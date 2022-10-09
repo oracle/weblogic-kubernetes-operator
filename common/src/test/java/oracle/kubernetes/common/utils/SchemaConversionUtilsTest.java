@@ -5,14 +5,7 @@ package oracle.kubernetes.common.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import com.meterware.simplestub.Memento;
 import org.junit.jupiter.api.AfterEach;
@@ -172,7 +165,19 @@ class SchemaConversionUtilsTest {
 
     // have to read document again because v8Domain variable contents will be modified
     v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
-    assertThat(converterv8.getDomain(), equalTo(v8Domain));
+    assertThat(sort(converterv8.getDomain()), equalTo(sort(v8Domain)));
+  }
+
+  // TEST
+  private Map<String, Object> sort(Map<String, Object> map) {
+    Map<String, Object> sorted = new TreeMap<>();
+    map.forEach((k, v) -> {
+      if (v instanceof Map) {
+        v = sort((Map<String, Object>) v);
+      }
+      sorted.put(k, v);
+    });
+    return sorted;
   }
 
   @Test

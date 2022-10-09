@@ -64,8 +64,12 @@ public class SchemaConversionUtils {
   public static final List<String> OBSOLETE_CONDITION_TYPES = List.of("Progressing");
 
   private static final String VOLUME_MOUNTS = "volumeMounts";
+  private static final String VOLUMES = "volumes";
   private static final String VOLUME = "volume";
   private static final String MOUNT_PATH = "mountPath";
+  private static final String INIT_CONTAINERS = "initContainers";
+  private static final String AUXILIARY_IMAGES = "auxiliaryImages";
+  private static final String AUXILIARY_IMAGE_VOLUMES = "auxiliaryImageVolumes";
   private static final String IMAGE = "image";
   private static final String V8_STATE_GOAL_KEY = "desiredState";
   private static final String V9_STATE_GOAL_KEY = "stateGoal";
@@ -196,12 +200,12 @@ public class SchemaConversionUtils {
   }
 
   private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, Map<String, Object> toBePreserved) {
-    List<Object> auxiliaryImageVolumes = (List<Object>) spec.remove("auxiliaryImageVolumes");
+    List<Object> auxiliaryImageVolumes = (List<Object>) spec.remove(AUXILIARY_IMAGE_VOLUMES);
     if (auxiliaryImageVolumes != null) {
-      preserve(toBePreserved, "$.spec", Map.of("auxiliaryImageVolumes", auxiliaryImageVolumes));
-      removeAndPreserveLegacyAuxiliaryImages(spec, auxiliaryImageVolumes, toBePreserved, "$.spec");
+      preserve(toBePreserved, "$.spec", Map.of(AUXILIARY_IMAGE_VOLUMES, auxiliaryImageVolumes));
+      removeAndPreserveLegacyAuxiliaryImages(spec, auxiliaryImageVolumes, toBePreserved, "$.spec.serverPod");
       Optional.ofNullable(getAdminServer(spec)).ifPresent(
-          as -> removeAndPreserveLegacyAuxiliaryImages(as, auxiliaryImageVolumes, toBePreserved, "$.spec.adminServer"));
+          as -> removeAndPreserveLegacyAuxiliaryImages(as, auxiliaryImageVolumes, toBePreserved, "$.spec.adminServer.serverPod"));
       Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
           removeAndPreserveLegacyAuxiliaryImagesForCluster(
               (Map<String, Object>) cluster, auxiliaryImageVolumes, toBePreserved)));
@@ -214,9 +218,9 @@ public class SchemaConversionUtils {
   private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes,
                                                       Map<String, Object> toBePreserved, String scope) {
     Map<String, Object> serverPod = getServerPod(spec);
-    List<Object> auxiliaryImages = (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.remove("auxiliaryImages"))).orElse(null);
+    List<Object> auxiliaryImages = (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.remove(AUXILIARY_IMAGES))).orElse(null);
     if (auxiliaryImages != null) {
-      preserve(toBePreserved, scope, Map.of("auxiliaryImages", auxiliaryImages));
+      preserve(toBePreserved, scope, Map.of(AUXILIARY_IMAGES, auxiliaryImages));
       addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes);
     }
   }
@@ -227,7 +231,7 @@ public class SchemaConversionUtils {
     Object name = cluster.get(CLUSTER_NAME);
     if (name != null) {
       removeAndPreserveLegacyAuxiliaryImages(
-          cluster, auxiliaryImageVolumes, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
+          cluster, auxiliaryImageVolumes, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')].serverPod");
     }
   }
 
@@ -237,7 +241,7 @@ public class SchemaConversionUtils {
     Object name = managedServer.get("serverName");
     if (name != null) {
       removeAndPreserveLegacyAuxiliaryImages(
-          managedServer, auxiliaryImageVolumes, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
+          managedServer, auxiliaryImageVolumes, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')].serverPod");
     }
   }
 
@@ -478,36 +482,40 @@ public class SchemaConversionUtils {
   @SuppressWarnings("unchecked")
   private boolean validateRestoreLegacyAuxilaryImages(Map<String, Object> domain,
                                                       Map<String, Object> scope, Map<String, Object> value) {
-    List<Object> auxiliaryImages = (List<Object>) value.get("auxiliaryImages");
+    List<Object> auxiliaryImages = (List<Object>) value.get(AUXILIARY_IMAGES);
     if (auxiliaryImages != null) {
-      Map<String, Object> serverPod = getServerPod(scope);
-      if (serverPod != null) {
-        // init containers
-        List<Object> initContainers = (List<Object>) serverPod.get("initContainers");
-        if (initContainers != null) {
-          for (Object item : initContainers) {
-            Map<String, Object> ic = (Map<String, Object>) item;
-            // HERE
-          }
-          if (initContainers.isEmpty()) {
-            serverPod.remove("initContainers");
-          }
-        }
-        // volume mounts
-        // env variables
-
-        if (serverPod.isEmpty()) {
-          scope.remove("serverPod");
-        }
-      }
+      // init containers, volumes, volumeMounts
+      removeNamedCompatibilityItems(scope, INIT_CONTAINERS);
+      removeNamedCompatibilityItems(scope, VOLUMES);
+      removeNamedCompatibilityItems(scope, VOLUME_MOUNTS);
+      // env variables
+      removeNamedItems(scope, "env", AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS::equals);
     }
     return true;
+  }
+
+  private void removeNamedCompatibilityItems(Map<String, Object> serverPod, String kind) {
+    removeNamedItems(serverPod, kind, name -> name.startsWith(CommonConstants.COMPATIBILITY_MODE));
+  }
+
+  private void removeNamedItems(Map<String, Object> serverPod, String kind, Predicate<String> test) {
+    List<Object> scope = (List<Object>) serverPod.get(kind);
+    if (scope != null) {
+      scope.removeIf(item -> {
+        Map<String, Object> ic = (Map<String, Object>) item;
+        String name = (String) ic.getOrDefault("name", "");
+        return test.test(name);
+      });
+      if (scope.isEmpty()) {
+        serverPod.remove(kind);
+      }
+    }
   }
 
   private void addInitContainersVolumeAndMountsToServerPod(Map<String, Object> serverPod, List<Object> auxiliaryImages,
                                                                          List<Object> auxiliaryImageVolumes) {
     addEmptyDirVolume(serverPod, auxiliaryImageVolumes);
-    List<Object> initContainers = Optional.ofNullable((List<Object>) serverPod.get("initContainers"))
+    List<Object> initContainers = Optional.ofNullable((List<Object>) serverPod.get(INIT_CONTAINERS))
         .orElse(new ArrayList<>());
     for (Object auxiliaryImage : auxiliaryImages) {
       initContainers.add(
@@ -515,7 +523,7 @@ public class SchemaConversionUtils {
               auxiliaryImageVolumes));
       containerIndex.addAndGet(1);
     }
-    serverPod.put("initContainers", initContainers);
+    serverPod.put(INIT_CONTAINERS, initContainers);
     auxiliaryImages.forEach(ai -> addVolumeMount(serverPod, (Map<String, Object>)ai, auxiliaryImageVolumes));
     addAuxiliaryImageEnv(auxiliaryImages, serverPod, auxiliaryImageVolumes);
   }
@@ -549,13 +557,13 @@ public class SchemaConversionUtils {
   }
 
   private void addVolumeIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImageVolume) {
-    List<Object> existingVolumes = Optional.ofNullable((List<Object>)serverPod.get("volumes"))
+    List<Object> existingVolumes = Optional.ofNullable((List<Object>)serverPod.get(VOLUMES))
             .orElse(new ArrayList<>());
     if (Optional.of(existingVolumes).map(volumes -> (volumes).stream().noneMatch(
           volume -> podHasMatchingVolumeName((Map<String, Object>)volume, auxiliaryImageVolume))).orElse(true)) {
       existingVolumes.add(createEmptyDirVolume(auxiliaryImageVolume));
     }
-    serverPod.put("volumes", existingVolumes);
+    serverPod.put(VOLUMES, existingVolumes);
   }
 
   private boolean podHasMatchingVolumeName(Map<String, Object> volume, Map<String, Object> auxiliaryImageVolume) {
@@ -577,7 +585,9 @@ public class SchemaConversionUtils {
                                        String mountPath) {
     if (Optional.ofNullable(serverPod.get(VOLUME_MOUNTS)).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
           volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
-      serverPod.put(VOLUME_MOUNTS, Collections.singletonList(getVolumeMount(auxiliaryImage, mountPath)));
+      List<Object> volumeMounts = new ArrayList<>();
+      volumeMounts.add(getVolumeMount(auxiliaryImage, mountPath));
+      serverPod.put(VOLUME_MOUNTS, volumeMounts);
     }
   }
 
