@@ -219,11 +219,6 @@ class ItLargeCapacityDomainsClustersMII {
             clusterManagedServerPodNamePrefix + i, domainNamespace);
         checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
-
-      List<String> managedServerNames = new ArrayList<>();
-      for (int i = 1; i <= clusterReplicaCount; i++) {
-        managedServerNames.add(clusterManagedServerNameBase + i);
-      }
     }
   }
 
@@ -322,11 +317,6 @@ class ItLargeCapacityDomainsClustersMII {
         checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
       }
 
-      List<String> managedServerNames = new ArrayList<>();
-      for (int i = 1; i <= clusterReplicaCount; i++) {
-        managedServerNames.add(clusterManagedServerNameBase + i);
-      }
-
       // verify managed server services and pods are created
       for (int i = 1; i <= clusterReplicaCount; i++) {
         logger.info("Checking managed server service and pod {0} is created in namespace {1}",
@@ -350,7 +340,8 @@ class ItLargeCapacityDomainsClustersMII {
     String clusterBaseName = "sdcluster-";
     //shutdown all clusters in default domain
     for (int j = 1; j <= numOfClusters; j++) {
-      String clusterManagedServerNameBase = "config-server";
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
@@ -370,7 +361,8 @@ class ItLargeCapacityDomainsClustersMII {
     }
     //startup all clusters in default domain
     for (int j = 1; j <= numOfClusters; j++) {
-      String clusterManagedServerNameBase = "config-server";
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       logger.info("patch the domain resource with new cluster and introspectVersion");
