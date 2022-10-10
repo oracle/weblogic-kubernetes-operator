@@ -166,10 +166,10 @@ class ItLargeCapacityDomainsClustersMII {
     logger.info("Found the default service nodePort {0}", nodePort);
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
-    String clusterBaseName = "cluster-";
+    String clusterBaseName = "mycluster-";
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = "config-server";
+      String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       String configMapName = "configclusterconfigmap";
@@ -549,10 +549,10 @@ class ItLargeCapacityDomainsClustersMII {
         + "    Cluster:\n"
         + "        '" + clusterName + "':\n"
         + "    Server:\n"
-        + "        'config-server1':\n"
+        + "        '" + clusterName + "-config-server1':\n"
         + "            Cluster: '" + clusterName + "'\n"
         + "            ListenPort: '8001'\n"
-        + "        'config-server2':\n"
+        + "        '" + clusterName + "-config-server2':\n"
         + "            Cluster: '" + clusterName + "'\n"
         + "            ListenPort: '8001'\n";
 
