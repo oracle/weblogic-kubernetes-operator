@@ -49,42 +49,55 @@ temp_file1=$(mktemp /tmp/$(basename $0).1.XXXXXX.out)
 temp_file2=$(mktemp /tmp/$(basename $0).2.XXXXXX.out)
 trap "rm -f $temp_file1 $temp_file2" 0 2 3 15
 
+filter_comments() {
+  sed 's;^[^:]*:[0-9]*:[[:space:]]*//.*$;;g' \
+  | sed 's;^[^:]*:[0-9]*:[[:space:]]*\*.*$;;g' \
+  | sed 's;^[^:]*:[0-9]*:[[:space:]]*/\*.*$;;g' \
+  | sed 's;^[^:]*:[0-9]*:[[:space:]]*\#.*$;;g'
+}
+
 for ext in sh py java ; do
   git ls-files \
     | grep "\.${ext}$" \
-    | xargs grep "kubectl[^_a-zA-Z0-9]" \
-    | grep -vE "[^:]*:[[:space:]]*(//|/\*|\*|#)" \
-    | grep -vE "[^:]*:.*(See kubectl|See .kubectl|logger.info)" \
-    | grep -vE "[^:]*:.*(KUBERNETES_CLI:-kubectl|KCLI=\"kubectl\")" \
-    | grep -vE "[^:]*:.*(.m .kubernetes_cli.)" \
-    | grep -vE "[^:]*:.*(Default is .kubectl)" \
-    | grep -vE "[^:]*:.*(when using the 'kubectl port-forward' pattern)" \
-    | grep -vE "[^:]*:.*(when describing the domain .kubectl)" \
-    | grep -vE "[^:]*:.*(__kubernetes_cli=.....-kubectl.)" \
-    | grep -vE "DEFAULT = .kubectl." \
-    | grep -vE "Verify call .kubectl scale." \
-    | grep -vE "annotations.put..kubectl.kubernetes.io.last-applied-configuration" \
-    | grep -vE "directly using 'kubectl'"
+    | xargs grep -n "kubectl" \
+    | filter_comments \
+    | sed 's;KUBERNETES_CLI:-kubectl;;g' \
+    | sed 's;KCLI=.kubectl.;;g' \
+    | sed 's;DEFAULT = .kubectl.;;g' \
+    | sed 's;__kubernetes_cli=.....-kubectl.;;g' \
+    | sed 's;See kubectl;;g' \
+    | sed 's;See .kubectl;;g' \
+    | sed 's;.m .kubernetes_cli.;;g' \
+    | sed 's;Default is .kubectl;;g' \
+    | sed 's;when using the .kubectl port-forward. pattern;;g' \
+    | sed 's;when describing the domain .kubectl;;g' \
+    | sed 's;Verify call .kubectl scale.;;g' \
+    | sed 's;annotations.put..kubectl.kubernetes.io.last-applied-configuration;;g' \
+    | sed 's;directly using .kubectl.;;g' \
+    | grep 'kubectl[^_a-zA-Z0-9]'
   git ls-files \
     | grep "\.${ext}$" \
-    | xargs grep "docker[^-_a-zA-Z0-9/]" \
-    | grep -vE "[^:]*:[[:space:]]*(//|/\*|\*|#)" \
-    | grep -vE "[^:]*:.*(logger.info|--secret-docker)" \
-    | grep -vE "[^:]*:.*(WLSIMG_BUILDER:-docker)" \
-    | grep -vE "DEFAULT = .docker." \
-    | grep -vE "directly using 'docker'"
+    | xargs grep -n "docker" \
+    | filter_comments \
+    | sed 's;.WLSIMG_BUILDER..docker.;;g' \
+    | sed 's;-secret-docker;;g' \
+    | sed 's;DEFAULT = .docker.;;g' \
+    | sed 's;directly using .docker.;;g' \
+    | sed 's;hub.docker.com;;g' \
+    | grep 'docker[^-_a-zA-Z0-9/]'
+
 done > $temp_file1
 
 exit_code=0
 match_myself_regex="^$(basename $0):"
 match_myself_count="$(grep -c "$match_myself_regex" $temp_file1)"
-match_myself_expected="2"
+match_myself_expected="4"
 
 if [ "$match_myself_count" != "$match_myself_expected" ]; then
   # This script deliberately includes itself in its own docker & kubectl checks
   # as a way to verify that its checks are working correctly.
-  # So the above 'xargs grep' lines are expected to be in $temp_file1
-  # (once for docker, and once for kubectl).
+  # So the above 'grep' lines are expected to be in $temp_file1
+  # (twice each for docker and kubectl).
   echo "ERROR: The $(basename $0) script did not find exactly $match_myself_expected" \
        "occurrences of itself in its search but instead found $match_myself_count instances:"
   grep "$match_myself_regex" $temp_file1

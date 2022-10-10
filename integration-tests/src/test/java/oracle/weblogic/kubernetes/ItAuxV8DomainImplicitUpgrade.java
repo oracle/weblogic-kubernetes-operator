@@ -221,8 +221,8 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
@@ -331,8 +331,8 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
@@ -397,8 +397,8 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
@@ -467,8 +467,8 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
@@ -540,8 +540,8 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());

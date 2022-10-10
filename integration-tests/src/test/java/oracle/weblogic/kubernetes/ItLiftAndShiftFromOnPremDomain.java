@@ -292,7 +292,7 @@ class ItLiftAndShiftFromOnPremDomain {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create secrets");
 
-    logger.info("Run kubectl to create the domain");
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
         + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML).toString());

@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_R
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -1251,7 +1252,7 @@ class ItIntrospectVersion {
   private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
     String podName = domainUid + "-" + serverName;
     final String command = String.format(
-        "kubectl exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
+        KUBERNETES_CLI + " exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
             + wlsUserName
             + ":"
             + wlsPassword

@@ -206,7 +206,7 @@ public class ItFmwSample {
               "image: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     });
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETES_CLI to create the domain and verify
     //verify EM console is accessible
     createDomainAndVerify(domainUid, sampleBase);
 
@@ -226,8 +226,8 @@ public class ItFmwSample {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f "
             + get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());

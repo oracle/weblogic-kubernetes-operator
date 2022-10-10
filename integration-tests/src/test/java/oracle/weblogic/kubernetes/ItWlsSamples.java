@@ -224,7 +224,7 @@ class ItWlsSamples {
             + ADMIN_PASSWORD_DEFAULT;
     String[] additonalStr = {additonalOptions, imageName};
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETS_CLI to create the domain and verify
     createDomainAndVerify(domainName, sampleBase, additonalStr);
 
     //delete the domain resource
@@ -281,7 +281,7 @@ class ItWlsSamples {
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETS_CLI to create the domain and verify
     createDomainAndVerify(domainUid, sampleBase);
 
     // update the domain to add a new cluster
@@ -681,8 +681,8 @@ class ItWlsSamples {
         "domain yaml file {0} exists",
         domainYamlFileString);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETS_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     params = new CommandParams().defaults();
     params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
 
@@ -752,8 +752,8 @@ class ItWlsSamples {
     // before initiating introspection of the domain to start the second cluster that was just added
     // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
     if (script.equals("wlst")) {
-      // run kubectl to update the domain
-      logger.info("Run kubectl to create the domain");
+      // run KUBERNETES_CLI to update the domain
+      logger.info("Run " + KUBERNETES_CLI + " to create the domain");
       params = new CommandParams().defaults();
       params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
       result = Command.withParams(params).execute();

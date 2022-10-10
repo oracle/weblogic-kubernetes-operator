@@ -178,7 +178,7 @@ public class ItFmwDiiSample {
     // update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainUid, sampleBase, script);
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETES_CLI to create the domain and verify
     //verify EM console is accessible
     createDomainAndVerify(domainUid, sampleBase);
   }
@@ -229,8 +229,8 @@ public class ItFmwDiiSample {
           Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml"))));
     }
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params1 = new CommandParams().defaults();
     params1.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
