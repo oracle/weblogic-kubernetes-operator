@@ -48,9 +48,13 @@ public class SchemaConversionUtils {
   private static final String TYPE = "type";
   private static final String CLUSTERS = "clusters";
   private static final String CLUSTER_NAME = "clusterName";
+  private static final String ACPFE = "adminChannelPortForwardingEnabled";
   private static final String PRESERVED = "weblogic.v8.preserved";
   private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
   private static final String ADDED_ACPFE = "weblogic.v8.adminChannelPortForwardingEnabled";
+  private static final String DOLLAR_SPEC = "$.spec";
+  private static final String DOLLAR_SPEC_SERVERPOD = "$.spec.serverPod";
+  private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
 
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
@@ -59,12 +63,6 @@ public class SchemaConversionUtils {
   public static final List<String> SUPPORTED_FAILURE_REASONS = List.of(
         "Aborted", "Internal", "TopologyMismatch", "ReplicasTooHigh",
         "ServerPod", "Kubernetes", "Introspection", "DomainInvalid");
-
-  /**
-   * The list of condition types no longer supported. Should match the values in DomainConditionType with
-   * a true value for isObsolete(). Validated in tests in the operator.
-   */
-  public static final List<String> OBSOLETE_CONDITION_TYPES = List.of("Progressing");
 
   private static final String VOLUME_MOUNTS = "volumeMounts";
   private static final String VOLUMES = "volumes";
@@ -198,10 +196,10 @@ public class SchemaConversionUtils {
                                                 Map<String, Object> spec, String apiVersion) {
     Map<String, Object> adminServerSpec = getAdminServer(spec);
     Boolean adminChannelPortForwardingEnabled = (Boolean) Optional.ofNullable(adminServerSpec)
-            .map(as -> as.get("adminChannelPortForwardingEnabled")).orElse(null);
+            .map(as -> as.get(ACPFE)).orElse(null);
     if ((adminChannelPortForwardingEnabled == null) && (CommonConstants.API_VERSION_V8.equals(apiVersion))) {
       Optional.ofNullable(adminServerSpec).ifPresent(as -> {
-        as.put("adminChannelPortForwardingEnabled", false);
+        as.put(ACPFE, false);
         Map<String, Object> meta = getMetadata(domain);
         Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
                 ANNOTATIONS, k -> new LinkedHashMap<>());
@@ -213,10 +211,11 @@ public class SchemaConversionUtils {
   private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     List<Object> auxiliaryImageVolumes = (List<Object>) spec.remove(AUXILIARY_IMAGE_VOLUMES);
     if (auxiliaryImageVolumes != null) {
-      preserve(toBePreserved, "$.spec", Map.of(AUXILIARY_IMAGE_VOLUMES, auxiliaryImageVolumes));
-      removeAndPreserveLegacyAuxiliaryImages(spec, auxiliaryImageVolumes, toBePreserved, "$.spec.serverPod");
+      preserve(toBePreserved, DOLLAR_SPEC, Map.of(AUXILIARY_IMAGE_VOLUMES, auxiliaryImageVolumes));
+      removeAndPreserveLegacyAuxiliaryImages(spec, auxiliaryImageVolumes, toBePreserved, DOLLAR_SPEC_SERVERPOD);
       Optional.ofNullable(getAdminServer(spec)).ifPresent(
-          as -> removeAndPreserveLegacyAuxiliaryImages(as, auxiliaryImageVolumes, toBePreserved, "$.spec.adminServer.serverPod"));
+          as -> removeAndPreserveLegacyAuxiliaryImages(as, auxiliaryImageVolumes,
+              toBePreserved, DOLLAR_SPEC_AS_SERVERPOD));
       Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
           removeAndPreserveLegacyAuxiliaryImagesForCluster(
               (Map<String, Object>) cluster, auxiliaryImageVolumes, toBePreserved)));
@@ -229,11 +228,21 @@ public class SchemaConversionUtils {
   private void removeAndPreserveLegacyAuxiliaryImages(Map<String, Object> spec, List<Object> auxiliaryImageVolumes,
                                                       Map<String, Object> toBePreserved, String scope) {
     Map<String, Object> serverPod = getServerPod(spec);
-    List<Object> auxiliaryImages = (List<Object>) Optional.ofNullable(serverPod).map(sp -> (sp.remove(AUXILIARY_IMAGES))).orElse(null);
-    if (auxiliaryImages != null) {
-      preserve(toBePreserved, scope, Map.of(AUXILIARY_IMAGES, auxiliaryImages));
-      addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes);
+    if (serverPod != null) {
+      List<Object> auxiliaryImages = (List<Object>) serverPod.remove(AUXILIARY_IMAGES);
+      if (auxiliaryImages != null) {
+        preserve(toBePreserved, scope, Map.of(AUXILIARY_IMAGES, auxiliaryImages));
+        addInitContainersVolumeAndMountsToServerPod(serverPod, auxiliaryImages, auxiliaryImageVolumes);
+      }
     }
+  }
+
+  private String getDollarSpecForCluster(Object name) {
+    return "$.spec.clusters[?(@.clusterName=='" + name + "')]";
+  }
+
+  private String getDollarSpecForManagedServer(Object name) {
+    return "$.spec.managedServer[?(@.serverName=='" + name + "')]";
   }
 
   private void removeAndPreserveLegacyAuxiliaryImagesForCluster(Map<String, Object> cluster,
@@ -242,7 +251,7 @@ public class SchemaConversionUtils {
     Object name = cluster.get(CLUSTER_NAME);
     if (name != null) {
       removeAndPreserveLegacyAuxiliaryImages(
-          cluster, auxiliaryImageVolumes, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')].serverPod");
+          cluster, auxiliaryImageVolumes, toBePreserved, getDollarSpecForCluster(name) + ".serverPod");
     }
   }
 
@@ -252,7 +261,8 @@ public class SchemaConversionUtils {
     Object name = managedServer.get("serverName");
     if (name != null) {
       removeAndPreserveLegacyAuxiliaryImages(
-          managedServer, auxiliaryImageVolumes, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')].serverPod");
+          managedServer, auxiliaryImageVolumes,
+              toBePreserved, getDollarSpecForManagedServer(name) + ".serverPod");
     }
   }
 
@@ -263,7 +273,8 @@ public class SchemaConversionUtils {
   }
 
   private void convertDomainStatusTargetV9(Map<String, Object> domain) {
-    removeObsoleteConditionsFromDomainStatus(domain);
+    // HERE
+    convertProgressingToCompleted(domain);
     removeUnsupportedDomainStatusConditionReasons(domain);
     renameServerStatusFieldsV8ToV9(domain);
   }
@@ -283,16 +294,19 @@ public class SchemaConversionUtils {
     }
   }
 
-  private void removeObsoleteConditionsFromDomainStatus(Map<String, Object> domain) {
-    getStatusConditions(domain).removeIf(this::isObsoleteCondition);
-  }
-
-  private boolean isObsoleteCondition(Map<String, String> condition) {
-    return Optional.ofNullable(condition.get("type")).map(this::isObsoleteConditionType).orElse(true);
-  }
-
-  private boolean isObsoleteConditionType(String type) {
-    return OBSOLETE_CONDITION_TYPES.contains(type);
+  private void convertProgressingToCompleted(Map<String, Object> domain) {
+    Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
+    while (conditions.hasNext()) {
+      Map<String, String> condition = conditions.next();
+      if ("Progressing".equals(condition.get(TYPE))) {
+        if ("True".equals(condition.get(STATUS))) {
+          condition.put(TYPE, "Completed");
+          condition.put(STATUS, "False");
+        } else {
+          conditions.remove();
+        }
+      }
+    }
   }
 
   @Nonnull
@@ -713,7 +727,7 @@ public class SchemaConversionUtils {
 
   private void removeAndPreserveAllowReplicasBelowMinDynClusterSize(Map<String, Object> spec,
                                                                     Map<String, Object> toBePreserved) {
-    removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved, "$.spec");
+    removeAndPreserveAllowReplicasBelowMinDynClusterSize(spec, toBePreserved, DOLLAR_SPEC);
     Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
         removeAndPreserveAllowReplicasBelowMinDynClusterSizeForCluster((Map<String, Object>) cluster, toBePreserved)));
   }
@@ -731,12 +745,12 @@ public class SchemaConversionUtils {
     Object name = cluster.get(CLUSTER_NAME);
     if (name != null) {
       removeAndPreserveAllowReplicasBelowMinDynClusterSize(
-          cluster, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
+          cluster, toBePreserved, getDollarSpecForCluster(name));
     }
   }
 
   private void removeAndPreserveServerStartState(Map<String, Object> spec, Map<String, Object> toBePreserved) {
-    removeAndPreserveServerStartState(spec, toBePreserved, "$.spec");
+    removeAndPreserveServerStartState(spec, toBePreserved, DOLLAR_SPEC);
     Optional.ofNullable(getAdminServer(spec)).ifPresent(
         as -> removeAndPreserveServerStartState(as, toBePreserved, "$.spec.adminServer"));
     Optional.ofNullable(getClusters(spec)).ifPresent(cl -> cl.forEach(cluster ->
@@ -757,7 +771,7 @@ public class SchemaConversionUtils {
                                                  Map<String, Object> toBePreserved) {
     Object name = cluster.get(CLUSTER_NAME);
     if (name != null) {
-      removeAndPreserveServerStartState(cluster, toBePreserved, "$.spec.clusters[?(@.clusterName=='" + name + "')]");
+      removeAndPreserveServerStartState(cluster, toBePreserved, getDollarSpecForCluster(name));
     }
   }
 
@@ -766,7 +780,7 @@ public class SchemaConversionUtils {
     Object name = managedServer.get("serverName");
     if (name != null) {
       removeAndPreserveServerStartState(
-          managedServer, toBePreserved, "$.spec.managedServer[?(@.serverName=='" + name + "')]");
+          managedServer, toBePreserved, getDollarSpecForManagedServer(name));
     }
   }
 
@@ -780,7 +794,8 @@ public class SchemaConversionUtils {
     });
   }
 
-  private void preserve(String annoName, Map<String, Object> domain, Map<String, Object> toBePreserved, String apiVersion)
+  private void preserve(String annoName, Map<String, Object> domain,
+                        Map<String, Object> toBePreserved, String apiVersion)
       throws IOException {
     if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion)) {
       Map<String, Object> meta = getMetadata(domain);
@@ -796,7 +811,7 @@ public class SchemaConversionUtils {
         Map<String, Object> spec = getSpec(domain);
         Map<String, Object> adminServerSpec = getAdminServer(spec);
         Optional.ofNullable(adminServerSpec).ifPresent(as -> {
-          as.remove("adminChannelPortForwardingEnabled");
+          as.remove(ACPFE);
           if (as.isEmpty()) {
             spec.remove("adminServer");
           }
@@ -826,20 +841,6 @@ public class SchemaConversionUtils {
     });
   }
 
-  private void withAnnotation(String annoName, Map<String, Object> domain, Consumer<String> consumer) {
-    Map<String, Object> metadata = getMetadata(domain);
-    Optional.ofNullable(metadata)
-        .map(meta -> (Map<String, Object>) meta.get(ANNOTATIONS))
-        .map(annotations -> {
-          String anno = (String) annotations.remove(annoName);
-          if (annotations.isEmpty()) {
-            metadata.remove(ANNOTATIONS);
-          }
-          return anno;
-        })
-        .ifPresent(consumer);
-  }
-
   private void restore(Map<String, Object> domain, Map<String, Object> toBeRestored,
                        RestoreValidator restoreValidator) {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
@@ -854,6 +855,20 @@ public class SchemaConversionUtils {
             }));
       });
     }
+  }
+
+  private void withAnnotation(String annoName, Map<String, Object> domain, Consumer<String> consumer) {
+    Map<String, Object> metadata = getMetadata(domain);
+    Optional.ofNullable(metadata)
+        .map(meta -> (Map<String, Object>) meta.get(ANNOTATIONS))
+        .map(annotations -> {
+          String anno = (String) annotations.remove(annoName);
+          if (annotations.isEmpty()) {
+            metadata.remove(ANNOTATIONS);
+          }
+          return anno;
+        })
+        .ifPresent(consumer);
   }
 
   private List<Map<String, Object>> read(ReadContext context, JsonPath path) {
