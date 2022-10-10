@@ -275,7 +275,7 @@ public class SchemaConversionUtils {
   private void convertDomainStatusTargetV9(Map<String, Object> domain) {
     // HERE
     convertProgressingToCompleted(domain);
-    removeUnsupportedDomainStatusConditionReasons(domain);
+    renameUnsupportedDomainStatusFailedConditionReasonV8ToV9(domain);
     renameServerStatusFieldsV8ToV9(domain);
   }
 
@@ -316,11 +316,12 @@ public class SchemaConversionUtils {
           .orElse(Collections.emptyList());
   }
 
-  private void removeUnsupportedDomainStatusConditionReasons(Map<String, Object> domain) {
-    getStatusConditions(domain).forEach(this::removeReasonIfUnsupported);
+  private void renameUnsupportedDomainStatusFailedConditionReasonV8ToV9(Map<String, Object> domain) {
+    getStatusConditions(domain).forEach(cond -> renameFailedReasonIfUnsupported(domain, cond));
   }
 
-  private void removeReasonIfUnsupported(Map<String, String> condition) {
+  private void renameFailedReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
+    // HERE
     removeIf(condition, "reason", this::isUnsupportedReason);
   }
 
