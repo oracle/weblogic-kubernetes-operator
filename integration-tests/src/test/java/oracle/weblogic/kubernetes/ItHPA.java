@@ -217,7 +217,6 @@ public class ItHPA {
     // it takes some time to autoscale down the cluster
     for (int i = 3; i <= 4; i++) {
       final int j = i;
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
       testUntil(withLongRetryPolicy,
           assertDoesNotThrow(() -> podDoesNotExist(managedServerPrefix + j, domainUid, domainNamespace),
               String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
