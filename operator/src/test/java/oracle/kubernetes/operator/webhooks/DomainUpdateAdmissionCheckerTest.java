@@ -262,8 +262,6 @@ class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
 
     testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
 
-    DomainUpdateAdmissionChecker checker = new DomainUpdateAdmissionChecker(existingDomain2, proposedDomain2);
-
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(false));
   }

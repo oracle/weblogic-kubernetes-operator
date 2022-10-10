@@ -3,29 +3,15 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
-import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
-import oracle.kubernetes.weblogic.domain.model.DomainList;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.jetbrains.annotations.NotNull;
-
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
 
 /**
  * ClusterUpdateAdmissionChecker provides the validation functionality for the validating webhook. It takes an existing
@@ -40,100 +26,28 @@ import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANN
  * </p>
  */
 
-public class ClusterUpdateAdmissionChecker extends AdmissionChecker {
+public class ClusterUpdateAdmissionChecker extends ClusterScaleAdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final ClusterResource existingCluster;
-  private final ClusterResource proposedCluster;
-  private final AdmissionResponse response = new AdmissionResponse();
-  private Exception exception;
 
   /** Construct a ClusterUpdateAdmissionChecker. */
   public ClusterUpdateAdmissionChecker(@NotNull ClusterResource existingCluster,
                                        @NotNull ClusterResource proposedCluster) {
+    super(proposedCluster);
     this.existingCluster = existingCluster;
-    this.proposedCluster = proposedCluster;
   }
 
   @Override
   AdmissionResponse validate() {
     LOGGER.fine("Validating ClusterResource " + proposedCluster + " against " + existingCluster);
 
-    response.allowed(isProposedChangeAllowed());
-    if (!response.isAllowed()) {
-      if (exception == null) {
-        return response.status(new AdmissionResponseStatus().message(createMessage()));
-      } else {
-        return response.status(new AdmissionResponseStatus().message(exception.getMessage()));
-      }
-    }
-    return response;
+    return validateIt();
   }
 
   @Override
   public boolean isProposedChangeAllowed() {
-    return isUnchanged() || skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
-  }
-
-  private boolean isReplicaCountValid() {
-    boolean isValid = (getClusterReplicaCount() != null
-        ? getClusterReplicaCount() <= getClusterSize(proposedCluster.getStatus())
-        : isDomainReplicaCountValid());
-
-    if (!isValid) {
-      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
-          existingCluster.getClusterName(), getClusterSize(existingCluster.getStatus())));
-    }
-    return isValid;
-  }
-
-  private boolean skipValidation(ClusterStatus clusterStatus) {
-    return getClusterSizeOptional(clusterStatus).isEmpty();
-  }
-
-  private Integer getClusterReplicaCount() {
-    return Optional.of(proposedCluster).map(ClusterResource::getSpec).map(ClusterSpec::getReplicas).orElse(null);
-  }
-
-  private boolean isDomainReplicaCountValid() {
-    try {
-      return getDomainResources(proposedCluster).stream()
-          .allMatch(domain -> getDomainReplicaCount(domain) <= getClusterSize(proposedCluster.getStatus()));
-    } catch (ApiException e) {
-      exception = e;
-      return false;
-    }
-  }
-
-  /**
-   * Check if the validation causes an Exception.
-   *
-   * @return true if the validation causes an Exception
-   */
-  public boolean hasException() {
-    return exception != null;
-  }
-
-  private List<DomainResource> getDomainResources(ClusterResource proposedCluster) throws ApiException {
-    return referencingDomains(proposedCluster, new CallBuilder().listDomain(getNamespace(proposedCluster)));
-  }
-
-  private List<DomainResource> referencingDomains(ClusterResource proposedCluster, DomainList domains) {
-    String name = proposedCluster.getMetadata().getName();
-    List<DomainResource> referencingDomains = new ArrayList<>();
-    Optional.ofNullable(domains).map(DomainList::getItems).ifPresent(list -> list.stream()
-        .filter(item -> referencesCluster(name, item)).forEach(referencingDomains::add));
-    return referencingDomains;
-  }
-
-  private boolean referencesCluster(String name, DomainResource domain) {
-    List<V1LocalObjectReference> refs = Optional.ofNullable(domain).map(DomainResource::getSpec)
-        .map(DomainSpec::getClusters).orElse(Collections.emptyList());
-    return refs.stream().anyMatch(item -> name.equals(item.getName()));
-  }
-
-  private String getNamespace(ClusterResource cluster) {
-    return Optional.of(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getNamespace).orElse("");
+    return isUnchanged() || super.isProposedChangeAllowed();
   }
 
   private boolean isUnchanged() {
@@ -150,5 +64,4 @@ public class ClusterUpdateAdmissionChecker extends AdmissionChecker {
   private boolean isProposedSpecUnchanged(@NotNull ClusterSpec existingSpec) {
     return Objects.equals(existingSpec, proposedCluster.getSpec());
   }
-
 }

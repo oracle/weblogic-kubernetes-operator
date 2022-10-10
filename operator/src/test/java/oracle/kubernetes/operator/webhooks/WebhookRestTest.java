@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.webhooks.model.ConversionRequest;
 import oracle.kubernetes.operator.webhooks.model.ConversionResponse;
 import oracle.kubernetes.operator.webhooks.model.ConversionReviewModel;
 import oracle.kubernetes.operator.webhooks.model.Result;
+import oracle.kubernetes.operator.webhooks.model.Scale;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
@@ -50,17 +51,22 @@ import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KIND;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_SINGULAR;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_SINGULAR;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_1;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.CLUSTER_NAME_2;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createCluster;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithClustersAndStatus;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithoutCluster;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createScale;
 import static oracle.kubernetes.operator.webhooks.WebhookRestTest.RestConfigStub.create;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
@@ -70,6 +76,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeCl
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeConversionReview;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeScaleToMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -97,14 +104,16 @@ class WebhookRestTest extends RestTestBase {
 
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
+  private final AdmissionReview scaleReview = createScaleAdmissionReview();
   private final DomainResource existingDomain = createDomainWithClustersAndStatus();
   private final DomainResource proposedDomain = createDomainWithClustersAndStatus();
   private final DomainResource existingDomain2 = createDomainWithoutCluster();
   private final DomainResource proposedDomain2 = createDomainWithoutCluster();
   private final ClusterResource existingCluster = createCluster();
   private final ClusterResource proposedCluster = createCluster();
-  private final ClusterResource existingCluster2 = createCluster(CLUSTER_NAME_2);
   private final ClusterResource proposedCluster2 = createCluster(CLUSTER_NAME_2);
+  private final Scale invalidScale = createScale(CLUSTER_NAME_1, "10");
+  private final Scale validScale = createScale(CLUSTER_NAME_1, "2");
 
   private final ConversionReviewModel conversionReview = createConversionReview();
 
@@ -114,10 +123,13 @@ class WebhookRestTest extends RestTestBase {
 
   private AdmissionRequest createDomainAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
+    Map<String, String> kind = new HashMap<>();
+    kind.put("kind", DOMAIN_SINGULAR);
     request.setUid(RESPONSE_UID);
-    request.setKind(new HashMap<>());
+    request.setKind(kind);
     request.setResource(createDomainResource());
-    request.setSubResource(new HashMap<>());
+    request.setSubResource(null);
+
     return request;
   }
 
@@ -135,10 +147,13 @@ class WebhookRestTest extends RestTestBase {
 
   private AdmissionRequest createClusterAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
+    Map<String, String> kind = new HashMap<>();
+    kind.put("kind", CLUSTER_SINGULAR);
     request.setUid(RESPONSE_UID);
-    request.setKind(new HashMap<>());
+    request.setKind(kind);
+    request.setUid(RESPONSE_UID);
     request.setResource(createClusterResource());
-    request.setSubResource(new HashMap<>());
+    request.setSubResource(null);
     return request;
   }
 
@@ -148,6 +163,25 @@ class WebhookRestTest extends RestTestBase {
     resource.put("version", CLUSTER_VERSION);
     resource.put("resource", CLUSTER_PLURAL);
     return resource;
+  }
+
+  private AdmissionReview createScaleAdmissionReview() {
+    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createScaleAdmissionRequest());
+  }
+
+  private AdmissionRequest createScaleAdmissionRequest() {
+    AdmissionRequest request = new AdmissionRequest();
+    Map<String, String> kind = new HashMap<>();
+    kind.put("kind", SCALE);
+    request.setUid(RESPONSE_UID);
+    request.setKind(kind);
+    request.setUid(RESPONSE_UID);
+
+    Map<String, String> resource = new HashMap<>();
+    resource.put("resource", CLUSTER_PLURAL);
+    request.setResource(resource);
+    request.setSubResource("scale");
+    return request;
   }
 
   private ConversionReviewModel createConversionReview() {
@@ -464,8 +498,6 @@ class WebhookRestTest extends RestTestBase {
     setExistingDomain(existingDomain2);
     setProposedDomain(proposedDomain2);
 
-    testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
-
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(domainReview);
     assertThat(isAllowed(responseReview), equalTo(true));
   }
@@ -508,6 +540,10 @@ class WebhookRestTest extends RestTestBase {
 
   private void setProposedCluster(ClusterResource cluster) {
     clusterReview.getRequest().setObject(writeClusterToMap(cluster));
+  }
+
+  private void setProposedScale(Scale scale) {
+    scaleReview.getRequest().setObject(writeScaleToMap(scale));
   }
 
   // test cases for validating webhook ClusterResource
@@ -643,6 +679,26 @@ class WebhookRestTest extends RestTestBase {
     setProposedCluster();
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenScaleClusterReplicasInvalid_rejectIt() {
+    testSupport.defineResources(invalidScale, proposedCluster);
+    setProposedScale(invalidScale);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenScaleClusterReplicasValid_acceptIt() {
+    testSupport.defineResources(validScale, proposedCluster);
+    setProposedScale(validScale);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
 
     assertThat(isAllowed(responseReview), equalTo(true));
   }
