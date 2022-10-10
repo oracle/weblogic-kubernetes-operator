@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -40,16 +41,13 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -60,7 +58,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkCopyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -431,12 +428,11 @@ class ItLivenessProbeCustomization {
 
   /**
    * Create a new domain with custom livenessProbe successThreshold value in serverPod to an invalid value.
-   * Verify the operator generates the expected log message.
-   * Verify successThreshold value is updated after patching the domain to correct successThreshold.
+   * Verify the create of domain resource failed.
    */
   @Test
-  @DisplayName("Test custom livenessProbe successThreshold in serverPod from an invalid value to valid value")
-  void testCustomLivenessProbeSuccessThresholdFromInvalidToValid() {
+  @DisplayName("Test custom livenessProbe successThreshold in serverPod with an invalid value")
+  void testCustomLivenessProbeInvalidNegative() {
     DomainResource domain = createDomainResource(domainUid2);
     domain.getSpec().serverPod().livenessProbe().successThreshold(2);
 
@@ -444,52 +440,29 @@ class ItLivenessProbeCustomization {
     logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid2, domainNamespace, imageName);
 
+    // check the operator log contains expected error msg
+    String expectedErrorMsg = "The liveness probe successThreshold value must be 1";
+
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid2, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                domainUid2, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid2, domainNamespace));
-
-    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid2, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid2, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), "domain1.getSpec() is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
-    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
-        "domain1.getSpec().getServerPod().getLivenessProbe() is null");
-
-    // check the operator log contains expected error msg
-    String expectedErrorMsg;
-    expectedErrorMsg = "Invalid value '2' for the liveness probe success threshold under "
-        + "'spec.adminServer.serverPod.livenessProbe.successThreshold'. "
-        + "The liveness probe successThreshold value must be 1.";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    OffsetDateTime timestamp = now();
-
-    String patchStr
-        = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 1}, "
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}, "
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/periodSeconds\", \"value\": 45}]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid2, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
-        String.format("failed to patch domain %s in namespace %s", domainUid2, domainNamespace));
-
-    // check the domain get restarted
-    checkPodRestarted(domainUid2, domainNamespace, adminServerPodName2, timestamp);
-
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
-      for (int j = 1; j <= replicaCount; j++) {
-        String managedServerPodName =
-            domainUid2 + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
-        checkPodRestarted(domainUid2, domainNamespace, managedServerPodName, timestamp);
-      }
+    boolean succeeded = true;
+    ApiException exception = null;
+    try {
+      succeeded = createDomainCustomResource(domain, DOMAIN_VERSION);
+    } catch (ApiException e) {
+      exception = e;
     }
+    assertTrue(failedWithExpectedErrorMsg(succeeded, exception, expectedErrorMsg),
+            String.format("Create domain custom resource unexpectedly succeeded for %s in namespace %s",
+                domainUid2, domainNamespace));
+  }
+
+  private boolean failedWithExpectedErrorMsg(boolean succeeded, ApiException exception, String expectedErrorMsg) {
+    return !succeeded || hasExpectedException(exception, expectedErrorMsg);
+  }
+
+  private boolean hasExpectedException(ApiException exception, String expectedMsg) {
+    return exception != null && exception.getResponseBody().contains(expectedMsg);
   }
 
   @NotNull

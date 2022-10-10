@@ -84,6 +84,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -92,6 +94,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatch
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -110,6 +113,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -577,6 +581,70 @@ class ItMiiDomain {
     assertTrue(
         domain1.getSpec().getAdminServer().getServerService().getLabels().containsKey("testkey"),
         "Missing expected label on admin service");
+  }
+
+  /** The default replicas at domain resource level is 1. Patching domain1 with new replicas 3.
+   * Verify managed server pods count at cluster resource level are not affected by domain resource
+   * level patching.
+   * Replicas count at cluster resource level is defined as 2.
+   * Scale up the cluster by patching replicas count to 5 at cluster resource level.
+   * Scale down the cluster by patching replicas count to 1 at cluster resource level.
+   * Verify cluster resource level scaling is successful even though replicas count at domain resource
+   * level is specified as 3
+   */
+  @Test
+  @Order(6)
+  @DisplayName("Verify scaling by patching replicas at domain resource and cluster resource level")
+  void testClusterScale() {
+    final int replicaCount = 2;
+    String clusterName = domainUid + "-" + "cluster-1";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    //patch replicas at domain resource level to 3
+    boolean scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 3);
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    //managed server pods at cluster resource level should not be affected by domain resource level patching
+    //verify at cluster resource level there are only 2 managed server pods exist and running
+    //verify managedServer3 doesn't exist
+    logger.info("Check dynamic managed server pods are not affected");
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
+        domainNamespace, replicaCount)));
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    //verify managedServer3 doesn't exist
+    checkPodDoesNotExist(managedServerPrefix + 3, domainUid, domainNamespace);
+
+
+    //scaling by patching replicas at cluster resource level should scale up/down
+    //the cluster even the domain resource has replicas defined
+    logger.info("Updating the cluster {0} replica count to 5", clusterName);
+    boolean p1Success = scaleCluster(clusterName, domainNamespace,5);
+    assertTrue(p1Success,
+        String.format("Patching replica to 5 failed for cluster %s in namespace %s",
+            clusterName, domainNamespace));
+    //verify 5 managed servers are up and running
+    for (int i = 1; i <= 5; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Updating the cluster {0} replica count to 1", clusterName);
+    p1Success = scaleCluster(clusterName, domainNamespace,1);
+    assertTrue(p1Success,
+        String.format("Patching replica to 1 failed for cluster %s in namespace %s",
+            clusterName, domainNamespace));
+    //verify only one managed server is up and running
+    for (int i = 5; i >= 2; i--) {
+      logger.info("Wait for managed server pod {0} to be shutdown in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    checkPodReadyAndServiceExists(managedServerPrefix + 1, domainUid, domainNamespace);
   }
 
   // This method is needed in this test class, since the cleanup util

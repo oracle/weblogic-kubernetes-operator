@@ -10,6 +10,7 @@ topology:
   Name: "wls-monexp-domain-1"
   AdminServerName: "admin-server"
   AdministrationPortEnabled: true
+  AdministrationPort: 7099
 
   Cluster:
     "cluster-1":
@@ -22,10 +23,10 @@ topology:
   Server:
     "admin-server":
       ListenPort: 7001
-      AdministrationPort: 7099
       SSL:
         Enabled: true
         ListenPort: 7002
+        HostnameVerificationIgnored: true
   ServerTemplate:
     "cluster-1-template":
       Cluster: "cluster-1"

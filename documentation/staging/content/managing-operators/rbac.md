@@ -5,13 +5,7 @@ weight: 8
 description: "Operator role-based authorization."
 ---
 
-### Contents
-* [Overview](#overview)
-* [Operator RBAC definitions](#operator-rbac-definitions)
-  - [Role and RoleBinding naming conventions](#kubernetes-role-and-rolebinding-naming-conventions)
-  - [ClusterRole and ClusterRoleBinding naming conventions](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions)
-* [RoleBindings](#rolebindings)
-* [ClusterRoleBindings](#clusterrolebindings)
+{{< table_of_contents >}}
 
 ### Overview
 

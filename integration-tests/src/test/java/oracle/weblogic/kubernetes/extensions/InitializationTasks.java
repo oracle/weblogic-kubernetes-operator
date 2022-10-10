@@ -609,8 +609,6 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         null, // domainspaceSelector
         true, // enableClusterRolebinding
         "INFO", // webhook pod log level
-        -1, // domainPresenceFailureRetryMaxCount
-        -1, // domainPresenceFailureRetrySeconds
         true, // webhookOnly
         "null" // domainNamespace
     );

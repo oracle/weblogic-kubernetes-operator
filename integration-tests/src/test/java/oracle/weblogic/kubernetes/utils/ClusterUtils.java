@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -18,6 +17,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
@@ -29,6 +29,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -255,4 +256,43 @@ public class ClusterUtils {
     }
     return false;
   }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with the KUBERNETES_CLI.
+   *
+   * @param clusterRes name of the cluster resource to be scaled.
+   * @param namespace  namespace where the cluster is deployed.
+   * @param replica   the replica count.
+   */
+  public static void kubernetesCLIScaleCluster(String clusterRes, String namespace, int replica) {
+    getLogger().info("Scaling cluster resource {0} in namespace {1} using " + KUBERNETES_CLI + " scale command", 
+        clusterRes, namespace);
+    CommandParams params = new CommandParams().defaults();
+    params.command(KUBERNETES_CLI + " scale  clusters/" + clusterRes 
+        + " --replicas=" + replica + " -n " + namespace);
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, KUBERNETES_CLI + " scale command failed");
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with the KUBERNETES_CLI.
+   *
+   * @param cmd    custom command line including cluster resource to be executed.
+   * @param namespace  namespace where the cluster is deployed.
+   * @param expectSuccess  expected result of the KUBERNETES_CLI command.
+   */
+  public static void kubernetesCLIScaleCluster(String cmd, String namespace, boolean expectSuccess) {
+    getLogger().info("Scaling cluster resource in namespace {1} using " + KUBERNETES_CLI + " scale command",
+        namespace);
+    String excommand = KUBERNETES_CLI + " scale cluster " + cmd + "-n " + namespace;
+    CommandParams params = new CommandParams().defaults();
+    params.command(excommand);
+    boolean result = Command.withParams(params).execute();
+    if (expectSuccess) {
+      assertTrue(result, KUBERNETES_CLI + " scale command should not fail");
+    } else {
+      assertFalse(result, KUBERNETES_CLI + " scale command should fail");
+    }
+  }
+
 }

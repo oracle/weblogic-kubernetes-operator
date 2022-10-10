@@ -6,13 +6,7 @@ weight: 3
 description: "An architectural overview of the operator runtime and related resources."
 ---
 
-### Contents
-
-- [Overall architecture](#overall-architecture)
-- [Domain architecture](#domain-architecture)
-- [Domain UID](#domain-uid)
-- [Network name predictability](#network-name-predictability)
-- [Domain state stored outside container images](#domain-state-stored-outside-container-images)
+{{< table_of_contents >}}
 
 ### Overall architecture
 

@@ -111,7 +111,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -151,11 +150,11 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
   private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
-  private static final String miiImageName = "mii-image";
+  private static final String miiImageName = "mdlb-mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
-  private static final String miiDomainUid = "miidomain";
-  private static final String dimDomainUid = "domaininimage";
-  private static final String domainOnPVUid = "domainonpv";
+  private static final String miiDomainUid = "mdlb-miidomain";
+  private static final String dimDomainUid = "mdlb-domaininimage";
+  private static final String domainOnPVUid = "mdlb-domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-multiapps-usingprop-wls.yaml";
 
   private static String opNamespace = null;
@@ -525,10 +524,10 @@ class ItMultiDomainModelsWithLoadBalancer {
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-        .isTrue();
+    testUntil(() -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
+        logger,
+        "NGINX can access the test web app from all managed servers {0} in the domain",
+        managedServers);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -727,6 +726,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         withLongRetryPolicy,
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
         logger,
+        "domain event {0} to be logged",
         DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
@@ -898,6 +898,21 @@ class ItMultiDomainModelsWithLoadBalancer {
       deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
+    }
+
+    // check that admin server pod is ready and service exists in domain namespace
+    logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the readiness for the managed servers in each cluster
+    for (int j = 1; j <= replicaCount; j++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+      // check managed server pod is ready and service exists in the namespace
+      logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
 
     return domain;
@@ -1273,7 +1288,12 @@ class ItMultiDomainModelsWithLoadBalancer {
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
 
       logger.info("Executing curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+          logger,
+          "WebLogic console on domain {0} in namespace {1} is accessible",
+          domainUid,
+          domainNamespace);
+
       logger.info("WebLogic console on domain1 is accessible");
     } else {
       logger.info("Skipping the admin console login test using ingress controller in OKD environment");

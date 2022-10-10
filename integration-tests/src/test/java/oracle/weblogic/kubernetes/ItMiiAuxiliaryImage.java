@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -569,7 +570,7 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Negative test. Create a domain using multiple auxiliary images with specified(custom) sourceWdtInstallHome.
-   * Verify operator log contains the expected error message and domain status and condition. This is a validation
+   * Verify the create domain call failed with expected error message This is a validation
    * check.
    */
   @Test
@@ -633,16 +634,27 @@ class ItMiiAuxiliaryImage {
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                domainUid, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+
+    String errorMessage = "The sourceWDTInstallHome value must be set for only one auxiliary image";
+    boolean succeeded = true;
+    ApiException exception = null;
+    try {
+      succeeded = createDomainCustomResource(domainCR);
+    } catch (ApiException e) {
+      exception = e;
+    }
+    assertTrue(failedWithExpectedErrorMsg(succeeded, exception, errorMessage),
+        String.format("Create domain custom resource unexpectedly succeeded for %s in namespace %s",
             domainUid, domainNamespace));
 
-    String errorMessage = "More than one auxiliary image under 'spec.configuration.model.auxiliaryImages' sets a "
-            + "'sourceWDTInstallHome' value. The sourceWDTInstallHome value must be set for only one auxiliary image.";
-    checkPodLogContainsString(opNamespace, operatorPodName, errorMessage);
+  }
 
+  private boolean failedWithExpectedErrorMsg(boolean succeeded, ApiException exception, String expectedErrorMsg) {
+    return !succeeded || hasExpectedException(exception, expectedErrorMsg);
+  }
+
+  private boolean hasExpectedException(ApiException exception, String expectedMsg) {
+    return exception != null && exception.getResponseBody().contains(expectedMsg);
   }
 
   /**
@@ -769,7 +781,7 @@ class ItMiiAuxiliaryImage {
 
     // delete domain3
     deleteDomainResource(domainNamespace, domainUid);
-    String configMapName1 = "modelfiles1-cm";;
+    String configMapName1 = "modelfiles1-cm";
 
     //add model files to configmap and verify domain is running
     cmFiles.add(

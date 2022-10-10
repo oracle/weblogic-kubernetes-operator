@@ -59,6 +59,7 @@ import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.clusterInUse;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.missingClusterResource;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
@@ -72,6 +73,7 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IM
     + "references its Cluster resources using `.spec.clusters`."
 )
 public class DomainResource implements KubernetesObject, RetryMessageFactory {
+
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -658,6 +660,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
+   * Returns the cluster names that the domain references to.
+   * @return the list of cluster names
+   */
+  public List<V1LocalObjectReference> getClusters() {
+    return spec.getClusters();
+  }
+
+  /**
    * Returns the strategy for applying changes to configuration overrides.
    * @return the selected strategy
    */
@@ -923,6 +933,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyContainerPortNameValidInPodSpecClusters(kubernetesResources);
       whenAuxiliaryImagesDefinedVerifyMountPathNotInUseClusters(kubernetesResources);
       verifyClusterResourcesNotInUse(kubernetesResources);
+      addMissingClusterResource(kubernetesResources);
     }
 
     private void addFatalValidationFailures() {
@@ -985,10 +996,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       Set<String> references = new HashSet<>();
       Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
           .stream().map(V1LocalObjectReference::getName).filter(Objects::nonNull)
-          .forEach(ref -> checkDuplcaiteClusterReferences(references, ref));
+          .forEach(ref -> checkDuplicateClusterReferences(references, ref));
     }
 
-    private void checkDuplcaiteClusterReferences(Set<String> references, String ref) {
+    private void checkDuplicateClusterReferences(Set<String> references, String ref) {
       if (references.contains(ref)) {
         failures.add(DomainValidationMessages.duplicateClusterName(ref));
       }
@@ -1125,7 +1136,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void verifyLivenessProbeSuccessThresholdClusters(KubernetesResourceLookup kubernetesResources) {
-      getSpec().getClusters().forEach(cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
+      getSpec().getClusters()
+          .forEach(cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
           .map(ClusterResource::getSpec).ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getLivenessProbe())
               .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
                   + clusterSpec.getClusterName() + "].serverPod.livenessProbe.successThreshold"))));
@@ -1196,24 +1208,25 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void verifyClusterResourcesNotInUse(
         KubernetesResourceLookup kubernetesResources) {
-      getSpec().getClusters().forEach(cluster ->
-          Optional.ofNullable(kubernetesResources.findCluster(cluster))
-              .ifPresent(cr -> verifyClusterInUseByAnotherDomain(kubernetesResources, cr)));
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .forEach(reference ->
+              Optional.ofNullable(kubernetesResources.findClusterInNamespace(reference, getNamespace()))
+              .ifPresent(cluster -> verifyClusterNotInUseByAnotherDomain(kubernetesResources, cluster)));
     }
 
-    private void verifyClusterInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
-                                                   ClusterResource cluster) {
+    private void verifyClusterNotInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
+                                                      ClusterResource cluster) {
       String domainAlreadyReferenceCluster =
-          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getClusterName());
-
+          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getMetadata().getName());
       if (domainAlreadyReferenceCluster != null) {
-        failures.add(clusterInUse(cluster.getClusterName(), domainAlreadyReferenceCluster));
+        failures.add(clusterInUse(cluster.getMetadata().getName(), domainAlreadyReferenceCluster));
       }
     }
 
     private String getReferencingDomains(KubernetesResourceLookup kubernetesResources,
                                                String namespace, String clusterName) {
       return Optional.ofNullable(kubernetesResources.getDomains(namespace)).orElse(new ArrayList<>()).stream()
+          .filter(domain -> !domain.isShuttingDown())
           .filter(domain -> domain.doesReferenceCluster(clusterName))
           .map(DomainResource::getDomainUid)
           .filter(domainUid -> !domainUid.equals(getDomainUid())).findFirst().orElse(null);
@@ -1346,6 +1359,17 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 
+    }
+
+    private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .forEach(cluster -> verifyClusterExists(resourceLookup, cluster));
+    }
+
+    private void verifyClusterExists(KubernetesResourceLookup resourceLookup, V1LocalObjectReference cluster) {
+      if (resourceLookup.findClusterInNamespace(cluster, getNamespace()) == null) {
+        failures.add(missingClusterResource(cluster.getName(), getNamespace()));
+      }
     }
 
     @SuppressWarnings("SameParameterValue")

@@ -8,14 +8,7 @@ description = "Debug deployed domains."
 
 Here are some suggestions for debugging problems with a domain after your Domain YAML file is deployed.
 
-### Contents
-
- - [Check the Domain status](#check-the-domain-status)
- - [Check the Domain events](#check-the-domain-events)
- - [Check the introspector job](#check-the-introspector-job)
- - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
- - [Check the docs](#check-the-docs)
- - [Check the operator](#check-the-operator)
+{{< table_of_contents >}}
 
 ### Check the Domain status
 

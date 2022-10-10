@@ -955,6 +955,13 @@ public class DomainPresenceInfo implements PacketComponent {
         .orElse(null);
   }
 
+  /**
+   * The desired number of running managed servers in each WebLogic cluster that is not explicitly
+   * configured in clusters.
+   *
+   * @param clusterName the same of the cluster
+   * @return replicas
+   */
   public int getReplicaCount(@Nonnull String clusterName) {
     final ClusterSpec clusterSpec = getClusterSpecFromClusterResource(clusterName);
     return getDomainApi().getReplicaCount(clusterSpec);
