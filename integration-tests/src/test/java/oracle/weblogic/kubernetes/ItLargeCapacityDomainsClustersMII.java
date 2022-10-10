@@ -167,13 +167,15 @@ class ItLargeCapacityDomainsClustersMII {
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     String clusterBaseName = "mycluster-";
+    List<Path> modelFiles = new ArrayList<>();
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       String configMapName = "configclusterconfigmap";
-      createClusterConfigMap(configMapName, createModelFiles(clusterName));
+      modelFiles.add(createModelFiles(clusterName));
+      createClusterConfigMap(configMapName, modelFiles);
 
       String patchStr = null;
       patchStr = "[{"
@@ -254,13 +256,15 @@ class ItLargeCapacityDomainsClustersMII {
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     String clusterBaseName = "sdcluster-";
+    List<Path> modelFiles = new ArrayList<>();
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       String configMapName = "configclusterconfigmap";
-      createClusterConfigMap(configMapName, createModelFiles(clusterName));
+      modelFiles.add(createModelFiles(clusterName));
+      createClusterConfigMap(configMapName, modelFiles);
 
       patchStr = "[{"
           + "\"op\": \"replace\","
@@ -519,16 +523,18 @@ class ItLargeCapacityDomainsClustersMII {
   }
 
   // Crate a ConfigMap with a model file to add a new WebLogic cluster
-  private void createClusterConfigMap(String configMapName, Path modelFile) {
+  private void createClusterConfigMap(String configMapName, List<Path> modelFiles) {
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainUid);
     Map<String, String> data = new HashMap<>();
-    String cmData = null;
-    cmData = assertDoesNotThrow(() -> Files.readString(modelFile),
-        String.format("readString operation failed for %s", modelFile));
-    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put(modelFile.getFileName().toString(), cmData);
 
+    for (Path modelFile : modelFiles) {
+      String cmData = null;
+      cmData = assertDoesNotThrow(() -> Files.readString(modelFile),
+          String.format("readString operation failed for %s", modelFile));
+      assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
+      data.put(modelFile.getFileName().toString(), cmData);
+    }
     V1ObjectMeta meta = new V1ObjectMeta()
         .labels(labels)
         .name(configMapName)
@@ -536,7 +542,6 @@ class ItLargeCapacityDomainsClustersMII {
     V1ConfigMap configMap = new V1ConfigMap()
         .data(data)
         .metadata(meta);
-
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
@@ -545,7 +550,7 @@ class ItLargeCapacityDomainsClustersMII {
   private static Path createModelFiles(String clusterName) {
 
     // write sparse yaml to file
-    pathToAddClusterYaml = Paths.get(WORK_DIR + "/addcluster.yaml");
+    pathToAddClusterYaml = Paths.get(WORK_DIR + "/" + clusterName + "-addcluster.yaml");
 
     String yamlToAddCluster = "topology:\n"
         + "    Cluster:\n"
