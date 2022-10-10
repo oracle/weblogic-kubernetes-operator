@@ -127,8 +127,8 @@ class ItRetryImprovements {
    * Create a domain-in-image domain before the secret for admin credentials is created,
    * the domain should fail to start with SEVERE error and the Operator should start retrying
    * in a specified failure.retry.interval.seconds and failure.retry.limit.minutes.
-   * Also log a clear message in the domain Failed condition with the cause,
-   * actions to fix the problem, and indicates that the next retry time and when the retry will stop.
+   * A clear message is logged by the Operator indicating (a) the Domain Failed Condition
+   * with cause (b) the action needed to resolve the issue (c) the next Retry time (d) Expiration of Retry
    */
   @Test
   @DisplayName("Create a domain without WLS secret. Verify that retry occurs and handles SEVERE error as designed.")
@@ -142,8 +142,6 @@ class ItRetryImprovements {
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
-
-    //assertDoesNotThrow(() -> createDomainForRetryTest(domain));
 
     String retryOccurRegex = new StringBuffer(".*WebLogicCredentials.*\\s*secret.*")
         .append(wlSecretName)
@@ -191,7 +189,6 @@ class ItRetryImprovements {
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
-    //assertDoesNotThrow(() -> createDomainForRetryTest(domain));
 
     String retryOccurRegex = new StringBuffer(".*WebLogicCredentials.*\\s*secret.*")
         .append(wlSecretName)
@@ -213,7 +210,7 @@ class ItRetryImprovements {
 
   /**
    * Create a domain-in-image domain with an invalid domain resource that has duplicate server names.
-   * tVerify that the creation of domain resource fails.
+   * Verify that the creation of domain resource fails.
    */
   @Test
   @DisplayName("Create a domain resource with duplicate server names. Verify that creating domain resource fails.")
@@ -272,7 +269,6 @@ class ItRetryImprovements {
     assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
-    //assertDoesNotThrow(() -> createDomainForRetryTest(domain));
 
     String warningMsgRegex = new StringBuffer(".*")
         .append(replicaCount)
@@ -371,8 +367,7 @@ class ItRetryImprovements {
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWdtImage);
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
+    // Create the repo secret to pull the image this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 
     // create the domain custom resource
@@ -382,15 +377,4 @@ class ItRetryImprovements {
 
     return domain;
   }
-
-  /*
-  private static void createDomainForRetryTest(DomainResource domain) throws ApiException {
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace));
-  }*/
 }
