@@ -52,6 +52,7 @@ public class SchemaConversionUtils {
   private static final String PRESERVED = "weblogic.v8.preserved";
   private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
   private static final String ADDED_ACPFE = "weblogic.v8.adminChannelPortForwardingEnabled";
+  private static final String FAILED_REASON = "weblogic.v8.failed.reason";
   private static final String DOLLAR_SPEC = "$.spec";
   private static final String DOLLAR_SPEC_SERVERPOD = "$.spec.serverPod";
   private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
@@ -74,6 +75,7 @@ public class SchemaConversionUtils {
   private static final String IMAGE = "image";
   private static final String V8_STATE_GOAL_KEY = "desiredState";
   private static final String V9_STATE_GOAL_KEY = "stateGoal";
+  private static final String REASON = "reason";
 
   private final AtomicInteger containerIndex = new AtomicInteger(0);
   private final String targetAPIVersion;
@@ -269,11 +271,11 @@ public class SchemaConversionUtils {
   private void convertDomainStatusTargetV8(Map<String, Object> domain) {
     convertCompletedToProgressing(domain);
     Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
+    renameUnsupportedDomainStatusFailedConditionReasonV9ToV8(domain);
     renameServerStatusFieldsV9ToV8(domain);
   }
 
   private void convertDomainStatusTargetV9(Map<String, Object> domain) {
-    // HERE
     convertProgressingToCompleted(domain);
     renameUnsupportedDomainStatusFailedConditionReasonV8ToV9(domain);
     renameServerStatusFieldsV8ToV9(domain);
@@ -321,19 +323,32 @@ public class SchemaConversionUtils {
   }
 
   private void renameFailedReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
-    // HERE
-    removeIf(condition, "reason", this::isUnsupportedReason);
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private void removeIf(Map<String, String> map, String key, Predicate<String> predicate) {
-    if (Optional.ofNullable(map.get(key)).map(predicate::test).orElse(false)) {
-      map.remove(key);
+    if ("Failed".equals(condition.get(TYPE))) {
+      String currentReason = condition.get(REASON);
+      if (isUnsupportedReason(currentReason)) {
+        Map<String, Object> meta = getMetadata(domain);
+        Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
+            ANNOTATIONS, k -> new LinkedHashMap<>());
+        annotations.put(FAILED_REASON, currentReason);
+        condition.put(REASON, "Internal");
+      }
     }
   }
 
+  @SuppressWarnings("SameParameterValue")
   private boolean isUnsupportedReason(@Nonnull String reason) {
     return !SUPPORTED_FAILURE_REASONS.contains(reason);
+  }
+
+  private void renameUnsupportedDomainStatusFailedConditionReasonV9ToV8(Map<String, Object> domain) {
+    withAnnotation(FAILED_REASON, domain, labelValue ->
+        getStatusConditions(domain).forEach(cond -> restoreFailedReason(cond, labelValue)));
+  }
+
+  private void restoreFailedReason(Map<String, String> condition, String reason) {
+    if ("Failed".equals(condition.get(TYPE))) {
+      condition.put(REASON, reason);
+    }
   }
 
   private void renameServerStatusFieldsV8ToV9(Map<String, Object> domain) {

@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TreeMap;
 
 import com.meterware.simplestub.Memento;
 import org.junit.jupiter.api.AfterEach;
@@ -173,19 +172,7 @@ class SchemaConversionUtilsTest {
 
     // have to read document again because v8Domain variable contents will be modified
     v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
-    assertThat(sort(converterv8.getDomain()), equalTo(sort(v8Domain)));
-  }
-
-  // TEST
-  private Map<String, Object> sort(Map<String, Object> map) {
-    Map<String, Object> sorted = new TreeMap<>();
-    map.forEach((k, v) -> {
-      if (v instanceof Map) {
-        v = sort((Map<String, Object>) v);
-      }
-      sorted.put(k, v);
-    });
-    return sorted;
+    assertThat(converterv8.getDomain(), equalTo(v8Domain));
   }
 
   @Test
@@ -222,29 +209,29 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void whenOldDomainHasUnsupportedConditionReasons_removeThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
-
-    converter.convert(v8Domain);
-
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].reason", empty()));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].message", contains("Too bad")));
-  }
-
-  @Test
-  void whenOldDomainHasSupportedConditionReasons_dontRemoveThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
+  void whenOldDomainHasUnsupportedFailedConditionReason_replaceAndPreserve() {
+    addStatusCondition("Failed", "True", "Danger", "whoops");
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(),
           hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Internal")));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Failed')].message", contains("whoops")));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']",
+            equalTo("Danger")));
+  }
+
+  @Test
+  void testV9DomainFailedConditionReason_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.failed.reason", "Danger");
+    addStatusCondition(v9Domain, "Failed", "True", "Internal", "whoops");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']"));
+    assertThat(converterv8.getDomain(),
+            hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Danger")));
   }
 
   @ParameterizedTest
