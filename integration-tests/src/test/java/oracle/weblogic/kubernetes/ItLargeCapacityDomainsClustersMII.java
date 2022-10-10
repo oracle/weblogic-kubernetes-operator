@@ -279,7 +279,7 @@ class ItLargeCapacityDomainsClustersMII {
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
           + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": "
-          + clusterReplicaCount + ", \"serverStartState\": \"IF_NEEDED\"}"
+          + clusterReplicaCount + ", \"serverStartPolicy\": \"IF_NEEDED\"}"
           + "}"
           + "]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
