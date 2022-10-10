@@ -256,7 +256,8 @@ class ItLargeCapacityDomainsClustersMII {
     String clusterBaseName = "sdcluster-";
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = "config-server";
+      String clusterManagedServerNameBase = clusterName + "-config-server";
+      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       String configMapName = "configclusterconfigmap";
       createClusterConfigMap(configMapName, createModelFiles(clusterName));
@@ -307,7 +308,8 @@ class ItLargeCapacityDomainsClustersMII {
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
     for (int j = 1; j <= numOfClusters; j++) {
-      String clusterManagedServerNameBase = "config-server";
+      String clusterName = clusterBaseName + j;
+      String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
       // verify managed server services and pods are created
       for (int i = 1; i <= clusterReplicaCount; i++) {
