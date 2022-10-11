@@ -156,12 +156,23 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    final Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML);
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> expectedDomain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
 
-    converter.convert(readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML));
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
+
+    converterv8.convert(converter.getDomain(), clusters);
+
+    // have to read document again because v8Domain variable contents will be modified
+    v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    assertThat(converterv8.getDomain(), equalTo(v8Domain));
   }
 
   @Test
@@ -198,29 +209,29 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void whenOldDomainHasUnsupportedConditionReasons_removeThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
-
-    converter.convert(v8Domain);
-
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].reason", empty()));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].message", contains("Too bad")));
-  }
-
-  @Test
-  void whenOldDomainHasSupportedConditionReasons_dontRemoveThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
+  void whenOldDomainHasUnsupportedFailedConditionReason_replaceAndPreserve() {
+    addStatusCondition("Failed", "True", "Danger", "whoops");
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(),
           hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Internal")));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Failed')].message", contains("whoops")));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']",
+            equalTo("Danger")));
+  }
+
+  @Test
+  void testV9DomainFailedConditionReason_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.failed.reason", "Danger");
+    addStatusCondition(v9Domain, "Failed", "True", "Internal", "whoops");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']"));
+    assertThat(converterv8.getDomain(),
+            hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Danger")));
   }
 
   @ParameterizedTest

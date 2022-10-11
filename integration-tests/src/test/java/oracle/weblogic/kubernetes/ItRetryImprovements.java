@@ -6,8 +6,12 @@ package oracle.weblogic.kubernetes;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -107,16 +111,24 @@ class ItRetryImprovements {
   // This method is needed in this test class to delete uncompleted domain to restore the env
   @AfterEach
   public void tearDown() {
-    deleteSecret(wlSecretName, domainNamespace);
-    deleteDomainResource(domainNamespace, domainUid);
+    try {
+      deleteSecret(wlSecretName, domainNamespace);
+
+      Callable<Boolean> domain = domainExists(domainUid, DOMAIN_VERSION, domainNamespace);
+      if (domain.call().booleanValue()) {
+        deleteDomainResource(domainNamespace, domainUid);
+      }
+    } catch (Exception ex) {
+      //
+    }
   }
 
   /**
    * Create a domain-in-image domain before the secret for admin credentials is created,
    * the domain should fail to start with SEVERE error and the Operator should start retrying
    * in a specified failure.retry.interval.seconds and failure.retry.limit.minutes.
-   * Also log a clear message in the domain Failed condition with the cause,
-   * actions to fix the problem, and indicates that the next retry time and when the retry will stop.
+   * A clear message is logged by the Operator indicating (a) the Domain Failed Condition
+   * with cause (b) the action needed to resolve the issue (c) the next Retry time (d) Expiration of Retry
    */
   @Test
   @DisplayName("Create a domain without WLS secret. Verify that retry occurs and handles SEVERE error as designed.")
@@ -125,8 +137,11 @@ class ItRetryImprovements {
     // verify that the operator starts retrying in the intervals specified in domain.spec.failureRetryIntervalSeconds
     // when a SEVERE error occurs and clear message is logged.
     Long failureRetryLimitMinutes = Long.valueOf("1");
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
     DomainResource domain = createDomainResourceForRetryTest(failureRetryLimitMinutes, replicaCount, false);
-    createDomainForRetryTest(domain);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
 
     String retryOccurRegex = new StringBuffer(".*WebLogicCredentials.*\\s*secret.*")
         .append(wlSecretName)
@@ -169,8 +184,11 @@ class ItRetryImprovements {
     int replicaCount = 2;
     // verify that the operator starts retrying when a SEVERE error occurs
     Long failureRetryLimitMinutes = Long.valueOf("5");
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
     DomainResource domain = createDomainResourceForRetryTest(failureRetryLimitMinutes, replicaCount,false);
-    createDomainForRetryTest(domain);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
 
     String retryOccurRegex = new StringBuffer(".*WebLogicCredentials.*\\s*secret.*")
         .append(wlSecretName)
@@ -191,58 +209,47 @@ class ItRetryImprovements {
   }
 
   /**
-   * Create a domain-in-image domain with an invalid domain resource that has duplicate server names
-   * the domain should fail to start with SEVERE error and FatalDomainInvalidError
-   * the Operator should stop retrying immediately.
-   * Also a message is logged into Operator Log indicating FatalDomainInvalidError
-   * and the domain Failed condition with the cause, actions to fix the problem.
-   * Verify that retry resume after the issue is fixed and the domain starts successfully.
+   * Create a domain-in-image domain with an invalid domain resource that has duplicate server names.
+   * Verify that the creation of domain resource fails.
    */
   @Test
-  @DisplayName("Create a domain with duplicate server names."
-       + "Verify that retry stopped and handles FATAL error as designed.")
-  void testRetryOccursAsExpectedAndThrowFatalFailures() {
+  @DisplayName("Create a domain resource with duplicate server names. Verify that creating domain resource fails.")
+  void testRetryFatalFailuresNegative() {
     int replicaCount = 2;
     String duplicateServerName = "managed-server1";
-    // verify that the operator stops retrying immediately when a FATAL error occurs and clear message is logged.
+
     DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);
 
     // create an invalid domain resource with duplicate server names
     domain.getSpec().addManagedServersItem(new ManagedServer().serverName(duplicateServerName));
     domain.getSpec().addManagedServersItem(new ManagedServer().serverName(duplicateServerName));
-    createDomainForRetryTest(domain);
 
-    String fatalDomainInvalidErrorRegex =
-        new StringBuffer(".*FatalDomainInvalidError.*More than one.*spec.managedServers.*")
+    ApiException exception = null;
+    try {
+      logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
+      createDomainCustomResource(domain, DOMAIN_VERSION);
+    } catch (ApiException e) {
+      exception = e;
+      assertNotNull(exception, "Check exception is not null");
+    }
+
+    String domainInvalidErrorRegex =
+        new StringBuffer(".*status.*Failure.*denied.*More\\s*than\\s*one\\s*item\\s*under.*spec.managedServers.*")
           .append(duplicateServerName)
           .append(".*").toString();
 
-    // verify that FatalDomainInvalidError message found in domain status message
-    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, fatalDomainInvalidErrorRegex),
-        logger, "FatalDomainInvalidError is found in domain status message");
+    logger.info("match regex {0} in STDERR {1}:", domainInvalidErrorRegex, exception.getResponseBody());
 
-    // verify that FatalDomainInvalidError message found in Operator log
-    testUntil(() -> findStringInOperatorLog(opNamespace, fatalDomainInvalidErrorRegex),
-        logger, "FatalDomainInvalidError is found in Operator log");
+    // match regex in STDERR
+    Pattern pattern = Pattern.compile(domainInvalidErrorRegex);
+    Matcher matcher = pattern.matcher(exception.getResponseBody());
 
-    // patch domain CR to delete duplicate server and have Operator retry
-    int introspectVersion = 0;
-    if (domain.getSpec().getIntrospectVersion() != null) {
-      introspectVersion = Integer.parseInt(domain.getSpec().getIntrospectVersion()) + 1;
-    }
+    // verify that expected error message found
+    assertTrue(matcher.find(),
+        String.format("Create domain resource unexpectedly succeeded for %s in namespace %s",
+        domainUid, domainNamespace));
 
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"remove\",")
-        .append(" \"path\": \"/spec/managedServers/0\"},")
-        .append("{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"")
-        .append(introspectVersion)
-        .append("\"}]");
-    logger.info("PatchStr for : {0}", patchStr.toString());
-
-    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
-    assertTrue(cmPatched, "Patch domain CR to delete duplicate server failed");
-
-    verifyDomainExistsAndServerStarted(replicaCount);
+    logger.info("regex {0} found in STDERR {1}:", domainInvalidErrorRegex, exception.getResponseBody());
   }
 
   /**
@@ -257,8 +264,11 @@ class ItRetryImprovements {
     int replicaMaxCount = 5;
     int replicaCount = 6;
     // create a domain with replicas = 6 that exceeds the maximum cluster size of 5
-    DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);
-    createDomainForRetryTest(domain);
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
+    DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);;
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
 
     String warningMsgRegex = new StringBuffer(".*")
         .append(replicaCount)
@@ -357,8 +367,7 @@ class ItRetryImprovements {
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domainInImageWithWdtImage);
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
+    // Create the repo secret to pull the image this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 
     // create the domain custom resource
@@ -367,15 +376,5 @@ class ItRetryImprovements {
     assertNotNull(domain, "domain is null");
 
     return domain;
-  }
-
-  private static void createDomainForRetryTest(DomainResource domain) {
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace)),
-        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-            domainUid, domainNamespace));
   }
 }
