@@ -19,7 +19,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -141,10 +140,7 @@ public class ItHorizontalPodAutoscaler {
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
-  }
 
-  @BeforeEach
-  public void beforeEach() {
     // check admin server is up and running for domain1
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
@@ -152,8 +148,8 @@ public class ItHorizontalPodAutoscaler {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
   }
+
 
   /**
    * Test autoscaling using HPA by increasing the CPU usage.
