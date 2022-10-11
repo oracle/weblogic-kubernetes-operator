@@ -18,9 +18,9 @@ import oracle.kubernetes.operator.webhooks.resource.DomainUpdateAdmissionChecker
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
-import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_SINGULAR;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_SINGULAR;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
@@ -171,9 +171,9 @@ public class AdmissionRequest {
    */
   public RequestKind getRequestKind() {
     switch (getKind().get("kind")) {
-      case DOMAIN_SINGULAR:
+      case DOMAIN:
         return RequestKind.DOMAIN;
-      case CLUSTER_SINGULAR:
+      case CLUSTER:
         return RequestKind.CLUSTER;
       case SCALE:
         return RequestKind.SCALE;

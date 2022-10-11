@@ -50,12 +50,12 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountO
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_API_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.ADMISSION_REVIEW_KIND;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
-import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_SINGULAR;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_VERSION;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_GROUP;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_PLURAL;
-import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_SINGULAR;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_REPLICAS;
@@ -126,7 +126,7 @@ class WebhookRestTest extends RestTestBase {
   private AdmissionRequest createDomainAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
     Map<String, String> kind = new HashMap<>();
-    kind.put("kind", DOMAIN_SINGULAR);
+    kind.put("kind", DOMAIN);
     request.setUid(RESPONSE_UID);
     request.setKind(kind);
     request.setResource(createDomainResource());
@@ -150,7 +150,7 @@ class WebhookRestTest extends RestTestBase {
   private AdmissionRequest createClusterAdmissionRequest() {
     AdmissionRequest request = new AdmissionRequest();
     Map<String, String> kind = new HashMap<>();
-    kind.put("kind", CLUSTER_SINGULAR);
+    kind.put("kind", CLUSTER);
     request.setUid(RESPONSE_UID);
     request.setKind(kind);
     request.setUid(RESPONSE_UID);
