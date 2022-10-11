@@ -278,7 +278,7 @@ container image.
 #### Step 1: Prerequisites
 
 - First, follow all of the steps in the Model in Image
-  [initial use case sample](/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/).
+  [initial use case sample](/samples/domains/model-in-image/initial/).
 
   This will:
 
@@ -809,5 +809,5 @@ If you see an error, then consult [Debugging]({{< relref "/userguide/managing-do
 #### Step 4: Invoke the web application
 
 To invoke the web application, follow the same steps as described in the
-[Invoke the web application](/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/#invoke-the-web-application)
+[Invoke the web application](/samples/domains/model-in-image/initial/#invoke-the-web-application)
 section of the initial use case.
