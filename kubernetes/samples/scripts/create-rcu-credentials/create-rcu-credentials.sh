@@ -32,7 +32,7 @@ fail() {
 }
 
 # Try to execute ${KUBERNETES_CLI:-kubectl} to see whether ${KUBERNETES_CLI:-kubectl} is available
-validateKubectlAvailable() {
+validateKubernetesCLIAvailable() {
   if ! [ -x "$(command -v ${KUBERNETES_CLI:-kubectl})" ]; then
     fail "${KUBERNETES_CLI:-kubectl} is not installed"
   fi

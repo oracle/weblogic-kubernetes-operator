@@ -10,7 +10,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
 usage() {
-  echo "usage: ${script} -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n <namespace>] [-c <credentialsSecretName>] [-p <docker-store>] [-i <image>] [-u <imagePullPolicy>] [-o <rcuOutputDir>] [-h]"
+  echo "usage: ${script} -s <schemaPrefix> [-t <schemaType>] [-d <dburl>] [-n <namespace>] [-c <credentialsSecretName>] [-p <imagePullSecret>] [-i <image>] [-u <imagePullPolicy>] [-o <rcuOutputDir>] [-h]"
   echo "  -s RCU Schema Prefix (required)"
   echo "  -t RCU Schema Type (optional)"
   echo "      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) "

@@ -127,7 +127,7 @@ initialize() {
   validateErrors=false
 
   validateImageBuilderAvailable
-  validateKubectlAvailable
+  validateKubernetesCLIAvailable
 
   if [ -z "${valuesInputFile}" ]; then
     validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image/create-domain-inputs.yaml)."

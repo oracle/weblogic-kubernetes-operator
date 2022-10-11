@@ -96,7 +96,7 @@ while test $# -gt 0; do
     --secret-docker*)
         shift
         if test $# -gt 0; then
-            export secretDocker=$1
+            export imagePullSecret=$1
         else
             echo "Secret name for Container Registry Account is required."
             exit 1
@@ -131,7 +131,7 @@ if [ -z ${resourceGroup} ]; then
   echo "${script}: --resource-group or -g must be specified."
   missingRequiredOption="true"
 fi
-if [ -z ${secretDocker} ]; then
+if [ -z ${imagePullSecret} ]; then
   echo "${script}: --secret-docker must be specified."
   missingRequiredOption="true"
 fi
@@ -200,10 +200,10 @@ connectAKS() {
     fi
 }
 
-validateDockerSecret() {
-    ${KUBERNETES_CLI:-kubectl} get secret ${secretDocker}
+validateImagePullSecret() {
+    ${KUBERNETES_CLI:-kubectl} get secret ${imagePullSecret}
     if [ $? -ne 0 ]; then
-        fail "Secret:${secretDocker} for container registry account is not created."
+        fail "Secret:${imagePullSecret} for container registry account is not created."
     fi
 }
 
@@ -256,7 +256,7 @@ pass() {
     echo "  Azure Kubernetes Service instance: ${aksName}"
     echo "  Azure storage account: ${storageAccount}"
     echo "  Azure file share: ${fileShare}"
-    echo "  Kubernetes secret for Container Registry Account: ${secretDocker}"
+    echo "  Kubernetes secret for Container Registry Account: ${imagePullSecret}"
     echo "  Kubernetes secret for WebLogic domain: ${secretWebLogic}"
     echo "  Persistent Volume Claim: ${pvcName}"
 }
@@ -273,7 +273,7 @@ validateFileShare
 
 connectAKS
 
-validateDockerSecret
+validateImagePullSecret
 
 validateWebLogicDomainSecret
 

@@ -626,14 +626,14 @@ class ItMiiClusterResource {
    * Create and deploy the domain with two cluster resources CR1 and CR2
    * Scale only the cluster CR2 and make sure no new server from CR1 is up 
    * Scale all the clusters in the namesapce using 
-   *   kubectel scale cluster --replicas=4  --all -n namespace
+   *   KUBERNETES_CLI scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1
-   *   kubectel scale cluster --initial-replicas=1 --replicas=5  --all -n ns
+   *   KUBERNETES_CLI scale cluster --initial-replicas=1 --replicas=5  --all -n ns
    * This command must fails as there is no cluster with currentreplica set to 1
    */
   @Test
-  @DisplayName("Verify various kuberenetes CLI scale options")
-  void testKubectlScaleClusterResource() {
+  @DisplayName("Verify various kubernetes CLI scale options")
+  void testKubernetesCLIScaleClusterResource() {
 
     String domainUid     = "domain6"; 
     String cluster1Name  = "cluster-1";

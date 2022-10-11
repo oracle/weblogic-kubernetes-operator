@@ -90,7 +90,7 @@ fi
 
 set -eu
 
-kubectlDryRunDelete() {
+kubernetesCLIDryRunDelete() {
 cat << EOF
 dryrun:${KUBERNETES_CLI} -n $NAMESPACE delete secret \\
 dryrun:  $SECRET_NAME \\
@@ -98,7 +98,7 @@ dryrun:  --ignore-not-found
 EOF
 }
 
-kubectlDryRunCreate() {
+kubernetesCLIDryRunCreate() {
 local moredry=""
 if [ "$DRY_RUN" = "yaml" ]; then
   local moredry="--dry-run=client -o yaml"
@@ -110,7 +110,7 @@ dryrun:  $LITERALS $FILENAMES ${moredry}
 EOF
 }
 
-kubectlDryRunLabel() {
+kubernetesCLIDryRunLabel() {
 cat << EOF
 dryrun:${KUBERNETES_CLI} -n $NAMESPACE label  secret \\
 dryrun:  $SECRET_NAME \\
@@ -118,15 +118,15 @@ dryrun:  weblogic.domainUID=$DOMAIN_UID
 EOF
 }
 
-kubectlDryRun() {
+kubernetesCLIDryRun() {
 cat << EOF
 dryrun:
 dryrun:echo "@@ Info: Setting up secret '$SECRET_NAME'."
 dryrun:
 EOF
-kubectlDryRunDelete
-kubectlDryRunCreate
-kubectlDryRunLabel
+kubernetesCLIDryRunDelete
+kubernetesCLIDryRunCreate
+kubernetesCLIDryRunLabel
 cat << EOF
 dryrun:
 EOF
@@ -134,7 +134,7 @@ EOF
 
 if [ "$DRY_RUN" = "${KUBERNETES_CLI}" ]; then
 
-  kubectlDryRun
+  kubernetesCLIDryRun
 
 elif [ "$DRY_RUN" = "yaml" ]; then
 
@@ -144,7 +144,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   # don't change indent of the sed '/a' commands - the spaces are significant
   # (we use an old form of sed append to stay compatible with old bash on mac)
 
-  source <( kubectlDryRunCreate |  sed 's/dryrun://') \
+  source <( kubernetesCLIDryRunCreate |  sed 's/dryrun://') \
   | sed -e '/ name:/a\
   labels:' \
   | sed -e '/labels:/a\
@@ -155,5 +155,5 @@ elif [ "$DRY_RUN" = "yaml" ]; then
 
 else
 
-  source <( kubectlDryRun | sed 's/dryrun://')
+  source <( kubernetesCLIDryRun | sed 's/dryrun://')
 fi

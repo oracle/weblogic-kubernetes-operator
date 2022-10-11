@@ -51,7 +51,7 @@ public interface TestConstants {
       "../kubernetes/charts/weblogic-operator";
   public static final String IMAGE_NAME_OPERATOR =
       getNonEmptySystemProperty("wko.it.image.name.operator", "oracle/weblogic-kubernetes-operator");
-  public static final String OPERATOR_DOCKER_BUILD_SCRIPT =
+  public static final String OPERATOR_IMAGE_BUILD_SCRIPT =
       "../buildDockerImage.sh";
   public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
@@ -149,12 +149,12 @@ public interface TestConstants {
   // jenkins constants
   public static final String BUILD_ID = System.getProperty("wko.it.jenkins.build.id", "");
   public static final String BRANCH_NAME_FROM_JENKINS = System.getProperty("wko.it.jenkins.branch.name", "");
-  public static final String DOCKER_SAFE_BRANCH_NAME =
+  public static final String SAFE_BRANCH_IMAGE_NAME =
       BRANCH_NAME_FROM_JENKINS.codePoints().map(cp -> Character.isLetterOrDigit(cp) ? cp : '-')
           .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
   public static final String IMAGE_TAG_OPERATOR = getNonEmptySystemProperty("wko.it.image.tag.operator");
   public static final String IMAGE_TAG_OPERATOR_FOR_JENKINS =
-      IMAGE_TAG_OPERATOR != null ? IMAGE_TAG_OPERATOR : DOCKER_SAFE_BRANCH_NAME + BUILD_ID;
+      IMAGE_TAG_OPERATOR != null ? IMAGE_TAG_OPERATOR : SAFE_BRANCH_IMAGE_NAME + BUILD_ID;
 
   public static final String K8S_NODEPORT_HOST = getNonEmptySystemProperty("wko.it.k8s.nodeport.host",
       assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));

@@ -93,7 +93,7 @@ public class Application {
    * @param expectedResponse expected response from the app
    * @return true if the command succeeds
    */
-  public static boolean appAccessibleInPodKubectl(
+  public static boolean appAccessibleInPodKubernetesCLI(
       String namespace,
       String podName,
       String port,

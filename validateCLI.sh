@@ -59,9 +59,10 @@ filter_comments() {
 for ext in sh py java ; do
   git ls-files \
     | grep "\.${ext}$" \
-    | xargs grep -n "kubectl" \
+    | xargs grep -nE "(kubectl|Kubectl|KUBECTL)" \
     | filter_comments \
     | sed 's;KUBERNETES_CLI:-kubectl;;g' \
+    | sed 's;KUBECTL_VERSION;;g' \
     | sed 's;KCLI=.kubectl.;;g' \
     | sed 's;DEFAULT = .kubectl.;;g' \
     | sed 's;__kubernetes_cli=.....-kubectl.;;g' \
@@ -74,17 +75,43 @@ for ext in sh py java ; do
     | sed 's;Verify call .kubectl scale.;;g' \
     | sed 's;annotations.put..kubectl.kubernetes.io.last-applied-configuration;;g' \
     | sed 's;directly using .kubectl.;;g' \
-    | grep 'kubectl[^_a-zA-Z0-9]'
+    | grep -E '(kubectl|Kubectl|KUBECTL)'
+
   git ls-files \
     | grep "\.${ext}$" \
-    | xargs grep -n "docker" \
+    | xargs grep -nE "(docker|Docker|DOCKER)" \
     | filter_comments \
-    | sed 's;.WLSIMG_BUILDER..docker.;;g' \
-    | sed 's;-secret-docker;;g' \
+    | sed 's;.WLSIMG_BUILDER:-docker.;;g' \
     | sed 's;DEFAULT = .docker.;;g' \
     | sed 's;directly using .docker.;;g' \
+    | sed 's;docker-store;;g' \
     | sed 's;hub.docker.com;;g' \
-    | grep 'docker[^-_a-zA-Z0-9/]'
+    | sed 's;kind load docker-image;;g' \
+    | sed 's;DOCKER_USERNAME;;g' \
+    | sed 's;DOCKER_PASSWORD;;g' \
+    | sed 's;DOCKER_FILE;;g' \
+    | sed 's;DockerFile;;g' \
+    | sed 's;Dockerfile;;g' \
+    | sed 's;dockerFile;;g' \
+    | sed 's;dockerconfigjson;;g' \
+    | sed 's;/docker/;;g' \
+    | sed 's;/docker-images/;;g' \
+    | sed 's;"../buildDockerImage.sh";;g' \
+    | sed 's;Usage: buildDockerImage.sh;;g' \
+    | sed 's;docker-container\|ockerContainer\|DockerCluster;;g' \
+    | sed 's;contains."BEGIN DOCKERFILE".;;g' \
+    | sed 's;--docker-email;;g' \
+    | sed 's;--docker-password;;g' \
+    | sed 's;--docker-server;;g' \
+    | sed 's;--docker-username;;g' \
+    | sed 's;--secret-docker;;g' \
+    | sed 's;--from-file=.=.HOME/.docker/config.json;;g' \
+    | sed 's;docker-registry;;g' \
+    | sed 's;docker-istio-secret;;g' \
+    | sed 's;DB_IMAGE_PULL_SECRET:-docker-secret;;g' \
+    | sed 's;SOURCEDIR:-ai-docker-file;;g' \
+    | sed 's;create-domain-on-aks.sh:.*;;g' \
+    | grep -E '[^:]*:.*(docker|Docker|DOCKER)'
 
 done > $temp_file1
 

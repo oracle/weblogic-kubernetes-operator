@@ -76,7 +76,7 @@ echo ""
 
 if [ $? -eq 0 ]; then
 cat << EOF
-  WebLogic Kubernetes Operator Docker Image is ready:
+  WebLogic Kubernetes Operator Image is ready:
 
     --> $IMAGE_NAME
 

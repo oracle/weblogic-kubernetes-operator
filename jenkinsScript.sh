@@ -59,7 +59,7 @@ function repoLogin {
       exit 1
     fi
   else
-    echo "Info: Docker credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
+    echo "Info: Credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
   fi
 }
 

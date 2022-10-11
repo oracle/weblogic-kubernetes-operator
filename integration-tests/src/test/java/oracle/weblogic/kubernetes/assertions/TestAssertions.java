@@ -724,7 +724,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -744,7 +744,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return !Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return !Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**

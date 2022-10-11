@@ -94,7 +94,7 @@ initialize() {
   # Validate the required files exist
   validateErrors=false
 
-  validateKubectlAvailable
+  validateKubernetesCLIAvailable
 
   if [ -z "${valuesInputFile}" ]; then
     validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
