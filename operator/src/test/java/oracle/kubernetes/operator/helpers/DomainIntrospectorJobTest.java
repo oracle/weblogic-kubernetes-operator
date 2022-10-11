@@ -89,7 +89,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
@@ -649,10 +648,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             jobPod.getMetadata().getNamespace(), 1, null, null);
 
     assertThat(getUpdatedDomain().getStatus().getMessage(), containsString(expectedDetail));
-  }
-
-  private String formatIntrospectionError(String failure) {
-    return LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, failure, 1, MAX_RETRY_COUNT);
   }
 
   @Test

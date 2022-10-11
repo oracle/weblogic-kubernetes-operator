@@ -57,8 +57,6 @@ public class TuningParameters {
   public static final String LIVENESS_FAILURE_COUNT_THRESHOLD = "livenessProbeFailureThreshold";
 
   public static final String INITIALIZATION_RETRY_DELAY_SECONDS = "initializationRetryDelaySeconds";
-  public static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
-  public static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
   public static final String UNCHANGED_COUNT_TO_DELAY_STATUS_RECHECK = "statusUpdateUnchangedCountToDelayStatusRecheck";
   public static final String DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS = "domainPresenceRecheckIntervalSeconds";
   public static final String DOMAIN_NAMESPACE_RECHECK_INTERVAL_SECONDS = "domainNamespaceRecheckIntervalSeconds";
@@ -165,13 +163,6 @@ public class TuningParameters {
     return getParameter(INITIALIZATION_RETRY_DELAY_SECONDS, 5);
   }
 
-  public int getDomainPresenceFailureRetrySeconds() {
-    return getParameter(DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS, 10);
-  }
-
-  public int getDomainPresenceFailureRetryMaxCount() {
-    return getParameter(DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT, 5);
-  }
 
   public int getDomainPresenceRecheckIntervalSeconds() {
     return getParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, 120);
