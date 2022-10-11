@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -343,20 +344,31 @@ class ItLargeCapacityDomainsClustersMII {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
-      logger.info("patch the domain resource with new cluster and introspectVersion");
-      String patchStr
-          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
-          + "\"value\": \"NEVER\""
-          + "}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-      for (int i = 1; i <= clusterReplicaCount; i++) {
-        logger.info("Checking managed server service and pod {0} is deleted in namespace {1}",
-            clusterManagedServerPodNamePrefix + i, domainNamespace);
-        checkPodDoesNotExist(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+      int index = -1;
+      Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+      List<Cluster> clusters = domain.getSpec().getClusters();
+      for (Cluster cluster : clusters) {
+        if (cluster.getClusterName().equals(clusterName)) {
+          index = clusters.indexOf(cluster);
+        }
+      }
+      if (-1 == index) {
+        logger.info("Cluster {0} not found", clusterName);
+      } else {
+        logger.info("patch the domain resource with serverStartPolicy to NEVER");
+        String patchStr
+            = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/" + index + "/serverStartPolicy\", "
+            + "\"value\": \"NEVER\""
+            + "}]";
+        logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+        V1Patch patch = new V1Patch(patchStr);
+        assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "Failed to patch domain");
+        for (int i = 1; i <= clusterReplicaCount; i++) {
+          logger.info("Checking managed server service and pod {0} is deleted in namespace {1}",
+              clusterManagedServerPodNamePrefix + i, domainNamespace);
+          checkPodDoesNotExist(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+        }
       }
     }
     //startup all clusters in default domain
@@ -364,21 +376,32 @@ class ItLargeCapacityDomainsClustersMII {
       String clusterName = clusterBaseName + j;
       String clusterManagedServerNameBase = clusterName + "-config-server";
       String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
-
-      logger.info("patch the domain resource with new cluster and introspectVersion");
-      String patchStr
-          = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
-          + "\"value\": \"IF_NEEDED\""
-          + "}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-      // verify managed server services and pods are created
-      for (int i = 1; i <= clusterReplicaCount; i++) {
-        logger.info("Checking managed server service and pod {0} is created in namespace {1}",
-            clusterManagedServerPodNamePrefix + i, domainNamespace);
-        checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+      int index = -1;
+      Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+      List<Cluster> clusters = domain.getSpec().getClusters();
+      for (Cluster cluster : clusters) {
+        if (cluster.getClusterName().equals(clusterName)) {
+          index = clusters.indexOf(cluster);
+        }
+      }
+      if (-1 == index) {
+        logger.info("Cluster {0} not found", clusterName);
+      } else {
+        logger.info("patch the domain resource with serverStartPolicy to IF_NEEDED");
+        String patchStr
+            = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
+            + "\"value\": \"IF_NEEDED\""
+            + "}]";
+        logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+        V1Patch patch = new V1Patch(patchStr);
+        assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "Failed to patch domain");
+        // verify managed server services and pods are created
+        for (int i = 1; i <= clusterReplicaCount; i++) {
+          logger.info("Checking managed server service and pod {0} is created in namespace {1}",
+              clusterManagedServerPodNamePrefix + i, domainNamespace);
+          checkPodReadyAndServiceExists(clusterManagedServerPodNamePrefix + i, domainUid, domainNamespace);
+        }
       }
     }
 
