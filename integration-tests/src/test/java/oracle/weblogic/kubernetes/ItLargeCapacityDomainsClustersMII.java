@@ -51,7 +51,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -85,32 +84,24 @@ class ItLargeCapacityDomainsClustersMII {
 
   private static String opNamespace = null;
 
-  private static int numOfDomains = 3;
-  private static int numOfClusters = 3;
+  private static int numOfDomains = 10;
+  private static int numOfClusters = 10;
   private static final String baseDomainUid = "domain";
   private static List<String> domainNamespaces;
 
   private static String domainNamespace;
   private static final String domainUid = "mydomain";
-  private static final String cluster1Name = "mycluster";
   private static final String adminServerName = "admin-server";
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String cluster1ManagedServerNameBase = cluster1Name + "-managed-server";
-  private static final String cluster1ManagedServerPodNamePrefix = domainUid + "-" + cluster1ManagedServerNameBase;
 
   private static int clusterReplicaCount = 2;
-  private static final int t3ChannelPort = getNextFreePort();
-  private static final String wlSecretName = "weblogic-credentials";
-  private static String wlsUserName = ADMIN_USERNAME_DEFAULT;
-  private static String wlsPassword = ADMIN_PASSWORD_DEFAULT;
 
-  private static String adminSvcExtHost = null;
   private static LoggingFacade logger;
 
   private V1Patch patch;
 
   /**
-   * Assigns unique namespaces for operator and domains. Installs operator. Creates a WebLogic domain.
+   * Assigns unique namespaces for operator and domains. Installs operator. Creates a MII WebLogic domain.
    *
    * @param namespaces injected by JUnit
    */
@@ -131,14 +122,14 @@ class ItLargeCapacityDomainsClustersMII {
   }
 
   /**
-   * Test brings up new domains and verifies it can successfully start by doing the following.
+   * Test brings up new MII domains and verifies it can successfully start by doing the following.
    *
-   * a. Creates new WebLogic domains using offline WLST in persistent volume. b. Creates domain resource and deploys in
-   * Kubernetes cluster. c. Verifies the servers in the new WebLogic domain comes up.
+   * a. Creates domain resource and deploys in Kubernetes cluster. 
+   * b. Verifies the servers in the new WebLogic domain comes up.
    */
   @Order(1)
   @Test
-  @DisplayName("Test domains creation")
+  @DisplayName("Test MII domains creation")
   void testCreateDomains() {
     String domainUid;
     for (int i = 0; i < numOfDomains; i++) {
@@ -150,23 +141,16 @@ class ItLargeCapacityDomainsClustersMII {
   /**
    * Test creates new clusters and verifies it can successfully start by doing the following.
    *
-   * a. Creates new WebLogic static clusters using online WLST. b. Patch the Domain Resource with clusters c. Update the
-   * introspectVersion version d. Verifies the servers in the new WebLogic cluster comes up. e. Repeat the above cycle
-   * for a number of clusters. Bug - OWLS-102898
+   * a. Creates new WebLogic static clusters using model files in configmap.
+   * b. Patch the Domain Resource with clusters 
+   * c. Update the introspectVersion version 
+   * d. Verifies the servers in the new WebLogic cluster comes up. e. Repeat the above cycle
+   * for a number of clusters.
    */
   @Order(2)
   @Test
   @DisplayName("Test new clusters creation on demand using model files in configmap and introspection")
   void testCreateNewClusters() {
-
-    logger.info("Getting port for default channel");
-    // Need to expose the admin server external service to access the console in OKD cluster only
-    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    int nodePort = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort, "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
-
     String clusterBaseName = "mycluster-";
     List<Path> modelFiles = new ArrayList<>();
     for (int j = 1; j <= numOfClusters; j++) {
@@ -227,36 +211,22 @@ class ItLargeCapacityDomainsClustersMII {
    * Test creates new clusters in shutdown state and verifies it can successfully start after patching the domain with
    * new introspectVersion string
    *
-   * a. Creates new WebLogic static clusters using online WLST. b. Patch the Domain Resource with clusters. c. Update
-   * the introspectVersion version. d. Verifies the servers in the new WebLogic clusters comes up without affecting any
+   * a. Creates new WebLogic static clusters using model files in configmap.  
+   * b. Patch the Domain Resource with clusters. 
+   * c. Update the introspectVersion version. 
+   * d. Verifies the servers in the new WebLogic clusters comes up without affecting any
    * of the running servers on pre-existing WebLogic cluster.
    */
   @Order(3)
   @Test
-  @DisplayName("Test new cluster creations and starting up on introspection on demand using WLST")
+  @DisplayName("Test new cluster creations in shutdown state and starting up on introspection on demand")
   void testCreateNewClustersDontStart() {
     String patchStr = null;
-
-    logger.info("Getting port for default channel");
-    int adminServerPort
-        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    // Need to expose the admin server external service to access the console in OKD cluster only
-    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
-        domainNamespace);
-
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort,
-        "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     String clusterBaseName = "sdcluster-";
     List<Path> modelFiles = new ArrayList<>();
     for (int j = 1; j <= numOfClusters; j++) {
       String clusterName = clusterBaseName + j;
-      String clusterManagedServerNameBase = clusterName + "-config-server";
-      String clusterManagedServerPodNamePrefix = domainUid + "-" + clusterManagedServerNameBase;
 
       String configMapName = "configclusterconfigmap";
       modelFiles.add(createModelFiles(clusterName));
@@ -328,10 +298,11 @@ class ItLargeCapacityDomainsClustersMII {
   }
 
   /**
-   * Test shuts down all existing clusters and starts up.
+   * Test restart all existing clusters.
    *
-   * a. Shutdowns all cluster using serverStartPolicy NEVER. b. Patch the Domain Resource with cluster serverStartPolicy
-   * IF_NEEDED. c. Verifies the servers in the domain cluster comes up.
+   * a. Shutdowns all cluster using serverStartPolicy NEVER. 
+   * b. Patch the Domain Resource with cluster serverStartPolicy IF_NEEDED. 
+   * c. Verifies the servers in the domain cluster comes up.
    */
   @Order(4)
   @Test
@@ -480,6 +451,7 @@ class ItLargeCapacityDomainsClustersMII {
   }
 
   private static void createDomain(String domainUid, String namespace) {
+    logger.info("Creating domain {0} in namespace {1}", domainUid, namespace);
 
     String adminSecretName = "weblogic-credentials";
     String encryptionSecretName = "encryptionsecret";
