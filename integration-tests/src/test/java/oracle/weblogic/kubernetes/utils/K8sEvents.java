@@ -406,10 +406,11 @@ public class K8sEvents {
    * @param domainNamespace namespace in which the domain exists
    * @param serverName server pod name for which event is checked
    * @param reason event to check for Started, Killing etc
+   * @param eventMsg event msg for the event
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkPodEventLoggedOnce(
-          String domainNamespace, String serverName, String reason, OffsetDateTime timestamp) {
+          String domainNamespace, String serverName, String reason, String eventMsg, OffsetDateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged for {1} pod in the domain namespace {2}",
               reason, serverName, domainNamespace);
@@ -417,6 +418,7 @@ public class K8sEvents {
         return isEventLoggedOnce(serverName, Kubernetes.listNamespacedEvents(domainNamespace).stream()
                 .filter(e -> e.getInvolvedObject().getName().equals(serverName))
                 .filter(e -> e.getReason().contains(reason))
+                .filter(e -> e.getMessage().contains(eventMsg))
                 .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
       } catch (ApiException ex) {
         Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);

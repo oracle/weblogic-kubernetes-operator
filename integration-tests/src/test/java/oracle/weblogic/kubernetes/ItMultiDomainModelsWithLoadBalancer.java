@@ -71,6 +71,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesDomainExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
@@ -160,6 +161,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static String miiDomainNegativeNamespace = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
+  private static String nginxNamespace = null;
   private String curlCmd = null;
 
   /**
@@ -182,7 +184,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     // get a unique NGINX namespace
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    String nginxNamespace = namespaces.get(1);
+    nginxNamespace = namespaces.get(1);
 
     // get unique namespaces for three different type of domains
     logger.info("Getting unique namespaces for three different type of domains");
@@ -488,11 +490,14 @@ class ItMultiDomainModelsWithLoadBalancer {
           domainNamespace);
     }
 
+    // check the NGINX pod is ready.
+    testUntil(isNginxReady(nginxNamespace), logger, "Nginx is ready");
+
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    testUntil(() -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
+    testUntil(withLongRetryPolicy, () -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
         logger,
         "NGINX can access the test web app from all managed servers {0} in the domain",
         managedServers);
@@ -684,8 +689,9 @@ class ItMultiDomainModelsWithLoadBalancer {
     testUntil(
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_CHANGED, "Normal", timestamp),
         logger,
-        "domain event {0} to be logged",
-        DOMAIN_CHANGED);
+        "domain event {0} to be logged in namespace {1}",
+        DOMAIN_CHANGED,
+        miiDomainNamespace);
 
     // wait for longer time for DomainCompleted event
     testUntil(
@@ -693,7 +699,9 @@ class ItMultiDomainModelsWithLoadBalancer {
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_COMPLETED,
             "Normal", timestamp),
         logger,
-        DOMAIN_PROCESSING_COMPLETED);
+        "domain event {0} to be logged in namespace {1}",
+        DOMAIN_PROCESSING_COMPLETED,
+        miiDomainNamespace);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
@@ -703,20 +711,25 @@ class ItMultiDomainModelsWithLoadBalancer {
 
         logger.info("Checking that managed server pod {0} is terminated and restarted once in namespace {1}",
             managedServerPodName, miiDomainNamespace);
+        String stopEventMsg = "Stopping container weblogic-server";
         testUntil(
             withLongRetryPolicy,
-            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_TERMINATED, timestamp),
+            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_TERMINATED, stopEventMsg, timestamp),
             logger,
-            "event {0} to be logged for pod {1}",
+            "event {0} to be logged for pod {1} in namespace {2}",
             POD_TERMINATED,
-            managedServerPodName);
+            managedServerPodName,
+            miiDomainNamespace);
+
+        String startedEventMsg = "Started container weblogic-server";
         testUntil(
             withLongRetryPolicy,
-            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_STARTED, timestamp),
+            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_STARTED, startedEventMsg, timestamp),
             logger,
-            "event {0} to be logged for pod {1}",
+            "event {0} to be logged for pod {1} in namespace {2}",
             POD_STARTED,
-            managedServerPodName);
+            managedServerPodName,
+            miiDomainNamespace);
       }
     }
 

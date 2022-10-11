@@ -608,6 +608,10 @@ public class CommonLBTestUtils {
         }
       }
       getLogger().info("Executing curl command {0}", curlCmd);
+      testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+          getLogger(),
+          "ingress can access ready app using {0}",
+          curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
     }
   }
