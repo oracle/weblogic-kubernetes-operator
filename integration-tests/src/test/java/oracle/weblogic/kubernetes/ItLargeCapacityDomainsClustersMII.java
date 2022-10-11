@@ -40,6 +40,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.ItMiiDynamicUpdatePart1.pathToAddClusterYaml;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -91,7 +92,7 @@ class ItLargeCapacityDomainsClustersMII {
 
   private static String domainNamespace;
   private static final String domainUid = "mydomain";
-  private static final String adminServerName = "admin-server";
+  private static final String adminServerName = ADMIN_SERVER_NAME_BASE;
   private static final String adminServerPodName = domainUid + "-" + adminServerName;
 
   private static int clusterReplicaCount = 2;
@@ -458,7 +459,7 @@ class ItLargeCapacityDomainsClustersMII {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
-    String adminServerPodName = domainUid + "-admin-server";
+    String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPrefix = domainUid + "-managed-server";
 
     createSecrets(namespace);
