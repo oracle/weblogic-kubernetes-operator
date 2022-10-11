@@ -50,7 +50,7 @@ public class ItHPA {
   private static String domainNamespace = null;
   static int replicaCount = 2;
   static String wlClusterName = "cluster-1";
-  static String clusterResName = "cluster-1";
+  static String clusterResName = "hpacluster";
 
   private static String adminSecretName;
   private static String encryptionSecretName;
