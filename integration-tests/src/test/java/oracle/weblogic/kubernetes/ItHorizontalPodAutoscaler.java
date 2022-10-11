@@ -17,6 +17,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,8 +28,10 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.METRICS_SERVER_YAML;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -52,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
-public class ItHPA {
+public class ItHorizontalPodAutoscaler {
   private static String domainNamespace = null;
   static int replicaCount = 2;
   static String wlClusterName = "cluster-1";
@@ -69,8 +72,6 @@ public class ItHPA {
   private static String opNamespace = null;
 
   private static LoggingFacade logger = null;
-  private static final String METRICS_SERVER_YAML =
-      "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -167,6 +168,26 @@ public class ItHPA {
 
     // create load on cpu and verify scale up/scale down
     createLoadOnCpuAndVerifyAutoscaling();
+  }
+
+  /**
+   * Delete metrics server.
+   */
+  @AfterAll
+  public static void cleanUp() {
+    if (!SKIP_CLEANUP) {
+      getLogger().info("After All cleanUp() method called");
+      // delete metrics server
+      CommandParams params = new CommandParams().defaults();
+      params.command("kubectl delete -f " + METRICS_SERVER_YAML);
+      ExecResult result = Command.withParams(params).executeAndReturnResult();
+      if (result.exitValue() != 0) {
+        getLogger().info(
+            "Failed to uninstall metrics server, result " + result);
+      } else {
+        getLogger().info("uninstalled metrics server");
+      }
+    }
   }
 
   private void installMetricsServer() {

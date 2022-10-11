@@ -381,4 +381,9 @@ public interface TestConstants {
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
   String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
+
+  // metrics server constants
+  public static final String METRICS_SERVER_YAML =
+      "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+
 }
