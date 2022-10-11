@@ -50,7 +50,7 @@ public class AdmissionWebhookResource extends BaseResource {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
-    LOGGER.info("Validating webhook is invoked with body " + body);
+    LOGGER.fine("Validating webhook is invoked with body " + body);
 
     AdmissionReview admissionReview = null;
     AdmissionRequest admissionRequest = null;
@@ -110,7 +110,7 @@ public class AdmissionWebhookResource extends BaseResource {
   }
 
   private AdmissionResponse createAdmissionResponse(AdmissionRequest request) throws ApiException {
-    if (request == null || request.getObject() == null || !request.getRequestKind().isSupported(request)) {
+    if (request == null || request.getObject() == null || !request.getRequestKind().isSupported()) {
       return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 

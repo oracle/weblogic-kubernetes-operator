@@ -19,7 +19,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
-import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
@@ -225,12 +224,6 @@ public class AdmissionRequest {
     },
     SCALE {
       @Override
-      public boolean isSupported(AdmissionRequest request) {
-        return CLUSTER_PLURAL.equals(request.getResource().get("resource"))
-            && "scale".equals(request.getSubResource());
-      }
-
-      @Override
       public Object readOldObject(AdmissionRequest request) {
         return readScale(writeMap(request.getOldObject()));
       }
@@ -261,7 +254,7 @@ public class AdmissionRequest {
     },
     NOT_SUPPORTED {
       @Override
-      public boolean isSupported(AdmissionRequest request) {
+      public boolean isSupported() {
         return false;
       }
 
@@ -281,7 +274,7 @@ public class AdmissionRequest {
       }
     };
 
-    public boolean isSupported(AdmissionRequest request) {
+    public boolean isSupported() {
       return true;
     }
 

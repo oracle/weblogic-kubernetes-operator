@@ -402,12 +402,9 @@ class ItValidateWebhookReplicas {
     params.command(command);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     String errorMsg =
-        "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to cluster resource '"
+        "admission webhook \"weblogic.validating.webhook\" denied the request: Scale request to cluster resource '"
             + clusterName
-            + "' cannot be honored because the replica count would exceed the cluster size '5' when patching "
-            + clusterName
-            + " in namespace "
-            + domainNamespace;
+            + "' cannot be honored because the replica count would exceed the cluster size '5'";
     assertTrue(result.stderr().contains(errorMsg),
         String.format("scale cluster beyond max cluster size did not throw error, got: %s; expect: %s",
             result.stderr(), errorMsg));

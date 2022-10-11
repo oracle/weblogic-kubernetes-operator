@@ -103,6 +103,8 @@ class WebhookRestTest extends RestTestBase {
       + "honored because the replica count would exceed the cluster size '%s'";
   private static final String REJECT_MESSAGE_PATTERN_CLUSTER_SCALE = "Scale request to cluster resource '%s' cannot be "
       + "honored because the replica count would exceed the cluster size '%s'";
+  private static final String REJECT_MESSAGE_CLUSTER_NOT_FOUND =
+      "Exception: io.kubernetes.client.openapi.ApiException: Cluster %s not found";
 
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
@@ -611,6 +613,10 @@ class WebhookRestTest extends RestTestBase {
     return String.format(REJECT_MESSAGE_PATTERN_CLUSTER_SCALE, cluster.getClusterName(), ORIGINAL_REPLICAS);
   }
 
+  private Object getRejectMessageForScaleClusterResourceWithException(ClusterResource cluster) {
+    return String.format(REJECT_MESSAGE_CLUSTER_NOT_FOUND, cluster.getMetadata().getName());
+  }
+
   @Test
   void whenProposedClusterMissing_acceptIt() {
     setExistingCluster();
@@ -716,6 +722,33 @@ class WebhookRestTest extends RestTestBase {
     setProposedScale(validScale);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
+
+    assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenScaleClusterWhenClusterNotFound_rejectItWithException() {
+    testSupport.defineResources(validScale);
+    setProposedScale(validScale);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
+    assertThat(getResponseStatusMessage(responseReview),
+        equalTo(getRejectMessageForScaleClusterResourceWithException(proposedCluster)));
+  }
+
+  @Test
+  void whenScaleRequestOnNonClusterResource_acceptIt() {
+    AdmissionReview review = createScaleAdmissionReview();
+    AdmissionRequest request = review.getRequest();
+    Map<String, String> kind = new HashMap<>();
+    kind.put("kind", "blabal");
+    request.setKind(kind);
+    testSupport.defineResources(validScale);
+    setProposedScale(validScale);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(review);
 
     assertThat(isAllowed(responseReview), equalTo(true));
   }
