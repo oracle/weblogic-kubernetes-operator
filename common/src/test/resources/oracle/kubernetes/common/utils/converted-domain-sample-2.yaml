@@ -7,6 +7,8 @@ metadata:
   labels:
     weblogic.domainUID: sample-domain1
   annotations:
+    weblogic.v8.adminChannelPortForwardingEnabled: "true"
+    weblogic.v8.preserved.aux: '{"$.spec":{"auxiliaryImageVolumes":[{"name":"auxiliaryImageVolume1","mountPath":"/auxiliary"}]},"$.spec.adminServer.serverPod":{"auxiliaryImages":[{"image":"model-in-image:WLS-AI-v1","imagePullPolicy":"IfNotPresent","volume":"auxiliaryImageVolume1"}]}}'
     weblogic.v8.preserved: '{"$.spec.adminServer":{"serverStartState":"RUNNING"},"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"}}'
 spec:
   domainHomeSourceType: FromModel
