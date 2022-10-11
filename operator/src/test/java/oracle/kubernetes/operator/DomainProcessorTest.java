@@ -341,6 +341,21 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainMarkedForDeletion_removeAllPodsServicesAndPodDisruptionBudgets() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+
+    domain.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    // MakeRightOperation is created without forDeletion() similar to list or MODIFIED watch
+    processor.createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+
+    assertThat(getRunningServices(), empty());
+    assertThat(getRunningPods(), empty());
+    assertThat(getRunningPDBs(), empty());
+  }
+
+  @Test
   void whenDomainShutDown_ignoreNonOperatorServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
