@@ -59,9 +59,6 @@ public class AdmissionWebhookResource extends BaseResource {
     try {
       admissionReview = readAdmissionReview(body);
       admissionRequest = getAdmissionRequest(admissionReview);
-      if (admissionRequest != null) {
-        LOGGER.info("XXX request's object = " + admissionRequest.getObject());
-      }
       admissionResponse = createAdmissionResponse(admissionRequest);
     } catch (Exception e) {
       LOGGER.severe(VALIDATION_FAILED, e.getMessage(), getAdmissionRequestAsString(admissionReview));
