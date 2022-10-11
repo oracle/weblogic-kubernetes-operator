@@ -32,7 +32,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -390,9 +389,7 @@ class ItValidateWebhookReplicas {
    * Verify that when a domain and its clusters are running, call
    * 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
    * domain level replicas to a value that exceeds the WebLogic cluster size will be rejected.
-   * Disabled due to jira 102833
    */
-  @Disabled
   @Test
   @DisplayName("Verify call 'kubectl scale' to increase the replicas of a cluster beyond configured WebLogic cluster "
       + "size will be rejected")
@@ -461,9 +458,7 @@ class ItValidateWebhookReplicas {
   /**
    * The domain contains two cluster resources and both have no replicas set, changing domain's replicas to a number
    * that exceeds all cluster resources' size fails and the message contains the name of both clusters.
-   * Disabled now due to jira 102830.
    */
-  @Disabled
   @Test
   @DisplayName("The domain contains two cluster resources and both have replicas set, changing domain's replicas to a "
       + "number that exceeds all cluster resources' size fails and the message contains the name of both clusters.")
