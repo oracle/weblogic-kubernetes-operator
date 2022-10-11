@@ -1009,13 +1009,20 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public Step createSteps() {
+      boolean deleteInProgress = deleting || domainHasDeletionTimestamp();
       Step strategy =
-            new StartPlanStep(liveInfo, deleting ? createDomainDownPlan(liveInfo) : createDomainUpPlan(liveInfo));
-      if (deleting || getDomain() == null) {
+            new StartPlanStep(liveInfo,
+                deleteInProgress ? createDomainDownPlan(liveInfo) : createDomainUpPlan(liveInfo));
+      if (deleteInProgress || getDomain() == null) {
         return strategy;
       } else {
         return DomainValidationSteps.createDomainValidationSteps(getNamespace(), strategy);
       }
+    }
+
+    private boolean domainHasDeletionTimestamp() {
+      return Optional.ofNullable(liveInfo.getDomain()).map(Domain::getMetadata)
+              .map(V1ObjectMeta::getDeletionTimestamp).isPresent();
     }
   }
 
