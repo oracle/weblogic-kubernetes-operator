@@ -389,7 +389,7 @@ class ItLargeCapacityDomainsClustersMII {
       } else {
         logger.info("patch the domain resource with serverStartPolicy to IF_NEEDED");
         String patchStr
-            = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + j + "/serverStartPolicy\", "
+            = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/" + index + "/serverStartPolicy\", "
             + "\"value\": \"IF_NEEDED\""
             + "}]";
         logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
