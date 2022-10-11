@@ -101,6 +101,8 @@ class WebhookRestTest extends RestTestBase {
       + " because the replica count of each cluster in '%s' would exceed its cluster size '%s' respectively";
   private static final String REJECT_MESSAGE_PATTERN_CLUSTER = "Change request to cluster resource '%s' cannot be "
       + "honored because the replica count would exceed the cluster size '%s'";
+  private static final String REJECT_MESSAGE_PATTERN_CLUSTER_SCALE = "Scale request to cluster resource '%s' cannot be "
+      + "honored because the replica count would exceed the cluster size '%s'";
 
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
@@ -605,6 +607,10 @@ class WebhookRestTest extends RestTestBase {
     return String.format(REJECT_MESSAGE_PATTERN_CLUSTER, cluster.getClusterName(), ORIGINAL_REPLICAS);
   }
 
+  private Object getRejectMessageForScaleClusterResource(ClusterResource cluster) {
+    return String.format(REJECT_MESSAGE_PATTERN_CLUSTER_SCALE, cluster.getClusterName(), ORIGINAL_REPLICAS);
+  }
+
   @Test
   void whenProposedClusterMissing_acceptIt() {
     setExistingCluster();
@@ -691,6 +697,17 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
 
     assertThat(isAllowed(responseReview), equalTo(false));
+  }
+
+  @Test
+  void whenScaleClusterReplicasInvalid_rejectItWithExpectedMessage() {
+    testSupport.defineResources(invalidScale, proposedCluster);
+    setProposedScale(invalidScale);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(scaleReview);
+
+    assertThat(getResponseStatusMessage(responseReview),
+        equalTo(getRejectMessageForScaleClusterResource(proposedCluster)));
   }
 
   @Test

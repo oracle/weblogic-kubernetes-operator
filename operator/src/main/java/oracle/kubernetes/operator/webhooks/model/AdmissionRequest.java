@@ -3,13 +3,12 @@
 
 package oracle.kubernetes.operator.webhooks.model;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.ApiException;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterCreateAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.ClusterScaleAdmissionChecker;
@@ -40,6 +39,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMa
  * </p>
  */
 public class AdmissionRequest {
+
   /**
    * An uid uniquely identifying this admission call.
    */
@@ -243,15 +243,20 @@ public class AdmissionRequest {
       @Override
       public AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException {
         Scale proposed = (Scale) request.getProposedResource();
-
         ClusterResource cluster = getCluster(proposed.getMetadata().getName(),
               proposed.getMetadata().getNamespace());
-        cluster.getSpec().withReplicas(Integer.valueOf(proposed.getSpec().get("replicas")));
-        return new ClusterScaleAdmissionChecker(cluster);
+        if (cluster != null) {
+          cluster.getSpec().withReplicas(Integer.valueOf(proposed.getSpec().get("replicas")));
+          return new ClusterScaleAdmissionChecker(cluster);
+        } else {
+          throw new ApiException("Cluster " + proposed.getMetadata().getName() + " not found");
+        }
       }
 
       private ClusterResource getCluster(String clusterName, String namespace) throws ApiException {
-        return (ClusterResource) Optional.of(new CallBuilder().readClusterUntyped(clusterName, namespace)).orElse(null);
+        List<ClusterResource> clusters = AdmissionChecker.getClusters(namespace);
+        return clusters.stream().filter(cluster -> clusterName.equals(cluster.getMetadata().getName()))
+            .findFirst().orElse(null);
       }
     },
     NOT_SUPPORTED {

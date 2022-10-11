@@ -13,6 +13,8 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
+
 /**
  * ClusterUpdateAdmissionChecker provides the validation functionality for the validating webhook. It takes an existing
  * cluster resource and a proposed cluster resource and returns a result to indicate if the proposed changes are
@@ -48,6 +50,11 @@ public class ClusterUpdateAdmissionChecker extends ClusterScaleAdmissionChecker 
   @Override
   public boolean isProposedChangeAllowed() {
     return isUnchanged() || super.isProposedChangeAllowed();
+  }
+
+  @Override
+  public String getErrorMessage() {
+    return CLUSTER_REPLICAS_CANNOT_BE_HONORED;
   }
 
   private boolean isUnchanged() {

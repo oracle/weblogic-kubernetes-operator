@@ -23,8 +23,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
-
 /**
  * ClusterAdmissionChecker provides the common functionality of validating webhook for cluster resources.
  */
@@ -34,6 +32,8 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
   protected ClusterResource proposedCluster;
   protected final AdmissionResponse response = new AdmissionResponse();
   protected Exception exception;
+
+  abstract String getErrorMessage();
 
   AdmissionResponse validateIt() {
     response.allowed(isProposedChangeAllowed());
@@ -53,7 +53,7 @@ public abstract class ClusterAdmissionChecker extends AdmissionChecker {
         : isDomainReplicaCountValid());
 
     if (!isValid) {
-      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
+      messages.add(LOGGER.formatMessage(getErrorMessage(),
           proposedCluster.getClusterName(), getClusterSize(proposedCluster.getStatus())));
     }
     return isValid;

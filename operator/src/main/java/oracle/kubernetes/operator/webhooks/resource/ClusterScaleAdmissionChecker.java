@@ -7,6 +7,8 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SCALE_REPLICAS_TOO_HIGH;
+
 /**
  * ClusterScaleAdmissionChecker provides the validation functionality for the validating webhook. It takes a proposed
  * cluster resource and returns a result to indicate if the proposed changes are allowed, and if not, hat the problem
@@ -37,5 +39,10 @@ public class ClusterScaleAdmissionChecker extends ClusterAdmissionChecker {
   @Override
   public boolean isProposedChangeAllowed() {
     return skipValidation(proposedCluster.getStatus()) || isReplicaCountValid();
+  }
+
+  @Override
+  public String getErrorMessage() {
+    return CLUSTER_SCALE_REPLICAS_TOO_HIGH;
   }
 }
