@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesDomainExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.checkIngressReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -152,6 +153,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static String opServiceAccount = null;
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
+  private static int nodeportshttps = 0;
   private static int externalRestHttpsPort = 0;
   private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
@@ -224,6 +226,8 @@ class ItMultiDomainModelsWithLoadBalancer {
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      logger.info("NGINX https node port: {0}", nodeportshttps);
     }
   }
 
@@ -492,6 +496,11 @@ class ItMultiDomainModelsWithLoadBalancer {
 
     // check the NGINX pod is ready.
     testUntil(isNginxReady(nginxNamespace), logger, "Nginx is ready");
+
+    // check the ingress is ready
+    String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";
+    logger.info("Checking for the ingress is ready");
+    checkIngressReady(true, ingressHost, false, nodeportshttp, nodeportshttps, "");
 
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
