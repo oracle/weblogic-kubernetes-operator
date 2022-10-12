@@ -260,17 +260,17 @@ public class AdmissionRequest {
 
       @Override
       public Object readOldObject(AdmissionRequest request) {
-        return null;
+        throw new AssertionError("Not Supported");
       }
 
       @Override
       public Object readObject(AdmissionRequest request) {
-        return null;
+        throw new AssertionError("Not Supported");
       }
 
       @Override
       public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
-        return null;
+        throw new AssertionError("Not Supported");
       }
     };
 
