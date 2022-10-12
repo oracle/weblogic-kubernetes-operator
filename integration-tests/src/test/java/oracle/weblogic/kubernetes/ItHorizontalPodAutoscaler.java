@@ -186,6 +186,9 @@ public class ItHorizontalPodAutoscaler {
     }
   }
 
+  /**
+   * Install metrics server to collect container resource metrics.
+   */
   private void installMetricsServer() {
     // install metrics server
     CommandParams params = new CommandParams().defaults();
@@ -214,6 +217,10 @@ public class ItHorizontalPodAutoscaler {
         "kube-system");
   }
 
+  /**
+   * Create hpa on the cluster to autoscale with cpu usage over 50%
+   * maintaining min replicas 2 and max replicas 4.
+   */
   private void createHPA() {
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl autoscale cluster " + clusterResName
