@@ -206,10 +206,10 @@ See the following description of each `spec.configuration.istio` attribute:
 
   |Red Hat OpenShift version|localhostBindingsEnabled|Notes|
         |----|----|----|
-  |Pre 4.11|`true` or not set|Supported|
-  |Pre 4.11|`false` or not set|Not Supported|
-  |4.11 and later|`true`|Not Supported|
-  |4.11 and later|`false`|Supported|
+  |Pre 4.11|`true` or not set|Supported.|
+  |Pre 4.11|`false` or not set|Not Supported.|
+  |4.11 and later|`true`|Not Supported.|
+  |4.11 and later|`false`|Supported.|
 
 __Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then:
