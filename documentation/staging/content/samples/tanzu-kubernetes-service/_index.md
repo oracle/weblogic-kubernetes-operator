@@ -6,7 +6,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Tanzu
 ---
 
 
-This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
 After performing the sample steps, your WLS domain with a Model in Image domain source type runs on a TKG Kubernetes cluster instance. After the domain has been provisioned, you can monitor it using the WebLogic Server Administration console.
 
 TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, see the [Tanzu Kubernetes Grid (TKG)](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
