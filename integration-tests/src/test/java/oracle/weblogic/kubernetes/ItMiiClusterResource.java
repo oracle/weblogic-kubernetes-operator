@@ -732,7 +732,7 @@ class ItMiiClusterResource {
    * Start the cluster CR1 by updating the serverStartPolicy to IfNeeded
    */
   @Test
-  @DisplayName("Verify various kubectl scale options")
+  @DisplayName("Verify restart/stop/start operation on cluster resource")
   void testManageClusterResource() {
 
     String domainUid     = "domain9"; 

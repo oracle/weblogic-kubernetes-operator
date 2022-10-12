@@ -118,7 +118,7 @@ public class Cluster {
         () -> getClusterCustomResource(clusterResourceName, namespace, CLUSTER_VERSION).getSpec().getRestartVersion(),
         String.format("Failed to get the restartVersion of %s in namespace %s", clusterResourceName, namespace));
     int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+    logger.info("Update cluster resource {0} in namespace {1} restartVersion from {2} to {3}",
         clusterResourceName, namespace, oldVersion, newVersion);
 
     StringBuffer patchStr = new StringBuffer("[{");
