@@ -228,10 +228,12 @@ When recovering from a failure, please keep the following points in mind:
    responsibility to revert problem changes to an image, configMap, secrets, and domain resource YAML file.
 
  - If there is any failure during an online update, then no WebLogic configuration changes
-   are made to the running domain and the introspector job retries up to a maximum number of times.
+   are made to the running domain and the introspector job retries up to the failure retry time
+   limit specified in `domain.spec.failureRetryLimitMinutes`.
    To correct the problem, modify and reapply your model resources (ConfigMap and/or secrets),
    plus, if the introspector job has stopped retrying, you must also change your domain resource
-   `domain.spec.introspectVersion` again.
+   `domain.spec.introspectVersion` again. For more information, see [Domain Failure Retry Processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+
 
 
 Sample domain resource YAML file for an online update:
