@@ -203,7 +203,7 @@ See the following description of each `spec.configuration.istio` attribute:
   |1.10 and later|`true`|Not supported.|
   |1.10 and later|`false`|Supported.|
 
-  **For Red Hat OpenShift Service Mesh**,  you do not need to set `istioLocalhostBindingsEnabled` or if set, it must be set to `true`.
+  **For Red Hat OpenShift Service Mesh**,  you do not need to set `istioLocalhostBindingsEnabled` or if set, it must be set to `true` if you are using Red Hat OpenShift version 4.10.x or below.  If you are using Red Hat OpenShift version 4.11.x or above, set `istioLocalhostBindingsEnabled` to `true`.
 
 __Note__: If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then:
