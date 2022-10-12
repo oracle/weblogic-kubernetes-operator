@@ -36,14 +36,19 @@ if ! git ls-files > /dev/null 2>&1 ; then
 fi
 
 top_level_file=./THIRD_PARTY_LICENSES.txt
-if [ ! -f $top_level_file ]; then
-  echo "ERROR: Validation check '$(basename $0)' failed." \
-       "This test expects to be run at the top of the WKO source tree" \
-       "but could not find top level file '$top_level_file'." \
-       "Current directory = $(pwd)." \
-       "Top of git tree = $(git rev-parse --show-toplevel)."
-  exit 1
-fi
+kubectl_exceptions_file=./validateCLI.kubectl.dat
+docker_exceptions_file=./validateCLI.docker.dat
+
+for fil in $top_level_file $docker_exceptions_file $kubectl_exceptions_file; do
+  if [ ! -f "$fil" ]; then
+    echo "ERROR: Validation check '$(basename $0)' failed." \
+         "This test expects to be run at the top of the WKO source tree" \
+         "but could not find top level file '$fil'." \
+         "Current directory = $(pwd)." \
+         "Top of git tree = $(git rev-parse --show-toplevel)."
+    exit 1
+  fi
+done
 
 temp_file1=$(mktemp /tmp/$(basename $0).1.XXXXXX.out)
 temp_file2=$(mktemp /tmp/$(basename $0).2.XXXXXX.out)
@@ -56,61 +61,26 @@ filter_comments() {
   | sed 's;^[^:]*:[0-9]*:[[:space:]]*\#.*$;;g'
 }
 
+filter_from() {
+  local cmd=$(cat $1 | grep -vE "^([[:space:]]*$|#.*)" | sed "s:^\(.*\)$:-e 's;\1;;g':g")
+  cmd="sed $cmd"
+  eval $cmd
+}
+
 for ext in sh py java ; do
+
   git ls-files \
     | grep "\.${ext}$" \
     | xargs grep -nE "(kubectl|Kubectl|KUBECTL)" \
     | filter_comments \
-    | sed 's;KUBERNETES_CLI:-kubectl;;g' \
-    | sed 's;KUBECTL_VERSION;;g' \
-    | sed 's;KCLI=.kubectl.;;g' \
-    | sed 's;DEFAULT = .kubectl.;;g' \
-    | sed 's;__kubernetes_cli=.....-kubectl.;;g' \
-    | sed 's;See kubectl;;g' \
-    | sed 's;See .kubectl;;g' \
-    | sed 's;.m .kubernetes_cli.;;g' \
-    | sed 's;Default is .kubectl;;g' \
-    | sed 's;when using the .kubectl port-forward. pattern;;g' \
-    | sed 's;when describing the domain .kubectl;;g' \
-    | sed 's;Verify call .kubectl scale.;;g' \
-    | sed 's;annotations.put..kubectl.kubernetes.io.last-applied-configuration;;g' \
-    | sed 's;directly using .kubectl.;;g' \
+    | filter_from $kubectl_exceptions_file \
     | grep -E '(kubectl|Kubectl|KUBECTL)'
 
   git ls-files \
     | grep "\.${ext}$" \
     | xargs grep -nE "(docker|Docker|DOCKER)" \
     | filter_comments \
-    | sed 's;.WLSIMG_BUILDER:-docker.;;g' \
-    | sed 's;DEFAULT = .docker.;;g' \
-    | sed 's;directly using .docker.;;g' \
-    | sed 's;docker-store;;g' \
-    | sed 's;hub.docker.com;;g' \
-    | sed 's;kind load docker-image;;g' \
-    | sed 's;DOCKER_USERNAME;;g' \
-    | sed 's;DOCKER_PASSWORD;;g' \
-    | sed 's;DOCKER_FILE;;g' \
-    | sed 's;DockerFile;;g' \
-    | sed 's;Dockerfile;;g' \
-    | sed 's;dockerFile;;g' \
-    | sed 's;dockerconfigjson;;g' \
-    | sed 's;/docker/;;g' \
-    | sed 's;/docker-images/;;g' \
-    | sed 's;"../buildDockerImage.sh";;g' \
-    | sed 's;Usage: buildDockerImage.sh;;g' \
-    | sed 's;docker-container\|ockerContainer\|DockerCluster;;g' \
-    | sed 's;contains."BEGIN DOCKERFILE".;;g' \
-    | sed 's;--docker-email;;g' \
-    | sed 's;--docker-password;;g' \
-    | sed 's;--docker-server;;g' \
-    | sed 's;--docker-username;;g' \
-    | sed 's;--secret-docker;;g' \
-    | sed 's;--from-file=.=.HOME/.docker/config.json;;g' \
-    | sed 's;docker-registry;;g' \
-    | sed 's;docker-istio-secret;;g' \
-    | sed 's;DB_IMAGE_PULL_SECRET:-docker-secret;;g' \
-    | sed 's;SOURCEDIR:-ai-docker-file;;g' \
-    | sed 's;create-domain-on-aks.sh:.*;;g' \
+    | filter_from $docker_exceptions_file \
     | grep -E '[^:]*:.*(docker|Docker|DOCKER)'
 
 done > $temp_file1
@@ -118,13 +88,13 @@ done > $temp_file1
 exit_code=0
 match_myself_regex="^$(basename $0):"
 match_myself_count="$(grep -c "$match_myself_regex" $temp_file1)"
-match_myself_expected="4"
+match_myself_expected="10"
 
 if [ "$match_myself_count" != "$match_myself_expected" ]; then
-  # This script deliberately includes itself in its own docker & kubectl checks
-  # as a way to verify that its checks are working correctly.
-  # So the above 'grep' lines are expected to be in $temp_file1
-  # (twice each for docker and kubectl).
+  # This script deliberately includes itself in its own docker and
+  # kubectl checks as a way to verify that its greps and filters are working
+  # correctly. It expects exactly $match_myself_expected occurances
+  # of docker and kubectl outside of comments).
   echo "ERROR: The $(basename $0) script did not find exactly $match_myself_expected" \
        "occurrences of itself in its search but instead found $match_myself_count instances:"
   grep "$match_myself_regex" $temp_file1
