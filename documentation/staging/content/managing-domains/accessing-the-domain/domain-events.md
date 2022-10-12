@@ -5,14 +5,8 @@ weight = 8
 description = "Monitor domain resources using operator-generated events about resources that it manages."
 +++
 
-### Contents
+{{< table_of_contents >}}
 
-- [Overview](#overview)
-- [What's new](#whats-new)
-- [Operator-generated event types](#operator-generated-event-types)
-- [Operator-generated event details](#operator-generated-event-details)
-- [How to access the events](#how-to-access-the-events)
-- [Examples of generated events](#examples-of-generated-events)
 
 ### Overview
 
@@ -271,9 +265,7 @@ LAST SEEN   TYPE      REASON             OBJECT                                 
 3m16s       Warning   DNSConfigForming   pod/sample-domain1-introspector-845w9          Search Line limits were exceeded, some search paths have been omitted, the applied search line is: sample-domain1-ns.svc.cluster.local svc.cluster.local cluster.local subnet1ad3phx.devweblogicphx.oraclevcn.com us.oracle.com oracle.com
 3m16s       Warning   Failed             pod/sample-domain1-introspector-845w9          Error: ImagePullBackOff
 3m16s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Server pod error': Failure on pod 'sample-domain1-introspector-845w9' in namespace 'sample-domain1-ns': Back-off pulling image "model-in-image:WLS-v2".
-2m30s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Internal error': Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries. Use spec.configuration.introspectorJobActiveDeadlineSeconds to increase the job timeout interval if the job still fails after the retries are exhausted.. Introspection failed on try 1 of 5.
-Introspection Error:
-Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries. Use spec.configuration.introspectorJobActiveDeadlineSeconds to increase the job timeout interval if the job still fails after the retries are exhausted. Will retry.
+2m30s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Internal error': Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator with longer `ActiveDeadlineSeconds` value in each subsequent retry. Use spec.configuration.introspectorJobActiveDeadlineSeconds to increase the job timeout interval if the job still fails after the retries are exhausted. The time limit for retries can be configured in `domain.spec.failureRetryLimitMinutes`.. Will retry next at 2022-10-06T23:17:03.051414370Z and approximately every 120 seconds afterward until 2022-10-06T23:20:03.051414370Z if the failure is not resolved.. Will retry.
 2m30s       Warning   DeadlineExceeded   job/sample-domain1-introspector                Job was active longer than specified deadline
 2m30s       Normal    SuccessfulDelete   job/sample-domain1-introspector                Deleted pod: sample-domain1-introspector-845w9
 2m29s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Server pod error': Failure on pod 'sample-domain1-introspector-845w9' in namespace 'sample-domain1-ns': rpc error: code = Unknown desc = pull access denied for model-in-image, repository does not exist or may require 'docker login'.

@@ -42,6 +42,13 @@ spec:
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
+  # **NOTE**:
+  # This example uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
+  # documentation for details.
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -67,10 +74,10 @@ spec:
   #logHome: /shared/logs/sample-domain1
 
   # Set which WebLogic Servers the Operator will start
-  # - "NEVER" will not start any server in the domain
-  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
-  # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
-  serverStartPolicy: "IF_NEEDED"
+  # - "Never" will not start any server in the domain
+  # - "AdminOnly" will start up only the administration server (no managed servers will be started)
+  # - "IfNeeded" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+  serverStartPolicy: IfNeeded
 
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
@@ -95,8 +102,8 @@ spec:
     #  name: weblogic-domain-storage-volume
 
   # The desired behavior for starting the domain's administration server.
-  adminServer:
-    # Setup a Kubernetes node port for the administration server default channel
+  # adminServer:
+    # Set up a Kubernetes node port for the administration server default channel
     #adminService:
     #  channels:
     #  - channelName: default
@@ -107,9 +114,7 @@ spec:
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
-  - clusterName: cluster-1
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -124,3 +129,18 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     #secrets:
     #- sample-domain1-datasource-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain1
+
+spec:
+  replicas: 2

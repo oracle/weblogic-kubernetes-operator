@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -18,16 +19,15 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 
 /**
  * AdmissionWebhookTestSetup creates the necessary Domain resources that can be used in admission webhook
- * related test cases such as WebhookRestTest and ValidationUtilsTest.
+ * related test cases such as WebhookRestTest and admission checker tests.
  */
 class AdmissionWebhookTestSetUp {
   static final String CLUSTER_NAME_1 = "C1";
-  private static final String CLUSTER_NAME_2 = "C2";
+  static final String CLUSTER_NAME_2 = "C2";
   public static final String ORIGINAL_IMAGE_NAME = "abcd";
   public static final int ORIGINAL_REPLICAS = 2;
   public static final String ORIGINAL_INTROSPECT_VERSION = "1234";
@@ -41,28 +41,59 @@ class AdmissionWebhookTestSetUp {
 
   /**
    * Create a Domain resource model that contains the domain configuration and status for WebhookRestTest
-   * and ValidationUtilsTest.
+   * and admission checker tests.
    */
-  public static DomainResource createDomain() {
+  public static DomainResource createDomainWithClustersAndStatus() {
     DomainResource domain = createTestDomain().withStatus(createDomainStatus());
     domain.getSpec()
         .withReplicas(ORIGINAL_REPLICAS)
         .withImage(ORIGINAL_IMAGE_NAME)
         .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
     domain.getSpec()
-        .withCluster(createClusterSpec(CLUSTER_NAME_1))
-        .withCluster(createClusterSpec(CLUSTER_NAME_2));
+        .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_1))
+        .withCluster(new V1LocalObjectReference().name(CLUSTER_NAME_2));
+    return domain;
+  }
+
+  /**
+   * Create a Domain resource model that contains the domain configuration without any clusters for WebhookRestTest
+   * and admission checker tests.
+   */
+  public static DomainResource createDomainWithoutCluster() {
+    DomainResource domain = createTestDomain();
+    domain.getSpec()
+        .withReplicas(ORIGINAL_REPLICAS)
+        .withImage(ORIGINAL_IMAGE_NAME)
+        .setIntrospectVersion(ORIGINAL_INTROSPECT_VERSION);
     return domain;
   }
 
   /**
    * Create a Cluster resource model that contains the cluster configuration and status for WebhookRestTest
    * and ValidationUtilsTest.
+   *
+   * @param clusterName the name of the cluster resource
+   * @return the cluster resource created
+   */
+  public static ClusterResource createCluster(String clusterName) {
+    ClusterResource clusterResource =
+        new ClusterResource().withMetadata(new V1ObjectMeta().name(clusterName).namespace(NS))
+            .spec(createClusterSpec(clusterName));
+    clusterResource.setApiVersion((KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION));
+    clusterResource.setStatus(createClusterStatus(clusterName));
+    return clusterResource;
+  }
+
+  /**
+   * Create a Cluster resource model that contains the cluster configuration and status for WebhookRestTest
+   * and ValidationUtilsTest.
+   *
+   * @return the cluster resource created
    */
   public static ClusterResource createCluster() {
     ClusterResource clusterResource =
         new ClusterResource().withMetadata(new V1ObjectMeta().name(CLUSTER_NAME_1).namespace(NS))
-            .spec(createClusterSpec(CLUSTER_NAME_1).withDomainUid(UID));
+            .spec(createClusterSpec(CLUSTER_NAME_1));
     clusterResource.setApiVersion((KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION));
     clusterResource.setStatus(createClusterStatus(CLUSTER_NAME_1));
     return clusterResource;

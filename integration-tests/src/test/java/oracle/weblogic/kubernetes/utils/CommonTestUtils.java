@@ -29,12 +29,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainCondition;
-import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -48,11 +48,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -79,7 +82,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithWLDF;
 import static oracle.weblogic.kubernetes.actions.impl.UniqueName.random;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -302,16 +304,14 @@ public class CommonTestUtils {
    * Check whether the cluster's replica count matches with input parameter value.
    *
    * @param clusterName Name of cluster to check
-   * @param domainName Name of domain to which cluster belongs
    * @param namespace cluster's namespace
    * @param replicaCount replica count value to match
    * @return true, if the cluster replica count is matched
    */
-  public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
+  public static boolean checkClusterReplicaCountMatches(String clusterName,
                                                         String namespace, Integer replicaCount) throws ApiException {
-    Cluster cluster = TestActions.getDomainCustomResource(domainName, namespace).getSpec().getClusters()
-            .stream().filter(c -> c.clusterName().equals(clusterName)).findAny().orElse(null);
-    return Optional.ofNullable(cluster).get().replicas() == replicaCount;
+    ClusterSpec clusterSpec = Kubernetes.getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION).getSpec();
+    return Optional.ofNullable(clusterSpec).get().replicas() == replicaCount;
   }
 
   /** Scale the WebLogic cluster to specified number of servers.
@@ -421,7 +421,7 @@ public class CommonTestUtils {
               clusterName, domainUid, domainNamespace))
           .isTrue();
     } else {
-      assertThat(assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, replicasAfterScale)))
+      assertThat(assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, replicasAfterScale)))
           .as(String.format("Verify scaling cluster %s of domain %s in namespace %s succeeds",
               clusterName, domainUid, domainNamespace))
           .withFailMessage(String.format("Scaling cluster %s of domain %s in namespace %s failed",
@@ -953,7 +953,10 @@ public class CommonTestUtils {
     while (port <= END_PORT) {
       freePort = port++;
       try {
-        isLocalPortFree(freePort);
+        isLocalPortFree(freePort, K8S_NODEPORT_HOST);
+        if (OKE_CLUSTER) {
+          isLocalPortFree(freePort, NODE_IP);
+        }
       } catch (IOException ex) {
         return freePort;
       }
@@ -967,11 +970,12 @@ public class CommonTestUtils {
    * the given port is already in use by an another process.
    *
    * @param port port to check
+   * @param host host to check
    * @throws java.io.IOException when the port is not used by any socket
    */
-  private static void isLocalPortFree(int port) throws IOException {
-    try (Socket socket = new Socket(K8S_NODEPORT_HOST, port)) {
-      getLogger().info("Port {0} is already in use", port);
+  private static void isLocalPortFree(int port, String host) throws IOException {
+    try (Socket socket = new Socket(host, port)) {
+      getLogger().info("Port {0} is already in use for host {1}", port, host);
     }
   }
 
@@ -1058,7 +1062,7 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(() -> {
-          Domain domain = getDomainCustomResource(domainUid, domainNamespace);
+          DomainResource domain = getDomainCustomResource(domainUid, domainNamespace);
           if ((domain != null) && (domain.getStatus() != null)) {
             for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
               getLogger().info("Condition Type =" + domainCondition.getType()
@@ -1296,7 +1300,7 @@ public class CommonTestUtils {
     String createContainerCmd = new StringBuffer("docker run -d -p 7001:7001 --name=")
         .append(containerName)
         .append(" --network=host ")
-        .append(" --add-host=host.docker.internal:host-gateway ")
+        //.append(" --add-host=host.docker.internal:host-gateway ")
         .append(imageName)
         .append(" /u01/oracle/user_projects/domains/")
         .append(domainUid)
@@ -1305,19 +1309,23 @@ public class CommonTestUtils {
 
     try {
       result = exec(createContainerCmd, true);
+      logger.info("Result for WLS docker container creation is {0}", result);
     } catch (Exception ex) {
       logger.info("createContainerCmd: caught unexpected exception {0}", ex);
     }
-
-    // check if the docker container started
-    logger.info("Wait for docker container {0} starting", containerName);
-    testUntil(
-        withStandardRetryPolicy,
-        isDockerContainerReady(containerName),
-        logger,
-        "{0} is started",
-        containerName);
-
+    assertNotNull(result, "command returns null");
+    if (result.exitValue() == 0) {
+      // check if the docker container started
+      logger.info("Wait for docker container {0} starting", containerName);
+      testUntil(
+          withStandardRetryPolicy,
+          isDockerContainerReady(containerName),
+          logger,
+          "{0} is started",
+          containerName);
+    } else {
+      logger.info("Failed to exec the command {0}. Error is {1} ", createContainerCmd, result.stderr());
+    }
     return result;
   }
 
@@ -1625,67 +1633,7 @@ public class CommonTestUtils {
   ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
-      String version = "";
-      String command = String.format(
-          "curl -fL %s -o %s/%s-%s",
-          location,
-          downloadDir,
-          type,
-          TMP_FILE_NAME);
-
-      CommandParams params =
-          defaultCommandParams()
-              .command(command)
-              .saveResults(true);
-      if (!Command.withParams(params).execute()) {
-        RuntimeException exception =
-            new RuntimeException(String.format("Failed to get the latest %s release information.", type));
-        getLogger().severe(
-            String.format(
-                "Failed to get the latest %s release information. The stderr is %s",
-                type,
-                params.stderr()),
-            exception);
-        throw exception;
-      }
-
-      command = String.format(
-          "cat %s/%s-%s | grep 'releases/download' | awk '{ split($0,a,/href=\"/);%s | %s",
-          downloadDir,
-          type,
-          TMP_FILE_NAME,
-          " print a[2] }'",
-          " cut -d/ -f 6");
-
-      params =
-          defaultCommandParams()
-          .command(command)
-          .saveResults(true)
-          .redirect(true);
-
-      // the command is considered successful only if we have got back a real version number in params.stdout()
-      if (Command.withParams(params).execute()
-          && params.stdout() != null
-          && params.stdout().length() != 0) {
-        // Because I've updated the name of the logging exporter to remove the version number in the name, but
-        // also preserved the original, there will be two entries located. Take the first.
-        version = params.stdout().lines().findFirst().get().trim();
-      } else {
-        RuntimeException exception =
-            new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
-        getLogger().severe(
-            String.format(
-                "Failed to get the version number of the requested %s release. The stderr is %s",
-                type,
-                params.stderr()),
-            exception);
-        throw exception;
-      }
-
-      if (version != null) {
-        actualLocation = location.replace("latest",
-            String.format("download/%s/%s", version, getInstallerFileName(type)));
-      }
+      actualLocation = location + "/download/" + getInstallerFileName(type);
     }
     getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
     return actualLocation;

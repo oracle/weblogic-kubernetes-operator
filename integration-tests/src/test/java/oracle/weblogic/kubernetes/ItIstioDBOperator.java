@@ -20,9 +20,9 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -70,6 +70,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
@@ -145,6 +147,7 @@ class ItIstioDBOperator {
   private String fmwDomainUid = "jrf-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
+  private String clusterName = "cluster-1";  
   private int replicaCount = 2;
   private String fmwAminSecretName = fmwDomainUid + "-weblogic-credentials";
   private String fmwEncryptionSecretName = fmwDomainUid + "-encryptionsecret";
@@ -298,7 +301,7 @@ class ItIstioDBOperator {
     createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.emptyList());
 
     // create the domain object
-    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
+    DomainResource domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -310,6 +313,14 @@ class ItIstioDBOperator {
         configMapName
         );
 
+    // create cluster object
+    String clusterResName = fmwDomainUid + "-" + clusterName;
+    ClusterResource cluster = createClusterResource(clusterResName, clusterName, fmwDomainNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterName, fmwDomainNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+    
     createDomainAndVerify(domain, fmwDomainNamespace);
 
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
@@ -429,7 +440,7 @@ class ItIstioDBOperator {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         replicaCount, pvName, pvcName, "cluster-1", configMapName,
-        dbSecretName, false, false, true);
+        dbSecretName, false, true);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", wlsDomainNamespace);
@@ -497,9 +508,7 @@ class ItIstioDBOperator {
     // Scale down the cluster to repilca count of 1, this will shutdown
     // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
-    boolean psuccess = assertDoesNotThrow(()
-        -> scaleCluster(wlsDomainUid, wlsDomainNamespace, "cluster-1", 1),
-        String.format("replica patching to 1 failed for domain %s in namespace %s", wlsDomainUid, wlsDomainNamespace));
+    boolean psuccess = scaleCluster(wlsDomainUid + "-cluster-1", wlsDomainNamespace, 1);
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s",
             wlsDomainUid, wlsDomainNamespace));
@@ -772,23 +781,23 @@ class ItIstioDBOperator {
     return istioIngressPort;
   }
 
-  private static Domain createDomainResourceWithLogHome(
-      String domainResourceName,
-      String domNamespace,
-      String imageName,
-      String adminSecretName,
-      String repoSecretName,
-      String encryptionSecretName,
-      int replicaCount,
-      String pvName,
-      String pvcName,
-      String clusterName,
-      String configMapName,
-      String dbSecretName,
-      boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled,
-      boolean setDataHome) {
+  private static DomainResource createDomainResourceWithLogHome(
+          String domainResourceName,
+          String domNamespace,
+          String imageName,
+          String adminSecretName,
+          String repoSecretName,
+          String encryptionSecretName,
+          int replicaCount,
+          String pvName,
+          String pvcName,
+          String clusterName,
+          String configMapName,
+          String dbSecretName,
+          boolean onlineUpdateEnabled,
+          boolean setDataHome) {
 
+    String clusterResName = domainResourceName + "-" + clusterName;
     List<String> securityList = new ArrayList<>();
     if (dbSecretName != null) {
       securityList.add(dbSecretName);
@@ -797,7 +806,6 @@ class ItIstioDBOperator {
     DomainSpec domainSpec = new DomainSpec()
         .domainUid(domainResourceName)
         .domainHomeSourceType("FromModel")
-        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
         .image(imageName)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -822,9 +830,6 @@ class ItIstioDBOperator {
             .addVolumeMountsItem(new V1VolumeMount()
                 .mountPath("/shared")
                 .name(pvName)))
-        .addClustersItem(new Cluster()
-            .clusterName(clusterName)
-            .replicas(replicaCount))
         .configuration(new Configuration()
             .secrets(securityList)
             .model(new Model()
@@ -839,13 +844,22 @@ class ItIstioDBOperator {
       domainSpec.dataHome("/shared/data");
     }
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainResourceName)
             .namespace(domNamespace))
         .spec(domainSpec);
+    
+    setPodAntiAffinity(domain);
+
+    // create cluster object
+    ClusterResource cluster = createClusterResource(clusterResName, clusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainResourceName, domNamespace);
@@ -854,8 +868,7 @@ class ItIstioDBOperator {
             domainResourceName, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainResourceName, domNamespace));
-
-    setPodAntiAffinity(domain);
+    
     return domain;
   }
 

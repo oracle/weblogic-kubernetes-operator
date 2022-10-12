@@ -17,6 +17,31 @@ source ${UTILSSCRIPTPATH}/utils_base.sh
 #   [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 #
 
+#
+# Define helper fn to copy a file only if src & tgt differ
+#
+
+copyIfChanged() {
+  [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
+  if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
+    trace "Copying '$1' to '$2'."
+    # Copy the source file to a temporary file in the same directory as the target and then
+    # move the temporary file to the target. This is done because the target file may be read by another
+    # process during the copy operation, such as can happen for situational configuration files stored in a
+    # domain home on a persistent volume.
+    tmp_file=$(mktemp -p $(dirname $2))
+    cp $1 $tmp_file
+    mv $tmp_file $2
+    [ $? -ne 0 ] && trace SEVERE "failed cp $1 $2" && exitOrLoop
+    if [ -O "$2" ]; then
+      chmod 770 $2
+      [ $? -ne 0 ] && trace SEVERE "failed chmod 770 $2" && exitOrLoop
+    fi
+  else
+    trace "Skipping copy of '$1' to '$2' -- these files already match."
+  fi
+}
+
 # exportInstallHomes
 #   purpose:  export MW_HOME, WL_HOME, ORACLE_HOME
 #             with defaults as needed 
@@ -604,7 +629,7 @@ linkServerDefaultDir() {
     # Create the server's directory in $DOMAIN_HOME/servers
     if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME} ]; then
       trace "Creating directory '${DOMAIN_HOME}/servers/${SERVER_NAME}'"
-      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop 
+      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop
     else
       trace "'${DOMAIN_HOME}/servers/${SERVER_NAME}' already exists as a directory"
     fi
@@ -718,10 +743,11 @@ checkAuxiliaryImage() {
   fi
   local severe_found=false
   for out_file in $out_files; do
+    sucFile="${out_file/%.out/.suc}"
     if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
       trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
       severe_found=true
-    elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+    elif [ ! -f "$sucFile" ]; then
       trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                    "Contents of '${out_file}':"
       cat $out_file
@@ -739,8 +765,8 @@ checkAuxiliaryImage() {
 #
 # checkCompatibilityModeInitContainersWithLegacyAuxImages
 #   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
-#            in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs dir. It returns 1 if a SEVERE message
-#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/compatibilityModeInitContainerLogs
+#            in ${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR} dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}
 #            dirs. It also returns 1 if 'successfully' message is not found in the output files
 #            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
 #            See also 'auxImage.sh'.
@@ -766,17 +792,18 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out 2>/dev/null | sort --version-sort)
+    out_files=$(ls -1 "${AUXILIARY_IMAGE_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/"*.out 2>/dev/null | sort --version-sort)
     if [ -z "${out_files}" ]; then
-      trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/compatibilityModeInitContainerLogs/*.out'"
+      trace SEVERE "Compatibility Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/$AUXILIARY_IMAGE_COMMAND_LOGS_DIR/*.out'"
       return 1
     fi
     severe_found=false
     for out_file in $out_files; do
+      sucFile="${out_file/%.out/.suc}"
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
         trace FINE "Compatibility Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
         severe_found=true
-      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+      elif [ ! -f "$sucFile" ]; then
         trace SEVERE "Compatibility Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                      "Contents of '${out_file}':"
         cat $out_file
@@ -788,7 +815,7 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
       trace "Compatibility Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v compatibilityModeInitContainerLogs)" ] \
+    [ -z "$(ls -A "${AUXILIARY_IMAGE_PATH}" 2>/dev/null | grep -v "${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}")" ] \
       && trace SEVERE "Compatibility Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
        "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
       && return 1

@@ -56,9 +56,12 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
 
+  String FATAL_DOMAIN_INVALID_ERROR = "FatalDomainInvalidError";
+
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 
   String WEBHOOK = "Webhook";
 
   String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
+  String DOMAIN_INTROSPECTION_COMPLETE = "Domain introspection complete";
 }

@@ -25,13 +25,14 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
@@ -48,6 +49,8 @@ import org.apache.commons.io.FileUtils;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
@@ -74,6 +77,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -582,22 +587,29 @@ public class MonitoringUtils {
     Path monitoringAppNoRestPort = Paths.get(monitoringExporterAppDir, "norestport");
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
+    Path monitoringAppAdministrationRestPort = Paths.get(monitoringExporterAppDir, "administrationrestport");
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppAdministrationRestPort.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppAdministrationRestPort));
 
     //adding ability to build monitoring exporter if branch is not main
     boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
-
+    String monitoringExporterAppAdministrationRestPortDir = monitoringAppAdministrationRestPort.toString();
     if (!toBuildMonitoringExporter) {
       downloadMonitoringExporterApp(RESOURCE_DIR
           + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
       downloadMonitoringExporterApp(RESOURCE_DIR
           + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config-administrationrestport.yaml", monitoringExporterAppAdministrationRestPortDir);
     } else {
       buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
           + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
       buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
           + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+          + "/exporter/exporter-config-administrationrestport.yaml", monitoringExporterAppAdministrationRestPortDir);
     }
     logger.info("Finished to build Monitoring Exporter webapp.");
   }
@@ -670,6 +682,17 @@ public class MonitoringUtils {
   /**
    * Create Domain Cr and verity.
    *
+   * @param adminSecretName WebLogic admin credentials
+   * @param repoSecretName image repository secret name
+   * @param encryptionSecretName model encryption secret name
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createDomainCrAndVerify(String adminSecretName,
                                              String repoSecretName,
@@ -683,8 +706,9 @@ public class MonitoringUtils {
                                              String monexpConfig,
                                              String exporterImage) {
     int t3ChannelPort = getNextFreePort();
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -700,6 +724,8 @@ public class MonitoringUtils {
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -716,19 +742,28 @@ public class MonitoringUtils {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(cluster1Name)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-    if (twoClusters) {
-      domain.getSpec().getClusters().add(new Cluster()
-          .clusterName(cluster2Name)
-          .replicas(replicaCount));
+
+    // add clusters to the domain resource
+    ClusterList clusters = Cluster.listClusterCustomResources(namespace);
+    String[] clusterNames = twoClusters ? new String[]{cluster1Name, cluster2Name} : new String[]{cluster1Name};
+    for (String clusterName : clusterNames) {
+      String clusterResName = domainUid + "-" + clusterName;
+      if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
+        getLogger().info("!!!Cluster resource {0} in namespace {1} already exists, skipping...",
+            clusterResName, namespace);
+      } else {
+        getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, namespace);
+        createClusterAndVerify(createClusterResource(clusterResName, clusterName, namespace, replicaCount));
+      }
+      // set cluster references
+      domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
     }
+    
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
@@ -753,11 +788,18 @@ public class MonitoringUtils {
     }
     createDomainAndVerify(domain, namespace);
   }
-
-
+  
   /**
    * create domain from provided image and monitoring exporter sidecar and verify it's start.
    *
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
    */
   public static void createAndVerifyDomain(String miiImage,
                                             String domainUid,

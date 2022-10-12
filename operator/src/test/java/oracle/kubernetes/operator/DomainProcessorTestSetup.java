@@ -11,6 +11,9 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -28,7 +31,12 @@ public class DomainProcessorTestSetup {
   public static final String NS = "namespace";
   public static final String SECRET_NAME = "secret-name";
   public static final String KUBERNETES_UID = "12345";
+  public static final String KUBERNETES_CLUSTER_UID = "678910";
   public static final String NODE_NAME = "Node1";
+  private static final String CLUSTER_1_NAME = "cluster-1";
+  private static final String CLUSTER_2_NAME = "cluster-2";
+  public static final ClusterResource cluster1 = DomainProcessorTestSetup.createTestCluster(CLUSTER_1_NAME);
+  public static final ClusterResource cluster2 = DomainProcessorTestSetup.createTestCluster(CLUSTER_2_NAME);
 
   public static void defineRequiredResources(KubernetesTestSupport testSupport) {
     testSupport.defineResources(createSecret());
@@ -103,6 +111,59 @@ public class DomainProcessorTestSetup {
   }
 
   /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @return a cluster
+   */
+  public static ClusterResource createTestCluster(String clusterName) {
+    return createTestCluster(clusterName,1L);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param generation Generation value
+   * @return a domain
+
+   */
+  public static ClusterResource createTestCluster(String clusterName, Long generation) {
+    return createTestCluster(clusterName, generation, NS);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param namespace the namespace of the cluster resource
+   * @return a cluster
+   */
+  public static ClusterResource createTestCluster(String clusterName, String namespace) {
+    return createTestCluster(clusterName,1L, namespace);
+  }
+
+  /**
+   * Create a basic cluster object that meets the needs of the domain processor.
+   *
+   * @param clusterName the name of the cluster
+   * @param generation Generation value
+   * @param namespace the namespace of the cluster resource
+   * @return a domain
+
+   */
+  public static ClusterResource createTestCluster(String clusterName, Long generation, String namespace) {
+    ClusterSpec cs = new ClusterSpec().withClusterName(clusterName).withReplicas(2);
+    return new ClusterResource().spec(cs)
+        .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.CLUSTER_VERSION)
+        .withKind(KubernetesConstants.CLUSTER)
+        .withMetadata(withTimestamps(
+            new V1ObjectMeta().name(clusterName).namespace(namespace)
+                .uid(KUBERNETES_CLUSTER_UID).generation(generation)))
+        .withStatus(new ClusterStatus());
+  }
+
+  /**
    * Creates the secret data for any test that must do authentication.
    * @param testSupport a Kubernetes Test Support instance
    */
@@ -112,5 +173,31 @@ public class DomainProcessorTestSetup {
                       .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
                       .data(Map.of(USERNAME_KEY, "user".getBytes(),
                             PASSWORD_KEY, "password".getBytes())));
+  }
+
+  /**
+   * Set up cluster resources for a domain.
+   *
+   * @param domain a DomainResource instance
+   * @param clusters a list of clusters
+   */
+  public static void setupCluster(DomainResource domain, ClusterResource[] clusters) {
+    for (ClusterResource cluster : clusters) {
+      domain.getSpec()
+          .withCluster(new V1LocalObjectReference().name(cluster.getMetadata().getName()));
+    }
+  }
+
+  /**
+   * Set up cluster resources for a domain.
+   *
+   * @param domain a DomainResource instance
+   * @param clusterNames a list of cluster names
+   */
+  public static void setupCluster(DomainResource domain, String[] clusterNames) {
+    for (String clusterName : clusterNames) {
+      domain.getSpec()
+          .withCluster(new V1LocalObjectReference().name(clusterName));
+    }
   }
 }

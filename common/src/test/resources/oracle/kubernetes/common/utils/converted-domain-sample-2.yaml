@@ -3,10 +3,13 @@ kind: Domain
 metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
-  annotations:
-    weblogic.v8.preserved: '{"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"},"$.spec.adminServer":{"serverStartState":"RUNNING"}}'
+  uid: f6b4dcbd-f88e-436e-a217-1d803124bb98
   labels:
     weblogic.domainUID: sample-domain1
+  annotations:
+    weblogic.v8.adminChannelPortForwardingEnabled: "true"
+    weblogic.v8.preserved.aux: '{"$.spec":{"auxiliaryImageVolumes":[{"name":"auxiliaryImageVolume1","mountPath":"/auxiliary"}]},"$.spec.adminServer.serverPod":{"auxiliaryImages":[{"image":"model-in-image:WLS-AI-v1","imagePullPolicy":"IfNotPresent","volume":"auxiliaryImageVolume1"}]}}'
+    weblogic.v8.preserved: '{"$.spec.adminServer":{"serverStartState":"RUNNING"},"$.spec.clusters[?(@.clusterName==''cluster-1'')]":{"serverStartState":"RUNNING"}}'
 spec:
   domainHomeSourceType: FromModel
   domainHome: /u01/domains/sample-domain1
@@ -64,22 +67,6 @@ spec:
         value: /auxiliary
     adminChannelPortForwardingEnabled: false
   replicas: 1
-  clusters:
-  - clusterName: cluster-1
-    serverPod:
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: weblogic.clusterName
-                  operator: In
-                  values:
-                  - $(CLUSTER_NAME)
-              topologyKey: kubernetes.io/hostname
-    replicas: 2
   restartVersion: '1'
   introspectVersion: '1'
   configuration:
@@ -88,3 +75,31 @@ spec:
       modelHome: /auxiliary/models
       wdtInstallHome: /auxiliary/weblogic-deploy
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+  clusters:
+    - name: sample-domain1-cluster-1
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain1-cluster-1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.createdByOperator: "true"
+spec:
+    clusterName: cluster-1
+    serverPod:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: weblogic.clusterName
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: kubernetes.io/hostname
+    replicas: 2

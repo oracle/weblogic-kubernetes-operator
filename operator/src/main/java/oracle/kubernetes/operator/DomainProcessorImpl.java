@@ -112,6 +112,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
+  // Map namespace to map of cluster resource name to KubernetesEventObjects; tests may replace this value.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Map<String, Map<String, KubernetesEventObjects>> clusterEventK8SObjects = new ConcurrentHashMap<>();
+
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this(delegate, null);
   }
@@ -129,7 +133,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
+  private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
+    List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
+    Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()
+        .filter(info -> info.doesReferenceCluster(cluster)).forEach(referencingDomains::add));
+    return referencingDomains;
+  }
+
   static void cleanupNamespace(String namespace) {
+    clusterEventK8SObjects.remove(namespace);
     domains.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
@@ -147,6 +159,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   public static void updateEventK8SObjects(CoreV1Event event) {
     getEventK8SObjects(event).update(event);
+  }
+
+  private static void updateClusterEventK8SObjects(CoreV1Event event) {
+    getClusterEventK8SObjects(event).update(event);
   }
 
   private static String getEventNamespace(CoreV1Event event) {
@@ -169,6 +185,25 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return Optional.ofNullable(domainUid)
         .map(d -> getDomainEventK8SObjects(ns, d))
         .orElse(getNamespaceEventK8SObjects(ns));
+  }
+
+  public static KubernetesEventObjects getClusterEventK8SObjects(CoreV1Event event) {
+    return getClusterEventK8SObjects(getEventNamespace(event), getClusterName(event));
+  }
+
+  private static KubernetesEventObjects getClusterEventK8SObjects(String ns, String clusterResourceName) {
+    return clusterEventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
+        .computeIfAbsent(clusterResourceName, c -> new KubernetesEventObjects());
+  }
+
+  private static String getClusterName(CoreV1Event event) {
+    return Optional.ofNullable(event.getInvolvedObject())
+        .map(V1ObjectReference::getName)
+        .orElse("");
+  }
+
+  private static void deleteClusterEventK8SObjects(CoreV1Event event) {
+    getClusterEventK8SObjects(event).remove(event);
   }
 
   private static KubernetesEventObjects getNamespaceEventK8SObjects(String ns) {
@@ -204,6 +239,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       case EventConstants.EVENT_KIND_NAMESPACE:
         updateEventK8SObjects(event);
         break;
+      case EventConstants.EVENT_KIND_CLUSTER:
+        updateClusterEventK8SObjects(event);
+        break;
       default:
         break;
     }
@@ -236,6 +274,25 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
+  /**
+   * Get all the domain resources in the given namespace.
+   *
+   * @param ns the namespace
+   * @return list of the domain resources
+   */
+  public static List<DomainResource> getDomains(String ns) {
+    List<DomainResource> domains = new ArrayList<>();
+    Optional.ofNullable(DomainProcessorImpl.domains.get(ns)).ifPresent(d -> d.values()
+        .forEach(domain -> addToList(domains, domain)));
+    return domains;
+  }
+
+  private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
+    if (info.isNotDeleting()) {
+      list.add(info.getDomain());
+    }
+  }
+
   private void onDeleteEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
@@ -257,6 +314,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
           deleteEventK8SObjects(event);
         }
+        break;
+      case EventConstants.EVENT_KIND_CLUSTER:
+        deleteClusterEventK8SObjects(event);
         break;
       default:
         break;
@@ -297,7 +357,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo) || liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isGenerationChanged(cachedInfo)) {
+    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());
@@ -638,48 +698,43 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
-        cluster.getDomainUid());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
-        .execute();
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(),
-        cluster.getDomainUid());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
-        .execute();
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
+      if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+        return;
+      }
+
+      LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(cluster.getNamespace(), cluster.getDomainUid());
-    if (info == null) {
-      return;
-    }
-    LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(),
-        cluster.getDomainUid());
-    info.removeClusterResource(cluster.getClusterName());
-    createMakeRightOperation(info)
-        .interrupt()
-        .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
-        .execute();
+    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(), info.getDomainUid());
+      info.removeClusterResource(cluster.getClusterName());
+      createMakeRightOperation(info)
+          .interrupt()
+          .withExplicitRecheck()
+          .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
+          .execute();
+    });
   }
-
 
   /**
    * Dispatch the Domain event to the appropriate handler.

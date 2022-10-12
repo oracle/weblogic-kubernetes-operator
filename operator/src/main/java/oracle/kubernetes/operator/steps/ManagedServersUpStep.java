@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
@@ -74,7 +75,26 @@ public class ManagedServersUpStep extends Step {
       insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
+    if (hasWorkToDo(steps, next)) {
+      insert(steps, new ClearCompletedConditionSteps());
+    }
     return Step.chain(steps.toArray(new Step[0]));
+  }
+
+  private static boolean hasWorkToDo(List<Step> steps, Step next) {
+    return getNonNullStepNum(steps) > getExpectedNumber(next);
+  }
+
+  private static int getExpectedNumber(Step next) {
+    return next == null ? 0 : 1;
+  }
+
+  private static boolean isNotNull(Step step) {
+    return step != null;
+  }
+
+  private static int getNonNullStepNum(List<Step> steps) {
+    return (int) steps.stream().filter(ManagedServersUpStep::isNotNull).count();
   }
 
   private static List<ServerShutdownInfo> getServersToStop(
@@ -299,39 +319,12 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
-      if (lessThanMinConfiguredClusterSize(clusterConfig)) {
-        String clusterName = clusterConfig.getClusterName();
-        LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
-            info.getReplicaCount(clusterName),
-            clusterConfig.getMinDynamicClusterSize(),
-            clusterName);
-
-        // Reset current replica count so we don't scale down less than minimum
-        // dynamic cluster size
-        info.setReplicaCount(clusterName, clusterConfig.getMinDynamicClusterSize());
-      }
-    }
-
     private void addReplicasTooHighValidationErrorWarning(Object... messageParams) {
       LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
     }
 
-    private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
-      if (clusterConfig != null) {
-        String clusterName = clusterConfig.getClusterName();
-        if (clusterConfig.hasDynamicServers()
-            && !info.isAllowReplicasBelowMinDynClusterSize(clusterName)) {
-          int configMinClusterSize = clusterConfig.getMinDynamicClusterSize();
-          return info.getReplicaCount(clusterName) < configMinClusterSize;
-        }
-      }
-      return false;
-    }
-
     private void logIfInvalidReplicaCount(WlsClusterConfig clusterConfig) {
       logIfReplicasExceedsClusterServersMax(clusterConfig);
-      logIfReplicasLessThanClusterServersMin(clusterConfig);
     }
 
     private void addServerIfAlways(

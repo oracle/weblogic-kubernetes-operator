@@ -37,6 +37,12 @@ public interface TestConstants {
   public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
+  public static final int DEFAULT_MAX_CLUSTER_SIZE = 5;
+
+  // cluster constants
+  public static final String CLUSTER_VERSION =
+      getNonEmptySystemProperty("wko.it.cluster.version", "v1");
+  public static final String CLUSTER_API_VERSION = "weblogic.oracle/" + CLUSTER_VERSION;
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -116,6 +122,10 @@ public interface TestConstants {
       BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.db.image.name",
       DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
+
+  // WebLogic Base Image with Japanese Locale
+  public static final String LOCALE_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/weblogic";
+  public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
 
   // For kind, replace repo name in image name with KIND_REPO, 
   // otherwise use the actual image name
@@ -267,13 +277,13 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.6");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.7");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
       getNonEmptySystemProperty("wko.it.prometheus.chart.version", "15.2.0");
   public static final String GRAFANA_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.29.2");
+      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.38.6");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";
@@ -304,7 +314,8 @@ public interface TestConstants {
   public static final boolean OKE_CLUSTER =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
-  public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
+  public static final String [] FSS_DIR = System.getProperty("wko.it.fss.dir","").split(",");
   public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
@@ -340,6 +351,14 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
   public static final String DOMAIN_STATUS_CONDITION_ROLLING_TYPE = "Rolling";
 
+  // Oracle RCU setup constants
+  public static final String ORACLE_RCU_SECRET_NAME = "oracle-rcu-secret";
+  public static final String ORACLE_RCU_SECRET_VOLUME = "oracle-rcu-volume";
+  public static final String ORACLE_RCU_SECRET_MOUNT_PATH = "/rcu-secret";
+
+  // Oracle database "no operator" constant(s)
+  public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
+
   //Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
@@ -353,4 +372,13 @@ public interface TestConstants {
       + "config/samples/sidb/singleinstancedatabase.yaml";
   public static final String ORACLELINUX_TEST_VERSION =
       getNonEmptySystemProperty("wko.it.oraclelinux.test.version", "7");
+
+  //retry improvement
+  //Defaulting to 120 seconds
+  public static final Long FAILURE_RETRY_INTERVAL_SECONDS =
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "20"));
+  //Defaulting to 1440 minutes (24 hours)
+  public static final Long FAILURE_RETRY_LIMIT_MINUTES =
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
+  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
 }

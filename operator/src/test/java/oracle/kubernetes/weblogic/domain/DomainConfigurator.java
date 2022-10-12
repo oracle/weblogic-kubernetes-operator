@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -24,6 +25,7 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -222,11 +224,6 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  public DomainConfigurator withAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    getDomainSpec().setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize);
-    return this;
-  }
-
   public DomainConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup) {
     getDomainSpec().setMaxClusterConcurrentStartup(maxConcurrentStartup);
     return this;
@@ -244,6 +241,11 @@ public abstract class DomainConfigurator {
 
   public DomainConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
     getDomainSpec().setMaxClusterConcurrentShutdown(maxConcurrentShutdown);
+    return this;
+  }
+
+  public DomainConfigurator withClusterReference(String clusterResourceName) {
+    getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterResourceName));
     return this;
   }
 
@@ -362,6 +364,8 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withMonitoringExporterConfiguration(String configuration);
 
+  public abstract DomainConfigurator withMonitoringExporterResources(V1ResourceRequirements resourceRequirements);
+
   public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
 
   public abstract DomainConfigurator withMonitoringExporterPort(Integer port);
@@ -380,10 +384,11 @@ public abstract class DomainConfigurator {
   /**
    * Adds a default cluster configuration to the domain, if not already present.
    *
+   * @param info Domain processor info
    * @param clusterName the name of the server to add
    * @return an object to add additional configurations
    */
-  public abstract ClusterConfigurator configureCluster(@Nonnull String clusterName);
+  public abstract ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName);
 
   public abstract void setShuttingDown(boolean start);
 

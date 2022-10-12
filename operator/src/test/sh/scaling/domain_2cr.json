@@ -3,14 +3,12 @@
   "kind": "Domain",
   "spec": {
     "clusters": [
-        {
-            "clusterName": "cluster-1",
-            "replicas": 1
-        },
-        {
-            "clusterName": "cluster-2",
-            "replicas": 2
-        }
+      {
+        "name": "domain1-cluster-1"
+      },
+      {
+        "name": "domain1-cluster-2"
+      }
     ],
     "dataHome": "",
     "domainHome": "/shared/domains/domain1",

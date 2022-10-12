@@ -453,8 +453,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           MessageKeys.JOB_DEADLINE_EXCEEDED_MESSAGE,
           job.getMetadata().getName(),
           job.getSpec().getActiveDeadlineSeconds(),
-          getJobStartedSeconds(),
-          DomainPresence.getFailureRetryMaxCount());
+          getJobStartedSeconds());
     }
 
     private long getJobStartedSeconds() {

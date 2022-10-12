@@ -8,17 +8,6 @@ version: create-domain-on-aks-inputs-v1
 # Parameters that must be changed from these values!
 #
 
-# The service principal is used to login to azure and create an azure kubernetes cluster.
-# If you don't have a service principal, please follow README.md
-# Application id of the service principal.
-azureServicePrincipalAppId: azure-service-principal-app-id
-
-# A client secret of the service principal.
-azureServicePrincipalClientSecret: azure-service-principal-client-secret
-
-# Tenant (Directory) id of the service principal.
-azureServicePrincipalTenantId: azure-service-principal-tenant-id
-
 # Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image.
 dockerEmail: docker-email
 
@@ -90,14 +79,21 @@ serverPodCpuLimit: "250m"
 persistentVolumeClaimNameSuffix: azurefile
 
 # Password for WebLogic account.
-weblogicAccountPassword: welcome1
+weblogicAccountPassword: weblogic-account-password
 
 # WebLogic Server image.
 # Parameter "image" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+# **NOTE**:
+# This sample uses General Availability (GA) images. GA images are suitable for demonstration and
+# development purposes only where the environments are not available from the public Internet;
+# they are not acceptable for production use. In production, you should always use CPU (patched)
+# images from OCR or create your images using the WebLogic Image Tool.
+# Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
+# documentation for details.
 weblogicDockerImage: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 
 # Name of weblogic user.
-weblogicUserName: weblogic
+weblogicUserName: weblogic-user-name
 
 
 

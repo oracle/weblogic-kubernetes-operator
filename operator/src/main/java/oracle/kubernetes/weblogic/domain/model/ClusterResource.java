@@ -12,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -23,6 +22,14 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 4.0
  */
+@Description(
+    "A Cluster resource describes the lifecycle options for all "
+    + "of the Managed Server members of a WebLogic cluster, including Java "
+    + "options, environment variables, additional Pod content, and the ability to "
+    + "explicitly start, stop, or restart cluster members. "
+    + "It must describe a cluster that already exists in the WebLogic domain "
+    + "configuration. See also `domain.spec.clusters`."
+)
 public class ClusterResource implements KubernetesObject {
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -231,15 +238,6 @@ public class ClusterResource implements KubernetesObject {
     return this;
   }
 
-  /**
-   * Returns the domain unique identifier.
-   *
-   * @return domain UID
-   */
-  public String getDomainUid() {
-    return Optional.ofNullable(spec.getDomainUid()).orElse(KubernetesUtils.getDomainUidLabel(metadata));
-  }
-
   @NotNull
   public ClusterSpec getSpec() {
     return spec;
@@ -262,5 +260,19 @@ public class ClusterResource implements KubernetesObject {
   public ClusterResource withReplicas(int i) {
     setReplicas(i);
     return this;
+  }
+
+  /**
+   * Returns true if the cluster resourcehas a later generation than the passed-in cached cluster resource.
+   * @param cachedResource another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(ClusterResource cachedResource) {
+    return getGeneration()
+        .map(gen -> (gen.compareTo(cachedResource.getGeneration().orElse(0L)) > 0))
+        .orElse(true);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getMetadata().getGeneration());
   }
 }

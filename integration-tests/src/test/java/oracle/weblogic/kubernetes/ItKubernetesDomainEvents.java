@@ -26,8 +26,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -61,8 +62,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.removeReplicasSettingAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -90,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.TOPOLOGY_MISMATCH_ERROR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -126,6 +132,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @Tag("kind-parallel")
+@Tag("oke-parallel")
 @Tag("okd-wls-srg")
 @IntegrationTest
 @Tag("olcne")
@@ -150,6 +157,7 @@ class ItKubernetesDomainEvents {
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
+  String clusterRes1Name = cluster1Name;
 
   static final String pvName1 = getUniqueName(domainUid + "-pv-");
   static final String pvcName1 = getUniqueName(domainUid + "-pvc-");
@@ -226,18 +234,15 @@ class ItKubernetesDomainEvents {
   @Tag("gate")
   @Tag("crio")
   void testK8SEventsSuccess() {
-    try {
-      OffsetDateTime timestamp = now();
-      logger.info("Creating domain");
-      createDomain(domainNamespace1, domainUid, pvName1, pvcName1);
+    OffsetDateTime timestamp = now();
+    logger.info("Creating domain");
+    createDomain(domainNamespace1, domainUid, pvName1, pvcName1);
 
-      logger.info("verify the Created event is generated");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
-      logger.info("verify the Completed event is generated");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
-    } finally {
-      shutdownDomain(domainUid, domainNamespace1);
-    }
+    logger.info("verify the Created event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
+    logger.info("verify the Completed event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+    shutdownDomain(domainUid, domainNamespace1);
   }
 
   /**
@@ -290,29 +295,33 @@ class ItKubernetesDomainEvents {
   @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
     OffsetDateTime timestamp = now();
+    createClusterAndVerify(createClusterResource(
+        "nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
-    String patchStr
-        = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"nonexisting-cluster\", \"replicas\": 2}"
-        + "}]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-    // verify the Failed event is generated
-    checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
+    try {
+      String patchStr
+          = "["
+          + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+          + "    {\"name\" : \"nonexisting-cluster\"}"
+          + "}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+      // verify the Failed event is generated
+      checkFailedEvent(opNamespace, domainNamespace3, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
+    } finally {
+      //remove the cluster from domain resource
+      timestamp = now();
+      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
 
-    //remove the cluster from domain resource
-    timestamp = now();
-    patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    // verify the Changed event is generated
-    checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      // verify the Changed event is generated
+      checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+    }
   }
 
   /**
@@ -325,45 +334,43 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain events for failed/retried domain life cycle changes")
   void testK8SEventsFailedLifeCycle() {
-    try {
-      V1Patch patch;
-      String patchStr;
-      Domain domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
-          spec -> spec.failureRetryLimitMinutes(2L));
-      assertNotNull(domain, " Can't create domain resource");
+    V1Patch patch;
+    String patchStr;
+    DomainResource domain = createDomain(domainNamespace5, domainUid, pvName5, pvcName5, "Never",
+        spec -> spec.failureRetryLimitMinutes(2L));
+    assertNotNull(domain, " Can't create domain resource");
 
-      String originalDomainHome = domain.getSpec().getDomainHome();
+    String originalDomainHome = domain.getSpec().getDomainHome();
 
-      OffsetDateTime timestamp = now();
+    OffsetDateTime timestamp = now();
 
-      logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
-              adminServerPodName, domainNamespace5);
-      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
+    logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
+        adminServerPodName, domainNamespace5);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace5);
 
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
-                managedServerPodNamePrefix + i, domainNamespace5);
-        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
-      }
-
-      logger.info("Replace the domainHome to a nonexisting location to verify the following events"
-              + " Changed and Failed events are logged");
-      patchStr = "[{\"op\": \"replace\", "
-              + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
-              + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
-      logger.info("PatchStr for domainHome: {0}", patchStr);
-
-      patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-              "patchDomainCustomResource failed");
-
-      logger.info("verify domain changed event is logged");
-      checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-      logger.info("verify domain failed event");
-      checkFailedEvent(opNamespace, domainNamespace5, domainUid, ABORTED_ERROR, "Warning", timestamp);
-    } finally {
-      shutdownDomain(domainUid, domainNamespace5);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace5);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace5);
     }
+
+    logger.info("Replace the domainHome to a nonexisting location to verify the following events"
+        + " Changed and Failed events are logged");
+    patchStr = "[{\"op\": \"replace\", "
+        + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
+    logger.info("PatchStr for domainHome: {0}", patchStr);
+
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace5, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "patchDomainCustomResource failed");
+
+    logger.info("verify domain changed event is logged");
+    checkEvent(opNamespace, domainNamespace5, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+    logger.info("verify domain failed event");
+    checkFailedEvent(opNamespace, domainNamespace5, domainUid, ABORTED_ERROR, "Warning", timestamp);
+
+    shutdownDomain(domainUid, domainNamespace5);
   }
 
   /**
@@ -378,13 +385,16 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     createNewCluster();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
-        externalRestHttpsPort, opNamespace, opServiceAccount);
+            externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the Domain_Available event is generated");
-    checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_AVAILABLE, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace3, domainUid,
+            DOMAIN_AVAILABLE, "Normal", timestamp);
     logger.info("verify the Completed event is generated");
-    checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
-    logger.info("verify the only 1 Completed event is generated");
-    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid, DOMAIN_COMPLETED, timestamp));
+    checkEvent(opNamespace, domainNamespace3,
+            domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+    logger.info("verify the only 1 Completed event for domain is generated");
+    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
+            DOMAIN_COMPLETED, timestamp));
   }
 
   /**
@@ -394,15 +404,8 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsScalePastMaxWithoutChangingIntrospectVersion() {
     OffsetDateTime timestamp = now();
     logger.info("Scaling cluster using patching");
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
-        + "]";
-
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertFalse(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Patching domain with a replica count that exceeds the cluster size did not fail as expected");
+    assertFalse(scaleCluster(cluster1Name, domainNamespace3, 3),
+            "Patching cluster with a replica count that exceeds the cluster size did not fail as expected");
   }
 
   /**
@@ -413,32 +416,35 @@ class ItKubernetesDomainEvents {
   void testDomainK8sEventsScalePastMaxAndChangeIntrospectVersion() {
     OffsetDateTime timestamp = now();
     try {
-      logger.info("Scaling cluster using patching");
+      removeReplicasSettingAndVerify(domainUid, cluster1Name, domainNamespace3, replicaCount,
+          managedServerPodNamePrefix);
+
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
       String patchStr
           = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3},"
-          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"12345\"}"
+          + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 3}"
           + "]";
 
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
+      logger.info("Updating introspect version  using patch string: {0}",  patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, new V1Patch(patchStr),
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
+
 
       logger.info("verify the Failed event is generated");
       checkFailedEvent(opNamespace, domainNamespace3, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
-      String patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
-          + "]";
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
 
+      assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster via patching");
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
+
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service {0} is created in namespace {1}",
+                managedServerPodNamePrefix + i, domainNamespace3);
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace3);
+      }
       logger.info("verify the Completed event is generated");
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
 
@@ -452,48 +458,10 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
-    try {
-      createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
-      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
-      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
-    } finally {
-      shutdownDomain(domainUid, domainNamespace4);
-    }
-  }
-
-  /**
-   * Scale the cluster below minimum dynamic cluster size and verify the Failed
-   * warning event is generated.
-   */
-  @Test
-  void testDomainK8sEventsScaleBelowMin() {
-    OffsetDateTime timestamp = now();
-    try {
-      String patchStr
-          = "["
-          + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": false},"
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
-          + "]";
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-
-      // No event will be created for this
-      logger.info("verify the Failed event is NOT generated");
-      assertFalse(domainEventExists(opNamespace, domainNamespace3, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
-    } finally {
-      timestamp = now();
-      logger.info("Updating domain resource to set correct replicas size");
-      String patchStr
-          = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 2}"
-          + "]";
-      logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-    }
+    createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
+    scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
+    scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
+    shutdownDomain(domainUid, domainNamespace4);
   }
 
   /**
@@ -556,7 +524,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
@@ -628,7 +596,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
-    Domain domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
+    DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace3, domainUid);
 
     // get the map with server pods and their original creation timestamps
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace3,
@@ -685,6 +653,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
     deleteDomainCustomResource(domainUid, domainNamespace2);
+    deleteClusterCustomResource(cluster1Name, domainNamespace2);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
@@ -758,15 +727,15 @@ class ItKubernetesDomainEvents {
   }
 
   // Create and start a WebLogic domain in PV
-  private static Domain createDomain(String domainNamespace, String domainUid,
-                                     String pvName, String pvcName, String serverStartupPolicy) {
+  private static DomainResource createDomain(String domainNamespace, String domainUid,
+                                             String pvName, String pvcName, String serverStartupPolicy) {
     return createDomain(domainNamespace, domainUid, pvName, pvcName, serverStartupPolicy, UnaryOperator.identity());
   }
 
   // Create and start a WebLogic domain in PV
-  private static Domain createDomain(String domainNamespace, String domainUid,
-                                     String pvName, String pvcName, String serverStartupPolicy,
-                                     UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
+  private static DomainResource createDomain(String domainNamespace, String domainUid,
+                                             String pvName, String pvcName, String serverStartupPolicy,
+                                             UnaryOperator<DomainSpec> domainSpecUnaryOperator) {
 
     String uniquePath = "/shared/" + domainNamespace + "/domains";
 
@@ -800,7 +769,7 @@ class ItKubernetesDomainEvents {
     p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
     p.setProperty("number_of_ms", "2");
     p.setProperty("managed_server_name_base", managedServerNameBase);
-    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid + "/");
+    p.setProperty("domain_logs", "/shared/" + domainNamespace + "/logs/" + domainUid);
     p.setProperty("production_mode_enabled", "true");
     assertDoesNotThrow(()
                     -> p.store(new FileOutputStream(domainPropertiesFile), "domain properties file"),
@@ -815,7 +784,7 @@ class ItKubernetesDomainEvents {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
@@ -825,6 +794,7 @@ class ItKubernetesDomainEvents {
                     .domainUid(domainUid)
                     .domainHome(uniquePath + "/" + domainUid) // point to domain home in pv
                     .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+                    .replicas(replicaCount)
                     .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                     .imagePullPolicy(IMAGE_PULL_POLICY)
                     .imagePullSecrets(Arrays.asList(
@@ -852,12 +822,11 @@ class ItKubernetesDomainEvents {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(getNextFreePort()))))
-                    .addClustersItem(new Cluster() //cluster
-                            .clusterName(cluster1Name)
-                            .replicas(replicaCount))));
+                                            .nodePort(getNextFreePort()))))));
     setPodAntiAffinity(domain);
-    // verify the domain custom resource is created
+    domain = createClusterResourceAndAddReferenceToDomain(
+        cluster1Name, cluster1Name, domainNamespace, domain, replicaCount);
+    assertNotNull(domain, "Failed to add Cluster to domain");
     createDomainAndVerify(domain, domainNamespace);
     return domain;
   }
@@ -928,13 +897,23 @@ class ItKubernetesDomainEvents {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace3);
 
+    ClusterList clusters = listClusterCustomResources(domainNamespace3);
+
+    if (clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterName().equals(cluster2Name))) {
+      getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", cluster2Name, domainNamespace3);
+    } else {
+      getLogger().info("Creating cluster {0} in namespace {1}", cluster2Name, domainNamespace3);
+      createClusterAndVerify(createClusterResource(
+           cluster2Name, cluster2Name, domainNamespace3, replicaCount));
+    }
+
     String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace3));
 
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2}"
+        + "    {\"name\" : \"" + cluster2Name + "\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
@@ -969,10 +948,7 @@ class ItKubernetesDomainEvents {
     OffsetDateTime timestamp = now();
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
     int countBefore = getDomainEventCount(namespace, domainUid, DOMAIN_COMPLETED, "Normal");
-    V1Patch patch = new V1Patch("["
-        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
-    assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+    assertTrue(scaleCluster(cluster1Name, namespace, replicaCount), "failed to scale domain to " + replicaCount);
     int serverNumber = replicaCount + 1;
 
     switch (testType) {

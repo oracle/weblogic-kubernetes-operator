@@ -3,6 +3,10 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
@@ -29,6 +33,10 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer replicas;
 
+  @Description("Label selector that can be used to discover Pods associated with WebLogic managed servers belonging "
+      + "to this cluster. Must be set to work with HorizontalPodAutoscaler.")
+  private String labelSelector;
+
   /** The number of ready cluster members. Required. */
   @Description("The number of ready cluster members.")
   @Range(minimum = 0)
@@ -50,16 +58,25 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer replicasGoal;
 
+  @Description("The generation observed by the WebLogic operator.")
+  private Long observedGeneration;
+
+  @Description("Current service state of the cluster.")
+  private List<ClusterCondition> conditions = new ArrayList<>();
+
   public ClusterStatus() {
   }
 
   ClusterStatus(ClusterStatus other) {
     this.clusterName = other.clusterName;
     this.replicas = other.replicas;
+    this.labelSelector = other.labelSelector;
     this.readyReplicas = other.readyReplicas;
     this.maximumReplicas = other.maximumReplicas;
     this.minimumReplicas = other.minimumReplicas;
     this.replicasGoal = other.replicasGoal;
+    this.observedGeneration = other.observedGeneration;
+    this.conditions = new ArrayList<>(other.conditions);
   }
 
   /**
@@ -104,6 +121,19 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
+  public String getLabelSelector() {
+    return labelSelector;
+  }
+
+  public void setLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
+  }
+
+  public ClusterStatus withLabelSelector(String labelSelector) {
+    this.labelSelector = labelSelector;
+    return this;
+  }
+
   public Integer getReadyReplicas() {
     return readyReplicas;
   }
@@ -140,15 +170,49 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
+  public Long getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  /**
+   * The observedGeneration attribute is defined as an integer type in the Cluster Resource
+   * schema, hence convert to integer when publishing the status.
+   * @return integer value of the observedGeneration, if set, otherwise defaults to 1.
+   */
+  private Integer getObservedGenerationAsInteger() {
+    return observedGeneration != null ? observedGeneration.intValue() : 1;
+  }
+
+  public ClusterStatus withObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+    return this;
+  }
+
+  public void setObservedGeneration(Long observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
+
+  /**
+   * Current service state of cluster.
+   *
+   * @return conditions
+   */
+  public @Nonnull List<ClusterCondition> getConditions() {
+    return conditions;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("clusterName", clusterName)
         .append("replicas", replicas)
+        .append("labelSelector", labelSelector)
         .append("readyReplicas", readyReplicas)
         .append("maximumReplicas", maximumReplicas)
         .append("minimumReplicas", minimumReplicas)
         .append("replicasGoal", replicasGoal)
+        .append("observedGeneration", observedGeneration)
+        .append("conditions", conditions)
         .toString();
   }
 
@@ -157,10 +221,13 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return new HashCodeBuilder()
         .append(clusterName)
         .append(replicas)
+        .append(labelSelector)
         .append(readyReplicas)
         .append(maximumReplicas)
         .append(minimumReplicas)
         .append(replicasGoal)
+        .append(observedGeneration)
+        .append(DomainResource.sortList(conditions))
         .toHashCode();
   }
 
@@ -176,10 +243,13 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)
+        .append(labelSelector, rhs.labelSelector)
         .append(readyReplicas, rhs.readyReplicas)
         .append(maximumReplicas, rhs.maximumReplicas)
         .append(minimumReplicas, rhs.minimumReplicas)
         .append(replicasGoal, rhs.replicasGoal)
+        .append(observedGeneration, rhs.observedGeneration)
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .isEquals();
   }
 
@@ -193,15 +263,38 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return other.getClusterName() != null && other.getClusterName().equals(clusterName);
   }
 
-  private static final ObjectPatch<ClusterStatus> clusterPatch = createObjectPatch(ClusterStatus.class)
-        .withStringField("clusterName", ClusterStatus::getClusterName)
-        .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
-        .withIntegerField("minimumReplicas", ClusterStatus::getMinimumReplicas)
-        .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
-        .withIntegerField("replicas", ClusterStatus::getReplicas)
-        .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
+  private static final ObjectPatch<ClusterStatus> clusterPatch =
+      createObjectPatch(ClusterStatus.class)
+          .withStringField("clusterName", ClusterStatus::getClusterName)
+          .withIntegerField("maximumReplicas", ClusterStatus::getMaximumReplicas)
+          .withIntegerField("minimumReplicas", ClusterStatus::getMinimumReplicas)
+          .withIntegerField("observedGeneration", ClusterStatus::getObservedGenerationAsInteger)
+          .withIntegerField("readyReplicas", ClusterStatus::getReadyReplicas)
+          .withIntegerField("replicas", ClusterStatus::getReplicas)
+          .withIntegerField("replicasGoal", ClusterStatus::getReplicasGoal);
 
   static ObjectPatch<ClusterStatus> getObjectPatch() {
     return clusterPatch;
+  }
+
+  /**
+   * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
+   * conditions according to the cluster rules.
+   *
+   * @param newCondition the condition to add.
+   * @return this object.
+   */
+  public ClusterStatus addCondition(ClusterCondition newCondition) {
+    if (conditions.contains(newCondition)) {
+      return this;
+    }
+
+    conditions = conditions.stream()
+        .filter(c -> c.isCompatibleWith(newCondition))
+        .collect(Collectors.toList());
+
+    conditions.add(newCondition);
+    Collections.sort(conditions);
+    return this;
   }
 }

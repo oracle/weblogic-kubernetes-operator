@@ -20,15 +20,22 @@ spec:
   domainHome: /u01/domains/@@DOMAIN_UID@@
 
   # The WebLogic Server image that the Operator uses to start the domain
+  # **NOTE**:
+  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `Manage FMW infrastructure domains` pages in the WebLogic
+  # Kubernetes Operator documentation for details.
   image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: "@@IMAGE_PULL_POLICY@@"
+  imagePullPolicy: @@IMAGE_PULL_POLICY@@
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
   #- name: @@DOMAIN_IMAGE_PULL_SECRET_NAME@@
+  #- name: @@IMAGE_PULL_SECRET_NAME@@
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -93,26 +100,9 @@ spec:
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - clusterName: cluster-1
-    serverPod:
-      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
-      # already members of the same cluster.
-      affinity:
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: "weblogic.clusterName"
-                      operator: In
-                      values:
-                        - $(CLUSTER_NAME)
-                topologyKey: "kubernetes.io/hostname"
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: @@DOMAIN_UID@@-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -128,7 +118,7 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "JRF"
+      domainType: JRF
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
@@ -167,3 +157,20 @@ spec:
 
       # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
       #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: @@DOMAIN_UID@@-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: @@DOMAIN_NAMESPACE@@
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: @@DOMAIN_UID@@
+spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
+  # The number of managed servers to start for this cluster
+  replicas: 2

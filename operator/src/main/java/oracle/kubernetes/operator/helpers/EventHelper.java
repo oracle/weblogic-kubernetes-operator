@@ -30,9 +30,13 @@ import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_AVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_CHANGED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_COMPLETED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_CREATED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_DELETED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_INCOMPLETE_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_UNAVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CHANGED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_COMPLETED_EVENT_PATTERN;
@@ -52,10 +56,15 @@ import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EV
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.STOP_MANAGING_NAMESPACE_EVENT_PATTERN;
+import static oracle.kubernetes.operator.DomainProcessorImpl.getClusterEventK8SObjects;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_CHANGED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_DELETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CONVERSION_WEBHOOK_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -343,6 +352,48 @@ public class EventHelper {
   }
 
   public enum EventItem {
+    CLUSTER_AVAILABLE {
+      @Override
+      public String getReason() {
+        return CLUSTER_AVAILABLE_EVENT;
+      }
+
+      @Override
+      int getOrdering() {
+        return 1;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_AVAILABLE_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
+    },
+    CLUSTER_COMPLETE {
+      @Override
+      public String getReason() {
+        return CLUSTER_COMPLETED_EVENT;
+      }
+
+      @Override
+      int getOrdering() {
+        return 20;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_COMPLETED_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
+    },
     CLUSTER_CREATED {
       @Override
       public String getReason() {
@@ -374,6 +425,48 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return CLUSTER_CHANGED_EVENT_PATTERN;
+      }
+    },
+    CLUSTER_INCOMPLETE {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return CLUSTER_INCOMPLETE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_INCOMPLETE_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
+    },
+    CLUSTER_UNAVAILABLE {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return CLUSTER_UNAVAILABLE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return CLUSTER_UNAVAILABLE_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
       }
     },
     DOMAIN_AVAILABLE {
@@ -874,15 +967,6 @@ public class EventHelper {
     public abstract String getReason();
   }
 
-  private static V1ObjectReference createInvolvedObjectForWebhook() {
-    return new V1ObjectReference()
-        .name(getWebhookPodName())
-        .namespace(getWebhookNamespace())
-        .kind(KubernetesConstants.POD)
-        .uid(getWebhookPodUID())
-        .apiVersion("v1");
-  }
-
   public static class EventData {
     private final EventItem eventItem;
     private DomainFailureReason failureReason;
@@ -1007,5 +1091,174 @@ public class EventHelper {
                 .involvedObject(eventItem.createInvolvedObject(eventData))
                 .metadata(CreateEventStep.createMetadata(eventData))
                 .count(1);
+  }
+
+  private static V1ObjectReference createInvolvedObjectForWebhook() {
+    return new V1ObjectReference()
+        .name(getWebhookPodName())
+        .namespace(getWebhookNamespace())
+        .kind(KubernetesConstants.POD)
+        .uid(getWebhookPodUID())
+        .apiVersion("v1");
+  }
+
+  private static V1ObjectReference createInvolvedObjectForClusterResource(EventData eventData) {
+    return new V1ObjectReference()
+        .name(eventData.getResourceName())
+        .namespace(eventData.getNamespace())
+        .kind(KubernetesConstants.CLUSTER)
+        .uid(eventData.getUID())
+        .apiVersion("v1");
+  }
+
+  /**
+   * Factory for {@link Step} that asynchronously creates a Cluster Resource event.
+   *
+   * @param eventData event data
+   * @return Step for creating an event
+   */
+  public static Step createClusterResourceEventStep(EventData eventData) {
+    return new CreateClusterResourceEventStep(eventData);
+  }
+
+  public static class CreateClusterResourceEventStep extends Step {
+    private final EventData eventData;
+
+    CreateClusterResourceEventStep(EventData eventData) {
+      this(eventData, null);
+    }
+
+    CreateClusterResourceEventStep(EventData eventData, Step next) {
+      super(next);
+      this.eventData = eventData;
+    }
+
+    @Override
+    protected String getDetail() {
+      return eventData.eventItem.toString();
+    }
+
+    private static CoreV1Event createEventModel(EventData eventData) {
+      EventItem eventItem = eventData.eventItem;
+
+      return new CoreV1Event()
+          .metadata(CreateEventStep.createMetadata(eventData))
+          .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
+          .reportingInstance(getOperatorPodName())
+          .lastTimestamp(eventItem.getCurrentTimestamp())
+          .type(eventItem.getType())
+          .reason(eventItem.getReason())
+          .message(eventItem.getMessage(eventData))
+          .involvedObject(eventItem.createInvolvedObject(eventData))
+          .count(1);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(createEventAPICall(createEventModel(eventData)), packet);
+    }
+
+    private Step createEventAPICall(CoreV1Event event) {
+      CoreV1Event existingEvent = getExistingClusterEvent(event);
+      return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
+    }
+
+    private Step createCreateEventCall(CoreV1Event event) {
+      LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
+      event.firstTimestamp(event.getLastTimestamp());
+      return new CallBuilder()
+          .createEventAsync(
+              event.getMetadata().getNamespace(),
+              event,
+              new CreateClusterResourceEventResponseStep(getNext()));
+    }
+
+    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+      LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
+      existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
+      existingEvent.lastTimestamp(event.getLastTimestamp());
+      return new CallBuilder()
+          .replaceEventAsync(
+              existingEvent.getMetadata().getName(),
+              existingEvent.getMetadata().getNamespace(),
+              existingEvent,
+              new ReplaceClusterResourceEventResponseStep(this, existingEvent, getNext()));
+    }
+
+    private CoreV1Event getExistingClusterEvent(CoreV1Event event) {
+      return Optional.ofNullable(getClusterEventK8SObjects(event))
+          .map(o -> o.getExistingEvent(event)).orElse(null);
+    }
+
+    private static class CreateClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
+      CreateClusterResourceEventResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        return doNext(packet);
+      }
+    }
+
+    private class ReplaceClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
+      Step replaceClusterEventStep;
+      CoreV1Event existingClusterEvent;
+
+      ReplaceClusterResourceEventResponseStep(Step replaceClusterEventStep, CoreV1Event existingClusterEvent,
+          Step next) {
+        super(next);
+        this.existingClusterEvent = existingClusterEvent;
+        this.replaceClusterEventStep = replaceClusterEventStep;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        return doNext(packet);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        restoreExistingClusterEvent();
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
+            || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+          return doNext(Step.chain(createCreateEventCall(createEventModel(eventData)), getNext()), packet);
+        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return onFailure(createClusterEventRetryStep(existingClusterEvent), packet, callResponse);
+        }
+      }
+
+      private void restoreExistingClusterEvent() {
+        if (existingClusterEvent == null || existingClusterEvent.getCount() == null) {
+          return;
+        }
+        existingClusterEvent.count(existingClusterEvent.getCount() - 1);
+      }
+
+      Step createClusterEventRetryStep(CoreV1Event event) {
+        return Step.chain(createClusterEventRefreshStep(event), replaceClusterEventStep);
+      }
+
+      private Step createClusterEventRefreshStep(CoreV1Event event) {
+        return new CallBuilder().readEventAsync(
+            event.getMetadata().getName(),
+            event.getMetadata().getNamespace(),
+            new ReadEventResponseStep(getNext()));
+      }
+    }
+
+    private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
+      ReadEventResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
+        return doNext(packet);
+      }
+    }
   }
 }

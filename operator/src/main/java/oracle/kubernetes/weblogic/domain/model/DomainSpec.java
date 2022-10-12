@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.common.utils.CommonUtils;
@@ -37,7 +38,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
@@ -240,13 +240,6 @@ public class DomainSpec extends BaseConfiguration {
   @Default(intDefault = 1)
   private Integer replicas;
 
-  @Description("Whether to allow the number of running cluster member Managed Server instances to drop "
-      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
-      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
-  )
-  @Default(boolDefault = true)
-  private Boolean allowReplicasBelowMinDynClusterSize;
-
   @Description(
       "The maximum number of cluster member Managed Server instances that the operator will start in parallel "
       + "for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the "
@@ -349,6 +342,20 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
+  V1ResourceRequirements getMonitoringExporterResourceRequirements() {
+    return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getResources).orElse(null);
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param resourceRequirements the name of the docker image
+   */
+  public void setMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
+    assert monitoringExporter != null : "May not set resources without configuration";
+
+    monitoringExporter.setResources(resourceRequirements);
+  }
+
   /**
    * Specifies the image for the monitoring exporter sidecar.
    * @param imageName the name of the docker image
@@ -424,20 +431,20 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 2.0
    */
-  @Description("Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, "
-      + "environment variables, additional Pod content, and the ability to explicitly start, stop, or restart "
-      + "cluster members. The `clusterName` field of each entry must match a cluster that already exists in the "
-      + "WebLogic domain configuration.")
-  protected final List<ClusterSpec> clusters = new ArrayList<>();
+  @Description("References to Cluster resources that describe the lifecycle options for all of the Managed Server "
+      + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
+      + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
+      + "cluster that already exists in the WebLogic domain configuration.")
+  protected final List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   /**
-   * Adds a Cluster to the DomainSpec.
+   * Adds a Cluster resource reference to the DomainSpec.
    *
-   * @param clusterSpec The cluster to be added to this DomainSpec
+   * @param reference The cluster reference to be added to this DomainSpec
    * @return this object
    */
-  public DomainSpec withCluster(ClusterSpec clusterSpec) {
-    clusters.add(clusterSpec);
+  public DomainSpec withCluster(V1LocalObjectReference reference) {
+    clusters.add(reference);
     return this;
   }
 
@@ -546,12 +553,12 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  V1LocalObjectReference getWebLogicCredentialsSecret() {
+  public V1LocalObjectReference getWebLogicCredentialsSecret() {
     return webLogicCredentialsSecret;
   }
 
   @SuppressWarnings("unused")
-  void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
+  public void setWebLogicCredentialsSecret(V1LocalObjectReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
   }
 
@@ -783,11 +790,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  public boolean isAllowReplicasBelowMinDynClusterSize() {
-    return Optional.ofNullable(allowReplicasBelowMinDynClusterSize)
-        .orElse(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
-  }
-
   public Integer getMaxClusterConcurrentStartup() {
     return Optional.ofNullable(maxClusterConcurrentStartup)
         .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
@@ -955,7 +957,6 @@ public class DomainSpec extends BaseConfiguration {
         new ToStringBuilder(this)
             .appendSuper(super.toString())
             .append("adminServer", adminServer)
-            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("clusters", clusters)
             .append("configuration", configuration)
             .append("domainHome", domainHome)
@@ -987,7 +988,6 @@ public class DomainSpec extends BaseConfiguration {
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
             .append(adminServer)
-            .append(allowReplicasBelowMinDynClusterSize)
             .append(clusters)
             .append(configuration)
             .append(domainHome)
@@ -1045,7 +1045,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(fluentdSpecification, rhs.getFluentdSpecification());
@@ -1068,26 +1067,6 @@ public class DomainSpec extends BaseConfiguration {
     return null;
   }
 
-  /**
-   * Get Cluster configuration.
-   * @param clusterName name of cluster.
-   * @return cluster configuration or null, if not defined.
-   */
-  public ClusterSpec getCluster(String clusterName) {
-    if (clusterName != null) {
-      for (ClusterSpec c : clusters) {
-        if (clusterName.equals(c.getClusterName())) {
-          return c;
-        }
-      }
-    }
-    return null;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
-  }
-
   public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
     this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
   }
@@ -1108,7 +1087,7 @@ public class DomainSpec extends BaseConfiguration {
     return managedServers;
   }
 
-  public List<ClusterSpec> getClusters() {
+  public List<V1LocalObjectReference> getClusters() {
     return clusters;
   }
 
@@ -1146,16 +1125,6 @@ public class DomainSpec extends BaseConfiguration {
 
     private boolean hasMaxUnavailable(ClusterSpec clusterSpec) {
       return clusterSpec != null && clusterSpec.getMaxUnavailable() != null;
-    }
-
-    private boolean hasAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return clusterSpec != null && clusterSpec.isAllowReplicasBelowMinDynClusterSize() != null;
-    }
-
-    private boolean isAllowReplicasBelowDynClusterSizeFor(ClusterSpec clusterSpec) {
-      return hasAllowReplicasBelowMinDynClusterSize(clusterSpec)
-          ? clusterSpec.isAllowReplicasBelowMinDynClusterSize()
-          : DomainSpec.this.isAllowReplicasBelowMinDynClusterSize();
     }
 
     private boolean hasMaxConcurrentStartup(ClusterSpec clusterSpec) {
@@ -1202,8 +1171,8 @@ public class DomainSpec extends BaseConfiguration {
 
     @Override
     public void setReplicaCount(String clusterName, ClusterSpec clusterSpec, int replicaCount) {
-      Optional.ofNullable(clusterSpec).ifPresentOrElse(c -> c.setReplicas(replicaCount),
-          () -> getOrCreateCluster(clusterName).setReplicas(replicaCount));
+      Optional.ofNullable(clusterSpec)
+              .ifPresentOrElse(cs -> cs.setReplicas(replicaCount), () -> setReplicas(replicaCount));
     }
 
     @Override
@@ -1217,11 +1186,6 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return isAllowReplicasBelowDynClusterSizeFor(clusterSpec);
-    }
-
-    @Override
     public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
       return getMaxConcurrentStartupFor(clusterSpec);
     }
@@ -1229,21 +1193,6 @@ public class DomainSpec extends BaseConfiguration {
     @Override
     public int getMaxConcurrentShutdown(ClusterSpec clusterSpec) {
       return getMaxConcurrentShutdownFor(clusterSpec);
-    }
-
-    private ClusterSpec getOrCreateCluster(String clusterName) {
-      ClusterSpec clusterSpec = getCluster(clusterName);
-      if (clusterSpec != null) {
-        return clusterSpec;
-      }
-
-      return createClusterWithName(clusterName);
-    }
-
-    private ClusterSpec createClusterWithName(String clusterName) {
-      ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
-      clusters.add(clusterSpec);
-      return clusterSpec;
     }
   }
 }

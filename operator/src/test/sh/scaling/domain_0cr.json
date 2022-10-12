@@ -3,10 +3,6 @@
   "kind": "Domain",
   "spec": {
     "clusters": [
-        {
-            "clusterName": "cluster-1",
-            "replicas": 1
-        }
     ],
     "dataHome": "",
     "domainHome": "/shared/domains/domain1",
@@ -23,7 +19,11 @@
     "clusters": [
        {
             "clusterName": "cluster-1",
-            "minimumReplicas": 3
+            "minimumReplicas": 1
+       },
+       {
+            "clusterName": "cluster-2",
+            "minimumReplicas": 2
        }
     ]
   }

@@ -5,21 +5,10 @@ weight: 12
 description: "Deploy WebLogic Server on Azure Kubernetes Service."
 ---
 
-### Contents
-
-- [Introduction](#introduction)
-- [Basics](#basics)
-- [Configure AKS cluster](#configure-aks-cluster)
-- [TLS/SSL configuration](#tlsssl-configuration)
-- [Networking](#networking)
-- [DNS Configuration](#dns-configuration)
-- [Database](#database)
-- [Review + create](#review--create)
-- [Template outputs](#template-outputs)
-- [Useful resources](#useful-resources)
+{{< table_of_contents >}}
 
 
-#### Introduction
+### Introduction
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
 
@@ -27,11 +16,11 @@ This document describes the Azure Marketplace offer that makes it easy to get st
 
 It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
 
-#### Basics
+### Basics
 
 Use the **Basics** blade to provide the basic configuration details for deploying an Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.
 
-##### Project details
+#### Project details
 
 
 | Field | Description |
@@ -39,13 +28,13 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).|
 | Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the [Azure documentation](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-overview#resource-groups). |
 
-##### Instance details
+#### Instance details
 
 | Field | Description |
 |-------|-------------|
 | Region | Select an Azure region from the drop-down list. |
 
-##### Credentials for WebLogic
+#### Credentials for WebLogic
 
 | Field | Description |
 |-------|-------------|
@@ -55,7 +44,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Password for WebLogic Model encryption | Model in Image requires a runtime encryption secret with a secure password key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. For more information, see [Required runtime encryption secret]({{< relref "/managing-domains/model-in-image/usage#required-runtime-encryption-secret" >}}).|
 | Confirm password | Re-enter the value of the preceding field. |
 
-##### Optional Basic Configuration
+#### Optional Basic Configuration
 
 | Field | Description |
 |-------|-------------|
@@ -67,24 +56,24 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 
 When you are satisfied with your selections, select **Next : Configure AKS cluster**.
 
-#### Configure AKS cluster
+### Configure AKS cluster
 
 Use the **Configure AKS Cluster** blade to configure fundamental details of how Oracle WebLogic Server runs on AKS. To do this, enter the values for the fields listed in the following tables.
 
-##### Azure Kubernetes Service
+#### Azure Kubernetes Service
 
 In this section, you can configure some options about the AKS which will run WebLogic Server.
 
 | Field | Description |
 |-------|-------------|
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
-|Use latest supported AKS Kubernetes version| The currently supported version is **1.21.9**.  Oracle tracks the AKS release versions in [Supported Kubernetes versions in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions). After a new version emerges, Oracle qualifies WLS on AKS against that version and will update the offer to that version.|
+|Use latest supported AKS Kubernetes version| The currently supported version is **1.24.3**.  Oracle tracks the AKS release versions in [Supported Kubernetes versions in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/supported-kubernetes-versions). After a new version emerges, Oracle qualifies WLS on AKS against that version and will update the offer to that version.|
 | Node count | The initial number of nodes in the AKS cluster. This value can be changed after deployment. For information, see [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). |
 | Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs).|
 |Enable Container insights| If selected, configure the necessary settings to integrate with Container insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
 |Create Persistent Volume using Azure File share service|If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted to the nodes of the AKS cluster. For more information, see [Oracle WebLogic Server persistent storage]({{< relref "/managing-domains/persistent-storage/_index.md" >}}) and [persistent volume with Azure Files share on AKS](https://docs.microsoft.com/azure/aks/azure-files-volume).|
 
-##### Image selection
+#### Image selection
 
 In this section, you can configure the image that is deployed using the model-in-image domain home source type. There are several options for the WebLogic image and the application image deployed therein.
 
@@ -100,7 +89,7 @@ In this section, you can configure the image that is deployed using the model-in
 | Is the specified SSO account associated with an active Oracle support contract? | If set to **Yes**, you must accept the license agreement in the `middleware/weblogic_cpu` repository. If set to **No**, you must accept the license agreement in the `middleware/weblogic`. Steps to accept the license agreement: log in to the [Oracle Container Registry](https://container-registry.oracle.com/); navigate to the `middleware/weblogic_cpu` and `middleware/weblogic` repository; accept license agreement. See this [document](https://aka.ms/wls-aks-ocr-doc) for more information. |
 | Select WebLogic Server Docker tag | Select one of the supported images. |
 
-##### Java EE Application
+#### Java EE Application
 
 In this section you can deploy a Java EE Application along with the WebLogic Server deployment.
 
@@ -113,7 +102,7 @@ In this section you can deploy a Java EE Application along with the WebLogic Ser
 
 When you are satisfied with your selections, select **Next : TLS/SSL configuration**.
 
-#### TLS/SSL configuration
+### TLS/SSL configuration
 
 With the **TLS/SSL configuration** blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA). See [Oracle WebLogic Server Keystores configuration](https://aka.ms/arm-oraclelinux-wls-ssl-configuration) for more information.
 
@@ -121,7 +110,7 @@ Select **Yes** or **No** for the option **Configure WebLogic Server Administrati
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
-##### Upload existing KeyStores
+#### Upload existing KeyStores
 
 | Field | Description |
 |-------|-------------|
@@ -139,7 +128,7 @@ If you want to upload existing keystores, select **Upload existing KeyStores** f
 
 If you want to use keystores that are stored in Azure Key Vault, select **Use KeyStores stored in Azure Key Vault** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
-##### Use KeyStores stored in Azure Key Vault
+#### Use KeyStores stored in Azure Key Vault
 
 | Field | Description |
 |-------|-------------|
@@ -156,11 +145,11 @@ If you want to use keystores that are stored in Azure Key Vault, select **Use Ke
 
 When you are satisfied with your selections, select **Next : Networking**.
 
-#### Networking
+### Networking
 
 Use this blade to configure options for load balancing and ingress controller.
 
-##### Standard Load Balancer service
+#### Standard Load Balancer service
 
 Selecting **Yes** here will cause the offer to provision the Azure Load Balancer as a Kubernetes load balancer service. For more information on the Standard Load Balancer see [Use a public Standard Load Balancer in Azure Kubernetes Service (AKS)](https://aka.ms/wls-aks-standard-load-balancer).  You can still deploy an Azure Application Gateway even if you select **No** here.
 
@@ -176,7 +165,7 @@ You can fill in any valid value in this column.
 
 For the ports, the recommended values are the usual 7001 for the **admin-server** and 8001 for the **cluster-1**.
 
-##### Application Gateway Ingress Controller
+#### Application Gateway Ingress Controller
 
 In this section, you can create an Azure Application Gateway instance as the ingress controller of your WebLogic Server. This Application Gateway is pre-configured for end-to-end-SSL with TLS termination at the gateway using the provided SSL certificate and load balances across your cluster.
 
@@ -233,7 +222,7 @@ Regardless of how you provide the certificates, there are several other options 
 
 When you are satisfied with your selections, select **Next : DNS Configuration**.
 
-#### DNS Configuration
+### DNS Configuration
 
 With the **DNS Configuration** blade, you can provision the Oracle WebLogic Server Administration Console using a custom DNS name.
 
@@ -266,13 +255,13 @@ In the case of creating an Azure DNS zone and a custom DNS alias, you must perfo
 
 When you are satisfied with your selections, select **Next : Database**.
 
-#### Database
+### Database
 
 Use the Database blade to configure Oracle WebLogic Server to connect to an existing database. Select **Yes** or **No** for the option **Connect to Database?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Next : Review + create >**. If you select **Yes**, you must specify the details of your database by entering the values for the fields listed in the following table.
 
 | Field | Description |
 |-------|-------------|
-| Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • Other |
+| Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • MySQL {{< line_break >}} • Other |
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
 | DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
 | Global transactions protocol | Determines the transaction protocol (global transaction processing behavior) for the data source. For more information, see [JDBC Data Source Transaction Options](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jdbca/transactions.html#GUID-4C929E67-5FD7-477B-A749-1EA0F4FD25D4). **IMPORTANT: The correct value for this parameter depends on the selected database type. For PostgreSQL, select EmulateTwoPhaseCommit**. |
@@ -290,7 +279,7 @@ If you select **Other** as the database type, there are some additional values y
 
 When you are satisfied with your selections, select **Next : Review + create**.
 
-#### Review + create
+### Review + create
 
 In the **Review + create blade**, review the details you provided for deploying Oracle WebLogic Server on AKS. If you want to make changes to any of the fields, click **< previous** or click on the respective blade and update the details.
 
@@ -298,7 +287,7 @@ If you want to use this template to automate the deployment, download it by sele
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
 
-#### Template outputs
+### Template outputs
 
 After clicking **Create** to create this offer, you will go to the **Deployment is in progress** page. When the deployment is completed, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.
 
@@ -323,13 +312,13 @@ After clicking **Create** to create this offer, you will go to the **Deployment 
 | `shellCmdtoOutputWlsImageProperties`|Shell command to display the base64 encoded string of the model properties.{{< line_break >}}Sample value:{{< line_break >}}`echo -e IyBDF...PTUK \| base64 -d > model.properties` |
 | `shellCmdtoOutputWlsVersionsandPatches` | Shell command to display the base64 encoded string of the WLS version and patches.{{< line_break >}}Sample value:{{< line_break >}}`echo -e CldlY...gMS4= \| base64 -d > version.info`|
 
-#### Useful resources
+### Useful resources
 
 Review the following useful resources.
 
-##### Store the TLS/SSL certificate in the Key Vault 
+#### Store the TLS/SSL certificate in the Key Vault
 
-1. Base 64 encode the certifcate file; omit the `-w0` for macOS: 
+1. Base 64 encode the certifcate file; omit the `-w0` for macOS:
 
     ```bash
     base64 myIdentity.jks -w0 >mycert.txt
@@ -345,5 +334,5 @@ Review the following useful resources.
 4. Select Generate/Import.
 5. Under Upload options, leave the default value.
 6. Under Name, enter `myIdentityCertData`, or whatever name you like.
-7. Under Value, enter the content of the mycert.txt file. 
+7. Under Value, enter the content of the mycert.txt file.
 8. Leave the remaining values at their defaults and select Create.

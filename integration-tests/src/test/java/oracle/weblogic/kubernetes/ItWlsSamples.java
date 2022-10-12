@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -39,9 +40,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
@@ -67,6 +71,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.p
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -97,6 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
+@Tag("oke-sequential")
 @IntegrationTest
 class ItWlsSamples {
 
@@ -113,17 +119,17 @@ class ItWlsSamples {
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
   private static String domainNamespace = null;
-  private static final String domainName = "domain1";
+  private static final String domain1Name = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
       SKIP_BUILD_IMAGES_IF_EXISTS ? WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
+  private final String clusterResourceName = domain1Name + "-" + clusterName;
   private final String managedServerNameBase = "managed-server";
-  private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+  private final String managedServerPodNamePrefix = domain1Name + "-" + managedServerNameBase;
 
   private final Path samplePath = get(ITTESTS_DIR, "../kubernetes/samples");
-  private final Path tempSamplePath = get(WORK_DIR, "wls-sample-testing");
   private final Path domainLifecycleSamplePath = get(samplePath + "/scripts/domain-lifecycle");
   private static String UPDATE_MODEL_FILE = "model-samples-update-domain.yaml";
   private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
@@ -181,16 +187,16 @@ class ItWlsSamples {
     String script = model.split(":")[0];
 
     String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInImage", domainName, script);
     //copy the samples directory to a temporary location
-    setupSample();
+    setupSample(testSamplePath);
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
     // update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainName, sampleBase);
+    updateDomainInputsFile(domainName, sampleBase,null);
 
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
@@ -239,12 +245,12 @@ class ItWlsSamples {
   @Tag("samples-gate")
   void testSampleDomainInPv(String model) {
 
-    String domainName = model.split(":")[1];
+    String domainUid = model.split(":")[1];
     String script = model.split(":")[0];
-
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", domainNamespace, "domainInPV", domainUid, script);
     //copy the samples directory to a temporary location
-    setupSample();
-    String secretName = domainName + "-weblogic-credentials";
+    setupSample(testSamplePath);
+    String secretName = domainUid + "-weblogic-credentials";
     if (!secretExists(secretName, domainNamespace)) {
       createSecretWithUsernamePassword(
           secretName,
@@ -253,31 +259,33 @@ class ItWlsSamples {
           ADMIN_PASSWORD_DEFAULT);
     }
     //create PV and PVC used by the domain
-    createPvPvc(domainName);
-
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
+    createPvPvc(domainUid, testSamplePath, pvName, pvcName);
     // WebLogic secrets for the domain has been created by previous test
     // No need to create it again
 
-    Path sampleBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
+    Path sampleBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
     // update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainName, sampleBase);
+    updateDomainInputsFile(domainUid, sampleBase, pvcName);
 
     // change namespace from default to custom, set wlst or wdt, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
+              "createDomainFilesDir: wlst", "createDomainFilesDir: "
+                      +  script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
-    createDomainAndVerify(domainName, sampleBase);
+    createDomainAndVerify(domainUid, sampleBase);
 
     // update the domain to add a new cluster
     copyModelFileForUpdateDomain(sampleBase);
-    updateDomainAndVerify(domainName, sampleBase, domainNamespace, script);
+    updateDomainAndVerify(domainUid, sampleBase, script);
   }
 
   /**
@@ -292,16 +300,16 @@ class ItWlsSamples {
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
     String serverName = managedServerNameBase + "1";
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 1);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 1);
     });
 
     // Verify that startServer script execution starts server pod and replica count is incremented
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
-    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
   }
 
@@ -317,18 +325,18 @@ class ItWlsSamples {
     String keepReplicaCountConstantParameter = "-k";
     // Verify that replica count is not changed when using "-k" parameter and a replacement server is started
     executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domainName, domainNamespace);
-    checkPodExists(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
 
     // Verify that replica count is not changed when using "-k" parameter and replacement server is shutdown
     executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicaCountConstantParameter);
-    checkPodExists(managedServerPodNamePrefix + "1", domainName, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + "3", domainName, domainNamespace);
+    checkPodExists(managedServerPodNamePrefix + "1", domain1Name, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + "3", domain1Name, domainNamespace);
     assertDoesNotThrow(() -> {
-      checkClusterReplicaCountMatches(clusterName, domainName, domainNamespace, 2);
+      checkClusterReplicaCountMatches(clusterResourceName, domainNamespace, 2);
     });
   }
 
@@ -344,13 +352,13 @@ class ItWlsSamples {
     // Verify all clustered server pods are shut down after stopCluster script execution
     executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
 
     // Verify all clustered server pods are started after startCluster script execution
     executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodExists(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
   }
 
@@ -365,18 +373,18 @@ class ItWlsSamples {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
     String adminServerName = "admin-server";
-    String adminServerPodName = domainName + "-" + adminServerName;
-    checkPodDoesNotExist(adminServerPodName, domainName, domainNamespace);
+    String adminServerPodName = domain1Name + "-" + adminServerName;
+    checkPodDoesNotExist(adminServerPodName, domain1Name, domainNamespace);
 
     // Verify all WebLogic server instance pods are started after startDomain script execution
     executeLifecycleScript(START_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+      checkPodExists(managedServerPodNamePrefix + i, domain1Name, domainNamespace);
     }
-    checkPodExists(adminServerPodName, domainName, domainNamespace);
+    checkPodExists(adminServerPodName, domain1Name, domainNamespace);
   }
 
   /**
@@ -386,8 +394,9 @@ class ItWlsSamples {
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   @Tag("samples-gate")
   void testTraefikIngressController() {
-    setupSample();
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "traefik");
+    setupSample(testSamplePath);
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
   }
@@ -399,7 +408,8 @@ class ItWlsSamples {
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
-    setupSample();
+    Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "nginx");
+    setupSample(testSamplePath);
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("TEST_IMAGES_REPO", TEST_IMAGES_REPO);
     templateMap.put("TEST_NGINX_IMAGE_NAME ", TEST_NGINX_IMAGE_NAME);
@@ -409,7 +419,7 @@ class ItWlsSamples {
     Path targetPropFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcPropFile.toString(), "nginx.properties", templateMap));
     logger.info("Generated nginx.properties file path is {0}", targetPropFile);
-    Path scriptBase = get(tempSamplePath.toString(), "charts/util");
+    Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace 
          + " -p " + targetPropFile.toString());
     setupLoadBalancer(scriptBase, "nginx", " -d -s -n " + nginxNamespace);
@@ -430,7 +440,7 @@ class ItWlsSamples {
     if (scriptType.equals("INTROSPECT_DOMAIN")) {
       commonParameters = extraParams;
     } else {
-      commonParameters = " -d " + domainName + " -n " + domainNamespace;
+      commonParameters = " -d " + domain1Name + " -n " + domainNamespace;
     }
     params = new CommandParams().defaults();
     if (scriptType.equals(SERVER_LIFECYCLE)) {
@@ -456,16 +466,16 @@ class ItWlsSamples {
   }
 
   // copy samples directory to a temporary location
-  private void setupSample() {
+  private void setupSample(Path testSamplePath) {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
-      logger.info("Deleting and recreating {0}", tempSamplePath);
-      createDirectories(tempSamplePath);
-      deleteDirectory(tempSamplePath.toFile());
-      createDirectories(tempSamplePath);
+      logger.info("Deleting and recreating {0}", testSamplePath);
+      createDirectories(testSamplePath);
+      deleteDirectory(testSamplePath.toFile());
+      createDirectories(testSamplePath);
 
-      logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
-      copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+      logger.info("Copying {0} to {1}", samplePath, testSamplePath);
+      copyDirectory(samplePath.toFile(), testSamplePath.toFile());
     });
   }
 
@@ -481,10 +491,7 @@ class ItWlsSamples {
   }
 
   // create persistent volume and persistent volume claims used by the samples
-  private void createPvPvc(String domainName) {
-
-    final String pvName = domainName + "-weblogic-sample-pv";
-    final String pvcName = domainName + "-weblogic-sample-pvc";
+  private void createPvPvc(String domainName, Path testSamplePath, String pvName, String pvcName) {
 
     // delete pvc first if exists
     if (assertDoesNotThrow(() -> doesPVCExist(pvcName, domainNamespace))) {
@@ -503,29 +510,52 @@ class ItWlsSamples {
         assertDoesNotThrow(() -> pvNotExist(pvName, null),
             String.format("pvNotExists failed for pv %s", pvName)), logger, "pv {0} to be deleted", pvName);
 
-    Path pvpvcBase = get(tempSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
+    Path pvpvcBase = get(testSamplePath.toString(), "scripts/create-weblogic-domain-pv-pvc");
 
-    // create pv and pvc
+    if (!OKE_CLUSTER) {
+      // create pv and pvc
+      assertDoesNotThrow(() -> {
+        // when tests are running in local box the PV directories need to exist
+        Path pvHostPath;
+        pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
+
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        createDirectories(pvHostPath);
+
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      });
+
+    } else {
+      assertDoesNotThrow(() -> {
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: "
+                        + FSS_DIR[new Random().nextInt(FSS_DIR.length)]);
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
+        replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+                "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: " + NFS_SERVER);
+        replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+        replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+                "storageClassName: %DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class", "storageClassName: oci-fss");
+
+      });
+    }
     assertDoesNotThrow(() -> {
-      // when tests are running in local box the PV directories need to exist
-      Path pvHostPath;
-      pvHostPath = createDirectories(get(PV_ROOT, this.getClass().getSimpleName(), pvName));
-
-      logger.info("Creating PV directory host path {0}", pvHostPath);
-      deleteDirectory(pvHostPath.toFile());
-      createDirectories(pvHostPath);
-
-      // set the pvHostPath in create-pv-pvc-inputs.yaml
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
       // set the namespace in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "namespace: default", "namespace: " + domainNamespace);
+              "namespace: default", "namespace: " + domainNamespace);
       // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
       replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
-      replaceStringInFile(get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
-          "domainUID:", "domainUID: " + domainName);
+              "domainUID:", "domainUID: " + domainName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pvc", pvcName);
+      replaceStringInFile(get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+              "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-pv", pvName);
     });
 
     // generate the create-pv-pvc-inputs.yaml
@@ -565,28 +595,55 @@ class ItWlsSamples {
         logger,
         "pv {0} to be ready in namespace {1}",
         pvcName,
-        domainNamespace);
+            domainNamespace);
   }
 
-  private void updateDomainInputsFile(String domainName, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domain1", domainName);
+              "domain1", domainUid);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET_NAME);
+
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "domainHome: /shared/domains", "domainHome: /shared/"
+                      + domainNamespace + "/domains");
+      replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "logHome: /shared/logs", "logHome: /shared/"
+                      + domainNamespace + "/logs");
+      if (pvcName != null) {
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+                "persistentVolumeClaimName: " + domainUid + "-weblogic-sample-pvc",
+                "persistentVolumeClaimName: " + pvcName);
+      }
+
       if (KIND_REPO == null) {
         replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
             "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
       }
+      if (OKE_CLUSTER && sampleBase.toString().contains("domain-home-on-pv")) {
+        String chownCommand1 = "chown 1000:0 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+
+        String chownCommand2 = "chown 1000:1000 %DOMAIN_ROOT_DIR%"
+                + "/. && find %DOMAIN_ROOT_DIR%"
+                + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+        replaceStringInFile(get(sampleBase.toString(), "create-domain-job-template.yaml").toString(),
+                "chown -R 1000:0 %DOMAIN_ROOT_DIR%", chownCommand1);
+        replaceStringInFile(get(sampleBase.toString(), "update-domain-job-template.yaml").toString(),
+                "chown -R 1000:1000 %DOMAIN_ROOT_DIR%", chownCommand2);
+      }
     });
   }
 
-  private void createDomainAndVerify(String domainName, Path sampleBase, String... additonalStr) {
+  private void createDomainAndVerify(String domainName,
+                                     Path sampleBase, String... additonalStr) {
     String additionalOptions = (additonalStr.length == 0) ? "" : additonalStr[0];
     String imageName = (additonalStr.length == 2) ? additonalStr[1] : "";
 
@@ -662,7 +719,6 @@ class ItWlsSamples {
 
   private void updateDomainAndVerify(String domainName,
                                      Path sampleBase,
-                                     String domainNamespace,
                                      String script) {
     //First copy the update model file to wdt dir and rename it wdt-model_dynamic.yaml
     assertDoesNotThrow(() -> {
@@ -756,5 +812,4 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to manage ingress controller");
   }
-
 }

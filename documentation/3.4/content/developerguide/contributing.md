@@ -14,7 +14,7 @@ If you have any questions about a possible submission, feel free to open an issu
 
 #### Contributing to the WebLogic Kubernetes Operator repository
 
-Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
+Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at [https://oca.opensource.oracle.com/](https://oca.opensource.oracle.com/).
 
 For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories list.
 

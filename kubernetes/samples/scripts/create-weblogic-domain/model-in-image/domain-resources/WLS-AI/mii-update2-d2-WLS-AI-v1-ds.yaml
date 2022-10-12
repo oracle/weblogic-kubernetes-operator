@@ -20,6 +20,13 @@ spec:
   domainHome: /u01/domains/sample-domain2
 
   # The WebLogic Server image that the Operator uses to start the domain
+  # **NOTE**:
+  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
+  # documentation for details.
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -28,6 +35,7 @@ spec:
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: regsecret
+  #- name: regsecret2
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -87,11 +95,9 @@ spec:
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - clusterName: cluster-1
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: sample-domain2-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -134,3 +140,20 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     secrets:
     - sample-domain2-datasource-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain2-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain2
+spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
+  # The number of managed servers to start for this cluster
+  replicas: 2

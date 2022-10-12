@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorImpl;
+import oracle.kubernetes.operator.DomainStatusUpdater.ClearCompletedConditionSteps;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -52,7 +53,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
-import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
@@ -66,6 +66,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -242,6 +243,15 @@ class ManagedServersUpStepTest {
     invokeStepWithConfiguredServer();
 
     assertManagedServersUpStepNotCreated();
+  }
+
+  @Test
+  void whenNoServerStartRequested_dontPrependUpdateCompleteConditionStep() {
+    startNoServers();
+
+    invokeStepWithConfiguredServer();
+
+    assertThat(firstNonEventStep(createNextStep()), not(instanceOf(ClearCompletedConditionSteps.class)));
   }
 
   private void startNoServers() {
@@ -478,7 +488,15 @@ class ManagedServersUpStepTest {
   void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(info, "server1");
 
-    assertThat(firstNonEventStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
+    assertThat(firstCoreStep(createNextStep()),
+        instanceOf(ServerDownIteratorStep.class));
+  }
+
+  @Test
+  void whenShuttingDownAtLeastOneServer_prependClearCompleteConditionStep() {
+    addServer(info, "server1");
+
+    assertThat(firstNonEventStep(createNextStep()), instanceOf(ClearCompletedConditionSteps.class));
   }
 
   @Test
@@ -488,7 +506,7 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")),
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
         "server1", "server3");
   }
 
@@ -501,17 +519,17 @@ class ManagedServersUpStepTest {
     addServer(info, "server3");
     addServer(info, ADMIN);
 
-    assertStoppingServers(firstNonEventStep(createNextStepWithout("server2")), "server1",
-        "server3", ADMIN);
+    assertStoppingServers(firstCoreStep(createNextStepWithout("server2")),
+        "server1", "server3", ADMIN);
   }
 
   @Test
   void whenShuttingDown_withNullWlsDomainConfig_ensureNoException() {
     configurator.setShuttingDown(true);
 
-    assertThat(createNextStepWithNullWlsDomainConfig(), instanceOf(ClusterServicesStep.class));
+    assertThat(firstCoreStep(createNextStepWithNullWlsDomainConfig()),
+        instanceOf(ClusterServicesStep.class));
   }
-
 
   @Test
   void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
@@ -558,19 +576,6 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  void whenReplicasLessThanMinDynClusterSize_setReplicaCountToMinClusterSize() {
-    startNoServers();
-    setCluster1Replicas(0);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(2, equalTo(info.getReplicaCount("cluster1")));
-  }
-
-  @Test
   void whenReplicasLessThanMinDynClusterSize_allowBelowMin_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(0);
@@ -586,30 +591,12 @@ class ManagedServersUpStepTest {
   void whenReplicasMoreThanMinDynClusterSize_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(3);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
 
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
     invokeStep();
 
     assertThat(3, equalTo(info.getReplicaCount("cluster1")));
-  }
-
-  @Test
-  void whenReplicasLessThanMinDynClusterSize_logMessage() {
-    List<LogRecord> messages = new ArrayList<>();
-    consoleHandlerMemento.withLogLevel(Level.WARNING)
-        .collectLogMessages(messages, REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT);
-
-    startNoServers();
-    setCluster1Replicas(0);
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(messages, containsWarning(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT));
   }
 
   @Test
@@ -648,6 +635,16 @@ class ManagedServersUpStepTest {
   private static Step firstNonEventStep(Step step) {
     Step stepLocal = step;
     while (stepLocal instanceof EventHelper.CreateEventStep) {
+      stepLocal = stepLocal.getNext();
+    }
+
+    return stepLocal;
+  }
+
+  private static Step firstCoreStep(Step step) {
+    Step stepLocal = step;
+    while (stepLocal instanceof EventHelper.CreateEventStep
+        || stepLocal instanceof ClearCompletedConditionSteps) {
       stepLocal = stepLocal.getNext();
     }
 
@@ -701,11 +698,7 @@ class ManagedServersUpStepTest {
   }
 
   private void setCluster1Replicas(int replicas) {
-    configurator.configureCluster("cluster1").withReplicas(replicas);
-  }
-
-  private void setCluster1AllowReplicasBelowMinDynClusterSize(boolean allowReplicasBelowMinDynClusterSize) {
-    configurator.configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(allowReplicasBelowMinDynClusterSize);
+    configurator.configureCluster(info, "cluster1").withReplicas(replicas);
   }
 
   private void configureServers(String... serverNames) {
@@ -751,7 +744,7 @@ class ManagedServersUpStepTest {
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {
-    return configurator.configureCluster(clusterName).withReplicas(1);
+    return configurator.configureCluster(info, clusterName).withReplicas(1);
   }
 
   private void assertManagedServersUpStepNotCreated() {

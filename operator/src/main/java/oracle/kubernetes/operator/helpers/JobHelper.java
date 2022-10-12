@@ -48,6 +48,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -55,6 +56,7 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 import org.jetbrains.annotations.NotNull;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_INCOMPLETE;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -63,6 +65,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospection
 import static oracle.kubernetes.operator.DomainStatusUpdater.createRemoveSelectedFailuresStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
@@ -144,7 +147,7 @@ public class JobHelper {
 
     // Returns true if any cluster is configured to start.
     private boolean willStartACluster() {
-      return getDomainSpec().getClusters().stream().anyMatch(this::shouldStart);
+      return getClusters().stream().map(ClusterResource::getSpec).anyMatch(this::shouldStart);
     }
 
     // Returns true if any server is configured to start.
@@ -170,6 +173,10 @@ public class JobHelper {
 
     private DomainResource getDomain() {
       return info.getDomain();
+    }
+
+    private List<ClusterResource> getClusters() {
+      return info.getReferencedClusters();
     }
   }
 
@@ -518,10 +525,21 @@ public class JobHelper {
 
         final V1Job domainIntrospectorJob = packet.getValue(DOMAIN_INTROSPECTOR_JOB);
         if (severeStatuses.isEmpty()) {
+          if (!isDomainIntrospectionComplete(callResponse)) {
+            LOGGER.severe(DOMAIN_INTROSPECTION_INCOMPLETE, callResponse.getResult());
+            severeStatuses.add(LOGGER.formatMessage(DOMAIN_INTROSPECTION_INCOMPLETE, callResponse.getResult()));
+            return handleFailure(packet, domainIntrospectorJob);
+          }
           return doNext(createRemoveSelectedFailuresStep(getNext(), INTROSPECTION), packet);
         } else {
           return handleFailure(packet, domainIntrospectorJob);
         }
+      }
+
+      @NotNull
+      private Boolean isDomainIntrospectionComplete(CallResponse<String> callResponse) {
+        return Optional.ofNullable(callResponse).map(CallResponse::getResult)
+            .map(r -> r.contains(DOMAIN_INTROSPECTION_COMPLETE)).orElse(false);
       }
 
       // Note: fluentd container log can be huge, may not be a good idea to read the container log.

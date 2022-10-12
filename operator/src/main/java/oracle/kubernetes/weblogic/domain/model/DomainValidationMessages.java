@@ -158,4 +158,12 @@ public class DomainValidationMessages {
   public static String invalidModelHome(String wdtInstallHome, String modelHome) {
     return getMessage(MessageKeys.INVALID_MODEL_HOME, wdtInstallHome, modelHome);
   }
+
+  public static String clusterInUse(String clusterName, String otherDomain) {
+    return getMessage(MessageKeys.CLUSTER_IN_USE, clusterName, otherDomain);
+  }
+
+  public static String missingClusterResource(String clusterName, String namespace) {
+    return getMessage(MessageKeys.CLUSTER_RESOURCE_NOT_FOUND, clusterName, namespace);
+  }
 }

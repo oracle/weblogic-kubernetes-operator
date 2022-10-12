@@ -45,7 +45,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SUBJECT_ACCESS_REVIEW;
@@ -64,6 +63,8 @@ class RestBackendImplTest {
   public static final String CLUSTER_1 = "cluster1";
   private static final int REPLICA_LIMIT = 4;
   private static final String NS = "namespace1";
+  private static final String NS2 = "namespace2";
+  private static final String NS3 = "namespace3";
   private static final String DOMAIN1 = "domain";
   private static final String DOMAIN2 = "domain2";
   private static final String DOMAIN3 = "domain3";
@@ -79,6 +80,7 @@ class RestBackendImplTest {
   private final Collection<String> namespaces = new ArrayList<>(Collections.singletonList(NS));
   private DomainResource updatedDomain;
   private ClusterResource updatedClusterResource;
+  private ClusterResource createdClusterResource;
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain1);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private WlsDomainConfig config;
@@ -106,6 +108,7 @@ class RestBackendImplTest {
     testSupport.doOnCreate(SUBJECT_ACCESS_REVIEW, s -> allow((V1SubjectAccessReview) s));
     testSupport.doOnUpdate(DOMAIN, d -> updatedDomain = (DomainResource) d);
     testSupport.doOnUpdate(CLUSTER, c -> updatedClusterResource = (ClusterResource) c);
+    testSupport.doOnCreate(CLUSTER, c -> createdClusterResource = (ClusterResource) c);
     domain1ConfigSupport.addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     domain1ConfigSupport.addWlsCluster("cluster2", "ms1", "ms2", "ms3", "ms4", "ms5", "ms6");
     restBackend = new RestBackendImpl("", "", this::getDomainNamespaces);
@@ -289,7 +292,9 @@ class RestBackendImplTest {
 
   @Test
   void whenPerClusterReplicaSettingMatchesScaleRequest_doNothing() {
-    configureCluster("cluster1").withReplicas(5);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain1);
+    configureCluster(info,"cluster1").withReplicas(5);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
 
@@ -299,9 +304,11 @@ class RestBackendImplTest {
   @Test
   void whenPerClusterReplicaSettingGreaterThanMax_throwsException() {
     final String cluster1 = "cluster1";
-    configureCluster(cluster1).withReplicas(5);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain1);
+    configureCluster(info, cluster1).withReplicas(5);
     domain1ConfigSupport.addWlsCluster(new WlsDomainConfigSupport.DynamicClusterConfigBuilder(cluster1)
             .withClusterLimits(0, 5));
+    info.getReferencedClusters().forEach(testSupport::defineResources);
 
     assertThrows(WebApplicationException.class,
             () -> restBackend.scaleCluster(DOMAIN1, cluster1, 10));
@@ -311,17 +318,8 @@ class RestBackendImplTest {
     return updatedDomain;
   }
 
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
-  }
-
-  @Test
-  void whenPerClusterReplicaSetting_scaleClusterUpdatesSetting() {
-    configureCluster("cluster1").withReplicas(1);
-
-    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
-
-    assertThat(new DomainPresenceInfo(getUpdatedDomain()).getReplicaCount("cluster1"), equalTo(5));
+  private ClusterConfigurator configureCluster(DomainPresenceInfo info, String clusterName) {
+    return configureDomain().configureCluster(info, clusterName);
   }
 
   @Test
@@ -330,9 +328,53 @@ class RestBackendImplTest {
             .withReplicas(1);
     testSupport.defineResources(clusterResource);
 
+    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  void whenPerClusterResourceReplicaSetting_NullReplica_scaleClusterUpdatesClusterResource() {
+    final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, CLUSTER_1);
+    clusterResource.getSpec().setReplicas(null);
+    testSupport.defineResources(clusterResource);
+
+    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  void whenMultipleClusterResourceWithSameClusterName_scaleClusterUpdatesClusterInCorrectDomain() {
+    defineClusterResources(new String[] {DOMAIN2, DOMAIN1, DOMAIN3}, new String[] {NS, NS, NS});
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getMetadata().getName(), equalTo(DOMAIN1 + '-' + CLUSTER_1));
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  @Test
+  void whenMultipleClusterResourceWithSameResourceName_scaleClusterUpdatesClusterInCorrectNamespace() {
+    defineClusterResources(new String[] {DOMAIN1, DOMAIN1, DOMAIN1}, new String[] {NS2, NS, NS3});
+    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
+
+    assertThat(getUpdatedClusterResource().getMetadata().getNamespace(), equalTo(NS));
+    assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
+  }
+
+  private void defineClusterResources(String[] domainNames, String[] namespaces) {
+
+    ClusterResource[] clusterResources  = new ClusterResource[domainNames.length];
+    for (int i = 0; i < clusterResources.length; i++) {
+      clusterResources[i] =
+          createClusterResource(domainNames[i], namespaces[i], CLUSTER_1).withReplicas(1);
+    }
+    testSupport.defineResources(clusterResources);
+
+    ClusterResource clusterToReturn = clusterResources[1]; // return the middle one
+    configureDomain().withClusterReference(DOMAIN1 + '-' + CLUSTER_1);
   }
 
   @Test
@@ -347,22 +389,6 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenPerClusterResourceNotFound_updateClusterSpecOfDomain() {
-    configureCluster(CLUSTER_1).withReplicas(2);
-    for (String name : new String[]{"cluster2", "cluster3", "cluster4"}) {
-      testSupport.defineResources(createClusterResource(DOMAIN2, NS, name));
-    }
-
-    restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 4);
-
-    DomainResource updatedDomain = getUpdatedDomain();
-    assertThat(updatedDomain, notNullValue());
-    ClusterSpec cluster = updatedDomain.getSpec().getCluster(CLUSTER_1);
-    assertThat(cluster, notNullValue());
-    assertThat(cluster.getReplicas(), equalTo(4));
-  }
-
-  @Test
   void whenPerClusterResourceReplicaSettingGreaterThanMax_throwsException() {
     final ClusterResource clusterResource = createClusterResource(DOMAIN1, NS, CLUSTER_1)
             .withReplicas(1);
@@ -374,20 +400,18 @@ class RestBackendImplTest {
             () -> restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 10));
   }
 
-  @Test
-  void whenScalingAndDomainNotFound_throwException() {
-    assertThrows(WebApplicationException.class,
-            () -> restBackend.scaleCluster(DOMAIN3, "cluster1", 4));
-  }
-
   private ClusterResource createClusterResource(String uid, String namespace, String clusterName) {
     return new ClusterResource()
             .withMetadata(new V1ObjectMeta().namespace(namespace).name(uid + '-' + clusterName))
-            .spec(new ClusterSpec().withDomainUid(uid).withClusterName(clusterName));
+            .spec(new ClusterSpec().withClusterName(clusterName));
   }
 
   private ClusterResource getUpdatedClusterResource() {
     return updatedClusterResource;
+  }
+
+  private ClusterResource getCreatedClusterResource() {
+    return createdClusterResource;
   }
 
   @Test
@@ -400,13 +424,12 @@ class RestBackendImplTest {
   }
 
   @Test
-  void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
-    testSupport.failOnResource(DOMAIN, DOMAIN2, NS, HTTP_CONFLICT);
+  void whenNoPerClusterReplicaSettingAndNonDefaultMatchesRequest_createCluster() {
+    configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
 
-    DomainConfiguratorFactory.forDomain(domain2).configureCluster("cluster1").withReplicas(2);
+    restBackend.scaleCluster(DOMAIN1, "cluster1", 3);
 
-    assertThrows(WebApplicationException.class,
-              () -> restBackend.scaleCluster(DOMAIN2, "cluster1", 3));
+    assertThat(getCreatedClusterResource().getSpec().getReplicas(), equalTo(3));
   }
 
   @Test

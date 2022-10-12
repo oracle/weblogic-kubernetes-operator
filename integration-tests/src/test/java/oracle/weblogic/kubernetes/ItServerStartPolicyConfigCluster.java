@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -72,9 +72,10 @@ class ItServerStartPolicyConfigCluster {
   private static final String domainUid = "mii-start-policy";
 
   private static final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
+  private static final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
+  private static final String clusterResourceName = DYNAMIC_CLUSTER;
   private static LoggingFacade logger = null;
-  private static String samplePath = "sample-testing-config-cluster";
+  private static final String samplePath = "sample-testing-config-cluster";
   private static String ingressHost = null; //only used for OKD
 
   /**
@@ -318,8 +319,8 @@ class ItServerStartPolicyConfigCluster {
 
     // check managed server from dynamic cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterResourceName,
+        domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
         assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
@@ -389,8 +390,8 @@ class ItServerStartPolicyConfigCluster {
     // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
     // String regex matches below
     // cluster        min  max  goal  current  ready
-    // clusterName     1    5    1      1       1
-    String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    // clusterName     0    5    1      1       1
+    String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)0(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER, dynamicServerPodName,
         replicaCount, regex, false, samplePath);
     // String regex matches below
@@ -411,8 +412,8 @@ class ItServerStartPolicyConfigCluster {
 
     // check managed server from dynamic cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
-        domainUid, domainNamespace, replicaCount)));
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterResourceName,
+        domainNamespace, replicaCount)));
     checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env

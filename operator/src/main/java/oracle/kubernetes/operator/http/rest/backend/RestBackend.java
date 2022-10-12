@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.http.rest.backend;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import oracle.kubernetes.operator.http.rest.model.DomainAction;
@@ -72,4 +74,8 @@ public interface RestBackend {
    * @param managedServerCount - the desired number of WebLogic managed servers.
    */
   void scaleCluster(String domainUid, String cluster, int managedServerCount);
+
+  Object createOrReplaceCluster(Map<String, Object> body);
+
+  List<Map<String, Object>> listClusters(String namespace);
 }

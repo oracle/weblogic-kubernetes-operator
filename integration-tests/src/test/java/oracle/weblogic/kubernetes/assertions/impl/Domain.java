@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.apis.ApiextensionsV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.util.ClientBuilder;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -103,7 +104,7 @@ public class Domain {
       String namespace,
       String image
   ) {
-    oracle.weblogic.domain.Domain domain = null;
+    DomainResource domain = null;
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {
@@ -129,7 +130,7 @@ public class Domain {
       String namespace,
       String secretName
   ) {
-    oracle.weblogic.domain.Domain domain = null;
+    DomainResource domain = null;
     try {
       domain = getDomainCustomResource(domainUID, namespace);
     } catch (ApiException apex) {

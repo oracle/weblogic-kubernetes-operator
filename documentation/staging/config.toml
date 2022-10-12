@@ -10,6 +10,8 @@ theme = "hugo-theme-learn"
 
 publishDir = "docs"
 
+canonifyURLs = true
+
 # For search functionality
 [outputs]
   home = [ "HTML", "RSS", "JSON"]
@@ -17,3 +19,9 @@ publishDir = "docs"
 [params]
   # disable the copy to clipboard links
   disableInlineCopyToClipBoard = true
+
+[markup]
+  [markup.tableOfContents]
+    endLevel = 5
+    ordered = false
+    startLevel = 3

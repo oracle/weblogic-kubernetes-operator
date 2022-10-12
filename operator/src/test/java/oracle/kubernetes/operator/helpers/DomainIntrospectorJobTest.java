@@ -64,6 +64,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
@@ -88,7 +89,6 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAIL
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
-import static oracle.kubernetes.common.logging.MessageKeys.NON_FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
@@ -101,6 +101,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
@@ -165,7 +166,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private static final String SEVERE_MESSAGE = "@[SEVERE] " + SEVERE_PROBLEM;
   private static final String FATAL_PROBLEM = "FatalIntrospectorError: really bad";
   private static final String FATAL_MESSAGE = "@[SEVERE] " + FATAL_PROBLEM;
-  private static final String INFO_MESSAGE = "@[INFO] just letting you know";
+  private static final String INFO_MESSAGE = "@[INFO] just letting you know. " + DOMAIN_INTROSPECTION_COMPLETE;
   private static final String JOB_UID = "FAILED_JOB";
   private static final String JOB_NAME = UID + "-introspector";
   public static final String TEST_VOLUME_NAME = "test";
@@ -173,7 +174,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final DomainResource domain = createDomain();
-  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
+  private final ClusterResource cluster = createCluster();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain, cluster);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
@@ -208,6 +210,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
+    testSupport.defineResources(cluster);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
 
     TuningParametersStub.setParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, "2");
@@ -243,8 +246,16 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
         .withSpec(createDomainSpec());
   }
 
-  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain) {
-    return new DomainPresenceInfo(domain);
+  private ClusterResource createCluster() {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name("cluster-1").namespace(NS))
+        .spec(createClusterSpec());
+  }
+
+  private DomainPresenceInfo createDomainPresenceInfo(DomainResource domain, ClusterResource cluster) {
+    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
+    dpi.addClusterResource(cluster);
+    return dpi;
   }
 
   private DomainSpec createDomainSpec() {
@@ -254,13 +265,19 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withWebLogicCredentialsSecret(new V1LocalObjectReference().name(CREDENTIALS_SECRET_NAME))
             .withConfiguration(new Configuration()
                 .withOverridesConfigMap(OVERRIDES_CM).withSecrets(List.of(OVERRIDE_SECRET_1, OVERRIDE_SECRET_2)))
-            .withCluster(new ClusterSpec()
-                .withClusterName("cluster-1").withReplicas(1).withServerStartPolicy(ServerStartPolicy.IF_NEEDED))
+            .withCluster(new V1LocalObjectReference().name("cluster-1"))
             .withImage(LATEST_IMAGE)
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
 
     return spec;
+  }
+
+  private ClusterSpec createClusterSpec() {
+    return new ClusterSpec()
+        .withClusterName("cluster-1")
+        .withReplicas(1)
+        .withServerStartPolicy(ServerStartPolicy.IF_NEEDED);
   }
 
   private String getJobCreatedMessageKey() {
@@ -633,10 +650,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getUpdatedDomain().getStatus().getMessage(), containsString(expectedDetail));
   }
 
-  private String formatIntrospectionError(String failure) {
-    return LOGGER.formatMessage(NON_FATAL_INTROSPECTOR_ERROR, failure, 1, MAX_RETRY_COUNT);
-  }
-
   @Test
   void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
     String jobName = UID + "-introspector";
@@ -685,6 +698,17 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
+  void whenNewFailedJobExistsAndUnableToReadContainerLogs_reportFailure() {
+    ignoreIntrospectorFailureLogs();
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithUnableToReadContainerLogs();
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(getUpdatedDomain(), hasCondition(FAILED));
+  }
+
+  @Test
   void whenNewJobSucceededOnFailedDomain_clearFailedCondition() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
@@ -704,6 +728,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private void defineFailedIntrospection() {
     testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
+  }
+
+  private void defineFailedIntrospectionWithUnableToReadContainerLogs() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        "unable to retrieve container logs for container containerd://9295e63");
   }
 
   private void defineFailedFluentdContainerInIntrospection() {
@@ -1212,7 +1242,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     IntrospectionTestUtils.defineIntrospectionTopology(testSupport, wlsDomainConfig);
 
     // make JobHelper.runIntrospector() return false
-    getCluster("cluster-1").setServerStartPolicy(ServerStartPolicy.NEVER);
+    cluster.getSpec().setServerStartPolicy(ServerStartPolicy.NEVER);
     domain.getSpec().setServerStartPolicy(ServerStartPolicy.NEVER);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, wlsDomainConfig);
 
@@ -1546,12 +1576,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
-  }
-
-  private ClusterSpec getCluster(String clusterName) {
-    return domain.getSpec().getClusters().stream()
-          .filter(c -> clusterName.equals(c.getClusterName()))
-          .findFirst().orElse(new ClusterSpec());
   }
 
   private String getDomainHome() {

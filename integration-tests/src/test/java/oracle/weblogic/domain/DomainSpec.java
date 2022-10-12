@@ -61,12 +61,6 @@ public class DomainSpec {
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
-  @ApiModelProperty("Whether to allow the number of running cluster member Managed Server instances to drop "
-      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
-      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
-  )
-  private Boolean allowReplicasBelowMinDynClusterSize;
-
   @ApiModelProperty(
       value = "The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.",
       allowableValues = "range[0,infinity]")
@@ -203,8 +197,11 @@ public class DomainSpec {
   @ApiModelProperty("Configuration for individual Managed Servers.")
   private List<ManagedServer> managedServers = new ArrayList<>();
 
-  @ApiModelProperty("Configuration for the clusters.")
-  private List<Cluster> clusters = new ArrayList<>();
+  @ApiModelProperty("References to Cluster resources that describe the lifecycle options for all of the Managed Server "
+      + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
+      + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
+      + "cluster that already exists in the WebLogic domain configuration.")
+  private List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   @ApiModelProperty("Experimental feature configurations.")
   private Experimental experimental;
@@ -345,23 +342,6 @@ public class DomainSpec {
 
   public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
-  }
-
-  public DomainSpec allowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
-    return this;
-  }
-
-  public Boolean allowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public Boolean getAllowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
-    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
   public DomainSpec failureRetryIntervalSeconds(Long failureRetryIntervalSeconds) {
@@ -611,35 +591,20 @@ public class DomainSpec {
     this.managedServers = managedServers;
   }
 
-  public DomainSpec clusters(List<Cluster> clusters) {
+  public DomainSpec clusters(List<V1LocalObjectReference> clusters) {
     this.clusters = clusters;
     return this;
   }
 
-  public List<Cluster> clusters() {
+  public List<V1LocalObjectReference> clusters() {
     return clusters;
   }
 
-  /**
-   * Adds cluster item.
-   * @param clustersItem Cluster
-   * @return this
-   */
-  public DomainSpec addClustersItem(Cluster clustersItem) {
-    if (clusters == null) {
-      clusters = new ArrayList<>();
-    }
-    clusters.add(clustersItem);
-    return this;
-  }
 
-  public List<Cluster> getClusters() {
+  public List<V1LocalObjectReference> getClusters() {
     return clusters;
   }
 
-  public void setClusters(List<Cluster> clusters) {
-    this.clusters = clusters;
-  }
 
   public DomainSpec experimental(Experimental experimental) {
     this.experimental = experimental;
@@ -738,6 +703,16 @@ public class DomainSpec {
     this.auxiliaryImageVolumes = auxiliaryImageVolumes;
   }
 
+  /**
+   * Adds a Cluster resource reference to the DomainSpec.
+   *
+   * @param reference The cluster reference to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec withCluster(V1LocalObjectReference reference) {
+    clusters.add(reference);
+    return this;
+  }
 
   @Override
   public String toString() {
@@ -749,7 +724,6 @@ public class DomainSpec {
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
-            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("failureRetryIntervalSeconds", failureRetryIntervalSeconds)
             .append("failureRetryLimitMinutes", failureRetryLimitMinutes)
             .append("dataHome", dataHome)
@@ -785,7 +759,6 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret)
             .append(logHome)
             .append(logHomeEnabled)
-            .append(allowReplicasBelowMinDynClusterSize)
             .append(failureRetryIntervalSeconds)
             .append(failureRetryLimitMinutes)
             .append(dataHome)
@@ -829,7 +802,6 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
-            .append(allowReplicasBelowMinDynClusterSize, rhs.allowReplicasBelowMinDynClusterSize)
             .append(failureRetryIntervalSeconds, rhs.failureRetryIntervalSeconds)
             .append(failureRetryLimitMinutes, rhs.failureRetryLimitMinutes)
             .append(dataHome, rhs.dataHome)

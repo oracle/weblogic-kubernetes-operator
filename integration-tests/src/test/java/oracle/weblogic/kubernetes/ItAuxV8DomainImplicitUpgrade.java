@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -269,7 +269,7 @@ class ItAuxV8DomainImplicitUpgrade {
           domainNamespace);
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource");
@@ -558,7 +558,7 @@ class ItAuxV8DomainImplicitUpgrade {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource");

@@ -6,14 +6,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Azure
 ---
 
 
-### Contents
-
-- [Introduction](#introduction)
-    - [Azure Kubernetes Service cluster](#azure-kubernetes-service-cluster)
-    - [Domain home source types](#domain-home-source-types)
-- [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
-- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
-- [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}})
+{{< table_of_contents >}}
 
 
 ### Introduction

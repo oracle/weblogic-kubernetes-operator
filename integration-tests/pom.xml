@@ -47,6 +47,7 @@
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
+        <wko.it.node.ip>${env.NODE_IP}</wko.it.node.ip>
         <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
         <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
         <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
@@ -219,6 +220,7 @@
                                 <wko.it.skip.build.images.if.exists>${wko.it.skip.build.images.if.exists}</wko.it.skip.build.images.if.exists>
                                 <wko.it.wdt.test.version>${wko.it.wdt.test.version}</wko.it.wdt.test.version>
                                 <wko.it.monitoring.exporter.webapp.version>${wko.it.monitoring.exporter.webapp.version}</wko.it.monitoring.exporter.webapp.version>
+                                <wko.it.monitoring.exporter.branch>${wko.it.monitoring.exporter.branch}</wko.it.monitoring.exporter.branch>
                                 <wko.it.prometheus.chart.version>${wko.it.prometheus.chart.version}</wko.it.prometheus.chart.version>
                                 <wko.it.grafana.chart.version>${wko.it.grafana.chart.version}</wko.it.grafana.chart.version>
                                 <wko.it.istio.version>${wko.it.istio.version}</wko.it.istio.version>

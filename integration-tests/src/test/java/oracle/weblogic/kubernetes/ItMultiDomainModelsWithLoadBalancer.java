@@ -22,9 +22,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -77,6 +76,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExi
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -111,7 +111,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -132,7 +131,8 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
         + "the sample application can be accessed via NGINX ingress controller")
-@Tag("kind-parallel")
+@Tag("kind-sequential")
+@Tag("oke-sequential")
 @IntegrationTest
 @Tag("olcne")
 class ItMultiDomainModelsWithLoadBalancer {
@@ -144,17 +144,17 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final int ADMIN_SERVER_SECURE_PORT = 7002;
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
   private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
   private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
-  private static final String miiImageName = "mii-image";
+  private static final String miiImageName = "mdlb-mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
-  private static final String miiDomainUid = "miidomain";
-  private static final String dimDomainUid = "domaininimage";
-  private static final String domainOnPVUid = "domainonpv";
+  private static final String miiDomainUid = "mdlb-miidomain";
+  private static final String dimDomainUid = "mdlb-domaininimage";
+  private static final String domainOnPVUid = "mdlb-domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-multiapps-usingprop-wls.yaml";
 
   private static String opNamespace = null;
@@ -162,7 +162,6 @@ class ItMultiDomainModelsWithLoadBalancer {
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int externalRestHttpsPort = 0;
-  private static List<Domain> domains = new ArrayList<>();
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String domainInImageNamespace = null;
@@ -263,9 +262,9 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @ValueSource(strings = {"modelInImage", "domainInImage", "domainOnPV"})
   @DisabledOnSlimImage
-  void testScaleClustersByPatchingDomainResource(String domainType) {
+  void testScaleClustersByPatchingClusterResource(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get the domain properties
     String domainUid = domain.getSpec().getDomainUid();
@@ -273,13 +272,13 @@ class ItMultiDomainModelsWithLoadBalancer {
     int numClusters = domain.getSpec().getClusters().size();
 
     for (int i = 1; i <= numClusters; i++) {
-      String clusterName = CLUSTER_NAME_PREFIX + i;
+      String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
       String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
       int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      // scale cluster-1 to 2 server and cluster-2 to 3 servers
       if (i == 1) {
-        numberOfServers = 1;
+        numberOfServers = 2;
       } else {
         numberOfServers = 3;
       }
@@ -291,7 +290,7 @@ class ItMultiDomainModelsWithLoadBalancer {
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
 
-      // then scale cluster back to 2 servers
+      // then scale cluster back to 1 servers
       logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
           clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
       managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
@@ -330,12 +329,13 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisabledOnSlimImage
   void testScaleClustersWithRestApi(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
+    String clusterName = domain.getSpec().getClusters().get(0).getName();
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
     int numberOfServers = 3;
 
@@ -377,13 +377,15 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisabledOnSlimImage
   void testScaleClustersWithWLDF(String domainType) {
 
-    Domain domain = createOrStartDomainBasedOnDomainType(domainType);
+    DomainResource domain = createOrStartDomainBasedOnDomainType(domainType);
 
     // get domain properties
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     String domainHome = domain.getSpec().getDomainHome();
     int numClusters = domain.getSpec().getClusters().size();
+    String clusterName = domain.getSpec().getClusters().get(0).getName();
+
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
@@ -428,24 +430,24 @@ class ItMultiDomainModelsWithLoadBalancer {
   @Test
   @DisplayName("Test liveness probe of pod")
   void testLivenessProbe() {
-    Domain domain = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource domain = createOrStartDomainBasedOnDomainType("modelInImage");
 
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
 
-    String serverName;
+    String serverNamePrefix;
     if (numClusters > 1) {
-      serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE;
     } else {
-      serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
+      serverNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     }
 
     // create file to kill server process
     File killServerScript = assertDoesNotThrow(() -> createScriptToKillServer(),
         "Failed to create script to kill server");
     logger.info("File/script created to kill server {0}", killServerScript);
-
+    String serverName = serverNamePrefix + "1";
     checkPodReady(serverName, domainUid, domainNamespace);
 
     // copy script to pod
@@ -508,14 +510,24 @@ class ItMultiDomainModelsWithLoadBalancer {
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
             serverName, domainNamespace));
 
+    // check the sample app is accessible from admin server pod
+    for (int i = 1; i <= replicaCount; i++) {
+      testUntil(
+          checkSampleAppReady(domainUid, domainNamespace, serverNamePrefix + i),
+          logger,
+          "sample app is accessible from server {0} in namespace {1}",
+          serverNamePrefix + i,
+          domainNamespace);
+    }
+    
     //access application in managed servers through NGINX load balancer
     logger.info("Accessing the sample app through NGINX load balancer");
     String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
     List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20))
-        .as("Verify NGINX can access the test web app from all managed servers in the domain")
-        .withFailMessage("NGINX can not access the test web app from one or more of the managed servers")
-        .isTrue();
+    testUntil(() -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
+        logger,
+        "NGINX can access the test web app from all managed servers {0} in the domain",
+        managedServers);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -526,14 +538,14 @@ class ItMultiDomainModelsWithLoadBalancer {
    * In this domain, set dataHome to /u01/mydata in domain custom resource
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/customFileStore in the model file which should be overridden by dataHome
-   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * File store and JMS server are targeted to the WebLogic cluster dimcluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
   @Test
   @DisplayName("Test dataHome override in a domain with domain in image type")
   void testDataHomeOverrideDomainInImage() {
 
-    Domain domainInImage = createOrStartDomainBasedOnDomainType("domainInImage");
+    DomainResource domainInImage = createOrStartDomainBasedOnDomainType("domainInImage");
     String domainUid = domainInImage.getSpec().getDomainUid();
     String domainNamespace = domainInImage.getMetadata().getNamespace();
 
@@ -579,7 +591,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with model in image type")
   void testDataHomeOverrideMiiDomain() {
 
-    Domain miiDomain = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource miiDomain = createOrStartDomainBasedOnDomainType("modelInImage");
     String domainUid = miiDomain.getSpec().getDomainUid();
     String domainNamespace = miiDomain.getMetadata().getNamespace();
 
@@ -630,7 +642,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   @DisplayName("Test dataHome override in a domain with domain on PV type")
   void testDataHomeOverrideDomainOnPV() {
 
-    Domain domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
+    DomainResource domainOnPV = createOrStartDomainBasedOnDomainType("domainOnPV");
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();    
     String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
@@ -679,7 +691,7 @@ class ItMultiDomainModelsWithLoadBalancer {
   void testMiiMultiClustersRollingRestart() {
 
     // get the original domain resource before update
-    Domain domain1 = createOrStartDomainBasedOnDomainType("modelInImage");
+    DomainResource domain1 = createOrStartDomainBasedOnDomainType("modelInImage");
     assertNotNull(domain1, "Got null domain resource");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
@@ -714,6 +726,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         withLongRetryPolicy,
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
         logger,
+        "domain event {0} to be logged",
         DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
@@ -750,7 +763,7 @@ class ItMultiDomainModelsWithLoadBalancer {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createMiiDomainWithMultiClusters(String domainNamespace) {
+  private static DomainResource createMiiDomainWithMultiClusters(String domainNamespace) {
 
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -771,16 +784,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount));
-    }
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -815,12 +820,18 @@ class ItMultiDomainModelsWithLoadBalancer {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .clusters(clusterList)
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    // create cluster resource in mii domain
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      String clusterResName = CLUSTER_NAME_PREFIX + i;
+      domain = createClusterResourceAndAddReferenceToDomain(clusterResName,
+          CLUSTER_NAME_PREFIX + i, domainNamespace, domain, replicaCount);
+    }
     setPodAntiAffinity(domain);
 
     // create model in image domain
@@ -855,11 +866,12 @@ class ItMultiDomainModelsWithLoadBalancer {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
+  private static DomainResource createDomainOnPvUsingWdt(String domainUid, String domainNamespace) {
 
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
-    Domain domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName,
+    String clusterName = "dopcluster-1";
+    DomainResource domain = DomainUtils.createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
+        clusterName,
         replicaCount, ItMultiDomainModelsWithLoadBalancer.class.getSimpleName());
 
     // build application sample-app and opensessionapp
@@ -886,6 +898,21 @@ class ItMultiDomainModelsWithLoadBalancer {
       deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,
           domainNamespace);
+    }
+
+    // check that admin server pod is ready and service exists in domain namespace
+    logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the readiness for the managed servers in each cluster
+    for (int j = 1; j <= replicaCount; j++) {
+      String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+      // check managed server pod is ready and service exists in the namespace
+      logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
 
     return domain;
@@ -943,7 +970,7 @@ class ItMultiDomainModelsWithLoadBalancer {
    * Assert the specified domain and domain spec, metadata and clusters not null.
    * @param domain oracle.weblogic.domain.Domain object
    */
-  private static void assertDomainNotNull(Domain domain) {
+  private static void assertDomainNotNull(DomainResource domain) {
     assertNotNull(domain, "domain is null");
     assertNotNull(domain.getSpec(), domain + " spec is null");
     assertNotNull(domain.getMetadata(), domain + " metadata is null");
@@ -1042,7 +1069,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create the domain CR without encryption secret created
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -1053,6 +1080,7 @@ class ItMultiDomainModelsWithLoadBalancer {
             .domainHome("/u01/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(miiImage)
+            .replicas(replicaCount)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
@@ -1106,8 +1134,8 @@ class ItMultiDomainModelsWithLoadBalancer {
     return miiImage;
   }
 
-  private static Domain createOrStartDomainBasedOnDomainType(String domainType) {
-    Domain domain = null;
+  private static DomainResource createOrStartDomainBasedOnDomainType(String domainType) {
+    DomainResource domain = null;
 
     if (domainType.equalsIgnoreCase("modelInImage")) {
       if (!doesDomainExist(miiDomainUid, DOMAIN_VERSION, miiDomainNamespace)) {
@@ -1128,6 +1156,7 @@ class ItMultiDomainModelsWithLoadBalancer {
         List<String> appSrcDirList = new ArrayList<>();
         appSrcDirList.add(MII_BASIC_APP_NAME);
         appSrcDirList.add(WLDF_OPENSESSION_APP);
+        String clusterName = "dimcluster-1";
         domain = createAndVerifyDomainInImageUsingWdt(dimDomainUid, domainInImageNamespace,
             wdtModelFileForDomainInImage, appSrcDirList, wlSecretName, clusterName, replicaCount);
 
@@ -1156,7 +1185,7 @@ class ItMultiDomainModelsWithLoadBalancer {
     return domain;
   }
 
-  private static void createRouteForOKDOrIngressForDomain(Domain domain) {
+  private static void createRouteForOKDOrIngressForDomain(DomainResource domain) {
 
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
@@ -1169,8 +1198,10 @@ class ItMultiDomainModelsWithLoadBalancer {
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     int numClusters = domain.getSpec().getClusters().size();
     for (int i = 1; i <= numClusters; i++) {
-      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
-      createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
+      String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
+      logger.info("DEBUG: get clusterName = {0}", clusterName);
+      clusterNameMsPortMap.put(clusterName, MANAGED_SERVER_PORT);
+      createRouteForOKD(domainUid + "-cluster-" + clusterName, domainNamespace);
     }
 
     if (!OKD) {
@@ -1257,11 +1288,27 @@ class ItMultiDomainModelsWithLoadBalancer {
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
 
       logger.info("Executing curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+      testUntil(() -> callWebAppAndWaitTillReady(curlCmd, 5),
+          logger,
+          "WebLogic console on domain {0} in namespace {1} is accessible",
+          domainUid,
+          domainNamespace);
+
       logger.info("WebLogic console on domain1 is accessible");
     } else {
       logger.info("Skipping the admin console login test using ingress controller in OKD environment");
     }
   }
 
+  private Callable<Boolean> checkSampleAppReady(String domainUid, String domainNamespace, String serverName) {
+    return () -> {
+      String curlCmd = String.format("curl http://%s:%s/sample-war/index.jsp", serverName, MANAGED_SERVER_PORT);
+      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+      ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName, null,
+          true, "/bin/sh", "-c", curlCmd),
+          String.format("Failed to execute curl command %s from pod %s in namespace %s", curlCmd,
+              adminServerPodName, domainNamespace));
+      return execResult.stdout().contains(serverName.substring(domainUid.length() + 1));
+    };
+  }
 }

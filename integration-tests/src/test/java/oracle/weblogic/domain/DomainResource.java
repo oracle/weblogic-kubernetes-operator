@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @ApiModel(
     description =
         "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
-public class Domain implements KubernetesObject {
+public class DomainResource implements KubernetesObject {
 
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
@@ -31,7 +31,7 @@ public class Domain implements KubernetesObject {
   @ApiModelProperty("The current status of the domain. Updated by the operator.")
   private DomainStatus status;
 
-  public Domain apiVersion(String apiVersion) {
+  public DomainResource apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
     return this;
   }
@@ -48,7 +48,7 @@ public class Domain implements KubernetesObject {
     this.apiVersion = apiVersion;
   }
 
-  public Domain kind(String kind) {
+  public DomainResource kind(String kind) {
     this.kind = kind;
     return this;
   }
@@ -65,7 +65,7 @@ public class Domain implements KubernetesObject {
     this.kind = kind;
   }
 
-  public Domain metadata(V1ObjectMeta metadata) {
+  public DomainResource metadata(V1ObjectMeta metadata) {
     this.metadata = metadata;
     return this;
   }
@@ -82,7 +82,7 @@ public class Domain implements KubernetesObject {
     this.metadata = metadata;
   }
 
-  public Domain spec(DomainSpec spec) {
+  public DomainResource spec(DomainSpec spec) {
     this.spec = spec;
     return this;
   }
@@ -99,7 +99,7 @@ public class Domain implements KubernetesObject {
     this.spec = spec;
   }
 
-  public Domain status(DomainStatus status) {
+  public DomainResource status(DomainStatus status) {
     this.status = status;
     return this;
   }
@@ -147,7 +147,7 @@ public class Domain implements KubernetesObject {
     if (other == null || getClass() != other.getClass()) {
       return false;
     }
-    Domain rhs = (Domain) other;
+    DomainResource rhs = (DomainResource) other;
     return new EqualsBuilder()
         .append(metadata, rhs.metadata)
         .append(apiVersion, rhs.apiVersion)

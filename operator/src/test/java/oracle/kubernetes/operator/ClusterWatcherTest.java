@@ -29,7 +29,7 @@ class ClusterWatcherTest extends WatcherTestBase implements WatchListener<Cluste
   private final ClusterResource cluster = createCluster();
 
   private static ClusterResource createCluster() {
-    return new ClusterResource().spec(new ClusterSpec().withDomainUid(UID));
+    return new ClusterResource().spec(new ClusterSpec());
   }
 
   @Override

@@ -8,11 +8,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -20,48 +26,49 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
-import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_TOO_HIGH;
+import static java.lang.Boolean.FALSE;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_TRIGGER_CHANGED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_CANNOT_BE_HONORED;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_TOO_HIGH;
+import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS;
 import static oracle.kubernetes.operator.KubernetesConstants.AUXILIARY_IMAGES;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_INTROSPECT_VERSION;
 import static org.apache.commons.collections4.CollectionUtils.isEqualCollection;
 
 /**
- * AdmissionChecker provides the validation functionality for the validating webhook. It takes an existing resource and
- * a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
+ * DomainUpdateAdmissionChecker provides the validation functionality for the validating webhook. It takes an existing
+ * resource and a proposed resource and returns a result to indicate if the proposed changes are allowed, and if not,
  * what the problem is.
  *
  * <p>Currently it checks the following:
  * <ul>
+ * <li>There are fatal domain validation errors.
+ * </li>
  * <li>The proposed replicas settings at the domain level and/or cluster level can be honored by WebLogic domain config.
  * </li>
  * </ul>
  * </p>
  */
 
-public class DomainAdmissionChecker extends AdmissionChecker {
+public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Webhook", "Operator");
 
   private final DomainResource existingDomain;
   private final DomainResource proposedDomain;
+  final List<ClusterStatus> failed = new ArrayList<>();
   final List<String> warnings = new ArrayList<>();
+  private Exception exception;
 
   /** Construct a DomainAdmissionChecker. */
-  public DomainAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
-    super(existingDomain.getDomainUid());
+  public DomainUpdateAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
     this.existingDomain = existingDomain;
     this.proposedDomain = proposedDomain;
   }
 
-  /**
-   * Validating a proposed DomainResource resource against an existing DomainResource resource.
-   *
-   * @return a AdmissionResponse object
-   */
   @Override
-  public AdmissionResponse validate() {
+  AdmissionResponse validate() {
     LOGGER.fine("Validating DomainResource " + proposedDomain + " against " + existingDomain);
 
     AdmissionResponse response = new AdmissionResponse().allowed(isProposedChangeAllowed());
@@ -73,29 +80,17 @@ public class DomainAdmissionChecker extends AdmissionChecker {
     return response;
   }
 
-  /**
-   * Validating a proposed Domain resource against an existing DomainResource resource. It returns true if the
-   * proposed changes in the proposed DomainResource resource can be honored, otherwise, returns false.
-   *
-   * @return true if valid, otherwise false
-   */
   @Override
   public boolean isProposedChangeAllowed() {
     return isSpecUnchanged() || areChangesAllowed();
   }
 
   private boolean areChangesAllowed() {
-    return hasNoPreIntrospectionValidationErrors(proposedDomain) && isProposedReplicaCountValid();
+    return hasNoFatalValidationErrors(proposedDomain) && isProposedReplicaCountValid();
   }
 
   private boolean isProposedReplicaCountValid() {
     return areAllClusterReplicaCountsValid(proposedDomain) || shouldIntrospect();
-  }
-
-  private boolean hasNoPreIntrospectionValidationErrors(DomainResource proposedDomain) {
-    List<String> failures = proposedDomain.getSimpleValidationFailures();
-    messages.addAll(failures);
-    return failures.isEmpty();
   }
 
   private boolean isSpecUnchanged() {
@@ -122,7 +117,35 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   }
 
   boolean areAllClusterReplicaCountsValid(DomainResource domain) {
-    return getClusterStatusList(domain).stream().allMatch(c -> isReplicaCountValid(domain, c));
+    boolean allValid = true;
+    List<String> names = new ArrayList<>();
+    List<Integer> replicaCounts = new ArrayList<>();
+    for (ClusterStatus status : getClusterStatusList(domain)) {
+      if (FALSE.equals(isReplicaCountValid(domain, status))) {
+        allValid = false;
+        names.add(status.getClusterName());
+        replicaCounts.add(getClusterSize(status));
+      }
+    }
+    String nameList = String.join(", ", names);
+    String replicasList = replicaCounts.stream().map(Object::toString).collect(Collectors.joining(", "));
+    if (!allValid) {
+      messages.add(LOGGER.formatMessage(getDomainReplicasCannotBeHonoredMsg(names),
+            domain.getDomainUid(), nameList, replicasList));
+      warnings.add(LOGGER.formatMessage(getDomainReplicasTooHighMsg(names),
+          domain.getDomainUid(), nameList, replicasList));
+    }
+    return allValid;
+  }
+
+  @NotNull
+  private String getDomainReplicasTooHighMsg(List<String> list) {
+    return list.size() > 1 ? DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS : DOMAIN_REPLICAS_TOO_HIGH;
+  }
+
+  @NotNull
+  private String getDomainReplicasCannotBeHonoredMsg(List<String> list) {
+    return list.size() > 1 ? DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS : DOMAIN_REPLICAS_CANNOT_BE_HONORED;
   }
 
   @NotNull
@@ -134,26 +157,66 @@ public class DomainAdmissionChecker extends AdmissionChecker {
   }
 
   private Boolean isReplicaCountValid(@NotNull DomainResource domain, @NotNull ClusterStatus status) {
-    boolean isValid =
-        getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
-    if (!isValid) {
-      messages.add(LOGGER.formatMessage(CLUSTER_REPLICAS_CANNOT_BE_HONORED,
-          domainUid, status.getClusterName(), getClusterSize(status)));
-      warnings.add(LOGGER.formatMessage(CLUSTER_REPLICAS_TOO_HIGH,
-          domainUid, status.getClusterName(), getClusterSize(status)));
+    boolean isValid = false;
+    try {
+      isValid = getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
+      if (!isValid) {
+        failed.add(status);
+      }
+    } catch (ApiException e) {
+      exception = e;
     }
     return isValid;
   }
 
-  private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) {
-    return Optional.of(domain).map(DomainResource::getSpec)
-        .map(DomainSpec::getClusters)
-        .orElse(Collections.emptyList())
-        .stream().filter(c -> nameMatches(c, clusterName)).findAny().orElse(null);
+  private int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
+    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
-  private boolean nameMatches(ClusterSpec clusterSpec, String clusterName) {
-    return Optional.ofNullable(clusterSpec).map(ClusterSpec::getClusterName).orElse("").equals(clusterName);
+  /**
+   * Check if the validation causes an Exception.
+   *
+   * @return true if the validation causes an Exception
+   */
+  public boolean hasException() {
+    return exception != null;
+  }
+
+  /**
+   * Check if the validation causes warnings.
+   * For unit test only.
+   *
+   * @return true if the validation causes an Exception
+   */
+  public boolean hasWarnings() {
+    return !warnings.isEmpty();
+  }
+
+  /**
+   * Get the validation warnings.
+   * For unit test only.
+   *
+   * @return list of warnings
+   */
+  public List<String> getWarnings() {
+    return warnings;
+  }
+
+  private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) throws ApiException {
+    List<ClusterResource> clusters = getClusters(domain.getNamespace());
+    return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())
+        && isReferenced(domain, cluster)).findFirst().map(ClusterResource::getSpec).orElse(null);
+  }
+
+  private List<ClusterResource> getClusters(String namespace) throws ApiException {
+    return Optional.of(new CallBuilder().listCluster(namespace))
+        .map(ClusterList::getItems).orElse(Collections.emptyList());
+  }
+
+  private boolean isReferenced(@NotNull DomainResource domain, ClusterResource cluster) {
+    String name = Optional.ofNullable(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getName).orElse("");
+    return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getClusters)
+        .orElse(Collections.emptyList()).stream().anyMatch(ref -> name.equals(ref.getName()));
   }
 
   private boolean imagesChanged() {

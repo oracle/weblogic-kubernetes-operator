@@ -12,7 +12,7 @@ usage() {
   echo "  -u Oracle Container Registry User Name (needed)"
   echo "  -p Oracle Container Registry Password (needed)"
   echo "  -e email (needed)"
-  echo "  -s Generated Secret (optional) "
+  echo "  -s Secret name (optional) "
   echo "      (default: docker-store) "
   echo "  -h Help"
   exit $1
@@ -26,7 +26,7 @@ while getopts ":u:p:s:e:" opt; do
     ;;
     e) email="${OPTARG}"
     ;;
-    s) secert="${OPTARG}"
+    s) secret="${OPTARG}"
     ;;
     h) usage 0
     ;;

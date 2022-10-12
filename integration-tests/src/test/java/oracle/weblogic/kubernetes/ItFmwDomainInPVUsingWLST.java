@@ -22,8 +22,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -71,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("okd-fmw-cert")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-parallel")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
@@ -151,7 +151,7 @@ class ItFmwDomainInPVUsingWLST {
     final String managedServerNameBase = "wlst-ms-";
     final int managedServerPort = 8001;
     final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int replicaCount = 2;
+    final int replicaCount = 1;
     final int t3ChannelPort = getNextFreePort();
 
     final String pvName = getUniqueName(domainUid + "-pv-");
@@ -189,7 +189,7 @@ class ItFmwDomainInPVUsingWLST {
     java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
     logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
     
-    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/" + domainUid + "/";
+    String uniquePath = "/shared/" + jrfDomainNamespace + "/domains/";
 
     Properties p = new Properties();
     p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
@@ -225,7 +225,7 @@ class ItFmwDomainInPVUsingWLST {
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -268,10 +268,7 @@ class ItFmwDomainInPVUsingWLST {
                         .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+                        .nodePort(t3ChannelPort)))));
 
     setPodAntiAffinity(domain);
 

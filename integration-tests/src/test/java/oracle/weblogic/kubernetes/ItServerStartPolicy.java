@@ -145,53 +145,12 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Verify the script stopServer.sh can not stop a server below the minimum
-   * DynamicServer count when allowReplicasBelowMinDynClusterSize is false.
-   * In the current domain configuration the minimum replica count is 1.
-   * The managed-server1 is up and running.
-   * Shutdown the managed-server1 using the script stopServer.sh.
-   * managed-server1 is shutdown and managed-server2 comes up to mantain the
-   * minimum replica count.
-   */
-  @Order(0)
-  @Test
-  @DisplayName("Stop a server below Limit")
-  void testStopManagedServerBeyondMinClusterLimit() {
-    String serverPodName = domainUid + "-managed-server1";
-    String serverPodName2 = domainUid + "-managed-server2";
-
-    // shutdown managed-server1 with keep_replica_constant option not set
-    // This operator MUST fail as the MinDynamicCluster size is 1
-    // and allowReplicasBelowMinDynClusterSize is false
-
-    String regex = "it is at its minimum";
-    String result =  assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePath,
-                STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
-        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
-    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server to go below Minimum");
-
-    // Make sure managed-server1 is deleted
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    // Make sure managed-server2 is provisioned to mantain the replica count
-    checkPodReadyAndServiceExists(serverPodName2, domainUid, domainNamespace);
-
-    // start managed-server1 with keep_replica_constant option
-    // to bring the domain to original configuation with only managed-server1
-    executeLifecycleScript(domainUid, domainNamespace, samplePath,
-        START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "-k");
-    checkPodDeleted(serverPodName2, domainUid, domainNamespace);
-    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
-
-  }
-
-  /**
    * Stop the Administration server by using stopServer.sh sample script.
    * Make sure that Only the Administration server is stopped.
    * Restart the Administration server by using startServer.sh sample script.
    * Make sure that the Administration server is in RUNNING state.
    */
-  @Order(1)
+  @Order(0)
   @Test
   @DisplayName("Restart the Administration server with serverStartPolicy")
   void testAdminServerRestart() {
@@ -253,7 +212,7 @@ class ItServerStartPolicy {
    * The use case also verify the scripts startDomain.sh/stopDomain.sh make
    * no changes in a running/stopped domain respectively.
    */
-  @Order(2)
+  @Order(1)
   @Test
   @DisplayName("Restart the Domain with serverStartPolicy")
   void testDomainRestart() {
@@ -342,7 +301,7 @@ class ItServerStartPolicy {
    * with spec/managedServers/0/serverStartPolicy set to Always.
    * Make sure that the specified managed server is in RUNNING state
    */
-  @Order(3)
+  @Order(2)
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy Always")
   void testStandaloneManagedRestartAlways() {
@@ -382,7 +341,7 @@ class ItServerStartPolicy {
    * with spec/managedServers/0/serverStartPolicy set to IfNeeded.
    * Make sure that the specified managed server is in RUNNING state
    */
-  @Order(4)
+  @Order(3)
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy IfNeeded")
   void testStandaloneManagedRestartIfNeeded() {
@@ -417,7 +376,7 @@ class ItServerStartPolicy {
    * The usecase also verify the scripts startServer.sh/stopServer.sh make
    * no changes in a running/stopped server respectively.
    */
-  @Order(5)
+  @Order(4)
   @Test
   @DisplayName("Restart the standalone managed server with sample script")
   void testStandaloneManagedRestart() {
@@ -464,7 +423,7 @@ class ItServerStartPolicy {
    * (b) the sample script can not stop or start a non-existing cluster
    * (c) the sample script can not stop or start a non-existing domain.
    */
-  @Order(6)
+  @Order(5)
   @Test
   @DisplayName("Verify that the sample script can not stop or start non-existing components")
   void testRestartNonExistingComponent() {
@@ -536,7 +495,7 @@ class ItServerStartPolicy {
    * server but it will keep on failing  until administration server is
    * available.
    */
-  @Order(8)
+  @Order(6)
   @Test
   @DisplayName("Manage configured cluster server in absence of Administration Server")
   void testConfiguredServerLifeCycleWithoutAdmin() {

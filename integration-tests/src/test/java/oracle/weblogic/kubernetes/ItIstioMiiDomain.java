@@ -16,9 +16,8 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
@@ -47,6 +46,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
@@ -179,15 +179,20 @@ class ItIstioMiiDomain {
 
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
+
+    // create cluster object
+    String clusterName = "cluster-1";
+
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
                                       TEST_IMAGES_REPO_SECRET_NAME,
                                       encryptionSecretName,
-                                      replicaCount,
-                              MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
                               configMapName);
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
@@ -316,13 +321,13 @@ class ItIstioMiiDomain {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace,
-           String adminSecretName, String repoSecretName,
-           String encryptionSecretName, int replicaCount,
-           String miiImage, String configmapName) {
+  private DomainResource createDomainResource(String domainUid, String domNamespace,
+                                              String adminSecretName, String repoSecretName,
+                                              String encryptionSecretName,
+                                              String miiImage, String configmapName) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -347,9 +352,6 @@ class ItIstioMiiDomain {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(createAdminServer())
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                      .model(new Model()
                          .domainType("WLS")
