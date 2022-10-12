@@ -39,6 +39,8 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMa
  */
 public class AdmissionRequest {
 
+  public static final String NOT_SUPPORTED_MSG = "Not Supported";
+  
   /**
    * An uid uniquely identifying this admission call.
    */
@@ -260,17 +262,17 @@ public class AdmissionRequest {
 
       @Override
       public Object readOldObject(AdmissionRequest request) {
-        throw new AssertionError("Not Supported");
+        throw new AssertionError(NOT_SUPPORTED_MSG);
       }
 
       @Override
       public Object readObject(AdmissionRequest request) {
-        throw new AssertionError("Not Supported");
+        throw new AssertionError(NOT_SUPPORTED_MSG);
       }
 
       @Override
       public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
-        throw new AssertionError("Not Supported");
+        throw new AssertionError(NOT_SUPPORTED_MSG);
       }
     };
 
