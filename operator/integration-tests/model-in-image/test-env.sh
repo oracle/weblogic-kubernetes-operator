@@ -56,4 +56,4 @@ export OKD=${OKD:-false}
 export OKE_CLUSTER=${OKE_CLUSTER:-false}
 
 # default Kubernetes CLI
-export KUBERNETES_CLI=${KUBERNETES_CLI:-kubernetes}
+export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
