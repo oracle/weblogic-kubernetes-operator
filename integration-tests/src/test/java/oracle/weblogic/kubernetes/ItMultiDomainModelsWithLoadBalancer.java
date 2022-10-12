@@ -495,7 +495,10 @@ class ItMultiDomainModelsWithLoadBalancer {
     }
 
     // check the NGINX pod is ready.
-    testUntil(isNginxReady(nginxNamespace), logger, "Nginx is ready");
+    testUntil(isNginxReady(nginxNamespace),
+        logger,
+        "Nginx is ready in namespace {0}",
+        nginxNamespace);
 
     // check the ingress is ready
     String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";

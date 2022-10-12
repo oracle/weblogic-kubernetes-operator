@@ -612,7 +612,6 @@ public class CommonLBTestUtils {
           getLogger(),
           "ingress can access ready app using {0}",
           curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
     }
   }
 
