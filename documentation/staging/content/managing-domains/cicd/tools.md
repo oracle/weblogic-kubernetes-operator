@@ -42,9 +42,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 
 #### WDT Create Domain Samples
 
-- (Docker) A sample for creating a domain in a container image with WDT can be found
-  [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
-- (Kubernetes) A similar sample of creating a domain in an image with WDT
+- (Kubernetes) A sample of creating a domain in an image with WDT
   can be found in the WebLogic Kubernetes Operator project for creating a
   [domain-in-image with WDT]({{< relref "/samples/domains/domain-home-in-image/" >}}).
 - (Kubernetes) A [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}})
