@@ -460,7 +460,7 @@ class ItKubernetesDomainEvents {
           + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH, 5),
           "Failed to patch domain");
 
       // No event will be created for this
@@ -476,7 +476,7 @@ class ItKubernetesDomainEvents {
           + "]";
       logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH, 5),
           "Failed to patch domain");
     }
   }

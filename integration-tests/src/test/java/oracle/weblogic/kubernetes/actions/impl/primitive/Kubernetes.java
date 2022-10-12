@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -91,6 +93,7 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -290,7 +293,6 @@ public class Kubernetes {
         );
     deleteOptions = new DeleteOptions();
     deleteOptions.setGracePeriodSeconds(0L);
-    deleteOptions.setPropagationPolicy(FOREGROUND);
   }
 
   // ------------------------  deployments -----------------------------------
@@ -1358,23 +1360,37 @@ public class Kubernetes {
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace,
                                                   V1Patch patch, String patchFormat) {
+    return patchDomainCustomResource(domainUid, namespace, patch, patchFormat, 0);
+  }
 
-    // GenericKubernetesApi uses CustomObjectsApi calls
-    KubernetesApiResponse<Domain> response = crdClient.patch(
-        namespace, // name of namespace
-        domainUid, // name of custom resource domain
-        patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
-        patch // patch data
-    );
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @param maxRetryCount Max retry count.
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainCustomResource(String domainUid, String namespace,
+                                                  V1Patch patch, String patchFormat, int maxRetryCount) {
 
-    if (!response.isSuccess()) {
-      getLogger().warning(
-          "Failed to patch " + domainUid + " in namespace " + namespace + " using patch format: "
-              + patchFormat);
-      return false;
-    }
+    final AtomicBoolean result = new AtomicBoolean(false);
+    final AtomicInteger retryCount = new AtomicInteger(0);
+    testUntil(() -> {
+      KubernetesApiResponse<Domain> response = crdClient.patch(
+          namespace, // name of namespace
+          domainUid, // name of custom resource domain
+          patchFormat, // "application/json-patch+json" or "application/merge-patch+json"
+          patch // patch data
+      );
+      result.set(response.isSuccess());
+      return response.isSuccess() || retryCount.incrementAndGet() > maxRetryCount;
+    }, getLogger(), "Retrying the domain resource patch operation until successful.");
 
-    return true;
+    return result.get();
   }
 
   /**
