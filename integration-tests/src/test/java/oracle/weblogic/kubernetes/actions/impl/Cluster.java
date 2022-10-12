@@ -13,6 +13,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.assertions.impl.Cluster.doesClusterExist;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Cluster {
 
@@ -100,6 +102,68 @@ public class Cluster {
 
     V1Patch patch = new V1Patch(new String(patchStr));
     return Kubernetes.patchClusterCustomResource(clusterRes, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
+  /**
+   * Patch the cluster resource with a new restartVersion.
+   * @param clusterResourceName name of the cluster resource
+   * @param namespace Kubernetes namespace that the cluster is hosted
+   * @return restartVersion new restartVersion of the cluster resource
+   */
+  public static String patchClusterResourceWithNewRestartVersion(
+      String clusterResourceName, String namespace) {
+
+    LoggingFacade logger = getLogger();
+    String oldVersion = assertDoesNotThrow(
+        () -> getClusterCustomResource(clusterResourceName, namespace, CLUSTER_VERSION).getSpec().getRestartVersion(),
+        String.format("Failed to get the restartVersion of %s in namespace %s", clusterResourceName, namespace));
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
+        clusterResourceName, namespace, oldVersion, newVersion);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/restartVersion\",")
+        .append(" \"value\": \"")
+        .append(newVersion)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("Restart version patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean rvPatched = assertDoesNotThrow(() ->
+            patchClusterCustomResource(clusterResourceName, namespace, patch, "application/json-patch+json"),
+        "patchClusterCustomResource(restartVersion)  failed ");
+    assertTrue(rvPatched, "patchClusterCustomResource(restartVersion) failed");
+
+    return String.valueOf(newVersion);
+  }
+
+  /**
+   * Get a Cluster Custom Resource.
+   * @param  clusterResName name of the cluster custom resource
+   * @param  namespace name of namespace
+   * @param  clusterVersion version of cluster
+   * @return cluster custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static ClusterResource getClusterCustomResource(
+         String clusterResName, 
+         String namespace, String clusterVersion) throws ApiException { 
+    return Kubernetes.getClusterCustomResource(clusterResName, namespace, clusterVersion);
+  }
+
+  /**
+   * Get a Domain Custom Resource.
+   *
+   * @param clusterResName unique domain identifier
+   * @param namespace name of namespace
+   * @return cluster custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static ClusterResource getClusterCustomResource(
+       String clusterResName, String namespace) throws ApiException {
+    return Kubernetes.getClusterCustomResource(clusterResName, namespace);
   }
 
   /**
