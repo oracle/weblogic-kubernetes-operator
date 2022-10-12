@@ -88,7 +88,7 @@ done > $temp_file1
 exit_code=0
 match_myself_regex="^$(basename $0):"
 match_myself_count="$(grep -c "$match_myself_regex" $temp_file1)"
-match_myself_expected="10"
+match_myself_expected="12"
 
 if [ "$match_myself_count" != "$match_myself_expected" ]; then
   # This script deliberately includes itself in its own docker and
@@ -110,7 +110,8 @@ if [ -s $temp_file1 ]; then
        "detected invalid direct uses of the Kubernetes or image builder CLIs." \
        "Kubernetes CLI calls should use the KUBERNETES_CLI env var or java constant instead of directly using 'kubectl'." \
        "And image builder CLI calls should use the WLSIMG_BUILDER env var or java constant instead of directly using 'docker'." \
-       "To add usage exceptions, add specifically targeted 'grep -vE' expressions in $(basename $0)." \
+       "To add usage exceptions, add a sed regex expression" \
+       "in $kubectl_exceptions_file or $docker_exceptions_file for 'kubectl' and 'docker' exceptions respectively." \
        "Please fix the following:"
   cat $temp_file1
   exit_code=2
