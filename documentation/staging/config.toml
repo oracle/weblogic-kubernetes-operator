@@ -10,6 +10,8 @@ theme = "hugo-theme-learn"
 
 publishDir = "docs"
 
+canonifyURLs = true
+
 # For search functionality
 [outputs]
   home = [ "HTML", "RSS", "JSON"]
