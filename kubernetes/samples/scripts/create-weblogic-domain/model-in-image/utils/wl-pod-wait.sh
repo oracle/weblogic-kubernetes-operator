@@ -179,7 +179,7 @@ function getDomainValue() {
   local ljpath="{$1}"
   local __retvar=$2
   set +e
-  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain.v8.weblogic.oracle ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ $expected -ne 0 ]; then
       echo "@@ Error: Could not obtain '$1' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
@@ -202,7 +202,7 @@ function getDomainAIImages() {
   set +e
   attvalue=$(
     kubectl \
-      get domain ${DOMAIN_UID} \
+      get domain.v8.weblogic.oracle ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
       -o=jsonpath="{range .spec.serverPod.auxiliaryImages[*]}{.image}{','}{end}" \
       2>&1
