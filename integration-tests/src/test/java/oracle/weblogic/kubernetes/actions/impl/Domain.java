@@ -192,7 +192,23 @@ public class Domain {
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
                                                   String patchFormat) {
-    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat);
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat, 0);
+  }
+
+  /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *     "application/json-patch+json", "application/merge-patch+json",
+   * @param maxRetryCount Max retry count.
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainCustomResource(String domainUid, String namespace, V1Patch patch,
+                                                  String patchFormat, int maxRetryCount) {
+    return Kubernetes.patchDomainCustomResource(domainUid, namespace, patch, patchFormat, maxRetryCount);
   }
 
   /**
