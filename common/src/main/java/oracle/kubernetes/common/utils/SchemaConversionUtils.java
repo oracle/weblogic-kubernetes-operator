@@ -53,6 +53,7 @@ public class SchemaConversionUtils {
   private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
   private static final String ADDED_ACPFE = "weblogic.v8.adminChannelPortForwardingEnabled";
   private static final String FAILED_REASON = "weblogic.v8.failed.reason";
+  private static final String AVAILABLE_REASON = "weblogic.v8.available.reason";
   private static final String DOLLAR_SPEC = "$.spec";
   private static final String DOLLAR_SPEC_SERVERPOD = "$.spec.serverPod";
   private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
@@ -272,12 +273,14 @@ public class SchemaConversionUtils {
     convertCompletedToProgressing(domain);
     Optional.ofNullable(getStatus(domain)).ifPresent(status -> status.remove("observedGeneration"));
     renameUnsupportedDomainStatusFailedConditionReasonV9ToV8(domain);
+    renameUnsupportedDomainStatusAvailableConditionReasonV9ToV8(domain);
     renameServerStatusFieldsV9ToV8(domain);
   }
 
   private void convertDomainStatusTargetV9(Map<String, Object> domain) {
     convertProgressingToCompleted(domain);
     renameUnsupportedDomainStatusFailedConditionReasonV8ToV9(domain);
+    renameUnsupportedDomainStatusAvailableConditionReasonV8ToV9(domain);
     renameServerStatusFieldsV8ToV9(domain);
   }
 
@@ -322,6 +325,10 @@ public class SchemaConversionUtils {
     getStatusConditions(domain).forEach(cond -> renameFailedReasonIfUnsupported(domain, cond));
   }
 
+  private void renameUnsupportedDomainStatusAvailableConditionReasonV8ToV9(Map<String, Object> domain) {
+    getStatusConditions(domain).forEach(cond -> renameAvailableReasonIfUnsupported(domain, cond));
+  }
+
   private void renameFailedReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
     if ("Failed".equals(condition.get(TYPE))) {
       String currentReason = condition.get(REASON);
@@ -335,6 +342,20 @@ public class SchemaConversionUtils {
     }
   }
 
+  private void renameAvailableReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
+    if ("Available".equals(condition.get(TYPE))) {
+      String currentReason = condition.get(REASON);
+      if (isUnsupportedReason(currentReason)) {
+        Map<String, Object> meta = getMetadata(domain);
+        Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
+            ANNOTATIONS, k -> new LinkedHashMap<>());
+        annotations.put(AVAILABLE_REASON, currentReason);
+        condition.put(REASON, "Internal");
+      }
+    }
+  }
+
+
   @SuppressWarnings("SameParameterValue")
   private boolean isUnsupportedReason(@Nonnull String reason) {
     return !SUPPORTED_FAILURE_REASONS.contains(reason);
@@ -345,8 +366,19 @@ public class SchemaConversionUtils {
         getStatusConditions(domain).forEach(cond -> restoreFailedReason(cond, labelValue)));
   }
 
+  private void renameUnsupportedDomainStatusAvailableConditionReasonV9ToV8(Map<String, Object> domain) {
+    withAnnotation(AVAILABLE_REASON, domain, labelValue ->
+        getStatusConditions(domain).forEach(cond -> restoreAvailableReason(cond, labelValue)));
+  }
+
   private void restoreFailedReason(Map<String, String> condition, String reason) {
     if ("Failed".equals(condition.get(TYPE))) {
+      condition.put(REASON, reason);
+    }
+  }
+
+  private void restoreAvailableReason(Map<String, String> condition, String reason) {
+    if ("Available".equals(condition.get(TYPE))) {
       condition.put(REASON, reason);
     }
   }
