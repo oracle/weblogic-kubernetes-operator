@@ -166,7 +166,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
-    supportNamespaced(SCALE, Scale.class, null);
+    supportNamespaced(SCALE, Scale.class);
 
     return new KubernetesTestSupportMemento();
   }

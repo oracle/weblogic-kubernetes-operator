@@ -40,7 +40,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMa
 public class AdmissionRequest {
 
   public static final String NOT_SUPPORTED_MSG = "Not Supported";
-  
+
   /**
    * An uid uniquely identifying this admission call.
    */
