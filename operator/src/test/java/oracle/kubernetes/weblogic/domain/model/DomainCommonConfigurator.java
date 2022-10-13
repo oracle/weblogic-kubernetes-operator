@@ -5,15 +5,18 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -22,6 +25,7 @@ import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -190,6 +194,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
+    getDomainSpec().setMonitoringExporterResources(resourceRequirements);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withMonitoringExporterImage(String imageName) {
     getDomainSpec().setMonitoringExporterImage(imageName);
     return this;
@@ -289,23 +299,30 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public ClusterConfigurator configureCluster(@Nonnull String clusterName) {
-    return new ClusterConfiguratorImpl(getOrCreateCluster(clusterName));
+  public ClusterConfigurator configureCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
+    return new ClusterConfiguratorImpl(getOrCreateCluster(info, clusterName));
   }
 
-  private ClusterSpec getOrCreateCluster(@Nonnull String clusterName) {
-    ClusterSpec clusterSpec = getDomainSpec().getCluster(clusterName);
-    if (clusterSpec != null) {
-      return clusterSpec;
+  private ClusterSpec getOrCreateCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
+    ClusterResource resource = info.getClusterResource(clusterName);
+    if (resource == null) {
+      resource = createCluster(info, clusterName);
     }
-
-    return createCluster(clusterName);
+    return resource.getSpec();
   }
 
-  private ClusterSpec createCluster(@Nonnull String clusterName) {
-    ClusterSpec clusterSpec = new ClusterSpec().withClusterName(clusterName);
-    getDomainSpec().getClusters().add(clusterSpec);
-    return clusterSpec;
+  private ClusterResource createCluster(DomainPresenceInfo info, @Nonnull String clusterName) {
+    ClusterResource cluster = new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(clusterName).namespace(getNamespace(info)))
+        .spec(new ClusterSpec().withClusterName(clusterName));
+    getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
+    info.addClusterResource(cluster);
+    return cluster;
+  }
+
+  private String getNamespace(DomainPresenceInfo info) {
+    return Optional.ofNullable(info.getDomain())
+        .map(DomainResource::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
 
@@ -810,12 +827,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withNodeName(String nodeName) {
       clusterSpec.setNodeName(nodeName);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withAllowReplicasBelowDynClusterSize(boolean allowReplicasBelowDynClusterSize) {
-      clusterSpec.setAllowReplicasBelowMinDynClusterSize(allowReplicasBelowDynClusterSize);
       return this;
     }
 

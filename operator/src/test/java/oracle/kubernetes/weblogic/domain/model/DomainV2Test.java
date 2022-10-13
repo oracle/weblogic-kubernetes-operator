@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -28,6 +29,7 @@ import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,6 +50,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainV2Test extends DomainTestBase {
 
@@ -376,16 +379,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainsAreConfiguredAlike_objectsAreEqual() {
-    DomainResource domain1 = createDomain();
-
-    configureDomain(domain).configureCluster("cls1");
-    configureDomain(domain1).configureCluster("cls1");
-
-    assertThat(domain, equalTo(domain1));
-  }
-
-  @Test
   void whenNodeSelectorConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain)
         .withNodeSelector("key1", "domain")
@@ -702,16 +695,6 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenDomainsHaveDifferentClusters_objectsAreNotEqual() {
-    DomainResource domain1 = createDomain();
-
-    configureDomain(domain).configureCluster("cls1").withReplicas(2);
-    configureDomain(domain1).configureCluster("cls1").withReplicas(3);
-
-    assertThat(domain, not(equalTo(domain1)));
-  }
-
-  @Test
   void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML);
     EffectiveServerSpec effectiveServerSpec = info.getServer("server0", null);
@@ -730,28 +713,32 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYamlWithNoSetting_defaultsToDomainHomeInImage() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.IMAGE));
   }
 
   @Test
   void whenDomainReadFromYaml_domainHomeSourceTypePersistentVolume() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getDomainHomeSourceType(), equalTo(DomainSourceType.PERSISTENT_VOLUME));
   }
 
   @Test
   void whenDomainReadFromYamlWithNoSetting_defaultsToServerOutInPodLog() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.isIncludeServerOutInPodLog(), is(true));
   }
 
   @Test
   void whenDomainReadFromYaml_serverOutInPodLogIsSet() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.isIncludeServerOutInPodLog(), is(false));
   }
@@ -776,7 +763,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_adminServerOverridesDefaults() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
     EffectiveServerSpec effectiveServerSpec = domain.getAdminServerSpec();
 
     assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value1")));
@@ -858,7 +846,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomainReadFromYaml_AdminAndManagedOverrideResourceRequirements()
       throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
     V1ResourceRequirements asResReq = domain.getAdminServerSpec().getResources();
 
     // Admin server override requests cpu: "150m" and limit cpu: "200m"
@@ -877,7 +866,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_AdminServiceIsDefined() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
     AdminService adminService = domain.getAdminServerSpec().getAdminService();
 
     assertThat(adminService.getChannels(), containsInAnyOrder(
@@ -967,8 +957,10 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_objectsEquals()
       throws IOException {
-    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain1 = (DomainResource) resources.get(0);
+    List<KubernetesObject> resources2 = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain2 = (DomainResource) resources2.get(0);
 
     assertThat(domain1, equalTo(domain2));
   }
@@ -976,8 +968,10 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_matchingIntrospectionVersionValuesLeaveDomainsEqual()
       throws IOException {
-    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain1 = (DomainResource) resources.get(0);
+    List<KubernetesObject> resources2 = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain2 = (DomainResource) resources2.get(0);
 
     domain1.getSpec().setIntrospectVersion("123");
     domain2.getSpec().setIntrospectVersion("123");
@@ -987,8 +981,10 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYamlTwice_differentIntrospectionVersionValuesLeaveDomainsUnequal()
       throws IOException {
-    DomainResource domain1 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
-    DomainResource domain2 = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain1 = (DomainResource) resources.get(0);
+    List<KubernetesObject> resources2 = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain2 = (DomainResource) resources2.get(0);
 
     domain1.getSpec().setIntrospectVersion("123");
     domain2.getSpec().setIntrospectVersion("124");
@@ -1016,7 +1012,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritContainerSecurityContextFromDomain()
       throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     V1SecurityContext asContainerSecCtx = domain.getAdminServerSpec().getContainerSecurityContext();
     assertThat(asContainerSecCtx.getRunAsGroup(), is(420L));
@@ -1060,7 +1057,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_AdminServerInheritPodSecurityContextFromDomain()
       throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = (DomainResource) resources.get(0);
     V1PodSecurityContext asPodSecCtx = domain.getAdminServerSpec().getPodSecurityContext();
     assertThat(asPodSecCtx.getRunAsGroup(), is(420L));
     assertThat(asPodSecCtx.getSysctls(), contains(DOMAIN_SYSCTL));
@@ -1072,7 +1070,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromServerSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     List<V1Container> serverSpecInitContainers = domain.getSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
@@ -1085,7 +1084,8 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenDomain2ReadFromYaml_InitContainersAreReadFromAdminServerSpec()
       throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     List<V1Container> serverSpecInitContainers = domain.getAdminServerSpec().getInitContainers();
     assertThat(serverSpecInitContainers.isEmpty(), is(false));
@@ -1149,7 +1149,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromServerSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     List<V1Container> serverSpecContainers = domain.getSpec().getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1161,7 +1162,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ContainersAreReadFromAdminServerSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     List<V1Container> serverSpecContainers = domain.getAdminServerSpec().getContainers();
     assertThat(serverSpecContainers.isEmpty(), is(false));
@@ -1219,7 +1221,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_ShutdownIsReadFromSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     Shutdown shutdown = domain.getSpec().getShutdown();
     assertThat(shutdown.getShutdownType(), is(ShutdownType.GRACEFUL));
@@ -1248,7 +1251,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     V1PodSpec.RestartPolicyEnum restartPolicy = domain.getSpec().getRestartPolicy();
     assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
@@ -1264,7 +1268,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_RuntimeClassNameIsReadFromSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     String runtimeClassName = domain.getSpec().getRuntimeClassName();
     assertThat(runtimeClassName, is("weblogic-class"));
@@ -1280,7 +1285,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain2ReadFromYaml_SchedulerNameIsReadFromSpec() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_5);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_5);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     String schedulerName = domain.getSpec().getSchedulerName();
     assertThat(schedulerName, is("my-scheduler"));
@@ -1321,20 +1327,23 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain3ReadFromYaml_hasExportedNaps() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getAdminServerChannelNames(), containsInAnyOrder("channelA", "channelB"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_adminServerHasNodeSelector() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
     assertThat(domain.getAdminServerSpec().getNodeSelectors(), hasEntry("os", "linux"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_adminServerHasAnnotationsAndLabels() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
     assertThat(
         domain.getAdminServerSpec().getServiceAnnotations(), hasEntry("testKey3", "testValue3"));
     assertThat(domain.getAdminServerSpec().getServiceLabels(), hasEntry("testKey1", "testValue1"));
@@ -1343,13 +1352,15 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomain3ReadFromYaml_AdminServerRestartVersion() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
     assertThat(domain.getAdminServerSpec().getServerRestartVersion(), is("1"));
   }
 
   @Test
   void whenDomain3ReadFromYaml_NoRestartVersion() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_3);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
     final EffectiveServerSpec clusteredServer = info.getServer("anyServer", "anyCluster");
     final EffectiveServerSpec nonClusteredServer = info.getServer("anyServer", null);
     assertThat(clusteredServer.getDomainRestartVersion(), nullValue());
@@ -1362,7 +1373,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_DomainRestartVersion() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
     assertThat(domain.getAdminServerSpec().getDomainRestartVersion(), is("1"));
     assertThat(domain.getAdminServerSpec().getClusterRestartVersion(), nullValue());
     assertThat(domain.getAdminServerSpec().getServerRestartVersion(), nullValue());
@@ -1390,7 +1402,8 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenDomainReadFromYaml_livenessCustomScriptMatches() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML);
+    DomainResource domain = (DomainResource) resources.get(0);
     assertThat(domain.getLivenessProbeCustomScript(), is(LIVENESS_PROBE_CUSTOM_SCRIPT));
   }
 
@@ -1646,14 +1659,16 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenNoDistributionStrategySpecified_defaultToDynamic() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_2);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.DYNAMIC));
   }
 
   @Test
   void whenDistributionStrategySpecified_readIt() throws IOException {
-    DomainResource domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_4);
+    DomainResource domain = (DomainResource) resources.get(0);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
   }
@@ -1663,5 +1678,25 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
+  }
+
+  @Test
+  void whenReadFromYaml_MonitoringExporterSpecificationSupportsBasicOperations() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_3);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    final MonitoringExporterSpecification specification = domain.getSpec().getMonitoringExporterSpecification();
+    assertThat(specification.toString(), containsString("monexp:latest"));
+    assertThat(specification, not(equalTo(new MonitoringExporterSpecification())));
+    assertThat(specification.hashCode(), not(equalTo(new MonitoringExporterSpecification().hashCode())));
+  }
+
+  @Test
+  void whenNoMonitoringExporterConfigurationDefined_refuseAttemptToSetResourceRequirements() {
+    final DomainConfigurator domainConfigurator = configureDomain(domain);
+    final V1ResourceRequirements resourceRequirements = new V1ResourceRequirements();
+    
+    assertThrows(AssertionError.class,
+        () -> domainConfigurator.withMonitoringExporterResources(resourceRequirements));
   }
 }

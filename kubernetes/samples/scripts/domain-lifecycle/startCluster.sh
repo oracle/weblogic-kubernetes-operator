@@ -48,6 +48,7 @@ domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 verboseMode=false
 patchJson=""
+clusterResource=""
 
 while getopts "vc:n:m:d:h" opt; do
   case $opt in
@@ -102,6 +103,14 @@ if [ "${isValidCluster}" != 'true' ]; then
   exit 1
 fi
 
+getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+if [ -z "${clusterJson}" ]; then
+  printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+  exit 1
+fi
+
 getDomainPolicy "${domainJson}" domainStartPolicy
 # Fail if effective start policy of domain is Never or AdminOnly
 if [[ "${domainStartPolicy}" == 'Never' || "${domainStartPolicy}" == 'AdminOnly' ]]; then
@@ -110,20 +119,20 @@ if [[ "${domainStartPolicy}" == 'Never' || "${domainStartPolicy}" == 'AdminOnly'
 fi
 
 # Get server start policy for this cluster
-getClusterPolicy "${domainJson}" "${clusterName}" startPolicy
+getClusterPolicy "${clusterJson}" startPolicy
 if [ -z "${startPolicy}" ]; then
   startPolicy=${domainStartPolicy}
 fi
 
 if [ "${startPolicy}" == 'IfNeeded' ]; then
-  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' attribute on the domain resource is 'IfNeeded'."
+  printInfo "No changes needed, exiting. The cluster '${clusterName}' is already started or starting. The effective value of 'spec.serverStartPolicy' attribute on the cluster resource is 'IfNeeded'."
   exit 0
 fi
 
 # Set policy value to IfNeeded
 printInfo "Patching start policy of cluster '${clusterName}' from '${startPolicy}' to 'IfNeeded'."
-createPatchJsonToUpdateClusterPolicy "${domainJson}" "${clusterName}" "IfNeeded" patchJson
+createPatchJsonToUpdateClusterPolicy "${clusterName}" "IfNeeded" patchJson
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
 printInfo "Successfully patched cluster '${clusterName}' with 'IfNeeded' start policy!."

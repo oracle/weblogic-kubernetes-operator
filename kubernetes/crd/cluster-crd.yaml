@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: a06c8b11a0616c9ded502a3185914472f622835e39dceee3bc98f07930423ef5
+    weblogic.sha256: c5705fa9410721155ee88e195303da6f7630f2732ed48911926732d1731d5d4c
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -25,8 +25,15 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
+        description: A Cluster resource describes the lifecycle options for all of
+          the Managed Server members of a WebLogic cluster, including Java options,
+          environment variables, additional Pod content, and the ability to explicitly
+          start, stop, or restart cluster members. It must describe a cluster that
+          already exists in the WebLogic domain configuration. See also `domain.spec.clusters`.
         properties:
           spec:
+            description: The specification of the operation of the WebLogic cluster.
+              Required.
             properties:
               serverService:
                 description: Customization affecting the generation of ClusterIP Services
@@ -77,14 +84,6 @@ spec:
                   of a WebLogic cluster already defined in the WebLogic domain configuration.
                   Required.
                 type: string
-              allowReplicasBelowMinDynClusterSize:
-                description: Specifies whether the number of running cluster members
-                  is allowed to drop below the minimum dynamic cluster size configured
-                  in the WebLogic domain configuration. Otherwise, the operator will
-                  ensure that the number of running cluster members is not less than
-                  the minimum dynamic cluster setting. This setting applies to dynamic
-                  clusters only. Defaults to true.
-                type: boolean
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic
                   Server instances.
@@ -2974,10 +2973,6 @@ spec:
                         type: object
                     type: object
                 type: object
-              domainUID:
-                description: Domain unique identifier. This domainUID is used to identify
-                  the Domain to which this Cluster is associated with.
-                type: string
               clusterService:
                 description: Customization affecting Kubernetes Service generated
                   for this WebLogic cluster.
@@ -3051,6 +3046,11 @@ spec:
               clusterName:
                 description: WebLogic cluster name.
                 type: string
+              labelSelector:
+                description: Label selector that can be used to discover Pods associated
+                  with WebLogic managed servers belonging to this cluster. Must be
+                  set to work with HorizontalPodAutoscaler.
+                type: string
               readyReplicas:
                 description: The number of ready cluster members.
                 minimum: 0
@@ -3094,6 +3094,7 @@ spec:
     storage: true
     subresources:
       scale:
+        labelSelectorPath: .status.labelSelector
         specReplicasPath: .spec.replicas
         statusReplicasPath: .status.replicas
       status: {}

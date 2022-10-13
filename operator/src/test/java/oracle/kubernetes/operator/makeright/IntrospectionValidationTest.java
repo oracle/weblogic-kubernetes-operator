@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -36,6 +37,9 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster1;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster2;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -49,12 +53,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 
 class IntrospectionValidationTest {
-
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
+  private final ClusterResource[] clusters = new ClusterResource[] {cluster1, cluster2};
 
   @BeforeEach
   void setUp() throws NoSuchFieldException {
@@ -66,6 +70,8 @@ class IntrospectionValidationTest {
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.defineResources(domain);
+    DomainProcessorTestSetup.setupCluster(domain, clusters);
+    testSupport.defineResources(clusters);
   }
 
   @AfterEach
@@ -77,7 +83,7 @@ class IntrospectionValidationTest {
   @EnumSource(Scenario.class)
   void introspectionRespondsToNewConditions(Scenario scenario) throws JsonProcessingException {
     info.setServerPod("admin", new V1Pod());
-    scenario.initializeScenario(testSupport);
+    scenario.initializeScenario(info, testSupport);
 
     testSupport.runSteps(MakeRightDomainOperationImpl.domainIntrospectionSteps());
 
@@ -103,7 +109,8 @@ class IntrospectionValidationTest {
       final ObjectMapper yamlWriter = new ObjectMapper(new YAMLFactory());
       return ">>>  /u01/introspect/domain1/" + IntrospectorConfigMapConstants.TOPOLOGY_YAML + '\n'
           + yamlWriter.writeValueAsString(new DomainTopology(createBuilder().createDomainConfig()))
-          + ">>> EOF";
+          + ">>> EOF" + '\n'
+          + DOMAIN_INTROSPECTION_COMPLETE;
     }
 
     WlsDomainConfigSupport createBuilder() {
@@ -128,18 +135,18 @@ class IntrospectionValidationTest {
       }
 
       @Override
-      DomainConfigurator configureDomain(DomainResource domainResource) {
-        final DomainConfigurator domainConfigurator = super.configureDomain(domainResource);
-        domainConfigurator.configureCluster("cluster-2");
+      DomainConfigurator configureDomain(DomainPresenceInfo info, DomainResource domainResource) {
+        final DomainConfigurator domainConfigurator = super.configureDomain(info, domainResource);
+        domainConfigurator.configureCluster(info,"cluster-2");
         return domainConfigurator;
       }
     };
 
     abstract boolean isCompatibleWith(TopologyType topologyType);
 
-    DomainConfigurator configureDomain(DomainResource domainResource) {
+    DomainConfigurator configureDomain(DomainPresenceInfo info, DomainResource domainResource) {
       final DomainConfigurator domainConfigurator = DomainConfiguratorFactory.forDomain(domainResource);
-      domainConfigurator.configureCluster("cluster-1");
+      domainConfigurator.configureCluster(info,"cluster-1");
       return domainConfigurator;
     }
   }
@@ -166,7 +173,8 @@ class IntrospectionValidationTest {
       this.finalTopology = finalTopology;
     }
 
-    private void initializeScenario(KubernetesTestSupport testSupport) throws JsonProcessingException {
+    private void initializeScenario(DomainPresenceInfo info, KubernetesTestSupport testSupport)
+        throws JsonProcessingException {
       if (initialTopology != null) {
         testSupport.addToPacket(DOMAIN_INTROSPECTOR_LOG_RESULT, initialTopology.createIntrospectionResult());
         testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null));
@@ -181,7 +189,7 @@ class IntrospectionValidationTest {
                 .withReason(DomainFailureReason.TOPOLOGY_MISMATCH)
                 .withMessage("preset for test"));
       }
-      finalDomain.configureDomain(getDomain(testSupport));
+      finalDomain.configureDomain(info, getDomain(testSupport));
     }
 
     private DomainResource getDomain(KubernetesTestSupport testSupport) {

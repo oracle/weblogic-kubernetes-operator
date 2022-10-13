@@ -6,18 +6,7 @@ description: "FMW Infrastructure domains contain the Java Required Files (JRF) f
 the prerequisite for upper stack products like Oracle SOA Suite."
 ---
 
-#### Contents
-
-* [Limitations](#limitations)
-* [Obtaining the FMW Infrastructure image](#obtaining-the-fmw-infrastructure-image)
-* [Creating an FMW Infrastructure image](#creating-an-fmw-infrastructure-image)
-* [Configuring access to your database](#configuring-access-to-your-database)
-* [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
-* [Create a Kubernetes Secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
-* [Creating an FMW Infrastructure domain](#creating-an-fmw-infrastructure-domain)
-* [Patching the FMW Infrastructure image](#patching-the-fmw-infrastructure-image)
-* [Additional considerations for Coherence](#additional-considerations-for-coherence)
-* [Additional considerations for Model in Image](#additional-considerations-for-model-in-image)
+{{< table_of_contents >}}
 
 
 The operator supports FMW Infrastructure domains, that is,
@@ -40,7 +29,7 @@ volume approach.
 
 For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
-#### Limitations
+### Limitations
 
 Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for FMW Infrastructure domains:
@@ -59,7 +48,7 @@ following limitations currently exist for FMW Infrastructure domains:
   before version 2.2.0.
 
 
-#### Obtaining the FMW Infrastructure image
+### Obtaining the FMW Infrastructure image
 
 The WebLogic Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure General Availability image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already
@@ -98,7 +87,7 @@ Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).
 
 
-#### Creating an FMW Infrastructure image
+### Creating an FMW Infrastructure image
 
 You can also create an image containing the FMW Infrastructure binaries.
 We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
@@ -146,7 +135,7 @@ layer with your domain in it.  You can use WLST or WDT to create your domain.
 
 Before creating a domain, you will need to set up the necessary schemas in your database.
 
-#### Configuring access to your database
+### Configuring access to your database
 
 FMW Infrastructure domains require a database with the necessary schemas installed in them.
 We provide a utility, called the Repository Creation Utility (RCU), which allows you to create
@@ -162,7 +151,7 @@ For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker [Doc ID 2216342.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2216342.1).
 {{% /notice %}}
 
-##### Running the database inside Kubernetes
+#### Running the database inside Kubernetes
 
 If you wish to run the database inside Kubernetes, you can use the official container image
 from the [Oracle Container Registry](https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3).
@@ -264,7 +253,7 @@ is not strictly necessary.  You could create a `NodePort` to expose your databas
 the Kubernetes cluster and run RCU on another machine with access to the cluster.
 
 
-##### Running the database outside Kubernetes
+#### Running the database outside Kubernetes
 
 If you wish to run the database outside Kubernetes, you need to create a way for containers
 running in pods in Kubernetes to see the database.  This can be done by defining a
@@ -313,7 +302,7 @@ When you create your data sources, you would use the internal address, for examp
 Because your database is externally accessible, you can run RCU in the normal way, from any
 machine on your network.
 
-#### Running the Repository Creation Utility to set up your database schema
+### Running the Repository Creation Utility to set up your database schema
 
 If you want to run RCU from a pod inside the Kubernetes cluster, you can use the container
 image that you built earlier as a "service" pod to run RCU.  To do this, start up a
@@ -345,7 +334,7 @@ You can use the same approach to get a temporary pod to run other utilities
 like WLST.
 {{% /notice %}}
 
-##### Creating schemas
+#### Creating schemas
 
 Inside this pod, you can use the following command to run RCU in command-line (no GUI) mode
 to create your FMW schemas.  You will need to provide the right prefix and connect string.
@@ -377,7 +366,7 @@ matching domain just like you did in a non-Kubernetes environment.  There is no 
 functionality provided to help with this.  We recommend that you consider making the RCU
 prefix (value of the `schemaPrefix` argument) the same as your `domainUID` to help maintain this association.
 
-##### Dropping schemas
+#### Dropping schemas
 
 If you want to drop the schema, you can use a command like this:
 
@@ -403,7 +392,7 @@ $ /u01/oracle/oracle_common/bin/rcu \
 Again, you will need to set the right prefix and connection string, and you will be prompted
 to enter the `sys` user password.
 
-#### Create a Kubernetes Secret with the RCU credentials
+### Create a Kubernetes Secret with the RCU credentials
 
 You also need to create a Kubernetes Secret containing the credentials for the database schemas.
 When you create your domain using the following sample, it will obtain the RCU credentials
@@ -414,13 +403,13 @@ that demonstrates how to create the secret.  The schema owner user name required
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.
 
-#### Creating an FMW Infrastructure domain
+### Creating an FMW Infrastructure domain
 
 Now that you have your images and you have created your RCU schemas, you are ready
 to create your domain.  We provide a [sample]({{< relref "/samples/domains/fmw-domain/_index.md" >}})
 that demonstrates how to create an FMW Infrastructure domain.
 
-#### Patching the FMW Infrastructure image
+### Patching the FMW Infrastructure image
 
 There are two kinds of patches that can be applied to the FMW Infrastructure binaries:
 
@@ -446,12 +435,12 @@ for more information.
 An example of a non-ZDP compliant patch is one that includes a schema change
 that can not be applied dynamically.
 
-#### Additional considerations for Coherence
+### Additional considerations for Coherence
 
 If you are running a domain which contains Coherence, please refer to
 [Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
 for more information.
 
-#### Additional considerations for Model in Image
+### Additional considerations for Model in Image
 
 If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).

@@ -13,8 +13,8 @@ import java.util.List;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -269,7 +270,8 @@ class ItMiiDynamicUpdatePart3 {
     if (!WEBLOGIC_SLIM) {
       assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
     }
-    assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector has failed"));
+    assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector in namespace " 
+        + helper.domainNamespace + " failed with status"));
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
 
@@ -373,30 +375,22 @@ class ItMiiDynamicUpdatePart3 {
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
-    // verify the introspector pod is created
-    logger.info("Verifying introspector pod is created");
-    String introspectJobName = getIntrospectJobName(domainUid);
 
-    // check whether the introspector log contains the expected error message
-    logger.info("verifying that the introspector log contains the expected error message");
+    logger.info("Verifying operator pod log for introspector error messages");
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, helper.opNamespace));
     testUntil(
-        () -> podLogContainsExpectedErrorMsg(introspectJobName, helper.domainNamespace, expectedErrorMsg),
+        () -> assertDoesNotThrow(() -> checkPodLogContains(expectedErrorMsg, operatorPodName, helper.opNamespace),
+            String.format("Checking operator pod %s log failed", operatorPodName)),
         logger,
-        "Checking for the log of introspector pod contains the expected error msg {0}",
+        "Checking operator log for introspector logs contains the expected error msg {0}",
         expectedErrorMsg);
-
-    // check the status phase of the introspector pod is failed
-    logger.info("verifying the status phase of the introspector pod is failed");
-    testUntil(
-        () -> podStatusPhaseContainsString(helper.domainNamespace, introspectJobName, V1PodStatus.PhaseEnum.FAILED),
-        logger,
-        "Checking for status phase of introspector pod is failed");
 
     // check that the domain status message contains the expected error msg
     logger.info("verifying the domain status message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           return (miidomain != null) && (miidomain.getStatus() != null) && (miidomain.getStatus().getMessage() != null)
               && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
         },
@@ -408,7 +402,7 @@ class ItMiiDynamicUpdatePart3 {
     logger.info("verifying the domain status condition message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase("Failed"))

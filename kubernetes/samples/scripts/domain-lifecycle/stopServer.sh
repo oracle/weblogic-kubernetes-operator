@@ -92,6 +92,9 @@ withReplicas="CONSTANT"
 withPolicy="CONSTANT"
 patchJson=""
 isAdminServer=false
+clusterJson=""
+replicaPatch=""
+clusterResource=""
 
 while getopts "vks:m:n:d:h" opt; do
   case $opt in
@@ -148,7 +151,18 @@ if [ "${isValidServer}" != 'true' ]; then
   exit 1
 fi
 
-getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+if [ -n "${clusterName}" ]; then
+  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
+fi
+
+
+getEffectivePolicy "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
     if [ "${effectivePolicy}" == "Never" ]; then
@@ -159,7 +173,7 @@ fi
 
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ "${effectivePolicy}" == "Never" || "${effectivePolicy}" == "AdminOnly" || "${serverStarted}" != "true" ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped. This is either because of the sever start policy or server is chosen to be stopped based on current replica count."
     exit 0
@@ -174,7 +188,7 @@ fi
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" == 'false' ]]; then
   # check if replica count can decrease below current value
-  isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterName}" replicasEqualsMinReplicas
+  isReplicaCountEqualToMinReplicas "${domainJson}" "${clusterJson}" "${clusterName}" replicasEqualsMinReplicas
   if [ "${replicasEqualsMinReplicas}" == 'true' ]; then
     printInfo "Not decreasing the replica count value: it is at its minimum. \
       (See 'domain.spec.allowReplicasBelowMinDynClusterSize' and \
@@ -193,35 +207,34 @@ if [[ -n "${clusterName}" && "${effectivePolicy}" == "Always" ]]; then
   # Server is part of a cluster and start policy is Always.
   withReplicas="CONSTANT"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenAlwaysPolicyReset
 fi
 
 if [[ -n "${clusterName}" && "${keepReplicaConstant}" != 'true' ]]; then
   # server is part of a cluster and replica count will decrease
   withReplicas="DECREASED"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
-  createReplicaPatch "${domainJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startedWhenRelicaReducedAndPolicyReset
+  createReplicaPatch "${domainJson}" "${clusterJson}" "${clusterName}" "DECREMENT" replicaPatch replicaCount
 
   if [[ -n ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting start policy and decrementing replica count, unset and decrement 
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
       and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   elif [[ -z ${managedServerPolicy} && "${startedWhenRelicaReducedAndPolicyReset}" != "true" ]]; then
     # Start policy is not set, server shuts down by decrementing replica count, decrement replicas
     printInfo "Updating replica count for cluster ${clusterName} to ${replicaCount}."
-    createPatchJsonToUpdateReplica "${replicaPatch}" patchJson
   elif [[ ${managedServerPolicy} == "Always" && "${startedWhenAlwaysPolicyReset}" != "true" ]]; then
     # Server shuts down by unsetting the start policy, unset and decrement replicas
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' \
      and decrementing replica count to ${replicaCount}."
-    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${replicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   else
     # Patch server start policy to Never and decrement replica count
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Never' \
       and decrementing replica count for cluster '${clusterName}' to ${replicaCount}."
-    createPatchJsonToUpdateReplicaAndPolicy "${replicaPatch}" "${neverStartPolicyPatch}" patchJson
+    createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Server is part of a cluster and replica count needs to stay constant
@@ -243,6 +256,11 @@ else
   createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
 fi
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+if [ ! -z "${replicaPatch}" ]; then
+  executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${replicaPatch}" "${verboseMode}"
+fi
+if [ ! -z "${patchJson}" ]; then
+  executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+fi
 
 printInfo "Patch command succeeded !"

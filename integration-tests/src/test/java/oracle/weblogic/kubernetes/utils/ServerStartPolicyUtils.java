@@ -19,9 +19,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -34,8 +33,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -46,6 +43,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -84,7 +82,6 @@ public class ServerStartPolicyUtils {
   public static final String managedServerNamePrefix = "managed-server";
   public static final String DYNAMIC_CLUSTER = "cluster-1";
   public static final String CONFIG_CLUSTER = "cluster-2";
-
 
   private static final int replicaCount = 1;
 
@@ -125,9 +122,7 @@ public class ServerStartPolicyUtils {
         Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace, domainUid, adminSecretName,
-        encryptionSecretName,
-        configMapName);
+    createDomainResource(domainNamespace, domainUid, adminSecretName, encryptionSecretName, configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -151,7 +146,7 @@ public class ServerStartPolicyUtils {
    *  Scaling cluster util method.
    * @param domainUid - domain uid
    * @param domainNamespace - domain namespace
-   * @param clusterName - cluster name
+   * @param clusterResName - cluster resource name
    * @param serverPodName -server pod name
    * @param replicaNum -number of servers to scale
    * @param regex - regex
@@ -159,13 +154,13 @@ public class ServerStartPolicyUtils {
    * @param samplePathDir - name of sample script dir
    */
   public static void scalingClusters(String domainUid, String domainNamespace,
-                                     String clusterName, String serverPodName, int replicaNum,
+                                     String clusterResName, String serverPodName, int replicaNum,
                                String regex, boolean checkPodExist, String samplePathDir) {
     // use scaleCluster.sh to scale a given cluster
-    logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
+    logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterResName);
     String result =  assertDoesNotThrow(() ->
             executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
-                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
+                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterResName, " -r " + replicaNum, false),
         String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
 
     if (checkPodExist) {
@@ -175,13 +170,13 @@ public class ServerStartPolicyUtils {
     }
 
     // verify that scaleCluster.sh does scale to a required replica number
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
-        domainUid, domainNamespace, replicaNum)));
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterResName,
+        domainNamespace, replicaNum)));
 
     // use clusterStatus.sh to verify scaling results
-    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterName, regex), logger,
-        "Checking for cluster status for cluster: " + clusterName);
-    logger.info("The cluster {0} scaled successfully.", clusterName);
+    testUntil(checkClusterStatus(domainUid, domainNamespace, samplePathDir,clusterResName, regex), logger,
+        "Checking for cluster status for cluster: " + clusterResName);
+    logger.info("The cluster {0} scaled successfully.", clusterResName);
   }
 
   /**
@@ -225,15 +220,15 @@ public class ServerStartPolicyUtils {
       String encryptionSecretName,
       String configmapName) {
     List<String> securityList = new ArrayList<>();
+    
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(domNamespace))
         .spec(new DomainSpec()
-            .allowReplicasBelowMinDynClusterSize(false)
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
             .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
@@ -244,8 +239,6 @@ public class ServerStartPolicyUtils {
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
-            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
-            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -258,14 +251,6 @@ public class ServerStartPolicyUtils {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(DYNAMIC_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IfNeeded"))
-            .addClustersItem(new Cluster()
-                .clusterName(CONFIG_CLUSTER)
-                .replicas(replicaCount)
-                .serverStartPolicy("IfNeeded"))
             .addManagedServersItem(new ManagedServer()
                 .serverName("standalone-managed")
                 .serverStartPolicy("IfNeeded"))
@@ -287,8 +272,12 @@ public class ServerStartPolicyUtils {
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(600L)));
-
     setPodAntiAffinity(domain);
+
+    createClusterResourceAndAddReferenceToDomain(
+        CONFIG_CLUSTER, CONFIG_CLUSTER, domNamespace, domain, replicaCount);
+    createClusterResourceAndAddReferenceToDomain(
+        DYNAMIC_CLUSTER, DYNAMIC_CLUSTER, domNamespace, domain, replicaCount);
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domNamespace);

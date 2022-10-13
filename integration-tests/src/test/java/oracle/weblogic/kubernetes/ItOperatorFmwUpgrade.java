@@ -23,8 +23,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
@@ -125,7 +124,7 @@ class ItOperatorFmwUpgrade {
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private static final int replicaCount = 2;
+  private static final int replicaCount = 1;
 
   private static String latestOperatorImageName;
 
@@ -192,24 +191,6 @@ class ItOperatorFmwUpgrade {
       CleanupUtil.cleanup(namespaces);
       cleanUpCRD();
     }
-  }
-
-  /**
-   * Operator upgrade from 3.1.4 to current with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to current")
-  void testOperatorFmwUpgradeFrom314ToCurrent() {
-    installAndUpgradeOperator("3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 3.2.5 to current with a FMW Domain.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to current")
-  void testOperatorFmwUpgradeFrom325ToCurrent() {
-    installAndUpgradeOperator("3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -408,9 +389,10 @@ class ItOperatorFmwUpgrade {
                                        String pvName,
                                        String pvcName,
                                        int t3ChannelPort) {
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion("weblogic.oracle/" + domainVersion)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -454,9 +436,7 @@ class ItOperatorFmwUpgrade {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster() //cluster
-                .clusterName(clusterName)
-                .replicas(replicaCount)));
+            .replicas(1));
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created

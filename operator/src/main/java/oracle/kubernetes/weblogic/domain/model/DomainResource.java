@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -57,12 +58,22 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.clusterInUse;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.missingClusterResource;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
+@Description(
+    "A Domain resource describes the configuration, logging, images, and lifecycle "
+    + "of a WebLogic domain, including Java "
+    + "options, environment variables, additional Pod content, and the ability to "
+    + "explicitly start, stop, or restart its members. The Domain resource "
+    + "references its Cluster resources using `.spec.clusters`."
+)
 public class DomainResource implements KubernetesObject, RetryMessageFactory {
+
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -286,6 +297,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   public MonitoringExporterSpecification getMonitoringExporterSpecification() {
     return spec.getMonitoringExporterSpecification();
+  }
+
+  public V1ResourceRequirements getMonitoringExporterResources() {
+    return spec.getMonitoringExporterResourceRequirements();
   }
 
   public String getMonitoringExporterImage() {
@@ -645,6 +660,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
+   * Returns the cluster names that the domain references to.
+   * @return the list of cluster names
+   */
+  public List<V1LocalObjectReference> getClusters() {
+    return spec.getClusters();
+  }
+
+  /**
    * Returns the strategy for applying changes to configuration overrides.
    * @return the selected strategy
    */
@@ -766,6 +789,12 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return startTime.plus(getFailureRetryIntervalSeconds(), ChronoUnit.SECONDS);
   }
 
+  private boolean doesReferenceCluster(@Nonnull String clusterName) {
+    return Optional.of(getSpec())
+        .map(DomainSpec::getClusters).orElse(new ArrayList<>())
+        .stream().map(V1LocalObjectReference::getName).anyMatch(clusterName::equals);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -807,8 +836,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   // used by the validating webhook
-  public List<String> getSimpleValidationFailures() {
-    return new Validator().getSimpleValidationFailures();
+  public List<String> getFatalValidationFailures() {
+    return new Validator().getFatalValidationFailures();
   }
 
   // used by the operator
@@ -868,11 +897,6 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     @Override
-    public boolean isAllowReplicasBelowMinDynClusterSize(ClusterSpec clusterSpec) {
-      return getEffectiveConfigurationFactory().isAllowReplicasBelowMinDynClusterSize(clusterSpec);
-    }
-
-    @Override
     public int getMaxConcurrentStartup(ClusterSpec clusterSpec) {
       return getEffectiveConfigurationFactory().getMaxConcurrentStartup(clusterSpec);
     }
@@ -892,31 +916,45 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
 
-    List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      getSimpleValidationFailures();
-      getCrossReferenceValidationFailures(kubernetesResources);
+    private List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
+      addFatalValidationFailures();
+      addCrossReferenceValidationFailures(kubernetesResources);
       return failures;
     }
 
-    private void getCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
+    private void addCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addMissingSecrets(kubernetesResources);
       addMissingModelConfigMap(kubernetesResources);
+      addDuplicateNamesClusters(kubernetesResources);
+      addInvalidMountPathsClusters(kubernetesResources);
+      addReservedEnvironmentVariablesClusters(kubernetesResources);
+      verifyLivenessProbeSuccessThresholdClusters(kubernetesResources);
+      verifyContainerNameValidInPodSpecClusters(kubernetesResources);
+      verifyContainerPortNameValidInPodSpecClusters(kubernetesResources);
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUseClusters(kubernetesResources);
+      verifyClusterResourcesNotInUse(kubernetesResources);
+      addMissingClusterResource(kubernetesResources);
     }
 
-    List<String> getSimpleValidationFailures() {
-      addDuplicateNames();
-      addInvalidMountPaths();
+    private void addFatalValidationFailures() {
+      addDuplicateNamesManagedServers();
+      addDuplicateNamesClusterReferences();
+      addInvalidMountPathsManagedServers();
+      addReservedEnvironmentVariablesManagedServers();
+      verifyLivenessProbeSuccessThresholdManagedServers();
+      verifyContainerNameValidInPodSpecManagedServers();
+      verifyContainerPortNameValidInPodSpecManagedServers();
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUseManagedServers();
       addUnmappedLogHome();
-      addReservedEnvironmentVariables();
       addIllegalSitConfigForMii();
       verifyIntrospectorJobName();
-      verifyLivenessProbeSuccessThreshold();
-      verifyContainerNameValidInPodSpec();
-      verifyContainerPortNameValidInPodSpec();
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
-      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+    }
+
+    private List<String> getFatalValidationFailures() {
+      addFatalValidationFailures();
       return failures;
     }
 
@@ -950,9 +988,30 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return failures;
     }
 
-    private void addDuplicateNames() {
+    private void addDuplicateNamesManagedServers() {
       getSpec().getManagedServers().forEach(this::checkDuplicateServerName);
-      getSpec().getClusters().forEach(this::checkDuplicateClusterName);
+    }
+
+    private void addDuplicateNamesClusterReferences() {
+      Set<String> references = new HashSet<>();
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .stream().map(V1LocalObjectReference::getName).filter(Objects::nonNull)
+          .forEach(ref -> checkDuplicateClusterReferences(references, ref));
+    }
+
+    private void checkDuplicateClusterReferences(Set<String> references, String ref) {
+      if (references.contains(ref)) {
+        failures.add(DomainValidationMessages.duplicateClusterName(ref));
+      }
+      references.add(ref);
+    }
+
+    private void addDuplicateNamesClusters(KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters()
+          .stream()
+          .map(kubernetesResources::findCluster)
+          .filter(Objects::nonNull)
+          .forEach(this::checkDuplicateClusterName);
     }
 
     private void checkDuplicateServerName(ManagedServer ms) {
@@ -968,7 +1027,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return LegalNames.toDns1123LegalName(ms.getServerName());
     }
 
-    private void checkDuplicateClusterName(ClusterSpec cluster) {
+    private void checkDuplicateClusterName(ClusterResource cluster) {
       String clusterName = getClusterLegalName(cluster);
       if (clusterNames.contains(clusterName)) {
         failures.add(DomainValidationMessages.duplicateClusterName(clusterName));
@@ -977,18 +1036,23 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private String getClusterLegalName(ClusterSpec cluster) {
+    private String getClusterLegalName(ClusterResource cluster) {
       return LegalNames.toDns1123LegalName(cluster.getClusterName());
     }
 
-    private void addInvalidMountPaths() {
+    private void addInvalidMountPathsManagedServers() {
       getSpec().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
       if (getSpec().getAdminServer() != null) {
         getSpec().getAdminServer().getAdditionalVolumeMounts().forEach(this::checkValidMountPath);
       }
+    }
+
+    private void addInvalidMountPathsClusters(KubernetesResourceLookup kubernetesResources) {
       if (getSpec().getClusters() != null) {
         getSpec().getClusters().forEach(
-            cluster -> cluster.getAdditionalVolumeMounts().forEach(this::checkValidMountPath));
+            cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
+                .map(ClusterResource::getSpec).map(ClusterSpec::getAdditionalVolumeMounts)
+                .ifPresent(mounts -> mounts.forEach(this::checkValidMountPath)));
       }
     }
 
@@ -1023,12 +1087,18 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return true;
     }
 
-    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUseManagedServers() {
       getAdminServerSpec().getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed);
-      getSpec().getClusters().forEach(cluster ->
-              cluster.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
       getSpec().getManagedServers().forEach(managedServer ->
               managedServer.getAdditionalVolumeMounts().forEach(this::verifyMountPathForAuxiliaryImagesNotUsed));
+    }
+
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUseClusters(
+        KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters().forEach(cluster ->
+          Optional.ofNullable(kubernetesResources.findCluster(cluster))
+              .map(ClusterResource::getSpec).map(ClusterSpec::getAdditionalVolumeMounts)
+              .ifPresent(mounts -> mounts.forEach(this::verifyMountPathForAuxiliaryImagesNotUsed)));
     }
 
     private void verifyMountPathForAuxiliaryImagesNotUsed(V1VolumeMount volumeMount) {
@@ -1055,18 +1125,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 
-    private void verifyLivenessProbeSuccessThreshold() {
+    private void verifyLivenessProbeSuccessThresholdManagedServers() {
       Optional.of(getAdminServerSpec().getLivenessProbe())
-              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
-                      + ".livenessProbe.successThreshold"));
-      getSpec().getClusters().forEach(cluster ->
-              Optional.ofNullable(cluster.getLivenessProbe())
-                      .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
-                              + cluster.getClusterName() + "].serverPod.livenessProbe.successThreshold")));
+          .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
+              + ".livenessProbe.successThreshold"));
       getSpec().getManagedServers().forEach(managedServer ->
-              Optional.ofNullable(managedServer.getLivenessProbe())
-                      .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
-                              + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+          Optional.ofNullable(managedServer.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
+                  + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+    }
+
+    private void verifyLivenessProbeSuccessThresholdClusters(KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters()
+          .forEach(cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
+          .map(ClusterResource::getSpec).ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
+                  + clusterSpec.getClusterName() + "].serverPod.livenessProbe.successThreshold"))));
     }
 
     private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
@@ -1076,17 +1150,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private void verifyContainerNameValidInPodSpec() {
+    private void verifyContainerNameValidInPodSpecManagedServers() {
       getAdminServerSpec().getContainers().forEach(container ->
-              isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
-      getSpec().getClusters().forEach(cluster ->
-              cluster.getContainers().forEach(container ->
-                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + SERVER_POD_CONTAINERS)));
+          isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
       getSpec().getManagedServers().forEach(managedServer ->
-              managedServer.getContainers().forEach(container ->
-                      isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + SERVER_POD_CONTAINERS)));
+          managedServer.getContainers().forEach(container ->
+              isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + SERVER_POD_CONTAINERS)));
+    }
+
+    private void verifyContainerNameValidInPodSpecClusters(KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters().forEach(cluster ->
+          Optional.ofNullable(kubernetesResources.findCluster(cluster)).map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
+                  .ifPresent(containers -> containers.forEach(container ->
+                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + clusterSpec.getClusterName()
+                          + SERVER_POD_CONTAINERS)))));
     }
 
     private void isContainerNameReserved(V1Container container, String prefix) {
@@ -1095,17 +1174,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private void verifyContainerPortNameValidInPodSpec() {
+    private void verifyContainerPortNameValidInPodSpecManagedServers() {
       getAdminServerSpec().getContainers().forEach(container ->
-              areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
-      getSpec().getClusters().forEach(cluster ->
-              cluster.getContainers().forEach(container ->
-                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
-                              + SERVER_POD_CONTAINERS)));
+          areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
       getSpec().getManagedServers().forEach(managedServer ->
-              managedServer.getContainers().forEach(container ->
-                      areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
-                              + SERVER_POD_CONTAINERS)));
+          managedServer.getContainers().forEach(container ->
+              areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                  + SERVER_POD_CONTAINERS)));
+    }
+
+    private void verifyContainerPortNameValidInPodSpecClusters(KubernetesResourceLookup kubernetesResources) {
+      getSpec().getClusters().forEach(cluster ->
+          Optional.ofNullable(kubernetesResources.findCluster(cluster)).map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
+                  .ifPresent(containers -> containers.forEach(container ->
+                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + clusterSpec.getClusterName()
+                          + SERVER_POD_CONTAINERS)))));
     }
 
     private void areContainerPortNamesValid(V1Container container, String prefix) {
@@ -1120,6 +1204,32 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
                 prefix + "." + name,
                 port.getName()));
       }
+    }
+
+    private void verifyClusterResourcesNotInUse(
+        KubernetesResourceLookup kubernetesResources) {
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .forEach(reference ->
+              Optional.ofNullable(kubernetesResources.findClusterInNamespace(reference, getNamespace()))
+              .ifPresent(cluster -> verifyClusterNotInUseByAnotherDomain(kubernetesResources, cluster)));
+    }
+
+    private void verifyClusterNotInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
+                                                      ClusterResource cluster) {
+      String domainAlreadyReferenceCluster =
+          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getMetadata().getName());
+      if (domainAlreadyReferenceCluster != null) {
+        failures.add(clusterInUse(cluster.getMetadata().getName(), domainAlreadyReferenceCluster));
+      }
+    }
+
+    private String getReferencingDomains(KubernetesResourceLookup kubernetesResources,
+                                               String namespace, String clusterName) {
+      return Optional.ofNullable(kubernetesResources.getDomains(namespace)).orElse(new ArrayList<>()).stream()
+          .filter(domain -> !domain.isShuttingDown())
+          .filter(domain -> domain.doesReferenceCluster(clusterName))
+          .map(DomainResource::getDomainUid)
+          .filter(domainUid -> !domainUid.equals(getDomainUid())).findFirst().orElse(null);
     }
 
     @Nonnull
@@ -1171,15 +1281,21 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private void addReservedEnvironmentVariables() {
+    private void addReservedEnvironmentVariablesManagedServers() {
       checkReservedIntrospectorVariables(spec, "spec");
       Optional.ofNullable(spec.getAdminServer())
           .ifPresent(a -> checkReservedIntrospectorVariables(a, "spec.adminServer"));
 
       spec.getManagedServers()
           .forEach(s -> checkReservedEnvironmentVariables(s, "spec.managedServers[" + s.getServerName() + "]"));
+    }
+
+    private void addReservedEnvironmentVariablesClusters(KubernetesResourceLookup kubernetesResources) {
       spec.getClusters()
-          .forEach(s -> checkReservedEnvironmentVariables(s, "spec.clusters[" + s.getClusterName() + "]"));
+          .forEach(reference -> Optional.ofNullable(kubernetesResources.findCluster(reference))
+              .map(ClusterResource::getSpec)
+              .ifPresent(clusterSpec -> checkReservedEnvironmentVariables(clusterSpec, "spec.clusters["
+                  + clusterSpec.getClusterName() + "]")));
     }
 
     class EnvironmentVariableCheck {
@@ -1243,6 +1359,17 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 
+    }
+
+    private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
+      Optional.ofNullable(getSpec().getClusters()).orElse(new ArrayList<>())
+          .forEach(cluster -> verifyClusterExists(resourceLookup, cluster));
+    }
+
+    private void verifyClusterExists(KubernetesResourceLookup resourceLookup, V1LocalObjectReference cluster) {
+      if (resourceLookup.findClusterInNamespace(cluster, getNamespace()) == null) {
+        failures.add(missingClusterResource(cluster.getName(), getNamespace()));
+      }
     }
 
     @SuppressWarnings("SameParameterValue")

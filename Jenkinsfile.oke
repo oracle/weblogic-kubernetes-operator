@@ -5,7 +5,7 @@
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
-        timeout(time: 800, unit: 'MINUTES')
+        timeout(time: 1200, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
@@ -137,7 +137,14 @@ pipeline {
                description: '',
                defaultValue: '2.0.7'
         )
-
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '15.2.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.38.6'
+        )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
                      defaultValue: false
@@ -189,7 +196,6 @@ pipeline {
 
                 stage('Setup terraform property file  ') {
                     environment {
-                        FSS_DIR="/oketest"
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         NODE_SHAPE="VM.Standard2.4"
                         IMAGE_ID="${IMAGE_ID}"
@@ -219,7 +225,6 @@ pipeline {
 
 
                         export OKE_CLUSTER="true"
-                        export FSS_DIR="/oketest"
                         if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
                            VCN_CIDR_PREFIX="10.1"
                         else
@@ -437,7 +442,7 @@ EOF
                         BASE_IMAGES_REPO = "phx.ocir.io"
                         REPO_REGISTRY = "phx.ocir.io"
                         clusterName = "${CLUSTER_NAME}"
-                        FSS_DIR = "/oketest"
+                        FSS_DIR = "/oketest1,/oketest2,/oketest3,/oketest4,/oketest5,/oketest6,/oketest7,/oketest8,/oketest9,/oketest10,/oketest11,/oketest12,/oketest13,/oketest14,/oketest15"
 
                     }
                     steps {
@@ -465,7 +470,7 @@ EOF
 
                             if [ -z "${mt_private_ip}" ]; then
                                echo "Mount Target was not setup properly , clean up Kubernetes cluster"
-                               sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+                               sh ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                                exit -1
                             fi
                             export NFS_SERVER=$mt_private_ip
@@ -498,6 +503,8 @@ EOF
                             echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
@@ -547,10 +554,13 @@ EOF
                             sh '''
                                 export PATH="${WORKSPACE}/bin:${PATH}"
                                 export KUBECONFIG=${kubeconfig_file}
+                                export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                                export OCI_CLI_PROFILE=WKOBUILD
                                 mkdir -m777 -p ${result_root}/kubelogs
 
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                                ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             '''
                             archiveArtifacts(artifacts: "logdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)

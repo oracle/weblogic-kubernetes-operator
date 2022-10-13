@@ -8,6 +8,7 @@ kind: Domain
 metadata:
   name: sample-domain1
   namespace: sample-domain1-ns
+  uid: f6b4dcbd-f88e-436e-a217-1d803124bb98
   labels:
     weblogic.domainUID: sample-domain1
 
@@ -104,11 +105,13 @@ spec:
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1
+  allowReplicasBelowMinDynClusterSize: false
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
   - clusterName: cluster-1
     serverStartState: "RUNNING"
+    serverStartPolicy: ALWAYS
     serverPod:
       # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
       # already members of the same cluster.
@@ -126,6 +129,7 @@ spec:
                 topologyKey: "kubernetes.io/hostname"
     # The number of managed servers to start for this cluster
     replicas: 2
+    allowReplicasBelowMinDynClusterSize: true
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent

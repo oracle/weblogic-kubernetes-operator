@@ -9,22 +9,21 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
@@ -39,6 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -67,6 +67,7 @@ public class MiiDynamicUpdateHelper {
   public String adminServerName = "admin-server";
   public LoggingFacade logger = null;
   public String adminSvcExtHost = null;
+  public String clusterName = "cluster-1";
 
   /**
    * Install Operator.
@@ -92,7 +93,7 @@ public class MiiDynamicUpdateHelper {
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, 0, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -136,20 +137,17 @@ public class MiiDynamicUpdateHelper {
     // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
     // because of bug OWLS-88679
     // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
-    createDomainResourceWithLogHome(domainUid, domainNamespace,
+    DomainResource domain = createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName,
-        dbSecretName, false, true, false);
+        adminSecretName, BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, replicaCount,
+        pvName, pvcName, configMapName,
+        dbSecretName, true, false);
 
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
+
+    createDomainAndVerify(domain, domainNamespace);
+
   }
 
   /**
@@ -183,7 +181,7 @@ public class MiiDynamicUpdateHelper {
   public void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          DomainResource miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()

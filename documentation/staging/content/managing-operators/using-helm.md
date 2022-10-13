@@ -5,56 +5,7 @@ weight: 5
 description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 
-### Contents
-
-- [Introduction](#introduction)
-- [Useful Helm operations](#useful-helm-operations)
-- [Operator Helm configuration values](#operator-helm-configuration-values)
-  - [Overall operator information](#overall-operator-information)
-    - [`serviceAccount`](#serviceaccount)
-    - [`kubernetesPlatform`](#kubernetesplatform)
-    - [`enableClusterRoleBinding`](#enableclusterrolebinding)
-  - [Creating the operator pod](#creating-the-operator-pod)
-    - [`image`](#image)
-    - [`imagePullPolicy`](#imagepullpolicy)
-    - [`imagePullSecrets`](#imagepullsecrets)
-    - [`annotations`](#annotations)
-    - [`labels`](#labels)
-    - [`nodeSelector`](#nodeselector)
-    - [`affinity`](#affinity)
-    - [`runAsUser`](#runasuser)
-  - [WebLogic domain conversion webhook](#weblogic-domain-conversion-webhook)
-    - [`webhookOnly`](#webhookonly)
-    - [`operatorOnly`](#operatoronly)
-    - [`preserveWebhook`](#preservewebhook)
-  - [WebLogic domain management](#weblogic-domain-management)
-    - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
-    - [`domainNamespaces`](#domainnamespaces)
-    - [`domainNamespaceLabelSelector`](#domainnamespacelabelselector)
-    - [`domainNamespaceRegExp`](#domainnamespaceregexp)
-    - [`domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`](#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds)
-    - [`introspectorJobNameSuffix` and `externalServiceNameSuffix`](#introspectorjobnamesuffix-and-externalservicenamesuffix)
-    - [`clusterSizePaddingValidationEnabled`](#clustersizepaddingvalidationenabled)
-    - [`istioLocalhostBindingsEnabled`](#istiolocalhostbindingsenabled)
-  - [Elastic Stack integration](#elastic-stack-integration)
-    - [`elkIntegrationEnabled`](#elkintegrationenabled)
-    - [`logStashImage`](#logstashimage)
-    - [`elasticSearchHost`](#elasticsearchhost)
-    - [`elasticSearchPort`](#elasticsearchport)
-    - [`elasticSearchProtocol`](#elasticsearchprotocol)
-    - [`createLogStashConfigMap`](#createlogstashconfigmap)
-  - [REST interface configuration](#rest-interface-configuration)
-    - [`externalRestEnabled`](#externalrestenabled)
-    - [`externalRestHttpsPort`](#externalresthttpsport)
-    - [`externalRestIdentitySecret`](#externalrestidentitysecret)
-    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-deprecated)
-    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-deprecated)
-    - [`tokenReviewAuthentication`](#tokenreviewauthentication)
-  - [Debugging options](#debugging-options)
-    - [`javaLoggingLevel`](#javalogginglevel)
-    - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
-    - [`internalDebugHttpPort`](#internaldebughttpport)
-    - [`externalDebugHttpPort`](#externaldebughttpport)
+{{< table_of_contents >}}
 
 ### Introduction
 
@@ -440,17 +391,6 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   the operator's Helm release.
   See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-
-##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
-Specify the number of introspector job retries for a domain and the interval between these retries in seconds.
-
-Defaults to five retries and 10 seconds between each retry.
-
-Example:
-```yaml
-domainPresenceFailureRetryMaxCount: 10
-domainPresenceFailureRetrySeconds: 30
-```
 
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
 Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.

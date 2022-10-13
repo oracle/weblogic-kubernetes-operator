@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
@@ -32,11 +33,14 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1StorageClass;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.Apache;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
+import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.actions.impl.ConfigMap;
@@ -74,8 +78,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ClusterUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
@@ -181,7 +187,7 @@ public class TestActions {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+  public static boolean createDomainCustomResource(DomainResource domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
   }
@@ -204,8 +210,8 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
   }
 
@@ -218,9 +224,9 @@ public class TestActions {
    * @return Domain Custom Resource or null if Domain does not exist
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
-                                                                      String namespace,
-                                                                      String domainVersion) throws ApiException {
+  public static DomainResource getDomainCustomResource(String domainUid,
+                                                       String namespace,
+                                                       String domainVersion) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
@@ -273,6 +279,21 @@ public class TestActions {
   }
 
   /**
+   * Patch the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document:
+   *                    "application/json-patch+json", "application/merge-patch+json",
+   * @return response msg of patching domain
+   */
+  public static String patchDomainCustomResourceReturnResponse(String domainUid, String namespace, V1Patch patch,
+                                                  String patchFormat) {
+    return Domain.patchDomainCustomResourceReturnResponse(domainUid, namespace, patch, patchFormat);
+  }
+
+  /**
    * Patch a running domain with introspectVersion.
    * If the introspectVersion doesn't exist it will add the value as 2,
    * otherwise the value is updated by 1.
@@ -308,7 +329,7 @@ public class TestActions {
    */
   public static String getNextIntrospectVersion(String domainUid, String namespace) throws ApiException {
     LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain = Domain.getDomainCustomResource(domainUid, namespace);
+    DomainResource domain = Domain.getDomainCustomResource(domainUid, namespace);
     String introspectVersion = domain.getSpec().getIntrospectVersion();
     if (null != introspectVersion) {
       logger.info("current introspectVersion: {0}", introspectVersion);
@@ -321,18 +342,80 @@ public class TestActions {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace by patching the domain resource.
+   * Scale all clusters in a domain by patching domain resource.
    *
    * @param domainUid domainUid of the domain to be scaled
-   * @param namespace name of Kubernetes namespace that the domain belongs to
-   * @param clusterName cluster in the domain to be scaled
-   * @param numOfServers number of servers to be scaled to.
+   * @param namespace namespace in which the domain exists
+   * @param replicaCount number of servers to be scaled to
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleAllClustersInDomain(String domainUid, String namespace, int replicaCount) {
+    return Domain.scaleAllClustersInDomain(domainUid, namespace, replicaCount);
+  }
+
+  // ----------------------   cluster  -----------------------------------
+
+  /**
+   * Create Cluster Custom Resource.
+   *
+   * @param cluster Cluster custom resource model object
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean scaleCluster(String domainUid, String namespace, String clusterName, int numOfServers)
-      throws ApiException {
-    return Domain.scaleCluster(domainUid, namespace, clusterName, numOfServers);
+  public static boolean createClusterCustomResource(ClusterResource cluster) throws ApiException {
+    return Cluster.createClusterCustomResource(cluster, CLUSTER_VERSION);
+  }
+
+  /**
+   * Delete Cluster Custom Resource.
+   *
+   * @param clusterResName Cluster custom resource name
+   * @param namespace namespace in which cluster custom resource exists
+   */
+  public static void deleteClusterCustomResource(String clusterResName, String namespace) {
+    ClusterUtils.deleteClusterCustomResourceAndVerify(clusterResName, namespace);
+  }
+
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterResName unique cluster resource identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchClusterCustomResource(String clusterResName, String namespace,
+                                                   V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCustomResource(clusterResName, namespace, patch, patchFormat);
+  }
+
+  /**
+   * Patch the Cluster Custom Resource.
+   *
+   * @param clusterName unique cluster identifier
+   * @param namespace name of namespace
+   * @param patch patch data in format matching the specified media type
+   * @param patchFormat one of the following types used to identify patch document: "application/json-patch+json",
+  "application/merge-patch+json",
+   * @return response msg of patching cluster resource
+   */
+  public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
+                                                                V1Patch patch, String patchFormat) {
+    return Cluster.patchClusterCustomResourceReturnResponse(clusterName, namespace, patch, patchFormat);
+  }
+
+  /**
+   * Scale a cluster in a specified namespace by patching cluster resource.
+   *
+   * @param clusterResName cluster resource name
+   * @param namespace name of Kubernetes namespace that the domain belongs to
+   * @param numOfServers number of servers to be scaled to.
+   * @return true on success, false otherwise
+   */
+  public static boolean scaleCluster(String clusterResName, String namespace, int numOfServers) {
+    return Cluster.scaleCluster(clusterResName, namespace, numOfServers);
   }
 
   /**
@@ -373,6 +456,27 @@ public class TestActions {
                                                 String opServiceAccount) {
     return Domain.scaleClusterWithRestApi(domainUid, clusterName, numOfServers,
         externalRestHttpsPort, opNamespace, opServiceAccount);
+  }
+
+  /**
+   * Scale the cluster of the domain in the specified namespace with REST API.
+   *
+   * @param domainUid domainUid of the domain to be scaled
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param numOfServers number of servers to be scaled to
+   * @param externalRestHttpsPort node port allocated for the external operator REST HTTPS interface
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount the service account for operator
+   * @return ExecResult object
+   */
+  public static ExecResult scaleClusterWithRestApiAndReturnResult(String domainUid,
+                                                                  String clusterName,
+                                                                  int numOfServers,
+                                                                  int externalRestHttpsPort,
+                                                                  String opNamespace,
+                                                                  String opServiceAccount) {
+    return Domain.scaleClusterWithRestApiAndReturnResult(domainUid, clusterName, numOfServers, externalRestHttpsPort,
+        opNamespace, opServiceAccount);
   }
 
   /**
@@ -1237,6 +1341,18 @@ public class TestActions {
    */
   public static boolean dockerPull(String image) {
     return Docker.pull(image);
+  }
+
+  /**
+   * Tag a originalImage to taggedImage and push it to repo.
+   * @param originalImage original image
+   * @param taggedImage tagged image
+   * @return true if docker tag and push succeeds, false otherwise
+   */
+  public static Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
+    return (() -> {
+      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+    });
   }
 
   /**

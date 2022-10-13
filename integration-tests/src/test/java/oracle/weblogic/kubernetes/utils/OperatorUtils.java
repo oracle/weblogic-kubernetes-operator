@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -25,6 +27,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
@@ -61,29 +64,8 @@ public class OperatorUtils {
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
-        0, opHelmParams, domainNamespace);
-  }
-
-  /**
-   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
-   *
-   * @param opNamespace the operator namespace in which the operator will be installed
-   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
-   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
-   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
-   * @return the operator Helm installation parameters
-   */
-  public static OperatorParams installAndVerifyOperator(String opNamespace,
-                                                        int domainPresenceFailureRetryMaxCount,
-                                                        int domainPresenceFailureRetrySeconds,
-                                                        String... domainNamespace) {
-    HelmParams opHelmParams =
-        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace)
-            .chartDir(OPERATOR_CHART_DIR);
-    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, opHelmParams, false, null, null,
-        false, domainPresenceFailureRetryMaxCount, domainPresenceFailureRetrySeconds, domainNamespace);
-
+        0, opHelmParams, false, null,
+        null, false, domainNamespace);
   }
 
   /**
@@ -148,7 +130,6 @@ public class OperatorUtils {
 
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled, domainNamespace);
-
   }
 
   /**
@@ -202,8 +183,6 @@ public class OperatorUtils {
             null,
             false,
             loggingLevel,
-            -1,
-            -1,
             domainNamespace);
   }
 
@@ -228,9 +207,7 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        null, null,
-            false, -1,
-            -1, domainNamespace);
+        null, null, false, domainNamespace);
   }
 
   /**
@@ -257,7 +234,7 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        domainNamespaceSelectionStrategy, null, false, -1, -1, domainNamespace);
+        domainNamespaceSelectionStrategy, null, false, domainNamespace);
   }
 
   /**
@@ -291,8 +268,6 @@ public class OperatorUtils {
         null,
         false,
         "INFO",
-        -1,
-        -1,
         false,
         domainNamespace);
   }
@@ -310,8 +285,6 @@ public class OperatorUtils {
    *                                  how to select the set of namespaces that it will manage
    * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
-   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
-   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -324,22 +297,18 @@ public class OperatorUtils {
                                                         String domainNamespaceSelectionStrategy,
                                                         String domainNamespaceSelector,
                                                         boolean enableClusterRoleBinding,
-                                                        int domainPresenceFailureRetryMaxCount,
-                                                        int domainPresenceFailureRetrySeconds,
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace,
-            opServiceAccount,
-    withRestAPI,
-    externalRestHttpsPort,
-    opHelmParams,
-    elkIntegrationEnabled,
-    domainNamespaceSelectionStrategy,
-    domainNamespaceSelector,
-    enableClusterRoleBinding,
-    "INFO",
-    domainPresenceFailureRetryMaxCount,
-    domainPresenceFailureRetrySeconds,
-    domainNamespace);
+        opServiceAccount,
+        withRestAPI,
+        externalRestHttpsPort,
+        opHelmParams,
+        elkIntegrationEnabled,
+        domainNamespaceSelectionStrategy,
+        domainNamespaceSelector,
+        enableClusterRoleBinding,
+        "INFO",
+        domainNamespace);
   }
 
   /**
@@ -356,8 +325,6 @@ public class OperatorUtils {
    * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
    * @param loggingLevel logging level of operator
-   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
-   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -371,8 +338,6 @@ public class OperatorUtils {
                                                         String domainNamespaceSelector,
                                                         boolean enableClusterRoleBinding,
                                                         String loggingLevel,
-                                                        int domainPresenceFailureRetryMaxCount,
-                                                        int domainPresenceFailureRetrySeconds,
                                                         String... domainNamespace) {
     return installAndVerifyOperator(opNamespace,
         opServiceAccount,
@@ -386,8 +351,6 @@ public class OperatorUtils {
         domainNamespaceSelector,
         enableClusterRoleBinding,
         loggingLevel,
-        domainPresenceFailureRetryMaxCount,
-        domainPresenceFailureRetrySeconds,
         false,
         domainNamespace);
   }
@@ -408,8 +371,6 @@ public class OperatorUtils {
    * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
    * @param loggingLevel logging level of operator
-   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
-   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
    * @param webhookOnly boolean indicating install webHookOnly operator 
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -426,8 +387,6 @@ public class OperatorUtils {
                                                         String domainNamespaceSelector,
                                                         boolean enableClusterRoleBinding,
                                                         String loggingLevel,
-                                                        int domainPresenceFailureRetryMaxCount,
-                                                        int domainPresenceFailureRetrySeconds,
                                                         boolean webhookOnly,
                                                         String... domainNamespace) {
     String operatorImage;
@@ -512,14 +471,6 @@ public class OperatorUtils {
       }
     }
 
-    // domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds
-    if (domainPresenceFailureRetryMaxCount >= 0) {
-      opParams.domainPresenceFailureRetryMaxCount(domainPresenceFailureRetryMaxCount);
-    }
-    if (domainPresenceFailureRetrySeconds > 0) {
-      opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
-    }
-
     // If running on OKD cluster, we need to specify the target
     if (OKD) {
       opParams.kubernetesPlatform("OpenShift");
@@ -596,8 +547,7 @@ public class OperatorUtils {
         .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
         true, 0, opHelmParams, false,
-        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding,
-        -1, -1, domainNamespace);
+        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
   }
 
   /**
@@ -688,5 +638,30 @@ public class OperatorUtils {
 
     logger.info("Operator pod is restarted in namespace {0}", opNamespace);
 
+  }
+
+  /**
+   * Obtains the specified domain, validates that it has a spec and no rolling condition.
+   * @param opNamespace the Operator namespace
+   * @param regex check string
+   * @return true if regex found, false otherwise.
+   */
+  public static boolean findStringInOperatorLog(String opNamespace, String regex) {
+    LoggingFacade logger = getLogger();
+    // get operator pod name
+    String operatorPodName = assertDoesNotThrow(
+        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    assertNotNull(operatorPodName, "Operator pod name returned is null");
+    logger.info("Operator pod name {0}", operatorPodName);
+
+    // get the Operator logs
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+
+    // match regex in Operator log
+    logger.info("Search: {0} in Operator log", regex);
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(operatorPodLog);
+
+    return matcher.find();
   }
 }

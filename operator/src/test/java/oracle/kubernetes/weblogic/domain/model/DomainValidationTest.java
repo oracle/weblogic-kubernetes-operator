@@ -8,21 +8,28 @@ import java.util.Collections;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.ModelInImageDomainType;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestCluster;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.setupCluster;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -43,6 +50,10 @@ class DomainValidationTest extends DomainValidationTestBase {
   private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
   private static final String LONG_CONTAINER_PORT_NAME = "long-container-port-name";
+  public static final String UID2 = "test-domain2";
+  public static final String CLUSTER_1 = "Cluster-1";
+  public static final String CLUSTER_2 = "Cluster-2";
+  public static final String CLUSTER_3 = "Cluster-3";
 
   private final DomainResource domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -52,9 +63,9 @@ class DomainValidationTest extends DomainValidationTestBase {
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
-    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(SECRET_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, V1ConfigMap.class, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, V1ConfigMap.class, NS);
     configureDomain(domain)
           .withWebLogicCredentialsSecret(SECRET_NAME);
   }
@@ -185,6 +196,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
+  @Disabled("Domain validation doesn't read cluster resources")
   void whenClusterSpecsHaveDuplicateNames_reportError() {
     addClusterWithName("cluster1");
     addClusterWithName("cluster1");
@@ -194,7 +206,8 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   private void addClusterWithName(String clusterName) {
-    domain.getSpec().getClusters().add(new ClusterSpec().withClusterName(clusterName));
+    resourceLookup.defineResource(clusterName, ClusterResource.class, NS);
+    domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
   }
 
   @Test
@@ -356,8 +369,10 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "of domain resource", "is not valid")));
@@ -365,25 +380,31 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
-
+          .configureCluster(info,"Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
           .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
-
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+    ClusterResource cluster1 = createTestCluster("Cluster-1");
+    resourceLookup.defineResource(cluster1);
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenClusteredServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+          .configureCluster(info, "Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("The mount path", "volume1", "of domain resource", "is not valid")));
@@ -430,9 +451,11 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenReservedEnvironmentVariablesSpecifiedAtClusterLevel_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster1")
+          .configureCluster(info,"cluster1")
           .withEnvironmentVariable("DOMAIN_HOME", "testValue");
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("variable", "DOMAIN_HOME", "spec.clusters[cluster1].serverPod.env", "is")));
@@ -462,9 +485,11 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenLivenessProbeSuccessThresholdValueInvalidForCluster_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info, "cluster-1")
           .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
@@ -494,9 +519,11 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenReservedContainerNameUsedForCluster_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "cluster-1",
@@ -527,10 +554,12 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenContainerPortNameExceedsMaxLength_ForClusteredServerContainer_reportError() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
-          .configureCluster("cluster-1")
+          .configureCluster(info,"cluster-1")
           .withContainer(new V1Container().name("Test")
                 .ports(List.of(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
+    info.getReferencedClusters().forEach(resourceLookup::defineResource);
 
     assertThat(domain.getValidationFailures(resourceLookup), contains(stringContainsInOrder(
           "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "cluster-1", "Test",
@@ -551,7 +580,7 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWebLogicCredentialsSecretNameNotFound_reportError() {
-    resourceLookup.undefineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.undefineResource(SECRET_NAME, V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("WebLogicCredentials", SECRET_NAME, "not found", NS)));
@@ -559,7 +588,7 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenImagePullSecretExists_dontReportError() {
-    resourceLookup.defineResource("a-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("a-secret", V1Secret.class, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -576,7 +605,7 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenConfigOverrideSecretExists_dontReportError() {
-    resourceLookup.defineResource("override-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("override-secret", V1Secret.class, NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -584,7 +613,7 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenConfigOverrideCmExistsTypeImage_dontReportError() {
-    resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource("overrides-cm-image", V1ConfigMap.class, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(IMAGE);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -592,8 +621,8 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenConfigOverrideCmExistsTypeFromModel_reportError() {
-    resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("overrides-cm-model", V1ConfigMap.class, NS);
+    resourceLookup.defineResource("wdt-cm-secret", V1Secret.class, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model")
           .withRuntimeEncryptionSecret("wdt-cm-secret")
           .withDomainHomeSourceType(FROM_MODEL);
@@ -605,8 +634,8 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWdtConfigMapExists_fromModel_dontReportError() {
-    resourceLookup.defineResource("wdt-cm", KubernetesResourceType.ConfigMap, NS);
-    resourceLookup.defineResource("wdt-cm-secret-model1", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wdt-cm", V1ConfigMap.class, NS);
+    resourceLookup.defineResource("wdt-cm-secret-model1", V1Secret.class, NS);
     configureDomain(domain)
           .withRuntimeEncryptionSecret("wdt-cm-secret-model1")
           .withModelConfigMap("wdt-cm")
@@ -617,7 +646,7 @@ class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWdtConfigMapSpecifiedButDoesNotExist_fromModel_reportError() {
-    resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wdt-cm-secret-model2", V1Secret.class, NS);
     configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
           .withModelConfigMap("wdt-configmap")
           .withDomainHomeSourceType(FROM_MODEL);
@@ -663,7 +692,7 @@ class DomainValidationTest extends DomainValidationTestBase {
   void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
           .withRuntimeEncryptionSecret("runtime-good-secret");
-    resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-good-secret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -683,7 +712,7 @@ class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
           .withOpssWalletPasswordSecret("wallet-password-secret-missing");
 
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("secret", "wallet-password-secret-missing", "not found", NS)));
@@ -695,7 +724,7 @@ class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
           .withOpssWalletFileSecret("wallet-file-secret-missing");
 
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("secret",
@@ -707,8 +736,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
           .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
           .withOpssWalletPasswordSecret("wallet-password-secret-good");
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -718,8 +747,8 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
           .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
           .withOpssWalletFileSecret("wallet-file-secret-good");
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource("wallet-file-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    resourceLookup.defineResource("wallet-file-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -729,7 +758,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType(ModelInImageDomainType.JRF);
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
           contains(stringContainsInOrder("spec.configuration.opss.walletPasswordSecret",
@@ -743,8 +772,8 @@ class DomainValidationTest extends DomainValidationTestBase {
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
 
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource("wallet-password-secret-good", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -754,7 +783,7 @@ class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withDomainHomeSourceType(IMAGE)
           .withOpssWalletFileSecret("wallet-file-secret");
 
-    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("wallet-file-secret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -766,8 +795,8 @@ class DomainValidationTest extends DomainValidationTestBase {
         .withDomainType(ModelInImageDomainType.WLS)
         .withOpssWalletFileSecret("wallet-file-secret");
 
-    resourceLookup.defineResource("runtime-encryption-secret-good", KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource("wallet-file-secret", KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    resourceLookup.defineResource("wallet-file-secret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -848,7 +877,112 @@ class DomainValidationTest extends DomainValidationTestBase {
             "spec.fluentdSpecification.elasticSearchCredentials")));
   }
 
+  @Test
+  void whenClusterReferenceNotFound_reportError() {
+    resourceLookup.defineResource(domain);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
+  @Test
+  void whenClusterReferenceInDifferentNamespace_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-1", "NS2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
+  @Test
+  void whenClusterReferenceDifferentName_reportError() {
+    ClusterResource cluster1 = createTestCluster("cluster-2");
+    resourceLookup.defineResource(domain);
+    resourceLookup.defineResource(cluster1);
+
+    setupCluster(domain, new String[] {"cluster-1"});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Cluster resource", "cluster-1", "not found", NS)));
+  }
+
   private DomainConfigurator configureDomain(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
   }
+
+  @Test
+  void whenTwoDomainsHaveSameClusterReference_reportError() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    defineResources(domain, domain2, cluster1);
+
+    ClusterResource[] clusters = new ClusterResource[] {cluster1};
+    setupCluster(domain, clusters);
+    setupCluster(domain2, clusters);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("cluster resource", CLUSTER_1, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenTwoDomainsReferenceDifferentClusterResources_noFailureReported() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    defineResources(domain, domain2, cluster1, cluster2);
+
+    setupCluster(domain, new ClusterResource[] {cluster1});
+    setupCluster(domain2, new ClusterResource[] {cluster2});
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_reportError() {
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    defineResources(domain, domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_withClusterName_reportError() {
+    String wlsClusterName1 = "c1";
+    String wlsClusterName2 = "c2";
+    String wlsClusterName3 = "c3";
+    DomainResource domain2 = createTestDomain(UID2);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    cluster1.getSpec().setClusterName(wlsClusterName1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    cluster2.getSpec().setClusterName(wlsClusterName2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    cluster3.getSpec().setClusterName(wlsClusterName3);
+    defineResources(domain, domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @SafeVarargs
+  private <T> void defineResources(T... resources) {
+    for (T resource : resources) {
+      resourceLookup.defineResource((KubernetesObject) resource);
+    }
+  }
+
 }

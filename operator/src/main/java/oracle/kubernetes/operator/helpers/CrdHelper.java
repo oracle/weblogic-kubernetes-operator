@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1WebhookConversion;
 import io.kubernetes.client.util.Yaml;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -54,8 +55,10 @@ import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.codec.binary.Base64;
@@ -276,6 +279,11 @@ public class CrdHelper {
     abstract Class<?> getStatusClass();
 
     /**
+     * Returns the class that represents the resource.
+     */
+    abstract Class<?> getResourceClass();
+
+    /**
      * Returns a prefix which identifies the CRD schema files for this type of resource.
      */
     abstract String getPrefix();
@@ -355,7 +363,8 @@ public class CrdHelper {
           .scale(
               new V1CustomResourceSubresourceScale()
                   .specReplicasPath(".spec.replicas")
-                  .statusReplicasPath(".status.replicas"));
+                  .statusReplicasPath(".status.replicas")
+                  .labelSelectorPath(".status.labelSelector"));
     }
 
     List<V1CustomResourceDefinitionVersion> getCrdVersions() {
@@ -415,12 +424,18 @@ public class CrdHelper {
       GsonBuilder gsonBuilder = new GsonBuilder();
       gsonBuilder.setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE);
       Gson gson = gsonBuilder.create();
+
       JsonElement jsonElementSpec = gson.toJsonTree(createCrdSchemaGenerator().generate(getSpecClass()));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
+
       JsonElement jsonElementStatus = gson.toJsonTree(createCrdSchemaGenerator().generate(getStatusClass()));
       V1JSONSchemaProps status = gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
+
+      String description = getResourceClass().getAnnotation(Description.class).value();
+
       return new V1JSONSchemaProps()
           .type("object")
+          .description(description)
           .putPropertiesItem("spec", spec)
           .putPropertiesItem("status", status);
     }
@@ -638,6 +653,11 @@ public class CrdHelper {
     }
 
     @Override
+    Class<?> getResourceClass() {
+      return DomainResource.class;
+    }
+
+    @Override
     protected String getSingularName() {
       return KubernetesConstants.DOMAIN_SINGULAR;
     }
@@ -690,6 +710,11 @@ public class CrdHelper {
     @Override
     Class<?> getStatusClass() {
       return ClusterStatus.class;
+    }
+
+    @Override
+    Class<?> getResourceClass() {
+      return ClusterResource.class;
     }
 
     @Override

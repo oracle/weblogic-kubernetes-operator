@@ -37,6 +37,12 @@ public interface TestConstants {
   public static final String DEFAULT_WEBLOGIC_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
   public static final String WEBLOGIC_IMAGE_TAGS =
       getNonEmptySystemProperty("wko.it.weblogic.image.tags", DEFAULT_WEBLOGIC_IMAGE_TAGS);
+  public static final int DEFAULT_MAX_CLUSTER_SIZE = 5;
+
+  // cluster constants
+  public static final String CLUSTER_VERSION =
+      getNonEmptySystemProperty("wko.it.cluster.version", "v1");
+  public static final String CLUSTER_API_VERSION = "weblogic.oracle/" + CLUSTER_VERSION;
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -277,7 +283,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CHART_VERSION =
       getNonEmptySystemProperty("wko.it.prometheus.chart.version", "15.2.0");
   public static final String GRAFANA_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.29.2");
+      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.38.6");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";
@@ -309,7 +315,7 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
-  public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final String [] FSS_DIR = System.getProperty("wko.it.fss.dir","").split(",");
   public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
 
   //OKD constants
@@ -370,8 +376,14 @@ public interface TestConstants {
   //retry improvement
   //Defaulting to 120 seconds
   public static final Long FAILURE_RETRY_INTERVAL_SECONDS =
-      Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "60"));
+      Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "20"));
   //Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
+  String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
+
+  // metrics server constants
+  public static final String METRICS_SERVER_YAML =
+      "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+
 }

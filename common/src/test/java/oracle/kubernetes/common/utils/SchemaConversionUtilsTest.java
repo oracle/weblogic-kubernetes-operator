@@ -8,19 +8,19 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
@@ -31,6 +31,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -56,9 +57,12 @@ class SchemaConversionUtilsTest {
 
   @SuppressWarnings("unchecked")
   private static Map<String, Object> readAsYaml(String fileName) throws IOException {
+    return (Map<String, Object>) getYamlDocuments(fileName).iterator().next();
+  }
+
+  private static Iterable<Object> getYamlDocuments(String fileName) throws IOException {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
-    ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-    return ((Map<String, Object>) yamlReader.readValue(yamlStream, Map.class));
+    return new Yaml().loadAll(yamlStream);
   }
 
   private static InputStream inputStreamFromClasspath(String path) {
@@ -74,19 +78,34 @@ class SchemaConversionUtilsTest {
 
     private final SchemaConversionUtils utils;
     private Map<String, Object> convertedDomain;
+    private List<Map<String, Object>> generatedClusters;
 
     ConversionAdapter(String targetApiVersion) {
       utils = SchemaConversionUtils.create(targetApiVersion);
     }
 
     void convert(Map<String, Object> yaml) {
+      convert(yaml, null);
+    }
+
+    void convert(Map<String, Object> yaml, List<Map<String, Object>> clusters) {
       assertDoesNotThrow(() -> {
-        convertedDomain = utils.convertDomainSchema(yaml);
+        SchemaConversionUtils.Resources convertedResources = utils.convertDomainSchema(yaml, toLookup(clusters));
+        convertedDomain = convertedResources.domain;
+        generatedClusters = convertedResources.clusters;
       });
+    }
+
+    private SchemaConversionUtils.ResourceLookup toLookup(List<Map<String, Object>> clusters) {
+      return () -> clusters;
     }
 
     Map<String, Object> getDomain() {
       return convertedDomain;
+    }
+
+    List<Map<String, Object>> getClusters() {
+      return generatedClusters;
     }
   }
 
@@ -108,20 +127,52 @@ class SchemaConversionUtilsTest {
 
   @Test
   void testV8DomainUpgradeWithLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    final Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Object expectedDomain = yamlDocuments.next();
+    List<Object> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(clusters::add);
 
     converter.convert(readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML));
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
+    assertThat(clusters, equalTo(converter.getClusters()));
   }
 
   @Test
-  void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
-    final Object expectedDomain = readAsYaml(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML);
+  @SuppressWarnings("unchecked")
+  void testV9DomainDowngrade() throws IOException {
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
 
-    converter.convert(readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML));
+    converterv8.convert(domain, clusters);
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
+    List<Object> convertedClusters = (List<Object>) getDomainSpec(converterv8.getDomain()).get("clusters");
+    List<Object> origClusters = (List<Object>) getDomainSpec(v8Domain).get("clusters");
+    assertThat(convertedClusters, notNullValue());
+    assertThat(convertedClusters, equalTo(origClusters));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> expectedDomain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
+
+    Map<String, Object> v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), equalTo(expectedDomain));
+
+    converterv8.convert(converter.getDomain(), clusters);
+
+    // have to read document again because v8Domain variable contents will be modified
+    v8Domain = readAsYaml(DOMAIN_V8_SERVER_SCOPED_AUX_IMAGE30_YAML);
+    assertThat(converterv8.getDomain(), equalTo(v8Domain));
   }
 
   @Test
@@ -158,29 +209,29 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void whenOldDomainHasUnsupportedConditionReasons_removeThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
-
-    converter.convert(v8Domain);
-
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].reason", empty()));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Completed')].message", contains("Too bad")));
-  }
-
-  @Test
-  void whenOldDomainHasSupportedConditionReasons_dontRemoveThem() {
-    addStatusCondition("Completed", "False", "Nothing else to do", "Too bad");
-    addStatusCondition("Failed", "True", "Internal", "whoops");
+  void whenOldDomainHasUnsupportedFailedConditionReason_replaceAndPreserve() {
+    addStatusCondition("Failed", "True", "Danger", "whoops");
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(),
           hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Internal")));
-    assertThat(converter.getDomain(),
-          hasJsonPath("$.status.conditions[?(@.type=='Failed')].message", contains("whoops")));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']",
+            equalTo("Danger")));
+  }
+
+  @Test
+  void testV9DomainFailedConditionReason_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.failed.reason", "Danger");
+    addStatusCondition(v9Domain, "Failed", "True", "Internal", "whoops");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']"));
+    assertThat(converterv8.getDomain(),
+            hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Danger")));
   }
 
   @ParameterizedTest
@@ -392,25 +443,39 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV8DomainServerStartState_preserved() {
+  void testV8DomainFields_preserved() {
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.adminServer.serverStartState"));
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].serverStartState"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.allowReplicasBelowMinDynClusterSize"));
+    assertThat(converter.getDomain(), hasNoJsonPath("$.spec.clusters[0].allowReplicasBelowMinDynClusterSize"));
     assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.preserved']",
-        equalTo("{\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"serverStartState\":\"RUNNING\"},"
-            + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"}}")));
+        equalTo("{\"$.spec\":{\"allowReplicasBelowMinDynClusterSize\":false},"
+            + "\"$.spec.adminServer\":{\"serverStartState\":\"RUNNING\"},"
+            + "\"$.spec.clusters[?(@.clusterName=='cluster-1')]\":{\"allowReplicasBelowMinDynClusterSize\":true,"
+            + "\"serverStartState\":\"RUNNING\"}}")));
   }
 
   @Test
-  void testV9DomainServerStartState_restored() throws IOException {
-    converterv8.convert(readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML));
+  @SuppressWarnings("unchecked")
+  void testV9DomainFields_restored() throws IOException {
+    Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
+    final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
+    List<Map<String, Object>> clusters = new ArrayList<>();
+    yamlDocuments.forEachRemaining(doc -> clusters.add((Map<String, Object>) doc));
+
+    converterv8.convert(domain, clusters);
 
     assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.preserved']"));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.adminServer.serverStartState",
         equalTo("RUNNING")));
     assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].serverStartState",
         equalTo("RUNNING")));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.allowReplicasBelowMinDynClusterSize",
+            equalTo(Boolean.FALSE)));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.spec.clusters[0].allowReplicasBelowMinDynClusterSize",
+            equalTo(Boolean.TRUE)));
   }
 
   @Test
@@ -466,6 +531,7 @@ class SchemaConversionUtilsTest {
     // Simplify domain to focus on Istio
     getDomainSpec(v8Domain).remove("adminServer");
     getDomainSpec(v8Domain).remove("clusters");
+    getDomainSpec(v8Domain).remove("allowReplicasBelowMinDynClusterSize");
 
     // Add Istio configuration
     Map<String, Object> istio = new LinkedHashMap<>();

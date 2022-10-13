@@ -17,7 +17,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
@@ -25,6 +26,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
@@ -263,17 +265,21 @@ public class PodUtils {
    *
    * @param domain custom resource object
    */
-  public static synchronized void setPodAntiAffinity(Domain domain) {
+  public static synchronized void setPodAntiAffinity(DomainResource domain) {
     domain.getSpec()
         .getClusters()
         .stream()
         .forEach(
-            cluster -> {
-              ServerPod serverPod = cluster.getServerPod();
-              if (serverPod == null) {
+            clusterRef -> {
+              ClusterResource clusterResource =
+                  assertDoesNotThrow(() -> Kubernetes.getClusterCustomResource(clusterRef.getName(),
+                  domain.getMetadata().getNamespace(), CLUSTER_VERSION),
+                  "Could not find the cluster resource by name " + clusterRef.getName());
+              ServerPod serverPod = clusterResource.getSpec().getServerPod();
+              if (clusterResource.getSpec().getServerPod() == null) {
                 serverPod = new ServerPod();
               }
-              cluster
+              clusterResource.getSpec()
                   .serverPod(serverPod
                       .affinity(new V1Affinity().podAntiAffinity(
                           new V1PodAntiAffinity()
@@ -432,5 +438,20 @@ public class PodUtils {
 
       return isPodEvictedStatusLoggedInOperator(operatorLog, regex);
     };
+  }
+
+  /**
+   * Check if the pod log contains the certain text.
+   * @param matchStr text to be searched in the log
+   * @param podName the name of the pod
+   * @param namespace namespace where pod exists
+   * @return true if the text exists in the log otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean checkPodLogContains(String matchStr, String podName, String namespace)
+      throws ApiException {
+
+    return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
+
   }
 }

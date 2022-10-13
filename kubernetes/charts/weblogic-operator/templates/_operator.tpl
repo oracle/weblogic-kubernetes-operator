@@ -29,6 +29,7 @@
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
 {{- include "operator.operatorExternalService" . }}
+{{- include "operator.operatorWebhookExternalService" . }}
 {{- if or (not .enableClusterRoleBinding) (eq .domainNamespaceSelectionStrategy "Dedicated") }}
 {{-   include "operator.domainNamespaces" . }}
 {{- else }}

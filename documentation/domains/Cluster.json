@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "A Cluster resource describes the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. It must describe a cluster that already exists in the WebLogic domain configuration. See also `domain.spec.clusters`.",
   "type": "object",
   "definitions": {
     "AdminServer": {
@@ -157,6 +158,7 @@
       }
     },
     "ClusterSpec": {
+      "description": "The specification of the operation of the WebLogic cluster. Required.",
       "type": "object",
       "properties": {
         "serverService": {
@@ -177,17 +179,9 @@
           "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
           "type": "string"
         },
-        "allowReplicasBelowMinDynClusterSize": {
-          "description": "Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true.",
-          "type": "boolean"
-        },
         "serverPod": {
           "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
-        },
-        "domainUID": {
-          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
-          "type": "string"
         },
         "clusterService": {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
@@ -237,6 +231,10 @@
         },
         "clusterName": {
           "description": "WebLogic cluster name.",
+          "type": "string"
+        },
+        "labelSelector": {
+          "description": "Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler.",
           "type": "string"
         },
         "readyReplicas": {
@@ -448,10 +446,10 @@
           "type": "boolean"
         },
         "clusters": {
-          "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
+          "description": "References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ClusterSpec"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "image": {
@@ -513,11 +511,6 @@
         },
         "logHomeEnabled": {
           "description": "Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.",
-          "type": "boolean"
-        },
-        "allowReplicasBelowMinDynClusterSize": {
-          "default": true,
-          "description": "Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.",
           "type": "boolean"
         },
         "serverPod": {
@@ -762,6 +755,10 @@
           "default": 8080,
           "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
           "type": "integer"
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         }
       }
     },

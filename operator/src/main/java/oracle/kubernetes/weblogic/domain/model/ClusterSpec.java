@@ -24,19 +24,13 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 2.0
  */
+@Description("The specification of the operation of the WebLogic cluster. Required.")
 public class ClusterSpec extends BaseConfiguration implements Comparable<ClusterSpec> {
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
       + "in the WebLogic domain configuration. Required.")
   @NotNull
   private String clusterName;
-
-  /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
-  @Description(
-          "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster "
-                  + "is associated with.")
-  @SerializedName("domainUID")
-  private String domainUid;
 
   /** The number of replicas to run in the cluster, if specified. */
   @Description(
@@ -79,14 +73,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   @Expose
   private ClusterService clusterService = new ClusterService();
 
-  @Description("Specifies whether the number of running cluster members is allowed to drop below the "
-      + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
-      + "Otherwise, the operator will ensure that the number of running cluster members is not less than "
-      + "the minimum dynamic cluster setting. This setting applies to dynamic clusters only. "
-      + "Defaults to true."
-  )
-  private Boolean allowReplicasBelowMinDynClusterSize;
-
   @Description(
       "The maximum number of Managed Servers instances that the operator will start in parallel "
       + "for this cluster in response to a change in the `replicas` count. "
@@ -126,15 +112,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return this;
   }
 
-  public String getDomainUid() {
-    return domainUid;
-  }
-
-  public ClusterSpec withDomainUid(String domainUid) {
-    this.domainUid = domainUid;
-    return this;
-  }
-
   public Integer getReplicas() {
     return replicas;
   }
@@ -146,21 +123,6 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   public ClusterSpec withReplicas(Integer replicas) {
     setReplicas(replicas);
     return this;
-  }
-
-  /**
-   * Whether to allow number of replicas to drop below the minimum dynamic cluster size configured
-   * in the WebLogic domain home configuration.
-   *
-   * @return whether to allow number of replicas to drop below the minimum dynamic cluster size
-   *     configured in the WebLogic domain home configuration.
-   */
-  public Boolean isAllowReplicasBelowMinDynClusterSize() {
-    return allowReplicasBelowMinDynClusterSize;
-  }
-
-  public void setAllowReplicasBelowMinDynClusterSize(Boolean value) {
-    allowReplicasBelowMinDynClusterSize = value;
   }
 
   public Integer getMaxConcurrentStartup() {
@@ -249,12 +211,10 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("clusterName", clusterName)
-        .append("domainUid", domainUid)
         .append("replicas", replicas)
         .append("serverStartPolicy", serverStartPolicy)
         .append("clusterService", clusterService)
         .append("maxUnavailable", maxUnavailable)
-        .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
         .append("maxConcurrentStartup", maxConcurrentStartup)
         .append("maxConcurrentShutdown", maxConcurrentShutdown)
         .toString();
@@ -275,12 +235,10 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(clusterName, clusterSpec.clusterName)
-        .append(domainUid, clusterSpec.domainUid)
         .append(replicas, clusterSpec.replicas)
         .append(serverStartPolicy, clusterSpec.serverStartPolicy)
         .append(clusterService, clusterSpec.clusterService)
         .append(maxUnavailable, clusterSpec.maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize, clusterSpec.allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup, clusterSpec.maxConcurrentStartup)
         .append(maxConcurrentShutdown, clusterSpec.maxConcurrentShutdown)
         .isEquals();
@@ -291,12 +249,10 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(clusterName)
-        .append(domainUid)
         .append(replicas)
         .append(serverStartPolicy)
         .append(clusterService)
         .append(maxUnavailable)
-        .append(allowReplicasBelowMinDynClusterSize)
         .append(maxConcurrentStartup)
         .append(maxConcurrentShutdown)
         .toHashCode();

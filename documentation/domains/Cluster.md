@@ -1,5 +1,7 @@
 ### Cluster
 
+A Cluster resource describes the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. It must describe a cluster that already exists in the WebLogic domain configuration. See also `domain.spec.clusters`.
+
 | Name | Type | Description |
 | --- | --- | --- |
 | `apiVersion` | string | The API version defines the versioned schema of this cluster. |
@@ -10,12 +12,12 @@
 
 ### Cluster Spec
 
+The specification of the operation of the WebLogic cluster. Required.
+
 | Name | Type | Description |
 | --- | --- | --- |
-| `allowReplicasBelowMinDynClusterSize` | Boolean | Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true. |
 | `clusterName` | string | The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required. |
 | `clusterService` | [Cluster Service](#cluster-service) | Customization affecting Kubernetes Service generated for this WebLogic cluster. |
-| `domainUID` | string | Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with. |
 | `maxConcurrentShutdown` | integer | The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1. |
 | `maxConcurrentStartup` | integer | The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0. |
 | `maxUnavailable` | integer | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
@@ -31,6 +33,7 @@
 | --- | --- | --- |
 | `clusterName` | string | WebLogic cluster name. |
 | `conditions` | Array of [Cluster Condition](#cluster-condition) | Current service state of the cluster. |
+| `labelSelector` | string | Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
 | `observedGeneration` | integer | The generation observed by the WebLogic operator. |

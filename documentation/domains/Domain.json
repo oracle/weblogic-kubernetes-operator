@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "description": "A Domain resource describes the configuration, logging, images, and lifecycle of a WebLogic domain, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart its members. The Domain resource references its Cluster resources using `.spec.clusters`.",
   "type": "object",
   "definitions": {
     "AdminServer": {
@@ -128,95 +129,6 @@
         }
       }
     },
-    "ClusterService": {
-      "type": "object",
-      "properties": {
-        "sessionAffinity": {
-          "default": "None",
-          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
-          "type": "string",
-          "enum": [
-            "ClientIP",
-            "None"
-          ]
-        },
-        "annotations": {
-          "description": "The annotations to be added to generated resources.",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        }
-      }
-    },
-    "ClusterSpec": {
-      "type": "object",
-      "properties": {
-        "serverService": {
-          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerService"
-        },
-        "maxUnavailable": {
-          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
-          "type": "integer",
-          "minimum": 1
-        },
-        "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 1.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "clusterName": {
-          "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
-          "type": "string"
-        },
-        "allowReplicasBelowMinDynClusterSize": {
-          "description": "Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true.",
-          "type": "boolean"
-        },
-        "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerPod"
-        },
-        "domainUID": {
-          "description": "Domain unique identifier. This domainUID is used to identify the Domain to which this Cluster is associated with.",
-          "type": "string"
-        },
-        "clusterService": {
-          "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
-          "$ref": "#/definitions/ClusterService"
-        },
-        "maxConcurrentShutdown": {
-          "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "serverStartPolicy": {
-          "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are `Never`, or `IfNeeded`. Defaults to `IfNeeded`. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
-          "type": "string",
-          "enum": [
-            "Never",
-            "IfNeeded"
-          ]
-        },
-        "maxConcurrentStartup": {
-          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "restartVersion": {
-          "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
-          "type": "string"
-        }
-      }
-    },
     "ClusterStatus": {
       "type": "object",
       "properties": {
@@ -237,6 +149,10 @@
         },
         "clusterName": {
           "description": "WebLogic cluster name.",
+          "type": "string"
+        },
+        "labelSelector": {
+          "description": "Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler.",
           "type": "string"
         },
         "readyReplicas": {
@@ -448,10 +364,10 @@
           "type": "boolean"
         },
         "clusters": {
-          "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
+          "description": "References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ClusterSpec"
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
           }
         },
         "image": {
@@ -513,11 +429,6 @@
         },
         "logHomeEnabled": {
           "description": "Specifies whether the log home folder is enabled. Defaults to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.",
-          "type": "boolean"
-        },
-        "allowReplicasBelowMinDynClusterSize": {
-          "default": true,
-          "description": "Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true.",
           "type": "boolean"
         },
         "serverPod": {
@@ -762,6 +673,10 @@
           "default": 8080,
           "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
           "type": "integer"
+        },
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         }
       }
     },

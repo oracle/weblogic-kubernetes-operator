@@ -90,10 +90,13 @@ managedServerPolicy=""
 effectivePolicy=""
 isValidServer=""
 patchJson=""
+clusterJson=""
 serverStarted=""
 startsByPolicyUnset=""
 startsByReplicaIncreaseAndPolicyUnset=""
 isAdminServer=false
+incrementReplicaPatch=""
+clusterResource=""
 
 while getopts "vkd:n:m:s:h" opt; do
   case $opt in
@@ -151,7 +154,17 @@ if [ "${isValidServer}" != 'true' ]; then
   exit 1
 fi
 
-getClusterPolicy "${domainJson}" "${clusterName}" clusterPolicy
+if [ -n "${clusterName}" ]; then
+  getClusterResource "${domainJson}" "${domainNamespace}" "${clusterName}" clusterResource
+
+  clusterJson=$(${kubernetesCli} get cluster ${clusterResource} -n ${domainNamespace} -o json --ignore-not-found)
+  if [ -z "${clusterJson}" ]; then
+    printError "Unable to get cluster resource for cluster '${clusterName}' in namespace '${domainNamespace}'. Please make sure that a Cluster exists for cluster '${clusterName}' and that this Cluster is referenced by the Domain."
+    exit 1
+  fi
+fi
+
+getClusterPolicy "${clusterJson}" clusterPolicy
 if [ "${clusterPolicy}" == 'Never' ]; then
   printError "Cannot start server '${serverName}', the server's parent cluster '.spec.clusters[?(clusterName=\"${clusterName}\"].serverStartPolicy' in the domain resource is set to 'Never'."
   exit 1
@@ -163,7 +176,7 @@ if [ "${domainPolicy}" == 'Never' ] || [[ "${domainPolicy}" == 'AdminOnly' && "$
   exit 1
 fi
 
-getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+getEffectivePolicy "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" effectivePolicy
 if [ "${isAdminServer}" == 'true' ]; then
     getEffectiveAdminPolicy "${domainJson}" effectivePolicy
     if [[ "${effectivePolicy}" == "IfNeeded" || "${effectivePolicy}" == "Always" ]]; then
@@ -174,7 +187,7 @@ fi
 
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
   if [[ ${effectivePolicy} == "IfNeeded" && ${serverStarted} == "true" ]]; then
     printInfo "No changes needed, exiting. The server should be already started or it's in the process of starting. The start policy for server ${serverName} is ${effectivePolicy} and server is chosen to be started based on current replica count."
     exit 0
@@ -198,27 +211,26 @@ if [[ -n ${clusterName} && "${keepReplicaConstant}" != 'true' ]]; then
   #check if server starts by increasing replicas and unsetting policy
   withReplicas="INCREASED"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
-  createReplicaPatch "${domainJson}" "${clusterName}" "INCREMENT" incrementReplicaPatch replicaCount
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByReplicaIncreaseAndPolicyUnset
+  createReplicaPatch "${domainJson}" "${clusterJson}" "${clusterName}" "INCREMENT" incrementReplicaPatch replicaCount
   if [[ -n ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Server starts by increasing replicas and policy unset, increment and unset
     printInfo "Unsetting the current start policy '${managedServerPolicy}' for '${serverName}' and incrementing replica count ${replicaCount}."
-    createPatchJsonToUnsetPolicyAndUpdateReplica "${domainJson}" "${serverName}" "${incrementReplicaPatch}" patchJson
+    createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
   elif [[ -z ${managedServerPolicy} && ${startsByReplicaIncreaseAndPolicyUnset} == "true" ]]; then
     # Start policy is not set, server starts by increasing replicas based on effective policy, increment replicas
     printInfo "Updating replica count for cluster '${clusterName}' to ${replicaCount}."
-    createPatchJsonToUpdateReplica "${incrementReplicaPatch}" patchJson
   else
     # Patch server policy to always and increment replicas
     printInfo "Patching start policy of server '${serverName}' from '${effectivePolicy}' to 'Always' and \
 incrementing replica count for cluster '${clusterName}' to ${replicaCount}."
-    createPatchJsonToUpdateReplicaAndPolicy "${incrementReplicaPatch}" "${alwaysStartPolicyPatch}" patchJson
+    createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
   fi
 elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
   # Replica count needs to stay constant, check if server starts by unsetting policy
   withReplicas="CONSTANT"
   withPolicy="UNSET"
-  checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
+  checkStartedServers "${domainJson}" "${clusterJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" startsByPolicyUnset
   if [[ "${effectivePolicy}" == "Never" && ${startsByPolicyUnset} == "true" ]]; then
     # Server starts by unsetting policy, unset policy
     printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
@@ -237,6 +249,11 @@ else
   createPatchJsonToUnsetPolicy "${domainJson}" "${serverName}" patchJson
 fi
 
-executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+if [ ! -z "${incrementReplicaPatch}" ]; then
+  executeClusterPatchCommand "${kubernetesCli}" "${clusterResource}" "${domainNamespace}" "${incrementReplicaPatch}" "${verboseMode}"
+fi
+if [ ! -z "${patchJson}" ]; then
+  executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
+fi
 
 printInfo "Patch command succeeded !"

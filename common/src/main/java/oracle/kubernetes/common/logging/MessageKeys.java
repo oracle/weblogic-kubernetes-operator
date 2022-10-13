@@ -114,7 +114,6 @@ public class MessageKeys {
   public static final String DOMAIN_VALIDATION_FAILED = "WLSKO-0157";
   public static final String NO_INTERNAL_CERTIFICATE = "WLSKO-162";
   public static final String NO_EXTERNAL_CERTIFICATE = "WLSKO-163";
-  public static final String REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0164";
   public static final String REQUEST_PARAMS_IN_NS = "WLSKO-0165";
   public static final String REQUEST_PARAMS_FOR_NAME = "WLSKO-0166";
   public static final String REQUEST_PARAMS_WITH = "WLSKO-0167";
@@ -144,8 +143,6 @@ public class MessageKeys {
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
   public static final String DOMAIN_FATAL_ERROR = "WLSKO-0195";
-  public static final String INTROSPECTOR_MAX_ERRORS_EXCEEDED = "WLSKO-0196";
-  public static final String NON_FATAL_INTROSPECTOR_ERROR = "WLSKO-0197";
   public static final String DUMP_BREADCRUMBS = "WLSKO-0198";
   public static final String BEGIN_SERVER_SHUTDOWN_REST = "WLSKO-0199";
   public static final String SERVER_SHUTDOWN_REST_SUCCESS = "WLSKO-0200";
@@ -169,6 +166,7 @@ public class MessageKeys {
   public static final String WATCH_CLUSTER = "WLSKO-0228";
   public static final String WATCH_CLUSTER_DELETED = "WLSKO-0229";
   public static final String CLUSTER_STATUS = "WLSKO-0230";
+  public static final String DOMAIN_INTROSPECTION_INCOMPLETE = "WLSKO-0231";
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
@@ -185,7 +183,6 @@ public class MessageKeys {
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
-  public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
   public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
@@ -210,6 +207,11 @@ public class MessageKeys {
   public static final String CYCLING_POD_EVICTED = "WLSDO-0042";
   public static final String CYCLING_POD_SPEC_CHANGED = "WLSDO-0043";
   public static final String PODS_NOT_RUNNING = "WLSDO-0044";
+  public static final String CLUSTER_IN_USE = "WLSDO-0045";
+  public static final String NO_APPLICATION_SERVERS_READY = "WLSDO-0046";
+  public static final String NON_CLUSTERED_SERVERS_NOT_READY = "WLSDO-0047";
+  public static final String CLUSTER_NOT_READY = "WLSDO-0048";
+  public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
@@ -265,10 +267,13 @@ public class MessageKeys {
   public static final String VALIDATING_WEBHOOK_CONFIGURATION_REPLACED = "WLSWH-0012";
   public static final String REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0013";
   public static final String READ_VALIDATING_WEBHOOK_CONFIGURATION_FAILED = "WLSWH-0014";
-  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
-  public static final String CLUSTER_REPLICAS_TOO_HIGH = "WLSWH-0016";
+  public static final String DOMAIN_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0015";
+  public static final String DOMAIN_REPLICAS_TOO_HIGH = "WLSWH-0016";
   public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
   public static final String WEBHOOK_STARTUP_FAILED = "WLSWH-0018";
+  public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0019";
+  public static final String DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS = "WLSWH-0020";
+  public static final String DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS = "WLSWH-0021";
 
   private MessageKeys() {
   }

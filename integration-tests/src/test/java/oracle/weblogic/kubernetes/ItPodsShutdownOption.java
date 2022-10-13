@@ -13,9 +13,9 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
@@ -51,6 +51,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -86,11 +88,10 @@ class ItPodsShutdownOption {
 
   // domain constants
   private static String domainUid = "domain1";
-  private static String clusterName = "cluster-1";
   private static int replicaCount = 2;
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-
+  String clusterName = "cluster-1";
   private static String indManagedServerName1 = "ms-1";
   private static String indManagedServerPodName1 = domainUid + "-" + indManagedServerName1;
   private static String indManagedServerName2 = "ms-2";
@@ -102,6 +103,7 @@ class ItPodsShutdownOption {
   private static String adminSecretName;
   private static String encryptionSecretName;
   private static String cmName = "configuredcluster";
+  private static ClusterResource cluster = null;
 
   /**
    * 1. Get namespaces for operator and WebLogic domain.
@@ -158,7 +160,6 @@ class ItPodsShutdownOption {
         + "      ListenPort: '9001'\n";
 
     createModelConfigMap(cmName, yamlString);
-
   }
 
   /**
@@ -173,6 +174,9 @@ class ItPodsShutdownOption {
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName1, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName2, domainUid, domainNamespace);
+    if (cluster != null) {
+      TestActions.deleteClusterCustomResource(clusterName, domainNamespace);
+    }
   }
 
   /**
@@ -216,7 +220,7 @@ class ItPodsShutdownOption {
     shutDownObjects[3] = ms1;
     shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource(shutDownObjects);
+    DomainResource domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
     // get pod logs each server which contains server.out file logs and verify values set above are present in the log
@@ -272,7 +276,7 @@ class ItPodsShutdownOption {
     shutDownObjects[3] = ms1;
     shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource(shutDownObjects);
+    DomainResource domain = buildDomainResource(shutDownObjects);
     domain.spec().serverPod()
         .addEnvItem(new V1EnvVar()
             .name("SHUTDOWN_TYPE")
@@ -324,7 +328,7 @@ class ItPodsShutdownOption {
     shutDownObjects[3] = ms1;
     shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource(shutDownObjects);
+    DomainResource domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
     // Verify values set above are present in the server log
@@ -347,7 +351,7 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, newReplicaCount),
         String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);
@@ -394,7 +398,7 @@ class ItPodsShutdownOption {
     shutDownObjects[3] = ms1;
     shutDownObjects[4] = ms2;
     // create domain custom resource and verify all the pods came up
-    Domain domain = buildDomainResource(shutDownObjects);
+    DomainResource domain = buildDomainResource(shutDownObjects);
     createVerifyDomain(domain);
 
     // Verify values set above are present in the server log
@@ -417,7 +421,7 @@ class ItPodsShutdownOption {
     int newReplicaCount = replicaCount - 1;
     logger.info("Scaling down the cluster {0} in namespace {1} to set the replicas to {2}",
         clusterName, domainNamespace, newReplicaCount);
-    assertDoesNotThrow(() -> scaleCluster(domainUid, domainNamespace, clusterName, newReplicaCount),
+    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace, newReplicaCount),
         String.format("failed to scale down cluster %s in namespace %s", clusterName, domainNamespace));
 
     checkPodDeleted(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace);
@@ -439,9 +443,10 @@ class ItPodsShutdownOption {
   }
 
   // create custom domain resource with different shutdownobject values for adminserver/cluster/independent ms
-  private Domain buildDomainResource(Shutdown[] shutDownObject) {
+  private DomainResource buildDomainResource(Shutdown[] shutDownObject) {
     logger.info("Creating domain custom resource");
-    Domain domain = new Domain()
+    // create cluster object
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -450,6 +455,7 @@ class ItPodsShutdownOption {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHomeSourceType("FromModel")
+            .replicas(replicaCount)
             .image(miiImage)
             .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -469,9 +475,6 @@ class ItPodsShutdownOption {
             .adminServer(new AdminServer()
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[1])))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .configMap(cmName)
@@ -489,15 +492,22 @@ class ItPodsShutdownOption {
                 .serverPod(new ServerPod()
                     .shutdown(shutDownObject[4]))));
     setPodAntiAffinity(domain);
-    domain.getSpec().getClusters().stream().forEach(cluster ->
-        cluster
-            .getServerPod()
-            .shutdown(shutDownObject[2]));
+    cluster = createClusterResource(
+        clusterName, clusterName, domainNamespace, replicaCount);
+    cluster.getSpec().serverPod(new ServerPod()
+        .shutdown((shutDownObject[2])));
+
+    logger.info("Creating cluster resource {0} in namespace {1}",clusterName, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+
     return domain;
   }
 
   // create domain resource and verify all the server pods are ready
-  private void createVerifyDomain(Domain domain) {
+  private void createVerifyDomain(DomainResource domain) {
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);

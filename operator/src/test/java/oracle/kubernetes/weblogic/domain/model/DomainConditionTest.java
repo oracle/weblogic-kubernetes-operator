@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
@@ -122,6 +123,14 @@ class DomainConditionTest {
 
     assertThat(failure.getSeverity(), sameInstance(FATAL));
 
+  }
+
+  @Test
+  void whenDomainInvalidFailuresIncludeFatalErrors_defaultToFatalSeverity() {
+    DomainCondition failure = new DomainCondition(FAILED).withReason(DOMAIN_INVALID)
+        .withMessage("one error\n" + FATAL_DOMAIN_INVALID_ERROR + " another");
+
+    assertThat(failure.getSeverity(), sameInstance(FATAL));
   }
 
   @Test

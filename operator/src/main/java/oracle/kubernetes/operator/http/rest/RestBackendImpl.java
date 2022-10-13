@@ -4,8 +4,10 @@
 package oracle.kubernetes.operator.http.rest;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -14,18 +16,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
+import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1TokenReviewStatus;
 import io.kubernetes.client.openapi.models.V1UserInfo;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.helpers.AuthenticationProxy;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy;
@@ -33,7 +39,6 @@ import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.http.rest.backend.RestBackend;
 import oracle.kubernetes.operator.http.rest.model.DomainAction;
 import oracle.kubernetes.operator.http.rest.model.DomainActionType;
@@ -44,6 +49,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
 import static oracle.kubernetes.common.logging.MessageKeys.INVALID_DOMAIN_UID;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -56,8 +62,6 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public class RestBackendImpl implements RestBackend {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String NEW_CLUSTER_REPLICAS =
-      "{'clusterName':'%s','replicas':%d}".replace("'", "\"");
   private static final String INITIAL_VERSION = "1";
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
@@ -91,7 +95,6 @@ public class RestBackendImpl implements RestBackend {
     userInfo = authenticate(accessToken);
     callBuilder = userInfo != null ? new CallBuilder() :
         new CallBuilder().withAuthentication(accessToken);
-    LOGGER.exiting();
   }
 
   private void authorize(String domainUid, Operation operation) {
@@ -120,14 +123,11 @@ public class RestBackendImpl implements RestBackend {
               Scope.NAMESPACE,
               getNamespace(domainUid));
     }
-    if (authorized) {
-      LOGGER.exiting();
-      return;
+    if (!authorized) {
+      WebApplicationException e = createWebApplicationException(Status.FORBIDDEN, null);
+      LOGGER.throwing(e);
+      throw e;
     }
-    // TBD - should we say what who the user is and what the user can't do?
-    WebApplicationException e = createWebApplicationException(Status.FORBIDDEN, null);
-    LOGGER.throwing(e);
-    throw e;
   }
 
   private String getNamespace(String domainUid) {
@@ -136,7 +136,6 @@ public class RestBackendImpl implements RestBackend {
 
 
   private V1UserInfo authenticate(String accessToken) {
-    LOGGER.entering();
     if (!useAuthenticateWithTokenReview()) {
       return null;
     }
@@ -161,7 +160,6 @@ public class RestBackendImpl implements RestBackend {
     if (userInfo == null) {
       throw new AssertionError(LOGGER.formatMessage(MessageKeys.NULL_USER_INFO, status));
     }
-    LOGGER.exiting(userInfo);
     return userInfo;
   }
 
@@ -279,89 +277,92 @@ public class RestBackendImpl implements RestBackend {
     return getDomainStream().filter(domain -> domainUid.equals(domain.getDomainUid())).findFirst();
   }
 
-  private Optional<ClusterResource> getClusterResource(String domainUid, String clusterName) {
+  private Optional<ClusterResource> getClusterResource(DomainResource domain, String clusterName) {
     authorize(null, Operation.LIST);
 
-    return getClusterStream().filter(c -> isMatchingClusterResource(domainUid, clusterName, c)).findFirst();
+    List<String> referencedClusterResources = getReferencedClusterResourceNames(domain);
+    return getClusterStream()
+        .filter(c -> isInSameNamespace(c, domain))
+        .filter(c -> isReferencedByDomain(c, referencedClusterResources))
+        .filter(c -> isMatchingClusterResource(clusterName, c))
+        .findFirst();
   }
 
-  private boolean isMatchingClusterResource(String domainUid, String clusterName, ClusterResource c) {
-    return clusterName.equals(c.getClusterName()) && domainUid.equals(c.getDomainUid());
+  private boolean isInSameNamespace(ClusterResource c, DomainResource domain) {
+    return Objects.equals(c.getNamespace(), domain.getNamespace());
+  }
+
+  private boolean isReferencedByDomain(ClusterResource c, List<String> referencedClusterResources) {
+    return Optional.ofNullable(referencedClusterResources)
+        .map(l -> l.contains(c.getMetadata().getName()))
+        .orElse(false);
+  }
+
+  private boolean isMatchingClusterResource(String clusterName, ClusterResource c) {
+    return clusterName.equals(c.getClusterName());
   }
 
   @Override
   public Set<String> getClusters(String domainUid) {
-    LOGGER.entering(domainUid);
     verifyDomain(domainUid);
     authorize(domainUid, Operation.GET);
 
     // Get list of WLS Configured Clusters defined for the corresponding WLS Domain identified by
     // Domain UID
     Map<String, WlsClusterConfig> wlsClusterConfigs = getWlsConfiguredClusters(domainUid);
-    Set<String> result = wlsClusterConfigs.keySet();
-    LOGGER.exiting(result);
-    return result;
+    return wlsClusterConfigs.keySet();
   }
 
   @Override
   public boolean isCluster(String domainUid, String cluster) {
-    LOGGER.entering(domainUid, cluster);
     authorize(domainUid, Operation.LIST);
-    boolean result = getClusters(domainUid).contains(cluster);
-    LOGGER.exiting(result);
-    return result;
+    return getClusters(domainUid).contains(cluster);
   }
 
   @Override
   public void scaleCluster(String domainUid, String cluster, int managedServerCount) {
-    LOGGER.entering(domainUid, cluster, managedServerCount);
-
     if (managedServerCount < 0) {
       throw createWebApplicationException(
           Status.BAD_REQUEST, MessageKeys.INVALID_MANAGE_SERVER_COUNT, managedServerCount);
     }
 
     authorize(domainUid, Operation.UPDATE);
-    getClusterResource(domainUid, cluster)
-        .ifPresentOrElse(cr -> performScaling(domainUid, cr, managedServerCount),
-          () ->  forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount)));
-
-    LOGGER.exiting();
-  }
-
-  private void performScaling(String domainUid, ClusterResource cluster, int managedServerCount) {
-    verifyWlsConfiguredClusterCapacity(domainUid, cluster.getClusterName(), managedServerCount);
-    patchClusterResourceReplicas(cluster, managedServerCount);
+    forDomainDo(domainUid, d -> performScaling(d, cluster, managedServerCount));
   }
 
   private void performScaling(DomainResource domain, String cluster, int managedServerCount) {
     verifyWlsConfiguredClusterCapacity(domain.getDomainUid(), cluster, managedServerCount);
-    patchClusterReplicas(domain, cluster, managedServerCount);
+
+    getClusterResource(domain, cluster)
+        .ifPresentOrElse(cr -> patchClusterResourceReplicas(cr, managedServerCount),
+            () -> createClusterIfNecessary(domain, cluster, managedServerCount));
   }
 
-  private void patchClusterReplicas(DomainResource domain, String cluster, int replicas) {
-    if (replicas == new DomainPresenceInfo(domain).getReplicaCount(cluster)) {
+  private List<String> getReferencedClusterResourceNames(DomainResource domain) {
+    return domain.getSpec().getClusters().stream()
+        .map(V1LocalObjectReference::getName)
+        .collect(Collectors.toList());
+  }
+
+  private void createClusterIfNecessary(DomainResource domain, String cluster, int managedServerCount) {
+    if (managedServerCount == Optional.of(domain.getSpec()).map(DomainSpec::getReplicas).orElse(0)) {
       return;
     }
-
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    int index = getClusterIndex(domain, cluster);
-    if (index < 0) {
-      patchBuilder.add("/spec/clusters/0", String.format(NEW_CLUSTER_REPLICAS, cluster, replicas));
-    } else {
-      patchBuilder.replace("/spec/clusters/" + index + "/replicas", replicas);
-    }
-
-    patchDomain(domain, patchBuilder);
+    createCluster(domain, cluster, managedServerCount);
   }
 
   private void patchClusterResourceReplicas(ClusterResource cluster, int replicas) {
-    if (replicas == cluster.getSpec().getReplicas()) {
+    Integer currentReplicas = cluster.getSpec().getReplicas();
+    if (currentReplicas != null && replicas == currentReplicas) {
       return;
     }
 
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    patchBuilder.replace("/spec/replicas", replicas);
+    if (currentReplicas == null) {
+      patchBuilder.add("/spec/replicas", replicas);
+    } else {
+      patchBuilder.replace("/spec/replicas", replicas);
+    }
     patchCluster(cluster, patchBuilder);
   }
 
@@ -376,6 +377,82 @@ public class RestBackendImpl implements RestBackend {
     }
   }
 
+  private void createCluster(DomainResource domain, String clusterName, int replicas) {
+    V1ObjectMeta domainMetadata = domain.getMetadata();
+    String namespace = domainMetadata.getNamespace();
+    ClusterResource cluster = new ClusterResource()
+        .withMetadata(new V1ObjectMeta()
+            .namespace(namespace)
+            .name(domain.getDomainUid() + "-" + clusterName)
+            .putLabelsItem("weblogic.createdByOperator", "true")
+            .addOwnerReferencesItem(new V1OwnerReference()
+                .apiVersion(domain.getApiVersion())
+                .kind(domain.getKind())
+                .name(domainMetadata.getName())
+                .uid(domainMetadata.getUid())
+                .controller(true)))
+        .withReplicas(replicas);
+    try {
+      callBuilder.createCluster(namespace, cluster);
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public Object createOrReplaceCluster(Map<String, Object> cluster) {
+    Map<String, Object> metadata = Optional.ofNullable((Map<String, Object>) cluster.get("metadata"))
+        .orElse(Collections.emptyMap());
+    String namespace = (String) metadata.getOrDefault("namespace", "default");
+    String name = (String) metadata.get("name");
+    Object currentCluster = null;
+    try {
+      currentCluster = callBuilder.readClusterUntyped(name, namespace);
+    } catch (ApiException apiException) {
+      if (apiException.getCode() != KubernetesConstants.HTTP_NOT_FOUND) {
+        throw handleApiException(apiException);
+      }
+    }
+
+    if (currentCluster == null) {
+      try {
+        Object result = callBuilder.createClusterUntyped(namespace, cluster);
+        if (LOGGER.isFineEnabled()) {
+          LOGGER.fine("Created Cluster: " + result);
+        }
+        return result;
+      } catch (ApiException f) {
+        throw handleApiException(f);
+      }
+    }
+
+    metadata.put("resourceVersion", Optional.ofNullable((Map<String, Object>) ((Map<String, Object>) currentCluster)
+        .get("metadata")).map(m -> m.get("resourceVersion")).orElse(null));
+    try {
+      Object result = callBuilder.replaceClusterUntyped(name, namespace, cluster);
+      if (LOGGER.isFineEnabled()) {
+        LOGGER.fine("Replaced Cluster: " + result);
+      }
+      return result;
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public List<Map<String, Object>> listClusters(String namespace) {
+    try {
+      Map<String, Object> clusterList = (Map<String, Object>) callBuilder.listClusterUntyped(namespace);
+      return Optional.of(clusterList).map(cl -> (List<Map<String, Object>>) cl.get("items"))
+          .orElse(Collections.emptyList());
+    } catch (ApiException e) {
+      throw handleApiException(e);
+    }
+  }
+
+
   private void patchDomain(DomainResource domain, JsonPatchBuilder patchBuilder) {
     try {
       callBuilder
@@ -385,16 +462,6 @@ public class RestBackendImpl implements RestBackend {
     } catch (ApiException e) {
       throw handleApiException(e);
     }
-  }
-
-  private int getClusterIndex(DomainResource domain, String cluster) {
-    for (int i = 0; i < domain.getSpec().getClusters().size(); i++) {
-      if (cluster.equals(domain.getSpec().getClusters().get(i).getClusterName())) {
-        return i;
-      }
-    }
-
-    return -1;
   }
 
   private void verifyWlsConfiguredClusterCapacity(String domainUid, String cluster, int requestedSize) {
@@ -441,8 +508,14 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WebApplicationException handleApiException(ApiException e) {
-    // TBD - what about e.getResponseHeaders?
-    return createWebApplicationException(e.getCode(), e.getResponseBody());
+    LOGGER.throwing(e);
+    return createWebApplicationException(e.getCode(),
+            Optional.ofNullable(new Gson().fromJson(e.getResponseBody(), V1Status.class))
+                    .map(this::messageFromStatus).orElse(null));
+  }
+
+  private String messageFromStatus(V1Status status) {
+    return status.getMessage();
   }
 
   private WebApplicationException createWebApplicationException(
@@ -456,11 +529,8 @@ public class RestBackendImpl implements RestBackend {
   }
 
   private WebApplicationException createWebApplicationException(int status, String msg) {
-    ResponseBuilder rb = Response.status(status);
-    if (msg != null) {
-      rb.entity(msg);
-    }
-    return new WebApplicationException(rb.build());
+    return new WebApplicationException(
+            Optional.ofNullable(msg).map(m -> Response.status(status, m)).orElse(Response.status(status)).build());
   }
 
   protected boolean useAuthenticateWithTokenReview() {

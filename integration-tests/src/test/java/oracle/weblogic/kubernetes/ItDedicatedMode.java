@@ -3,15 +3,13 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -39,9 +37,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -54,7 +51,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * The current class verifies various use cases related to Dedicated
@@ -64,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @Tag("kind-sequential")
+@Tag("oke-sequential")
 @Tag("okd-wls-mrg")
 @IntegrationTest
 @Tag("olcne")
@@ -78,6 +75,7 @@ class ItDedicatedMode {
   // domain constants
   private final String domainUid = "dedicated-domain1";
   private final String clusterName = "cluster-1";
+  private final String clusterResName = domainUid + "-" + clusterName;
   private final int replicaCount = 2;
   private final String adminServerPodName =
        domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -222,14 +220,8 @@ class ItDedicatedMode {
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
-    // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
-    List<Cluster> clusters = new ArrayList<>();
-    clusters.add(new Cluster()
-        .clusterName(clusterName)
-        .replicas(replicaCount));
-
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -253,11 +245,14 @@ class ItDedicatedMode {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .clusters(clusters)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
+
+    domain = createClusterResourceAndAddReferenceToDomain(
+        clusterResName, clusterName, domainNamespace, domain, replicaCount);
+
     setPodAntiAffinity(domain);
     // create model in image domain
     logger.info("Creating mii domain {0} in namespace {1} using image {2}",
@@ -299,19 +294,4 @@ class ItDedicatedMode {
     }
   }
 
-  private void uninstallOperatorAndVerify() {
-    // uninstall operator
-    assertTrue(uninstallOperator(opHelmParams),
-        String.format("Uninstall operator failed in namespace %s", opNamespace));
-
-    // delete service account
-    assertTrue(deleteServiceAccount(opServiceAccount,opNamespace),
-        String.format("Delete service acct %s failed in namespace %s", opServiceAccount, opNamespace));
-
-    // delete secret/base-images-repo-secret
-    Command
-        .withParams(new CommandParams()
-            .command("kubectl delete secret/base-images-repo-secret -n " + opNamespace + " --ignore-not-found"))
-        .execute();
-  }
 }

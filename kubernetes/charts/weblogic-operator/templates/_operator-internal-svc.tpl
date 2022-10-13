@@ -22,6 +22,7 @@ spec:
       name: "metrics"
       appProtocol: http
 ---
+{{- if not .operatorOnly }}
 apiVersion: "v1"
 kind: "Service"
 metadata:
@@ -40,4 +41,5 @@ spec:
     - port: 8084
       name: "restwebhook"
       appProtocol: https
+{{- end }}
 {{- end }}

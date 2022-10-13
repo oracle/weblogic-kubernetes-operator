@@ -22,9 +22,8 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
@@ -84,6 +83,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -91,6 +92,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -109,6 +112,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -216,12 +220,17 @@ class ItMiiDomain {
         + "         ListenPort: '" + adminServerSecurePort + "' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
 
+    // create cluster object
+    String clusterName = "cluster-1";
+
     // create the domain object
-    Domain domain = createDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-               replicaCount,
-               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -337,8 +346,9 @@ class ItMiiDomain {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
             "weblogicenc", "weblogicenc");
 
+    String clusterName = "cluster-1";
     // create the domain object
-    Domain domain = createDomainResource(domainUid1,
+    DomainResource domain = createDomainResource(domainUid1,
                 domainNamespace1,
                 adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -348,6 +358,9 @@ class ItMiiDomain {
 
     // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
+
+    domain = createClusterResourceAndAddReferenceToDomain(domainUid1 + "-" + clusterName,
+        clusterName, domainNamespace1, domain, replicaCount);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -558,7 +571,7 @@ class ItMiiDomain {
   @Order(5)
   @DisplayName("Check admin service annotations and labels")
   void testAdminServiceAnnotationsLabels() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertTrue(
@@ -567,6 +580,70 @@ class ItMiiDomain {
     assertTrue(
         domain1.getSpec().getAdminServer().getServerService().getLabels().containsKey("testkey"),
         "Missing expected label on admin service");
+  }
+
+  /** The default replicas at domain resource level is 1. Patching domain1 with new replicas 3.
+   * Verify managed server pods count at cluster resource level are not affected by domain resource
+   * level patching.
+   * Replicas count at cluster resource level is defined as 2.
+   * Scale up the cluster by patching replicas count to 5 at cluster resource level.
+   * Scale down the cluster by patching replicas count to 1 at cluster resource level.
+   * Verify cluster resource level scaling is successful even though replicas count at domain resource
+   * level is specified as 3
+   */
+  @Test
+  @Order(6)
+  @DisplayName("Verify scaling by patching replicas at domain resource and cluster resource level")
+  void testClusterScale() {
+    final int replicaCount = 2;
+    String clusterName = domainUid + "-" + "cluster-1";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    //patch replicas at domain resource level to 3
+    boolean scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 3);
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    //managed server pods at cluster resource level should not be affected by domain resource level patching
+    //verify at cluster resource level there are only 2 managed server pods exist and running
+    //verify managedServer3 doesn't exist
+    logger.info("Check dynamic managed server pods are not affected");
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
+        domainNamespace, replicaCount)));
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    //verify managedServer3 doesn't exist
+    checkPodDoesNotExist(managedServerPrefix + 3, domainUid, domainNamespace);
+
+
+    //scaling by patching replicas at cluster resource level should scale up/down
+    //the cluster even the domain resource has replicas defined
+    logger.info("Updating the cluster {0} replica count to 5", clusterName);
+    boolean p1Success = scaleCluster(clusterName, domainNamespace,5);
+    assertTrue(p1Success,
+        String.format("Patching replica to 5 failed for cluster %s in namespace %s",
+            clusterName, domainNamespace));
+    //verify 5 managed servers are up and running
+    for (int i = 1; i <= 5; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Updating the cluster {0} replica count to 1", clusterName);
+    p1Success = scaleCluster(clusterName, domainNamespace,1);
+    assertTrue(p1Success,
+        String.format("Patching replica to 1 failed for cluster %s in namespace %s",
+            clusterName, domainNamespace));
+    //verify only one managed server is up and running
+    for (int i = 5; i >= 2; i--) {
+      logger.info("Wait for managed server pod {0} to be shutdown in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    checkPodReadyAndServiceExists(managedServerPrefix + 1, domainUid, domainNamespace);
   }
 
   // This method is needed in this test class, since the cleanup util
@@ -746,6 +823,7 @@ class ItMiiDomain {
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
             .target(witTarget)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 
@@ -764,11 +842,12 @@ class ItMiiDomain {
   }
 
 
-  private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, String encryptionSecretName, int replicaCount,
-                                      String miiImage) {
+  private DomainResource createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+                                              String repoSecretName, String encryptionSecretName, int replicaCount,
+                                              String miiImage) {
+
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -797,9 +876,6 @@ class ItMiiDomain {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -810,16 +886,16 @@ class ItMiiDomain {
   }
 
   // Create a domain resource with a custom ConfigMap
-  private Domain createDomainResourceWithConfigMap(String domainUid,
-          String domNamespace, String adminSecretName,
-          String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName) {
+  private DomainResource createDomainResourceWithConfigMap(String domainUid,
+                                                           String domNamespace, String adminSecretName,
+                                                           String repoSecretName, String encryptionSecretName,
+                                                           String miiImage, String configmapName) {
 
     Map<String, String> keyValueMap = new HashMap<>();
     keyValueMap.put("testkey", "testvalue");
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -855,9 +931,6 @@ class ItMiiDomain {
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
