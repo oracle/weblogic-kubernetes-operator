@@ -167,7 +167,7 @@ public class ClusterUtils {
 
   /**
    * Remove the replicas setting from a cluster resource.
-   *  @param domainUid uid of the domain
+   * @param domainUid uid of the domain
    * @param clusterName name of the cluster resource
    * @param namespace namespace
    * @param replicaCount original replicaCount
@@ -292,6 +292,50 @@ public class ClusterUtils {
     } else {
       assertFalse(result, "kubectl scale command should fail");
     }
+  }
+
+  /**
+   * Stop the  cluster managed server(s) in a cluster resource.
+   * @param clusterResource name of the cluster resource
+   * @param namespace namespace
+   * */
+  public static void stopCluster(String clusterResource, 
+            String namespace) {
+    getLogger().info("Stop the server(s) on cluster resource {0} in namespace {1}", clusterResource, namespace);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/serverStartPolicy\",")
+        .append(" \"value\": \"")
+        .append("Never")
+        .append("\"")
+        .append(" }]");
+
+    getLogger().info("Cluster Patch string: {0}", patchStr);
+    assertTrue(patchClusterCustomResource(clusterResource, namespace, new V1Patch(new String(patchStr)),
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to stop cluster resource");
+  }
+
+  /**
+   * Start the cluster managed server(s) in a cluster resource.
+   * @param clusterResource name of the cluster resource
+   * @param namespace namespace
+   * */
+  public static void startCluster(String clusterResource, 
+            String namespace) {
+    getLogger().info("Stop the server(s) on cluster resource {0} in namespace {1}", clusterResource, namespace);
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/serverStartPolicy\",")
+        .append(" \"value\": \"")
+        .append("IfNeeded")
+        .append("\"")
+        .append(" }]");
+
+    getLogger().info("Cluster Patch string: {0}", patchStr);
+    assertTrue(patchClusterCustomResource(clusterResource, namespace, new V1Patch(new String(patchStr)),
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to start cluster resource");
   }
 
 }
