@@ -1865,6 +1865,18 @@ public class TestActions {
   }
 
   /**
+   * Patch the cluster resource with a new restartVersion.
+   *
+   * @param clusterResourceName name of the cluster resource
+   * @param namespace Kubernetes namespace that the cluster is hosted
+   * @return restartVersion new restartVersion of the cluster resource
+   */
+  public static String patchClusterResourceWithNewRestartVersion(
+      String clusterResourceName, String namespace) {
+    return Cluster.patchClusterResourceWithNewRestartVersion(clusterResourceName, namespace);
+  }
+
+  /**
    * Get the name of the operator pod.
    *
    * @param release release name of the operator
