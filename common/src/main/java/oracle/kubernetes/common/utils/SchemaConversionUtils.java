@@ -58,12 +58,13 @@ public class SchemaConversionUtils {
   private static final String DOLLAR_SPEC_SERVERPOD = "$.spec.serverPod";
   private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
 
+  public static final String INTERNAL = "Internal";
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
    * Validated in tests in the operator.
    */
   public static final List<String> SUPPORTED_FAILURE_REASONS = List.of(
-        "Aborted", "Internal", "TopologyMismatch", "ReplicasTooHigh",
+        "Aborted", INTERNAL, "TopologyMismatch", "ReplicasTooHigh",
         "ServerPod", "Kubernetes", "Introspection", "DomainInvalid");
 
   private static final String VOLUME_MOUNTS = "volumeMounts";
@@ -337,7 +338,7 @@ public class SchemaConversionUtils {
         Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
             ANNOTATIONS, k -> new LinkedHashMap<>());
         annotations.put(FAILED_REASON, currentReason);
-        condition.put(REASON, "Internal");
+        condition.put(REASON, INTERNAL);
       }
     }
   }
@@ -350,7 +351,7 @@ public class SchemaConversionUtils {
         Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
             ANNOTATIONS, k -> new LinkedHashMap<>());
         annotations.put(AVAILABLE_REASON, currentReason);
-        condition.put(REASON, "Internal");
+        condition.put(REASON, INTERNAL);
       }
     }
   }
