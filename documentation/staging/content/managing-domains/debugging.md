@@ -29,7 +29,7 @@ If your introspector job failed, then examine the `kubectl describe` of the job 
 
 {{% notice tip %}}
 To prevent the introspector job from retrying while you are debugging a failure, configure `domain.spec.failureRetryLimitMinutes` to `0`.
-For more information, see [Domain Failure Retry Processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+For more information, see [Domain failure retry processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
 {{% /notice %}}
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`.

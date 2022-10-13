@@ -232,7 +232,7 @@ When recovering from a failure, please keep the following points in mind:
    limit specified in `domain.spec.failureRetryLimitMinutes`.
    To correct the problem, modify and reapply your model resources (ConfigMap and/or secrets),
    plus, if the introspector job has stopped retrying, you must also change your domain resource
-   `domain.spec.introspectVersion` again. For more information, see [Domain Failure Retry Processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+   `domain.spec.introspectVersion` again. For more information, see [Domain failure retry processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
 
 
 
