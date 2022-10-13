@@ -673,19 +673,6 @@ class ItWlsSamples {
     String additionalOptions = (additonalStr.length == 0) ? "" : additonalStr[0];
     String imageName = (additonalStr.length == 2) ? additonalStr[1] : "";
 
-    // run create-domain.sh to create domain.yaml file
-    /*CommandParams params = new CommandParams().defaults();
-    params.command("sh "
-            + get(sampleBase.toString(), "create-domain.sh").toString()
-            + " -i " + get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
-            + " -o "
-            + get(sampleBase.toString())
-            + additionalOptions);
-
-    logger.info("Run create-domain.sh to create domain.yaml file");
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");*/
-
     String command1 = "sh "
             + get(sampleBase.toString(), "create-domain.sh").toString()
             + " -i " + get(sampleBase.toString(), "create-domain-inputs.yaml").toString()

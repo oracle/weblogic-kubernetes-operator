@@ -218,28 +218,6 @@ public class ItFmwDiiSample {
 
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
-    /*final CommandParams params = new CommandParams().defaults();
-
-    params.command("sh "
-            + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
-            + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
-            + " -u " + ADMIN_USERNAME_DEFAULT
-            + " -p " + ADMIN_PASSWORD_DEFAULT
-            + " -q " + RCUSYSPASSWORD
-            + " -b host"
-            + " -o "
-            + Paths.get(sampleBase.toString()));
-
-
-    logger.info("Going to run sample create-domain.sh");
-    testUntil(
-        withLongRetryPolicy,
-        () -> {
-          return Command.withParams(params).execute();
-        },
-        logger,
-        "Running sample create-domain.sh to create domain.yaml");*/
-
     String command1 = "sh "
             + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
             + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
