@@ -346,7 +346,7 @@ public class SchemaConversionUtils {
   private void renameAvailableReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
     if ("Available".equals(condition.get(TYPE))) {
       String currentReason = condition.get(REASON);
-      if (isUnsupportedReason(currentReason)) {
+      if (currentReason != null && isUnsupportedReason(currentReason)) {
         Map<String, Object> meta = getMetadata(domain);
         Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
             ANNOTATIONS, k -> new LinkedHashMap<>());

@@ -233,6 +233,15 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenOldDomainHasNullAvailableConditionReason_dontPreserve() {
+    addStatusCondition("Available", "True", null, "Ready");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.available.reason']"));
+  }
+
+  @Test
   void testV9DomainFailedConditionReason_restored() throws IOException {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "metadata.annotations")
