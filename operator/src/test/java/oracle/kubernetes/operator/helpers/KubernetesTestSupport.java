@@ -74,6 +74,7 @@ import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.webhooks.model.Scale;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
@@ -113,6 +114,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PODLOG = "PodLog";
   public static final String SECRET = "Secret";
   public static final String SERVICE = "Service";
+  public static final String SCALE = "Scale";
   public static final String SUBJECT_ACCESS_REVIEW = "SubjectAccessReview";
   public static final String SELF_SUBJECT_ACCESS_REVIEW = "SelfSubjectAccessReview";
   public static final String SELF_SUBJECT_RULES_REVIEW = "SelfSubjectRulesReview";
@@ -164,6 +166,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
+    supportNamespaced(SCALE, Scale.class);
 
     return new KubernetesTestSupportMemento();
   }

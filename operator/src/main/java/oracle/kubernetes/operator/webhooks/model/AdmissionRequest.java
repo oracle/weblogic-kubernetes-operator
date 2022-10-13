@@ -3,14 +3,27 @@
 
 package oracle.kubernetes.operator.webhooks.model;
 
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.webhooks.resource.AdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.ClusterCreateAdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.ClusterScaleAdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.ClusterUpdateAdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.DomainCreateAdmissionChecker;
+import oracle.kubernetes.operator.webhooks.resource.DomainUpdateAdmissionChecker;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
-import static oracle.kubernetes.operator.helpers.WebhookHelper.CLUSTER_RESOURCES;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
+import static oracle.kubernetes.operator.KubernetesConstants.SCALE;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readCluster;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readDomain;
+import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readScale;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 
 /**
@@ -25,6 +38,9 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMa
  * </p>
  */
 public class AdmissionRequest {
+
+  public static final String NOT_SUPPORTED_MSG = "Not Supported";
+
   /**
    * An uid uniquely identifying this admission call.
    */
@@ -51,7 +67,7 @@ public class AdmissionRequest {
    */
   @SerializedName("subResource")
   @Expose
-  private Map<String, String> subResource;
+  private String subResource;
 
   /**
    * The new object being admitted.
@@ -91,11 +107,11 @@ public class AdmissionRequest {
     this.resource = resource;
   }
 
-  public Map<String, String> getSubResource() {
+  public String getSubResource() {
     return subResource;
   }
 
-  public void setSubResource(Map<String, String> subResource) {
+  public void setSubResource(String subResource) {
     this.subResource = subResource;
   }
 
@@ -130,11 +146,11 @@ public class AdmissionRequest {
   }
 
   private Object getOldResource() {
-    return isCluster() ? readCluster(writeMap(getOldObject())) : readDomain(writeMap(getOldObject()));
+    return getRequestKind().readOldObject(this);
   }
 
   public Object getProposedResource() {
-    return isCluster() ? readCluster(writeMap(getObject())) : readDomain(writeMap(getObject()));
+    return getRequestKind().readObject(this);
   }
 
   @Override
@@ -149,7 +165,130 @@ public class AdmissionRequest {
         + '}';
   }
 
-  public boolean isCluster() {
-    return resource.get("resource").equals(CLUSTER_RESOURCES);
+  /**
+   * Get the kind type of the admission request.
+   *
+   * @return enum element.
+   */
+  public RequestKind getRequestKind() {
+    switch (getKind().get("kind")) {
+      case DOMAIN:
+        return RequestKind.DOMAIN;
+      case CLUSTER:
+        return RequestKind.CLUSTER;
+      case SCALE:
+        return RequestKind.SCALE;
+      default:
+        return RequestKind.NOT_SUPPORTED;
+    }
+  }
+
+  public enum RequestKind {
+    DOMAIN {
+      @Override
+      public Object readOldObject(AdmissionRequest request) {
+        return readDomain(writeMap(request.getOldObject()));
+      }
+
+      @Override
+      public Object readObject(AdmissionRequest request) {
+        return readDomain(writeMap(request.getObject()));
+      }
+
+      @Override
+      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+        DomainResource existing = (DomainResource) request.getExistingResource();
+        DomainResource proposed = (DomainResource) request.getProposedResource();
+        return request.isNewResource()
+            ? new DomainCreateAdmissionChecker(proposed)
+            : new DomainUpdateAdmissionChecker(existing, proposed);
+      }
+    },
+    CLUSTER {
+      @Override
+      public Object readOldObject(AdmissionRequest request) {
+        return readCluster(writeMap(request.getOldObject()));
+      }
+
+      @Override
+      public Object readObject(AdmissionRequest request) {
+        return readCluster(writeMap(request.getObject()));
+      }
+
+      @Override
+      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+        ClusterResource existing = (ClusterResource) request.getExistingResource();
+        ClusterResource proposed = (ClusterResource) request.getProposedResource();
+        return request.isNewResource()
+            ? new ClusterCreateAdmissionChecker(proposed)
+            : new ClusterUpdateAdmissionChecker(existing, proposed);
+      }
+    },
+    SCALE {
+      @Override
+      public Object readOldObject(AdmissionRequest request) {
+        return readScale(writeMap(request.getOldObject()));
+      }
+
+      @Override
+      public Object readObject(AdmissionRequest request) {
+        return readScale(writeMap(request.getObject()));
+      }
+
+      @Override
+      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException {
+        Scale proposed = (Scale) request.getProposedResource();
+        ClusterResource cluster = getCluster(proposed.getMetadata().getName(),
+              proposed.getMetadata().getNamespace());
+        if (cluster != null) {
+          cluster.getSpec().withReplicas(Integer.valueOf(proposed.getSpec().get("replicas")));
+          return new ClusterScaleAdmissionChecker(cluster);
+        } else {
+          throw new ApiException("Cluster " + proposed.getMetadata().getName() + " not found");
+        }
+      }
+
+      private ClusterResource getCluster(String clusterName, String namespace) throws ApiException {
+        List<ClusterResource> clusters = AdmissionChecker.getClusters(namespace);
+        return clusters.stream().filter(cluster -> clusterName.equals(cluster.getMetadata().getName()))
+            .findFirst().orElse(null);
+      }
+    },
+    NOT_SUPPORTED {
+      @Override
+      public boolean isSupported() {
+        return false;
+      }
+
+      @Override
+      public Object readOldObject(AdmissionRequest request) {
+        throw new AssertionError(NOT_SUPPORTED_MSG);
+      }
+
+      @Override
+      public Object readObject(AdmissionRequest request) {
+        throw new AssertionError(NOT_SUPPORTED_MSG);
+      }
+
+      @Override
+      public AdmissionChecker getAdmissionChecker(AdmissionRequest request) {
+        throw new AssertionError(NOT_SUPPORTED_MSG);
+      }
+    };
+
+    public boolean isSupported() {
+      return true;
+    }
+
+    public abstract Object readOldObject(AdmissionRequest request);
+
+    public abstract Object readObject(AdmissionRequest request);
+
+    public abstract AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException;
+
+  }
+
+  private boolean isNewResource() {
+    return getOldObject() == null;
   }
 }
