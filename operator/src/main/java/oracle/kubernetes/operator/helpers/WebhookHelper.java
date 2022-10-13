@@ -148,7 +148,8 @@ public class WebhookHelper {
     }
 
     private V1RuleWithOperations createRuleForCluster() {
-      return createRule().apiVersions(createList(CLUSTER_VERSION)).resources(createList(CLUSTER_RESOURCES));
+      return createRule().apiVersions(createList(CLUSTER_VERSION))
+          .resources(Arrays.asList(CLUSTER_RESOURCES, "*/scale"));
     }
 
     private V1ObjectMeta createMetadata(Map<String, String> labels) {
