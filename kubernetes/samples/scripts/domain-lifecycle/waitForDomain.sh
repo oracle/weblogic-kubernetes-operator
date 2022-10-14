@@ -30,6 +30,8 @@ initGlobals() {
   DOMAIN_UID_DEFAULT="sample-domain1"
   DOMAIN_UID=$DOMAIN_UID_DEFAULT
 
+  DOMAIN_RTYPE="domain.v9.weblogic.oracle"
+
   DOMAIN_NAMESPACE_DEFAULT="sample-domain1-ns"
   DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE_DEFAULT
 
@@ -219,17 +221,17 @@ getDomainValue() {
   local ljpath="{$2}"
   local attvalue
   set +e
-  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get ${DOMAIN_RTYPE} ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ "$EXPECTED_STATE" = "Completed" ]; then
-      trace "Error: Could not obtain '$ljpath' from domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
+      trace "Error: Could not obtain '$ljpath' from ${DOMAIN_RTYPE} '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
       exit 1
     else
       # We're waiting for 0 pods - domain might have been deleted, and it doesn't matter what the value is
       attvalue=''
     fi
   fi
-  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath=\"$ljpath\" 2>&1"
+  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get ${DOMAIN_RTYPE} ${DOMAIN_UID} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
   eval "$__retvar='$attvalue'"
   set -e
@@ -269,7 +271,7 @@ getDomainAIImages() {
   set +e
   attvalue=$(
     ${KUBERNETES_CLI} \
-      get domain ${DOMAIN_UID} \
+      get ${DOMAIN_RTYPE} ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
       -o=jsonpath="{range .spec.configuration.model.auxiliaryImages[*]}{.image}{','}{end}" \
       2>&1
