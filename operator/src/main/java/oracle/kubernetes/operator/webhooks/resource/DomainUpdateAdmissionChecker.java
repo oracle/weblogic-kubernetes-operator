@@ -12,12 +12,10 @@ import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
-import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
@@ -206,11 +204,6 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     List<ClusterResource> clusters = getClusters(domain.getNamespace());
     return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())
         && isReferenced(domain, cluster)).findFirst().map(ClusterResource::getSpec).orElse(null);
-  }
-
-  private List<ClusterResource> getClusters(String namespace) throws ApiException {
-    return Optional.of(new CallBuilder().listCluster(namespace))
-        .map(ClusterList::getItems).orElse(Collections.emptyList());
   }
 
   private boolean isReferenced(@NotNull DomainResource domain, ClusterResource cluster) {
