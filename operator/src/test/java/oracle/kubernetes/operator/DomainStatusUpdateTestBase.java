@@ -1223,6 +1223,24 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenServersInAClusterAreNotInRunningState_clusterIsNotAvailableAndNotCompleted() {
+    defineScenario()
+            .withCluster("cluster1", "ms1", "ms2")
+            .withServersReachingState(STARTING_STATE, "ms1", "ms2").build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+    condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
   void withServersShuttingDown_domainIsNotCompleted() {
     defineScenario().withServers("server1").withServersReachingState(SHUTTING_DOWN_STATE, "server1").build();
 

@@ -430,6 +430,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
+      public MakeRightDomainOperation withDomainResourcesValidation() {
+        return this;
+      }
+
+      @Override
       public MakeRightDomainOperation forDeletion() {
         deleting = true;
         return this;

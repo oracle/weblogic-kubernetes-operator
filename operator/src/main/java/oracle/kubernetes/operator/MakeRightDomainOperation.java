@@ -36,6 +36,11 @@ public interface MakeRightDomainOperation extends PacketComponent {
    */
   MakeRightDomainOperation withEventData(EventData eventData);
 
+  /**
+   * Specifies that this make right operation was initiated by tte DomainRecheck task.
+   */
+  MakeRightDomainOperation withDomainResourcesValidation();
+
   MakeRightDomainOperation interrupt();
 
   /**

@@ -68,6 +68,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
+  private boolean domainResourcesValidation;
 
 
   /**
@@ -115,6 +116,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    */
   public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
     this.eventData = eventData;
+    return this;
+  }
+
+  public MakeRightDomainOperation withDomainResourcesValidation() {
+    this.domainResourcesValidation = true;
     return this;
   }
 
@@ -187,6 +193,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     this.deleting = false;
     this.willInterrupt = false;
     this.inspectionRun = false;
+    this.domainResourcesValidation = false;
   }
 
 
@@ -390,7 +397,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction apply(Packet packet) {
-      executor.registerDomainPresenceInfo(info);
+      if (domainResourcesValidation) {
+        executor.registerDomainPresenceInfoForStatus(info);
+      } else {
+        executor.registerDomainPresenceInfo(info);
+      }
 
       return doNext(getNextSteps(), packet);
     }

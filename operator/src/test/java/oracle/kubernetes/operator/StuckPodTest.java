@@ -252,6 +252,11 @@ class StuckPodTest {
       }
 
       @Override
+      public MakeRightDomainOperation withDomainResourcesValidation() {
+        return this;
+      }
+
+      @Override
       public void execute() {
         
       }

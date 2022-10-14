@@ -48,6 +48,12 @@ public interface MakeRightExecutor {
   void registerDomainPresenceInfo(DomainPresenceInfo info);
 
   /**
+   * Adds the specified presence info to a cache.
+   * @param info the presence info which encapsulates the domain
+   */
+  void registerDomainPresenceInfoForStatus(DomainPresenceInfo info);
+
+  /**
    * Removes the specified presence info from the cache.
    * @param info the presence info which encapsulates the domain
    */
