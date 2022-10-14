@@ -27,6 +27,8 @@ syntaxError() {
 }
 
 initGlobals() {
+  KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
   DOMAIN_UID_DEFAULT="sample-domain1"
   DOMAIN_UID=$DOMAIN_UID_DEFAULT
 
@@ -217,7 +219,7 @@ getDomainValue() {
   local ljpath="{$2}"
   local attvalue
   set +e
-  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '$ljpath' from domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
@@ -227,7 +229,7 @@ getDomainValue() {
       attvalue=''
     fi
   fi
-  # echo "DEBUG kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath=\"$ljpath\" 2>&1"
+  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
   eval "$__retvar='$attvalue'"
   set -e
@@ -242,7 +244,7 @@ getClusterValue() {
   local ljpath="{$3}"
   local attvalue
   set +e
-  attvalue=$(kubectl -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath="$ljpath" 2>&1)
+  attvalue=$(${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath="$ljpath" 2>&1)
   if [ $? -ne 0 ]; then
     if [ "$EXPECTED_STATE" = "Completed" ]; then
       trace "Error: Could not obtain '$ljpath' from cluster '${cname}' in namespace '${DOMAIN_NAMESPACE}'. Is your cluster resource deployed? Err='$attvalue'"
@@ -252,7 +254,7 @@ getClusterValue() {
       attvalue=''
     fi
   fi
-  # echo "DEBUG kubectl -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath=\"$ljpath\" 2>&1"
+  # echo "DEBUG ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get cluster ${cname} -o=jsonpath=\"$ljpath\" 2>&1"
   # echo "DEBUG   = '$attvalue'"
   eval "$__retvar='$attvalue'"
   set -e
@@ -266,7 +268,7 @@ getDomainAIImages() {
   local __retvar=$1
   set +e
   attvalue=$(
-    kubectl \
+    ${KUBERNETES_CLI} \
       get domain ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
       -o=jsonpath="{range .spec.configuration.model.auxiliaryImages[*]}{.image}{','}{end}" \
@@ -363,13 +365,13 @@ getPodInfo() {
   ljpath+='{end}'
 
   # get introspector pod, if any:
-  kubectl -n ${DOMAIN_NAMESPACE} get pods \
+  ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get pods \
           -l job-name=${DOMAIN_UID}-introspector \
           -o=jsonpath="$ljpath" \
           | sortAIImages
 
   # get wl server pods, if any:
-  kubectl -n ${DOMAIN_NAMESPACE} get pods \
+  ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get pods \
           -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
           -o=jsonpath="$ljpath" \
           | sortAIImages
