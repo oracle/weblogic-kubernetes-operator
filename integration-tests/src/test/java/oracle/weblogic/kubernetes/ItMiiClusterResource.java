@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusMatchesDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
@@ -203,7 +204,10 @@ class ItMiiClusterResource {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-
+    logger.info("Check cluster reource status is mirrow of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+            "Cluster Resource status does not march domain.status"));
     logger.info("Patch the domain resource with new cluster resource");
     String patchStr
         = "["
@@ -227,7 +231,10 @@ class ItMiiClusterResource {
           managedServer1Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-
+    logger.info("Check cluster reource status is mirrow of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+            "Cluster Resource status does not march domain.status"));
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
@@ -255,12 +262,19 @@ class ItMiiClusterResource {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
           managedServer2Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
+      logger.info("Check cluster reource status is mirrow of domain.status");
+      assertDoesNotThrow(() ->
+          assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+              "Cluster Resource status does not march domain.status"));
     }
 
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
-
+    logger.info("Check cluster reource status is mirrow of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+            "Cluster Resource status does not march domain.status"));
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);

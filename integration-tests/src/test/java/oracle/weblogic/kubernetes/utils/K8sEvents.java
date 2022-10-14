@@ -498,7 +498,7 @@ public class K8sEvents {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
-    if (domainUid != null) {
+    if (domainUid != null && event.getInvolvedObject().getKind().equals("Domain")) {
       assertEquals(TestConstants.DOMAIN_API_VERSION, event.getInvolvedObject().getApiVersion(),
           "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
     }
@@ -525,6 +525,13 @@ public class K8sEvents {
   public static final String DOMAIN_CHANGED = "Changed";
   public static final String DOMAIN_COMPLETED = "Completed";
   public static final String DOMAIN_FAILED = "Failed";
+  public static final String CLUSTER_AVAILABLE = "ClusterAvailable";
+  public static final String CLUSTER_CREATED = "ClusterCreated";
+  public static final String CLUSTER_DELETED = "ClusterDeleted";
+  public static final String CLUSTER_CHANGED = "ClusterChanged";
+  public static final String CLUSTER_COMPLETED = "ClusterCompleted";
+  public static final String CLUSTER_INCOMPLETED = "ClusterIncomplete";
+  public static final String CLUSTER_UNAVAILABLE = "ClusterUnavailable";
   public static final String DOMAIN_ROLL_STARTING = "RollStarting";
   public static final String DOMAIN_ROLL_COMPLETED = "RollCompleted";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";

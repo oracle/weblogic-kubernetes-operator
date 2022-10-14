@@ -10,12 +10,16 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Yaml;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterStatus;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerStatus;
+
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
@@ -40,9 +44,11 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -417,6 +423,57 @@ public class TestAssertions {
                                                       Map<String, String> label,
                                                       String namespace) {
     return () -> !Kubernetes.doesServiceExist(serviceName, label, namespace);
+  }
+
+  /**
+   * Check the status cluster in the domain matches status in the cluster resource.
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
+   * @return true if the status matches, false otherwise
+   */
+  public static boolean clusterStatusMatchesDomain(String domainUid, String namespace) throws ApiException {
+    LoggingFacade logger = getLogger();
+
+    DomainResource domain = getDomainCustomResource(domainUid, namespace);
+    boolean match = true;
+    if (domain != null && domain.getSpec() != null) {
+      int numClusters = domain.getSpec().getClusters().size();
+      if (numClusters > 0 && domain.getStatus() != null) {
+        for (int i = 1; i <= numClusters; i++) {
+          ClusterStatus clusterStatus = domain.getStatus().getClusters().get(i - 1);
+          String clusterName = domain.getSpec().getClusters().get(i - 1).getName();
+          ClusterResource cluster = getClusterCustomResource(clusterName, namespace, CLUSTER_VERSION);
+          if (cluster != null && cluster.getStatus() != null) {
+            if (cluster.getStatus().getMaximumReplicas() != clusterStatus.getMaximumReplicas()) {
+              logger.info("MaximumReplicas number does not match in Domain status and ClusterResource status");
+              match = false;
+            }
+            if (cluster.getStatus().getReplicas() != clusterStatus.getReplicas()) {
+              logger.info("Replicas number does not match in Domain status and ClusterResource status");
+              match = false;
+            }
+            if (cluster.getStatus().getMinimumReplicas() != clusterStatus.getMinimumReplicas()) {
+              logger.info("MinimumReplicas number does not match in Domain status and ClusterResource status");
+              match = false;
+            }
+            if (cluster.getStatus().getReadyReplicas() != clusterStatus.getReadyReplicas()) {
+              logger.info("ReadyReplicas number does not match in Domain status and ClusterResource status");
+              match = false;
+            }
+          }
+        }
+      }
+      return match;
+    } else {
+      if (domain == null) {
+        logger.info("domain is null");
+      } else if (domain.getStatus() == null) {
+        logger.info("domain status is null");
+      } else {
+        logger.info("domain has no clusters");
+      }
+      return false;
+    }
   }
 
   /**
