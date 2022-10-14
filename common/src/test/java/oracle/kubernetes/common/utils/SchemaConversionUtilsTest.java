@@ -221,6 +221,27 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
+  void whenOldDomainHasUnsupportedAvailableConditionReason_replaceAndPreserve() {
+    addStatusCondition("Available", "True", "ServersReady", "Ready");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Available')].reason", contains("Internal")));
+    assertThat(converter.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v8.available.reason']",
+        equalTo("ServersReady")));
+  }
+
+  @Test
+  void whenOldDomainHasNullAvailableConditionReason_dontPreserve() {
+    addStatusCondition("Available", "True", null, "Ready");
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.available.reason']"));
+  }
+
+  @Test
   void testV9DomainFailedConditionReason_restored() throws IOException {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "metadata.annotations")
@@ -232,6 +253,20 @@ class SchemaConversionUtilsTest {
     assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.failed.reason']"));
     assertThat(converterv8.getDomain(),
             hasJsonPath("$.status.conditions[?(@.type=='Failed')].reason", contains("Danger")));
+  }
+
+  @Test
+  void testV9DomainAvailableConditionReason_restored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "metadata.annotations")
+        .put("weblogic.v8.available.reason", "ServersReady");
+    addStatusCondition(v9Domain, "Available", "True", "Internal", "Ready");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v8.available.reason']"));
+    assertThat(converterv8.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Available')].reason", contains("ServersReady")));
   }
 
   @ParameterizedTest
