@@ -35,7 +35,6 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
@@ -202,7 +201,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
       return new DefaultResponseStep<>(getNext()) {
-        @NotNull
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
@@ -373,7 +371,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         this.callback = callback;
       }
 
-      @NotNull
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
         if (callResponse.getResult() == null || callback.didResumeFiber()) {
