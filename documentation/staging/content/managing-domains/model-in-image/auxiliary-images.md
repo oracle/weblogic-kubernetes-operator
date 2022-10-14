@@ -758,5 +758,5 @@ If you see an error, then consult [Domain debugging]({{< relref "/managing-domai
 #### Step 4: Invoke the web application
 
 To invoke the web application, follow the same steps as described in the
-[Invoke the web application](/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/#invoke-the-web-application)
+[Invoke the web application](/samples/domains/model-in-image/initial/#invoke-the-web-application)
 section of the initial use case.

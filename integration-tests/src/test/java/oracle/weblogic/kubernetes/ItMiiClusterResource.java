@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,14 +49,20 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusMatchesDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.kubectlScaleCluster;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.startCluster;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.stopCluster;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -68,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventW
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -141,6 +149,7 @@ class ItMiiClusterResource {
    * Create WebLogic domain DR with domain level replica set to zero.
    * Do not associate any Cluster Resource with DR even if two 
    * WebLogic clusters (cluster-1 and cluster-2) are configuted in config.xml
+   * where cluster-1 is a dynamic cluster and cluster-2 is a configured cluster
    * Create two kubernates cluster resources CR1 and CR2 
    * corresponding to WebLogic clusters cluster-1 and cluster-2 respectively.
    * Start the domain and make sure no managed servers are started from either 
@@ -218,7 +227,7 @@ class ItMiiClusterResource {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
@@ -245,12 +254,12 @@ class ItMiiClusterResource {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch2, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
     checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
     // check managed server pods from cluster-1 are shutdown
     for (int i = 1; i <= replicaCount; i++) {
@@ -689,7 +698,7 @@ class ItMiiClusterResource {
     domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster2Res));
     createDomainAndVerify(domain, domainNamespace);
 
-    // check only admin server pod is ready
+    // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminPodName, domainUid, domainNamespace);
@@ -722,6 +731,115 @@ class ItMiiClusterResource {
     // current replicacount set to 1. All have the count of 4 
     cmd = " --replicas=5 --current-replicas=1 --all ";
     kubectlScaleCluster(cmd, domainNamespace,false);
+
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+  }
+
+  /**
+   * Create a WebLogic domain resource DR with domain level replica set to zero.
+   * Create and deploy two cluster resources CR1 and CR2
+   * Create and deploy the domain with two cluster resources CR1 and CR2
+   * Restart only the cluster CR2 by incrementing restart version on 
+   * Cluster resource and make sure no effect on CR1 
+   * Stop the cluster CR1 by updating the serverStartPolicy to Never
+   * Start the cluster CR1 by updating the serverStartPolicy to IfNeeded
+   */
+  @Test
+  @DisplayName("Verify restart/stop/start operation on cluster resource")
+  void testManageClusterResource() {
+
+    String domainUid     = "domain9"; 
+    String cluster1Name  = "cluster-1";
+    String cluster2Name  = "cluster-2";
+
+    String cluster1Res     = domainUid + "-cluster-1";
+    String cluster2Res     = domainUid + "-cluster-2";
+    String config1MapName  = domainUid + "-configmap";
+    String config2MapName  = domainUid + "-configmap2";
+
+    String adminPodName      = domainUid + "-admin-server";
+    String managedPod1Prefix = domainUid + "-c1-managed-server";
+    String managedPod2Prefix = domainUid + "-c2-managed-server";
+
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    logger.info("Creating Cluster Resource {0} in namespace {1}",cluster1Res, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    ClusterResource cluster2 = createClusterResource(
+        cluster2Res, cluster2Name, domainNamespace, replicaCount);
+    logger.info("Creating Cluster Resource {0} in namespace {1}",cluster2Res, domainNamespace);
+    createClusterAndVerify(cluster2);
+    createModelConfigMap(domainUid,config1MapName);
+
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domainUid,
+               domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, config1MapName);
+    logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace, 
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Res));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster2Res));
+    createDomainAndVerify(domain, domainNamespace);
+
+    LinkedHashMap<String, OffsetDateTime> c1Time = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> c2Time = new LinkedHashMap<>();
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminPodName, domainUid, domainNamespace);
+
+    c1Time.put(adminPodName, getPodCreationTime(domainNamespace, adminPodName));
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedPod1Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedPod1Prefix + i, domainUid, domainNamespace);
+      c1Time.put(managedPod1Prefix + i, 
+           getPodCreationTime(domainNamespace, managedPod1Prefix + i));
+    }
+
+    // verify managed server pods from cluster-2 are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedPod2Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedPod2Prefix + i, domainUid, domainNamespace);
+      c2Time.put(managedPod2Prefix + i, 
+           getPodCreationTime(domainNamespace, managedPod2Prefix + i));
+    }
+
+    // Restart the Cluster(2) make sure it does not affect other Cluster(1)
+    patchClusterResourceWithNewRestartVersion(cluster2Res,domainNamespace);
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+
+    verifyPodsNotRolled(domainNamespace,c1Time);
+    assertTrue(verifyRollingRestartOccurred(c2Time, 1, domainNamespace),
+        String.format("Rolling restart failed for cluster %s in namespace %s", cluster2Res, domainNamespace));
+
+    stopCluster(cluster1Res,domainNamespace);
+    // check managed server pods are removed
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedPod1Prefix + i,domainUid,domainNamespace);
+    }
+    startCluster(cluster1Res,domainNamespace);
+    // check managed server pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedPod1Prefix + i, domainUid, domainNamespace);
+    }
 
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
@@ -793,19 +911,26 @@ class ItMiiClusterResource {
         + "         MaxDynamicClusterSize: 5 \n"
         + "         CalculatedListenPorts: false \n"
         + "    'cluster-2':\n"
-        + "       DynamicServers: \n"
-        + "         ServerTemplate: 'cluster-2-template' \n"
-        + "         ServerNamePrefix: 'c2-managed-server' \n"
-        + "         DynamicClusterSize: 5 \n"
-        + "         MaxDynamicClusterSize: 5 \n"
-        + "         CalculatedListenPorts: false \n"
         + "  ServerTemplate:\n"
         + "    'cluster-1-template':\n"
         + "       Cluster: 'cluster-1' \n"
         + "       ListenPort : 8001 \n"
-        + "    'cluster-2-template':\n"
+        + "  Server:\n"
+        + "    'c2-managed-server1':\n"
         + "       Cluster: 'cluster-2' \n"
-        + "       ListenPort : 9001 \n";
+        + "       ListenPort : 8001 \n"
+        + "    'c2-managed-server2':\n"
+        + "       Cluster: 'cluster-2' \n"
+        + "       ListenPort : 8001 \n"
+        + "    'c2-managed-server3':\n"
+        + "       Cluster: 'cluster-2' \n"
+        + "       ListenPort : 8001 \n"
+        + "    'c2-managed-server4':\n"
+        + "       Cluster: 'cluster-2' \n"
+        + "       ListenPort : 8001 \n"
+        + "    'c2-managed-server5':\n"
+        + "       Cluster: 'cluster-2' \n"
+        + "       ListenPort : 8001 \n";
 
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainid);

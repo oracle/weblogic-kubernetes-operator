@@ -2307,9 +2307,9 @@ class DomainProcessorTest {
     domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 
-    for (int numRetries = 0; numRetries < DomainPresence.getFailureRetryMaxCount(); numRetries++) {
+    for (int numRetries = 0; numRetries < 5; numRetries++) {
       processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
-      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
+      time += domain.getFailureRetryIntervalSeconds();
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
