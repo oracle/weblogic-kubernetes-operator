@@ -429,7 +429,7 @@ the operator will initiate a rolling restart of the domain.
 
 If you wish to apply a non-ZDP compliant patch to the FMW Infrastructure binary image,
 you must shut down the entire domain before applying the patch. Please see the documentation on
-[domain lifecycle operations]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}})
+[domain life cycle operations]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}})
 for more information.
 
 An example of a non-ZDP compliant patch is one that includes a schema change
