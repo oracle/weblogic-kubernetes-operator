@@ -25,6 +25,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -297,7 +298,7 @@ public abstract class ResponseStep<T> extends Step {
    * @param callResponse the result of the call
    * @return Next action for fiber processing
    */
-  public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+  public @NotNull NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
     throw new IllegalStateException("Must be overridden, if called");
   }
 }
