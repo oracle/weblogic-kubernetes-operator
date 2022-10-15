@@ -1,9 +1,9 @@
 ---
-title: "Lifecycle scripts"
+title: "Life cycle scripts"
 date: 2021-12-05T17:04:41-05:00
 draft: false
 weight: 7
-description: "A collection of useful domain lifecycle sample scripts."
+description: "A collection of useful domain life cycle sample scripts."
 ---
 
 Beginning in version 3.1.0,
