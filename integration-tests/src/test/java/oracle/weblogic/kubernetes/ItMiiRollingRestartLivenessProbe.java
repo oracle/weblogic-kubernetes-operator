@@ -42,7 +42,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -58,10 +57,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesDomainExist;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.checkIngressReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -109,7 +105,6 @@ class ItMiiRollingRestartLivenessProbe {
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final int replicaCount = 2;
-  private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String miiImageName = "mdlb-mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
@@ -118,11 +113,9 @@ class ItMiiRollingRestartLivenessProbe {
   private static String opNamespace = null;
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int nodeportshttps = 0;
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String miiImage = null;
-  private static String nginxNamespace = null;
 
   /**
    * Install operator and NGINX.
@@ -144,7 +137,7 @@ class ItMiiRollingRestartLivenessProbe {
     // get a unique NGINX namespace
     logger.info("Get a unique namespace for NGINX");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    nginxNamespace = namespaces.get(1);
+    String nginxNamespace = namespaces.get(1);
 
     // get unique namespaces for three different type of domains
     logger.info("Getting unique namespaces for three different type of domains");
@@ -175,8 +168,6 @@ class ItMiiRollingRestartLivenessProbe {
       logger.info("NGINX service name: {0}", nginxServiceName);
       nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
       logger.info("NGINX http node port: {0}", nodeportshttp);
-      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
-      logger.info("NGINX https node port: {0}", nodeportshttps);
     }
   }
 
@@ -271,26 +262,6 @@ class ItMiiRollingRestartLivenessProbe {
           serverNamePrefix + i,
           domainNamespace);
     }
-
-    // check the NGINX pod is ready.
-    testUntil(isNginxReady(nginxNamespace),
-        logger,
-        "Nginx is ready in namespace {0}",
-        nginxNamespace);
-
-    // check the ingress is ready
-    String ingressHost = domainUid + "." + domainNamespace + "." + clusterName + ".test";
-    logger.info("Checking for the ingress is ready");
-    checkIngressReady(true, ingressHost, false, nodeportshttp, nodeportshttps, "");
-
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the sample app through NGINX load balancer");
-    String curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-    List<String> managedServers = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    testUntil(withLongRetryPolicy, () -> callWebAppAndCheckForServerNameInResponse(curlCmd, managedServers, 20),
-        logger,
-        "NGINX can access the test web app from all managed servers {0} in the domain",
-        managedServers);
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
@@ -488,45 +459,6 @@ class ItMiiRollingRestartLivenessProbe {
     }
 
     return domain;
-  }
-
-  /**
-   * Generate the curl command to access the sample app from the ingress controller.
-   *
-   * @param domainUid uid of the domain
-   * @param domainNamespace the namespace in which the domain exists
-   * @param clusterName WebLogic cluster name which is the backend of the ingress
-   * @param appContextRoot the context root of the application
-   * @return curl command string
-   */
-  private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
-                                        String appContextRoot) {
-    return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
-        domainUid + "." + domainNamespace + "." + clusterName + ".test",
-        K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
-  }
-
-  /**
-   * Generate a server list which contains all managed servers in the cluster before scale.
-   *
-   * @param numClusters         number of clusters in the domain
-   * @param clusterName         the name of the WebLogic cluster
-   * @param replicasBeforeScale the replicas of WebLogic cluster before scale
-   * @return list of managed servers in the cluster before scale
-   */
-  private static List<String> listManagedServersBeforeScale(int numClusters, String clusterName,
-                                                            int replicasBeforeScale) {
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicasBeforeScale; i++) {
-      if (numClusters <= 1) {
-        managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
-      } else {
-        managedServerNames.add(clusterName + "-" + MANAGED_SERVER_NAME_BASE + i);
-      }
-    }
-
-    return managedServerNames;
   }
 
   /**
