@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -16,8 +17,6 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
-import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -51,7 +50,7 @@ public class AdmissionWebhookResource extends BaseResource {
   @POST
   @Consumes(MediaType.APPLICATION_JSON)
   public String post(String body) {
-    LOGGER.fine("Validating webhook is invoked");
+    LOGGER.fine("Validating webhook is invoked with body " + body);
 
     AdmissionReview admissionReview = null;
     AdmissionRequest admissionRequest = null;
@@ -110,49 +109,23 @@ public class AdmissionWebhookResource extends BaseResource {
     return Optional.ofNullable(request).map(AdmissionRequest::getUid).orElse(null);
   }
 
-  private AdmissionResponse createAdmissionResponse(AdmissionRequest request) {
-    if (request == null || request.getObject() == null) {
+  private AdmissionResponse createAdmissionResponse(AdmissionRequest request) throws ApiException {
+    if (request == null || request.getObject() == null || !request.getRequestKind().isSupported()) {
       return new AdmissionResponse().uid(getUid(request)).allowed(true);
     }
 
     return validate(request);
   }
 
-  private AdmissionResponse validate(@NotNull AdmissionRequest request) {
-    LOGGER.fine("validating " +  request.getObject() + " against " + request.getOldObject()
+  private AdmissionResponse validate(@NotNull AdmissionRequest request) throws ApiException {
+    LOGGER.fine("Validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
     return getAdmissionChecker(request).validate().uid(getUid(request));
   }
 
   @NotNull
-  private AdmissionChecker getAdmissionChecker(@NotNull AdmissionRequest request) {
-    if (request.isCluster()) {
-      return getClusterAdmissionChecker(request);
-    }
-    return getDomainAdmissionChecker(request);
+  private AdmissionChecker getAdmissionChecker(@NotNull AdmissionRequest request) throws ApiException {
+    return request.getRequestKind().getAdmissionChecker(request);
   }
-
-  @NotNull
-  private AdmissionChecker getDomainAdmissionChecker(@NotNull AdmissionRequest request) {
-    DomainResource existing = (DomainResource) request.getExistingResource();
-    DomainResource proposed = (DomainResource) request.getProposedResource();
-    return isNewResource(request)
-        ? new DomainCreateAdmissionChecker(proposed)
-        : new DomainUpdateAdmissionChecker(existing, proposed);
-  }
-
-  private boolean isNewResource(@NotNull AdmissionRequest request) {
-    return request.getOldObject() == null;
-  }
-
-  @NotNull
-  private AdmissionChecker getClusterAdmissionChecker(@NotNull AdmissionRequest request) {
-    ClusterResource existing = (ClusterResource) request.getExistingResource();
-    ClusterResource proposed = (ClusterResource) request.getProposedResource();
-    return isNewResource(request)
-        ? new ClusterCreateAdmissionChecker(proposed)
-        : new ClusterUpdateAdmissionChecker(existing, proposed);
-  }
-
 }

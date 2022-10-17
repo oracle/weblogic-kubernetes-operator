@@ -66,9 +66,9 @@ domain.weblogic.oracle/domain1 patched
 
 #### `rollDomain.sh`
 
-Use the `rollDomain.sh` script to initiate a rolling restart of the WebLogic Server Pods in a domain managed by the operator.
+Use the `rollDomain.sh` script to initiate a rolling restart of the WebLogic Server instance Pods in a domain managed by the operator.
 
-The `rollDomain.sh` script updates the value of the `spec.restartVersion` attribute of the domain resource.  Then, the operator will do a rolling restart of the Server Pods in the WebLogic domain after the value of the `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
+The `rollDomain.sh` script updates the value of the `spec.restartVersion` attribute of the domain resource.  Then, the operator will do a rolling restart of the server Pods in the WebLogic domain after the value of the `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
 
 ```
 $ rollDomain.sh -d domain1 -n weblogic-domain-1
