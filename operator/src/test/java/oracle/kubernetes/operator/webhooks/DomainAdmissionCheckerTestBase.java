@@ -36,9 +36,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   private static final String DUPLICATE_SERVER_NAME = "duplicate-ms";
   private static final String DUPLICATE_CLUSTER_NAME = "duplicate-cluster";
-  private static final String MOUNT_NAME = "bad-mount";
-  private static final String BAD_MOUNT_PATH = "mydir/mount";
-  private static final String GOOD_MOUNT_PATH = "/mydir/mount";
   private static final String BAD_LOG_HOME = "/loghome";
   private static final String BAD_DOMAIN_UID = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz123456789012345";
   private static final String GOOD_CONTAINER_NAME = "abcdef";
@@ -106,14 +103,14 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
 
   @Test
   void whenDomainSpecHasReservedEnvs_returnFalse() {
-    List<V1EnvVar> list = createEnvVarListWithRerservedName();
+    List<V1EnvVar> list = createEnvVarListWithReservedName();
     proposedDomain.getSpec().setEnv(list);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
   @NotNull
-  private List<V1EnvVar> createEnvVarListWithRerservedName() {
+  private List<V1EnvVar> createEnvVarListWithReservedName() {
     List<V1EnvVar> list = new ArrayList<>();
     list.add(new V1EnvVar().name(SERVER_NAME).value("haha"));
     return list;
@@ -121,7 +118,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
 
   @Test
   void whenDomainASHasReservedEnvs_returnFalse() {
-    List<V1EnvVar> list = createEnvVarListWithRerservedName();
+    List<V1EnvVar> list = createEnvVarListWithReservedName();
     proposedDomain.getSpec().getOrCreateAdminServer().setEnv(list);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
@@ -143,7 +140,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   }
 
   @Test
-  void whenDomainASHasReservedContainerPortName_returnFalse() {
+  void whenDomainASHasReservedContainerName_returnFalse() {
     proposedDomain.getSpec().getOrCreateAdminServer().getContainers().add(new V1Container().name(WLS_CONTAINER_NAME));
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));

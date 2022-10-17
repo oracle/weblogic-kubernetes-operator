@@ -37,11 +37,8 @@ public abstract class Validator {
   static final String SERVER_POD_CONTAINERS = "].serverPod.containers";
   final List<String> failures = new ArrayList<>();
 
-  void addClusterFatalValidationFailures(ClusterResource cluster) {
-    addClusterInvalidMountPaths(cluster.getSpec());
-  }
-
-  void addClusterInvalidMountPaths(ClusterSpec spec) {
+  void addClusterInvalidMountPaths(ClusterResource cluster) {
+    ClusterSpec spec = cluster.getSpec();
     Optional.of(spec).map(ClusterSpec::getAdditionalVolumeMounts)
         .ifPresent(mounts -> mounts.forEach(mount -> checkValidMountPath(mount, getEnvNames(spec))));
   }
@@ -85,22 +82,20 @@ public abstract class Validator {
 
   void verifyClusterLivenessProbeSuccessThreshold(ClusterResource cluster, String prefix) {
     Optional.of(cluster).map(ClusterResource::getSpec)
-        .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getLivenessProbe())
-            .ifPresent(probe -> verifySuccessThresholdValue(probe, prefix)));
+        .flatMap(clusterSpec -> Optional.ofNullable(clusterSpec.getLivenessProbe()))
+        .ifPresent(probe -> verifySuccessThresholdValue(probe, prefix));
   }
 
   void verifyClusterContainerPortNameValidInPodSpec(ClusterResource cluster, String prefix) {
     Optional.of(cluster).map(ClusterResource::getSpec)
-        .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
-            .ifPresent(containers -> containers.forEach(container ->
-                areContainerPortNamesValid(container, prefix))));
+        .flatMap(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers()))
+        .ifPresent(containers -> containers.forEach(container -> areContainerPortNamesValid(container, prefix)));
   }
 
-  void verifyClusterContainerNameValidInPodSpec(ClusterResource cluster, String prefix) {
+  void verifyClusterContainerNameValid(ClusterResource cluster, String prefix) {
     Optional.of(cluster).map(ClusterResource::getSpec)
-        .ifPresent(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers())
-            .ifPresent(containers -> containers.forEach(container ->
-                isContainerNameReserved(container, prefix))));
+        .flatMap(clusterSpec -> Optional.ofNullable(clusterSpec.getContainers()))
+        .ifPresent(containers -> containers.forEach(container -> isContainerNameReserved(container, prefix)));
   }
 
   void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {

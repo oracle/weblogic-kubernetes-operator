@@ -1042,7 +1042,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       if (getSpec().getClusters() != null) {
         getSpec().getClusters().forEach(
             cluster -> Optional.ofNullable(kubernetesResources.findCluster(cluster))
-                .map(ClusterResource::getSpec).ifPresent(this::addClusterInvalidMountPaths));
+                .ifPresent(this::addClusterInvalidMountPaths));
       }
     }
 
@@ -1123,7 +1123,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private void verifyContainerNameValidInPodSpecClusters(KubernetesResourceLookup kubernetesResources) {
       getSpec().getClusters().forEach(cluster ->
           Optional.ofNullable(kubernetesResources.findCluster(cluster))
-              .ifPresent(c -> verifyClusterContainerNameValidInPodSpec(c, CLUSTER_SPEC_PREFIX + "[" + c.getClusterName()
+              .ifPresent(c -> verifyClusterContainerNameValid(c, CLUSTER_SPEC_PREFIX + "[" + c.getClusterName()
                   + SERVER_POD_CONTAINERS)));
     }
 

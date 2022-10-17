@@ -21,6 +21,12 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithoutCluster;
 
 abstract class AdmissionCheckerTestBase {
+  static final String MOUNT_NAME = "bad-mount";
+  static final String BAD_MOUNT_PATH = "mydir/mount";
+  static final String GOOD_MOUNT_PATH = "/mydir/mount";
+  static final String GOOD_CONTAINER_NAME = "abcdef";
+  static final String BAD_PORT_NAME = "abcdefghijklmnopqrstuvw";
+
   final List<Memento> mementos = new ArrayList<>();
   final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
