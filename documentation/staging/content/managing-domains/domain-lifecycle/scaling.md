@@ -39,7 +39,7 @@ spec:
   replicas: 1
   ...
 ```
-In addition, see the helper scripts in the [Domain life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
+In addition, see the helper scripts in the [Domain life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-life-cycle-sample-scripts" >}}) section.
 
 #### Calling the operator's REST scale API
 

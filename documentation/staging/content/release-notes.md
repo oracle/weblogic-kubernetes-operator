@@ -237,7 +237,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 #### Operator 3.1.0
 
 * All fixes included in 3.0.1 through 3.0.4 are included in 3.1.0.
-* Sample [scripts to start and stop server instances]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
+* Sample [scripts to start and stop server instances]({{< relref "/managing-domains/domain-lifecycle/startup#domain-life-cycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
 * Support running with [OpenShift restrictive SCC]({{< relref "/security/openshift#create-a-custom-security-context-constraint" >}}) ([#2007](https://github.com/oracle/weblogic-kubernetes-operator/pull/2007)).
 * Updated [default resource and Java options]({{< relref "/faq/resource-settings.md" >}}) ([#1775](https://github.com/oracle/weblogic-kubernetes-operator/pull/1775)).
 * Introspection failures are logged to the operator's log ([#1787](https://github.com/oracle/weblogic-kubernetes-operator/pull/1787)).
