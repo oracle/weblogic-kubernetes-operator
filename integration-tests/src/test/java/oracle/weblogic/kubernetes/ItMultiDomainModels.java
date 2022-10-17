@@ -130,7 +130,6 @@ class ItMultiDomainModels {
     // In OKD cluster, we need to get the routeHost for the external admin service
     String routeHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
-
     int numberOfServers = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domainUid, domainNamespace, numberOfServers);
@@ -146,10 +145,9 @@ class ItMultiDomainModels {
         numberOfServers, replicaCount, null, managedServersBeforeScale);
 
     logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
-        }, "Access to admin server node port failed"),
+    testUntil(assertDoesNotThrow(
+        () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost),
+        "Access to admin server node port failed"),
         logger,
         "Console login validation");
 
