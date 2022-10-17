@@ -237,12 +237,12 @@ container image.
   - Deploy a domain _without_ auxiliary images.
 
 - Second, shut down the domain and wait for its pods to exit.
-  - You can use the `wl-pod-wait.sh` script to wait.
-  - For example, assuming that
-    you have set up `/tmp/mii-sample` as your working directory:
+  - You can use the `waitForDomain.sh` sample life cycle script to wait.
+  - For example:
     ```shell
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
-    $ /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
+    $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecycle
+    $ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p 0
     ```
 
 #### Step 2: Create the auxiliary image
@@ -614,144 +614,19 @@ the introspector job run and your WebLogic Server pods start. The output will lo
   ```
   {{% /expand %}}
 
-Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`.
-This utility script exits successfully when the designated number of WebLogic
-Server pods reach a `ready` state and have `restartVersion`, `introspectVersion`,
-`spec.image`, and `spec.serverPod.auxiliaryImages.image` values that match
-their corresponding values in their domain resource.
+For a more detailed view of this activity,
+you can use the `waitForDomain.sh` sample life cycle script.
+This script provides useful information about a domain's pods and
+optionally waits for its `Completed` status condition to become `True`.
+A `Completed` domain indicates that all of its expected
+pods have reached a `ready` state
+plus their target `restartVersion`, `introspectVersion`, and `image`.
+For example:
 
-  {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```shell
-    $ ./wl-pod-wait.sh -?
+  $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecycle
+  $ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p Completed
   ```
-
-  ```text
-    Usage:
-
-      wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
-         [-p expected_pod_count] \
-         [-t timeout_secs] \
-         [-q]
-
-      Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
-
-    Parameters:
-
-      -d <domain_uid> : Defaults to 'sample-domain1'.
-
-      -n <namespace>  : Defaults to 'sample-domain1-ns'.
-
-      -p 0            : Wait until there are no running WebLogic Server pods
-                        for a domain. The default.
-
-      -p <pod_count>  : Wait until all of the following are true
-                        for exactly 'pod_count' WebLogic Server pods
-                        in the domain:
-                        - ready
-                        - same 'weblogic.domainRestartVersion' label value as
-                          the domain resource's 'spec.restartVersion'
-                        - same 'weblogic.introspectVersion' label value as
-                          the domain resource's 'spec.introspectVersion'
-                        - same image as the domain resource's 'spec.image'
-                        - same auxiliary images as
-                          the domain resource's 'spec.serverPod.auxiliaryImages'
-
-      -t <timeout>    : Timeout in seconds. Defaults to '1000'.
-
-      -q              : Quiet mode. Show only a count of wl pods that
-                        have reached the desired criteria.
-
-      -?              : This help.
-  ```
-  {{% /expand %}}
-
-  {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
-  ```text
-  @@ [2022-01-21T18:39:48][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   ready='true'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   image='container-registry.oracle.com/middleware/weblogic:12.2.1.4'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   auxiliaryImages='model-in-image:WLS-AI-v1'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   domainRestartVersion='1'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   introspectVersion='1'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   namespace='sample-domain1-ns'
-  @@ [2022-01-21T18:39:48][seconds=1] Info:   domainUID='sample-domain1'
-
-  @@ [2022-01-21T18:39:48][seconds=1] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:39:48][seconds=1] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                 RVER  IVER  IMAGE  AIIMAGES                    READY  PHASE
-  ----                                 ----  ----  -----  --------                    -----  -----
-  'sample-domain1-introspector-xndwj'  ''    ''    ''     'model-in-image:WLS-AI-v1'  ''     'Pending'
-
-  @@ [2022-01-21T18:39:51][seconds=4] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:39:51][seconds=4] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                 RVER  IVER  IMAGE  AIIMAGES                    READY  PHASE
-  ----                                 ----  ----  -----  --------                    -----  -----
-  'sample-domain1-introspector-xndwj'  ''    ''    ''     'model-in-image:WLS-AI-v1'  ''     'Running'
-
-  @@ [2022-01-21T18:41:02][seconds=75] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:41:02][seconds=75] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                 RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                                 ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'        '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Pending'
-  'sample-domain1-introspector-xndwj'  ''    ''    ''                                                            'model-in-image:WLS-AI-v1'  ''       'Succeeded'
-
-  @@ [2022-01-21T18:41:03][seconds=76] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:41:03][seconds=76] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                           ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Pending'
-
-  @@ [2022-01-21T18:41:05][seconds=78] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:41:05][seconds=78] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                           ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Running'
-
-  @@ [2022-01-21T18:41:44][seconds=117] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:41:44][seconds=117] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                              ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'     '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Pending'
-  'sample-domain1-managed-server2'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Pending'
-
-  @@ [2022-01-21T18:41:48][seconds=121] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:41:48][seconds=121] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                              ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'     '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Running'
-  'sample-domain1-managed-server2'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Running'
-
-  @@ [2022-01-21T18:42:22][seconds=155] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:42:22][seconds=155] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              RVER  IVER  IMAGE                                                         AIIMAGES                    READY    PHASE
-  ----                              ----  ----  -----                                                         --------                    -----    -----
-  'sample-domain1-admin-server'     '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'   'Running'
-  'sample-domain1-managed-server2'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'false'  'Running'
-
-  @@ [2022-01-21T18:42:29][seconds=162] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2022-01-21T18:42:29][seconds=162] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              RVER  IVER  IMAGE                                                         AIIMAGES                    READY   PHASE
-  ----                              ----  ----  -----                                                         --------                    -----   -----
-  'sample-domain1-admin-server'     '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'  'Running'
-  'sample-domain1-managed-server1'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'  'Running'
-  'sample-domain1-managed-server2'  '1'   '1'   'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'model-in-image:WLS-AI-v1'  'true'  'Running'
-
-
-  @@ [2022-01-21T18:42:29][seconds=162] Info: Success!
-  ```
-  {{% /expand %}}
 
 If you see an error, then consult [Domain debugging]({{< relref "/managing-domains/debugging.md" >}}).
 

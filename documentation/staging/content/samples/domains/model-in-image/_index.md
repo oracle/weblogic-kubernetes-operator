@@ -104,11 +104,15 @@ Location | Description |
 `model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
 `model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
 `ingresses` | Ingress resources. |
-`utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, `introspectVersion`, image name, and ready state. |
 `utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
 `utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
 `utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
+
+In addition, this sample makes use of the `waitForDomain.sh` sample life cycle script
+that is located in the operator source `kubernetes/samples/scripts/domain-lifecycle` directory.
+This is is a utility script that optionally waits for the pods in a domain
+to reach their expected `restartVersion`, `introspectVersion`, `Completed`, `image`, and `ready` state.
 
 #### Ensuring your Kubernetes cluster can access images
 

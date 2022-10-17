@@ -407,7 +407,7 @@ have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
 
 4. The operator will restart all the servers in the domain.
 
-### Domain lifecycle sample scripts
+### Domain life cycle sample scripts
 
 See the [Life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}})
 for scripts that help with initiating domain life cycle operations.
