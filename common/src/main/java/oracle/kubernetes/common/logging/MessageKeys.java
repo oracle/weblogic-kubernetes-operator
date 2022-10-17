@@ -143,8 +143,6 @@ public class MessageKeys {
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
   public static final String DOMAIN_FATAL_ERROR = "WLSKO-0195";
-  public static final String INTROSPECTOR_MAX_ERRORS_EXCEEDED = "WLSKO-0196";
-  public static final String NON_FATAL_INTROSPECTOR_ERROR = "WLSKO-0197";
   public static final String DUMP_BREADCRUMBS = "WLSKO-0198";
   public static final String BEGIN_SERVER_SHUTDOWN_REST = "WLSKO-0199";
   public static final String SERVER_SHUTDOWN_REST_SUCCESS = "WLSKO-0200";
@@ -185,7 +183,6 @@ public class MessageKeys {
   public static final String NO_CLUSTER_IN_DOMAIN = "WLSDO-0011";
   public static final String NO_MANAGED_SERVER_IN_DOMAIN = "WLSDO-0012";
   public static final String CANNOT_EXPOSE_DEFAULT_CHANNEL_ISTIO = "WLSDO-0013";
-  public static final String INTROSPECT_JOB_FAILED = "WLSDO-0014";
   public static final String ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH = "WLSDO-0016";
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
@@ -275,6 +272,9 @@ public class MessageKeys {
   public static final String DOMAIN_INTROSPECTION_TRIGGER_CHANGED = "WLSWH-0017";
   public static final String WEBHOOK_STARTUP_FAILED = "WLSWH-0018";
   public static final String CLUSTER_REPLICAS_CANNOT_BE_HONORED = "WLSWH-0019";
+  public static final String DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS = "WLSWH-0020";
+  public static final String DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS = "WLSWH-0021";
+  public static final String CLUSTER_SCALE_REPLICAS_TOO_HIGH = "WLSWH-0022";
 
   private MessageKeys() {
   }

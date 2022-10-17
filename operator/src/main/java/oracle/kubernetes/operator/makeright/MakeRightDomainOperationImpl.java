@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -224,7 +225,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
     result.add(createStatusInitializationStep());
-    if (deleting) {
+    if (deleting || domainHasDeletionTimestamp()) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
       result.add(createListClusterResourcesStep(getNamespace()));
@@ -233,6 +234,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
 
     return Step.chain(result);
+  }
+
+  private boolean domainHasDeletionTimestamp() {
+    return Optional.ofNullable(liveInfo.getDomain()).map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getDeletionTimestamp).isPresent();
   }
 
   private static Step createListClusterResourcesStep(String domainNamespace) {

@@ -32,7 +32,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -261,7 +260,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid
-            + "' cannot be honored because the replica count for cluster '"
+            + "' cannot be honored because the replica count of cluster '"
             + clusterName
             + "' would exceed the cluster size '5' when patching "
             + domainUid
@@ -390,9 +389,7 @@ class ItValidateWebhookReplicas {
    * Verify that when a domain and its clusters are running, call
    * 'kubectl scale --replicas=10 clusters/cluster-1 -n ns-xxx' to increase the
    * domain level replicas to a value that exceeds the WebLogic cluster size will be rejected.
-   * Disabled due to jira 102833
    */
-  @Disabled
   @Test
   @DisplayName("Verify call 'kubectl scale' to increase the replicas of a cluster beyond configured WebLogic cluster "
       + "size will be rejected")
@@ -405,12 +402,9 @@ class ItValidateWebhookReplicas {
     params.command(command);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     String errorMsg =
-        "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to cluster resource '"
+        "admission webhook \"weblogic.validating.webhook\" denied the request: Scale request to cluster resource '"
             + clusterName
-            + "' cannot be honored because the replica count would exceed the cluster size '5' when patching "
-            + clusterName
-            + " in namespace "
-            + domainNamespace;
+            + "' cannot be honored because the replica count would exceed the cluster size '5'";
     assertTrue(result.stderr().contains(errorMsg),
         String.format("scale cluster beyond max cluster size did not throw error, got: %s; expect: %s",
             result.stderr(), errorMsg));
@@ -442,7 +436,7 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-2' "
+            + "' cannot be honored because the replica count of cluster 'cluster-2' "
             + "would exceed the cluster size '5' when patching "
             + domainUid2
             + " in namespace "
@@ -461,9 +455,7 @@ class ItValidateWebhookReplicas {
   /**
    * The domain contains two cluster resources and both have no replicas set, changing domain's replicas to a number
    * that exceeds all cluster resources' size fails and the message contains the name of both clusters.
-   * Disabled now due to jira 102830.
    */
-  @Disabled
   @Test
   @DisplayName("The domain contains two cluster resources and both have replicas set, changing domain's replicas to a "
       + "number that exceeds all cluster resources' size fails and the message contains the name of both clusters.")
@@ -488,8 +480,8 @@ class ItValidateWebhookReplicas {
     String expectedErrorMsg =
         "admission webhook \"weblogic.validating.webhook\" denied the request: Change request to domain resource '"
             + domainUid2
-            + "' cannot be honored because the replica count for cluster 'cluster-1' and 'cluster-2' "
-            + "would exceed the cluster size '5' when patching "
+            + "' cannot be honored because the replica count of each cluster in 'cluster-1, cluster-2' "
+            + "would exceed its cluster size '5, 5' respectively when patching "
             + domainUid2
             + " in namespace "
             + domainNamespace2;

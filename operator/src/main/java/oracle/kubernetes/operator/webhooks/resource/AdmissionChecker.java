@@ -4,10 +4,15 @@
 package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.ApiException;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
+import oracle.kubernetes.weblogic.domain.model.ClusterList;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -48,6 +53,11 @@ public abstract class AdmissionChecker {
     List<String> failures = proposedDomain.getFatalValidationFailures();
     messages.addAll(failures);
     return failures.isEmpty();
+  }
+
+  public static List<ClusterResource> getClusters(String namespace) throws ApiException {
+    return Optional.of(new CallBuilder().listCluster(namespace))
+        .map(ClusterList::getItems).orElse(Collections.emptyList());
   }
 
   String createMessage() {

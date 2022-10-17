@@ -10,6 +10,7 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.webhooks.resource.ClusterUpdateAdmissionChecker;
 import oracle.kubernetes.operator.webhooks.resource.DomainUpdateAdmissionChecker;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.GOOD_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_INTROSPECT_VERSION;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.ORIGINAL_REPLICAS;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
 import static org.hamcrest.Matchers.equalTo;
@@ -30,7 +32,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
+class DomainUpdateAdmissionCheckerTest extends DomainAdmissionCheckerTestBase {
+  private static final String WARN_MESSAGE_PATTERN_DOMAIN =
+      "Change request to domain resource '%s' causes the replica count of each cluster in '%s' to exceed its cluster "
+          + "size '%s' respectively";
 
   @Override
   void setupCheckers() {
@@ -208,7 +213,7 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
-  void whenDomainSourceTypeBothMIIAuxImgDifferentAndDomainImageChangedReplicasInvalid_returnTrue() {
+  void whenDomainSourceTypeBothMIIAuxImgDifferentAndDomainImageChangedReplicasInvalid_returnTrueWithWarnings() {
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     proposedDomain.getSpec().withImage(NEW_IMAGE_NAME);
     setAuxiliaryImages(existingDomain, Collections.singletonList(createAuxiliaryImage(AUX_IMAGE_1)));
@@ -217,10 +222,19 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedDomain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+    assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(true));
+    assertThat(((DomainUpdateAdmissionChecker)domainChecker).getWarnings().get(0),
+        equalTo(getWarningMessageForDomainResource(proposedDomain, proposedCluster, proposedCluster2)));
+
+  }
+
+  private Object getWarningMessageForDomainResource(DomainResource domain, ClusterResource c1, ClusterResource c2) {
+    return String.format(WARN_MESSAGE_PATTERN_DOMAIN, domain.getDomainUid(),
+        c1.getMetadata().getName() + ", " + c2.getMetadata().getName(), ORIGINAL_REPLICAS + ", " + ORIGINAL_REPLICAS);
   }
 
   @Test
-  void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterSucceed_returnTrueWithoutException() {
+  void whenDomainCheckerClusterReplicasChangedToUnsetAndReadClusterSucceed_returnFalseWithoutException() {
     testSupport.defineResources(proposedDomain);
     proposedDomain.getSpec().withReplicas(BAD_REPLICAS);
     existingCluster.getSpec().withReplicas(2);
@@ -247,8 +261,6 @@ class ResourceUpdateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedDomain2.getSpec().withReplicas(BAD_REPLICAS);
 
     testSupport.failOnList(KubernetesTestSupport.CLUSTER, NS, HTTP_FORBIDDEN);
-
-    DomainUpdateAdmissionChecker checker = new DomainUpdateAdmissionChecker(existingDomain2, proposedDomain2);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
     assertThat(((DomainUpdateAdmissionChecker)domainChecker).hasWarnings(), equalTo(false));
