@@ -111,7 +111,7 @@ Location | Description |
 
 In addition, this sample makes use of the `waitForDomain.sh` sample life cycle script
 that is located in the operator source `kubernetes/samples/scripts/domain-lifecycle` directory.
-This is is a utility script that optionally waits for the pods in a domain
+This is a utility script that optionally waits for the pods in a domain
 to reach their expected `restartVersion`, `introspectVersion`, `Completed`, `image`, and `ready` state.
 
 #### Ensuring your Kubernetes cluster can access images
