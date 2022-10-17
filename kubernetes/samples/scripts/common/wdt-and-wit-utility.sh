@@ -256,7 +256,7 @@ install_wdt() {
 
   WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 
-  echo @@ " DEBUG WDT_INSTALL_ZIP_URL is '$WDT_INSTALL_ZIP_URL'"
+  echo @@ " Info: WDT_INSTALL_ZIP_URL is '$WDT_INSTALL_ZIP_URL'"
   if [ -z ${WDT_INSTALL_ZIP_URL} ]; then
     echo @@ "WDT_INSTALL_ZIP_URL is not set"
     if [ "$WDT_VERSION" == "LATEST" ]; then
@@ -309,7 +309,7 @@ install_wit() {
 
   WIT_INSTALL_ZIP_FILE="${WIT_INSTALL_ZIP_FILE:-imagetool.zip}"
 
-  echo @@ " DEBUG WIT_INSTALL_ZIP_URL is '$WIT_INSTALL_ZIP_URL'"
+  echo @@ " Info: WIT_INSTALL_ZIP_URL is '$WIT_INSTALL_ZIP_URL'"
   if [ -z ${WIT_INSTALL_ZIP_URL} ]; then
     echo @@ "WIT_INSTALL_ZIP_URL is not set"
     if [ "$WIT_VERSION" == "LATEST" ]; then
