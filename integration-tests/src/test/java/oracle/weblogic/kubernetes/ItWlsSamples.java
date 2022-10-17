@@ -188,9 +188,9 @@ class ItWlsSamples {
     }
 
     if (WDT_DOWNLOAD_URL != null) {
-      logger.info("@@@ DEBUG WDT_DOWNLOAD_URL is: " + WDT_DOWNLOAD_URL);
+      logger.info("WDT_DOWNLOAD_URL is: " + WDT_DOWNLOAD_URL);
       String wdtDownloadUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL,WDT);
-      logger.info("@@@ DEBUG The actual wdtDownloadUrl is: " + wdtDownloadUrl);
+      logger.info("The actual wdtDownloadUrl is: " + wdtDownloadUrl);
       envMap.put("wdtInstallZipUrl", wdtDownloadUrl);
     }
     logger.info("Env. variables to the script {0}", envMap);
