@@ -8,22 +8,11 @@ description: "This document describes domain failure retry processing in the Ora
 
 {{< table_of_contents >}}
 
-The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource. Failures fall into different categories and are handled differently by the operator.
-
-### Domain failure reasons
-
-The following is a list of reasons for failures that may be encountered by the operator while processing a Domain resource.
-
-| Domain Failure Reason | Description                                                                                                                                                                                        |
-|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `DomainInvalid`       | One of more configuration validation errors in the Domain resource, such as the `domainUID` is too long, or configuration overrides are used in a Model In Image domain.                           |
-| `Introspection`       | One or more `SEVERE` log messages is found in the introspector's log file.                                                                                                                         |
-| `Kubernetes`          | Unrecoverable response code received from a Kubernetes API call.                                                                                                                                   |
-| `ServerPod`           | One or more WebLogic Server pods failed or did not get into the ready state within a predefined maximum wait time, or the introspector job pod did not complete.                                   |
-| `ReplicasTooHigh`     | The replicas field is set or changed to a value that exceeds the maximum number of servers in the WebLogic cluster configuration.                                                                  |
-| `Internal`            | The operator encountered an internal exception while processing the Domain resource.                                                                                                               |
-| `TopologyMismatch`    | One or more servers or clusters configured in the domain resource do not exist in the WebLogic domain configuration, or monitoring exporter port is specified and it conflicts with a server port. |
-| `Aborted`             | The introspector encountered a fatal error, or the operator has exceeded the maximum retry time.                                                                                                   |
+The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
+Failures are are reported using Kubernetes events and the `spec.status` field in the Domain resource, 
+see [Domain debugging]({{< relref "/managing-domains/debugging#check-the-domain-status" >}}). 
+Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries. 
+Refer to [Retry Behavior]({{< relref "#retry-behavior" >}}) on turning failure retry limits and intervals.
 
 ### Domain failure severities
 
@@ -49,8 +38,10 @@ Domain resource failures fall into the three severity levels:
 - Warnings
    - Mismatch in domain spec configuration and WebLogic domain topology that usually does not prevent the domain from becoming available. 
      For example, replicas are configured too high.
-     
-{{%expand "Click here for an example of domain status showing a failure with severity and reason." %}}
+
+See [Domain failure reasons]({{< relref "#domain-failure-reasons" >}}) for reasons for Domain failures.
+
+{{%expand "Click here for an example of domain status showing a failure and its severity." %}}
 ```yaml
 Status:
    ...
@@ -103,6 +94,21 @@ Status:
     Status:                  True
     ...
 ```
+### Domain failure reasons
+
+The following is a list of reasons for failures that may be encountered by the operator while processing a Domain resource.
+
+| Domain Failure Reason | Description                                                                                                                                                                                                                                       |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DomainInvalid`       | One of more configuration validation errors in the Domain resource, such as the `domainUID` is too long, or configuration overrides are used in a Model In Image domain.                                                                          |
+| `Introspection`       | One or more `SEVERE` log messages is found in the introspector's log file.                                                                                                                                                                        |
+| `Kubernetes`          | Unrecoverable response code received from a Kubernetes API call.                                                                                                                                                                                  |
+| `ServerPod`           | One or more WebLogic Server pods failed or did not get into the ready state within a predefined maximum wait time as configured in `spec.serverPod.maxReadyWaitTimeSeconds` in the Domain resource, or the introspector job pod did not complete. |
+| `ReplicasTooHigh`     | The replicas field is set or changed to a value that exceeds the maximum number of servers in the WebLogic cluster configuration.                                                                                                                 |
+| `Internal`            | The operator encountered an internal exception while processing the Domain resource.                                                                                                                                                              |
+| `TopologyMismatch`    | One or more servers or clusters configured in the domain resource do not exist in the WebLogic domain configuration, or monitoring exporter port is specified and it conflicts with a server port.                                                |
+| `Aborted`             | The introspector encountered a fatal error, or the operator has exceeded the maximum retry time.                                                                                                                                                  |
+
 
 
 
