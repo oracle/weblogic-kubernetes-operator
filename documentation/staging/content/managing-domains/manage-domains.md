@@ -126,9 +126,9 @@ For Model in Image, you use [Runtime Updates]({{<relref "/managing-domains/model
 
 For more information, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
-### Managing life cycle operations
+### Managing lifecycle operations
 
-You can perform life cycle operations on WebLogic Servers, clusters, or domains.
+You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
 See [Starting and stopping]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) and [Restarting]({{< relref "/managing-domains/domain-lifecycle/restarting.md" >}}) servers.
 
 ### Scaling clusters
