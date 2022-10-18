@@ -1,6 +1,6 @@
-### Sample Life Cycle Management Scripts
+### Sample Lifecycle Management Scripts
 
-The operator provides sample life cycle management scripts
+The operator provides sample lifecycle management scripts
 to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 In addition, it provides sample scripts to force a new introspection of a domain, scale a cluster, or monitor a domain.
 
@@ -220,7 +220,7 @@ Use these approaches to monitor a domain, cluster, or server as it cycles.
 
 #### `kubectl --watch`
 
-After executing the life cycle scripts described previously for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to use `Ctrl-C` to stop watching the Pods and exit.
+After executing the lifecycle scripts described previously for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to use `Ctrl-C` to stop watching the Pods and exit.
 
 #### `clusterStatus.sh`
 

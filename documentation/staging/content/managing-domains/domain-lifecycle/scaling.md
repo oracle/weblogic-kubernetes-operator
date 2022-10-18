@@ -39,7 +39,7 @@ spec:
   replicas: 1
   ...
 ```
-In addition, see the helper scripts in the [Domain life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-life-cycle-sample-scripts" >}}) section.
+In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
 
 #### Calling the operator's REST scale API
 
@@ -70,7 +70,7 @@ The `/scale` REST endpoint accepts an HTTP POST request and the request body sup
 {
     "spec":
     {
-       "replicas": 3 
+       "replicas": 3
     }
 }
 ```
