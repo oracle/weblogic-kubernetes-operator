@@ -52,7 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusConditionsMatchesDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusMatchesDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -213,10 +213,7 @@ class ItMiiClusterResource {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-    logger.info("Check cluster reource status is mirrow of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
-            "Cluster Resource status does not march domain.status"));
+
     logger.info("Patch the domain resource with new cluster resource");
     String patchStr
         = "["
@@ -240,9 +237,9 @@ class ItMiiClusterResource {
           managedServer1Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-    logger.info("Check cluster reource status is mirrow of domain.status");
+    logger.info("Check cluster resource status is mirrow of domain.status");
     assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-1"),
             "Cluster Resource status does not march domain.status"));
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
@@ -271,9 +268,9 @@ class ItMiiClusterResource {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
           managedServer2Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
-      logger.info("Check cluster reource status is mirrow of domain.status");
+      logger.info("Check cluster resource status is mirrow of domain.status");
       assertDoesNotThrow(() ->
-          assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+          assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-2"),
               "Cluster Resource status does not march domain.status"));
     }
 
@@ -282,8 +279,152 @@ class ItMiiClusterResource {
     logger.info("Cluster is scaled up to replica count 3");
     logger.info("Check cluster reource status is mirrow of domain.status");
     assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace),
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-2"),
             "Cluster Resource status does not march domain.status"));
+    // Clean up resources
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+  }
+
+  /**
+   * Create WebLogic domain DR with domain level replica set to zero.
+   * Patch the domain resource to add cluster resource CR1
+   * Make sure only managed servers from cluster-1 comes up
+   * Make sure cluster status matches domain status
+   * Patch the domain resource to replace the resource  CR1 with CR2
+   * Make sure managed servers from CR1 goes down and managed servers
+   * from CR2 comes up.
+   * Scale up the cluster CR2
+   * Make sure cluster status matches domain status
+   */
+  @Test
+  @DisplayName("Verify domain status for clusters matches cluster resource status")
+  void testDomainStatusMatchesClusterResourceStatus() {
+
+    String domainUid = "domain1";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServer1Prefix = domainUid +  "-c1-managed-server";
+    String managedServer2Prefix = domainUid + "-c2-managed-server";
+
+    String cluster1Res   = domainUid + "-cluster-1";
+    String cluster2Res   = domainUid + "-cluster-2";
+    String cluster1Name  = "cluster-1";
+    String cluster2Name  = "cluster-2";
+
+    String configMapName = domainUid + "-configmap";
+
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    logger.info("Creating ClusterResource {0} in namespace {1}",cluster1Res, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    ClusterResource cluster2 = createClusterResource(
+        cluster2Res, cluster2Name, domainNamespace, replicaCount);
+    logger.info("Creating ClusterResource {0} in namespace {1}",cluster2Res, domainNamespace);
+    createClusterAndVerify(cluster2);
+
+    createModelConfigMap(domainUid,configMapName);
+
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domainUid,
+        domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+    logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+
+    // Do not set cluster references in domain resource
+    // check only admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // check managed server pods are not started
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServer1Prefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Patch the domain resource with new cluster resource");
+    String patchStr
+        = "["
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + cluster1Res + "\"}"
+        + "}]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServer1Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name),
+            "Cluster Resource status does not match domain.status"));
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                "Available", "True"),
+        "Cluster Resource status condition type does not match domain.status"));
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                "Completed", "True"),
+            "Cluster Resource status condition type does not match domain.status"));
+    logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
+    String patchStr2 = "["
+        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
+        + " \"" + cluster2Res + "\""
+        + "}]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr2);
+    V1Patch patch2 = new V1Patch(patchStr2);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch2, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase2 = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
+
+    // check managed server pods from cluster-1 are shutdown
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServer1Prefix + i,domainUid,domainNamespace);
+    }
+
+    // verify managed server pods from cluster-2 are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServer2Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name),
+            "Cluster Resource status does not match domain.status"));
+    kubectlScaleCluster(cluster2Res,domainNamespace,3);
+    checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
+    logger.info("Cluster is scaled up to replica count 3");
+    logger.info("Check cluster reource status is mirror of domain.status");
+    assertDoesNotThrow(() ->
+        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name),
+            "Cluster Resource status does not match domain.status"));
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);

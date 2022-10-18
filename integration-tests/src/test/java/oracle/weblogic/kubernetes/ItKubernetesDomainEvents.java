@@ -86,7 +86,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.ABORTED_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_AVAILABLE;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_COMPLETED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_CREATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_DELETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_AVAILABLE;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
