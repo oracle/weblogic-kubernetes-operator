@@ -383,7 +383,7 @@ Here are the steps for this use case:
    {{% /expand %}}
 
    For a more detailed view of this activity,
-   you can use the `waitForDomain.sh` sample life cycle script.
+   you can use the `waitForDomain.sh` sample lifecycle script.
    This script provides useful information about a domain's pods and
    optionally waits for its `Completed` status condition to become `True`.
    A `Completed` domain indicates that all of its expected
