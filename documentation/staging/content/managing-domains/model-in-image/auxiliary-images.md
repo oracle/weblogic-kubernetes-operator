@@ -237,7 +237,7 @@ container image.
   - Deploy a domain _without_ auxiliary images.
 
 - Second, shut down the domain and wait for its pods to exit.
-  - You can use the `waitForDomain.sh` sample life cycle script to wait.
+  - You can use the `waitForDomain.sh` sample lifecycle script to wait.
   - For example:
     ```shell
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
@@ -615,7 +615,7 @@ the introspector job run and your WebLogic Server pods start. The output will lo
   {{% /expand %}}
 
 For a more detailed view of this activity,
-you can use the `waitForDomain.sh` sample life cycle script.
+you can use the `waitForDomain.sh` sample lifecycle script.
 This script provides useful information about a domain's pods and
 optionally waits for its `Completed` status condition to become `True`.
 A `Completed` domain indicates that all of its expected

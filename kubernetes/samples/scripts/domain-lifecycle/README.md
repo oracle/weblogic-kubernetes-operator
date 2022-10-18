@@ -1,6 +1,6 @@
-### Sample Life Cycle Management Scripts
+### Sample Lifecycle Management Scripts
 
-The operator provides sample life cycle management scripts
+The operator provides sample lifecycle management scripts
 to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 In addition, it provides sample scripts to force a new introspection of a domain, scale a cluster, or monitor a domain.
 
@@ -19,11 +19,11 @@ see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/us
   - [`stopCluster.sh`](#stopclustersh)
   - [`rollCluster.sh`](#rollclustersh)
   - [`scaleCluster.sh`](#scaleclustersh)
-- [Cycle a WebLogic Server instance](#cycle-a-weblogic-server-instance)
+- [Cycle a server](#cycle-a-server)
   - [`startServer.sh`](#startserversh)
   - [`stopServer.sh`](#stopserversh)
   - [`restartServer.sh`](#restartserversh)
-- [Monitor domains, clusters, and pods](#monitor-domains-clusters-and-pods)
+- [Monitor domains, clusters, and servers](#monitor-domains-clusters-and-servers)
   - [`kubectl --watch`](#kubectl---watch)
   - [`clusterStatus.sh`](#clusterstatussh)
   - [`waitForDomain.sh`](#waitfordomainsh)
@@ -33,11 +33,11 @@ see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/us
 - Prior to running these scripts, you must have previously created and deployed the domain.
 
 - Additionally, the cluster cycle scripts require a cluster resource,
-  the WebLogic Server instance cycle scripts require a cluster resource when the server is part of a cluster,
-  and the `waitForDomain.sh` requires cluster resources when the domain contains clusters.
+  the server cycle scripts require a cluster resource when the server is part of a cluster,
+  and the `waitForDomain.sh` script requires cluster resources when the domain contains clusters.
 
 - Some scripts make use of [jq](https://stedolan.github.io/jq/) for processing JSON.
-  You must have `jq 1.5 or higher` installed in order to run these scripts.
+  You must have `jq 1.5` or later installed in order to run these scripts.
   See the installation options on the [jq download](https://stedolan.github.io/jq/download/) page.
 
 ### Cycle a domain
@@ -66,9 +66,9 @@ domain.weblogic.oracle/domain1 patched
 
 #### `rollDomain.sh`
 
-Use the `rollDomain.sh` script to initiate a rolling restart of the WebLogic Server Pods in a domain managed by the operator.
+Use the `rollDomain.sh` script to initiate a rolling restart of the WebLogic Server instance Pods in a domain managed by the operator.
 
-The `rollDomain.sh` script updates the value of the `spec.restartVersion` attribute of the domain resource.  Then, the operator will do a rolling restart of the Server Pods in the WebLogic domain after the value of the `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
+The `rollDomain.sh` script updates the value of the `spec.restartVersion` attribute of the domain resource.  Then, the operator will do a rolling restart of the server Pods in the WebLogic domain after the value of the `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
 
 ```
 $ rollDomain.sh -d domain1 -n weblogic-domain-1
@@ -87,9 +87,9 @@ domain.weblogic.oracle/domain1 patched
 
 #### `introspectDomain.sh`
 
-Use the `introspectDomain.sh` script to rerun a WebLogic domain's introspect job by explicitly initiating the introspection. This script updates the value of the `spec.introspectVersion` attribute of the domain resource. The resulting behavior depends on your domain home source type and other factors, see [Initiating introspection](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection) for details. You can provide the new value of the `introspectVersion` as a parameter to the script or the script will automatically generate a new value to trigger the introspection. See the script `usage` information by using the `-h` option.
+Use the `introspectDomain.sh` script to rerun a WebLogic domain's instrospection job by explicitly initiating the introspection. This script updates the value of the `spec.introspectVersion` attribute of the domain resource. The resulting behavior depends on your domain home source type and other factors, see [Initiating introspection](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection) for details. You can provide the new value of the `introspectVersion` as a parameter to the script or the script will automatically generate a new value to trigger the introspection. See the script `usage` information by using the `-h` option.
 
-Use the following command to rerun a domain's introspect job with the `introspectVersion` value generated by the script.
+Use the following command to rerun a domain's instrospection job with the `introspectVersion` value generated by the script.
 ```
 $ introspectDomain.sh -d domain1 -n weblogic-domain-1
 [2021-03-24T21:37:55.989000Z][INFO] Patching introspectVersion for domain 'domain1' to '1'.
@@ -97,7 +97,7 @@ domain.weblogic.oracle/domain1 patched
 [2021-03-24T21:37:56.110000Z][INFO] Successfully patched introspectVersion for domain 'domain1'!
 ```
 
-Use the following command to rerun a domain's introspect job with a specific `introspectVersion` value.
+Use the following command to rerun a domain's instrospection job with a specific `introspectVersion` value.
 ```
 $ introspectDomain.sh -i v1 -d domain1 -n weblogic-domain-1
 [2021-03-24T21:38:34.369000Z][INFO] Patching introspectVersion for domain 'domain1' to 'v1'.
@@ -134,7 +134,7 @@ domain.weblogic.oracle/domain1 patched
 
 Use the `rollCluster.sh` script to initiate a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
 
-The `rollCluster.sh` script updates the value of the `spec.restartVersion` attribute of the cluster resource. Then, the operator will do a rolling restart of the WebLogic cluster Server Pods after the value of the `spec.restartVersion` is updated. You can provide the new value of the `restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
+The `rollCluster.sh` script updates the value of the `spec.restartVersion` attribute of the cluster resource. Then, the operator will do a rolling restart of the WebLogic cluster server instances after the value of the `spec.restartVersion` is updated. You can provide the new value of the `restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
 
 ```
 $ rollCluster.sh -c cluster-1 -d domain1 -n weblogic-domain-1
@@ -143,7 +143,7 @@ domain.weblogic.oracle/domain1 patched
 [2021-03-24T04:03:27.669000Z][INFO] Successfully patched restartVersion for cluster 'cluster-1'!
 ```
 
-Use the following command to roll the WebLogic Cluster Servers with a specific `restartVersion`:
+Use the following command to roll the WebLogic cluster servers with a specific `restartVersion`:
 ```
 $ rollCluster.sh -r v2 -c cluster-1 -d domain1 -n weblogic-domain-1
 [2021-03-24T13:46:16.833000Z][INFO] Patching restartVersion for cluster 'cluster-1' to 'v2'.
@@ -161,7 +161,7 @@ domain.weblogic.oracle/domain1 patched
 [2021-02-26T19:04:14.466000Z][INFO] Successfully patched replicas for cluster 'cluster-1'!
 ```
 
-### Cycle a WebLogic Server instance
+### Cycle a server
 
 Use the following scripts to cycle specific WebLogic Server pods within a domain.
 
@@ -214,13 +214,13 @@ $ restartServer.sh -s managed-server1 -d domain1 -n weblogic-domain-1
 [2021-03-24T22:20:37.614000Z][INFO] Server restart succeeded !
 ```
 
-### Monitor domains, clusters, and pods
+### Monitor domains, clusters, and servers
 
-Use these approaches to monitor a domain, cluster, or pod as it cycles.
+Use these approaches to monitor a domain, cluster, or server as it cycles.
 
 #### `kubectl --watch`
 
-After executing the life cycle scripts described above for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to use `Ctrl-C` to stop watching the Pods and exit.
+After executing the lifecycle scripts described previously for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to use `Ctrl-C` to stop watching the Pods and exit.
 
 #### `clusterStatus.sh`
 
@@ -253,7 +253,7 @@ weblogic-domain-1  domain1  cluster-2  0    4    0     0        0
 
 #### `waitForDomain.sh`
 
-Use the `waitForDomain.sh` script to wait for a domain to shutdown or for a domain to fully start (reach its `Completed` condition).
+Use the `waitForDomain.sh` script to wait for a domain to shut down or for a domain to fully start (reach its `Completed` condition).
 This script additionally reports information about the ready, condition, image, restart, and introspect state of the domain's pods.
 By default, this script exits with an error when the `Failure` condition is detected.
 
@@ -269,7 +269,7 @@ Use the following command to wait for a domain to reach its `Completed` conditio
 $ waitForDomain.sh -n my-namespace -d my-domain -p Completed
 ```
 
-Use the following command to wait for a domain to fully shutdown:
+Use the following command to wait for a domain to fully shut down:
 
 ```
 $ waitForDomain.sh -n my-namespace -d my-domain -p 0
