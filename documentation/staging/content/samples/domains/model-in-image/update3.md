@@ -185,7 +185,7 @@ Here are the steps for this use case:
    - One way to do this is to call `kubectl get pods -n sample-domain1-ns --watch` and wait for the pods to cycle back to their `ready` state.
 
    - For a more detailed view of this activity,
-     you can use the `waitForDomain.sh` sample life cycle script.
+     you can use the `waitForDomain.sh` sample lifecycle script.
      This script provides useful information about a domain's pods and
      optionally waits for its `Completed` status condition to become `True`.
      A `Completed` domain indicates that all of its expected
