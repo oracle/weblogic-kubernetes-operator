@@ -857,7 +857,7 @@ class ItMiiClusterResource {
     } catch (Exception e) {
       exception = e;
     }
-    assertTrue(exception != null,
+    assertNotNull(exception,
         String.format("Create cluster resource %s in namespace %s should fail", cluster1Res, domainNamespace));
   }
 
