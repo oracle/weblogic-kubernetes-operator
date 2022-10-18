@@ -20,6 +20,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -56,6 +57,10 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -70,6 +75,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.d
 import static oracle.weblogic.kubernetes.assertions.impl.PersistentVolumeClaim.pvcNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -137,6 +143,7 @@ class ItWlsSamples {
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   private static LoggingFacade logger = null;
+  private static Map<String, String> envMap = null;
 
   /**
    * Assigns unique namespaces for operator and domains and installs operator.
@@ -169,6 +176,25 @@ class ItWlsSamples {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
+
+    // env variables to override default values in sample scripts
+    envMap = new HashMap<>();
+
+    if (WIT_DOWNLOAD_URL != null) {
+      logger.info("@@@ DEBUG WIT_DOWNLOAD_URL is: " + WIT_DOWNLOAD_URL);
+      String witDownloadUrl = getActualLocationIfNeeded(WIT_DOWNLOAD_URL,WIT);
+      logger.info("@@@ DEBUG The actual witDownloadUrl is: " + witDownloadUrl);
+      envMap.put("witInstallZipUrl", witDownloadUrl);
+    }
+
+    if (WDT_DOWNLOAD_URL != null) {
+      logger.info("WDT_DOWNLOAD_URL is: " + WDT_DOWNLOAD_URL);
+      String wdtDownloadUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL,WDT);
+      logger.info("The actual wdtDownloadUrl is: " + wdtDownloadUrl);
+      envMap.put("wdtInstallZipUrl", wdtDownloadUrl);
+    }
+    logger.info("Env. variables to the script {0}", envMap);
+
   }
 
   /**
@@ -647,18 +673,23 @@ class ItWlsSamples {
     String additionalOptions = (additonalStr.length == 0) ? "" : additonalStr[0];
     String imageName = (additonalStr.length == 2) ? additonalStr[1] : "";
 
-    // run create-domain.sh to create domain.yaml file
-    CommandParams params = new CommandParams().defaults();
-    params.command("sh "
+    String command1 = "sh "
             + get(sampleBase.toString(), "create-domain.sh").toString()
             + " -i " + get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
             + " -o "
             + get(sampleBase.toString())
-            + additionalOptions);
-
-    logger.info("Run create-domain.sh to create domain.yaml file");
-    boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain.yaml");
+            + additionalOptions;
+    ExecResult result1 = Command.withParams(
+            new CommandParams()
+                .command(command1)
+                .env(envMap)
+                .redirect(true)
+                .verbose(true)
+    ).executeAndReturnResult();
+    boolean success =
+            result1 != null
+                && result1.exitValue() == 0;
+    assertTrue(success, "Failed to create domain.yaml");
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
@@ -682,10 +713,10 @@ class ItWlsSamples {
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
-    params = new CommandParams().defaults();
+    CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + domainYamlFileString);
 
-    result = Command.withParams(params).execute();
+    boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
 
     // wait for the domain to exist
