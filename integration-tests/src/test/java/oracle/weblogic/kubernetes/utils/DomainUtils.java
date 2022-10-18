@@ -106,6 +106,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.assertions.impl.Cluster.doesClusterExist;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -1147,7 +1148,7 @@ public class DomainUtils {
             .introspectorJobActiveDeadlineSeconds(300L)));
 
     // create cluster resource for the domain
-    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+    if (!doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
       ClusterResource cluster = createClusterResource(clusterName, clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }

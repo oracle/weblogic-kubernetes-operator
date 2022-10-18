@@ -308,7 +308,7 @@ class ItRetryImprovements {
 
     // verify that WARNING and warningMsgRegex message found in Operator log
     testUntil(() -> checkPodLogContainsRegex(warningMsgRegex, operatorPodName, opNamespace),
-        logger, "{0}} is found in Operator log", warningMsgRegex);
+        logger, "{0} is found in Operator log", warningMsgRegex);
 
     // verify that the cluster is up and running
     verifyDomainExistsAndServerStarted(replicaMaxCount);
@@ -348,7 +348,7 @@ class ItRetryImprovements {
    * Verify that retry stops after failureRetryLimitMinutes expired.
    */
   @Test
-  @DisplayName("Verify that retry stops after the issue is fixed and the domain starts successfully.")
+  @DisplayName("Verify that retry stops after failureRetryLimitMinutes expired")
   void testRetryStoppedAfterfailureRetryLimitMinutesExpired() {
     int replicaCount = 2;
 
