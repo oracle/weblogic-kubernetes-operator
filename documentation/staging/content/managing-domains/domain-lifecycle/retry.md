@@ -12,22 +12,20 @@ The WebLogic Kubernetes Operator may encounter various failures during its proce
 Failures are are reported using Kubernetes events and the `spec.status` field in the Domain resource, 
 see [Domain debugging]({{< relref "/managing-domains/debugging#check-the-domain-status" >}}). 
 Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries. 
-Refer to [Retry Behavior]({{< relref "#retry-behavior" >}}) on turning failure retry limits and intervals.
+Refer to [Retry Behavior]({{< relref "#retry-behavior" >}}) on tuning failure retry limits and intervals.
 
 ### Domain failure severities
 
-Domain resource failures fall into the three severity levels:
+Domain resource failures fall into three severity levels:
 
-- Fatal failures
-   - Failures that any further retries will also fail unless the cause of the failure is fixed. \
-     Examples:
-     - Fatal errors in the introspector log that contain the special marker string `FatalIntrospectorError`.
-     - Validation errors in the domain resource that require changes to the domain spec.
-     - Failures at the `Severe` level that have reached the expected maximum retry time.
+- Warnings
+    - Mismatch in domain spec configuration and WebLogic domain topology that usually does not prevent the domain from becoming available.
+      For example, replicas are configured too high.
 - Severe failures
    - Most of the failures during domain processing are temporary failures that may either resolve at a later 
      time without intervention, or be fixed by users actions without making any change to the domain resource
-     or the cluster resource. \
+     or the cluster resource. The operator [periodically retries]({{< relref "#retry-behavior" >}}) 
+     when it encounters this type of failure. \
      Examples:
      - Introspector job time out (`DeadlineExceeded` error).
      - `SEVERE` errors in the introspector log that do not contain the special marker string `FatalIntrospectorError`.
@@ -35,9 +33,13 @@ Domain resource failures fall into the three severity levels:
      - Unauthorized to create some resources.
      - An exception from the operator.
      - Validation errors that can be fixed without changing the domain spec, for example, missing secrets or a missing ConfigMap.
-- Warnings
-   - Mismatch in domain spec configuration and WebLogic domain topology that usually does not prevent the domain from becoming available. 
-     For example, replicas are configured too high.
+- Fatal failures
+    - Failures that are not automatically retried. The cause of the failure must be fixed, and the retry
+      must be manually initiated by updating the domain as described in [Retry Behavior]({{< relref "#retry-behavior" >}}). \
+      Examples:
+        - Fatal errors in the introspector log that contain the special marker string `FatalIntrospectorError`.
+        - Validation errors in the domain resource that require changes to the domain spec.
+        - Failures at the `Severe` level that have reached the expected [maximum retry time]({{< relref "#retry-behavior" >}}).
 
 See [Domain failure reasons]({{< relref "#domain-failure-reasons" >}}) for reasons for Domain failures.
 
@@ -94,6 +96,13 @@ Status:
     Status:                  True
     ...
 ```
+
+To manually initiate an immediate retry, or to restart retries that have reached their 
+`spec.failureIntervalRetrySeconds`, update a domain field that will cause immediate action by the operator. 
+For example, change `spec.introspectVersion` or `spec.restartVersion` as appropriate. 
+See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}}) 
+and [Initiating introspection]({{< relref "/managing-domains/domain-lifecycle/introspection#initiating-introspection" >}})
+
 ### Domain failure reasons
 
 The following is a list of reasons for failures that may be encountered by the operator while processing a Domain resource.
