@@ -82,6 +82,22 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   }
 
   @Test
+  void whenDomainVolumeMountPathContainsToken_returnTrue() {
+    proposedDomain.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN));
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenDomainVolumeMountPathContainsTokenInMiddle_returnTrue() {
+    proposedDomain.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN_2));
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenDomainLogHomeEnabledHasUnmappedLogHome_returnFalse() {
     proposedDomain.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(GOOD_MOUNT_PATH));

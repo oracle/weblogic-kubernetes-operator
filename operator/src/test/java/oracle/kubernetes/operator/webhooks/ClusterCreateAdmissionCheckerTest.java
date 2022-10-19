@@ -49,6 +49,22 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
+  void whenDomainVolumeMountPathContainsToken_returnTrue() {
+    proposedCluster.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN));
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenDomainVolumeMountPathContainsTokenInMiddle_returnTrue() {
+    proposedCluster.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(MOUNT_PATH_WITH_TOKEN_2));
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenClusterSpecHasNoEnvs_returnTrue() {
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
   }
@@ -105,6 +121,17 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     proposedCluster.getSpec().setLivenessProbeThresholds(2, 1);
   }
 
+  private void setValidLivenessProbeSuccessThreshold() {
+    proposedCluster.getSpec().setLivenessProbeThresholds(1, 1);
+  }
+
+  @Test
+  void whenClusterHasValidLivenessProbeSuccessThreshold_returnTrue() {
+    setValidLivenessProbeSuccessThreshold();
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+  
   private void setInvalidContainerPortName() {
     proposedCluster.getSpec().getContainers()
         .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(BAD_PORT_NAME)));
