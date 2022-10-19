@@ -274,6 +274,7 @@ public class ItHorizontalPodAutoscaler {
   // verify hpa is getting the metrics
   private boolean verifyHPA(String namespace, String hpaName) {
     CommandParams params = new CommandParams().defaults();
+    params.saveResults(true);
     params.command("kubectl get hpa " + hpaName + " -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
