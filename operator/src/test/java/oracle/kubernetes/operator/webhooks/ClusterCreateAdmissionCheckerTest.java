@@ -47,7 +47,12 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
   }
-  
+
+  @Test
+  void whenClusterSpecHasNoEnvs_returnTrue() {
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
   @Test
   void whenClusterSpecHasReservedEnvs_returnFalse() {
     List<V1EnvVar> list = createEnvVarListWithReservedName();
@@ -78,6 +83,18 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
+  void whenClusterHasValidContainerPortName_returnTrue() {
+    setValidContainerPortName();
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenClusterHasNoLivenessProbeSuccessThreshold_returnTrue() {
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenClusterHasInvalidLivenessProbeSuccessThreshold_returnFalse() {
     setInvalidLivenessProbeSuccessThreshold();
 
@@ -91,5 +108,10 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   private void setInvalidContainerPortName() {
     proposedCluster.getSpec().getContainers()
         .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(BAD_PORT_NAME)));
+  }
+
+  private void setValidContainerPortName() {
+    proposedCluster.getSpec().getContainers()
+        .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(GOOD_PORT_NAME)));
   }
 }

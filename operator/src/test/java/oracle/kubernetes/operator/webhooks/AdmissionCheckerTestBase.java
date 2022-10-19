@@ -26,6 +26,7 @@ abstract class AdmissionCheckerTestBase {
   static final String GOOD_MOUNT_PATH = "/mydir/mount";
   static final String GOOD_CONTAINER_NAME = "abcdef";
   static final String BAD_PORT_NAME = "abcdefghijklmnopqrstuvw";
+  static final String GOOD_PORT_NAME = "abcdef";
 
   final List<Memento> mementos = new ArrayList<>();
   final KubernetesTestSupport testSupport = new KubernetesTestSupport();
