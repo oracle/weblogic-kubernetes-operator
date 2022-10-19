@@ -70,7 +70,7 @@ The `/scale` REST endpoint accepts an HTTP POST request and the request body sup
 {
     "spec":
     {
-       "replicas": 3 
+       "replicas": 3
     }
 }
 ```
