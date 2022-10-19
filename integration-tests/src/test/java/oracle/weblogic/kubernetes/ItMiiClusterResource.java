@@ -237,10 +237,6 @@ class ItMiiClusterResource {
           managedServer1Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-    logger.info("Check cluster resource status is mirrow of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-1"),
-            "Cluster Resource status does not march domain.status"));
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
@@ -268,19 +264,12 @@ class ItMiiClusterResource {
       logger.info("Wait for managed pod {0} to be ready in namespace {1}",
           managedServer2Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
-      logger.info("Check cluster resource status is mirrow of domain.status");
-      assertDoesNotThrow(() ->
-          assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-2"),
-              "Cluster Resource status does not march domain.status"));
     }
 
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
     logger.info("Check cluster reource status is mirrow of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, "cluster-2"),
-            "Cluster Resource status does not march domain.status"));
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
@@ -302,7 +291,7 @@ class ItMiiClusterResource {
   @DisplayName("Verify domain status for clusters matches cluster resource status")
   void testDomainStatusMatchesClusterResourceStatus() {
 
-    String domainUid = "domain1";
+    String domainUid = "domain10";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServer1Prefix = domainUid +  "-c1-managed-server";
     String managedServer2Prefix = domainUid + "-c2-managed-server";
@@ -313,10 +302,6 @@ class ItMiiClusterResource {
     String cluster2Name  = "cluster-2";
 
     String configMapName = domainUid + "-configmap";
-
-    deleteDomainResource(domainUid, domainNamespace);
-    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
-    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
 
     // create and deploy cluster resource(s)
     ClusterResource cluster = createClusterResource(
@@ -331,6 +316,7 @@ class ItMiiClusterResource {
 
     createModelConfigMap(domainUid,configMapName);
 
+
     // create and deploy domain resource
     DomainResource domain = createDomainResource(domainUid,
         domainNamespace, adminSecretName,
@@ -339,34 +325,8 @@ class ItMiiClusterResource {
     logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
         domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Res));
     createDomainAndVerify(domain, domainNamespace);
-
-    // Do not set cluster references in domain resource
-    // check only admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    // check managed server pods are not started
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServer1Prefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Patch the domain resource with new cluster resource");
-    String patchStr
-        = "["
-        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": {\"name\" : \"" + cluster1Res + "\"}"
-        + "}]";
-    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
-
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    //verify the introspector pod is created and runs
-    String introspectPodNameBase = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
     // verify managed server services and pods are created
     for (int i = 1; i <= replicaCount; i++) {
@@ -375,17 +335,18 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
     }
     logger.info("Check cluster resource status is mirror of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name),
-            "Cluster Resource status does not match domain.status"));
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
-                "Available", "True"),
-        "Cluster Resource status condition type does not match domain.status"));
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
-                "Completed", "True"),
-            "Cluster Resource status condition type does not match domain.status"));
+    assertDoesNotThrow(() -> {
+          testUntil(
+              clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
+              "Cluster Resource status does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                      "Available", "True"), getLogger(),
+                  "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                      "Completed", "True"), getLogger(),
+                  "Cluster Resource status condition type does not match domain.status");
+        }
+    );
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
@@ -415,16 +376,32 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
     }
     logger.info("Check cluster resource status is mirror of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name),
-            "Cluster Resource status does not match domain.status"));
+    assertDoesNotThrow(() -> {
+
+      testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+          "Cluster Resource status does not match domain.status");
+      testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+      testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+    });
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
-    logger.info("Check cluster reource status is mirror of domain.status");
-    assertDoesNotThrow(() ->
-        assertTrue(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name),
-            "Cluster Resource status does not match domain.status"));
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+        }
+    );
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
@@ -792,7 +769,7 @@ class ItMiiClusterResource {
    *   kubectel scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1
    *   kubectel scale cluster --initial-replicas=1 --replicas=5  --all -n ns
-   * This command must fails as there is no cluster with currentreplica set to 1
+   * This command must fail as there is no cluster with currentreplica set to 1
    */
   @Test
   @DisplayName("Verify various kubectl scale options")
@@ -855,10 +832,43 @@ class ItMiiClusterResource {
           managedPod2Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedPod2Prefix + i, domainUid, domainNamespace);
     }
+    //verify status and conditions are matching for domain.status and cluster resource status
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
+              "Cluster Resource status does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+        }
+    );
     // Scaling one Cluster(2) does not affect other Cluster(1)
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedPod2Prefix + "3", domainUid, domainNamespace);
     checkPodDoesNotExist(managedPod1Prefix + "3", domainUid, domainNamespace);
+
+    //verify status and conditions after scaling
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type does not match domain.status");
+        }
+    );
 
     // Scale all clusters in the namesapce to replicas set to 4
     // kubectl scale cluster --replicas=4 --all -n namesapce
