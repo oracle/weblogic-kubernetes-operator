@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,9 +20,11 @@ import org.junit.jupiter.api.Test;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -110,5 +113,22 @@ class DomainResourceRetryTest extends DomainTestBase {
     addFailureCondition(ABORTED);
 
     assertThat(domain.shouldRetry(), is(false));
+  }
+
+  @Test
+  void retryMessage_contains_retryLimitCalculatedFromInitialFailureTime() {
+    final int RETRY_LIMIT_MINUTES = 60;
+    configureDomain(domain)
+        .withFailureRetryLimitMinutes(RETRY_LIMIT_MINUTES);
+
+    OffsetDateTime initialFailureTime = SystemClock.now();
+    addFailureCondition(DOMAIN_INVALID);
+
+    SystemClockTestSupport.increment();
+    DomainCondition secondLaterCondition = new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withMessage("oops");
+
+    String retryMessage = domain.createRetryMessage(domain.getStatus(), secondLaterCondition);
+    assertThat(retryMessage,
+        containsString(initialFailureTime.plus(RETRY_LIMIT_MINUTES, ChronoUnit.MINUTES).toString()));
   }
 }
