@@ -269,7 +269,7 @@ class ItMiiClusterResource {
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
-    logger.info("Check cluster resource status is mirrow of domain.status");
+
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);

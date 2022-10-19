@@ -429,6 +429,7 @@ public class TestAssertions {
    * Check the status cluster in the domain matches status in the cluster resource.
    * @param domainUid  domain uid
    * @param namespace namespace in which the domain resource exists
+   * @param clusterName  name of cluster
    * @return true if the status matches, false otherwise
    */
   public static Callable<Boolean> clusterStatusMatchesDomain(String domainUid, String namespace,
@@ -506,9 +507,12 @@ public class TestAssertions {
   }
 
   /**
-   * Check the status cluster in the domain matches status in the cluster resource.
+   * Check the status conditions for cluster in the domain matches status conditions in the cluster resource.
    * @param domainUid  domain uid
    * @param namespace namespace in which the domain resource exists
+   * @param clusterName name of cluster
+   * @param conditionType conditions type
+   * @param expectedStatus expected status
    * @return true if the status matches, false otherwise
   */
   public static Callable<Boolean> clusterStatusConditionsMatchesDomain(String domainUid, String namespace,
