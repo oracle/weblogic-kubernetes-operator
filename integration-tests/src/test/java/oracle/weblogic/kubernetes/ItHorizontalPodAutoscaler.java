@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainRe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -228,7 +229,13 @@ public class ItHorizontalPodAutoscaler {
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to create hpa or autoscale, result " + result);
-
+    // wait till autoscaler could get the current cpu utilization to make sure it is ready
+    testUntil(withStandardRetryPolicy,
+        () -> verifyHPA(domainNamespace, clusterResName),
+        logger,
+        "Get current cpu utilization from hpa {0} in namespace {1}",
+        clusterResName,
+        domainNamespace);
   }
 
   private void createLoadOnCpuAndVerifyAutoscaling() {
@@ -262,5 +269,22 @@ public class ItHorizontalPodAutoscaler {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+  }
+
+  // verify hpa is getting the metrics
+  private boolean verifyHPA(String namespace, String hpaName) {
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl get hpa " + hpaName + " -n " + namespace);
+
+    ExecResult result = Command.withParams(params).executeAndReturnResult();
+    /* check if hpa output contains something like 7%/50%
+     * kubectl get hpa --all-namespaces
+     * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+     * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         4         2          18m
+     * when its not ready, it looks
+     * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+     * ns-qsjlcw   hpacluster   Cluster/hpacluster   <unknown>/50%    2         4         2          18m
+     */
+    return result.stdout().contains("%/");
   }
 }
