@@ -27,6 +27,8 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -44,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -234,6 +237,9 @@ class ItRecoveryDomainInPV  {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i),
+          String.format("Get pod uid failed for podName %s in namespace %s", managedServerPodNamePrefix + i,
+            domainNamespace));
     }
 
     // build the standalone JMS Client on Admin pod
@@ -258,8 +264,17 @@ class ItRecoveryDomainInPV  {
     scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 2);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
-    checkPodReadyAndServiceExists(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
-    logger.info("Managed Server(2) started");
+    //checkPodReadyAndServiceExists(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    //logger.info("Managed Server(2) started");
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i),
+          String.format("Get pod uid failed for podName %s in namespace %s", managedServerPodNamePrefix + i,
+            domainNamespace));
+    }
 
     runJmsClientOnAdminPod("receive",
         "ClusterJmsServer@managed-1@jms.UniformDistributedTestQueue");
@@ -318,4 +333,26 @@ class ItRecoveryDomainInPV  {
         logger,
         "Wait for JMS Client to send/recv msg");
   }
+
+  private boolean getPodUid(String nameSpace, String podName) {
+
+    String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='{.metadata.uid}'";
+    CommandParams params =
+        defaultCommandParams()
+            .command(command)
+            .saveResults(true)
+            .redirect(true);
+    if (Command.withParams(params).execute()
+        && params.stdout() != null
+        && params.stdout().length() != 0) {
+      String uid = params.stdout();
+      logger.info("Got pod {0} uid {1}", podName, uid);
+      return true;
+    }
+
+    return false;
+
+  }
+
+
 }
