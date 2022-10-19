@@ -511,7 +511,6 @@ if [ "$DO_UPDATE2" = "true" ]; then
   fi
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-<<<<<<< HEAD
   doCommand -c "${KUBERNETES_CLI:-kubectl} -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   waitForDomain 0
 
