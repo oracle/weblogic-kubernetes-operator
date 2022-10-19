@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -119,5 +120,24 @@ class ClusterStatusTest {
 
     assertThat(cluster1.getConditions().size(), equalTo(2));
     assertThat(cluster1.getConditions(), equalTo(list));
+  }
+
+  @Test
+  void verifyClusterConditionTransitionTimeChanged() {
+    ClusterCondition available = new ClusterCondition(ClusterConditionType.AVAILABLE)
+            .withStatus(ClusterCondition.TRUE);
+    ClusterCondition completed = new ClusterCondition(ClusterConditionType.COMPLETED)
+            .withStatus(ClusterCondition.TRUE);
+    SystemClockTestSupport.increment();
+    ClusterCondition available2 = new ClusterCondition(ClusterConditionType.AVAILABLE)
+            .withStatus(ClusterCondition.TRUE);
+    ClusterCondition completed2 = new ClusterCondition(ClusterConditionType.COMPLETED)
+            .withStatus(ClusterCondition.TRUE);
+    cluster1.addCondition(available);
+    cluster1.addCondition(completed);
+    cluster2.addCondition(available2);
+    cluster2.addCondition(completed2);
+    boolean result = cluster2.anyConditionTransitionTimeChanged(cluster1);
+    assertThat(result, is(true));
   }
 }

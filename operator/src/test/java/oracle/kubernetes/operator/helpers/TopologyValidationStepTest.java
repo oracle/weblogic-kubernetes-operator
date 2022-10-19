@@ -470,6 +470,7 @@ class TopologyValidationStepTest {
     defineScenario(TopologyCase.REPLICAS)
         .withStaticCluster(10).withReplicas(5).build();
     testSupport.defineResources();
+    info.setServerStartupInfo(Collections.emptyList());
     runTopologyValidationStep();
 
     assertMaxReplicasSet();

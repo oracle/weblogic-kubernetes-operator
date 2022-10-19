@@ -76,9 +76,11 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EV
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_RESOURCES_VALIDATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.SCHEDULED_STATUS_UPDATER;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -416,7 +418,7 @@ abstract class DomainStatusUpdateTestBase {
     info.setServerPod("server1", null);
     info.setServerPod("server2", null);
     info.setServerPod("server3", null);
-    info.setServerStartupInfo(null);
+    info.setServerStartupInfo(Collections.emptyList());
   }
 
   @Test
@@ -1656,6 +1658,50 @@ abstract class DomainStatusUpdateTestBase {
           .withServers("server1", "server2")
           .withServersReachingState(SHUTTING_DOWN_STATE, "server1", "server2")
           .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+  }
+
+  @Test
+  void whenServerStateInfoNotConstructed_duringDomainResourceValidation_verifyDomainStatusNotUpdated() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
+    ScenarioBuilder scenarioBuilder = defineScenario();
+    scenarioBuilder.withCluster("cluster1", "server1", "server2")
+        .withServersReachingState(STARTING_STATE, "server1", "server2")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+
+    scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
+    testSupport.addToPacket(DOMAIN_RESOURCES_VALIDATION, Boolean.TRUE);
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+  }
+
+  @Test
+  void whenServerStateInfoNotConstructed_duringScheduledStatusUpdate_verifyDomainStatusNotUpdated() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
+    ScenarioBuilder scenarioBuilder = defineScenario();
+    scenarioBuilder.withCluster("cluster1", "server1", "server2")
+            .withServersReachingState(STARTING_STATE, "server1", "server2")
+            .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+
+    scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
+    testSupport.addToPacket(SCHEDULED_STATUS_UPDATER, Boolean.TRUE);
+    info.setServerStartupInfo(null);
 
     updateDomainStatus();
 

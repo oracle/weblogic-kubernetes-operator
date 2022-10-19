@@ -83,9 +83,11 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_RESOURCES_VALIDATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.SCHEDULED_STATUS_UPDATER;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -570,6 +572,22 @@ public class DomainStatusUpdater {
     void modifyStatus(DomainStatus domainStatus) { // no-op; modification happens in the context itself.
     }
 
+    @Override
+    public NextAction apply(Packet packet) {
+      return shouldSkipDomainStatusUpdate(packet)
+              ? doNext(getNext().getNext(), packet) : super.apply(packet);
+    }
+
+    private boolean shouldSkipDomainStatusUpdate(Packet packet) {
+      boolean isDomainResourcesValidation =
+              packet.get(DOMAIN_RESOURCES_VALIDATION) != null;
+      boolean isScheduledStatusUpdater =
+              packet.get(SCHEDULED_STATUS_UPDATER) != null;
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return (isDomainResourcesValidation || isScheduledStatusUpdater)
+              && info.getServerStartupInfo() == null;
+    }
+
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
       private final WlsDomainConfig config;
       private final Set<String> expectedRunningServers;
@@ -825,7 +843,10 @@ public class DomainStatusUpdater {
         }
 
         private boolean noApplicationServersReady() {
-          return getInfo().getServerStartupInfo().stream()
+          Collection<DomainPresenceInfo.ServerStartupInfo> ssis =
+                  Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList());
+
+          return ssis.stream()
               .map(DomainPresenceInfo.ServerInfo::getName)
               .filter(this::isApplicationServer)
               .noneMatch(StatusUpdateContext.this::isServerReady);

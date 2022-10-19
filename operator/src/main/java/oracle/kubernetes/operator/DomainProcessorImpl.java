@@ -97,9 +97,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   // Map namespace to map of domainUID to Domain; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
-  // Map namespace to map of domainUID to Domain; tests may replace this value.
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
-  private static Map<String, Map<String, DomainPresenceInfo>> domainsForStatus = new ConcurrentHashMap<>();
 
 
   // map namespace to map of uid to processing.
@@ -147,7 +144,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   static void cleanupNamespace(String namespace) {
     clusterEventK8SObjects.remove(namespace);
     domains.remove(namespace);
-    domainsForStatus.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
     statusUpdaters.remove((namespace));
@@ -402,34 +398,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     domains
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
           .put(info.getDomainUid(), info);
-  }
-
-  @Override
-  public void registerDomainPresenceInfoForStatus(DomainPresenceInfo info) {
-    DomainPresenceInfo currentInfo = Optional.ofNullable(domains.get(info.getNamespace()))
-            .map(m -> m.get(info.getDomainUid())).orElse(null);
-
-    // Move to status cache
-    if (currentInfo != null) {
-      domainsForStatus
-          .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
-          .put(info.getDomainUid(), currentInfo);
-    }
-
-    // register new DomainPresenceInfo to domain cache
-    registerDomainPresenceInfo(info);
-  }
-
-  private static DomainPresenceInfo getExistingDomainPresenceInfoForStatus(String ns, String domainUid) {
-    // first look in cache for status
-    DomainPresenceInfo info = domainsForStatus.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).remove(domainUid);
-
-    if (info == null) {
-      // get directly from domains cache
-      info = Optional.ofNullable(domains.get(ns)).map(n -> n.get(domainUid)).orElse(null);
-    }
-
-    return info;
   }
 
   @Override
@@ -1045,13 +1013,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion()));
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
+      packet.put(ProcessingConstants.SCHEDULED_STATUS_UPDATER, Boolean.TRUE);
       return packet;
     }
 
     private class DomainPresenceInfoStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
-        Optional.ofNullable(getExistingDomainPresenceInfoForStatus(getNamespace(), getDomainUid()))
+        Optional.ofNullable(domains.get(getNamespace()))
+            .map(n -> n.get(getDomainUid()))
             .ifPresent(i -> i.addToPacket(packet));
 
         return doNext(packet);

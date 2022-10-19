@@ -213,6 +213,9 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
+    if (domainResourcesValidation) {
+      packet.put(ProcessingConstants.DOMAIN_RESOURCES_VALIDATION, Boolean.TRUE);
+    }
     return packet;
   }
 
@@ -397,11 +400,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (domainResourcesValidation) {
-        executor.registerDomainPresenceInfoForStatus(info);
-      } else {
-        executor.registerDomainPresenceInfo(info);
-      }
+      executor.registerDomainPresenceInfo(info);
 
       return doNext(getNextSteps(), packet);
     }

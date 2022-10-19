@@ -273,6 +273,8 @@ public class ManagedServersUpStep extends Step {
       if (startupInfos != null) {
         startupInfos.sort(
             comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
+      } else {
+        startupInfos = Collections.emptyList();
       }
       return startupInfos;
     }

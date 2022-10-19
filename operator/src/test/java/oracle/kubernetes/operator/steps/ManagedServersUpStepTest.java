@@ -795,9 +795,11 @@ class ManagedServersUpStepTest {
     }
 
     static ServerStartupInfo getServerStartupInfo(String serverName) {
-      for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
-        if (startupInfo.serverConfig.getName().equals(serverName)) {
-          return startupInfo;
+      if (info.getServerStartupInfo() != null) {
+        for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
+          if (startupInfo.serverConfig.getName().equals(serverName)) {
+            return startupInfo;
+          }
         }
       }
       return null;
