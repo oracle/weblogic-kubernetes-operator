@@ -26,6 +26,7 @@ public interface KubernetesConstants {
   String CLUSTER = "Cluster";
   String CLUSTER_PLURAL = "clusters";
   String CLUSTER_SINGULAR = "cluster";
+  String SCALE = "Scale";
   String CLUSTER_SHORT = "clu";
   String CLUSTER_VERSION = "v1";
   String API_VERSION_CLUSTER_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + CLUSTER_VERSION;

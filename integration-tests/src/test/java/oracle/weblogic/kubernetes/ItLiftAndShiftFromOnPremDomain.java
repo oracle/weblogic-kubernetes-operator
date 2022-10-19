@@ -363,7 +363,7 @@ class ItLiftAndShiftFromOnPremDomain {
 
   private static V1Pod callSetupWebLogicPod(String namespace) {
     getLogger().info("The input WDT_DOWNLOAD_URL is: {0}", WDT_DOWNLOAD_URL);
-    String wdtDownloadurl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT, LIFT_AND_SHIFT_WORK_DIR);
+    String wdtDownloadurl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
     getLogger().info("The actual download location for lifeAndShift is {0}", wdtDownloadurl);
     // create a V1Container with specific scripts and properties for creating domain
     V1Container container = new V1Container()

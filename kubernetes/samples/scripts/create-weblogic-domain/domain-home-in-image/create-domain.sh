@@ -182,6 +182,11 @@ initialize() {
   export WDT_VERSION=${wdtVersion:-LATEST}
   export WIT_VERSION=${witVersion:-LATEST}
 
+  export WIT_INSTALL_ZIP_URL=${witInstallZipUrl}
+  echo @@ " Info: in create-domain.sh witInstallZipUrl is '$witInstallZipUrl'"
+  export WDT_INSTALL_ZIP_URL=${wdtInstallZipUrl}
+  echo @@ " Info: in create-domain.sh wdInstallZipUrl is '$wdtInstallZipUrl'"
+
   install_wit_if_needed || exit 1
 }
 

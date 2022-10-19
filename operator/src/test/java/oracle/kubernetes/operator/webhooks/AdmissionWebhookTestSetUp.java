@@ -3,12 +3,14 @@
 
 package oracle.kubernetes.operator.webhooks;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.webhooks.model.Scale;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
@@ -121,7 +123,18 @@ class AdmissionWebhookTestSetUp {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
   }
 
-  static void setFromModel(DomainResource domain) {
-    domain.getSpec().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+  /**
+   * Create a scale model that contains the scale request and status for WebhookRestTest
+   * and ValidationUtilsTest.
+   *
+   * @param clusterName the name of the cluster resource
+   * @param replicas the replica count of the scale request
+   * @return the scale object created
+   */
+  public static Scale createScale(String clusterName, String replicas) {
+    Map<String, String> spec = new HashMap<>();
+    spec.put("replicas", replicas);
+
+    return new Scale().metadata(new V1ObjectMeta().name(clusterName).namespace(NS)).spec(spec);
   }
 }

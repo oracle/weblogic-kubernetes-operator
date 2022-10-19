@@ -360,7 +360,7 @@ public interface TestConstants {
   // Oracle database "no operator" constant(s)
   public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
 
-  //Oracle database operator constants
+  // Oracle database operator constants
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
@@ -374,23 +374,27 @@ public interface TestConstants {
   public static final String ORACLELINUX_TEST_VERSION =
       getNonEmptySystemProperty("wko.it.oraclelinux.test.version", "7");
 
-  //retry improvement
-  //Defaulting to 120 seconds
+  // retry improvement
+  // Defaulting to 120 seconds
   public static final Long FAILURE_RETRY_INTERVAL_SECONDS =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.interval.seconds", "20"));
-  //Defaulting to 1440 minutes (24 hours)
+  // Defaulting to 1440 minutes (24 hours)
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
   String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
 
-  //kubernetes CLI, some may set this to 'oc'
+  // kubernetes CLI, some may set this to 'oc'
   public static final String KUBERNETES_CLI_DEFAULT = "kubectl";
   public static final String KUBERNETES_CLI =
       getEnvironmentProperty("KUBERNETES_CLI", KUBERNETES_CLI_DEFAULT);
 
-  //image build CLI, some may set this to 'podman'
+  // image build CLI, some may set this to 'podman'
   //note: 'WLSIMG_BUILDER' is the same name as the env-var/prop used by WIT
   public static final String WLSIMG_BUILDER_DEFAULT = "docker";
   public static final String WLSIMG_BUILDER =
       getEnvironmentProperty("WLSIMG_BUILDER", WLSIMG_BUILDER_DEFAULT);
+
+  // metrics server constants
+  public static final String METRICS_SERVER_YAML =
+      "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
 }
