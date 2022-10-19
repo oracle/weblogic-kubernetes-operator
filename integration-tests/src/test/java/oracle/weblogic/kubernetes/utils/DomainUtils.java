@@ -995,9 +995,9 @@ public class DomainUtils {
 
 
   /**
-   * Create domain resource with a custom ConfigMap.
+   * Create domain resource with configMap.
    *
-   * @param domainUid domain uid
+   * @param domainUid unique id of the WebLogic domain
    * @param domainNamespace domain namespace
    * @param clusterName names of cluster
    * @param miiImage name of the image including its tag
@@ -1084,9 +1084,9 @@ public class DomainUtils {
   }
 
   /**
-   * Create domain resource with domain-in-image type.
+   * Create a domain-in-image type domain resource with configMap.
    *
-   * @param domainUid domain uid
+   * @param domainUid unique id of the WebLogic domain
    * @param domainNamespace domain namespace
    * @param imageName image name used to create domain-in-image domain
    * @param wlSecretName wls admin secret name
