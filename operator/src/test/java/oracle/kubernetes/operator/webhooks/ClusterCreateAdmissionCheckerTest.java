@@ -41,11 +41,32 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
   }
 
   @Test
+  void whenClusterHasNoVolumeMountPath_returnTrue() {
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
   void whenClusterVolumeMountPathInvalid_returnFalse() {
     proposedCluster.getSpec().getAdditionalVolumeMounts()
         .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(BAD_MOUNT_PATH));
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
+  void whenClusterVolumeMountPathEmpty_returnFalse() {
+    proposedCluster.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(""));
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
+  void whenClusterVolumeMountPathValid_returnTrue() {
+    proposedCluster.getSpec().getAdditionalVolumeMounts()
+        .add(new V1VolumeMount().name(MOUNT_NAME).mountPath(GOOD_MOUNT_PATH));
+
+    assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
   }
 
   @Test
@@ -131,7 +152,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
 
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(true));
   }
-  
+
   private void setInvalidContainerPortName() {
     proposedCluster.getSpec().getContainers()
         .add(new V1Container().name(GOOD_CONTAINER_NAME).addPortsItem(new V1ContainerPort().name(BAD_PORT_NAME)));

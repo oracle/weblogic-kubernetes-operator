@@ -35,7 +35,6 @@ abstract class AdmissionCheckerTestBase {
 
   final DomainResource existingDomain = createDomainWithClustersAndStatus();
   final DomainResource proposedDomain = createDomainWithClustersAndStatus();
-  final DomainResource existingDomain2 = createDomainWithoutCluster();
   final DomainResource proposedDomain2 = createDomainWithoutCluster();
   final ClusterResource existingCluster = createCluster();
   final ClusterResource proposedCluster = createCluster();

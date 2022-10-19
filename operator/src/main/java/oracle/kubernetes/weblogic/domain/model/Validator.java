@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -140,11 +141,7 @@ public abstract class Validator {
     }
 
     void checkEnvironmentVariables(@Nonnull BaseConfiguration configuration, String prefix) {
-      if (configuration.getEnv() == null) {
-        return;
-      }
-
-      List<String> reservedNames = configuration.getEnv()
+      List<String> reservedNames = Optional.ofNullable(configuration.getEnv()).orElse(Collections.emptyList())
           .stream()
           .map(V1EnvVar::getName)
           .filter(isReserved)
