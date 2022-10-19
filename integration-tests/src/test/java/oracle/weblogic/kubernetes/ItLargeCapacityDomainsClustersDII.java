@@ -41,7 +41,6 @@ class ItLargeCapacityDomainsClustersDII {
 
   private static String opNamespace = null;
   private static int numOfDomains = Integer.valueOf(getNonEmptySystemProperty("NUMBER_OF_DOMAINS", "10"));
-  private static int numOfClusters = Integer.valueOf(getNonEmptySystemProperty("NUMBER_OF_CLUSTERS", "10"));
   private static final String baseDomainUid = "domain";
   private static List<String> domainNamespaces;
 
@@ -55,7 +54,7 @@ class ItLargeCapacityDomainsClustersDII {
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
 
   /**
-   * Assigns unique namespaces for operator and domains. Installs operator. Creates a MII WebLogic domain.
+   * Assigns unique namespaces for operator and domains. Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -72,14 +71,14 @@ class ItLargeCapacityDomainsClustersDII {
   }
 
   /**
-   * Test brings up new MII domains and verifies it can successfully start by doing the following.
+   * Test brings up new DII domains and verifies it can successfully start by doing the following.
    *
    * a. Creates domain resource and deploys in Kubernetes cluster. 
    * b. Verifies the servers in the new WebLogic domain comes up.
    */
   @Order(1)
   @Test
-  @DisplayName("Test MII domains creation")
+  @DisplayName("Test DII domains creation")
   void testCreateDomains() {
     String domainUid;
     for (int i = 0; i < numOfDomains; i++) {
@@ -92,7 +91,7 @@ class ItLargeCapacityDomainsClustersDII {
   }
 
   /**
-   * Test restart all existing clusters.
+   * Test restart all existing DII domains.
    *
    * a. Shutdowns all domains using serverStartPolicy NEVER. 
    * b. Patch the Domain Resource with cluster serverStartPolicy IF_NEEDED. 
