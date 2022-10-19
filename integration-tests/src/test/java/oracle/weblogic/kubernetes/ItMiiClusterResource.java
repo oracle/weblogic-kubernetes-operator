@@ -269,7 +269,7 @@ class ItMiiClusterResource {
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
-    logger.info("Check cluster reource status is mirrow of domain.status");
+    logger.info("Check cluster resource status is mirrow of domain.status");
     // Clean up resources
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
@@ -280,12 +280,13 @@ class ItMiiClusterResource {
    * Create WebLogic domain DR with domain level replica set to zero.
    * Patch the domain resource to add cluster resource CR1
    * Make sure only managed servers from cluster-1 comes up
-   * Make sure cluster status matches domain status
+   * Make sure cluster resource cluster-1 status matches domain status
    * Patch the domain resource to replace the resource  CR1 with CR2
    * Make sure managed servers from CR1 goes down and managed servers
    * from CR2 comes up.
+   * Make sure cluster resource cluster-2 status matches domain status
    * Scale up the cluster CR2
-   * Make sure cluster status matches domain status
+   * Make sure cluster resource cluster-2 status matches domain status
    */
   @Test
   @DisplayName("Verify domain status for clusters matches cluster resource status")
@@ -764,7 +765,9 @@ class ItMiiClusterResource {
    * Create a WebLogic domain resource DR with domain level replica set to zero.
    * Create and deploy two cluster resources CR1 and CR2
    * Create and deploy the domain with two cluster resources CR1 and CR2
-   * Scale only the cluster CR2 and make sure no new server from CR1 is up 
+   * Verify status and conditions are matching for domain.status and cluster resource status
+   * Scale only the cluster CR2 and make sure no new server from CR1 is up
+   * Verify status and conditions are matching for domain.status and cluster resource status
    * Scale all the clusters in the namesapce using 
    *   kubectel scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1

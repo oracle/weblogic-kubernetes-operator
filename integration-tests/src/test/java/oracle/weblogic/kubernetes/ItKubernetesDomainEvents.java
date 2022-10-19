@@ -246,8 +246,6 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
     logger.info("verify the Completed event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
-    //logger.info("verify the ClusterCreated event is generated");
-    //checkEvent(opNamespace, domainNamespace1, domainUid, CLUSTER_CREATED, "Normal", timestamp);
     logger.info("verify the ClusterCompleted event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, CLUSTER_COMPLETED, "Normal", timestamp);
     shutdownDomain(domainUid, domainNamespace1);
