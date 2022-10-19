@@ -8,7 +8,7 @@ description: "Access the WebLogic Admin Console to manage domains running in Kub
 
 You can use the WebLogic Server Administration Console to monitor and manage a WebLogic domain running in Kubernetes.
 
-{{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). In addition, if your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the Administration Console to change the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+{{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). In addition, if your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the Administration Console to make changes to the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 {{% /notice %}}
 
 To setup WebLogic Server Administration Console access to a domain running in Kubernetes, you can:
@@ -90,8 +90,7 @@ cd('/Clusters/%s' % cluster_name)
 set('WeblogicPluginEnabled',true)
 ```
 ##### 2. Update the ingress resource with customRequestHeaders value
-Replace the string `weblogic-domain` with namespace of the WebLogic domain, the string `domain1` with domain UID and the string `adminserver` with name of the Administration Server in the WebLogic domain.  
-
+You can configure an ingress route to the Administration Servers ClusterIP service. For an example, see the following path-routing YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. Following example also creates the Middleware with the `customRequestHeaders` for `WL-Proxy-SSL`.
 
 **NOTE**: If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following `customRequestHeaders` in the Traefik ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
 
@@ -151,7 +150,7 @@ Use the following URL from your browser to access the WebLogic Server Administra
 https://${HOSTNAME}:${SSLPORT}/console
 ```
 
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can adjust the PathPrefix in the ingress path routing rules to access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
 ```
 https://${HOSTNAME}:${SSLPORT}/em
