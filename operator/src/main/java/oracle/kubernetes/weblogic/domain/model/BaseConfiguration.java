@@ -130,7 +130,7 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
   }
 
-  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+  public void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
     serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
   }
 

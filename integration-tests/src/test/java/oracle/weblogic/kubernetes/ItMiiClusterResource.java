@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -46,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -829,6 +831,34 @@ class ItMiiClusterResource {
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+  }
+
+  /**
+   * Create a new Cluster resource with custom livenessProbe successThreshold value in serverPod to an invalid value.
+   * Verify the create operation failed.
+   */
+  @Test
+  @DisplayName("Test custom livenessProbe invalid successThreshold in serverPod")
+  void testCustomLivenessProbeNegativeSuccessThreshold() {
+    String domainUid     = "domain10";
+    String cluster1Name  = "cluster-1";
+
+    String cluster1Res     = domainUid + "-cluster-1";
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    cluster.getSpec().serverPod(new ServerPod().livenessProbe(new ProbeTuning().successThreshold(2)));
+    logger.info("Creating Cluster Resource {0} in namespace {1}",cluster1Res, domainNamespace);
+
+    Exception exception = null;
+    try {
+      createClusterCustomResource(cluster);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertNotNull(exception,
+        String.format("Create cluster resource %s in namespace %s should fail", cluster1Res, domainNamespace));
   }
 
   // Create a domain resource with replicas count ZERO

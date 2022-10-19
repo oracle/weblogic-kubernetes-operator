@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
@@ -77,6 +79,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeCo
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeScaleToMap;
+import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.DOMAIN_NAME;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -751,6 +754,19 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(review);
 
     assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenNewClusterUseReservedEnvName_rejectIt() {
+    List<V1EnvVar> envs = new ArrayList<>();
+    V1EnvVar env = new V1EnvVar().name(DOMAIN_NAME).value("yyyyy");
+    envs.add(env);
+    existingCluster.getSpec().setEnv(envs);
+    setProposedCluster(existingCluster);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {
