@@ -116,8 +116,6 @@ spec:
       name: domain1-adminserver
       namespace: weblogic-domain
       port: 7001
-  tls:
-     secretName: domain1-tls-cert
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
