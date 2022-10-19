@@ -29,7 +29,7 @@ The domain events have been enhanced in 4.0. Here is a summary of the changes in
 * Enhanced `Failed` event to:
     * Have a better failure categorization (see [Operator-generated event types](#operator-generated-event-types) for more details).
     * Include the categorization information in the event message.
-    * Provide more information in the event message to indicate what has been wrong, what you need to do to resolve the problem, and if the operator will retry the failed operation.
+    * Provide more information in the event message to indicate what has gone wrong, what you need to do to resolve the problem, and if the operator will [retry]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}) the failed operation.
 * Added three event types, `Unavailable`, `Incomplete`, and `FailureResolved`, to record the transition of domain condition `Available/Completed/Failed` from `True` to `False`, and vice versa.
 
 ### Operator-generated event types
@@ -48,7 +48,7 @@ The operator generates these event types in a domain namespace, which indicate t
    * A topology mismatch between the domain resource configuration and the WebLogic domain configuration.
    * The replicas of a cluster in the domain resource exceeds the maximum number of servers configured for the WebLogic cluster.
    * An internal error.
-   * A failure that retries will not help, or has been retried and has exceeded the pre-defined maximum number of retry attempts.
+   * A failure that retries will not help, or has been retried and has exceeded the [pre-defined maximum retry time]({{< relref "/managing-domains/domain-lifecycle/retry#retry-behavior" >}}).
  * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
  * `Unavailable`: The domain resource is unavailable, which means the domain does not have a sufficient number of servers active.
  * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.

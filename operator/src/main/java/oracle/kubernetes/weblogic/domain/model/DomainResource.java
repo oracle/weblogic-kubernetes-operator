@@ -789,6 +789,18 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return startTime.plus(getFailureRetryIntervalSeconds(), ChronoUnit.SECONDS);
   }
 
+  @Nullable
+  private OffsetDateTime getLastRetryTime(@Nonnull DomainStatus domainStatus) {
+    return Optional.of(domainStatus)
+        .map(DomainStatus::getInitialFailureTime)
+        .map(this::addRetryLimit)
+        .orElse(null);
+  }
+
+  private OffsetDateTime addRetryLimit(@Nonnull OffsetDateTime startTime) {
+    return startTime.plus(getFailureRetryLimitMinutes(), ChronoUnit.MINUTES);
+  }
+
   private boolean doesReferenceCluster(@Nonnull String clusterName) {
     return Optional.of(getSpec())
         .map(DomainSpec::getClusters).orElse(new ArrayList<>())
@@ -859,8 +871,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         selected.getMessage(),
         getNextRetryTime(domainStatus),
         getFailureRetryIntervalSeconds(),
-        selected.getLastTransitionTime().plus(getFailureRetryLimitMinutes(),
-            ChronoUnit.MINUTES));
+        getLastRetryTime(domainStatus));
   }
 
   class PrivateDomainApiImpl implements PrivateDomainApi {
