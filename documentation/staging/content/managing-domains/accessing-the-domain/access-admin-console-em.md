@@ -12,9 +12,9 @@ You can use the WebLogic Server Administration Console to monitor and manage a W
 {{% /notice %}}
 
 To setup WebLogic Server Administration Console access to a domain running in Kubernetes, you can:
-   * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
-
    * Deploy a load balancer with [ingress path routing rules for non-SSL port](#configure-ingress-path-routing-rules) and [SSL port](#access-the-weblogic-server-administration-console-through-the-ssl-port).
+
+   * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
 
@@ -26,133 +26,148 @@ For more information, see [External network access security]({{<relref "/securit
 {{% /notice %}}
 
 
-#### Use an Administration Server `NodePort`
-
-You can configure the Administration Server to expose an externally accessible NodePort in the Domain resource.
-For an example of setting up the `NodePort` on an Administration Server, 
-see [Use a `NodePort`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}). 
-For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
-
-After you have set up the NodePort service, use the following URL from your browser to access the WebLogic Server Administration Console:
-
-```
-http://hostname:adminserver-NodePort/console
-```
-The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
-
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
-
-```
-http://hostname:adminserver-NodePort/em
-```
-
 #### Configure ingress path routing rules
 
-You can configure an ingress route to the Administration Servers ClusterIP service. See [Configure ingress path routing rules]({{< relref "/managing-domains/accessing-the-domain/admin-console#configure-ingress-path-routing-rules" >}})
- for an example of configuring an ingress path routing rule.
+1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}) documentation.
 
-After you have configured an ingress path routing rule, use the following URL from your browser to access the WebLogic Server Administration Console:
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer. If you have multiple domains managed by a single ingress controller, then see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) example or consider using the [Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console/_index.md">}}).
+ 
+   ```yaml
+   apiVersion: traefik.containo.us/v1alpha1
+   kind: IngressRoute
+   metadata:
+     annotations:
+       kubernetes.io/ingress.class: traefik
+     name: traefik-pathrouting-1
+     namespace: weblogic-domain
+   spec:
+     routes:
+     - kind: Rule
+       match: PathPrefix(`/console`)
+       services:
+       - kind: Service
+         name: domain1-adminserver
+         namespace: weblogic-domain
+         port: 7001
+   ```
 
-```
-http://${HOSTNAME}:${LB_PORT}/console
-```
-Where:
+2. Open the following URL from your browser to access the WebLogic Server Administration Console:
 
-  * `${HOSTNAME}` is where the ingress load balancer is running.
+   ```
+   http://${HOSTNAME}:${LB_PORT}/console
+   ```
+   Where:
+   
+     * `${HOSTNAME}` is where the ingress load balancer is running.
+   
+     * To determine the `${LB_PORT}` when using a Traefik load balancer:
 
-  * To determine the `${LB_PORT}` when using a Traefik load balancer:
+        `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-     `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
-
-```
-http://${HOSTNAME}:${LB_PORT}/em
-```
+   ```
+   http://${HOSTNAME}:${LB_PORT}/em
+   ```
 #### Access the WebLogic Server Administration Console through the SSL port 
-You will need to enable the "WebLogic Plugin Enabled" setting when accessing the WebLogic Server Administration Console through the SSL port. Additionally, you may need to terminate the SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port when using some ingress controllers such as `Nginx`. Use the following steps to enable "WebLogic Plugin Enabled" and terminate the SSL traffic at the ingress controller.
+1. Enable `WebLogic Plugin Enabled` on the WebLogic domain level
 
-##### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
+   If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
+   ```yaml
+   resources:
+        WebAppContainer:
+            WeblogicPluginEnabled: true
+   ```
+   If you are using a WLST script to configure the domain, then the following modifications are needed to the respective WLST python script.
+   ```javascript
+   # Configure the Administration Server
+   cd('/Servers/AdminServer')
+   set('WeblogicPluginEnabled',true)
+   ...
+   cd('/Clusters/%s' % cluster_name)
+   set('WeblogicPluginEnabled',true)
+   ```
+2. Configure an ingress path routing rule and update the ingress resource with customRequestHeaders value
 
-If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
-```yaml
-resources:
-     WebAppContainer:
-         WeblogicPluginEnabled: true
-```
-If you are using a WLST script to configure the domain, then the following modifications are needed to the respective WLST python script.
-```javascript
-# Configure the Administration Server
-cd('/Servers/AdminServer')
-set('WeblogicPluginEnabled',true)
-...
-cd('/Clusters/%s' % cluster_name)
-set('WeblogicPluginEnabled',true)
-```
-##### 2. Update the ingress resource with customRequestHeaders value
-You can configure an ingress route to the Administration Servers ClusterIP service. For an example, see the following path-routing YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. Following example also creates the Middleware with the `customRequestHeaders` for `WL-Proxy-SSL`.
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. Following example creates the Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. If you have multiple domains managed by a single ingress controller, then see the [Host-based secured routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-secured-routing) example or consider using the [Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console/_index.md">}}).
 
-**NOTE**: If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following `customRequestHeaders` in the Traefik ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
+   ```yaml
+   apiVersion: traefik.containo.us/v1alpha1
+   kind: IngressRoute
+   metadata:
+     annotations:
+       kubernetes.io/ingress.class: traefik
+     name: traefik-console-tls
+     namespace: weblogic-domain
+   spec:
+     entryPoints: 
+      - websecure
+     routes:
+     - kind: Rule
+       match: PathPrefix(`/console`)
+       middlewares:
+       - name: tls-console-middleware
+         namespace: weblogic-domain
+       services:
+       - kind: Service
+         name: domain1-adminserver
+         namespace: weblogic-domain
+         port: 7001
+   ---
+   apiVersion: traefik.containo.us/v1alpha1
+   kind: Middleware
+   metadata:
+     name: tls-console-middleware
+     namespace: weblogic-domain
+   spec:
+     headers:
+       customRequestHeaders:
+         WL-Proxy-SSL: "true"
+       sslRedirect: true
+   ```
+3. Create ingress resource
 
-```yaml
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: traefik
-  name: traefik-console-tls
-  namespace: weblogic-domain
-spec:
-  entryPoints: 
-   - websecure
-  routes:
-  - kind: Rule
-    match: PathPrefix(`/console`)
-    middlewares:
-    - name: tls-console-middleware
-      namespace: weblogic-domain
-    services:
-    - kind: Service
-      name: domain1-adminserver
-      namespace: weblogic-domain
-      port: 7001
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: tls-console-middleware
-  namespace: weblogic-domain
-spec:
-  headers:
-    customRequestHeaders:
-      X-Custom-Request-Header: ""
-      X-Forwarded-For: "" 
-      WL-Proxy-Client-IP: ""
-      WL-Proxy-SSL: ""
-      WL-Proxy-SSL: "true"
-    sslRedirect: true
-```
-##### 3. Create ingress resource
-Save the above configuration as `traefik-tls-console.yaml`.
-```shell
-$ kubectl create -f traefik-tls-console.yaml
-```
-##### 4. Access the WebLogic Server Administration Console using the HTTPS port
-Get the SSL port from the Kubernetes service. 
-```shell
-# Get the ingress controller secure web port
-$ SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
-```
-Use the following URL from your browser to access the WebLogic Server Administration Console:
-```
-https://${HOSTNAME}:${SSLPORT}/console
-```
+   Save the above configuration as `traefik-tls-console.yaml`.
+   ```shell
+   $ kubectl create -f traefik-tls-console.yaml
+   ```
 
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can adjust the PathPrefix in the ingress path routing rules to access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+4. Access the WebLogic Server Administration Console using the HTTPS port
 
-```
-https://${HOSTNAME}:${SSLPORT}/em
-```
+   Get the SSL port from the Kubernetes service. 
+   ```shell
+   # Get the ingress controller secure web port
+   $ SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
+   ```
+   Use the following URL from your browser to access the WebLogic Server Administration Console:
+   ```
+   https://${HOSTNAME}:${SSLPORT}/console
+   ```
+
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can adjust the PathPrefix in the ingress path routing rules to access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+
+   ```
+   https://${HOSTNAME}:${SSLPORT}/em
+   ```
+
+#### Use an Administration Server `NodePort`
+
+1. Configure the Administration Server to expose an externally accessible NodePort in the Domain resource.
+
+   For an example of setting up the `NodePort` on an Administration Server, see [Use a `NodePort`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}). For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
+
+2. Use the following URL from your browser to access the WebLogic Server Administration Console:
+
+   ```
+   http://hostname:adminserver-NodePort/console
+   ```
+   The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
+
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+   
+   ```
+   http://hostname:adminserver-NodePort/em
+   ```
 
 #### Use a `kubectl port-forward` connection
 
@@ -183,13 +198,13 @@ https://${HOSTNAME}:${SSLPORT}/em
      * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
        This is specified on the `port-forward` command.
 
-If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
-```
-http://${HOSTNAME}:${LOCAL_PORT}/em
-```
-
+   ```
+   http://${HOSTNAME}:${LOCAL_PORT}/em
+   ```
 
 ### Test 
 To verify that your load balancer, `NodePort`, or `kubectl port-forward` setup is working as expected, 
 see [Test]({{< relref "/managing-domains/accessing-the-domain/admin-console#test" >}}).
+
