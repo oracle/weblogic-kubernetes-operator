@@ -91,12 +91,10 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  *  domain-on-pv ( using WDT )
  *  domain-in-image ( using WDT )
  *  model-in-image
- * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain and
- * triggering rolling ( in case of mii domain )
+ * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain.
  * Also verify the sample application can be accessed via NGINX ingress controller.
  */
-@DisplayName("Verify scaling the clusters in the domain with different domain types, "
-        + "rolling restart behavior in a multi-cluster MII domain and "
+@DisplayName("Verify scaling the clusters in the domain with different domain types, and "
         + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
 class ItMultiDomainModelsScale {
