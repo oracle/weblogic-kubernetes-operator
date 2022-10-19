@@ -1005,7 +1005,9 @@ public class DomainUtils {
    * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount replica count of the cluster
-   * @param configmapName name of the configMap containing Weblogic Deploy Tooling model
+   * @param configmapName name of the configMap containing WebLogic Deploy Tooling model
+   * @param introspectorDeadline seconds of introspector job active deadline
+   * @param failureRetryLimitMinutesArgs the time in minutes before the operator will stop retrying Severe failures
    * @return oracle.weblogic.domain.Domain object
    */
   public static  DomainResource createDomainResourceWithConfigMap(String domainUid,
@@ -1092,6 +1094,8 @@ public class DomainUtils {
    * @param wlSecretName wls admin secret name
    * @param clusterName cluster name
    * @param replicaCount replica count of the cluster
+   * @param configmapName name of the configMap
+   * @param failureRetryLimitMinutesArgs the time in minutes before the operator will stop retrying Severe failures
    * @return oracle.weblogic.domain.Domain object
    */
   public static DomainResource createDomainResourceForDomainInImageWithConfigMap(String domainUid,
