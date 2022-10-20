@@ -11,6 +11,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 @ApiModel(
     description =
         "Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.")
@@ -114,6 +118,21 @@ public class DomainResource implements KubernetesObject {
 
   public void setStatus(DomainStatus status) {
     this.status = status;
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  static List sortList(List list) {
+    return sortList(list, null);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static List sortList(List list, Comparator c) {
+    if (list != null) {
+      Object[] a = list.toArray(new Object[0]);
+      Arrays.sort(a, c);
+      return Arrays.asList(a);
+    }
+    return List.of();
   }
 
   @Override

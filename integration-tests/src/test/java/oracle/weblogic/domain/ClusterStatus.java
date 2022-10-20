@@ -246,7 +246,7 @@ public class ClusterStatus {
         .append(minimumReplicas, rhs.minimumReplicas)
         .append(replicasGoal, rhs.replicasGoal)
         .append(observedGeneration, rhs.observedGeneration)
-        .append(conditions, rhs.conditions)
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .isEquals();
   }
 }
