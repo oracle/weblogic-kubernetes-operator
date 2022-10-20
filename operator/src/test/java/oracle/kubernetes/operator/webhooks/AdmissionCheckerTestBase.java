@@ -21,12 +21,20 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.crea
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createDomainWithoutCluster;
 
 abstract class AdmissionCheckerTestBase {
+  static final String MOUNT_NAME = "bad-mount";
+  static final String BAD_MOUNT_PATH = "mydir/mount";
+  static final String MOUNT_PATH_WITH_TOKEN = "$(DOMAIN_HOME)/mount";
+  static final String MOUNT_PATH_WITH_TOKEN_2 = "/mydir/$(DOMAIN_HOME)/mount";
+  static final String GOOD_MOUNT_PATH = "/mydir/mount";
+  static final String GOOD_CONTAINER_NAME = "abcdef";
+  static final String BAD_PORT_NAME = "abcdefghijklmnopqrstuvw";
+  static final String GOOD_PORT_NAME = "abcdef";
+
   final List<Memento> mementos = new ArrayList<>();
   final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   final DomainResource existingDomain = createDomainWithClustersAndStatus();
   final DomainResource proposedDomain = createDomainWithClustersAndStatus();
-  final DomainResource existingDomain2 = createDomainWithoutCluster();
   final DomainResource proposedDomain2 = createDomainWithoutCluster();
   final ClusterResource existingCluster = createCluster();
   final ClusterResource proposedCluster = createCluster();
