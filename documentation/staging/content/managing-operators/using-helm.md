@@ -390,17 +390,6 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   the operator's Helm release.
   See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
-Specify the number of introspector job retries for a domain and the interval between these retries in seconds.
-
-Defaults to five retries and 10 seconds between each retry.
-
-Example:
-```yaml
-domainPresenceFailureRetryMaxCount: 10
-domainPresenceFailureRetrySeconds: 30
-```
-
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
 Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
 

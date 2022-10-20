@@ -176,7 +176,7 @@ draft: false
 * Support for the networking changes included with Istio 1.10 ([#2538](https://github.com/oracle/weblogic-kubernetes-operator/pull/2538)).
 * Support for accessing the WebLogic Server Administration Console through `kubectl port-forward` ([#2520](https://github.com/oracle/weblogic-kubernetes-operator/pull/2520)).
 * Prevent insecure file system warnings related to the "umask 027" requirement ([#2533](https://github.com/oracle/weblogic-kubernetes-operator/pull/2533)).
-* Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
+* Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
 * Additional validation for container port names and WebLogic Network Access Point (NAP) names that will be used as container ports ([#2542](https://github.com/oracle/weblogic-kubernetes-operator/pull/2542)).
 
 #### Operator 3.3.1
@@ -187,7 +187,7 @@ draft: false
 
 #### Operator 3.3.0
 
-* [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/).
+* [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/).
 * Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
 * Improved the ability of the operator to use an existing introspection ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
 * Upgraded core dependency versions, including upgrading the Kubernetes Java Client to 13.0.0 ([#2466](https://github.com/oracle/weblogic-kubernetes-operator/pull/2466)).
@@ -292,7 +292,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 #### Operator 3.1.0
 
 * All fixes included in 3.0.1 through 3.0.4 are included in 3.1.0.
-* Sample [scripts to start and stop server instances]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
+* Sample [scripts to start and stop server instances]({{< relref "/managing-domains/domain-lifecycle/startup#domain-life-cycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
 * Support running with [OpenShift restrictive SCC]({{< relref "/security/openshift#create-a-custom-security-context-constraint" >}}) ([#2007](https://github.com/oracle/weblogic-kubernetes-operator/pull/2007)).
 * Updated [default resource and Java options]({{< relref "/faq/resource-settings.md" >}}) ([#1775](https://github.com/oracle/weblogic-kubernetes-operator/pull/1775)).
 * Introspection failures are logged to the operator's log ([#1787](https://github.com/oracle/weblogic-kubernetes-operator/pull/1787)).

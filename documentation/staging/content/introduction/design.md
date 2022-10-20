@@ -6,7 +6,7 @@ weight: 2
 description: "Define the expected roles of an administrator, the operator, and domain and cluster resources."
 ---
 
-The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.
 
 Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
 

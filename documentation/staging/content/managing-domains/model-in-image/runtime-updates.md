@@ -228,10 +228,12 @@ When recovering from a failure, please keep the following points in mind:
    responsibility to revert problem changes to an image, configMap, secrets, and domain resource YAML file.
 
  - If there is any failure during an online update, then no WebLogic configuration changes
-   are made to the running domain and the introspector job retries up to a maximum number of times.
+   are made to the running domain and the introspector job retries up to the failure retry time
+   limit specified in `domain.spec.failureRetryLimitMinutes`.
    To correct the problem, modify and reapply your model resources (ConfigMap and/or secrets),
    plus, if the introspector job has stopped retrying, you must also change your domain resource
-   `domain.spec.introspectVersion` again.
+   `domain.spec.introspectVersion` again. For more information, see [Domain failure retry processing]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}).
+
 
 
 Sample domain resource YAML file for an online update:
@@ -364,7 +366,7 @@ Here is how to interpret each domain resource's `domain.status.conditions` type:
  1. The `Available` type.
     * `Status` attribute is `True` when:
       * Processing successfully completes without error
-        (introspect job, syntax checks, and such).
+        (introspection job, syntax checks, and such).
       * The operator is starting or has started all desired WebLogic Server pods
         (not including any servers that may be shutting down).
     * `Status` is `False` or unset:
@@ -435,12 +437,12 @@ Here are some of the expected WebLogic pod labels after an online update success
     * If the domain resource attribute
       `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly` (the default),
       then the introspect version label on all pods is immediately updated
-      after the introspect job successfully completes.
+      after the introspection job successfully completes.
     * If the domain resource attribute
       `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`
       and there are no non-dynamic configuration changes to the model,
       then the introspect version label on all pods is immediately updated
-      after the introspect job successfully completes.
+      after the introspection job successfully completes.
     * If the domain resource attribute
       `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`
       and there are non-dynamic clabel onfiguration changes to the model,

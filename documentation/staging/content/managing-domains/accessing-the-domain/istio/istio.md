@@ -22,6 +22,10 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+WebLogic Kubernetes Operator assumes that you are familiar with Istio. If you are new to
+Istio, we strongly recommend reading the documentation and working through the `Bookinfo`
+sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the operator.
+
 To learn more about Istio,
 see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
 
@@ -32,6 +36,8 @@ The current support for Istio has these limitations:
 * The operator supports Istio versions 1.10 and later,
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
+
+* This operator version 4.0 is incompatible with Red Hat OpenShift version 4.11.x and above.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
@@ -69,20 +75,13 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
-For a non-OpenShift service mesh, label the namespace as follows:
+Label the namespace as follows:
 
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
 After the namespace is labeled, you can [install the operator]({{< relref "/managing-operators/installation.md" >}}).
-
-When using an OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
-annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm,
-with the `--set` option, as follows:
-
-`--set "annotations.sidecar\.istio\.io/inject=true"`
-
 
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.
@@ -110,30 +109,14 @@ and label it for automatic injection before deploying your domain.
 $ kubectl create namespace domain1
 ```
 
-For a non-OpenShift environment:
-
 ```shell
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-For an OpenShift environment, you do not need to label the namespace for Istio sidecar injection, instead add the following
-annotation at the pod level in the domain resource.  
-
-```
-...
-spec:
-  ...
-  serverPod:
-     annotations:
-        sidecar.istio.io/inject=true
-  ...
-```
-
-#### Configuring the domain resource
+##### Configuring the domain resource
 
 Beginning with WebLogic Kubernetes Operator release 4.0, you no longer have to provide the `domain.spec.configuration.istio` section to
-enable Istio support for a domain.  Enabling the sidecar injection at the namespace level alone or annotation at `serverPod`
-level for OpenShift is sufficient.  The `domain.spec.configuration.istio` field has been removed from the schema.
+enable Istio support for a domain.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
 
 #### Applying a Domain YAML file
 

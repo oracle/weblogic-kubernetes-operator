@@ -175,7 +175,7 @@ public class Installer {
 
       // we are about to download the installer. We need to get the real version that is requested
       try {
-        params.location(getActualLocationIfNeeded(params.location(), params.type(), downloadDir));
+        params.location(getActualLocationIfNeeded(params.location(), params.type()));
       } catch (RuntimeException re) {
         // already logged
         return false;
