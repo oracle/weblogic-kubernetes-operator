@@ -518,7 +518,7 @@ class ItMonitoringExporterWebApp {
       page1 = webClient.getPage(exporterUrl);
     }
     assertNotNull(page1, "can't retrieve exporter dashboard page");
-    assertTrue((page1.asNormalizedText()).contains("This is the WebLogic Monitoring Exporter."));
+    assertTrue((page1.asNormalizedText()).contains("Oracle WebLogic Monitoring Exporter"));
 
     // Get the form that we are dealing with and within that form,
     // find the submit button and the field that we want to change.Generated form for cluster had
