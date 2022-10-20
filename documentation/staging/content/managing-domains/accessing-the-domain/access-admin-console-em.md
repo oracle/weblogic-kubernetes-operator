@@ -1,9 +1,9 @@
 ---
-title: "Access the Administration Console"
+title: "Use the Administration Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 1
-description: "Access the WebLogic Admin Console to manage domains running in Kubernetes."
+description: "Use the WebLogic Administration Console to manage domains running in Kubernetes."
 ---
 
 You can use the WebLogic Server Administration Console to monitor and manage a WebLogic domain running in Kubernetes.
@@ -12,7 +12,8 @@ You can use the WebLogic Server Administration Console to monitor and manage a W
 {{% /notice %}}
 
 To setup WebLogic Server Administration Console access to a domain running in Kubernetes, you can:
-   * Deploy a load balancer with [ingress path routing rules for non-SSL port](#configure-ingress-path-routing-rules) and [SSL port](#access-the-weblogic-server-administration-console-through-the-ssl-port).
+   * Deploy a load balancer with [ingress path routing rules for non-SSL port](#configure-ingress-path-routing-rules-for-non-ssl-port) 
+     and [SSL port](#configure-ingress-path-routing-rules-and-enable-weblogic-plugin-enabled-to-access-the-console-through-ssl-port)
 
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
@@ -26,11 +27,19 @@ For more information, see [External network access security]({{<relref "/securit
 {{% /notice %}}
 
 
-#### Configure ingress path routing rules
+For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console.
 
-1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}) documentation.
 
-   For an example, see the following `path-routing` YAML file for a Traefik load balancer. If you have multiple domains managed by a single ingress controller, then see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) example or consider using the [Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console/_index.md">}}).
+#### Deploy a load balancer with ingress path routing rules for non-SSL port and SSL port.
+To access WebLogic Server Administration Console through a load balancer, first set up an [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). This, in combination with SSL, is the best practice approach for production use cases.
+
+{{% notice note %}} The following `path-routing` ingress instructions do not apply when you need to concurrently access multiple domains in the same Kubernetes cluster through the same external load balancer port. For the multiple domain use case, see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) sample and make sure that the host name defined in the route section of the `host-routing` YAML file is resolvable by your DNS server.
+{{% /notice %}}
+
+##### Configure ingress path routing rules for non-SSL port
+1. Configure an ingress path routing rule to access WebLogic Server Administration Console through non-SSL port. 
+
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer. 
  
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -69,8 +78,9 @@ For more information, see [External network access security]({{<relref "/securit
    ```
    http://${HOSTNAME}:${LB_PORT}/em
    ```
-#### Access the WebLogic Server Administration Console through the SSL port 
+##### Configure ingress path routing rules and enable `WebLogic Plugin Enabled` to access the console through SSL port 
 1. Enable `WebLogic Plugin Enabled` on the WebLogic domain level
+   The WLS setting `WebLogic plugin Enabled` when set to true informs the WLS of the presence of the load-balancer proxy. Failure to have this setting enabled causes unexpected results in cases where the client IP address is required or when SSL terminates at the load-balancer. 
 
    If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
    ```yaml
@@ -87,9 +97,9 @@ For more information, see [External network access security]({{<relref "/securit
    cd('/Clusters/%s' % cluster_name)
    set('WeblogicPluginEnabled',true)
    ```
-2. Configure an ingress path routing rule and update the ingress resource with customRequestHeaders value
+2. Configure an ingress path routing rule for SSL port and update the ingress resource with customRequestHeaders value
 
-   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. Following example creates the Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. If you have multiple domains managed by a single ingress controller, then see the [Host-based secured routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-secured-routing) example or consider using the [Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console/_index.md">}}).
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. The following example creates the Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. 
 
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -112,7 +122,7 @@ For more information, see [External network access security]({{<relref "/securit
        - kind: Service
          name: domain1-adminserver
          namespace: weblogic-domain
-         port: 7001
+         port: 7002
    ---
    apiVersion: traefik.containo.us/v1alpha1
    kind: Middleware
@@ -125,14 +135,7 @@ For more information, see [External network access security]({{<relref "/securit
          WL-Proxy-SSL: "true"
        sslRedirect: true
    ```
-3. Create ingress resource
-
-   Save the above configuration as `traefik-tls-console.yaml`.
-   ```shell
-   $ kubectl create -f traefik-tls-console.yaml
-   ```
-
-4. Access the WebLogic Server Administration Console using the HTTPS port
+3. Open the following URL from your browser to access the WebLogic Server Administration Console using the HTTPS port:
 
    Get the SSL port from the Kubernetes service. 
    ```shell
@@ -152,11 +155,16 @@ For more information, see [External network access security]({{<relref "/securit
 
 #### Use an Administration Server `NodePort`
 
-1. Configure the Administration Server to expose an externally accessible NodePort in the Domain resource.
+***Note***: Using Administration Server `NodePort` is convenient for development use cases and is not recommended for production use cases. 
+
+You can configure an Administration Server to expose an externally accessible NodePort using these two steps:
+
+1. Configure a Network Access Point (custom channel) with the T3 protocol on the Administration Server.
+2. Expose this channel on a NodePort service using the `domain.spec.adminServer.adminService.channels` attribute.
 
    For an example of setting up the `NodePort` on an Administration Server, see [Use a `NodePort`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}). For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
 
-2. Use the following URL from your browser to access the WebLogic Server Administration Console:
+3. Use the following URL from your browser to access the WebLogic Server Administration Console:
 
    ```
    http://hostname:adminserver-NodePort/console
@@ -170,6 +178,7 @@ For more information, see [External network access security]({{<relref "/securit
    ```
 
 #### Use a `kubectl port-forward` connection
+A Kubernetes port forward command is convenient for development use cases and is not recommended for production use cases. It creates a local process external to a Kubernetes cluster that accepts external traffic on a dedicated local port and forwards this traffic to a specific pod and port in the Kubernetes cluster. If you have multiple domains, then each domain will require its own dedicated port forward command and a separate local port.
 
 1. Forward a local port (that is external to
    Kubernetes) to the administration port of the
