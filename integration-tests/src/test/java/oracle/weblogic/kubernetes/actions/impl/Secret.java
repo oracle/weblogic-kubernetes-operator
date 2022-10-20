@@ -92,7 +92,15 @@ public class Secret {
     return saSecretName;
   }
 
-  private static boolean hasToken(String saSecretName, String namespace) throws ApiException {
+  /**
+   * Check if the secret has token.
+   *
+   * @param saSecretName name of the secret
+   * @param namespace namespace in which secret exists
+   * @return true if token in the secret exists otherwise false
+   * @throws ApiException when there is issue getting secret
+   */
+  public static boolean hasToken(String saSecretName, String namespace) throws ApiException {
     V1Secret secret = Kubernetes.getSecret(saSecretName, namespace);
     if (secret != null) {
       Map<String, byte[]> data = Optional.of(secret).map(V1Secret::getData).orElse(Collections.emptyMap());
@@ -109,6 +117,10 @@ public class Secret {
    * @return the encoded token of the secret
    */
   public static String getSecretEncodedToken(String namespace, String secretName) {
+    testUntil(
+        () -> hasToken(secretName, namespace),
+        getLogger(),
+        "Waiting for token to be populated in secret");
 
     List<V1Secret> v1Secrets = new ArrayList<>();
 
