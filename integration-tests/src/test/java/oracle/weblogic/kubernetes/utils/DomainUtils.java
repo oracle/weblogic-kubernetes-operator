@@ -995,7 +995,7 @@ public class DomainUtils {
 
 
   /**
-   * Create domain resource with configMap.
+   * Create model-in-image type domain resource with configMap.
    *
    * @param domainUid unique id of the WebLogic domain
    * @param domainNamespace domain namespace
@@ -1010,17 +1010,17 @@ public class DomainUtils {
    * @param failureRetryLimitMinutesArgs the time in minutes before the operator will stop retrying Severe failures
    * @return oracle.weblogic.domain.Domain object
    */
-  public static  DomainResource createDomainResourceWithConfigMap(String domainUid,
-                                                                  String domainNamespace,
-                                                                  String clusterName,
-                                                                  String wlSecretName,
-                                                                  String repoSecretName,
-                                                                  String encryptionSecretName,
-                                                                  int replicaCount,
-                                                                  String miiImage,
-                                                                  String configmapName,
-                                                                  Long introspectorDeadline,
-                                                                  Long... failureRetryLimitMinutesArgs) {
+  public static  DomainResource createMiiDomainResourceWithConfigMap(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String clusterName,
+                                                                     String wlSecretName,
+                                                                     String repoSecretName,
+                                                                     String encryptionSecretName,
+                                                                     int replicaCount,
+                                                                     String miiImage,
+                                                                     String configmapName,
+                                                                     Long introspectorDeadline,
+                                                                     Long... failureRetryLimitMinutesArgs) {
     Long failureRetryLimitMinutes =
         (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
 

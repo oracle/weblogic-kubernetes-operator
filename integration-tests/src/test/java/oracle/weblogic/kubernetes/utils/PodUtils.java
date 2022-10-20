@@ -24,8 +24,6 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -492,21 +490,14 @@ public class PodUtils {
         -> getIntrospectorPodName(domainUid, namespace), "Getting introspector pod name failed");
     getLogger().info("introspector pod name is: {0}", introspectorPodName);
 
-    // get the domain status message
-    StringBuffer getPodLogCmd = new StringBuffer("kubectl logs pod/");
-    getPodLogCmd.append(introspectorPodName)
-        .append(" -n ")
-        .append(namespace);
-    getLogger().info("Command to get logs of pod {0}: {1} ", introspectorPodName, getPodLogCmd);
-
-    CommandParams params = new CommandParams().defaults();
-    params.command(getPodLogCmd.toString());
-    ExecResult execResult = Command.withParams(params).executeAndReturnResult();
-    getLogger().info("Search: {0} in pod: {1} returns {2}", regex, introspectorPodName, execResult.stdout());
+    // get the introspector log message
+    String introspectorLog = assertDoesNotThrow(()
+        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector",
+              new Boolean(false), new Integer(300), new Boolean(true)));
 
     // match regex in domain info
     Pattern pattern = Pattern.compile(regex);
-    Matcher matcher = pattern.matcher(execResult.stdout());
+    Matcher matcher = pattern.matcher(introspectorLog);
 
     return matcher.find();
   }

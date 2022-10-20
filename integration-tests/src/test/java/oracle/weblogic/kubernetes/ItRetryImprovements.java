@@ -56,7 +56,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceForDomainInImage;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceWithConfigMap;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createMiiDomainResourceWithConfigMap;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.findStringInDomainStatusMessage;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -506,7 +506,7 @@ class ItRetryImprovements {
     createConfigMapFromFiles(configmapName, modelList, domainNamespace);
 
     logger.info("Creating a domain resource with bad model file from configmap");
-    DomainResource domain = createDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = createMiiDomainResourceWithConfigMap(domainUid,
         domainNamespace, clusterName, wlSecretName, BASE_IMAGES_REPO_SECRET_NAME,
         encryptionSecretName, replicaCount, imageName + ":" + imageTag,
         configmapName, 30L, failureRetryLimitMinutes);
