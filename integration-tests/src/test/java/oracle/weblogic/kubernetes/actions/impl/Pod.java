@@ -11,7 +11,6 @@ import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -132,7 +131,7 @@ public class Pod {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName)
       throws ApiException {
     return Kubernetes.getPodStatusPhase(namespace, labelSelectors, podName);
   }

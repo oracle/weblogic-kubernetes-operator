@@ -78,12 +78,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "sourceModelHome": {
           "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
@@ -376,12 +371,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "maxClusterConcurrentStartup": {
           "default": 0,
@@ -520,12 +510,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "fluentdConfiguration": {
           "description": "The fluentd configuration text, specify your own custom fluentd configuration.",
@@ -657,12 +642,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "configuration": {
           "x-kubernetes-preserve-unknown-fields": "true",
@@ -869,12 +849,7 @@
         },
         "restartPolicy": {
           "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "Never",
-            "OnFailure"
-          ]
+          "type": "string"
         },
         "maxPendingWaitTimeSeconds": {
           "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes.",
@@ -951,14 +926,7 @@
         },
         "podPhase": {
           "description": "Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
-          "type": "string",
-          "enum": [
-            "Failed",
-            "Pending",
-            "Running",
-            "Succeeded",
-            "Unknown"
-          ]
+          "type": "string"
         },
         "clusterName": {
           "description": "WebLogic cluster name, if the server is a member of a cluster.",

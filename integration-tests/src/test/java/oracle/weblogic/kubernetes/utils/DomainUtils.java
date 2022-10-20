@@ -777,7 +777,7 @@ public class DomainUtils {
                                       V1Container jobContainer) {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+        .restartPolicy("Never")
         .addContainersItem(jobContainer  // container containing WLST or WDT details
                .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -827,7 +827,7 @@ public class DomainUtils {
         "Getting the job failed");
     if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+          v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {

@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 // All parameters needed to install Operator from test
@@ -45,7 +44,7 @@ public class OperatorParams {
   private boolean externalRestEnabled;
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
   private Map<String, Object> imagePullSecrets;
   private HelmParams helmParams;
   private boolean elkIntegrationEnabled;
@@ -87,7 +86,7 @@ public class OperatorParams {
     return this;
   }
 
-  public OperatorParams imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public OperatorParams imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }

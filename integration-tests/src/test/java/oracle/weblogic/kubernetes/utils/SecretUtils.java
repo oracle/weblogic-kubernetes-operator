@@ -198,7 +198,7 @@ public class SecretUtils {
     testUntil(
         () -> {
           V1Namespace namespace = Kubernetes.getNamespace("default");
-          return V1NamespaceStatus.PhaseEnum.ACTIVE.equals(
+          return "Active".equals(
               Optional.ofNullable(namespace).map(V1Namespace::getStatus)
                   .map(V1NamespaceStatus::getPhase).orElse(null));
         },

@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -21,7 +20,7 @@ public class ServerConfig {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1EnvVar> env = null;
   private String image;
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1LocalObjectReference> imagePullSecrets = null;
 

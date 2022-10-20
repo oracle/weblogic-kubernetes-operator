@@ -1049,7 +1049,7 @@ public class CommonMiiTestUtils {
               .backoffLimit(0) // try only once
               .template(new V1PodTemplateSpec()
                   .spec(new V1PodSpec()
-                      .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+                      .restartPolicy("Never")
                       .addContainersItem(
                           createfixPVCOwnerContainer(pvName,
                               "/shared")) // mounted under /shared inside pod
@@ -1070,7 +1070,7 @@ public class CommonMiiTestUtils {
           "Getting the job failed");
       if (job != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-            v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+            v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
         if (jobCondition != null) {
