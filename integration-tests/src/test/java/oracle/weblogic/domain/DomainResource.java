@@ -3,6 +3,10 @@
 
 package oracle.weblogic.domain;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
@@ -10,10 +14,6 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 
 @ApiModel(
     description =
