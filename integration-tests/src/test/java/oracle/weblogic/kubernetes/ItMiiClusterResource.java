@@ -410,7 +410,7 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a WebLogic domain DR with domain level replica set to zero.
+   * Create a WebLogic Domain Resource with domain level replica set to zero.
    * Create  kubernates cluster resources CR which corresponds to a 
    * WebLogic cluster cluster-1 in model file.
    * Associate Cluster Resource CR with Domain Resource DR  
