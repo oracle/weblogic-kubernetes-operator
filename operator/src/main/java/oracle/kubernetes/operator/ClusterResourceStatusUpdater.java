@@ -207,18 +207,7 @@ public class ClusterResourceStatusUpdater {
     }
 
     boolean isClusterResourceStatusChanged() {
-      ClusterStatus newStatus = getNewStatus();
-      ClusterStatus resourceStatus = resource.getStatus();
-      return !Objects.equals(newStatus, resourceStatus)
-              || isAnyConditionTransitionTimeChanged(newStatus, resourceStatus);
-    }
-
-    private boolean isAnyConditionTransitionTimeChanged(ClusterStatus newStatus, ClusterStatus resourceStatus) {
-      if (newStatus == null || resourceStatus == null) {
-        return false;
-      }
-
-      return newStatus.anyConditionTransitionTimeChanged(resourceStatus);
+      return !Objects.equals(getNewStatus(), resource.getStatus());
     }
 
     private StepAndPacket createReplaceClusterResourceStatusStep() {

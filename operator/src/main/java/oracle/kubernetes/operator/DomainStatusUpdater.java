@@ -843,10 +843,8 @@ public class DomainStatusUpdater {
         }
 
         private boolean noApplicationServersReady() {
-          Collection<DomainPresenceInfo.ServerStartupInfo> ssis =
-                  Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList());
-
-          return ssis.stream()
+          return Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList())
+              .stream()
               .map(DomainPresenceInfo.ServerInfo::getName)
               .filter(this::isApplicationServer)
               .noneMatch(StatusUpdateContext.this::isServerReady);

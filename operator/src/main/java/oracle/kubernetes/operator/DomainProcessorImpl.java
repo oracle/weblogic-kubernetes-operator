@@ -98,7 +98,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
-
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();

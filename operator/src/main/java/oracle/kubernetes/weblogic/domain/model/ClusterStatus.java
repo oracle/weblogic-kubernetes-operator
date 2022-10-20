@@ -297,25 +297,4 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     Collections.sort(conditions);
     return this;
   }
-
-  private ClusterCondition getCondition(ClusterConditionType type) {
-    return conditions.stream().filter(c -> c.getType().equals(type)).findFirst().get();
-  }
-
-  /**
-   * Compares the two conditions of the same type to see if lastTransistionTine has changed.
-   *
-   * @param status ClusterStatus to compare against.
-   * @return true if lastTransitionTime of any condition in the current ClusterStatus is newer than
-   *      ClusterStatus compared against, or else false.
-   */
-  public boolean anyConditionTransitionTimeChanged(ClusterStatus status) {
-    for (ClusterConditionType type : ClusterConditionType.values()) {
-      if (getCondition(type).compareTo(status.getCondition(type)) < 0) {
-        return true;
-      }
-    }
-
-    return false;
-  }
 }
