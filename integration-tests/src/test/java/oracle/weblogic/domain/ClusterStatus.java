@@ -191,7 +191,7 @@ public class ClusterStatus {
     return observedGeneration;
   }
 
-  public ClusterStatus withObservedGeneration(int observedGeneration) {
+  public ClusterStatus observedGeneration(int observedGeneration) {
     this.observedGeneration = observedGeneration;
     return this;
   }

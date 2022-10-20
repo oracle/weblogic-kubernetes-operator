@@ -312,12 +312,10 @@ class ItMiiClusterResource {
 
     ClusterResource cluster2 = createClusterResource(
         cluster2Res, cluster2Name, domainNamespace, replicaCount);
-    logger.info("Creating ClusterResource {0} in namespace {1}",cluster2Res, domainNamespace);
+    logger.info("Creating ClusterResource {0} in namespace {1} ",cluster2Res, domainNamespace);
     createClusterAndVerify(cluster2);
-
     createModelConfigMap(domainUid,configMapName);
-
-
+    
     // create and deploy domain resource
     DomainResource domain = createDomainResource(domainUid,
         domainNamespace, adminSecretName,
@@ -339,13 +337,13 @@ class ItMiiClusterResource {
     assertDoesNotThrow(() -> {
           testUntil(
               clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
-              "Cluster Resource status does not match domain.status");
+              "Cluster Resource status matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
                       "Available", "True"), getLogger(),
-                  "Cluster Resource status condition type does not match domain.status");
+                  "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
                       "Completed", "True"), getLogger(),
-                  "Cluster Resource status condition type does not match domain.status");
+                  "Cluster Resource status condition type matches domain.status");
         }
     );
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
@@ -380,13 +378,13 @@ class ItMiiClusterResource {
     assertDoesNotThrow(() -> {
 
       testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
-          "Cluster Resource status does not match domain.status");
+          "Cluster Resource status matches domain.status");
       testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Available", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
       testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Completed", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
     });
     kubectlScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
@@ -394,13 +392,13 @@ class ItMiiClusterResource {
     logger.info("Check cluster resource status is mirror of domain.status");
     assertDoesNotThrow(() -> {
           testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
-              "Cluster Resource status does not match domain.status");
+              "Cluster Resource status matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Available", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Completed", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
         }
     );
     // Clean up resources
@@ -838,21 +836,21 @@ class ItMiiClusterResource {
     //verify status and conditions are matching for domain.status and cluster resource status
     assertDoesNotThrow(() -> {
           testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
-              "Cluster Resource status does not match domain.status");
+              "Cluster Resource status matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
                   "Available", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
                   "Completed", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
-              "Cluster Resource status does not match domain.status");
+              "Cluster Resource status matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Available", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Completed", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
         }
     );
     // Scaling one Cluster(2) does not affect other Cluster(1)
@@ -863,13 +861,13 @@ class ItMiiClusterResource {
     //verify status and conditions after scaling
     assertDoesNotThrow(() -> {
           testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
-              "Cluster Resource status does not match domain.status");
+              "Cluster Resource status matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Available", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
           testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
                   "Completed", "True"), getLogger(),
-              "Cluster Resource status condition type does not match domain.status");
+              "Cluster Resource status condition type matches domain.status");
         }
     );
 

@@ -543,9 +543,12 @@ public class TestAssertions {
             logger.info("Cluster Resource conditions : " + Yaml.dump(clusterResConditionList));
             boolean foundConditionTypeInClusterResource = false;
             boolean foundConditionTypeInDomainStatusCluster = false;
+            OffsetDateTime lastTransitionTimeClusterRes = null;
+            OffsetDateTime lastTransitionTimeDomainCluster = null;
             for (ClusterCondition clusterResCondition : clusterResConditionList) {
               if (clusterResCondition.getType().equalsIgnoreCase(conditionType)) {
                 if (expectedStatus.equals(clusterResCondition.getStatus())) {
+                  lastTransitionTimeClusterRes = clusterResCondition.getLastTransitionTime();
                   foundConditionTypeInClusterResource = true;
                   logger.info("Found matching condition type {0} and status {1} for cluster resource {2}",
                       clusterResCondition.getType(), clusterResCondition.getStatus(),
@@ -557,12 +560,23 @@ public class TestAssertions {
               if (domainClusterCondition.getType().equalsIgnoreCase(conditionType)) {
                 if (expectedStatus.equals(domainClusterCondition.getStatus())) {
                   foundConditionTypeInDomainStatusCluster = true;
+                  lastTransitionTimeDomainCluster = domainClusterCondition.getLastTransitionTime();
                   logger.info("Found matching condition type {0} and status {1} for domain status cluster {2} ",
                       domainClusterCondition.getType(), domainClusterCondition.getStatus(),
                       domainClusterStatus.getClusterName());
                 }
               }
             }
+            boolean isTransitionTimeSame = (lastTransitionTimeDomainCluster != null
+                && lastTransitionTimeDomainCluster.isEqual(lastTransitionTimeClusterRes));
+            if (!isTransitionTimeSame) {
+              logger.info("Found not matching condition lastTransitionTime {0} "
+                      + "for domain cluster status and cluster resource status {1} ",
+                  lastTransitionTimeDomainCluster, lastTransitionTimeClusterRes);
+            }
+            //commented out check for lastTransition time until OWLS-102910 will be fixed
+            //return (foundConditionTypeInClusterResource &&
+            // foundConditionTypeInDomainStatusCluster && isTransitionTimeSame);
             return (foundConditionTypeInClusterResource && foundConditionTypeInDomainStatusCluster);
           }
         }

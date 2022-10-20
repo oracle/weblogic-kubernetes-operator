@@ -12,7 +12,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
-    description = "ClusterCondition contains details for the current condition of this domain.")
+    description = "ClusterCondition contains details for the current condition of this cluster.")
 public class ClusterCondition {
 
   @ApiModelProperty(
