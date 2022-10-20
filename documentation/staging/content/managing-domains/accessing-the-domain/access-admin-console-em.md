@@ -64,7 +64,7 @@ For more information, see [External network access security]({{<relref "/securit
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can add an ingress path routing rule for PathPrefix `/em` and access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
    ```
    http://${HOSTNAME}:${LB_PORT}/em
@@ -144,7 +144,7 @@ For more information, see [External network access security]({{<relref "/securit
    https://${HOSTNAME}:${SSLPORT}/console
    ```
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can adjust the PathPrefix in the ingress path routing rules to access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can add an ingress path routing rule for PathPrefix `/em` and access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
    ```
    https://${HOSTNAME}:${SSLPORT}/em
