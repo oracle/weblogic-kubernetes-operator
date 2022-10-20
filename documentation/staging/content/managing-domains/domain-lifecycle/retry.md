@@ -98,7 +98,7 @@ Status:
 ```
 
 To manually initiate an immediate retry, or to restart retries that have reached their
-`spec.failureIntervalRetrySeconds`, update a domain field that will cause immediate action by the operator.
+`spec.failureRetryLimitMinutes`, update a domain field that will cause immediate action by the operator.
 For example, change `spec.introspectVersion` or `spec.restartVersion` as appropriate.
 See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})
 and [Initiating introspection]({{< relref "/managing-domains/domain-lifecycle/introspection#initiating-introspection" >}})
