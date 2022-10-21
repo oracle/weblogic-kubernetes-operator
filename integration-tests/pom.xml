@@ -486,7 +486,8 @@
                   **/ItMiiMultiModel,
                   **/ItMiiUpdateDomainConfig,
                   **/ItMultiDomainModels,
-                  **/ItPodsRestart
+                  **/ItPodsRestart,
+                  **/ItRecoveryDomainInPV
                 </includes-failsafe>
             </properties>
         </profile>
@@ -586,7 +587,8 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples
+                  **/ItMonitoringExporterSamples,
+                  **/ItRecoveryDomainInPV
                 </includes-failsafe>
           </properties>
         </profile>
