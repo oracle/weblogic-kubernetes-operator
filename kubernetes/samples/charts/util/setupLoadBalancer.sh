@@ -200,7 +200,7 @@ createTraefik() {
   fi
 
   # load the extra set of helm values if provided thru file using -p option
-  if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
+  if [ "$(helm status ${chart} -n ${ns})" != 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
     purgeDefaultResources || true
     helm install $chart traefik/traefik --namespace ${ns} \
