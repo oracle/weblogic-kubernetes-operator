@@ -3,9 +3,12 @@ title: "Use the Remote Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 1.5
-description: "Use the WebLogic Remote Console to manage domains running in Kubernetes."
+description: "Use the WebLogic Remote Console with domains running in Kubernetes."
 ---
 
+{{< table_of_contents >}}
+
+### Introduction
 The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
 It is an _alternative_ to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
@@ -21,7 +24,10 @@ The Remote Console is deployed as a standalone Java program, which can connect t
 You connect to the Remote Console and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server's administration port to which you want to connect.
 
-**Note**:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
+**Notes:**  
+  * An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
+  * If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
 
 {{% notice warning %}}
 Externally exposing administrative, RMI, or T3 capable WebLogic channels

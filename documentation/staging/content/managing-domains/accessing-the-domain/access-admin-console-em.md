@@ -3,21 +3,26 @@ title: "Use the Administration Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 1
-description: "Use the WebLogic Administration Console to manage domains running in Kubernetes."
+description: "Use the WebLogic Administration Console with domains running in Kubernetes."
 ---
 
-You can use the WebLogic Server Administration Console to monitor and manage a WebLogic domain running in Kubernetes.
+{{< table_of_contents >}}
 
-{{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). In addition, if your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the Administration Console to make changes to the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-{{% /notice %}}
+### Introduction
+You can access the WebLogic Server Administration Console external to the Kubernetes cluster using the following approaches:
 
-To setup WebLogic Server Administration Console access to a domain running in Kubernetes, you can:
-   * Deploy a load balancer with [ingress path routing rules for non-SSL port](#configure-ingress-path-routing-rules-for-non-ssl-port) 
-     and [SSL port](#configure-ingress-path-routing-rules-for-ssl-port-and-enable-weblogic-plugin-enabled)
+   * [Use a load balancer](#use-a-load-balancer)
 
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
+
+**Notes:**
+ * For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console. 
+
+ * To verify that your load balancer, NodePort, or kubectl port-forward setup is working as expected, see [Test]({{< relref "#test" >}}).
+
+ * Do not use the WebLogic Server Administration Console to start or stop servers, or for scaling clusters. See [Starting and stopping servers]({{< relref "/managing-domains/domain-lifecycle/startup#starting-and-stopping-servers" >}}) and [Scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}). In addition, if your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the Administration Console to make changes to the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 {{% notice warning %}}
 Externally exposing administrative, RMI, or T3 capable WebLogic channels
@@ -26,20 +31,16 @@ port forwarding, or a similar method can create an insecure configuration.
 For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
 {{% /notice %}}
 
-
-For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console. To verify that your load balancer, NodePort, or kubectl port-forward setup is working as expected, see [Test]({{< relref "/managing-domains/accessing-the-domain/admin-console#test" >}}).
-
-
-#### Deploy a load balancer with ingress path routing rules for non-SSL port and SSL port.
+### Use a load balancer 
 To access WebLogic Server Administration Console through a load balancer, first set up an [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md">}}). This, in combination with SSL, is the best practice approach for production use cases.
 
-{{% notice note %}} The following `path-routing` ingress instructions do not apply when you need to concurrently access multiple domains in the same Kubernetes cluster through the same external load balancer port. For the multiple domain use case, see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) sample and make sure that the host name defined in the route section of the `host-routing` YAML file is resolvable by your DNS server.
+{{% notice note %}} The following `path-routing` ingress instructions do not apply when you need to concurrently access multiple domains in the same Kubernetes cluster through the same external load balancer port. For the multiple domain use case, see the [Host-based routing](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md#host-based-routing) sample and make sure that the host names are resolvable by your DNS server (e.g. `domain1.org` and `domain2.org` in the sample).
 {{% /notice %}}
 
-##### Configure ingress path routing rules for non-SSL port
-1. Configure an ingress path routing rule to access WebLogic Server Administration Console through non-SSL port. 
+#### Configure ingress path routing rules for a non-SSL port
+The following example sets up an ingress path routing rule to access a WebLogic Server Administration Console through a non-SSL port. 
 
-   For an example, see the following `path-routing` YAML file for a Traefik load balancer. 
+1. Set up a `path-routing` YAML file for a Traefik load balancer:
  
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -73,23 +74,25 @@ To access WebLogic Server Administration Console through a load balancer, first 
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
-   If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can add an ingress path routing rule for PathPrefix `/em` and access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
+If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can add an ingress path routing rule for PathPrefix `/em` and access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
-   ```
-   http://${HOSTNAME}:${LB_PORT}/em
-   ```
-##### Configure ingress path routing rules for SSL port and enable `WebLogic Plugin Enabled`
-1. Enable `WebLogic Plugin Enabled` on the WebLogic domain level
+```
+http://${HOSTNAME}:${LB_PORT}/em
+```
+#### Configure ingress path routing rules for a SSL port and enable `WebLogic Plugin Enabled`
+The following example sets up load balancer routing for access to a WebLogic Server Administration Console through a SSL port.
 
-   The WLS setting `WebLogic plugin Enabled` when set to true informs the WLS of the presence of the load-balancer proxy. Failure to have this setting enabled causes unexpected results in cases where the client IP address is required or when SSL terminates at the load-balancer. 
+1. Enable `WebLogic Plugin Enabled` setting in the WebLogic configuration: 
 
-   If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
+   The WebLogic configuration setting `WebLogic plugin Enabled`, when set to true, informs the WebLogic Server about the presence of a load balancer proxy. Failure to have this setting enabled causes unexpected results in cases where the client IP address is required or when SSL terminates at the load balancer. 
+
+   When using WDT to configure a WebLogic domain, use the resource section at the domain level in a model YAML file:
    ```yaml
    resources:
         WebAppContainer:
             WeblogicPluginEnabled: true
    ```
-   If you are using a WLST script to configure the domain, then the following modifications are needed to the respective WLST python script.
+   When using a `WLST` script to configure a WebLogic domain, use these commands:
    ```javascript
    # Configure the Administration Server
    cd('/Servers/AdminServer')
@@ -98,9 +101,9 @@ To access WebLogic Server Administration Console through a load balancer, first 
    cd('/Clusters/%s' % cluster_name)
    set('WeblogicPluginEnabled',true)
    ```
-2. Configure an ingress path routing rule and update the ingress resource with `customRequestHeaders` value
+2. Configure an ingress path routing rule and update the ingress resource with a `customRequestHeaders` value:
 
-   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. The following example creates a Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. 
+   For example, see the following `path-routing` YAML file for a Traefik load balancer. In the case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. 
 
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -154,18 +157,15 @@ To access WebLogic Server Administration Console through a load balancer, first 
    https://${HOSTNAME}:${SSLPORT}/em
    ```
 
-#### Use an Administration Server `NodePort`
+### Use an Administration Server `NodePort`
 
-***Note***: Using Administration Server `NodePort` is convenient for development use cases and is not recommended for production use cases. 
+Use the following steps to configure a `NodePort` to access the WebLogic Server Administration Console:
 
-You can configure an Administration Server to expose an externally accessible NodePort using these two steps:
-
-1. Configure a Network Access Point (custom channel) with the T3 protocol on the Administration Server.
-2. Expose this channel on a NodePort service using the `domain.spec.adminServer.adminService.channels` attribute.
+1. Update the WebLogic Server configuration for the Administration Server to add a Network Access Point (custom channel) with the HTTP protocol, and expose this channel on a NodePort service using the `domain.spec.adminServer.adminService.channels` attribute.
 
    For an example of setting up the `NodePort` on an Administration Server, see [Use a `NodePort`]({{< relref "/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}). For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) document.
 
-3. Use the following URL from your browser to access the WebLogic Server Administration Console:
+2. Use the following URL from your browser to access the WebLogic Server Administration Console:
 
    ```
    http://hostname:adminserver-NodePort/console
@@ -178,7 +178,7 @@ You can configure an Administration Server to expose an externally accessible No
    http://hostname:adminserver-NodePort/em
    ```
 
-#### Use a `kubectl port-forward` connection
+### Use a `kubectl port-forward` connection
 A Kubernetes port forward command is convenient for development use cases and is not recommended for production use cases. It creates a local process external to a Kubernetes cluster that accepts external traffic on a dedicated local port and forwards this traffic to a specific pod and port in the Kubernetes cluster. If you have multiple domains, then each domain will require its own dedicated port forward command and a separate local port.
 
 1. Forward a local port (that is external to
@@ -189,27 +189,40 @@ A Kubernetes port forward command is convenient for development use cases and is
    **NOTE:** If you plan to access the WebLogic Server Administration Console from a browser
    on a different machine than the port forwarding command,
    then the port forwarding command needs to specify a `--address` parameter
-   with the IP address of the machine that is hosting the command.
+   with an externally accessible IP address for the machine that is running the command.
 
-1. Use the below URL using either the local hostname or IP address
-   from the `port-forward` command in the first step, plus the local port from
-   this same command to access the WebLogic Server Administration Console. For example:
+1. Use the following URL in the browser:
 
    ```
    http://${HOSTNAME}:${LOCAL_PORT}/console
    ```
    Where:
 
-     * `${HOSTNAME}` is the hostname or the defined IP address of the machine
+     * `${HOSTNAME}` is the DNS address or the IP address of the machine
        where the `kubectl port-forward` command is running. This is
-       customizable on the `port-forward` command and is `localhost`
-       or `127.0.0.1`, by default.
+       customizable on the `port-forward` command using `--address` parameter 
+       and is `localhost` or `127.0.0.1`, by default.
 
-     * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
-       This is specified on the `port-forward` command.
+     * `${LOCAL_PORT}` is the local port specified on the `kubectl port-forward` command line.
 
    If you have an [FMW Infrastructure]({{< relref "/managing-fmw-domains.md" >}}) type domain, then you can also access the Fusion Middleware Control (Enterprise Manager) Console using the following URL:
 
    ```
    http://${HOSTNAME}:${LOCAL_PORT}/em
    ```
+
+### Test
+
+To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
+`NodePort`, or `kubectl port-forward` are working as expected, run the following curl commands at the same location as your browser:
+
+
+```
+$ curl http://${HOSTNAME}:${LB_PORT}/console > /dev/null && echo "Connection succeeded."
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   271  100   271    0     0  90333      0 --:--:-- --:--:-- --:--:-- 90333
+Connection succeeded.
+```
+
+If successful, then you should see the "Connection succeeded" message in the output from the above command.

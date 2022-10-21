@@ -3,7 +3,7 @@ title: "Use WLST"
 date: 2019-02-23T17:39:19-05:00
 draft: false
 weight: 2
-description: "Use the WebLogic Scripting Tool (WLST) to manage domains running in Kubernetes."
+description: "Use the WebLogic Scripting Tool (WLST) with domains running in Kubernetes."
 ---
 
 You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
@@ -13,6 +13,8 @@ To give WLST access to a domain running in Kubernetes, you can:
 - [Use kubectl exec](#use-kubectl-exec)
 - [Use a `NodePort`](#use-a-nodeport)
 - [Use port forwarding](#use-port-forwarding)
+
+**Note:**  If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WLST to make changes to the WebLogic domain configuration as these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 ### Use `kubectl exec`
 
