@@ -232,6 +232,9 @@ class ItRecoveryDomainInPV  {
 
     // verify the admin server service created
     checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+    assertTrue(getPodUid(domainNamespace, adminServerPodName),
+          String.format("Get pod uid failed for podName %s in namespace %s", adminServerPodName,
+            domainNamespace));
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed service {0} is created in namespace {1}",
@@ -265,8 +268,8 @@ class ItRecoveryDomainInPV  {
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     //checkPodReadyAndServiceExists(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
-    //logger.info("Managed Server(2) started");
 
+    logger.info("Managed Server(2) started");
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);

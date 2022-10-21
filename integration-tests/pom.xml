@@ -475,7 +475,19 @@
             <id>okd-wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>okd-wls-srg</groups>
+                <includes-failsafe>
+                  **/ItCrossDomainTransaction,
+                  **/ItKubernetesDomainEvents,
+                  **/ItKubernetesNameSpaceWatchingEvents,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiMultiModel,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItMultiDomainModels,
+                  **/ItPodsRestart
+                </includes-failsafe>
             </properties>
         </profile>
 
@@ -483,7 +495,36 @@
             <id>okd-wls-mrg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>okd-wls-mrg</groups>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples
+                </includes-failsafe>
             </properties>
         </profile>
 
@@ -491,8 +532,63 @@
             <id>okd-fmw-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>okd-fmw-cert</groups>
+                <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwMiiDomain,
+                  **/ItMiiSampleFmwMain,
+                  **/ItMiiSampleFmwAux
+                </includes-failsafe>
             </properties>
+        </profile>
+
+        <profile>
+            <id>wko-okd-wls-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCrossDomainTransaction,
+                  **/ItKubernetesDomainEvents,
+                  **/ItKubernetesNameSpaceWatchingEvents,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiMultiModel,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItMultiDomainModels,
+                  **/ItPodsRestart,
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples
+                </includes-failsafe>
+          </properties>
         </profile>
 
         <profile>
