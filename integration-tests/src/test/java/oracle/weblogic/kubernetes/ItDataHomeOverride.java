@@ -137,7 +137,7 @@ class ItDataHomeOverride {
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
    * by dataHome
-   * File store and JMS server are targeted to the WebLogic admin server
+   * File store and JMS server are targeted to the WebLogic cluster cluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
   @Test
@@ -185,7 +185,7 @@ class ItDataHomeOverride {
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
    * by dataHome
-   * File store and JMS server are targeted to the WebLogic admin server
+   * File store and JMS server are targeted to the WebLogic cluster cluster-1
    */
   @Test
   @DisplayName("Test dataHome override in a domain with dataHome is a empty string in the domain spec")
