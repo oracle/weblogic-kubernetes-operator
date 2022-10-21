@@ -39,7 +39,6 @@ import oracle.kubernetes.operator.webhooks.model.Scale;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -673,14 +672,13 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
-  @Disabled("Cluster replicas are no longer included in Domain specification")
-  void whenClusterReplicasChangedUnsetAndReadDomainFailed404_rejectItWithException() {
+  void whenClusterReplicasChangedUnsetAndListDomainFailed404_rejectItWithException() {
     testSupport.defineResources(proposedDomain);
     existingCluster.getSpec().withReplicas(GOOD_REPLICAS);
     proposedCluster.getSpec().withReplicas(null);
     setExistingAndProposedCluster();
 
-    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
+    testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
 
