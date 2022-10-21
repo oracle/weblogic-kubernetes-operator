@@ -361,7 +361,7 @@ class ItRecoveryDomainInPV  {
         && params.stdout() != null
         && params.stdout().length() != 0) {
       String uid = params.stdout();
-      logger.info("{0}, got uid {1} for pod {2}", verbose, uid, podName);
+      logger.info("{0}, got uid {1} for pod {2} in the namespace {3}", verbose, uid, podName, nameSpace);
       return true;
     }
     return false;
