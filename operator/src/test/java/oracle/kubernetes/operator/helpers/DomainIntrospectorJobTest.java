@@ -1571,7 +1571,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
             hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
                 "wdt-image2:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(4));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getLegacyAuxiliaryImageVolumeName())

@@ -1078,12 +1078,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
         allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1",
-                        "IfNotPresent",
+                "wdt-image:v1", "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
             Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                "wdt-image:v2",
-                    "IfNotPresent",
+                "wdt-image:v2", "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
@@ -1126,12 +1124,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1",
-                            "IfNotPresent",
+                    "wdt-image:v1", "IfNotPresent",
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
                     Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                            "wdt-image:v2",
-                            "IfNotPresent",
+                            "wdt-image:v2", "IfNotPresent",
                         AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(

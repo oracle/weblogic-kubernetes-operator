@@ -615,11 +615,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(getCreatedPodSpecInitContainers(),
         allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                 "wdt-image:v1",
-                        "IfNotPresent",
+                "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER),
             Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
                 "wdt-image:v2",
-                    "IfNotPresent",
+                "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER)));
     assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName(TEST_VOLUME_NAME)).emptyDir(

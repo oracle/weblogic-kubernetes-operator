@@ -256,7 +256,7 @@ public class DbUtils {
                                 .requests(requests))
                             .terminationMessagePath("/dev/termination-log")
                             .terminationMessagePolicy("File")))
-                    .dnsPolicy("CluserFirst")
+                    .dnsPolicy("ClusterFirst")
                     .restartPolicy("Always")
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
