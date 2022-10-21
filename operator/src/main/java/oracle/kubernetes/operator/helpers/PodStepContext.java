@@ -709,16 +709,6 @@ public abstract class PodStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
-  private List<V1EnvVar> createEnv(V1Container c) {
-    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
-      getEnvironmentVariables().forEach(envVar ->
-              addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
-    }
-    return initContainerEnvVars;
-  }
-
   // ---------------------- model methods ------------------------------
 
   private List<V1PodReadinessGate> getReadinessGates() {
@@ -1260,17 +1250,15 @@ public abstract class PodStepContext extends BasePodStepContext {
           currentPod.getSpec().getContainers().stream().filter(c -> "istio-proxy".equals(c.getName()))
               .findFirst().map(V1Container::getEnv);
 
-      if (!envVars.isEmpty()) {
-        Optional<V1Probe> currentProbe = weblogicContainer.map(V1Container::getReadinessProbe);
-        if (currentProbe.isPresent()) {
-          resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer, envVars.get(), currentProbe.get());
-        }
+      if (envVars.isPresent()) {
+        weblogicContainer.map(V1Container::getReadinessProbe)
+            .ifPresent(v1Probe -> resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer, envVars.get()));
       }
     }
 
-    @SuppressWarnings("java:S112")
+    @SuppressWarnings({"java:S112", "unchecked"})
     private void resetIstioPodRecipeAfterUpgrade(V1PodSpec recipePodSpec, Optional<V1Container> weblogicContainer,
-                                                 List<V1EnvVar> envVars, V1Probe currentProbe) {
+                                                 List<V1EnvVar> envVars) {
 
       for (V1EnvVar envVar : envVars) {
         if ("ISTIO_KUBE_APP_PROBERS".equals(envVar.getName())) {
