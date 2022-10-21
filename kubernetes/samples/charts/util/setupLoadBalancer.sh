@@ -168,18 +168,23 @@ createNameSpace() {
 waitForIngressPod() {
   type=$1
   ns=$2
+  if [[ "${type}" == "traefik" ]]; then
+    instance=${type}-release-${ns}
+  elif [[ "${type}" == "nginx" ]]; then
+    instance=${type}-release
+  fi
 
   printInfo "Wait (max 5min) until ${type} ingress controller pod to be ready."
   ${kubernetesCli} wait --namespace ${ns} \
   --for=condition=ready pod \
-  --selector=app.kubernetes.io/instance=${type}-release \
+  --selector=app.kubernetes.io/instance=${instance} \
   --timeout=300s
 
   if [ $? != 0 ]; then
    printError "${type} ingress controller pod not READY in state in 5 min"
    exit -1;
   else 
-   ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${type}-release -o jsonpath="{.items[0].metadata.name}")
+   ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${instance} -o jsonpath="{.items[0].metadata.name}")
    ${kubernetesCli} get po/${ipod} -n ${ns}
    helm list -n ${ns}
   fi 
@@ -247,12 +252,17 @@ purgeDefaultResources() {
 deleteIngress() {
   type=${1}
   ns=${2}
+  if [[ "${type}" == "traefik" ]]; then
+    instance=${type}-release-${ns}
+  elif [[ "${type}" == "nginx" ]]; then
+    instance=${type}-release
+  fi  
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
     ${kubernetesCli} wait --namespace ${ns} \
        --for=delete pod \
-       --selector=app.kubernetes.io/instance=${type}-release \
+       --selector=app.kubernetes.io/instance=${instance} \
        --timeout=120s
     if [ ${skipDeleteNamespace} == "false" ]; then
       ${kubernetesCli} delete ns ${ns}
