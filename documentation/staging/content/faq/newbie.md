@@ -65,7 +65,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 * _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
 
-* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}}).
+* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/remote-admin-console.md" >}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
