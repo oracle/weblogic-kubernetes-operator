@@ -13,7 +13,7 @@ You can use the WebLogic Server Administration Console to monitor and manage a W
 
 To setup WebLogic Server Administration Console access to a domain running in Kubernetes, you can:
    * Deploy a load balancer with [ingress path routing rules for non-SSL port](#configure-ingress-path-routing-rules-for-non-ssl-port) 
-     and [SSL port](#configure-ingress-path-routing-rules-and-enable-weblogic-plugin-enabled-to-access-the-console-through-ssl-port)
+     and [SSL port](#configure-ingress-path-routing-rules-for-ssl-port-and-enable-weblogic-plugin-enabled)
 
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
@@ -27,7 +27,7 @@ For more information, see [External network access security]({{<relref "/securit
 {{% /notice %}}
 
 
-For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console.
+For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console. To verify that your load balancer, NodePort, or kubectl port-forward setup is working as expected, see [Test]({{< relref "/managing-domains/accessing-the-domain/admin-console#test" >}}).
 
 
 #### Deploy a load balancer with ingress path routing rules for non-SSL port and SSL port.
@@ -78,8 +78,9 @@ To access WebLogic Server Administration Console through a load balancer, first 
    ```
    http://${HOSTNAME}:${LB_PORT}/em
    ```
-##### Configure ingress path routing rules and enable `WebLogic Plugin Enabled` to access the console through SSL port 
+##### Configure ingress path routing rules for SSL port and enable `WebLogic Plugin Enabled`
 1. Enable `WebLogic Plugin Enabled` on the WebLogic domain level
+
    The WLS setting `WebLogic plugin Enabled` when set to true informs the WLS of the presence of the load-balancer proxy. Failure to have this setting enabled causes unexpected results in cases where the client IP address is required or when SSL terminates at the load-balancer. 
 
    If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
@@ -97,9 +98,9 @@ To access WebLogic Server Administration Console through a load balancer, first 
    cd('/Clusters/%s' % cluster_name)
    set('WeblogicPluginEnabled',true)
    ```
-2. Configure an ingress path routing rule for SSL port and update the ingress resource with customRequestHeaders value
+2. Configure an ingress path routing rule and update the ingress resource with `customRequestHeaders` value
 
-   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. The following example creates the Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. 
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer. In case of SSL termination, Traefik must pass a custom header `WL-Proxy-SSL:true` to the WebLogic Server endpoints. The following example creates a Traefik Middleware custom resource with the custom request header `WL-Proxy-SSL:true`. 
 
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -135,7 +136,7 @@ To access WebLogic Server Administration Console through a load balancer, first 
          WL-Proxy-SSL: "true"
        sslRedirect: true
    ```
-3. Open the following URL from your browser to access the WebLogic Server Administration Console using the HTTPS port:
+3. Access the WebLogic Server Administration Console using the HTTPS port:
 
    Get the SSL port from the Kubernetes service. 
    ```shell
@@ -212,8 +213,3 @@ A Kubernetes port forward command is convenient for development use cases and is
    ```
    http://${HOSTNAME}:${LOCAL_PORT}/em
    ```
-
-### Test 
-To verify that your load balancer, `NodePort`, or `kubectl port-forward` setup is working as expected, 
-see [Test]({{< relref "/managing-domains/accessing-the-domain/admin-console#test" >}}).
-
