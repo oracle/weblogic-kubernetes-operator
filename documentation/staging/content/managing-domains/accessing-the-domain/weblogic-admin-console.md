@@ -18,7 +18,7 @@ You can access the WebLogic Server Administration Console external to the Kubern
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
 
 **Notes:**
- * For production use cases, Oracle recommends using a load balancer with ingress path routing rules and SSL port to access the WebLogic Server Administration Console. 
+ * For production use cases, Oracle recommends using a load balancer with ingress path routing rules and an SSL port to access the WebLogic Server Administration Console. 
 
  * To verify that your load balancer, NodePort, or kubectl port-forward setup is working as expected, see [Test]({{< relref "#test" >}}).
 
