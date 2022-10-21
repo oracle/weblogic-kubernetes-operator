@@ -335,8 +335,11 @@ class ItRecoveryDomainInPV  {
   }
 
   private boolean getPodUid(String nameSpace, String podName) {
-
-    String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='{.metadata.uid}'";
+    //String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='{.metadata.uid}'";
+    String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='"
+        + "{range .items[*]}{@.metadata.name}{\" runAsUser: \"}{@.spec.containers[*].securityContext.runAsUser}"
+        + "{\" fsGroup: \"}{@.spec.securityContext.fsGroup}{\" seLinuxOptions: \"}"
+        + "{@.spec.securityContext.seLinuxOptions.level}{\"\\n\"}'";
     CommandParams params =
         defaultCommandParams()
             .command(command)
@@ -349,9 +352,7 @@ class ItRecoveryDomainInPV  {
       logger.info("Got pod {0} uid {1}", podName, uid);
       return true;
     }
-
     return false;
-
   }
 
 
