@@ -580,9 +580,9 @@ public class DomainStatusUpdater {
 
     private boolean shouldSkipDomainStatusUpdate(Packet packet) {
       boolean isDomainResourcesValidation =
-              packet.get(DOMAIN_RESOURCES_VALIDATION) != null;
+              (Boolean) packet.getOrDefault(DOMAIN_RESOURCES_VALIDATION, Boolean.FALSE);
       boolean isScheduledStatusUpdater =
-              packet.get(SCHEDULED_STATUS_UPDATER) != null;
+              (Boolean) packet.getOrDefault(SCHEDULED_STATUS_UPDATER, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return (isDomainResourcesValidation || isScheduledStatusUpdater)
               && info.getServerStartupInfo() == null;
