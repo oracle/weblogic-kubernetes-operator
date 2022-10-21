@@ -31,10 +31,10 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to large capacity MII domain and multiple clusters.
+ * Tests related to large capacity DII domain and multiple clusters.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the Operator can handle multiple MII domains and clusters at the same time.")
+@DisplayName("Verify the Operator can handle multiple DII domains and clusters at the same time.")
 @IntegrationTest
 @Tag("okdenv")
 class ItLargeCapacityDomainsClustersDII {
