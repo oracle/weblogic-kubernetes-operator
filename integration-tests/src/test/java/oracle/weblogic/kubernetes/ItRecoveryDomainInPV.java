@@ -232,7 +232,7 @@ class ItRecoveryDomainInPV  {
 
     // verify the admin server service created
     checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
-    assertTrue(getPodUid(domainNamespace, adminServerPodName),
+    assertTrue(getPodUid(domainNamespace, adminServerPodName, "Initial domain startup"),
           String.format("Get pod uid failed for podName %s in namespace %s", adminServerPodName,
             domainNamespace));
     // verify managed server services created
@@ -240,7 +240,7 @@ class ItRecoveryDomainInPV  {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i),
+      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i, "Initial domain startup"),
           String.format("Get pod uid failed for podName %s in namespace %s", managedServerPodNamePrefix + i,
             domainNamespace));
     }
@@ -270,11 +270,15 @@ class ItRecoveryDomainInPV  {
     //checkPodReadyAndServiceExists(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
 
     logger.info("Managed Server(2) started");
+    assertTrue(getPodUid(domainNamespace, adminServerPodName, "After managed Server2 was restarted"),
+          String.format("Get pod uid failed for podName %s in namespace %s", adminServerPodName,
+            domainNamespace));
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
-      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i),
+      assertTrue(getPodUid(domainNamespace, managedServerPodNamePrefix + i,
+          "After managed Server2 was restarted"),
           String.format("Get pod uid failed for podName %s in namespace %s", managedServerPodNamePrefix + i,
             domainNamespace));
     }
@@ -337,7 +341,7 @@ class ItRecoveryDomainInPV  {
         "Wait for JMS Client to send/recv msg");
   }
 
-  private boolean getPodUid(String nameSpace, String podName) {
+  private boolean getPodUid(String nameSpace, String podName, String verbose) {
     //String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='{.metadata.uid}'";
     String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='"
         + "{range .items[*]}{@.metadata.name}{\" runAsUser: \"}{@.spec.containers[*].securityContext.runAsUser}"
@@ -352,7 +356,7 @@ class ItRecoveryDomainInPV  {
         && params.stdout() != null
         && params.stdout().length() != 0) {
       String uid = params.stdout();
-      logger.info("Got pod {0} uid {1}", podName, uid);
+      logger.info("{0}, got uid {1} for pod {2}", verbose, uid, podName);
       return true;
     }
     return false;
