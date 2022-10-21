@@ -121,8 +121,13 @@ class ItRecoveryDomainInPV  {
    * (b) WLDF system resource assigned to WLS cluster
    * (c) JDBC system resource assigned to WLS cluster 
    *
+   * Print out UID, GID and SELinux label of pods in the domain namespace
+   *
    * Send 100 persistent messages to JMS Destination on managed server(2)
-   * Stop/Start the managed server(2) by scaling the cluster 
+   * Stop/Start the managed server(2) by scaling the cluster
+   *
+   * Print out UID, GID and SELinux label of pods in the domain namespace
+   * 
    * Make sure all 100 persistent messages are recovered form managed server(2)
    */
   @Test
