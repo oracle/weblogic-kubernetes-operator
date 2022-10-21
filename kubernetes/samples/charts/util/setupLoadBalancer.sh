@@ -252,12 +252,19 @@ purgeDefaultResources() {
 deleteIngress() {
   type=${1}
   ns=${2}
+
+  if [[ "${type}" == "traefik" ]]; then
+    instance=${type}-release-${ns}
+  elif [[ "${type}" == "nginx" ]]; then
+    instance=${type}-release
+  fi
+  
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
     ${kubernetesCli} wait --namespace ${ns} \
        --for=delete pod \
-       --selector=app.kubernetes.io/instance=${type}-release \
+       --selector=app.kubernetes.io/instance=${instance} \
        --timeout=120s
     if [ ${skipDeleteNamespace} == "false" ]; then
       ${kubernetesCli} delete ns ${ns}
