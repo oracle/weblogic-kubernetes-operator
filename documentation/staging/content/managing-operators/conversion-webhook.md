@@ -26,6 +26,7 @@ The following table lists the components of the WebLogic Domain resource convers
 - The conversion webhook Deployment sets the `spec.conversion.strategy` field of the Domain CRD to `Webhook`. It also adds webhook client configuration details such as service name, namespace, path, port, and the self-signed CA certificate used for authentication.
 
 ### Install the conversion webhook
+
 Beginning with  operator version 4.0, when you [install the operator]({{<relref "/managing-operators/installation#install-the-operator">}}) using the `helm install` command with the operator Helm chart, by default, it also configures a deployment and supporting resources for the conversion webhook and deploys the conversion webhook in the specified namespace. Note that a webhook is a singleton deployment in the cluster. Therefore, if the webhook is already installed in the cluster and the operator installation version is the same or older, then the operator installation will skip the webhook installation. However, if the operator version is newer, then a new webhook Deployment is created and all webhook traffic for the CRD is redirected to the new webhook.
 
 {{% notice note %}}

@@ -36,7 +36,7 @@ The specification of the operation of the WebLogic cluster. Required.
 | `labelSelector` | string | Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
-| `observedGeneration` | integer | The generation observed by the WebLogic operator. |
+| `observedGeneration` | integer | The Cluster resource generation observed by the WebLogic operator. If the Cluster resource exists, then this value will match the 'cluster.metadata.generation'  when the 'cluster.status' correctly reflects the latest cluster resource changes. |
 | `readyReplicas` | integer | The number of ready cluster members. |
 | `replicas` | integer | The number of currently running cluster members. |
 | `replicasGoal` | integer | The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero. |

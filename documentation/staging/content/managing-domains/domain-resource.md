@@ -1,5 +1,5 @@
 +++
-title = "Domain resource"
+title = "Domain and Cluster resources"
 date = 2019-02-23T16:43:45-05:00
 weight = 3
 pre = "<b> </b>"
@@ -49,7 +49,7 @@ $ kubectl get weblogic -n <namespace>
 To view all of the attributes of a running domain, including the domain's status, use this command:
 
 ```shell
-$ kubectl describe domain <domain-resoource-name> -n <namespace>
+$ kubectl describe domain <domain-resource-name> -n <namespace>
 ```
 
 Or this command:

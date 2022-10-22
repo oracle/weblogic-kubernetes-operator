@@ -132,6 +132,7 @@ see [Troubleshooting]({{<relref "/managing-operators/troubleshooting#check-the-o
   as shown in the previous example.
 
 ### Install the WebLogic domain resource conversion webhook
+
 By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled. If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
 For conversion webhook installation details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
 
