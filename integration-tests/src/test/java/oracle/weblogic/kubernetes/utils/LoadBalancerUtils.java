@@ -115,7 +115,7 @@ public class LoadBalancerUtils {
         .name("http")
         .port(portshttp)
         .targetPort(new IntOrString(portshttp))
-        .protocol(V1ServicePort.ProtocolEnum.TCP));
+        .protocol("TCP"));
 
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -126,8 +126,8 @@ public class LoadBalancerUtils {
         .spec(new V1ServiceSpec()
             .ports(ports)
             .selector(selectors)
-            .sessionAffinity(V1ServiceSpec.SessionAffinityEnum.NONE)
-            .type(V1ServiceSpec.TypeEnum.LOADBALANCER));
+            .sessionAffinity("None")
+            .type("LoadBalancer"));
     LoggingFacade logger = getLogger();
     assertNotNull(service, "Can't create ocilb service, returns null");
     assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");

@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Stub;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -206,8 +205,8 @@ class DomainPresenceInfoTest {
 
   private void setReady(V1Pod pod) {
     pod.status(new V1PodStatus()
-          .phase(V1PodStatus.PhaseEnum.RUNNING)
-          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+          .phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
 
   }
 
@@ -301,7 +300,7 @@ class DomainPresenceInfoTest {
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(EffectiveServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(spec.getImagePullSecrets(), empty());
   }
 

@@ -1006,11 +1006,11 @@ public class DomainStatusUpdater {
 
         private boolean isReadyCondition(Object condition) {
           return (condition instanceof V1PodCondition)
-              && V1PodCondition.TypeEnum.READY.equals(((V1PodCondition)condition).getType());
+              && "Ready".equals(((V1PodCondition)condition).getType());
         }
 
         private boolean isPhaseRunning(V1PodStatus status) {
-          return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
+          return "Running".equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {

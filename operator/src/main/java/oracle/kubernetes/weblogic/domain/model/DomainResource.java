@@ -22,7 +22,6 @@ import javax.annotation.Nullable;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -302,7 +301,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return spec.getMonitoringExporterImage();
   }
 
-  public V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
+  public String getMonitoringExporterImagePullPolicy() {
     return spec.getMonitoringExporterImagePullPolicy();
   }
 

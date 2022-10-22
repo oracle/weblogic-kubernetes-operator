@@ -164,8 +164,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   private static V1Pod createReadyPod(String serverName) {
     return new V1Pod().metadata(withNames(new V1ObjectMeta().namespace(NS), serverName))
             .spec(new V1PodSpec().nodeName("Node1"))
-            .status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
-            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+            .status(new V1PodStatus().phase("Running")
+            .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
   }
 
   private static V1Pod createPod(String serverName) {
@@ -217,8 +217,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   private V1PodStatus createPodReadyStatus() {
     return new V1PodStatus()
-          .phase(V1PodStatus.PhaseEnum.RUNNING)
-          .addConditionsItem(new V1PodCondition().status("True").type(V1PodCondition.TypeEnum.READY));
+          .phase("Running")
+          .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
   }
 
   @AfterEach

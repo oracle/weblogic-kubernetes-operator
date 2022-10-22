@@ -302,9 +302,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     List<V1ContainerPort> ports = new ArrayList<>();
     getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
-    addContainerPort(ports, "default", getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-    addContainerPort(ports, "default-secure", getSslListenPort(), V1ContainerPort.ProtocolEnum.TCP);
-    addContainerPort(ports, "default-admin", getAdminPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, "default", getListenPort(), "TCP");
+    addContainerPort(ports, "default-secure", getSslListenPort(), "TCP");
+    addContainerPort(ports, "default-admin", getAdminPort(), "TCP");
 
     return ports;
   }
@@ -319,15 +319,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
     String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
-    addContainerPort(ports, name, nap.getListenPort(), V1ContainerPort.ProtocolEnum.TCP);
+    addContainerPort(ports, name, nap.getListenPort(), "TCP");
 
     if (isSipProtocol(nap)) {
-      addContainerPort(ports, "udp-" + name, nap.getListenPort(), V1ContainerPort.ProtocolEnum.UDP);
+      addContainerPort(ports, "udp-" + name, nap.getListenPort(), "UDP");
     }
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, String name,
-                                @Nullable Integer listenPort, V1ContainerPort.ProtocolEnum protocol) {
+                                @Nullable Integer listenPort, String protocol) {
     if (listenPort != null) {
       String finalName = createContainerPortName(ports, name);
       // add if needed
@@ -913,7 +913,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     V1HTTPGetAction getAction = new V1HTTPGetAction();
     getAction.path(path).port(new IntOrString(port));
     if (useHttps) {
-      getAction.scheme(V1HTTPGetAction.SchemeEnum.HTTPS);
+      getAction.scheme("HTTPS");
     }
     return getAction;
   }
@@ -1296,7 +1296,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
             if (scheme.equals("HTTPS")) {
               recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
-                  .setScheme(V1HTTPGetAction.SchemeEnum.HTTPS));
+                  .setScheme("HTTPS"));
             } else if (scheme.equals("HTTP")) {
               recipeContainer.ifPresent(c -> c.getReadinessProbe().getHttpGet()
                   .setScheme(null));
@@ -1607,7 +1607,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .resources(getDomain().getMonitoringExporterResources())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
-                .name("metrics").protocol(V1ContainerPort.ProtocolEnum.TCP).containerPort(getPort()));
+                .name("metrics").protocol("TCP").containerPort(getPort()));
     }
 
     private String createJavaOptions() {
