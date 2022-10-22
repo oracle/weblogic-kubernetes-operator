@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -41,7 +40,7 @@ public class FluentdSpecification {
       "The image pull policy for the Fluentd sidecar container image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   @Valid
   @Description("A list of environment variables to set in the fluentd container. "
@@ -101,11 +100,11 @@ public class FluentdSpecification {
     this.image = image;
   }
 
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  public void setImagePullPolicy(@Nullable V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 

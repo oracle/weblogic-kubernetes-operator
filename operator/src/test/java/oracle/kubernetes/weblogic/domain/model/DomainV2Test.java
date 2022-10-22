@@ -14,11 +14,9 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SELinuxOptions;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -700,7 +698,7 @@ class DomainV2Test extends DomainTestBase {
     EffectiveServerSpec effectiveServerSpec = info.getServer("server0", null);
 
     assertThat(effectiveServerSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(effectiveServerSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(effectiveServerSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(effectiveServerSpec.getEnvironmentVariables(), contains(envVar("var1", "value0")));
@@ -750,7 +748,7 @@ class DomainV2Test extends DomainTestBase {
     EffectiveServerSpec effectiveServerSpec = info.getServer("server0", "cluster0");
 
     assertThat(effectiveServerSpec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(effectiveServerSpec.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(effectiveServerSpec.getImagePullSecrets().get(0).getName(), equalTo("pull-secret1"));
     assertThat(effectiveServerSpec.getImagePullSecrets().get(1).getName(), equalTo("pull-secret2"));
     assertThat(info.getDomain().getConfigOverrides(), equalTo("overrides-config-map"));
@@ -1254,16 +1252,16 @@ class DomainV2Test extends DomainTestBase {
     List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_5);
     DomainResource domain = (DomainResource) resources.get(0);
 
-    V1PodSpec.RestartPolicyEnum restartPolicy = domain.getSpec().getRestartPolicy();
-    assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
+    String restartPolicy = domain.getSpec().getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
   }
 
   @Test
   void whenDomain2ReadFromYaml_RestartPolicyIsReadFromClusterSpec() throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML_5);
 
-    V1PodSpec.RestartPolicyEnum restartPolicy = info.getCluster("cluster2").getRestartPolicy();
-    assertThat(restartPolicy, is(V1PodSpec.RestartPolicyEnum.ONFAILURE));
+    String restartPolicy = info.getCluster("cluster2").getRestartPolicy();
+    assertThat(restartPolicy, is("OnFailure"));
   }
 
   @Test
@@ -1305,8 +1303,8 @@ class DomainV2Test extends DomainTestBase {
       throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML_2);
 
-    V1ServiceSpec.SessionAffinityEnum sessionAffinity = info.getCluster("cluster1").getClusterSessionAffinity();
-    assertThat(sessionAffinity, is(V1ServiceSpec.SessionAffinityEnum.CLIENTIP));
+    String sessionAffinity = info.getCluster("cluster1").getClusterSessionAffinity();
+    assertThat(sessionAffinity, is("ClientIP"));
   }
 
   @Test
@@ -1314,7 +1312,7 @@ class DomainV2Test extends DomainTestBase {
       throws IOException {
     DomainPresenceInfo info = readDomainPresence(DOMAIN_V2_SAMPLE_YAML_4);
 
-    V1ServiceSpec.SessionAffinityEnum sessionAffinity = info.getCluster("cluster2").getClusterSessionAffinity();
+    String sessionAffinity = info.getCluster("cluster2").getClusterSessionAffinity();
     assertThat(sessionAffinity, nullValue());
   }
 

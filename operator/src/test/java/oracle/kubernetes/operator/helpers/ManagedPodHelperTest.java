@@ -16,7 +16,6 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -25,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -1015,12 +1013,12 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasRestartPolicy_createPodWithIt() {
     getConfigurator()
         .configureCluster(domainPresenceInfo, CLUSTER_NAME)
-        .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
+        .withRestartPolicy("Always");
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(
         getCreatedPod().getSpec().getRestartPolicy(),
-        is(V1PodSpec.RestartPolicyEnum.ALWAYS));
+        is("Always"));
   }
 
   @Test
@@ -1067,9 +1065,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenDomainAndClusterHaveLegacyAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
     Map<String, Object> auxiliaryImage2 =
-        createAuxiliaryImage("wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1080,12 +1078,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
         allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1",
-                V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                "wdt-image:v1", "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
             Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                "wdt-image:v2",
-                V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                "wdt-image:v2", "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
@@ -1099,7 +1095,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenClusterHasLegacyAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH2);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1114,9 +1110,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   void whenDomainAndManagedServersHaveLegacyAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
     Map<String, Object> auxiliaryImage2 =
-        createAuxiliaryImage("wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -1128,12 +1124,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1",
-                    V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                    "wdt-image:v1", "IfNotPresent",
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
                     Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                            "wdt-image:v2",
-                            V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                            "wdt-image:v2", "IfNotPresent",
                         AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName()).emptyDir(
@@ -1151,9 +1145,9 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT),
+                "wdt-image:v1", "IfNotPresent"),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                        "wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
+                        "wdt-image:v2", "IfNotPresent")));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -1396,10 +1390,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         .filter(p -> p.getName().endsWith(SIP_CLEAR)).count(), equalTo(2L));
     assertThat(v1Container.getPorts().stream()
         .filter(p -> p.getName().equals(SIP_CLEAR)).findFirst().orElseThrow().getProtocol(),
-        equalTo(V1ContainerPort.ProtocolEnum.TCP));
+        equalTo("TCP"));
     assertThat(v1Container.getPorts().stream()
         .filter(p -> p.getName().equals("udp-" + SIP_CLEAR))
-        .findFirst().orElseThrow().getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.UDP));
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
   }
 
   void addSipPorts() {
@@ -1417,10 +1411,10 @@ class ManagedPodHelperTest extends PodHelperTestBase {
         .filter(p -> p.getName().endsWith(SIP_SECURE)).count(), equalTo(2L));
     assertThat(v1Container.getPorts().stream()
         .filter(p -> p.getName().equals(SIP_SECURE)).findFirst().orElseThrow().getProtocol(),
-        equalTo(V1ContainerPort.ProtocolEnum.TCP));
+        equalTo("TCP"));
     assertThat(v1Container.getPorts().stream()
         .filter(p -> p.getName().equals("udp-" + SIP_SECURE))
-        .findFirst().orElseThrow().getProtocol(), equalTo(V1ContainerPort.ProtocolEnum.UDP));
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
   }
 
   @SuppressWarnings("unused")

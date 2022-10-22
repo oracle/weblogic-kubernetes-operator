@@ -101,10 +101,10 @@ public class MySQLDBUtils {
               .name(serviceName)
               .namespace(namespace))
           .spec(new V1ServiceSpec()
-              .type(V1ServiceSpec.TypeEnum.NODEPORT)
+              .type("NodePort")
               .ports(Arrays.asList(new V1ServicePort()
                   .port(3306)
-                  .protocol(V1ServicePort.ProtocolEnum.TCP)
+                  .protocol("TCP")
                   .targetPort(new IntOrString(3306))
                   .nodePort(port)))
               .selector(selector)));

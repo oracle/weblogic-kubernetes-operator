@@ -12,7 +12,6 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -419,7 +418,7 @@ class ItMiiDynamicUpdatePart3 {
         expectedErrorMsg);
   }
 
-  boolean podStatusPhaseContainsString(String namespace, String jobName, V1PodStatus.PhaseEnum expectedPhase) {
+  boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
     String introspectPodName;
     V1Pod introspectorPod;
 

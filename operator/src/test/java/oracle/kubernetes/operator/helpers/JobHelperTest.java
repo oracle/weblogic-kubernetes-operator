@@ -159,8 +159,8 @@ class JobHelperTest extends DomainValidationTestBase {
   private final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   private final V1SecurityContext containerSecurityContext = createSecurityContext(555L);
   private final V1Affinity podAffinity = createAffinity();
-  private final V1Toleration toleration = createToleration("key", V1Toleration.OperatorEnum.EQUAL, "value",
-        V1Toleration.EffectEnum.NOSCHEDULE);
+  private final V1Toleration toleration = createToleration("key", "Equal", "value",
+        "NoSchedule");
   private final V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
   private final V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
   private final V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
@@ -828,18 +828,18 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void introspectorPodSpec_alwaysCreatedWithNeverRestartPolicy() {
     configureDomain()
-          .withRestartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS);
+          .withRestartPolicy("Always");
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getPodSpec(jobSpec).getRestartPolicy(),
-          is(V1PodSpec.RestartPolicyEnum.NEVER));
+          is("Never"));
   }
 
   @Test
   void introspectorPodSpec_createdWithoutConfiguredReadinessGates() {
     configureDomain()
-          .withReadinessGate(new V1PodReadinessGate().conditionType(V1PodReadinessGate.ConditionTypeEnum.READY));
+          .withReadinessGate(new V1PodReadinessGate().conditionType("Ready"));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(

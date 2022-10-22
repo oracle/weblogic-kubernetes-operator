@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -186,7 +185,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     clusterService.addAnnotations(name, value);
   }
 
-  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
+  public String getClusterSessionAffinity() {
     return clusterService.getSessionAffinity();
   }
 

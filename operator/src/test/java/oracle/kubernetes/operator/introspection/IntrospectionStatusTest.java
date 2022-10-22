@@ -319,7 +319,7 @@ class IntrospectionStatusTest {
     }
 
     IntrospectorJobPodBuilder withFailedPhase() {
-      builder.withPhase(V1PodStatus.PhaseEnum.FAILED);
+      builder.withPhase("Failed");
       return this;
     }
 
