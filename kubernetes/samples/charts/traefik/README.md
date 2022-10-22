@@ -34,7 +34,7 @@ Create two WebLogic domains:
 The following sections describe how to route an application web request to the WebLogic domain through a Traefik frontend.
 
 #### Host-based routing 
-This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
+This sample demonstrates how to access an application and WebLogic Administration Console on two WebLogic domains using host-based routing. Install a host-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
 ```shell
 $ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
@@ -47,6 +47,17 @@ $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
+
+Use the following URLs from your browser to access the WebLogic Server Administration Console for `domain1` and `domain2`, respectively.
+```
+http://${HOSTNAME_1}:${LB_PORT}/console
+http://${HOSTNAME_2}:${LB_PORT}/console
+```
+Where:
+  - ${HOSTNAME_1} is the host name defined for `domain1` in the route section of the `host-routing.yaml` file which is `domain1.org`. The host name `domain1.org` must be resolvable by your DNS server.
+  - ${HOSTNAME_2} is the host name defined for `domain2` in the route section of the `host-routing.yaml` file  which is `domain2.org`. The host name `domain2.org` must be resolvable by your DNS server.
+  - To determine the ${LB_PORT} of the Traefik load balancer:
+    `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
 #### Path-based routing  
 This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/).
