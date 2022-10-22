@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c5705fa9410721155ee88e195303da6f7630f2732ed48911926732d1731d5d4c
+    weblogic.sha256: 70bafec24ec0f378000f5916e91ad27c6aa400bdff77526f4dee9be54898eea2
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -104,11 +104,6 @@ spec:
                       properties:
                         conditionType:
                           type: string
-                          enum:
-                          - ContainersReady
-                          - Initialized
-                          - PodScheduled
-                          - Ready
                       required:
                       - conditionType
                     type: array
@@ -142,10 +137,6 @@ spec:
                           localhostProfile:
                             type: string
                           type:
-                            enum:
-                            - Localhost
-                            - RuntimeDefault
-                            - Unconfined
                             type: string
                         required:
                         - type
@@ -258,10 +249,6 @@ spec:
                       properties:
                         effect:
                           type: string
-                          enum:
-                          - NoExecute
-                          - NoSchedule
-                          - PreferNoSchedule
                         tolerationSeconds:
                           type: integer
                         value:
@@ -270,9 +257,6 @@ spec:
                           type: string
                         operator:
                           type: string
-                          enum:
-                          - Equal
-                          - Exists
                     type: array
                   readinessProbe:
                     description: Settings for the readiness probe associated with
@@ -340,10 +324,6 @@ spec:
                           localhostProfile:
                             type: string
                           type:
-                            enum:
-                            - Localhost
-                            - RuntimeDefault
-                            - Unconfined
                             type: string
                         required:
                         - type
@@ -1250,10 +1230,6 @@ spec:
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                       See `kubectl explain pods.spec.restartPolicy`.'
-                    enum:
-                    - Always
-                    - Never
-                    - OnFailure
                     type: string
                   maxPendingWaitTimeSeconds:
                     description: The maximum time in seconds that the operator waits
@@ -1288,10 +1264,6 @@ spec:
                           type: string
                         imagePullPolicy:
                           type: string
-                          enum:
-                          - Always
-                          - IfNotPresent
-                          - Never
                         livenessProbe:
                           type: object
                           properties:
@@ -1348,9 +1320,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -1382,9 +1351,6 @@ spec:
                           type: boolean
                         terminationMessagePolicy:
                           type: string
-                          enum:
-                          - FallbackToLogsOnError
-                          - File
                         terminationMessagePath:
                           type: string
                         workingDir:
@@ -1436,10 +1402,6 @@ spec:
                                   type: string
                                 type:
                                   type: string
-                                  enum:
-                                  - Localhost
-                                  - RuntimeDefault
-                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -1519,9 +1481,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -1621,10 +1580,6 @@ spec:
                             properties:
                               protocol:
                                 type: string
-                                enum:
-                                - SCTP
-                                - TCP
-                                - UDP
                               hostIP:
                                 type: string
                               name:
@@ -1701,9 +1656,6 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
-                                      enum:
-                                      - HTTP
-                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -1766,9 +1718,6 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
-                                      enum:
-                                      - HTTP
-                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -1856,9 +1805,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -1934,10 +1880,6 @@ spec:
                           type: string
                         imagePullPolicy:
                           type: string
-                          enum:
-                          - Always
-                          - IfNotPresent
-                          - Never
                         livenessProbe:
                           type: object
                           properties:
@@ -1994,9 +1936,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -2028,9 +1967,6 @@ spec:
                           type: boolean
                         terminationMessagePolicy:
                           type: string
-                          enum:
-                          - FallbackToLogsOnError
-                          - File
                         terminationMessagePath:
                           type: string
                         workingDir:
@@ -2082,10 +2018,6 @@ spec:
                                   type: string
                                 type:
                                   type: string
-                                  enum:
-                                  - Localhost
-                                  - RuntimeDefault
-                                  - Unconfined
                               required:
                               - type
                             windowsOptions:
@@ -2165,9 +2097,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -2267,10 +2196,6 @@ spec:
                             properties:
                               protocol:
                                 type: string
-                                enum:
-                                - SCTP
-                                - TCP
-                                - UDP
                               hostIP:
                                 type: string
                               name:
@@ -2347,9 +2272,6 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
-                                      enum:
-                                      - HTTP
-                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2412,9 +2334,6 @@ spec:
                                       type: string
                                     scheme:
                                       type: string
-                                      enum:
-                                      - HTTP
-                                      - HTTPS
                                     port:
                                       type: object
                                       properties:
@@ -2502,9 +2421,6 @@ spec:
                                   type: string
                                 scheme:
                                   type: string
-                                  enum:
-                                  - HTTP
-                                  - HTTPS
                                 port:
                                   type: object
                                   properties:
@@ -2616,13 +2532,6 @@ spec:
                                             type: string
                                           operator:
                                             type: string
-                                            enum:
-                                            - DoesNotExist
-                                            - Exists
-                                            - Gt
-                                            - In
-                                            - Lt
-                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -2639,13 +2548,6 @@ spec:
                                             type: string
                                           operator:
                                             type: string
-                                            enum:
-                                            - DoesNotExist
-                                            - Exists
-                                            - Gt
-                                            - In
-                                            - Lt
-                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -2673,13 +2575,6 @@ spec:
                                             type: string
                                           operator:
                                             type: string
-                                            enum:
-                                            - DoesNotExist
-                                            - Exists
-                                            - Gt
-                                            - In
-                                            - Lt
-                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -2696,13 +2591,6 @@ spec:
                                             type: string
                                           operator:
                                             type: string
-                                            enum:
-                                            - DoesNotExist
-                                            - Exists
-                                            - Gt
-                                            - In
-                                            - Lt
-                                            - NotIn
                                         required:
                                         - key
                                         - operator
@@ -2982,9 +2870,6 @@ spec:
                     description: 'Supports "ClientIP" and "None". Used to maintain
                       session affinity. Enable client IP based session affinity. Must
                       be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies'
-                    enum:
-                    - ClientIP
-                    - None
                     type: string
                   annotations:
                     additionalProperties:

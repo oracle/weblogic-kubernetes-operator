@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -1510,7 +1509,7 @@ public class TestActions {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName)
       throws ApiException {
     return Pod.getPodStatusPhase(namespace, labelSelectors, podName);
   }

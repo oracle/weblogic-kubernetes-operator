@@ -7,7 +7,6 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
@@ -47,8 +46,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   @Description("Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, "
       + "or Unknown.")
   @Expose
-  private V1PodStatus.PhaseEnum podPhase;
-
+  private String podPhase;
 
   @Description("Status of the WebLogic Server pod's Ready condition if the pod is in Running phase, otherwise Unknown. "
       + "Possible values are: True, False or Unknown.")
@@ -230,7 +228,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    *
    * @return podPhase
    */
-  public V1PodStatus.PhaseEnum getPodPhase() {
+  public String getPodPhase() {
     return podPhase;
   }
 
@@ -249,7 +247,7 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
    * @param podPhase  phase of server pod
    * @return this
    */
-  public ServerStatus withPodPhase(V1PodStatus.PhaseEnum podPhase) {
+  public ServerStatus withPodPhase(String podPhase) {
     this.podPhase = podPhase;
     return this;
   }

@@ -281,7 +281,7 @@ class ItIstioManagedCoherence {
         .name("tcp-coherence")
         .port(7777)
         .targetPort(new IntOrString(7777))
-        .protocol(V1ServicePort.ProtocolEnum.TCP));
+        .protocol("TCP"));
 
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -292,7 +292,7 @@ class ItIstioManagedCoherence {
             .ports(ports)
             .publishNotReadyAddresses(true)
             .selector(selectors)
-            .type(V1ServiceSpec.TypeEnum.CLUSTERIP));
+            .type("ClusterIP"));
 
     assertNotNull(service, "Can't create multi-domain-svc service, returns null");
     assertDoesNotThrow(() -> createService(service), "Can't create multi-domain-svc service");
@@ -318,7 +318,7 @@ class ItIstioManagedCoherence {
         .name("tcp-coherenceapp")
         .port(8001)
         .targetPort(new IntOrString(8001))
-        .protocol(V1ServicePort.ProtocolEnum.TCP));
+        .protocol("TCP"));
 
     V1Service coherenceappService = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -327,7 +327,7 @@ class ItIstioManagedCoherence {
         .spec(new V1ServiceSpec()
             .ports(ports)
             .selector(selectors)
-            .type(V1ServiceSpec.TypeEnum.CLUSTERIP));
+            .type("ClusterIP"));
 
     assertNotNull(service, "Can't create multi-domain-coherenceapp-svc service, returns null");
     assertDoesNotThrow(() -> createService(coherenceappService),

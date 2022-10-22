@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.processing;
 
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -28,7 +27,7 @@ public abstract class EffectiveServerSpecBase implements EffectiveServerSpec {
   }
 
   @Override
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return domainSpec.getImagePullPolicy();
   }
 

@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import oracle.kubernetes.operator.ServerStartPolicy;
 
@@ -112,7 +111,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
    */
   ClusterConfigurator withRestartVersion(String restartVersion);
 
-  ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
+  ClusterConfigurator withRestartPolicy(String restartPolicy);
 
   ClusterConfigurator withAffinity(V1Affinity affinity);
 

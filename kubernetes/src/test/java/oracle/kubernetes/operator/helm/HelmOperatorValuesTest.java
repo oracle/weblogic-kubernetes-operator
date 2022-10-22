@@ -7,7 +7,6 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -154,32 +153,32 @@ class HelmOperatorValuesTest {
 
   @Test
   void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
-    operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+    operatorValues.weblogicOperatorImagePullPolicy("IfNotPresent");
 
     assertThat(operatorValues.createMap(),
-        hasEntry("imagePullPolicy", V1Container.ImagePullPolicyEnum.IFNOTPRESENT.toString()));
+        hasEntry("imagePullPolicy", "IfNotPresent"));
   }
 
   @Test
   void weblogicOperatorImagePullPolicyIsExpectedEnumValue() {
-    operatorValues.weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    operatorValues.weblogicOperatorImagePullPolicy("Always");
 
-    assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo("Always"));
   }
 
   @Test
   void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
-    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.NEVER));
+    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo("Never"));
   }
 
   @Test
   void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
     HelmOperatorValues values =
-        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", V1Container.ImagePullPolicyEnum.ALWAYS.toString()));
+        new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", "Always"));
 
-    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo("Always"));
   }
 
   @Test

@@ -184,7 +184,7 @@ abstract class DomainStatusUpdateTestBase {
                 .withStateGoal(RUNNING_STATE)
                 .withNodeName("node1")
                 .withServerName("server1")
-                .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
+                .withPodPhase("Running")
                 .withPodReady("True")
                 .withHealth(overallHealth("health1"))));
     assertThat(
@@ -196,7 +196,7 @@ abstract class DomainStatusUpdateTestBase {
                 .withClusterName("clusterB")
                 .withNodeName("node2")
                 .withServerName("server2")
-                .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
+                .withPodPhase("Running")
                 .withPodReady("True")
                 .withHealth(overallHealth("health2"))));
   }
@@ -321,7 +321,7 @@ abstract class DomainStatusUpdateTestBase {
                         .withServerName("admin")
                         .withNodeName("node")
                         .withIsAdminServer(true)
-                        .withPodPhase(V1PodStatus.PhaseEnum.RUNNING)
+                        .withPodPhase("Running")
                         .withPodReady("True")
                         .withHealth(overallHealth("health")),
                     new ServerStatus()
@@ -541,7 +541,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private boolean isReadyTrue(V1PodCondition condition) {
-    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && "True".equals(condition.getStatus());
+    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private void setNotReady(V1PodCondition condition) {
@@ -799,20 +799,20 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void failPod(String serverName) {
-    getPod(serverName).setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.FAILED));
+    getPod(serverName).setStatus(new V1PodStatus().phase("Failed"));
     getServerStateMap().put(serverName, UNKNOWN_STATE);
   }
 
   @SuppressWarnings("SameParameterValue")
   private void unreadyPod(String serverName) {
     getPod(serverName).setStatus(
-        new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).addConditionsItem(
-            new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False")));
+        new V1PodStatus().phase("Running").addConditionsItem(
+            new V1PodCondition().type("Ready").status("False")));
   }
 
   @SuppressWarnings("SameParameterValue")
   private void markPodRunningPhaseFalse(String serverName) {
-    getPod(serverName).setStatus(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
+    getPod(serverName).setStatus(new V1PodStatus().phase("Pending"));
   }
 
   @Nonnull
@@ -924,7 +924,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -937,7 +937,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -947,9 +947,9 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server1").withPodReady("True").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
+        hasStatusForServer("server1").withPodReady("True").withPodPhase("Running"));
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("True").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
+        hasStatusForServer("server2").withPodReady("True").withPodPhase("Running"));
   }
 
   @Test
@@ -960,7 +960,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(),
-        hasStatusForServer("server2").withPodReady("False").withPodPhase(V1PodStatus.PhaseEnum.RUNNING));
+        hasStatusForServer("server2").withPodReady("False").withPodPhase("Running"));
   }
 
   @Test
@@ -1797,15 +1797,15 @@ abstract class DomainStatusUpdateTestBase {
       if (waitingStates.containsKey(serverName)) {
         pod.setStatus(new V1PodStatus()
             .startTime(SystemClock.now())
-            .phase(V1PodStatus.PhaseEnum.PENDING)
-            .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False"))
+            .phase("Pending")
+            .addConditionsItem(new V1PodCondition().type("Ready").status("False"))
             .addContainerStatusesItem(createContainerStatusItem(serverName))
         );  
       } else {
         pod.setStatus(new V1PodStatus()
               .startTime(SystemClock.now())
-              .phase(V1PodStatus.PhaseEnum.RUNNING)
-              .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+              .phase("Running")
+              .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
       }
     }
 
@@ -1852,7 +1852,7 @@ abstract class DomainStatusUpdateTestBase {
     }
 
     @SuppressWarnings("SameParameterValue")
-    ServerStatusMatcher withPodPhase(V1PodStatus.PhaseEnum expectedValue) {
+    ServerStatusMatcher withPodPhase(String expectedValue) {
       matcher.addField("pod phase", ServerStatus::getPodPhase, expectedValue);
       return this;
     }

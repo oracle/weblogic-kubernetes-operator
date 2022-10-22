@@ -5,7 +5,6 @@ package oracle.weblogic.domain;
 
 import java.util.Optional;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -33,7 +32,7 @@ public class AuxiliaryImage {
           "The image pull policy for the container image. "
                   + "Legal values are Always, Never, and IfNotPresent. "
                   + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   @ApiModelProperty("The source location of the WebLogic Deploy Tooling installation within the auxiliary image "
           + "that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in "
@@ -63,15 +62,15 @@ public class AuxiliaryImage {
     return this;
   }
 
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public void setImagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public void setImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  public AuxiliaryImage imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public AuxiliaryImage imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
