@@ -3,6 +3,10 @@
 
 package oracle.weblogic.domain;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
@@ -114,6 +118,21 @@ public class DomainResource implements KubernetesObject {
 
   public void setStatus(DomainStatus status) {
     this.status = status;
+  }
+
+  @SuppressWarnings({"rawtypes"})
+  static List sortList(List list) {
+    return sortList(list, null);
+  }
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
+  static List sortList(List list, Comparator c) {
+    if (list != null) {
+      Object[] a = list.toArray(new Object[0]);
+      Arrays.sort(a, c);
+      return Arrays.asList(a);
+    }
+    return List.of();
   }
 
   @Override
