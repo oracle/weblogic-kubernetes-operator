@@ -119,6 +119,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The common utility class for model-in-image tests.
  */
 public class CommonMiiTestUtils {
+
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
@@ -128,6 +129,7 @@ public class CommonMiiTestUtils {
    * @param adminServerPodName name of the admin server pod
    * @param managedServerPrefix prefix of the managed server pods
    * @param replicaCount number of managed servers to start
+   * @return Domain domain resource object
    */
   public static Domain createMiiDomainAndVerify(
       String domainNamespace,
@@ -135,8 +137,32 @@ public class CommonMiiTestUtils {
       String imageName,
       String adminServerPodName,
       String managedServerPrefix,
-      int replicaCount
-  ) {
+      int replicaCount) {
+    return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, adminServerPodName, managedServerPrefix,
+        replicaCount, false, null);
+  }
+
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
+   * @return Domain domain resource object
+   */
+  public static Domain createMiiDomainAndVerify(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      String adminServerPodName,
+      String managedServerPrefix,
+      int replicaCount,
+      boolean setDataHome,
+      String dataHome) {
+
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
@@ -175,6 +201,13 @@ public class CommonMiiTestUtils {
         encryptionSecretName,
         replicaCount,
         "cluster-1");
+
+    // set the dataHome in the domain spec
+    if (setDataHome) {
+      DomainSpec domainSpec = domain.getSpec();
+      domainSpec.dataHome(dataHome);
+      domain.spec(domainSpec);
+    }
 
     createDomainAndVerify(domain, domainNamespace);
 
