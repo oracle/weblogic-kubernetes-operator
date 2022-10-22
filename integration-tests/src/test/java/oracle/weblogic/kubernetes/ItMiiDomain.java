@@ -34,7 +34,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -47,6 +47,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -59,11 +60,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_TWO_APP_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -77,6 +80,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -93,10 +97,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -123,9 +129,10 @@ class ItMiiDomain {
   private String domainUid1 = "domain2";
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
-  private String miiImage = null;
   private static LoggingFacade logger = null;
   private static volatile boolean mainThreadDone = false;
+  private static String miiDomainNegativeNamespace = null;
+  private String encryptionSecretName = "encryptionsecret";
 
   /**
    * Install Operator.
@@ -133,7 +140,7 @@ class ItMiiDomain {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -155,9 +162,11 @@ class ItMiiDomain {
     domainNamespace = namespaces.get(1);
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domainNamespace1 = namespaces.get(2);
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    miiDomainNegativeNamespace = namespaces.get(3);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1);
+    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1, miiDomainNegativeNamespace);
   }
 
   /**
@@ -538,16 +547,31 @@ class ItMiiDomain {
         "Missing expected label on admin service");
   }
 
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterEach
-  public void tearDown() {
-    // delete mii domain images created for parameterized test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * Verify the error message should be logged in the operator log.
+   */
+  @Test
+  @Order(6)
+  @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
+  void testOperatorLogSevereMsg() {
+    String domainUid = "miidomainnegative";
+    createMiiDomainNegative(domainUid, miiDomainNegativeNamespace);
+
+    // verify the error msg is logged in the operator log
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
+            + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
+
+    // verify the admin server is not created
+    checkPodDoesNotExist(domainUid + "-" + ADMIN_SERVER_NAME_BASE, domainUid, miiDomainNegativeNamespace);
+
   }
 
+  @AfterAll
   public void tearDownAll() {
     // delete the domain images created in the test class
     if (miiImagePatchAppV2 != null) {
@@ -1104,4 +1128,68 @@ class ItMiiDomain {
     assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * The error message should be logged in the operator log.
+   *
+   * @param domainUid the uid of the domain to be created
+   * @param domainNamespace namespace in which the domain will be created
+   */
+  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
+
+    // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    createTestRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create the domain CR without encryption secret created
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/u01/domains/" + domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
+
+    setPodAntiAffinity(domain);
+
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domainNamespace, MII_BASIC_APP_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+  }
 }
