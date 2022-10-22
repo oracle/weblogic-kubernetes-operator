@@ -76,7 +76,7 @@ and usually, the type can be determined by examining the image name and tag:
   - If there are requirements to monitor the WebLogic configuration, then:
     - You should address them using Prometheus and Grafana, or other alternatives.
     - Note that you can use the open source
-      [WebLogic Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}})
+      [WebLogic Remote Console]({{< relref "/managing-domains/accessing-the-domain/remote-admin-console.md" >}})
       as an alternative for the WebLogic Server Administration Console.
 
 - `.../weblogic...:...dev...`:
