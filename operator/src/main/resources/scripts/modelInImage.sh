@@ -1327,9 +1327,10 @@ prepareMIIServer() {
 
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path
-
+        # exclude standalone app module in wlsdeploy/applications/*.xml since it is included int zipped up domain config
+        # zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
+        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/applications/*.xml" -x "wlsdeploy/domainBin/*"
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
