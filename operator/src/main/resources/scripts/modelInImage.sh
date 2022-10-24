@@ -1335,9 +1335,11 @@ prepareMIIServer() {
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
-        # No need to have domainLibraries in domain home
-        rm -fr ${WLSDEPLOY_DOMAINLIB}
     done
+    echo "-----------------------------------------------"
+    cat ${DOMAIN_HOME}/config/config.xml
+    ls -lR ${DOMAIN_HOME}/wlsdeploy
+
   return 0
 }
 
