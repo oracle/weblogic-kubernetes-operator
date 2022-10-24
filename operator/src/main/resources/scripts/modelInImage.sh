@@ -1256,47 +1256,7 @@ encrypt_decrypt_domain_secret() {
 }
 
 # prepare mii server
-
-prepareMIIServer() {
-
-  trace "Model-in-Image: Creating domain home."
-
-  # primordial domain contain the basic structures, security and other fmwconfig templated info
-  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
-  # Both are needed for the complete domain reconstruction
-
-  if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
-    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
-    return 1
-  fi
-
-  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
-    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
-    return 1
-  fi
-
-  trace "Model-in-Image: Restoring primordial domain"
-  restorePrimordialDomain || return 1
-
-  trace "Model-in-Image: Restore domain secret"
-  # decrypt the SerializedSystemIni first
-  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
-    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-  else
-    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
-    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
-    return 1
-  fi
-  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
-
-  # restore the config zip
-  #
-  trace "Model-in-Image: Restore domain config"
-  restoreDomainConfig || return 1
-
-  # restore the archive apps and libraries
-  #
-  trace "Model-in-Image: Restoring apps and libraries"
+restorAppAndLibs() {
 
   createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
   local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
@@ -1330,12 +1290,56 @@ prepareMIIServer() {
         # exclude standalone app module in wlsdeploy/applications/*.xml since it is included int zipped up domain config
         # zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
-        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/applications/./*.xml" -x "wlsdeploy/domainBin/*"
+        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*"
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
     done
+
+}
+
+prepareMIIServer() {
+
+  trace "Model-in-Image: Creating domain home."
+
+  # primordial domain contain the basic structures, security and other fmwconfig templated info
+  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
+  # Both are needed for the complete domain reconstruction
+
+  if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
+    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
+    return 1
+  fi
+
+  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
+    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
+    return 1
+  fi
+
+  trace "Model-in-Image: Restoring primordial domain"
+  restorePrimordialDomain || return 1
+
+  trace "Model-in-Image: Restore domain secret"
+  # decrypt the SerializedSystemIni first
+  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
+    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+  else
+    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
+    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    return 1
+  fi
+  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+
+  # We restore the app and libs from the archive first,  the domain zip may contain any standalone application
+  # modules under wlsdeploy/applications/*.xml.  In the next step, if any standalon application module exists collected
+  # during introspection, it will overwrite the tokenized version in the archive.
+    
+  trace "Model-in-Image: Restoring apps and libraries"
+  restorAppAndLibs || return 1
+
+  trace "Model-in-Image: Restore domain config"
+  restoreDomainConfig || return 1
 
   return 0
 }
