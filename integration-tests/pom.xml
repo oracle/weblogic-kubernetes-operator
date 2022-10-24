@@ -472,7 +472,7 @@
         </profile>
 
         <profile>
-            <id>okd-wls-srg</id>
+            <id>wko-okd-wls-srg</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
@@ -493,7 +493,7 @@
         </profile>
 
         <profile>
-            <id>okd-wls-mrg</id>
+            <id>wko-okd-wls-mrg</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
@@ -530,7 +530,7 @@
         </profile>
 
         <profile>
-            <id>okd-fmw-cert</id>
+            <id>wko-okd-fmw-cert</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
