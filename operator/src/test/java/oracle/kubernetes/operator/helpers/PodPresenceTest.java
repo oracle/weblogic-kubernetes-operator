@@ -39,7 +39,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.kubernetes.client.openapi.models.V1PodStatus.PhaseEnum.FAILED;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.KubernetesConstants.EVICTED_REASON;
@@ -143,7 +142,7 @@ class PodPresenceTest {
 
   @Test
   void whenPodRunningButNoConditionsDefined_reportNotReady() {
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING));
+    pod.status(new V1PodStatus().phase("Running"));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
@@ -151,8 +150,8 @@ class PodPresenceTest {
   @Test
   void whenPodRunningButNoReadyConditionsDefined_reportNotReady() {
     List<V1PodCondition> conditions = Collections.singletonList(
-        new V1PodCondition().type(V1PodCondition.TypeEnum.INITIALIZED));
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
+        new V1PodCondition().type("Initialized"));
+    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
@@ -160,8 +159,8 @@ class PodPresenceTest {
   @Test
   void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() {
     List<V1PodCondition> conditions =
-        Collections.singletonList(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("False"));
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
+        Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
+    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
@@ -175,8 +174,8 @@ class PodPresenceTest {
 
   private void makePodReady(V1Pod pod) {
     List<V1PodCondition> conditions =
-        Collections.singletonList(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True"));
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING).conditions(conditions));
+        Collections.singletonList(new V1PodCondition().type("Ready").status("True"));
+    pod.status(new V1PodStatus().phase("Running").conditions(conditions));
   }
 
   @Test
@@ -186,35 +185,35 @@ class PodPresenceTest {
 
   @Test
   void whenPodPhaseRunning_reportNotFailed() {
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING));
+    pod.status(new V1PodStatus().phase("Running"));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
   }
 
   @Test
   void whenPodPhasePending_reportNotFailed() {
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
+    pod.status(new V1PodStatus().phase("Pending"));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
   }
 
   @Test
   void whenPodPhasePending_reportPending() {
-    pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.PENDING));
+    pod.status(new V1PodStatus().phase("Pending"));
 
     MatcherAssert.assertThat(PodHelper.isPending(pod), is(true));
   }
 
   @Test
   void whenPodPhaseIsFailed_reportFailed() {
-    pod.status(new V1PodStatus().phase(FAILED));
+    pod.status(new V1PodStatus().phase("Failed"));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(true));
   }
 
   @Test
   void whenPodPhaseIsFailedAndReasonIsEvicted_reportEvicted() {
-    pod.status(new V1PodStatus().phase(FAILED).reason(EVICTED_REASON));
+    pod.status(new V1PodStatus().phase("Failed").reason(EVICTED_REASON));
 
     MatcherAssert.assertThat(PodHelper.isEvicted(pod), is(true));
   }
@@ -226,7 +225,7 @@ class PodPresenceTest {
 
   @Test
   void whenPodPhaseIsFailedAndReasonIsNotEvicted_reportNotEvicted() {
-    pod.status(new V1PodStatus().phase(FAILED));
+    pod.status(new V1PodStatus().phase("Failed"));
 
     MatcherAssert.assertThat(PodHelper.isEvicted(pod), is(false));
   }
@@ -540,7 +539,7 @@ class PodPresenceTest {
   }
 
   private V1Pod withEvictedStatus(V1Pod pod) {
-    return pod.status(new V1PodStatus().phase(FAILED).reason(EVICTED_REASON));
+    return pod.status(new V1PodStatus().phase("Failed").reason(EVICTED_REASON));
   }
 
   private OffsetDateTime advanceAndGetTime() {

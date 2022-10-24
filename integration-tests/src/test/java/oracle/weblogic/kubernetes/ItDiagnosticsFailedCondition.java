@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -438,7 +437,7 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain resource with incorrect image pull secret");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image, clusterResName);
-    domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    domain.getSpec().imagePullPolicy("Always");
 
     try {
       logger.info("Creating domain");

@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 /**
@@ -30,7 +29,7 @@ public class ApacheParams {
   private static final String DOMAIN_UID = "domainUID";
 
   private String image = null;
-  private V1Container.ImagePullPolicyEnum imagePullPolicy = null;
+  private String imagePullPolicy = null;
   private Map<String, Object> imagePullSecrets = null;
   private String pvcName = null;
   private int httpNodePort = 0;
@@ -47,7 +46,7 @@ public class ApacheParams {
     return this;
   }
 
-  public ApacheParams imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public ApacheParams imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }

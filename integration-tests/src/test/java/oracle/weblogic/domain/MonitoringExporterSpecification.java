@@ -7,13 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.google.gson.Gson;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.yaml.snakeyaml.Yaml;
-
 
 public class MonitoringExporterSpecification {
 
@@ -31,7 +29,7 @@ public class MonitoringExporterSpecification {
   @ApiModelProperty(
       "The image pull policy for the WebLogic Monitoring Exporter sidecar image. "
           + "Legal values are Always, Never, and IfNotPresent. ")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
 
   public MonitoringExporterConfiguration configuration() {
@@ -52,11 +50,11 @@ public class MonitoringExporterSpecification {
     return this;
   }
 
-  public V1Container.ImagePullPolicyEnum imagePullPolicy() {
+  public String imagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public MonitoringExporterSpecification imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public MonitoringExporterSpecification imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }

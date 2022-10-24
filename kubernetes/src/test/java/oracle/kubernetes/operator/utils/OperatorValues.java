@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.Objects;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import org.apache.commons.codec.binary.Base64;
 
 public class OperatorValues {
@@ -26,7 +25,7 @@ public class OperatorValues {
   private String domainNamespaceLabelSelector = "";
   private String domainNamespaceRegExp = "";
   private String weblogicOperatorImage = "";
-  private V1Container.ImagePullPolicyEnum weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.NEVER;
+  private String weblogicOperatorImagePullPolicy = "Never";
   private String weblogicOperatorImagePullSecretName = "";
   private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
@@ -54,7 +53,7 @@ public class OperatorValues {
         .domainNamespaceSelectionStrategy("List")
         .domainNamespaces("test-domain-namespace1,test-domain-namespace2")
         .weblogicOperatorImage("test-operator-image")
-        .weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER)
+        .weblogicOperatorImagePullPolicy("Never")
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
         .elasticSearchHost("test-elastic-search_host")
@@ -195,7 +194,7 @@ public class OperatorValues {
     return this;
   }
 
-  public V1Container.ImagePullPolicyEnum getWeblogicOperatorImagePullPolicy() {
+  public String getWeblogicOperatorImagePullPolicy() {
     return weblogicOperatorImagePullPolicy;
   }
 
@@ -204,10 +203,10 @@ public class OperatorValues {
   }
 
   public void setWeblogicOperatorImagePullPolicy(String val) {
-    weblogicOperatorImagePullPolicy = V1Container.ImagePullPolicyEnum.fromValue(val);
+    weblogicOperatorImagePullPolicy = val;
   }
 
-  public OperatorValues weblogicOperatorImagePullPolicy(V1Container.ImagePullPolicyEnum val) {
+  public OperatorValues weblogicOperatorImagePullPolicy(String val) {
     weblogicOperatorImagePullPolicy = val;
     return this;
   }

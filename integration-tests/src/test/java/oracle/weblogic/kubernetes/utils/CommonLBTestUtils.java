@@ -137,7 +137,7 @@ public class CommonLBTestUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("6Gi"))
-            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
+            .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(sharingPvName)
             .build()
@@ -268,7 +268,7 @@ public class CommonLBTestUtils {
             .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
-                    .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+                    .restartPolicy("Never")
                     .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Collections.singletonList(new V1Container()
                         .name("create-weblogic-domain-onpv-container")

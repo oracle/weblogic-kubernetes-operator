@@ -8,7 +8,6 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.json.Default;
@@ -43,7 +42,7 @@ public class MonitoringExporterSpecification {
       "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   /**
    * Defines the requirements and limits for the monitoring exporter sidecar.
@@ -105,7 +104,7 @@ public class MonitoringExporterSpecification {
     this.image = image;
   }
 
-  V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  String getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 

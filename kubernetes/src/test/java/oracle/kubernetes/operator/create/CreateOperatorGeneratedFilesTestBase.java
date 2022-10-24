@@ -200,7 +200,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                     .putMatchLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
                 .replicas(1)
                 .strategy(new V1DeploymentStrategy()
-                    .type(V1DeploymentStrategy.TypeEnum.RECREATE))
+                    .type("Recreate"))
                 .template(
                     newPodTemplateSpec()
                         .metadata(
@@ -324,7 +324,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
       return null;
     }
     V1ServiceSpec spec =
-        newServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT).putSelectorItem(APP_LABEL, "weblogic-operator");
+        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(newServicePort()
               .name("rest")
@@ -369,7 +369,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
         .spec(
             newServiceSpec()
-                .type(V1ServiceSpec.TypeEnum.CLUSTERIP)
+                .type("ClusterIP")
                 .putSelectorItem(APP_LABEL, "weblogic-operator")
                 .addPortsItem(newServicePort().name("rest").appProtocol("https").port(8082))
                 .addPortsItem(newServicePort().name("metrics").appProtocol("http").port(8083)));
@@ -772,7 +772,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
   protected V1Service getExpectedExternalOperatorService(
       boolean debuggingEnabled, boolean externalRestEnabled) {
     V1ServiceSpec spec =
-        newServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT).putSelectorItem(APP_LABEL, "weblogic-operator");
+        newServiceSpec().type("NodePort").putSelectorItem(APP_LABEL, "weblogic-operator");
     if (externalRestEnabled) {
       spec.addPortsItem(
           newServicePort()
