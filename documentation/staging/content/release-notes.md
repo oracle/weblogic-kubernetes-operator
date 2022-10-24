@@ -130,8 +130,8 @@ draft: false
 
 * Condition status updates.
   * Added or updated Conditions to clearly reflect the current state of the domain:
-    * The `Completed` condition is set to `True` when no failures are detected, plus all expected pods are `ready`, at their target image(s), `restartVersion`, and `introspectorVersion`.
-    * The `Available` condition is set to `True` when when a sufficient number of pods are `ready`. This condition can be `True` even when `Completed` is `False`, a `Failed` condition is reported, or a cluster has less than or equal to `cluster.spec.maxUnavailable` pods that are `ready`.
+    * The `Completed` condition is set to `True` when no failures are detected, plus all expected pods are `ready`, at their target image(s), `restartVersion`, and `introspectVersion`.
+    * The `Available` condition is set to `True` when a sufficient number of pods are `ready`. This condition can be `True` even when `Completed` is `False`, a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods that are not `ready`.
     * The `Failed` condition is set to `True` and its `.message` field is updated when there is a failure.
   * Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
   * Added fields `.status.initialFailureTime` and `.status.lastFailureTime` to enable measuring how long a `Failure` condition has been reported.
