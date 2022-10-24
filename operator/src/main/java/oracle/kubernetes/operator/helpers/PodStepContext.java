@@ -115,6 +115,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+  private static final String WLS_EXPORTER = "/wls-exporter";
 
   private static String productVersion;
   protected final ExporterContext exporterContext;
@@ -269,12 +270,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
-  }
-
-  boolean isDomainWideAdminPortEnabled() {
-    return domainTopology
-        .getServerConfig(domainTopology.getAdminServerName())
-        .isAdminPortEnabled();
   }
 
   private String getDataHome() {
@@ -493,7 +488,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void addLegacyPrometheusAnnotationsFrom31(V1Pod pod) {
-    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
+    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getMetricsPort());
   }
 
   private Integer getMetricsPort() {
@@ -1160,7 +1155,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void addLegacyPrometheusAnnotationsFrom30(V1Pod pod) {
-      AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
+      AnnotationHelper.annotateForPrometheus(pod.getMetadata(), WLS_EXPORTER, getOldMetricsPort());
     }
 
     private boolean canAdjustLegacyHashToMatch(V1Pod currentPod, String requiredHash) {
@@ -1250,14 +1245,12 @@ public abstract class PodStepContext extends BasePodStepContext {
           currentPod.getSpec().getContainers().stream().filter(c -> "istio-proxy".equals(c.getName()))
               .findFirst().map(V1Container::getEnv);
 
-      if (envVars.isPresent()) {
-        weblogicContainer.map(V1Container::getReadinessProbe)
-            .ifPresent(v1Probe -> resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer, envVars.get()));
-      }
+      envVars.ifPresent(v1EnvVars -> weblogicContainer.map(V1Container::getReadinessProbe)
+          .ifPresent(v1Probe -> resetIstioPodRecipeAfterUpgrade(recipePodSpec, weblogicContainer.get(), v1EnvVars)));
     }
 
     @SuppressWarnings({"java:S112", "unchecked"})
-    private void resetIstioPodRecipeAfterUpgrade(V1PodSpec recipePodSpec, Optional<V1Container> weblogicContainer,
+    private void resetIstioPodRecipeAfterUpgrade(V1PodSpec recipePodSpec, V1Container wlContainer,
                                                  List<V1EnvVar> envVars) {
 
       for (V1EnvVar envVar : envVars) {
@@ -1291,11 +1284,11 @@ public abstract class PodStepContext extends BasePodStepContext {
             }
 
             // copy the ports over for calculating hash
-            Optional<List<V1ContainerPort>>  currentContainerPorts = weblogicContainer.map(V1Container::getPorts);
+            List<V1ContainerPort>  currentContainerPorts = wlContainer.getPorts();
             if (currentContainerPorts.isEmpty()) {
               recipeContainer.ifPresent(c -> c.setPorts(new ArrayList<>()));
             } else {
-              recipeContainer.ifPresent(c -> c.setPorts(weblogicContainer.map(V1Container::getPorts).get()));
+              recipeContainer.ifPresent(c -> c.setPorts(currentContainerPorts));
             }
           } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
@@ -1551,7 +1544,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     String getBasePath() {
-      return "/wls-exporter";
+      return WLS_EXPORTER;
     }
 
     @Override

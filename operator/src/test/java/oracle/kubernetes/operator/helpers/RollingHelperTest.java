@@ -242,8 +242,7 @@ class RollingHelperTest {
     CLUSTERED_SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
     configureDomain().configureCluster(domainPresenceInfo, CLUSTER_NAME).withReplicas(3);
 
-    ConcurrentLinkedQueue<StepAndPacket> stepAndPackets = new ConcurrentLinkedQueue<>();
-    stepAndPackets.addAll(rolling.values());
+    ConcurrentLinkedQueue<StepAndPacket> stepAndPackets = new ConcurrentLinkedQueue<>(rolling.values());
     Step rollSpecificClusterStep = new RollingHelper.RollSpecificClusterStep(CLUSTER_NAME, stepAndPackets);
 
     rollSpecificClusterStep.apply(testSupport.getPacket());

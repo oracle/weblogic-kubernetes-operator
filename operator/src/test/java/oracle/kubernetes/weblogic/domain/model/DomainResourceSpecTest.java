@@ -101,7 +101,6 @@ class DomainResourceSpecTest {
   private String getLatestDefaultImage() {
     String defaultImageName = KubernetesConstants.DEFAULT_IMAGE
         .substring(0, KubernetesConstants.DEFAULT_IMAGE.indexOf(':'));
-    String latestImage = defaultImageName + KubernetesConstants.LATEST_IMAGE_SUFFIX;
-    return latestImage;
+    return defaultImageName + KubernetesConstants.LATEST_IMAGE_SUFFIX;
   }
 }

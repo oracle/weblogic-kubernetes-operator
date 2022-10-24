@@ -108,6 +108,9 @@ class WebhookRestTest extends RestTestBase {
   private static final String REJECT_MESSAGE_CLUSTER_NOT_FOUND =
       "Exception: io.kubernetes.client.openapi.ApiException: Cluster %s not found";
 
+  public static final String KIND_ADMISSION_REVIEW = "AdmissionReview";
+
+
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
   private final AdmissionReview scaleReview = createScaleAdmissionReview();
@@ -123,8 +126,12 @@ class WebhookRestTest extends RestTestBase {
 
   private final ConversionReviewModel conversionReview = createConversionReview();
 
+  private AdmissionReview createAdmissionReview() {
+    return new AdmissionReview().apiVersion(V1).kind(KIND_ADMISSION_REVIEW);
+  }
+
   private AdmissionReview createDomainAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createDomainAdmissionRequest());
+    return createAdmissionReview().request(createDomainAdmissionRequest());
   }
 
   private AdmissionRequest createDomainAdmissionRequest() {
@@ -148,7 +155,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private AdmissionReview createClusterAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createClusterAdmissionRequest());
+    return createAdmissionReview().request(createClusterAdmissionRequest());
   }
 
   private AdmissionRequest createClusterAdmissionRequest() {
@@ -172,7 +179,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private AdmissionReview createScaleAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createScaleAdmissionRequest());
+    return createAdmissionReview().request(createScaleAdmissionRequest());
   }
 
   private AdmissionRequest createScaleAdmissionRequest() {
@@ -744,7 +751,7 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview review = createScaleAdmissionReview();
     AdmissionRequest request = review.getRequest();
     Map<String, String> kind = new HashMap<>();
-    kind.put("kind", "blabal");
+    kind.put("kind", "blabla");
     request.setKind(kind);
     testSupport.defineResources(validScale);
     setProposedScale(validScale);

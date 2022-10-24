@@ -268,10 +268,7 @@ public class FluentdHelper {
   private static void addFluentdContainerELSCredEnv(FluentdSpecification fluentdSpecification,
                                                     V1Container fluentdContainer, String envName, String keyName) {
     if (!hasFluentdContainerEnv(fluentdSpecification, envName)) {
-      boolean isOptional = false;
-      if (envName.equals("ELASTICSEARCH_USER") || envName.equals("ELASTICSEARCH_PASSWORD")) {
-        isOptional = true;
-      }
+      boolean isOptional = envName.equals("ELASTICSEARCH_USER") || envName.equals("ELASTICSEARCH_PASSWORD");
       V1SecretKeySelector keySelector = new V1SecretKeySelector()
           .key(keyName)
           .optional(isOptional)

@@ -54,8 +54,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 public class ShutdownManagedServerStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private String serverName;
-  private V1Pod pod;
+  private final String serverName;
+  private final V1Pod pod;
 
   private ShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
     super(next);
@@ -360,7 +360,7 @@ public class ShutdownManagedServerStep extends Step {
 
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
-    private String serverName;
+    private final String serverName;
     private HttpAsyncRequestStep requestStep;
 
     ShutdownManagedServerResponseStep(String serverName, Step next) {

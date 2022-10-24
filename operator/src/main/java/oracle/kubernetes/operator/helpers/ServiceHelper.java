@@ -184,8 +184,8 @@ public class ServiceHelper {
   }
 
   static String getAppProtocol(String protocol) {
-    List<String> httpProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTP));
-    List<String> httpsProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTPS));
+    List<String> httpProtocols = new ArrayList<>(List.of(PROTOCOL_HTTP));
+    List<String> httpsProtocols = new ArrayList<>(List.of(PROTOCOL_HTTPS));
     List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", PROTOCOL_ADMIN));
 
     String appProtocol = PROTOCOL_TCP;

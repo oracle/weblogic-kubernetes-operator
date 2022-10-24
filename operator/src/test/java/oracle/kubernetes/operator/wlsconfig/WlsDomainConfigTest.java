@@ -42,7 +42,7 @@ class WlsDomainConfigTest {
   };
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final List<Memento> mementos = new ArrayList<>();
-  private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("test-domain");
+  private final WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("test-domain");
   private final WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
 
   @BeforeEach
