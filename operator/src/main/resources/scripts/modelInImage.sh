@@ -1330,15 +1330,12 @@ prepareMIIServer() {
         # exclude standalone app module in wlsdeploy/applications/*.xml since it is included int zipped up domain config
         # zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
-        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/applications/*.xml" -x "wlsdeploy/domainBin/*"
+        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/applications/./*.xml" -x "wlsdeploy/domainBin/*"
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
     done
-    echo "-----------------------------------------------"
-    cat ${DOMAIN_HOME}/config/config.xml
-    ls -lR ${DOMAIN_HOME}/wlsdeploy
 
   return 0
 }
