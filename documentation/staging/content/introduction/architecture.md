@@ -19,13 +19,15 @@ The operator consists of the following parts:
   - Performs the actual management tasks
     for domain and cluster resources deployed to these namespaces.
 * A Helm chart for installing the operator runtime and its related resources.
-* A Kubernetes custom resource definition (CRD) that,
-  when installed, enables the Kubernetes API server
+* Kubernetes custom resource definitions (CRD) for domains and clusters that,
+  when installed, enable the Kubernetes API server
   and the operator to monitor and manage domain and cluster resource instances.
 * Domain resources that reference WebLogic
   domain configuration, a WebLogic install, and
   anything else necessary to run the domain.
-* Cluster resources that are referenced by domain resources and that reference WebLogic clusters to scale the cluster and to allow other cluster-specific configurations.
+* Cluster resources that are referenced by domain resources
+  and that reference WebLogic clusters
+  to scale the cluster and to allow other cluster-specific configurations.
 
 The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
@@ -90,7 +92,9 @@ resources.
 
 As a convention, any resource that is associated with a particular Domain UID
 is given a Kubernetes label named `weblogic.domainUID` that
-is assigned to that UID. If the operator creates a resource for
+is assigned to that UID, and the resource name
+is prefixed with that UID followed by a dash (`-`).
+If the operator creates a resource for
 you on behalf of a particular domain, it will follow this
 convention. For example, to see all pods created with
 the `weblogic.domainUID` label in a Kubernetes cluster try:

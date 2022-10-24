@@ -10,16 +10,45 @@ Here are some suggestions for debugging problems with a domain after your Domain
 
 {{< table_of_contents >}}
 
+### Understand failure types, severities, and tuning
+
+When debugging, it helps to understand failure types,
+failure severities, retry behavior, and retry tuning,
+see [Domain failure retry processing]({{< relref "managing-domains/domain-lifecycle/retry.md" >}}).
+These apply to failures reported in the resource status,
+events, introspector jobs, and pods.
+
 ### Check the Domain status
 
-To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
+To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAIN_RESOURCE_NAME`.
 
-If you are performing an online update to a running domain's WebLogic configuration,
-then see [Online update status and labels]({{<relref "/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
+**Note**:
+If `.status.observedGeneration` does not equal `.metadata.generation`,
+then this is an indication that the status is not up-to-date
+with respect to the latest changes to the `.spec` or `.metadata`.
+Either the operator is in the process of updating of the status
+or the operator is not running.
+
+
+### Check the Cluster status
+
+If you have deployed cluster resources,
+then you can optionally check the status of
+each using `kubectl -n MY_NAMESPACE describe cluster MY_CLUSTER_NAME`.
+
+The same information is reported in the Domain resource status under `domain.status.clusters`.
+
+**Note:** If `.observedGeneration` for a particular cluster status
+does not equal `.metadata.generation` for the corresponding cluster resource,
+then this is an indication that the status is not up-to-date
+with respect to the latest changes to the `.spec` or `.metadata`.
+Either the operator is in the process of updating of the status
+or the operator is not running.
 
 ### Check the Domain events
 
 To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
+
 
 For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
 

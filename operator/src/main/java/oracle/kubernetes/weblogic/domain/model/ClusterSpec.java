@@ -44,7 +44,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
       + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 1.")
+      + "running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 1.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -77,7 +77,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "for this cluster in response to a change in the `replicas` count. "
       + "If more Managed Server instances must be started, the operator will wait until a Managed "
       + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
-      + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
+      + "A value of 0 means all Managed Server instances will start in parallel. "
+      + "Defaults to `domain.spec.maxClusterConcurrentStartup`, which defaults to 0."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;
@@ -85,8 +86,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   @Description(
           "The maximum number of WebLogic Server instances that will shut down in parallel "
                   + "for this cluster when it is being partially shut down by lowering its replica count. "
-                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
-                  + "which defaults to 1."
+                  + "A value of 0 means there is no limit. "
+                  + "Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentShutdown;

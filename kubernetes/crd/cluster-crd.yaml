@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1d4f926b7ba14b84d691cc072035737bde4f600799d97961e27b2f416a4877d6
+    weblogic.sha256: 04ebe729f5d220e5fc762e392a7b9ffcf4042b1173ee82649e18adbf39a73aef
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -75,7 +75,7 @@ spec:
                   further cluster members in the sorted list that are not already
                   started. If cluster members are started because of their related
                   entries under `managedServers`, then this cluster may have more
-                  cluster members running than its `replicas` count. Defaults to `spec.replicas`,
+                  cluster members running than its `replicas` count. Defaults to `domain.spec.replicas`,
                   which defaults 1.
                 minimum: 0
                 type: integer
@@ -2906,7 +2906,8 @@ spec:
                   must be started, the operator will wait until a Managed Server Pod
                   is in the `Ready` state before starting the next Managed Server
                   instance. A value of 0 means all Managed Server instances will start
-                  in parallel. Defaults to 0.
+                  in parallel. Defaults to `domain.spec.maxClusterConcurrentStartup`,
+                  which defaults to 0.
                 minimum: 0
                 type: integer
               restartVersion:
