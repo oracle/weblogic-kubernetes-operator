@@ -103,7 +103,7 @@ public class JobUtils {
         pvName, pvcName, domainScriptCM, namespace);
 
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+        .restartPolicy("Never")
         .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
             .name("create-weblogic-domain-onpv-container")
             .image(image)
@@ -167,7 +167,7 @@ public class JobUtils {
         "Getting the job failed");
     if (job != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+          v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {

@@ -7,7 +7,6 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import oracle.kubernetes.operator.ServerStartPolicy;
 
@@ -111,7 +110,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
    */
   ServerConfigurator withRestartVersion(String restartVersion);
 
-  ServerConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
+  ServerConfigurator withRestartPolicy(String restartPolicy);
 
   ServerConfigurator withAffinity(V1Affinity affinity);
 

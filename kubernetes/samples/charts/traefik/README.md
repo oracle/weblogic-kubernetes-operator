@@ -1,6 +1,6 @@
 # Install and configure Traefik
 
-This sample demonstrates how to install the Traefik ingress controller to provide 
+This sample demonstrates how to install the Traefik ingress controller to provide
 load balancing for WebLogic clusters.
 
 ## Install the Traefik operator with a Helm chart
@@ -30,11 +30,11 @@ Create two WebLogic domains:
 - Each domain has a web application installed with the URL context `testwebapp`.
 - Each domain has a WebLogic cluster `cluster-1` where each Managed Server listens on port `8001`.
 
-### 2. Web request routing 
+### 2. Web request routing
 The following sections describe how to route an application web request to the WebLogic domain through a Traefik frontend.
 
-#### Host-based routing 
-This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
+#### Host-based routing
+This sample demonstrates how to access an application and the WebLogic Server Administration Console on two WebLogic domains using host-based routing. Install a host-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
 ```shell
 $ kubectl create -f samples/host-routing.yaml
 ingressroute.traefik.containo.us/traefik-hostrouting-1 created
@@ -47,6 +47,17 @@ $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 ```
+
+Use the following URLs from your browser to access the WebLogic Server Administration Console for `domain1` and `domain2`, respectively.
+```
+http://${HOSTNAME_1}:${LB_PORT}/console
+http://${HOSTNAME_2}:${LB_PORT}/console
+```
+Where:
+  - ${HOSTNAME_1} is the host name defined for `domain1` in the route section of the `host-routing.yaml` file which is `domain1.org`. The host name `domain1.org` must be resolvable by your DNS server.
+  - ${HOSTNAME_2} is the host name defined for `domain2` in the route section of the `host-routing.yaml` file  which is `domain2.org`. The host name `domain2.org` must be resolvable by your DNS server.
+  - To determine the ${LB_PORT} of the Traefik load balancer:
+    `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
 #### Path-based routing  
 This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute) and [Middleware](https://docs.traefik.io/middlewares/overview/).
@@ -65,7 +76,7 @@ $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='
 $ curl http://${HOSTNAME}:${LB_PORT}/domain1/
 $ curl http://${HOSTNAME}:${LB_PORT}/domain2/
 ```
-#### Host-based secured routing 
+#### Host-based secured routing
 This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled Traefik [IngressRoute](https://docs.traefik.io/routing/providers/kubernetes-crd/#kind-ingressroute).
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
@@ -91,7 +102,7 @@ $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
 ```
 
 ## SSL termination at ingress controller
-This sample demonstrates how to terminate SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port. 
+This sample demonstrates how to terminate SSL traffic at the ingress controller to access the WebLogic Server Administration Console through the SSL port.
 
 ### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
 
@@ -125,7 +136,7 @@ metadata:
   name: traefik-console-tls
   namespace: weblogic-domain
 spec:
-  entryPoints: 
+  entryPoints:
    - websecure
   routes:
   - kind: Rule
@@ -150,7 +161,7 @@ spec:
   headers:
     customRequestHeaders:
       X-Custom-Request-Header: ""
-      X-Forwarded-For: "" 
+      X-Forwarded-For: ""
       WL-Proxy-Client-IP: ""
       WL-Proxy-SSL: ""
       WL-Proxy-SSL: "true"
@@ -162,7 +173,7 @@ Save the above configuration as `traefik-tls-console.yaml`.
 $ kubectl create -f traefik-tls-console.yaml
 ```
 ### 4. Access the WebLogic Server Administration Console using the HTTPS port
-Get the SSL port from the Kubernetes service. 
+Get the SSL port from the Kubernetes service.
 ```shell
 # Get the ingress controller secure web port
 $ SSLPORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
