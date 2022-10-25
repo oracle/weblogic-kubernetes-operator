@@ -593,7 +593,7 @@
     <maven-install-plugin-version>3.0.1</maven-install-plugin-version>
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.2.0</maven-resources-plugin-version>
-    <maven-site-plugin-version>3.11.0</maven-site-plugin-version>
+    <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.0.0-M7</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.2.0</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.0-M5</maven-release-plugin-version>
