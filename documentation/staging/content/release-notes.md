@@ -128,7 +128,7 @@ draft: false
   * Added `.spec.failureRetryIntervalSeconds` and `.spec.failureRetryLimitMinutes` for configuration of failure retry timing.
   * Added `.spec.serverPod.maxReadyWaitTimeSeconds` for configuring maximum time before considering servers as stalled during startup.
 
-* Condition status updates.
+* [Condition status]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}}) updates.
   * Added or updated Conditions to clearly reflect the current state of the domain:
     * The `Completed` condition is set to `True` when no failures are detected, plus all expected pods are `ready`, at their target image(s), `restartVersion`, and `introspectVersion`.
     * The `Available` condition is set to `True` when a sufficient number of pods are `ready`. This condition can be `True` even when `Completed` is `False`, a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods that are not `ready`.

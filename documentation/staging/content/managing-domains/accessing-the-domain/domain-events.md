@@ -29,7 +29,8 @@ The domain events have been enhanced in 4.0. Here is a summary of the changes in
     * Have a better failure categorization (see [Operator-generated event types](#operator-generated-event-types) for more details).
     * Include the categorization information in the event message.
     * Provide more information in the event message to indicate what has gone wrong, what you need to do to resolve the problem, and if the operator will [retry]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}) the failed operation.
-* Added three event types, `Unavailable`, `Incomplete`, and `FailureResolved`, to record the transition of domain condition `Available/Completed/Failed` from `True` to `False`, and vice versa.
+* Added three event types, `Unavailable`, `Incomplete`, and `FailureResolved`, to record the transition of [domain condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}})
+  `Available/Completed/Failed` from `True` to `False`, and vice versa.
 
 ### Operator-generated event types
 

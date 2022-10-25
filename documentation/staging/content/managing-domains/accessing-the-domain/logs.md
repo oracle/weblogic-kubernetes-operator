@@ -2,7 +2,7 @@
 title: "Log files"
 date: 2019-02-23T17:39:19-05:00
 draft: false
-weight: 9
+weight: 10
 description: "Configure WebLogic Server and domain log settings."
 ---
 

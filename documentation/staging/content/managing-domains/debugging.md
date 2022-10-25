@@ -22,6 +22,9 @@ events, introspector jobs, and pods.
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAIN_RESOURCE_NAME`.
 
+See [Domain status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-status-conditions" >}}) 
+for more information.
+
 **Note**:
 If `.status.observedGeneration` does not equal `.metadata.generation`,
 then this is an indication that the status is not up-to-date
@@ -37,6 +40,9 @@ then you can optionally check the status of
 each using `kubectl -n MY_NAMESPACE describe cluster MY_CLUSTER_NAME`.
 
 The same information is reported in the Domain resource status under `domain.status.clusters`.
+
+See [Cluster status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-status-conditions" >}})
+for more information.
 
 **Note:** If `.observedGeneration` for a particular cluster status
 does not equal `.metadata.generation` for the corresponding cluster resource,

@@ -13,7 +13,8 @@ This document describes domain failure retry processing in the Oracle WebLogic S
 ### Overview
 
 The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
-Failures are reported using Kubernetes events and the `spec.status` field in the Domain resource,
+Failures are reported using Kubernetes events and [conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}})
+in the `spec.status` field in the Domain resource,
 see [Domain debugging]({{< relref "/managing-domains/debugging#check-the-domain-status" >}}).
 Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.
 Refer to [Retry behavior]({{< relref "#retry-behavior" >}}) on tuning failure retry limits and intervals.
@@ -55,10 +56,10 @@ Status:
     Last Transition Time:  2022-10-10T23:48:09.157398Z
     Message:               10 replicas specified for cluster 'cluster-1' which has a maximum cluster size of 5
   10 replicas specified for cluster 'cluster-2' which has a maximum cluster size of 2
-Reason:                ReplicasTooHigh
-Severity:              Warning
-Status:                True
-Type:                  Failed
+    Reason:                ReplicasTooHigh
+    Severity:              Warning
+    Status:                True
+    Type:                  Failed
    ...
 ```
 {{% /expand %}}
