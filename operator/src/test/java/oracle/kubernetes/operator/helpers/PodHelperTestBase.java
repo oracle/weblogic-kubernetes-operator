@@ -33,11 +33,11 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
-import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -1791,7 +1791,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private V1Lifecycle createLifecycle() {
     return new V1Lifecycle()
         .preStop(
-            new V1Handler()
+            new V1LifecycleHandler()
                 .exec(
                     new V1ExecAction().addCommandItem("/weblogic-operator/scripts/stopServer.sh")));
   }
