@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import io.kubernetes.client.openapi.models.V1Status;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -659,20 +658,20 @@ public class ServiceHelper {
       }
     }
 
-    private class DeleteServiceResponse extends ResponseStep<V1Status> {
+    private class DeleteServiceResponse extends ResponseStep<V1Service> {
       DeleteServiceResponse(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
         return callResponse.getStatusCode() == KubernetesConstants.HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Status> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1Service> callResponse) {
         return doNext(createReplacementService(getNext()), packet);
       }
     }

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1641aa9f4ae5186be388438aef308f41280e72198f1a1318e3a8078af876fe7d
+    weblogic.sha256: 1b2b3efe241f8ef8d147ecfa1d47cdfc349f9f51947adeb66e19214fcd45c4ce
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1781,6 +1781,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -1933,6 +1942,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2248,6 +2266,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2370,6 +2397,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2522,6 +2558,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -2837,6 +2882,15 @@ spec:
                                       type: array
                                       items:
                                         type: string
+                                grpc:
+                                  type: object
+                                  properties:
+                                    port:
+                                      type: number
+                                    service:
+                                      type: string
+                                  required:
+                                  - port
                                 httpGet:
                                   type: object
                                   properties:
@@ -4706,6 +4760,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -4858,6 +4921,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5173,6 +5245,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5295,6 +5376,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5447,6 +5537,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -5762,6 +5861,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -7628,6 +7736,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -7780,6 +7897,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8095,6 +8221,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8217,6 +8352,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8369,6 +8513,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -8684,6 +8837,15 @@ spec:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                              - port
                             httpGet:
                               type: object
                               properties:
@@ -10460,6 +10622,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10612,6 +10783,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -10927,6 +11107,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -11049,6 +11238,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -11201,6 +11399,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -11516,6 +11723,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                    - port
                                   httpGet:
                                     type: object
                                     properties:
