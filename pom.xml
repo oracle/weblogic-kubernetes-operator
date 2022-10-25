@@ -504,6 +504,11 @@
         <version>${jersey-version}</version>
       </dependency>
       <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>${snakeyaml-version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.dataformat</groupId>
         <artifactId>jackson-dataformat-yaml</artifactId>
         <version>${jackson-version}</version>
@@ -602,8 +607,8 @@
     <maven-dependency-plugin-version>3.2.0</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.5.3.0</spotbugs-maven-plugin-version>
-    <spotbugs-version>4.7.1</spotbugs-version>
-    <checkstyle-version>10.3.2</checkstyle-version>
+    <spotbugs-version>4.7.3</spotbugs-version>
+    <checkstyle-version>10.3.4</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -623,7 +628,7 @@
     <assertj.core.version>3.23.1</assertj.core.version>
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
-    <client-java-version>14.0.1</client-java-version>
+    <client-java-version>16.0.1</client-java-version>
     <kotlin-stdlib-version>1.7.20</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.1</junit.jupiter.version>
@@ -632,8 +637,9 @@
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.0.8</jersey-version>
-    <jackson-version>2.13.3</jackson-version>
-    <jackson-databind-version>2.13.3</jackson-databind-version>
+    <jackson-version>2.13.4</jackson-version>
+    <snakeyaml-version>1.33</snakeyaml-version>
+    <jackson-databind-version>2.13.4</jackson-databind-version>
     <dependency-check-version>7.0.0</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
@@ -642,7 +648,7 @@
     <skip.dependency-check>false</skip.dependency-check>
     <jacoco.version>0.8.7</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
-    <htmlunit-version>2.63.0</htmlunit-version>
+    <htmlunit-version>2.66.0</htmlunit-version>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
     <no-reports>false</no-reports>
   </properties>

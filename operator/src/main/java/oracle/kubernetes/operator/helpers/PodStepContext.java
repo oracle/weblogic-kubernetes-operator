@@ -28,8 +28,8 @@ import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
-import io.kubernetes.client.openapi.models.V1Handler;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -1033,8 +1033,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return new V1Lifecycle().preStop(handler(STOP_SERVER));
   }
 
-  private V1Handler handler(String... commandItems) {
-    return new V1Handler().exec(execAction(commandItems));
+  private V1LifecycleHandler handler(String... commandItems) {
+    return new V1LifecycleHandler().exec(execAction(commandItems));
   }
 
   private V1ExecAction execAction(String... commandItems) {
