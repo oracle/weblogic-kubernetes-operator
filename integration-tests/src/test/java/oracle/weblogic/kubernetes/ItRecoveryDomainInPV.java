@@ -272,8 +272,7 @@ class ItRecoveryDomainInPV  {
     scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 2);
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
-    //checkPodReadyAndServiceExists(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
-
+    
     logger.info("Managed Server(2) started");
     assertTrue(getPodUid(domainNamespace, adminServerPodName, "After managed Server2 was restarted"),
           String.format("Get pod uid failed for podName %s in namespace %s", adminServerPodName,
@@ -347,7 +346,6 @@ class ItRecoveryDomainInPV  {
   }
 
   private boolean getPodUid(String nameSpace, String podName, String verbose) {
-    //String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='{.metadata.uid}'";
     String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='"
         + "{range .items[*]}{@.metadata.name}{\" runAsUser: \"}{@.spec.containers[*].securityContext.runAsUser}"
         + "{\" fsGroup: \"}{@.spec.securityContext.fsGroup}{\" seLinuxOptions: \"}"
