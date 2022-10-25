@@ -119,6 +119,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return this;
   }
 
+  @Override
   public MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
     this.skipUpdateDomainStatusIfNeeded = true;
     return this;
