@@ -29,7 +29,7 @@ weight: 3
 
     These two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample domain YAML file accordingly in the next step.
 
-1. Create the `sample-domain1` domain resource and an associated `cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource do not replace the traditional WebLogic configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
+1. Create the `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource do not replace the traditional WebLogic configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
 
    - Use the following command to apply the two sample resources.
 

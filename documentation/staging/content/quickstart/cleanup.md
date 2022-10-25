@@ -33,7 +33,7 @@ weight: 4
 1.	Use `kubectl` to delete the cluster resource.
 
     ```shell
-    $ kubectl delete cluster cluster-1 -n sample-domain1-ns
+    $ kubectl delete cluster sample-domain1-cluster-1 -n sample-domain1-ns
     ```
 
 1.	Remove the Kubernetes Secrets associated with the domain.
