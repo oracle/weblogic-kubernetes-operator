@@ -7,9 +7,9 @@
 #      $ ./buildDockerImage.sh [-t <image-name>]
 #
 # -------------------------
-FROM ghcr.io/oracle/oraclelinux:8-slim AS jre-build
+FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk18.0.2/f6ad4b4450fd4d298113270ec84f30ee/9/GPL/openjdk-18.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.1/afdd2e245b014143b62ccb916125e3ce/10/GPL/openjdk-19.0.1_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
