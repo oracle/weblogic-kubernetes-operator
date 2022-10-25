@@ -198,7 +198,7 @@ public class ManagedServersUpStep extends Step {
     final WlsDomainConfig domainTopology;
     final DomainResource domain;
     final DomainPresenceInfo info;
-    List<ServerStartupInfo> startupInfos;
+    List<ServerStartupInfo> startupInfos = new ArrayList<>();
     List<ServerShutdownInfo> shutdownInfos = new ArrayList<>();
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
@@ -270,12 +270,8 @@ public class ManagedServersUpStep extends Step {
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
-      if (startupInfos != null) {
-        startupInfos.sort(
-            comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
-      } else {
-        startupInfos = Collections.emptyList();
-      }
+      startupInfos.sort(
+          comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
       return startupInfos;
     }
 
@@ -288,9 +284,6 @@ public class ManagedServersUpStep extends Step {
     }
 
     private void addStartupInfo(ServerStartupInfo startupInfo) {
-      if (startupInfos == null) {
-        startupInfos = new ArrayList<>();
-      }
       startupInfos.add(startupInfo);
     }
 

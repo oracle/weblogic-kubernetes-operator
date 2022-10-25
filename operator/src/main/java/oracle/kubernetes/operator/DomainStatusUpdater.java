@@ -83,13 +83,12 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.COMMIT_UPDATE_ONLY;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_RESOURCES_VALIDATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
-import static oracle.kubernetes.operator.ProcessingConstants.SCHEDULED_STATUS_UPDATER;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -579,12 +578,10 @@ public class DomainStatusUpdater {
     }
 
     private boolean shouldSkipDomainStatusUpdate(Packet packet) {
-      boolean isDomainResourcesValidation =
-              (Boolean) packet.getOrDefault(DOMAIN_RESOURCES_VALIDATION, Boolean.FALSE);
-      boolean isScheduledStatusUpdater =
-              (Boolean) packet.getOrDefault(SCHEDULED_STATUS_UPDATER, Boolean.FALSE);
+      boolean isSkipUpdateDomainStatusIfNeeded =
+              (Boolean) packet.getOrDefault(SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return (isDomainResourcesValidation || isScheduledStatusUpdater)
+      return (isSkipUpdateDomainStatusIfNeeded)
               && info.getServerStartupInfo() == null;
     }
 

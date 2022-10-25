@@ -68,7 +68,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
-  private boolean domainResourcesValidation;
+  private boolean skipUpdateDomainStatusIfNeeded;
 
 
   /**
@@ -119,8 +119,8 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return this;
   }
 
-  public MakeRightDomainOperation withDomainResourcesValidation() {
-    this.domainResourcesValidation = true;
+  public MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
+    this.skipUpdateDomainStatusIfNeeded = true;
     return this;
   }
 
@@ -193,7 +193,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     this.deleting = false;
     this.willInterrupt = false;
     this.inspectionRun = false;
-    this.domainResourcesValidation = false;
+    this.skipUpdateDomainStatusIfNeeded = false;
   }
 
 
@@ -213,8 +213,8 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-    if (domainResourcesValidation) {
-      packet.put(ProcessingConstants.DOMAIN_RESOURCES_VALIDATION, Boolean.TRUE);
+    if (skipUpdateDomainStatusIfNeeded) {
+      packet.put(ProcessingConstants.SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
     }
     return packet;
   }

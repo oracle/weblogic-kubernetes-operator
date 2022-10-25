@@ -37,9 +37,12 @@ public interface MakeRightDomainOperation extends PacketComponent {
   MakeRightDomainOperation withEventData(EventData eventData);
 
   /**
-   * Specifies that this make right operation was initiated by tte DomainRecheck task.
+   * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the
+   * DomainPresenceInfo.ServerStartupInfo value has not yet been constructed..
    */
-  MakeRightDomainOperation withDomainResourcesValidation();
+  default MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
+    return this;
+  }
 
   MakeRightDomainOperation interrupt();
 

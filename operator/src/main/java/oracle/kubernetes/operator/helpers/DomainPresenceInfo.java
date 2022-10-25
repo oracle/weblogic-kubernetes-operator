@@ -779,7 +779,7 @@ public class DomainPresenceInfo implements PacketComponent {
   /**
    * Server startup info.
    *
-   * @return Server startup info
+   * @return Server startup info or null if the current value is not set.
    */
   public Collection<ServerStartupInfo> getServerStartupInfo() {
     return serverStartupInfo.get();
@@ -844,7 +844,8 @@ public class DomainPresenceInfo implements PacketComponent {
   @Nonnull
   private Set<String> getExpectedRunningManagedServers() {
     return Optional.ofNullable(getServerStartupInfo()).orElse(Collections.emptySet()).stream()
-            .map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
+            .map(ServerStartupInfo::getServerName)
+            .collect(Collectors.toSet());
   }
 
   public Map<String, Step.StepAndPacket> getServersToRoll() {
