@@ -299,4 +299,4 @@ Follow these steps to ensure that a JRF domain can continue to access its RCU da
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.
 
-See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/main/documentation/1.9/content/rcuinfo.md) in the WDT documentation.
+See also, [Specifying RCU connection information in the model](https://oracle.github.io/weblogic-deploy-tooling/rcuinfo/) in the WDT documentation.
