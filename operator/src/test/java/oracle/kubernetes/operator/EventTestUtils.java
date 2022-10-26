@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -295,7 +296,7 @@ public class EventTestUtils {
 
   public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
     return DOMAIN_FAILED_EVENT.equals(e.getReason())
-        && e.getMessage().contains(getLocalizedString(ABORTED_EVENT_ERROR));
+        && Objects.requireNonNull(e.getMessage()).contains(getLocalizedString(ABORTED_EVENT_ERROR));
   }
 
   public static String getLocalizedString(String msgId) {

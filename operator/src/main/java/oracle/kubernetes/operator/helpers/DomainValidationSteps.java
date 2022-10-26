@@ -265,6 +265,7 @@ public class DomainValidationSteps {
           .or(() -> Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS))).orElse(Collections.emptyList());
     }
 
+    @SuppressWarnings("unchecked")
     private List<ClusterResource> getClustersInNamespace(Packet packet) {
       return Optional.ofNullable((List<ClusterResource>) packet.get(CLUSTERS)).orElse(Collections.emptyList());
     }
