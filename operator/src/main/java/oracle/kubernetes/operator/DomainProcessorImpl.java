@@ -1012,7 +1012,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion()));
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
-      packet.put(ProcessingConstants.SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
+      packet.put(ProcessingConstants.DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
       return packet;
     }
 

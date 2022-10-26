@@ -68,8 +68,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
-  private boolean skipUpdateDomainStatusIfNeeded;
-
 
   /**
    * Create the operation.
@@ -116,12 +114,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    */
   public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
     this.eventData = eventData;
-    return this;
-  }
-
-  @Override
-  public MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
-    this.skipUpdateDomainStatusIfNeeded = true;
     return this;
   }
 
@@ -194,7 +186,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     this.deleting = false;
     this.willInterrupt = false;
     this.inspectionRun = false;
-    this.skipUpdateDomainStatusIfNeeded = false;
   }
 
 
@@ -214,8 +205,8 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-    if (skipUpdateDomainStatusIfNeeded) {
-      packet.put(ProcessingConstants.SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
+    if (!wasStartedFromEvent()) {
+      packet.put(ProcessingConstants.DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
     }
     return packet;
   }

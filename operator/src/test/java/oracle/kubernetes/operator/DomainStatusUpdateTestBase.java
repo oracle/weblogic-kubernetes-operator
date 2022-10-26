@@ -76,12 +76,12 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EV
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -1675,7 +1675,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenSkipUpdateDomainStatusTrueAndSSINotConstructedDuringMakeRight_verifyDomainStatusNotUpdated() {
+  void whenDomainRecheckOrScheduledStatusUpdateAndSSINotConstructed_verifyDomainStatusNotUpdated() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
     ScenarioBuilder scenarioBuilder = defineScenario();
     scenarioBuilder.withCluster("cluster1", "server1", "server2")
@@ -1688,7 +1688,7 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
 
     scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
-    testSupport.addToPacket(SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
+    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
     info.setServerStartupInfo(null);
 
     updateDomainStatus();
@@ -1697,22 +1697,22 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenSkipUpdateDomainStatusTrueAndAdminOnly_availableIsTrue() {
+  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnly_availableIsTrue() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
-    testSupport.addToPacket(SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
+    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
   }
 
   @Test
-  void whenSkipUpdateDomainStatusTrueAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
+  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
 
-    testSupport.addToPacket(SKIP_UPDATE_DOMAIN_STATUS_IF_NEEDED, Boolean.TRUE);
+    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));

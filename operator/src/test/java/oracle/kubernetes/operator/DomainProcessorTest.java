@@ -2201,7 +2201,8 @@ class DomainProcessorTest {
   void whenDomainIsNotValid_dontBringUpServers() {
     defineDuplicateServerNames();
 
-    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(originalInfo)
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(originalInfo, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
