@@ -18,7 +18,7 @@ RUN set -eux; \
     tar --extract --file /jdk.tar.gz --directory /jdk --strip-components 1; \
     /jdk/bin/jlink --verbose --compress 2 --strip-java-debug-attributes --no-header-files --no-man-pages --output jre --add-modules java.base,java.desktop,java.instrument,java.management,java.naming,java.net.http,java.sql,jdk.attach,jdk.jdi,jdk.unsupported,jdk.crypto.ec,jdk.zipfs
 
-FROM ghcr.io/oracle/oraclelinux:8-slim
+FROM ghcr.io/oracle/oraclelinux:9-slim
 
 LABEL "org.opencontainers.image.authors"="Ryan Eberhard <ryan.eberhard@oracle.com>" \
       "org.opencontainers.image.url"="https://github.com/oracle/weblogic-kubernetes-operator" \
