@@ -17,6 +17,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -38,7 +39,6 @@ import org.apache.commons.io.FileUtils;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.WEBHOOK_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -197,7 +197,7 @@ public class InitializeWebhookIdentityStep extends Step {
   private static class SslIdentityFactoryImpl implements SslIdentityFactory {
 
     @Override
-    @NotNull
+    @Nonnull
     public KeyPair createKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
       return SelfSignedCertUtils.createKeyPair();
     }

@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -42,7 +43,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -201,7 +201,7 @@ class RollingHelperTest {
     logRecords.clear();
   }
 
-  @NotNull
+  @Nonnull
   private List<String> getAllServerNames() {
     List<String> allServerNames = new ArrayList<>(Collections.singletonList(NONCLUSTERED_SERVER));
     allServerNames.addAll(CLUSTERED_SERVER_NAMES);
@@ -386,7 +386,7 @@ class RollingHelperTest {
     return pod;
   }
 
-  @NotNull
+  @Nonnull
   private List<V1EnvVar> getEnvList(V1Pod pod) {
     return Optional.ofNullable(pod.getSpec())
           .map(V1PodSpec::getContainers)

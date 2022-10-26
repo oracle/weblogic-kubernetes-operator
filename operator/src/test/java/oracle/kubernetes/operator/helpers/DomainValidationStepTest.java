@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -31,7 +32,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -205,7 +205,7 @@ class DomainValidationStepTest {
         .orElse(null);
   }
 
-  @NotNull
+  @Nonnull
   private Stream<DomainCondition> getConditions(DomainResource updatedDomain) {
     return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getConditions)
         .orElse(Collections.emptyList()).stream();
