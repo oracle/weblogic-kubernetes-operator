@@ -234,7 +234,9 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    result.add(createStatusInitializationStep());
+    if (wasStartedFromEvent()) {
+      result.add(createStatusInitializationStep());
+    }
     if (deleting) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
