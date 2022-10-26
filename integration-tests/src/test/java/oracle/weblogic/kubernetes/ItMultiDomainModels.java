@@ -3,10 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,13 +10,10 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -30,28 +23,24 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -59,9 +48,6 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createAndVerifyDomain
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -102,6 +88,7 @@ class ItMultiDomainModels {
   private static final String dimDomainUid = "domaininimage";
   private static final String dpvDomainUid = "domainonpv";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
+  private static final String encryptionSecretName = "encryptionsecret";
 
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
@@ -146,8 +133,8 @@ class ItMultiDomainModels {
   }
 
   /**
-   * Scale the cluster by patching domain resource for three different
-   * type of domains i.e. domain-on-pv, domain-in-image and model-in-image and domain-with-auxiliary-image
+   * Scale the cluster by patching domain resource for four different
+   * type of domains i.e. domain-on-pv, domain-in-image, model-in-image and domain-with-auxiliary-image
    * Also verify admin console login using admin node port.
    * @param domainType domain type, possible value: modelInImage, domainInImage, domainOnPV, auxiliaryImageDomain
    */
@@ -197,7 +184,7 @@ class ItMultiDomainModels {
     // then scale cluster back to 1 server
     logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
-    assertDoesNotThrow(() -> scaleCluster(clusterName,domainNamespace,
+    assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace,
         replicaCount), "Could not scale down the cluster");
     for (int i = (replicaCount + 1); i <= numberOfServers; i++) {
       logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
@@ -253,41 +240,19 @@ class ItMultiDomainModels {
   }
 
   private DomainResource createDomainUsingAuxiliaryImage() {
-
     String domainUid = "auxiliaryimagedomain";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
 
-    // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/auxiliary";
-
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, auxiliaryImageDomainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, auxiliaryImageDomainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, auxiliaryImageDomainNamespace,
         "weblogicenc", "weblogicenc");
-
-    // create stage dir for the auxiliary image
-    Path auxiliaryImageDir = Paths.get(RESULTS_ROOT, ItMultiDomainModels.class.getSimpleName(), "auxiliaryimage");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(auxiliaryImageDir.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(auxiliaryImageDir),
-        "Create directory failed");
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(auxiliaryImageDir.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
 
     // build app
     assertTrue(buildAppArchive(defaultAppParams()
@@ -295,59 +260,36 @@ class ItMultiDomainModels {
             .appName(MII_BASIC_APP_NAME)),
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
+    // image1 with model files for domain config, ds, app and wdt install files
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(auxiliaryImageDir.toString());
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
+    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, archiveList, modelList);
 
-    // create image1 with model and wdt installation files
-    String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
-    createAuxiliaryImage(auxiliaryImageDir.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
-
-    // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
-    }
-
-    // create domain custom resource using the auxiliary image
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImagePath = "/auxiliary";
+    String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag;
+    // create domain custom resource using a auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1}",
         domainUid, miiAuxiliaryImage1);
-    DomainResource domainCR = createDomainResource(domainUid, auxiliaryImageDomainNamespace,
-        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(auxiliaryImageDomainNamespace),
-        encryptionSecretName, auxiliaryImagePath, auxiliaryImageVolumeName, miiAuxiliaryImage1);
+
+    DomainResource domainCR =
+        createDomainResourceWithAuxiliaryImage(domainUid, auxiliaryImageDomainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, wlSecretName, createSecretsForImageRepos(auxiliaryImageDomainNamespace),
+        encryptionSecretName, auxiliaryImagePath, miiAuxiliaryImage1);
+
+    domainCR = createClusterResourceAndAddReferenceToDomain(
+        clusterName, clusterName, auxiliaryImageDomainNamespace, domainCR, replicaCount);
 
     // create domain and verify its running
-    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+    logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
         domainUid, miiAuxiliaryImage1, auxiliaryImageDomainNamespace);
     createDomainAndVerify(domainUid, domainCR, auxiliaryImageDomainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
 
     return domainCR;
   }
-
-  private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
-    //replace the BUSYBOX_IMAGE and BUSYBOX_TAG in Dockerfile
-    Path dockerDestFile = Paths.get(WORK_DIR, "auximages", "Dockerfile");
-    assertDoesNotThrow(() -> {
-      Files.createDirectories(dockerDestFile.getParent());
-      Files.copy(Paths.get(dockerFileLocation),
-          dockerDestFile, StandardCopyOption.REPLACE_EXISTING);
-      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_IMAGE", BUSYBOX_IMAGE);
-      replaceStringInFile(dockerDestFile.toString(), "BUSYBOX_TAG", BUSYBOX_TAG);
-    });
-
-    String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
-        stageDirPath, dockerDestFile.toString(),
-        "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", auxiliaryImage);
-    assertTrue(Command.withParams(new CommandParams().command(cmdToExecute)).execute(),
-        String.format("Failed to execute command %s", cmdToExecute));
-  }
-
 
 }

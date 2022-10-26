@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
@@ -49,7 +51,7 @@ class ItDataHomeOverride {
   private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
   private static final String miiImageName = "datahome-mii-image";
   private static final String wdtModelFileForMiiDomain = "wdt-singlecluster-multiapps-usingprop-wls.yaml";
-
+  private static final String clusterName = "dimcluster-1";
   private static LoggingFacade logger = null;
   private static String miiDomainNamespace = null;
   private static String miiImage = null;
@@ -89,7 +91,7 @@ class ItDataHomeOverride {
    * In this domain, set dataHome to /u01/mydata in domain custom resource
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should be overridden by dataHome
-   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * File store and JMS server are targeted to the WebLogic cluster dimcluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
   @Test
@@ -100,8 +102,10 @@ class ItDataHomeOverride {
     String domainUid = "overridedatahome-domain";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage, adminServerPodName, managedServerPrefix,
-        replicaCount, Arrays.asList("cluster-1"), true, DATA_HOME_OVERRIDE);
+    // create mii domain and override data home
+    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName),
+        true, DATA_HOME_OVERRIDE);
 
     // check in admin server pod, there is no data file for JMS server created
     String dataFileToCheck = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0000000.DAT";
@@ -138,7 +142,7 @@ class ItDataHomeOverride {
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
    * by dataHome
-   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * File store and JMS server are targeted to the WebLogic cluster dimcluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
   @Test
@@ -148,8 +152,9 @@ class ItDataHomeOverride {
     String domainUid = "nodatahome-domain";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage, adminServerPodName, managedServerPrefix,
-        replicaCount, Arrays.asList("cluster-1"), false, null);
+    // create mii domain and don't override data home
+    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName), false, null);
 
     // check in admin server pod, there is no data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
@@ -186,7 +191,7 @@ class ItDataHomeOverride {
    * The domain contains JMS and File Store configuration
    * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
    * by dataHome
-   * File store and JMS server are targeted to the WebLogic cluster cluster-1
+   * File store and JMS server are targeted to the WebLogic cluster dimcluster-1
    */
   @Test
   @DisplayName("Test dataHome override in a domain with dataHome is a empty string in the domain spec")
@@ -195,8 +200,9 @@ class ItDataHomeOverride {
     String domainUid = "emptydatahome-domain";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage, adminServerPodName, managedServerPrefix,
-        replicaCount, Arrays.asList("cluster-1"), true, "");
+    // create mii domain and set datahome to empty string
+    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName), true, "");
 
     // check in admin server pod, there is no data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
@@ -225,6 +231,12 @@ class ItDataHomeOverride {
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(miiDomainNamespace, domainUid, replicaCount);
+  }
+
+  @AfterEach
+  public void deleteClusterResource() {
+    // delete cluster resource
+    deleteClusterCustomResourceAndVerify(clusterName, miiDomainNamespace);
   }
 
   /**
