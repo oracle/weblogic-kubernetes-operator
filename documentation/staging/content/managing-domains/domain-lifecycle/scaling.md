@@ -84,44 +84,6 @@ $ kubectl patch cluster cluster-1 --type=merge -p '{"spec":{"replicas":3}}'
 $ kubectl get clusters cluster-1 -o jsonpath='{.spec.replicas}'
   3
 ```
-
-#### Kubernetes Horizontal Pod Autoscalar (HPA)
-Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
-
-1. Since this example will scale a WebLogic cluster based on CPU utilization, then there is a precondition that the Kubernetes Metrics Server be installed in the cluster:
-```shell
-$ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-2. Confirm that the Kubernetes Metric Server is running by listing the pods in the kube-system namespace:
-```shell
-$ kubectl get po -n kube-system
-```
-{{% notice note %}}
-If the Kubernetes Metric Server does not reach READY state (i.e READY 0/1 ), due to "Readiness probe failed: HTTP probe failed with statuscode: 500", you may need to install a valid cluster certificate.  For testing purposes, one can resolve this issue by downloading the components.yaml and adding the argument `--kubelet-insecure-tls` to the Metrics Server container.
-{{% /notice %}}
-
-3. Assuming a WebLogic domain running in the default namespace, the following command can be used to create an HPA resource targeted at the Cluster resource (sample-domain1-cluster-1) that will autoscale WebLogic Server instances from a minimum of 2 cluster members up to 5 cluster members and the scale up or down will occur when the average CPU is consistently over 50%:
-```shell
-$ kubectl autoscale cluster sample-domain1-cluster-1 --cpu-percent=50 --min=2 --max=5
-  horizontalpodautoscaler.autoscaling/sample-domain1-cluster-1 autoscaled
-```
-
-4. Verify the status about the autoscaler and its behavior by inspecting the HPA resource:
-```shell
-$ kubectl get hpa
-  NAME                       REFERENCE                          TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-  sample-domain1-cluster-1   Cluster/sample-domain1-cluster-1   8%/50%    2         5         2          3m27s
-```
-
-5. To see the HPA scale up the WebLogic cluster `sample-domain1-cluster-1`, you can generate a loaded CPU by getting a shell to a running container in one of the cluster member pods and running:
-```shell
-$ kubectl exec --stdin --tty sample-domain1-managed-server1 -- /bin/bash
-  [oracle@sample-domain1-managed-server1 oracle]$ dd if=/dev/zero of=/dev/null
-```
-6. By listing the managed server pods you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscalar will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.
-
-For more in-depth information on the Kubernetes Horizontal Pod Autoscalar, see [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
-
 #### Calling the operator's REST scale API
 
 Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes environments, scaling WebLogic clusters involves scaling the number of corresponding Pods in which Managed Server instances are running. Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.
@@ -159,7 +121,7 @@ The `replicas` value designates the number of Managed Server instances to scale 
 
 When you POST to the `/scale` REST endpoint, you must send the following headers:
 
-* `X-Requested-By` request value.  The value is an arbitrary name such as `MyClient`.  
+* `X-Requested-By` request value.  The value is an arbitrary name such as `MyClient`.
 * `Authorization: Bearer` request value. The value of the `Bearer` token is the WebLogic domain service account token.
 
 For example, when using `curl`:
@@ -206,15 +168,54 @@ Regardless of which endpoint is being invoked, the URL format for scaling is the
 
 When the operator receives a scaling request, it will:
 
-*	Perform an authentication and authorization check to verify that the specified user is allowed to perform the specified operation on the specified resource.
-*	Validate that the specified domain, identified by `domainUID`, exists.
-*	Validate that the WebLogic cluster, identified by `clusterName`, exists.
-*	Verify that the specified WebLogic cluster has a sufficient number of configured servers or sufficient dynamic cluster size to satisfy the scaling request.
-*	Initiate scaling by setting the `replicas` field within the corresponding Domain, which can be done in either:
-      *	A `cluster` entry, if defined within its cluster list.
-      *	At the domain level, if not defined in a `cluster` entry.
+* Perform an authentication and authorization check to verify that the specified user is allowed to perform the specified operation on the specified resource.
+* Validate that the specified domain, identified by `domainUID`, exists.
+* Validate that the WebLogic cluster, identified by `clusterName`, exists.
+* Verify that the specified WebLogic cluster has a sufficient number of configured servers or sufficient dynamic cluster size to satisfy the scaling request.
+* Verifies that the specified cluster has a corresponding Cluster resource defined or else creates one if necessary.
+* Initiate scaling by setting the `replicas` field within the corresponding Cluster resource.
 
-In response to a change to either `replicas` field, in the Domain, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.
+In response to a change in the `replicas` field, in the Cluster resource, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.
+
+#### Kubernetes Horizontal Pod Autoscalar (HPA)
+Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
+
+1. Since this example will scale a WebLogic cluster based on CPU utilization, then there is a precondition that the Kubernetes Metrics Server be installed in the cluster:
+```shell
+$ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+```
+2. Confirm that the Kubernetes Metric Server is running by listing the pods in the kube-system namespace:
+```shell
+$ kubectl get po -n kube-system
+```
+{{% notice note %}}
+If the Kubernetes Metric Server does not reach READY state (i.e READY 0/1 ), due to "Readiness probe failed: HTTP probe failed with statuscode: 500", you may need to install a valid cluster certificate.  For testing purposes, one can resolve this issue by downloading the components.yaml and adding the argument `--kubelet-insecure-tls` to the Metrics Server container.
+{{% /notice %}}
+
+3. Assuming a WebLogic domain running in the default namespace, the following command can be used to create an HPA resource targeted at the Cluster resource (sample-domain1-cluster-1) that will autoscale WebLogic Server instances from a minimum of 2 cluster members up to 5 cluster members and the scale up or down will occur when the average CPU is consistently over 50%:
+```shell
+$ kubectl autoscale cluster sample-domain1-cluster-1 --cpu-percent=50 --min=2 --max=5
+  horizontalpodautoscaler.autoscaling/sample-domain1-cluster-1 autoscaled
+```
+{{% notice note %}}
+Beginning with Operator 4.0, the `allowReplicasBelowMinDynClusterSize` field has been removed from the Domain resource schema. The minimum allowed replica count, when scaling down, must now be configured on the selected autoscaling controller.
+{{% /notice %}}
+
+4. Verify the status about the autoscaler and its behavior by inspecting the HPA resource:
+```shell
+$ kubectl get hpa
+  NAME                       REFERENCE                          TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+  sample-domain1-cluster-1   Cluster/sample-domain1-cluster-1   8%/50%    2         5         2          3m27s
+```
+
+5. To see the HPA scale up the WebLogic cluster `sample-domain1-cluster-1`, you can generate a loaded CPU by getting a shell to a running container in one of the cluster member pods and running:
+```shell
+$ kubectl exec --stdin --tty sample-domain1-managed-server1 -- /bin/bash
+  [oracle@sample-domain1-managed-server1 oracle]$ dd if=/dev/zero of=/dev/null
+```
+6. By listing the managed server pods you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscalar will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.
+
+For more in-depth information on the Kubernetes Horizontal Pod Autoscalar, see [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
 
 #### Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
