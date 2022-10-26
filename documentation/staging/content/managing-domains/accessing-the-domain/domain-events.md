@@ -52,7 +52,7 @@ The operator generates these event types in a domain namespace, which indicate t
  * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
  * `Unavailable`: The domain resource is unavailable, which means the domain does not have a sufficient number of servers active.
  * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
- * `FailureRessolved`: The failure condition that the domain was in has been resolved.
+ * `FailureRessolved`: The [failure condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}) that the domain was in has been resolved.
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
  * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain.

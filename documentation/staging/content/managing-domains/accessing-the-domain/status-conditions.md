@@ -2,7 +2,7 @@
 title = "Status conditions"
 date = 2022-10-24T16:43:45-05:00
 weight = 9
-description = "Monitor domain and cluster resources using operator-generated conditions about resources that it manages."
+description = "Monitor domain and cluster resources using operator-generated status conditions."
 +++
 
 {{< table_of_contents >}}
@@ -12,20 +12,20 @@ description = "Monitor domain and cluster resources using operator-generated con
 Kubernetes conditions are commonly found in the status of Kuberentes resources, including Pod and Deployment. 
 The pattern is that the status has a list of conditions that give a quick readout on the status of the resource. 
 For instance, if a pod is ready, then the Pod resource will have a `Ready` condition in its status that indicates this. 
-WebLogic Kubernetes Operator has elected to use conditions in its resources as well. 
-Each Domain or Cluster resource contains a list of conditions that provide information about the status of the Domain or Cluster.
+WebLogic Kubernetes Operator uses conditions in its resource status as well.
+Each domain or cluster resource status contains a list of conditions that provide information about the status of the domain or cluster.
 
-### Checking conditions
+### Checking domain or cluster conditions
 
-Conditions can be found under the `spec.status` field in a Domain or Cluster resource.
+Conditions can be found under the `spec.status` field in a domain resource or a cluster resource.
 
-You can check the conditions in a Domain resource by using:
+You can check the conditions in a domain resource by using:
 `kubectl -n MY_NAMESPACE describe domain MY_DOMAIN_RESOURCE_NAME`
 
-Similarly, you can check the conditions in a Cluster resource by using:
+Similarly, you can check the conditions in a cluster resource by using:
 `kubectl -n MY_NAMESPACE describe cluster MY_CLUSTER_NAME`
 
-{{%expand "Click here for an example of status of a Cluster resource showing its conditions." %}}
+{{%expand "Click here for an example of a cluster status showing its conditions." %}}
 ```
 Status:
   Cluster Name:  cluster-1
@@ -39,9 +39,10 @@ Status:
 ```
 {{% /expand %}}
 
-The cluster conditions are also listed in the Domain resource status under `domain.status.clusters`.
+The conditions for [cluster resources referenced by a domain]({{< relref "managing-domains/domain-resource#domain-and-cluster-resource-attribute-references">}})
+are also listed in the domain status under `domain.status.clusters`.
 
-{{%expand "Click here for an example of status of a Domain resource with a cluster." %}}
+{{%expand "Click here for an example of a domain status showing both domain and cluster conditions." %}}
 ```
 Status:  
   Clusters:
@@ -73,27 +74,28 @@ Status:
 ### Attributes in a condition
 
 The following attributes can be found in a condition:
-- `Type` - type of the condition, such as `Failed` or `Available`. See [Types of Domain status conditions]({{< relref "#types-of-domain-status-conditions">}}) below.
-- `Status` - status of the condition, such as `True` or `False`.
-- `Message` - a human-readable message providing more details about the condition. Optional.
-- `Reason` - [reason]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}) for the `Failed` condition. Not applicable to other types.
-- `Severity` - [severity]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}) for the `Failed` condition. Not applicable to other types.
-- `Last Transition Time` - a timestamp of when the condition was created or the last time time the condition transitioned from one status to another.
+- `type` - type of the condition, such as `Failed` or `Available`. See [Types of domain status conditions]({{< relref "#types-of-domain-status-conditions">}}) below.
+- `status` - status of the condition, such as `True` or `False`.
+- `message` - an optional human-readable message providing more details about the condition.
+- `reason` - [reason]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}) for the `Failed` condition. Not applicable to other types of condition.
+- `severity` - [severity]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}) for the `Failed` condition. Not applicable to other types of condition.
+- `lastTransitionTime` - a timestamp of when the condition was created or the last time time the condition transitioned from one status to another.
 
-### Types of Domain status conditions
+### Types of domain conditions
 
-The following is a list of status condition types for a Domain resource.
+The following is a list of condition types for a domain resource.
 
 - `Failed`
-    * The desired state of the Domain resource cannot be achieved.
-      See [Retry behavior]({{< relref "managing-domains/domain-lifecycle/retry#retry-behavior" >}})
+    * The desired state of the domain resource cannot be achieved due to failures encountered in
+      processing the domain resource.
+      See [retry behavior]({{< relref "managing-domains/domain-lifecycle/retry#retry-behavior" >}})
       on how the operator handle different types of failures.
-    * The `Status` attribute is always `True` for a `Failed` condition. 
-      The `Failed` condition is removed from the domain status when the underlying failure is resolved.
-    * The `Message` attribute contains an error message with details of the failure.
-    * The `Reason` attribute is set to one of the reasons listed in [Domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
-    * The `Severity` attribute is set to one of the severity levels listed in [Domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
-      {{%expand "Click here for an example of a Domain resource with a Failed condition." %}}
+    * The `status` attribute is always `True` for a `Failed` condition.
+      The `failed` condition is removed from the domain status when the underlying failure is resolved.
+    * The `message` attribute contains an error message with details of the failure.
+    * The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
+    * The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
+      {{%expand "Click here for an example of a domain status with a Failed condition." %}}
 ```
 Status:
   ...
@@ -117,32 +119,32 @@ Status:
 ```
 {{% /expand %}}
 - `Completed`
-    * The `Status` attribute of a `Completed` condition indicates whether the desired state of the 
-      Domain resource has been fully achieved.
-    * The `Status` attribute is set to `True` when:
+    * The `status` attribute of a `Completed` condition indicates whether the desired state of the
+      domain resource has been fully achieved.
+    * The `status` attribute is set to `True` when:
       * There are no `Failed` conditions, ie, no failures are detected.
       * One of the following conditions are met:
-        * All server pods that are expected to be running are ready at their target images(s), 
+        * All WebLogic Server pods that are expected to be running are ready at their target images(s),
           `restartVersion`, and `introspectVersion`, or
-        * no servers are running if so configured in the Domain and the related Cluster resources, or
-        * the Domain is configured to have a `spec.serverStartPolicy` value of `AdminOnly` and the 
-          admin server is running.
+        * no WebLogic Server pods are running [as configured in the domain]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#shut-down-all-the-servers">}}) and its referenced cluster resources, or
+        * the domain is configured to have a `spec.serverStartPolicy` value of `AdminOnly` and the
+          admin server pod is running and ready.
       * There are no pending server shutdown requests.
 - `Available`
-    * `Status` attribute is set to  `True` when a sufficient number of pods are `ready`:
-        * Processing successfully completes without error
-          (introspection job, syntax checks, and such).
-        * The operator is starting or has started all desired WebLogic Server pods
-          (not including any servers that may be shutting down).
-    * `Status` attribute can be `True` even when `Status` for the `Completed` condition is `False`,
+    * `status` attribute is set to  `True` when a sufficient number of pods are ready:
+        * At least one WebLogic Server pod is ready.
+        * Every non-clustered servers with a `serverStartPolicy` value of `IfNeeded` or `Always` are ready.
+        * Every cluster resource referenced by the domain has `True` in its `Available` condition.
+          Clusters that are configured with a `replicas` value of 0 or a `serverStartPolicy` value of `Never`
+          are ignored.
+    * `status` can be `True` even when `status` for the `Completed` condition is `False`,
       a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods 
-      that are not `ready`.
-    * `Status` is set to `False`if servers are rolling or starting, or a failure has occurred.
-    * _Note:_ This condition may 'blink' on and off while
-      processing a domain resource change or during a roll.
+      that are not ready.
+    * `status` is set to `False` if servers are rolling or starting, a failure has occurred, or
+      if `domain.spec.serverStartPolicy` is configured as `AdminOnly`.
 
 - `ConfigChangesPendingRestart`
-  * `Status` attribute is `True` if all of the following are true:
+  * `status` attribute is `True` if all of the following are true:
     * The domain resource attribute
       `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.
     * The domain resource attribute
@@ -153,7 +155,7 @@ Status:
       (to propagate the pending non-dynamic changes).
   * See [Online update status and labels]({{< relref "managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" >}})
     on how to see which pods are awaiting restart using WebLogic pod labels.
-{{%expand "Click here for an example of a Domain resource with a ConfigChangesPendingRestart condition." %}}
+{{%expand "Click here for an example of a domain status with a ConfigChangesPendingRestart condition." %}}
 ```
 Status:
   ...
@@ -172,24 +174,29 @@ Status:
 {{% /expand %}}
 
 - `Rolling`
-  * This condition indicates that the operator is rolling the server pods in a Domain, such as after it
-    has detected an update to the Domain resource or Model in Image model that require it to 
-    perform a rolling restart of the domain.
-  * The `Status` attribute is always `True` for a `Rolling` condition. 
-  * The `Rolling` condition is removed from the Domain status when the rolling is completed.
+  * This condition indicates that the operator is rolling the server pods in a domain, such as after it
+    has detected an update to the domain resource or Model in Image model that require it to
+    perform a [rolling restart]({{< relref "managing-domains/domain-lifecycle/startup#rolling-restarts" >}}) of the domain.
+  * The `status` attribute is always `True` for a `Rolling` condition.
+  * The `Rolling` condition is removed from the domain status when the rolling is completed.
 
 
-### Types of Cluster status conditions
+### Types of cluster conditions
 
-The following is a list of status condition types for a Cluster resource.
+The following is a list of condition types for a cluster resource.
 - `Completed`
-    * The `Status` attribute of a `Completed` condition indicates whether the desired state of the
-      Cluster resource has been fully achieved.
-    * The `Status` attribute is set to `True` when:
-        * All server pods in the cluster that are expected to be running are ready at their target images(s),
-          `restartVersion`, and `introspectVersion`
+    * The `status` attribute of a `Completed` condition indicates whether the desired state of the
+      cluster resource has been fully achieved.
+    * The `status` attribute is set to `True` when:
+        * All server pods in the cluster that are expected to be running are ready at their target,
+          images(s), `restartVersion`, and `introspectVersion`
         * There are no pending server shutdown requests.
 - `Available`
-    * The `Status` attribute is set to  `True` when a sufficient number of pods are `ready` in the cluster,
-      which can be configured using `cluster.spec.maxUnavailable`.
-    * The `Status` attribute is set to `False` if servers are rolling/starting or a failure has occurred.
+    * The `status` attribute is set to  `True` when a sufficient number of WebLogic Server pods are
+      ready in the cluster:
+      * All WebLogic Server pods in the cluster are ready, as configured in the `cluster.spec.replicas`,
+        or if it is not configured, in the `domain.spec.replicas` field.
+      * When some server pods for the cluster are temporarily not ready, and the number of such
+        server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
+    * The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
+      pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.

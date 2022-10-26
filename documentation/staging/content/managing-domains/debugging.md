@@ -22,7 +22,7 @@ events, introspector jobs, and pods.
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAIN_RESOURCE_NAME`.
 
-See [Domain status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-status-conditions" >}}) 
+See [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}})
 for more information.
 
 **Note**:
@@ -41,7 +41,7 @@ each using `kubectl -n MY_NAMESPACE describe cluster MY_CLUSTER_NAME`.
 
 The same information is reported in the Domain resource status under `domain.status.clusters`.
 
-See [Cluster status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-status-conditions" >}})
+See [Cluster conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" >}})
 for more information.
 
 **Note:** If `.observedGeneration` for a particular cluster status

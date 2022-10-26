@@ -273,7 +273,7 @@ spec:
      * The MBean changes are committed in the running domain and effective immediately.
    * Expected outcome after the introspector job completes:
      * The domain `Available` condition status is set to `True`.
-       See [Domain status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-status-conditions" >}})
+       See [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}})
        for more information.
      * The `weblogic.introspectVersion` label on all pods will be set to match the `domain.spec.introspectVersion`.
    * Actions required:
