@@ -1230,8 +1230,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
         new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
-            Arrays.asList(
-                createWeightedPodAffinityTerm("weblogic.domainUID", UID))));
+            List.of(createWeightedPodAffinityTerm("weblogic.domainUID", UID))));
 
     assertThat(getCreatePodAffinity(), is(expectedValue));
   }
@@ -1254,8 +1253,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     V1Affinity expectedValue = new V1Affinity().podAntiAffinity(
         new V1PodAntiAffinity().preferredDuringSchedulingIgnoredDuringExecution(
-            Arrays.asList(
-                createWeightedPodAffinityTerm("weblogic.clusterName", CLUSTER_NAME))));
+            List.of(createWeightedPodAffinityTerm("weblogic.clusterName", CLUSTER_NAME))));
 
     assertThat(getCreatePodAffinity(), is(expectedValue));
   }

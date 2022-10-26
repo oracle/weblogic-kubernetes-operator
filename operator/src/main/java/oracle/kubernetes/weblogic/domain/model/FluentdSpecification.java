@@ -56,7 +56,7 @@ public class FluentdSpecification {
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
   @Description("Volume mounts for fluentd container")
-  private List<V1VolumeMount> volumeMounts = new ArrayList<>();
+  private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   @Description("Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain."
       + " It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address,"

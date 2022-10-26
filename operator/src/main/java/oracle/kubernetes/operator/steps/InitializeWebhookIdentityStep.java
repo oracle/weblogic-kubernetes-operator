@@ -237,7 +237,7 @@ public class InitializeWebhookIdentityStep extends Step {
     }
   }
 
-  protected static final V1Secret createModel(V1Secret secret, WebhookIdentity webhookIdentity) {
+  protected static V1Secret createModel(V1Secret secret, WebhookIdentity webhookIdentity) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
       data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
@@ -260,8 +260,8 @@ public class InitializeWebhookIdentityStep extends Step {
 
   final class WebhookIdentity {
 
-    private String webhookKey;
-    private byte[] webhookCert;
+    private final String webhookKey;
+    private final byte[] webhookCert;
 
     public WebhookIdentity(String webhookKey, byte[] webhookCert) {
       this.webhookKey = webhookKey;
