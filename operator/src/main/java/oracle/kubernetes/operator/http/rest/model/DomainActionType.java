@@ -4,5 +4,5 @@
 package oracle.kubernetes.operator.http.rest.model;
 
 public enum DomainActionType {
-  UNKNOWN, INTROSPECT, RESTART;
+  UNKNOWN, INTROSPECT, RESTART
 }

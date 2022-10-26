@@ -14,7 +14,63 @@ def createWLDFSystemResource(sysResName, sysResTarget):
     cd('/')
     create(sysResName, 'WLDFSystemResource')
     assign('WLDFSystemResource', sysResName, 'Target', sysResTarget)
-    print 'WLDFSystemResource[%s] Created/Targeted to [%s]' % (sysResName, sysResTarget)
+    print 'WLDFSystemResource[%s] Targeted to [%s]' % (sysResName, sysResTarget)
+
+def createJDBCSystemResource():
+    cd('/')
+
+    DSnam = 'TestDataSource'
+    sysResTarget='cluster-1'
+
+    print 'Creating DataSource[%s] on [%s]' % (DSnam, sysResTarget)
+    create(DSnam, 'JDBCSystemResource')
+
+    RESOURCE='/JDBCSystemResources/'+DSnam+'/JdbcResource/'+DSnam
+    cd(RESOURCE)
+    set('Name',DSnam)
+    print 'DataSource[%s] created'  %(DSnam)
+ 
+    #Setting JNDI name
+    cd('/JDBCSystemResource/TestDataSource/JdbcResource/TestDataSource')
+    create('dataSourceParams','JDBCDataSourceParams')
+    cd('JDBCDataSourceParams/NO_NAME_0')
+    set('JNDIName', ['jdbc/TestDataSource'])
+    set('GlobalTransactionsProtocol','None')
+    print 'JNDI name assigned ...'
+
+    #Set Connection Pool specific parameters
+    cd('/JDBCSystemResource/TestDataSource/JdbcResource/TestDataSource')
+    create('connectionPoolParams','JDBCConnectionPoolParams')
+    cd('JDBCConnectionPoolParams/NO_NAME_0')
+    set('InitialCapacity',0)
+    set('TestTableName','SQL SELECT 1 FROM DUAL')
+    print 'JDBCConnectionPoolParams created ...'
+
+    DBURL='jdbc:oracle:thin:@//localhost:1521/dummydb'
+    DBDRV='oracle.jdbc.OracleDriver'
+    DBUSR='scott'
+    DBPASS='tiger'
+
+    cd('/JDBCSystemResource/TestDataSource/JdbcResource/TestDataSource')
+    create('driverParams', 'JDBCDriverParams')
+    cd('JDBCDriverParams/NO_NAME_0')
+    set('DriverName','oracle.jdbc.OracleDriver')
+    set('URL','jdbc:oracle:thin:@//localhost:1521/dummydb')
+    set('PasswordEncrypted','tiger')
+    set('UseXADataSourceInterface', 'false')
+    print 'JDBCDriverParams created ...'
+
+    create('myProps','Properties')
+    cd('Properties/NO_NAME_0')
+    create('user', 'Property')
+    cd('Property/user')
+    set('Value', 'scott')
+    print 'JDBCDriverParams Properties created'
+
+    cd('/JDBCSystemResources/'+DSnam)
+    #assign('JDBCSystemResource', sysResName, 'Target', sysResTarget)
+    set('Target', sysResTarget)
+    print 'JDBCSystemResource[%s] Targeted to [%s]' % (DSnam, sysResTarget)
 
 def createJMSSystemResource(sysResTarget):
     filestore = 'ClusterFileStore'
@@ -25,9 +81,12 @@ def createJMSSystemResource(sysResTarget):
 
     cf = 'ClusterConnectionFactory'
     urt = 'UniformReplicatedTestTopic'
+    udq = 'UniformDistributedTestQueue'
   
     cd('/')
     create(filestore, 'FileStore')
+    cd('/FileStores/'+filestore)
+    set('Directoy','JmsFileStores')
     assign('FileStore', filestore, 'Target', sysResTarget)
   
     cd('/')
@@ -53,12 +112,16 @@ def createJMSSystemResource(sysResTarget):
     myt = create(urt, 'UniformDistributedTopic')
     myt.setJNDIName('jms/' + urt)
     myt.setDefaultTargetingEnabled(true)
+
+    myq = create(udq, 'UniformDistributedQueue')
+    myq.setJNDIName('jms/' + udq)
+    myq.setDefaultTargetingEnabled(true)
   
     cd('UniformDistributedTopic/' + urt)
     create('testparams', 'DeliveryFailureParams')
     cd('DeliveryFailureParams/NO_NAME_0')
     cmo.setExpirationPolicy('Log')
-   
+
     cd('/JMSSystemResource/' + jmsmodule + '/JmsResource/NO_NAME_0')
     myc = create(cf, 'ConnectionFactory')
     myc.setJNDIName('jms/ClusterConnectionFactory')
@@ -131,7 +194,8 @@ def create_domain():
    
   #create JMS and WLDF resources
   createJMSSystemResource(cluster_name)
-  createWLDFSystemResource("WLDF-MODULE-0", admin_server_name)
+  createWLDFSystemResource("WLDF-MODULE-0", cluster_name)
+  #createJDBCSystemResource()
 
   print('Writing domain in disk %s' % domain_path + os.path.sep + domain_name)
   writeDomain(domain_path + os.path.sep + domain_name)
