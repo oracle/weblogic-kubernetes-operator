@@ -384,17 +384,6 @@ public class JobStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
   }
 
-  protected List<V1EnvVar> createEnv(V1Container c) {
-    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
-      getEnvironmentVariables()
-              .forEach(envVar -> addIfMissing(initContainerEnvVars,
-                  envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
-    }
-    return initContainerEnvVars;
-  }
-
   @Override
   protected V1PodSpec createPodSpec() {
     V1PodSpec podSpec = super.createPodSpec()
@@ -431,7 +420,7 @@ public class JobStepContext extends BasePodStepContext {
       addWdtSecretVolume(podSpec);
     }
 
-    if (podSpec.getAffinity().equals(getDefaultAntiAffinity())) {
+    if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
     return podSpec;

@@ -98,7 +98,7 @@ public class Helpers {
    */
   protected V1ServiceAccountList getAllServiceAccounts() throws ApiException {
 
-    V1ServiceAccountList serviceAccountList = null;
+    V1ServiceAccountList serviceAccountList;
 
     String cont = "";
 

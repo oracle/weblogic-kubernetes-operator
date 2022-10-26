@@ -271,8 +271,8 @@ public class EventHelper {
     }
 
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
-      Step replaceEventStep;
-      CoreV1Event existingEvent;
+      final Step replaceEventStep;
+      final CoreV1Event existingEvent;
 
       ReplaceEventResponseStep(Step replaceEventStep, CoreV1Event existingEvent, Step next) {
         super(next);
@@ -1202,8 +1202,8 @@ public class EventHelper {
     }
 
     private class ReplaceClusterResourceEventResponseStep extends ResponseStep<CoreV1Event> {
-      Step replaceClusterEventStep;
-      CoreV1Event existingClusterEvent;
+      final Step replaceClusterEventStep;
+      final CoreV1Event existingClusterEvent;
 
       ReplaceClusterResourceEventResponseStep(Step replaceClusterEventStep, CoreV1Event existingClusterEvent,
           Step next) {

@@ -19,7 +19,7 @@ openAPIV3Schema:
           properties:
             image:
               description: The WebLogic Monitoring Exporter sidecar container
-                image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7
+                image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0
               type: string
             imagePullPolicy:
               description: The image pull policy for the WebLogic Monitoring
@@ -1761,6 +1761,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -1913,6 +1922,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -2228,6 +2246,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -2350,6 +2377,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -2502,6 +2538,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -2817,6 +2862,15 @@ openAPIV3Schema:
                                 type: array
                                 items:
                                   type: string
+                          grpc:
+                            type: object
+                            properties:
+                              port:
+                                type: number
+                              service:
+                                type: string
+                            required:
+                              - port
                           httpGet:
                             type: object
                             properties:
@@ -4686,6 +4740,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -4838,6 +4901,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -5153,6 +5225,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -5275,6 +5356,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -5427,6 +5517,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -5742,6 +5841,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -7608,6 +7716,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -7760,6 +7877,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -8075,6 +8201,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -8197,6 +8332,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -8349,6 +8493,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -8664,6 +8817,15 @@ openAPIV3Schema:
                             type: array
                             items:
                               type: string
+                      grpc:
+                        type: object
+                        properties:
+                          port:
+                            type: number
+                          service:
+                            type: string
+                        required:
+                          - port
                       httpGet:
                         type: object
                         properties:
@@ -10440,6 +10602,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -10592,6 +10763,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -10907,6 +11087,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -11029,6 +11218,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -11181,6 +11379,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:
@@ -11496,6 +11703,15 @@ openAPIV3Schema:
                                   type: array
                                   items:
                                     type: string
+                            grpc:
+                              type: object
+                              properties:
+                                port:
+                                  type: number
+                                service:
+                                  type: string
+                              required:
+                                - port
                             httpGet:
                               type: object
                               properties:

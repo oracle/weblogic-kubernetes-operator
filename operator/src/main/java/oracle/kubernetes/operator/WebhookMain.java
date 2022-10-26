@@ -41,7 +41,7 @@ public class WebhookMain extends BaseMain {
 
   private final WebhookMainDelegate conversionWebhookMainDelegate;
   private boolean warnedOfCrdAbsence;
-  private AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
+  private final AtomicInteger crdPresenceCheckCount = new AtomicInteger(0);
   private final RestConfig restConfig = new RestConfigImpl(new Certificates(delegate));
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
