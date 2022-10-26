@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -37,8 +36,10 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryI
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DomainValidationTest extends DomainValidationTestBase {
 
@@ -196,13 +197,12 @@ class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  @Disabled("Domain validation doesn't read cluster resources")
   void whenClusterSpecsHaveDuplicateNames_reportError() {
     addClusterWithName("cluster1");
     addClusterWithName("cluster1");
 
-    assertThat(domain.getValidationFailures(resourceLookup),
-          contains(stringContainsInOrder("clusters", "cluster1")));
+    assertThat(domain.getValidationFailures(resourceLookup), hasSize(2));
+    assertTrue(domain.getValidationFailures(resourceLookup).get(0).contains("cluster1"));
   }
 
   private void addClusterWithName(String clusterName) {

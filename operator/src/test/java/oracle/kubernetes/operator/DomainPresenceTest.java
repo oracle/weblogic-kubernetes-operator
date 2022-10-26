@@ -76,7 +76,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
-  DomainResource domain = createDomain(UID1, NS);
+  final DomainResource domain = createDomain(UID1, NS);
 
   @BeforeEach
   public void setUp() throws Exception {
