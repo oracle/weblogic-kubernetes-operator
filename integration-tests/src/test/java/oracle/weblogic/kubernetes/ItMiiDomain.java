@@ -1223,15 +1223,16 @@ class ItMiiDomain {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/u01/domains/" + domainUid)
+            .domainHome("/u01/" + domainNamespace + "/domains/" + domainUid)
             .domainHomeSourceType("FromModel")
             .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(TEST_IMAGES_REPO_SECRET_NAME))
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -1253,7 +1254,7 @@ class ItMiiDomain {
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, MII_BASIC_APP_NAME + ":" + MII_BASIC_IMAGE_TAG);
+        domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
   }
 }
