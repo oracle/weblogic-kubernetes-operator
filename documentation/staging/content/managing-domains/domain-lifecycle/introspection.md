@@ -6,11 +6,11 @@ weight: 5
 description: "This document describes domain introspection in the Oracle WebLogic Server in Kubernetes environment."
 ---
 
+This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
+
 {{< table_of_contents >}}
 
 ### Overview
-
-This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
 
 To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the

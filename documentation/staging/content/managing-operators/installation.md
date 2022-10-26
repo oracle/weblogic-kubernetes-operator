@@ -132,7 +132,10 @@ see [Troubleshooting]({{<relref "/managing-operators/troubleshooting#check-the-o
   as shown in the previous example.
 
 ### Install the WebLogic domain resource conversion webhook
-By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled. If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
+
+By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled.
+
+**Note:** If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
 For conversion webhook installation details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
 
 ### Set up domain namespaces
@@ -224,12 +227,13 @@ then Helm will create them during `helm install`; however, `helm uninstall` will
 {{% /notice %}}
 
 After removing the operator deployment,
-you should also remove the Domain custom resource definition (CRD) if it is no longer needed:
+you should also remove the Domain and Cluster custom resource definitions (CRD) if they are no longer needed:
 ```text
 $ kubectl delete customresourcedefinition domains.weblogic.oracle
+$ kubectl delete customresourcedefinition clusters.weblogic.oracle
 ```
-Note that the Domain custom resource definition is shared.
-Do not delete the CRD if there are other operators in the same cluster
+Note that the custom resource definitions are shared.
+Do not delete them if there are other operators in the same cluster
 or you have running domain resources.
 
 Beginning with operator version 4.0, uninstalling an operator also removes the conversion webhook

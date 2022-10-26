@@ -304,7 +304,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType()));
   }
 
-  private V1ServiceSpec.TypeEnum getServiceType(V1Service service) {
+  private String getServiceType(V1Service service) {
     return service.getSpec().getType();
   }
 
@@ -337,8 +337,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
   }
 
-  private V1ServicePort.ProtocolEnum getExpectedProtocol(String portName) {
-    return portName.startsWith("udp-") ? V1ServicePort.ProtocolEnum.UDP : V1ServicePort.ProtocolEnum.TCP;
+  private String getExpectedProtocol(String portName) {
+    return portName.startsWith("udp-") ? "UDP" : "TCP";
   }
 
   private String getExpectedAppProtocol(String portName) {
@@ -608,7 +608,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     labels.put(LabelConstants.DOMAINUID_LABEL, UID);
     labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     V1Service strandedService = new V1Service().metadata(new V1ObjectMeta().name(STRANDED).namespace(NS)
-            .labels(labels)).spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT));
+            .labels(labels)).spec(new V1ServiceSpec().type("NodePort"));
     testSupport.defineResources(strandedService);
     testFacade.recordService(domainPresenceInfo, strandedService);
   }
@@ -710,8 +710,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
     abstract Integer getExpectedListenPort();
 
-    V1ServiceSpec.TypeEnum getExpectedServiceType() {
-      return V1ServiceSpec.TypeEnum.CLUSTERIP;
+    String getExpectedServiceType() {
+      return "ClusterIP";
     }
 
     Integer getExpectedSslListenPort() {
@@ -837,24 +837,19 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   static class PortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
-    private final V1ServicePort.ProtocolEnum expectedProtocol;
+    private final String expectedProtocol;
     private final String expectedAppProtocol;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
-      this(expectedName, V1ServicePort.ProtocolEnum.TCP, expectedValue);
-    }
-
-    private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
-                        Integer expectedValue) {
-      this(expectedName, expectedProtocol, null, expectedValue);
+      this(expectedName, "TCP", expectedValue);
     }
 
     private PortMatcher(@Nonnull String expectedName, String expectedAppProtocol, Integer expectedValue) {
-      this(expectedName, V1ServicePort.ProtocolEnum.TCP, expectedAppProtocol, expectedValue);
+      this(expectedName, "TCP", expectedAppProtocol, expectedValue);
     }
 
-    private PortMatcher(@Nonnull String expectedName, V1ServicePort.ProtocolEnum expectedProtocol,
+    private PortMatcher(@Nonnull String expectedName, String expectedProtocol,
                         String expectedAppProtocol, Integer expectedValue) {
       this.expectedName = expectedName;
       this.expectedProtocol = expectedProtocol;
@@ -867,13 +862,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     }
 
     static PortMatcher containsPort(@Nonnull String expectedName,
-                                    @Nonnull V1ServicePort.ProtocolEnum expectedProtocol, Integer expectedValue) {
-      return new PortMatcher(expectedName, expectedProtocol, expectedValue);
-    }
-
-    static PortMatcher containsPort(@Nonnull String expectedName,
-                                    @Nonnull V1ServicePort.ProtocolEnum expectedProtocol,
-                                    @Nonnull String expectedAppProtocol,Integer expectedValue) {
+                                    @Nonnull String expectedProtocol,
+                                    @Nonnull String expectedAppProtocol, Integer expectedValue) {
       return new PortMatcher(expectedName, expectedProtocol, expectedAppProtocol, expectedValue);
     }
 

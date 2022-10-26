@@ -58,7 +58,10 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
   @Range(minimum = 0)
   private Integer replicasGoal;
 
-  @Description("The generation observed by the WebLogic operator.")
+  @Description("The Cluster resource generation observed by the WebLogic operator."
+      + " If the Cluster resource exists,"
+      + " then this value will match the 'cluster.metadata.generation' "
+      + " when the 'cluster.status' correctly reflects the latest cluster resource changes.")
   private Long observedGeneration;
 
   @Description("Current service state of the cluster.")

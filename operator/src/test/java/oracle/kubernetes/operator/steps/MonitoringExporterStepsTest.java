@@ -142,8 +142,8 @@ class MonitoringExporterStepsTest {
   }
 
   private V1PodStatus setReady(V1PodStatus status) {
-    status.phase(V1PodStatus.PhaseEnum.RUNNING).setConditions(
-        List.of(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+    status.phase("Running").setConditions(
+        List.of(new V1PodCondition().type("Ready").status("True")));
     return status;
   }
 
@@ -313,7 +313,7 @@ class MonitoringExporterStepsTest {
   }
 
   private void setNotReadyState(V1PodStatus status) {
-    status.phase(V1PodStatus.PhaseEnum.PENDING);
+    status.phase("Pending");
   }
 
   @Test

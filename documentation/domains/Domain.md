@@ -60,7 +60,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `introspectJobFailureCount` | integer | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `lastFailureTime` | DateTime | RFC 3339 date and time at which a currently failing domain last experienced a Severe failure. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
-| `observedGeneration` | integer | The generation observed by the WebLogic operator. |
+| `observedGeneration` | integer | The Domain resource generation observed by the WebLogic operator. This value will match the 'domain.metadata.generation'  when the 'domain.status' correctly reflects the latest resource changes. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | `replicas` | integer | The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case. |
 | `servers` | Array of [Server Status](#server-status) | Status of WebLogic Servers in this domain. |
@@ -116,7 +116,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `configuration` | Map | The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances. |
-| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7 |
+| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0 |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `port` | integer | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`. |
@@ -169,7 +169,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `labelSelector` | string | Label selector that can be used to discover Pods associated with WebLogic managed servers belonging to this cluster. Must be set to work with HorizontalPodAutoscaler. |
 | `maximumReplicas` | integer | The maximum number of cluster members. |
 | `minimumReplicas` | integer | The minimum number of cluster members. |
-| `observedGeneration` | integer | The generation observed by the WebLogic operator. |
+| `observedGeneration` | integer | The Cluster resource generation observed by the WebLogic operator. If the Cluster resource exists, then this value will match the 'cluster.metadata.generation'  when the 'cluster.status' correctly reflects the latest cluster resource changes. |
 | `readyReplicas` | integer | The number of ready cluster members. |
 | `replicas` | integer | The number of currently running cluster members. |
 | `replicasGoal` | integer | The requested number of cluster members. Cluster members will be started by the operator if this value is larger than zero. |

@@ -6,7 +6,7 @@ weight: 4
 ---
 
 
-#### Remove the domain.
+#### Remove the domain and cluster.
 
 1.	Remove the domain's ingress routes by using `kubectl`.
 
@@ -15,7 +15,7 @@ weight: 4
     $ kubectl delete ingressroute console -n sample-domain1-ns
     ```
 
-1.	Use `kubectl` to delete the domain.
+1.	Use `kubectl` to delete the domain resource.
 
     ```shell
     $ kubectl delete domain sample-domain1 -n sample-domain1-ns
@@ -28,6 +28,12 @@ weight: 4
     ```
     ```shell
     $ kubectl get domains -n sample-domain1-ns
+    ```
+
+1.	Use `kubectl` to delete the cluster resource.
+
+    ```shell
+    $ kubectl delete cluster sample-domain1-cluster-1 -n sample-domain1-ns
     ```
 
 1.	Remove the Kubernetes Secrets associated with the domain.

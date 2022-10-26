@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -26,7 +25,7 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 public interface EffectiveServerSpec {
   String getImage();
 
-  V1Container.ImagePullPolicyEnum getImagePullPolicy();
+  String getImagePullPolicy();
 
   /**
    * The secrets used to authenticate to a docker repository when pulling an image.
@@ -141,7 +140,7 @@ public interface EffectiveServerSpec {
 
   List<V1PodReadinessGate> getReadinessGates();
 
-  V1PodSpec.RestartPolicyEnum getRestartPolicy();
+  String getRestartPolicy();
 
   String getRuntimeClassName();
 

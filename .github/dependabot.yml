@@ -9,3 +9,8 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+  - package-ecosystem: "maven" # See documentation for possible values
+    target-branch: release/3.4
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "daily"

@@ -478,12 +478,12 @@ public class LoggingExporter {
         .spec(new V1ServiceSpec()
             .addPortsItem(new V1ServicePort()
                 .name("http")
-                .protocol(V1ServicePort.ProtocolEnum.TCP)
+                .protocol("TCP")
                 .port(elasticsearchHttpPort)
                 .targetPort(new IntOrString(elasticsearchHttpPort)))
             .addPortsItem(new V1ServicePort()
                 .name("https")
-                .protocol(V1ServicePort.ProtocolEnum.TCP)
+                .protocol("TCP")
                 .port(elasticsearchHttpsPort)
                 .targetPort(new IntOrString(elasticsearchHttpsPort)))
             .selector(labels));
@@ -495,7 +495,7 @@ public class LoggingExporter {
 
     String kibanaName = params.getKibanaName();
     String namespace = params.getLoggingExporterNamespace();
-    V1ServiceSpec.TypeEnum kibanaType = V1ServiceSpec.TypeEnum.fromValue(params.getKibanaType());
+    String kibanaType = params.getKibanaType();
     int kibanaContainerPort = params.getKibanaContainerPort();
     Map<String, String> labels = new HashMap<>();
     labels.put("app", kibanaName);

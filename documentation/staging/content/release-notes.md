@@ -62,50 +62,115 @@ draft: false
 
 ##### Major Themes
 
-* Auxiliary Image simplification: the [usage of auxiliary images has been substantially simplified]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}). In most cases, customers need only specify the name of the auxiliary image.
-* Cluster resource: the operator now provides a new custom resource, Cluster, which configures a specific WebLogic cluster. This resource can be used with [Kubernetes Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) or similar technologies to scale WebLogic clusters.
-* Status and Events: the status of and the Events generated about Domain and Cluster resources have been significantly updated. The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads. Failures are distinguished between those that require customer intervention or those that are potentially temporary and will be retried.
-* Istio compatibility: domain configurations are always compatible with Istio and other service mesh products. Customers are no longer required to enable this support.
+* Auxiliary Image simplification:
+  * The usage of Model in Image
+    [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+    has been substantially simplified.
+  * In most cases, customers now need only specify the name of the auxiliary image.
+
+* New Cluster resource:
+  * The operator now provides a new custom resource, [Cluster]({{< relref "/managing-domains/domain-resource.md" >}}), which configures a specific WebLogic cluster and provides status information for that cluster.
+  * This resource can be used with [Kubernetes Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) or similar technologies to scale WebLogic clusters.
+
+* Status and Events updates:
+  * The [Conditions]({{< ref "#changes-to-domain-schema" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated. 
+  * The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads.
+  * Failures are distinguished between those that require customer intervention or those that are potentially temporary and will be retried.
+
+* Retry updates:
+  * The operator handling of
+    [retries after a failure]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}})
+    have been significantly updated.
+  * Customers can now tune retry intervals and limits, or disable retries, on a per domain basis.
+  * The time of the first failure, last retry, and the expected time of the next retry can now be easily inferred from Domain resource `.status`.
+
+* Istio compatibility:
+  * Domain configurations are always compatible with [Istio]({{< relref "/managing-domains/accessing-the-domain/istio/istio.md" >}}) and other service mesh products.
+  * Customers are no longer required to enable this support.
 
 ##### Upgrade Notes
 
-* This release introduces a new API version for the Domain resource, `weblogic.oracle/v9`. The previous API version, `weblogic.oracle/v8` introduced with Operator 3.0.0 is deprecated, but is still supported.
-* The operator added a [schema conversion webhook]({{< relref "/managing-operators/conversion-webhook.md" >}}) that automates the upgrade of `weblogic.oracle/v8` Domain resources to `weblogic.oracle/v9`. Customers do not need to take any action to begin using the latest Domain schema; however, the team recommends starting with "v9" Domain resources for any new projects. The operator provides a library that can be used to update existing "v8" Domain YAML files to "v9".
-* This release also introduces a new custom resource, the `weblogic.oracle/v1` Cluster resource. This Cluster resource configures a specific WebLogic cluster and allows customers to scale that cluster using the Kubernetes Horizontal Pod Autoscaling (HPA) or similar technologies. The Cluster resource schema is similar to the former `weblogic.oracle/v8` Domain resource `.spec.clusters[*]` content.
-* Customers who install a single WebLogic Kubernetes Operator per Kubernetes cluster (most common use case) can upgrade directly from any 3.x operator release to 4.0.0. The Helm chart for 4.0.0 will automatically install the schema conversion webhook.
-* For those customers who install more than one WebLogic Kubernetes Operator in a single Kubernetes cluster, you must upgrade every operator to at least version 3.4.1 before upgrading any operator to 4.0.0. As the 4.0.0 Helm chart now also installs a schema conversion webhook, you will want to use the Helm chart option to install this webhook in its own namespace prior to installing any of the 4.0.0 operators.
-* Several [Helm chart default values have been changed]({{< ref "#changes-to-helm-chart" >}}). Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
+* This release introduces a new API version for the Domain resource, `weblogic.oracle/v9`.
+  * The previous API version, `weblogic.oracle/v8` introduced with Operator 3.0.0 is deprecated, but is still supported.
+
+* This release also introduces a new custom resource, the `weblogic.oracle/v1` Cluster resource.
+  * This Cluster resource configures a specific WebLogic cluster and allows customers to scale that cluster using the Kubernetes Horizontal Pod Autoscaling (HPA) or similar technologies.
+  * The Cluster resource `.spec` schema is similar to and replaces the former `weblogic.oracle/v8` Domain resource `.spec.clusters[*]` content. 
+  * The Cluster resource `.status` schema mirrors the content of the Domain resource `.status.clusters[*]` content.
+
+* This release simplifies [upgrading the operator]({{< relref "/managing-operators/installation.md" >}}).
+  * The operator added a [schema conversion webhook]({{< relref "/managing-operators/conversion-webhook.md" >}}).
+    * This webhook automates the upgrade of `weblogic.oracle/v8` Domain resources to `weblogic.oracle/v9`.
+    * Customers do not need to take any action to begin using the latest Domain schema; however, the team recommends starting with "v9" Domain resources for any new projects.
+  * Customers who install a single WebLogic Kubernetes Operator per Kubernetes cluster (most common use case) can upgrade directly from any 3.x operator release to 4.0.0. The Helm chart for 4.0.0 will automatically install the schema conversion webhook.
+  * For those customers who install more than one WebLogic Kubernetes Operator in a single Kubernetes cluster:
+    * You must upgrade every operator to at least version 3.4.1 before upgrading any operator to 4.0.0.
+    * As the 4.0.0 Helm chart now also installs a singleton schema conversion webhook that is shared by all 4.0.0 operators in the cluster,
+      you will want to use the `webhookOnly` Helm chart option to install this webhook in its own namespace prior
+      to installing any of the 4.0.0 operators,
+      and also use the `preserveWebhook` Helm chart option with each operator to prevent an operator uninstall from uninstalling the shared webhook.
+  * The operator provides a utility that can be used to convert existing "v8" Domain YAML files to "v9".
+  * Several [Helm chart default values have been changed]({{< ref "#changes-to-helm-chart" >}}). Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
 
 ##### Changes to domain schema
 
-* Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
-* Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
-* Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
-* Content under `.spec.clusters[*]` is moved to the new Cluster resource `.spec` and is replaced in the Domain schema with references to the Cluster resources.
-* Removed `allowReplicasBelowMinDynClusterSize` field from `.spec.` and `.spec.clusters[*]` as cluster minimums must now be configured through autoscaling.
-* Removed `.spec.configuration.istio` as this section is no longer required.
-* The previously deprecated fields `.spec.domainHomeInImage`, `.spec.configOverrides`, and `.spec.configOverrideSecrets` have been removed.
-* Removed `serverStartState` field from `.spec`, `.spec.adminServer`, `.spec.managedServers[*]`, and `spec.clusters[*]` as this field is no longer needed.
-* Added `.spec.logHomeLayout` for configuring the directory layout for WebLogic Server logs.
-* Added `.spec.serverPod.shutdown.waitForAllSessions` to enhance the configuration of server shutdown options.
-* The field `.spec.adminServer.adminChannelPortForwardingEnabled` now defaults to `true`. It previously defaulted to `false`.
-* Added `.spec.failureRetryIntervalSeconds` and `.spec.failureRetryLimitMinutes` for configuration of failure retry timing.
-* Added `.spec.serverPod.maxReadyWaitTimeSeconds` for configuring maximum time before considering servers as stalled during startup.
-* Added `.status.serverStatus[*].podReady` and `.status.serverStatus[*].podPhase` with additional information about the pod associated with each WebLogic Server instance.
-* The field `.status.lastIntrospectJobProcessedUid` was renamed as `.status.failedIntrospectionUid` and added fields `.status.initialFailureTime` and `.status.lastFailureTime`.
-* Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
+* Model in Image auxiliary image related.
+  * Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
+  * Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
+  * Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
 
-##### Changes to Helm chart
+* Cluster changes.
+  * Moved content under `.spec.clusters[*]` to the new Cluster resource `.spec`.
+  * Modified `.spec.clusters[*]` to be a list of Cluster resource names.
+  * Removed `allowReplicasBelowMinDynClusterSize` field from `.spec.` and `.spec.clusters[*]` as cluster minimums must now be configured through autoscaling.
 
-* The default value for `domainNamespaceSelectionStrategy` is now `LabelSelector`. It was previously `List`.
-* The default value for `domainNamespaceLabelSelector` is now `weblogic-operator=enabled`. It was previously unspecified.
-* The previously deprecated value `dedicated` has been removed.
-* The default value for `enableClusterRoleBinding` is now `true`; however, this value is ignored if `domainNamespaceSelectionStrategy` is `Dedicated`. It was previously `false`.
-* The chart now has a value `createLogStashConfigMap`, which defaults to `true`, that configures how an optional Logstash container for the operator is configured.
-* The chart now has a value `webhookOnly`, which defaults to `false`, that specifies if this Helm release will install only the schema conversion webhook.
-* The chart now has a value `operatorOnly`, which defaults to `false`, that specifies if this Helm release will install only the operator.
-* The chart now has a value `preserveWebhook`, which defaults to `false`, that specifies if the schema conversion webhook should be orphaned when this Helm release is uninstalled.
-* The chart now has a value `webhookDebugHttpPort`, which defaults to `31999`, that configures an optional debugging port for the webhook.
+* Retry and failure tuning related.
+  * Added `.spec.failureRetryIntervalSeconds` and `.spec.failureRetryLimitMinutes` for configuration of failure retry timing.
+  * Added `.spec.serverPod.maxReadyWaitTimeSeconds` for configuring maximum time before considering servers as stalled during startup.
+
+* Condition status updates.
+  * Added or updated Conditions to clearly reflect the current state of the domain:
+    * The `Completed` condition is set to `True` when no failures are detected, plus all expected pods are `ready`, at their target image(s), `restartVersion`, and `introspectVersion`.
+    * The `Available` condition is set to `True` when a sufficient number of pods are `ready`. This condition can be `True` even when `Completed` is `False`, a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods that are not `ready`.
+    * The `Failed` condition is set to `True` and its `.message` field is updated when there is a failure.
+  * Added `.status.conditions[*].severity` to describe the severity of conditions that represent failures or warnings.
+  * Added fields `.status.initialFailureTime` and `.status.lastFailureTime` to enable measuring how long a `Failure` condition has been reported.
+  * Removed condition `ServersReady`. Instead use `Available` or `Completed`.
+  * Removed condition `Progressing`. Instead:
+    * Check `Completed` is `True` to see when a Domain is fully up-to-date and running.
+    * Check whether `Available` or `Completed` exist to verify that the operator has noticed the Domain resource.
+    * If `Failed` is `True`, then check its `.message` and `.severity` to see if retries have stopped.
+
+* General status updates.
+  * Added `.status.observedGeneration` for comparison to `.metadata.generation`; if the two values match, then the status correctly reflects the status of the latest updates to the Domain resource.
+  * Renamed `.status.lastIntrospectJobProcessedUid` to `.status.failedIntrospectionUid`.
+  * Added `.status.serverStatus[*].podReady` and `.status.serverStatus[*].podPhase` with additional information about the pod associated with each WebLogic Server instance.
+
+* Miscellaneous changes.
+  * Added `.spec.logHomeLayout` for configuring the directory layout for WebLogic Server logs.
+  * Added `.spec.serverPod.shutdown.waitForAllSessions` to enhance the configuration of server shutdown options.
+  * Removed `.spec.configuration.istio` as this section is no longer required.
+  * Removed previously deprecated fields `.spec.domainHomeInImage`, `.spec.configOverrides`, and `.spec.configOverrideSecrets`.
+    These have been replaced with `.spec.domainHomeSourceType`, `.spec.configuration.overridesConfigMap`, and `.spec.configuration.secrets`.
+  * Removed `serverStartState` field from `.spec`, `.spec.adminServer`, `.spec.managedServers[*]`, and `spec.clusters[*]` as this field is no longer needed.
+  * Default change for `.spec.adminServer.adminChannelPortForwardingEnabled` to `true`. It previously defaulted to `false`.
+
+##### Changes to operator Helm chart configuration values
+
+* Changed defaults for configuration values.
+  * The default for `domainNamespaceSelectionStrategy` is now `LabelSelector`. It was previously `List`.
+  * The default for `domainNamespaceLabelSelector` is now `weblogic-operator=enabled`. It was previously unspecified.
+  * The default for `enableClusterRoleBinding` is now `true`; however, this value is ignored if `domainNamespaceSelectionStrategy` is `Dedicated`. It was previously `false`.
+
+* Removed configuration value.
+  * The previously deprecated value `dedicated` has been removed. Set the `domainNamespaceSelectionStrategy` to `Dedicated` instead.
+
+* New configuration values.
+  * Added value `createLogStashConfigMap`, default `true`, that configures how an optional Logstash container for the operator is configured.
+  * Added value `webhookOnly`, default `false`, that specifies if this Helm release will install only the schema conversion webhook.
+  * Added value `operatorOnly`, default `false`, that specifies if this Helm release will install only the operator.
+  * Added value `preserveWebhook`, default to `false`, that specifies if the schema conversion webhook should be orphaned when this Helm release is uninstalled.
+  * Added value `webhookDebugHttpPort`, default `31999`, that configures an optional debugging port for the webhook.
 
 ##### Minor features and fixes
 

@@ -2,11 +2,15 @@
 title: "Domain failure retry processing"
 date: 2022-10-10T08:14:51-05:00
 draft: false
-weight: 8
+weight: 7
 description: "This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment."
 ---
 
+This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment.
+
 {{< table_of_contents >}}
+
+### Overview
 
 The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
 Failures are reported using Kubernetes events and the `spec.status` field in the Domain resource,
@@ -98,7 +102,7 @@ Status:
 ```
 
 To manually initiate an immediate retry, or to restart retries that have reached their
-`spec.failureIntervalRetrySeconds`, update a domain field that will cause immediate action by the operator.
+`spec.failureRetryLimitMinutes`, update a domain field that will cause immediate action by the operator.
 For example, change `spec.introspectVersion` or `spec.restartVersion` as appropriate.
 See [Startup and shutdown]({{< relref "/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})
 and [Initiating introspection]({{< relref "/managing-domains/domain-lifecycle/introspection#initiating-introspection" >}})

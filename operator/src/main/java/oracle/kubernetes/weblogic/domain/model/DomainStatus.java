@@ -60,7 +60,9 @@ public class DomainStatus {
       "A brief CamelCase message indicating details about why the domain is in this state.")
   private String reason;
 
-  @Description("The generation observed by the WebLogic operator.")
+  @Description("The Domain resource generation observed by the WebLogic operator."
+      + " This value will match the 'domain.metadata.generation' "
+      + " when the 'domain.status' correctly reflects the latest resource changes.")
   private Long observedGeneration;
 
 

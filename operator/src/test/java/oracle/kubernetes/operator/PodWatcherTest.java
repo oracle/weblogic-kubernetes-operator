@@ -157,12 +157,12 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
   }
 
   private V1Pod markPodReady(V1Pod pod) {
-    return pod.status(new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
-        .addConditionsItem(createCondition(V1PodCondition.TypeEnum.READY)));
+    return pod.status(new V1PodStatus().phase("Running")
+        .addConditionsItem(createCondition("Ready")));
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1PodCondition createCondition(V1PodCondition.TypeEnum type) {
+  private V1PodCondition createCondition(String type) {
     return new V1PodCondition().type(type).status("True");
   }
 

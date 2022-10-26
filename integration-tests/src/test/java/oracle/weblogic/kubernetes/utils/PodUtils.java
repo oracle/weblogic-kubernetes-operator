@@ -8,6 +8,8 @@ import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -453,5 +455,50 @@ public class PodUtils {
 
     return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
 
+  }
+
+
+  /**
+   * Check if the pod log contains the certain text.
+   * @param regex check string
+   * @param podName the name of the pod
+   * @param namespace the Operator namespace
+   * @return true if regex found, false otherwise.
+   */
+  public static boolean checkPodLogContainsRegex(String regex, String podName, String namespace) {
+    // get the Pod logs
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(podName, namespace));
+
+    // match regex in pod log
+    getLogger().info("Search: {0} in pod {1} log", regex, podName);
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(operatorPodLog);
+
+    return matcher.find();
+  }
+
+  /**
+   * Search specified regex in an uncompleted pod log.
+   * @param regex check string
+   * @param domainUid domain uid of the domain
+   * @param namespace the Operator namespace
+   * @return true if regex found, false otherwise.
+   */
+  public static boolean checkInUncompletedIntroPodLogContainsRegex(String regex, String domainUid, String namespace) {
+    // get introspector pod name
+    String introspectorPodName = assertDoesNotThrow(()
+        -> getIntrospectorPodName(domainUid, namespace), "Getting introspector pod name failed");
+    getLogger().info("introspector pod name is: {0}", introspectorPodName);
+
+    // get the introspector log message
+    String introspectorLog = assertDoesNotThrow(()
+        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector",
+              new Boolean(false), new Integer(300), new Boolean(true)));
+
+    // match regex in domain info
+    Pattern pattern = Pattern.compile(regex);
+    Matcher matcher = pattern.matcher(introspectorLog);
+
+    return matcher.find();
   }
 }
