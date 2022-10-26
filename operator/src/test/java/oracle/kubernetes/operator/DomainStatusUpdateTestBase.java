@@ -1630,6 +1630,17 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAdminOnlyAndAdminServerNameNotSetInDomainPresenceInfo_availableIsFalse() {
+    info.setAdminServerName(null);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
   void whenAdminOnly_completedIsTrue() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
@@ -1815,6 +1826,7 @@ abstract class DomainStatusUpdateTestBase {
     @Nonnull
     private List<DomainPresenceInfo.ServerStartupInfo> createServerStartupInfo(WlsDomainConfig domainConfig) {
       return domainConfig.getAllServers().stream()
+            .filter(c -> !isAdminServer(c))
             .filter(this::isLive)
             .map(config -> new DomainPresenceInfo.ServerStartupInfo(config, "", null))
             .collect(Collectors.toList());
@@ -1822,6 +1834,10 @@ abstract class DomainStatusUpdateTestBase {
 
     private boolean isLive(WlsServerConfig serverConfig) {
       return !nonStartedServers.contains(serverConfig.getName());
+    }
+
+    private boolean isAdminServer(WlsServerConfig serverConfig) {
+      return ADMIN.equals(serverConfig.getName());
     }
 
     private Map<String,String> createStateMap() {

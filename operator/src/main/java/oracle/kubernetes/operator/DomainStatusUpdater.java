@@ -840,11 +840,20 @@ public class DomainStatusUpdater {
         }
 
         private boolean noApplicationServersReady() {
-          return Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList())
-              .stream()
-              .map(DomainPresenceInfo.ServerInfo::getName)
-              .filter(this::isApplicationServer)
-              .noneMatch(StatusUpdateContext.this::isServerReady);
+          return isAdminOnlyDomain() && getInfo().getAdminServerName() != null
+                  ? isServerNotReady(getInfo().getAdminServerName()) : noManagedServersReady();
+        }
+
+        private boolean noManagedServersReady() {
+          return getServerStartupInfos()
+                  .stream()
+                  .map(DomainPresenceInfo.ServerInfo::getName)
+                  .filter(this::isApplicationServer)
+                  .noneMatch(StatusUpdateContext.this::isServerReady);
+        }
+
+        private Collection<DomainPresenceInfo.ServerStartupInfo> getServerStartupInfos() {
+          return Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList());
         }
 
         // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
