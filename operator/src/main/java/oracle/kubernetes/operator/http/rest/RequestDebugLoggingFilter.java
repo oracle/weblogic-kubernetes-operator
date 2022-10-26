@@ -74,7 +74,7 @@ public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
     // This should be OK since JSON input shouldn't be monstrously big
     try (BufferedReader ir = new BufferedReader(new InputStreamReader(req.getEntityStream()))) {
       StringBuilder sb = new StringBuilder();
-      String line = null;
+      String line;
       Charset cs = MessageUtils.getCharset(req.getMediaType());
       // TBD - is all the Charset handling correct?
       do {
