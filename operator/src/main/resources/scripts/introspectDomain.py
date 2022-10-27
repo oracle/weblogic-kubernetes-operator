@@ -1105,7 +1105,8 @@ class MII_DomainConfigGenerator(Generator):
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
               "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
-              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml" % (
+              "%s/wlsdeploy/applications/*.xml " \
+              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml" % ( self.domain_home,
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home)
     os.system(packcmd)
