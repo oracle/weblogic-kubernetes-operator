@@ -5,7 +5,6 @@ weight: 5
 description: "Ingress controllers and load balancer sample scripts."
 ---
 
-
 The WebLogic Kubernetes Operator supports NGINX, Traefik, and Apache. We provide samples that demonstrate how to install and configure each one.
 
 {{% notice note %}}

@@ -8,7 +8,6 @@ the prerequisite for upper stack products like Oracle SOA Suite."
 
 {{< table_of_contents >}}
 
-
 The operator supports FMW Infrastructure domains, that is,
 domains that are created with the FMW Infrastructure installer rather than the WebLogic
 Server installer.  These domains contain Java Required Files (JRF), which are

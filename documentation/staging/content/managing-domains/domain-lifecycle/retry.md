@@ -2,11 +2,15 @@
 title: "Domain failure retry processing"
 date: 2022-10-10T08:14:51-05:00
 draft: false
-weight: 8
+weight: 7
 description: "This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment."
 ---
 
+This document describes domain failure retry processing in the Oracle WebLogic Server in Kubernetes environment.
+
 {{< table_of_contents >}}
+
+### Overview
 
 The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
 Failures are reported using Kubernetes events and the `spec.status` field in the Domain resource,

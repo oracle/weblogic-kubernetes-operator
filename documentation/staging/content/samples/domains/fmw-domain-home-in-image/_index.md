@@ -5,7 +5,6 @@ weight: 6
 description: "Sample for creating an FMW Infrastructure domain home inside an image, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
-
 The sample scripts demonstrate the creation of a FMW Infrastructure domain home in an image using
 [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
 The sample scripts have the option of putting the WebLogic domain log, server logs, server output files,

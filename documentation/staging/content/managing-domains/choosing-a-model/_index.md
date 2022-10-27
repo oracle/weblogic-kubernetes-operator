@@ -2,8 +2,14 @@
 title = "Choose a domain home source type"
 date = 2019-02-23T16:44:54-05:00
 weight = 2
-description = "When using the operator to start WebLogic Server instances from a domain, choose among these domain home types depending on your requirements."
+description = "Choose among these domain home types depending on your requirements and create images that are appropriate for your type."
 +++
+
+This document describes the domain home source types for deploying a domain, and creating images that are appropriate for each type.
+
+{{< table_of_contents >}}
+
+### Overview of domain home source types
 
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
 

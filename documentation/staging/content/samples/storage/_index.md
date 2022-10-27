@@ -5,7 +5,6 @@ weight: 1
 description: "Sample for creating a PV or PVC that can be used by a Domain YAML file as the persistent storage for the WebLogic domain home or log files."
 ---
 
-
 ### Sample PersistentVolume and PersistentVolumeClaim
 
 The sample scripts demonstrate the creation of a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC), which can then be used in a Domain YAML file as a persistent storage for the WebLogic domain home or log files.
