@@ -14,15 +14,13 @@ This document describes approaches for scaling WebLogic clusters in a Kubernetes
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by defining each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/clust/dynamic_clusters.html#GUID-DA7F7FAD-49AA-4F3D-8A05-0D9921B96971).
 
-For more in-depth information on support for scaling WebLogic clusters in Kubernetes, see [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
-
-WebLogic Kubernetes Operator 4.0 introduces a new custom resource, `Cluster`.  A cluster resource references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  The Cluster resource enables the `/scale` subresource which allows it to be scaled up or down via an HTTP endpoint.  With the introduction of the `Cluster` resource, the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is now fully supported and can be used to autoscale individual WebLogic clusters.
+WebLogic Kubernetes Operator 4.0 introduces a new custom resource, `Cluster`.  A cluster resource references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  The Cluster resource implements a Kubernetes [/scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource\).  With the introduction of the Cluster resource, the `kubectl scale` command is now fully supported for individual WebLogic clusters, and the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) to autoscale individual WebLogic clusters.
 
 For more in-depth information on the scale subresource, see [Scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource).
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
-* [kubectl CLI commands](#kubectl-cli-commands).
+* [`kubectl` CLI commands](#kubectl-cli-commands).
 * [On-demand, updating the Cluster or Domain directly (using `kubectl`)](#on-demand-updating-the-cluster-or-domain-directly).
 * [Using Domain Lifecycle Sample Scripts](#using-domain-lifecycle-sample-scripts).
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
@@ -72,11 +70,8 @@ spec:
   ...
 ```
 ##### Updating the Domain directly
-To scale a WebLogic cluster, that does not reference a Cluster resource or the Cluster resource does not have the `.spec.replicas` field specified, modify the value of the `replicas` field of a Domain by using the `kubectl edit` command.  
-{{% notice note %}}
-The `domain.spec.replicas` field is the default `replicas` for all clusters in a domain. It affects any WebLogic clusters that do not have a corresponding Cluster resource and any WebLogic clusters with a Cluster resource that do not have the `.spec.replicas` field specified.
-{{% /notice %}}
-For example:
+To scale every WebLogic cluster in a domain that does not have a corresponding Cluster resource, or that has a Cluster resource which does not specify a `cluster.spec.replicas` field, modify the `domain.spec.replicas` using the `kubectl edit` command:
+
 ```shell
 $ kubectl edit domain domain1 -n [namespace]
 ```
@@ -187,7 +182,8 @@ In response to a change in the `replicas` field in the Cluster resource, the ope
 #### Supported Autoscaling Controllers
 While continuing to support automatic scaling of WebLogic clusters with the WebLogic Diagnostic Framework (WLDF) and Prometheus, Operator 4.0 now supports the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
 ##### Kubernetes Horizontal Pod Autoscalar (HPA)
-Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. In order to scale based on "resource metrics" (like CPU, memory, or any custom metrics), an implementation of the `Metrics API` must be deployed to the Kubernetes cluster.  One such implementation of the `Metrics API` is the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/).  Prometheus offers the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter), which implements the Kubernetes resource metrics, custom metrics, and external metrics APIs and is also suitable for use with the Horizontal Pod Autoscaler.
+Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the Kubernetes [/scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource/). 
+Autoscaling based on resource metrics requires the installation of the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/) or another implementation of the resource metrics API. Prometheus offers the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter), which implements the Kubernetes resource metrics, custom metrics, and external metrics APIs and is also suitable for use with the Horizontal Pod Autoscaler.
 
 The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
 
