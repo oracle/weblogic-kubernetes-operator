@@ -8,7 +8,6 @@ weight: 10
 
 {{< table_of_contents >}}
 
-
 ### Cheat sheet for setting up Kubernetes
 
 If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, [Microsoft Azure](/samples/azure-kubernetes-service/), Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:
@@ -509,6 +508,6 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
     To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     ```
 
-    #### Important note about persistent volumes
+#### Important note about persistent volumes
   {{% notice warning %}} Docker for Mac has some restrictions on where you can place a directory that can be used as a `HostPath` for a persistent volume.  To keep it simple, place your directory somewhere under `/Users`.
   {{% /notice %}}

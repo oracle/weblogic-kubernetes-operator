@@ -8,7 +8,6 @@ description: "Use port forwarding to access WebLogic Server administration conso
 
 {{< table_of_contents >}}
 
-
 ### Overview
 
 Beginning with WebLogic Kubernetes Operator version 3.3.2,

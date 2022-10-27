@@ -3,7 +3,7 @@ title: "Design philosophy"
 date: 2019-02-23T20:51:51-05:00
 draft: false
 weight: 2
-description: "Define the expected roles of an administrator, the operator, and domain resources."
+description: "Define the expected roles of an administrator, the operator, and domain and cluster resources."
 ---
 
 The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various lifecycle operations on a domain correctly.
@@ -28,6 +28,6 @@ The operator is designed with security in mind from the outset.  Some examples o
 
 The operator is designed to avoid imposing any arbitrary restriction on how WebLogic Server may be configured or used in Kubernetes.  Where there are restrictions, these are based on the availability of some specific feature in Kubernetes; for example, multicast support.
 
-The operator learns of WebLogic domains through instances of a domain Kubernetes resource.  When the operator is installed, it creates a Kubernetes [Custom Resource Definition](https://kubernetes.io/docs/concepts/api-extension/custom-resources/).  This custom resource definition defines the Domain type.  After this type is defined, you can manage Domains using `kubectl` just like any other resource type.  For instance, `kubectl get domain` or `kubectl edit domain domain1`.  
+The operator learns of WebLogic domains and WebLogic clusters within domains through instances of domain Kubernetes resources and cluster Kubernetes resources.  When the operator is installed, it creates a Kubernetes [Custom Resource Definition](https://kubernetes.io/docs/concepts/api-extension/custom-resources/) for domain resources and another for cluster resources.  These custom resource definitions define the Domain type and the Cluster type.  After these types are defined, you can manage Domains and Clusters using `kubectl` just like any other resource type.  For instance, `kubectl get domain` or `kubectl edit domain domain1`.  
 
-The schema for the Domain type is designed to be as sparse as possible.  It includes the connection details for the Administration Server, but all of the other content is operational details about which servers should be started, environment variables, and details about what should be exposed outside the Kubernetes cluster.  This way, the WebLogic domain's configuration remains the normative configuration.
+The schema for the Domain type is designed to be as sparse as possible.  It includes the connection details for the Administration Server, but all of the other content is operational details about which servers should be started, environment variables, and details about what should be exposed outside the Kubernetes cluster.  Similarly, the schema for the Cluster type is also sparse where often the only value set is the desired size of the corresponding WebLogic cluster. This way, the WebLogic domain's configuration remains the normative configuration.

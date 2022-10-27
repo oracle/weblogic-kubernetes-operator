@@ -4,6 +4,7 @@ date: 2019-02-22T15:44:42-05:00
 draft: false
 weight: 3
 ---
+
 #### Create the domain using a domain resource.
 
 1. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain.
@@ -28,9 +29,9 @@ weight: 3
 
     These two commands create secrets named `sample-domain1-weblogic-credentials` and `sample-domain1-runtime-encryption-secret` used in the sample domain YAML file. If you want to use different secret names, then you will need to update the sample domain YAML file accordingly in the next step.
 
-1. Create the `sample-domain1` domain using a domain resource. The domain resource does not replace the traditional domain configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
+1. Create the `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource do not replace the traditional WebLogic configuration files, but instead cooperates with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-   - Use the following command to apply the sample domain resource.
+   - Use the following command to apply the two sample resources.
 
      ```shell
      $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml
@@ -39,7 +40,7 @@ weight: 3
    - **NOTE**: If you want to view or need to modify it, you can download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar. Then apply the file using `kubectl apply -f /tmp/quickstart/domain-resource.yaml`.
 
 
-   This domain resource references a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image," which contains traditional WebLogic configuration and a WebLogic application.
+   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, and a sample "auxiliary image", which contains traditional WebLogic configuration and a WebLogic application.
 
      - To examine the domain resource, click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml).
      - For detailed information, see [Domain resource]({{< relref "/managing-domains/domain-resource.md" >}}).

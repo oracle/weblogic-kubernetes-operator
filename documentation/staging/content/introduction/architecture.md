@@ -17,14 +17,17 @@ The operator consists of the following parts:
     into a Kubernetes Pod and that monitors one
     or more Kubernetes namespaces.
   - Performs the actual management tasks
-    for domain resources deployed to these namespaces.
+    for domain and cluster resources deployed to these namespaces.
 * A Helm chart for installing the operator runtime and its related resources.
-* A Kubernetes custom resource definition (CRD) that,
-  when installed, enables the Kubernetes API server
-  and the operator to monitor and manage domain resource instances.
+* Kubernetes custom resource definitions (CRD) for domains and clusters that,
+  when installed, enable the Kubernetes API server
+  and the operator to monitor and manage domain and cluster resource instances.
 * Domain resources that reference WebLogic
   domain configuration, a WebLogic install, and
   anything else necessary to run the domain.
+* Cluster resources that are referenced by domain resources
+  and that reference WebLogic clusters
+  to scale the cluster and to allow other cluster-specific configurations.
 
 The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
@@ -34,7 +37,7 @@ $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}
 
 For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}).
 
-The operator registers a Kubernetes custom resource definition called `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  More details about the Domain type defined by this CRD, including its schema, are available [here]({{< relref "/managing-domains/domain-resource.md" >}}).
+The operator registers two Kubernetes custom resource definitions. The first is for the `Domain` resource and is named `domain.weblogic.oracle` (shortname `domain`, plural `domains`).  The second is for the `Cluster` resource and is named `cluster.weblogic.oracle` (shortname `cluster`, plural `clusters`).  More details about the types defined by these CRDs, including their schema, are available [here]({{< relref "/managing-domains/domain-resource.md" >}}).
 
 The following diagram shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
@@ -55,9 +58,12 @@ The Kubernetes cluster has several namespaces. Components may be deployed into n
   * There is no limit on the number of domains or namespaces that an operator can manage.  
   * If the Elastic Stack integration option is configured to monitor the operator,
     then a Logstash container will also be created in the operator’s pod.
-* WebLogic domain resources deployed into various namespaces.
+* WebLogic domain and cluster resources deployed into various namespaces.
   * There can be more than one domain in a namespace, if desired.
   * Every domain resource must be configured with a [domain unique identifier](#domain-uid).
+  * Cluster resources are only active when they are referenced by a domain resource.
+  * Each cluster resource must be referenced by at most one domain resource.
+  * While a cluster resource configures a particular WebLogic cluster, it is not required that every WebLogic cluster be associated with a cluster resource. If there is no cluster resource then the WebLogic cluster will inherit the default configuration from the domain resource.
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.
 * Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.
 
@@ -85,8 +91,10 @@ be unique within a namespace, similarly to the names of Kubernetes
 resources.
 
 As a convention, any resource that is associated with a particular Domain UID
-is typically given a Kubernetes label named `weblogic.domainUID` that
-is assigned to that UID. If the operator creates a resource for
+is given a Kubernetes label named `weblogic.domainUID` that
+is assigned to that UID, and the resource name
+is prefixed with that UID followed by a dash (`-`).
+If the operator creates a resource for
 you on behalf of a particular domain, it will follow this
 convention. For example, to see all pods created with
 the `weblogic.domainUID` label in a Kubernetes cluster try:
