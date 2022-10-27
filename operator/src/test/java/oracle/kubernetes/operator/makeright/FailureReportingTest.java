@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.Processors;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
@@ -94,7 +95,8 @@ class FailureReportingTest {
   private final MakeRightExecutorStub executor = Stub.createNiceStub(MakeRightExecutorStub.class);
   private final DomainProcessorDelegateStub delegate
       = Stub.createStrictStub(DomainProcessorDelegateStub.class, testSupport);
-  private final MakeRightDomainOperation makeRight = new MakeRightDomainOperationImpl(executor, delegate, info);
+  private final MakeRightDomainOperation makeRight = new MakeRightDomainOperationImpl(executor, delegate, info)
+      .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED));
   private final TerminalStep terminalStep = new TerminalStep();
   private String introspectionString = INFO_MESSAGE;
   private Step steps;
