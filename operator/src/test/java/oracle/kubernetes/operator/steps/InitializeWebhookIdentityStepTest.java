@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -32,7 +33,6 @@ import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Matchers;
 import org.hamcrest.junit.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -178,7 +178,7 @@ class InitializeWebhookIdentityStepTest {
           InitializeWebhookIdentityStep.class, "identityFactory", new SSlIdentityFactoryStub());
     }
 
-    @NotNull
+    @Nonnull
     @Override
     public KeyPair createKeyPair() {
       return new KeyPair(Stub.createNiceStub(PublicKey.class), Stub.createNiceStub(PrivateKey.class));

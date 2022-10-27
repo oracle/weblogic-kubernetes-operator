@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.steps;
 
+import javax.annotation.Nonnull;
+
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -11,7 +13,6 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownWithHttpStep;
 
@@ -49,7 +50,7 @@ public class ServerDownStep extends Step {
     return doNext(oldPod != null ? createShutdownManagedServerStep(oldPod, next) : next, packet);
   }
 
-  @NotNull
+  @Nonnull
   private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
     return ShutdownManagedServerStep
         .createShutdownManagedServerStep(createWaitForServerShutdownWithHttpStep(

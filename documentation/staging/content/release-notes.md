@@ -76,7 +76,7 @@ draft: false
 * Status and Events updates:
   * The [Conditions]({{< ref "#changes-to-domain-schema" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated. 
   * The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads.
-  * Failures are distinguished between those that require customer intervention or those that are potentially temporary and will be retried.
+  * Failures are distinguished between those that require customer intervention and those that are potentially temporary and will be retried.
 
 * Retry updates:
   * The operator handling of
@@ -111,7 +111,7 @@ draft: false
       to installing any of the 4.0.0 operators,
       and also use the `preserveWebhook` Helm chart option with each operator to prevent an operator uninstall from uninstalling the shared webhook.
   * The operator provides a utility that can be used to convert existing "v8" Domain YAML files to "v9".
-  * Several [Helm chart default values have been changed]({{< ref "#changes-to-helm-chart" >}}). Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
+  * Several [Helm chart default values have been changed]({{< ref "#changes-to-operator-helm-chart-configuration-values" >}}). Customers who upgrade their 3.x installations using the `--reuse-values` option during the Helm upgrade will continue to use the values from their original installation.
 
 ##### Changes to domain schema
 

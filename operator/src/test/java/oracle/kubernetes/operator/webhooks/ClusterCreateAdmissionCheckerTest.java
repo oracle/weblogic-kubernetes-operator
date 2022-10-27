@@ -5,13 +5,13 @@ package oracle.kubernetes.operator.webhooks;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.webhooks.resource.ClusterCreateAdmissionChecker;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -98,7 +98,7 @@ class ClusterCreateAdmissionCheckerTest extends AdmissionCheckerTestBase {
     assertThat(clusterChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
-  @NotNull
+  @Nonnull
   private List<V1EnvVar> createEnvVarListWithReservedName() {
     List<V1EnvVar> list = new ArrayList<>();
     list.add(new V1EnvVar().name(SERVER_NAME).value("haha"));

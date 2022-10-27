@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -22,7 +23,6 @@ import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -328,7 +328,7 @@ class OperatorEventProcessingTest {
     return getEventName(found).equals(getEventName(event)) ? found : null;
   }
 
-  @NotNull
+  @Nonnull
   private String getEventName(CoreV1Event event) {
     return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
   }
