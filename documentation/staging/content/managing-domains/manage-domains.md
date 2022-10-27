@@ -2,10 +2,103 @@
 title: "About WebLogic domains"
 date: 2019-02-23T16:43:45-05:00
 weight: 1
-description: "Important considerations for managing WebLogic domains in Kubernetes."
+description: "An overview about managing WebLogic domains and clusters in Kubernetes."
 ---
 
+This document is an overview of managing WebLogic domains and clusters in Kubernetes.
+
 {{< table_of_contents >}}
+
+### Creating and managing WebLogic domains
+
+Domain resources reference WebLogic domain configuration, a WebLogic install,
+[images]({{< relref "/base-images/_index.md" >}}),
+and anything else necessary to run the domain.
+Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain configuration
+may optionally be associated with a Cluster resource in addition to a Domain resource.
+For more information, see [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
+
+You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
+For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
+
+If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
+with a specific configuration or applications deployed, then you can create the domain custom resource
+manually to deploy your domain.  This process is documented in [this
+sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
+
+**Note:** Once you are familiar with the basics, it is recommended to review
+[important considerations]({{< relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" >}})
+and 
+[resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
+
+### Modifying domain configurations
+
+You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
+
+When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
+
+For Domain in Image and Domain in PV, you can use [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
+
+Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
+parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
+and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{< relref "/managing-domains/configoverrides#unsupported-overrides" >}}).
+
+For Model in Image, you use [Runtime Updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
+
+### Managing lifecycle operations
+
+You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
+This includes starting, stopping, and rolling domains, clusters,
+or individual servers, plus detecting failures and tuning retry behavior.
+See [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md" >}}).
+
+### Scaling clusters
+
+The operator lets you initiate scaling of clusters in various ways:
+
+* Using kubectl to edit a Cluster resource
+* Using Kubernetes `scale` commands
+* Using a Kubernetes Horizontal Pod Autoscaler
+* Using the operator's REST APIs
+* Using WLDF policies
+* Using a Prometheus action
+
+See [Domain life cycle scaling]({{< relref "/managing-domains/domain-lifecycle/scaling.md" >}}).
+
+### About domain events
+
+The operator generates Kubernetes events at key points during domain processing.
+For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
+
+### Accessing and monitoring domains
+
+To access the domain using WLST, console, T3, or a load balancer,  or to export Prometheus-compatible metrics,
+see [Access and monitor domains]({{< relref "/managing-domains/accessing-the-domain/" >}}).
+
+### Logging
+
+To tune log file location and rotation, see [Log Files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
+
+To export operator or domain log files, see the [Elastic Stack]({{< relref "/samples/elastic-stack/" >}}) examples.
+
+### Meet Kubernetes resource name restrictions
+
+Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.
+
+The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
+
+* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
+* A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
+* A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
+* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
+
+The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
+* All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lowercase and substitute a hyphen (`-`) for each underscore (`_`).
+* A `domainUID` is required to be no more than 45 characters.
+* WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits.
+
+When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
 
 
 ### Important considerations for WebLogic domains in Kubernetes
@@ -56,7 +149,7 @@ Be aware of the following important considerations for WebLogic domains running 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
   that many cloud provider's volume providers may not support volumes across availability zones.  You may want to use NFS or a clustered file system to work around this limitation.
 
-* _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
+* _Security Note:_ The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain or Cluster YAML file using the `env` attribute under the `serverPod` configuration.
 
 * _JVM Memory and Java Option Arguments:_ The following environment variables can be used to customize the JVM memory and Java options for both the WebLogic Server Managed Servers and Node Manager instances:
 
@@ -65,7 +158,8 @@ Be aware of the following important considerations for WebLogic domains running 
     * `NODEMGR_JAVA_OPTIONS` - Java options for starting a Node Manager instance
     * `NODEMGR_MEM_ARGS` - JVM memory arguments for starting a Node Manager instance
 
-    For more information, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
+    For more information, see [JVM memory and Java option environment variables]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).
+
 
 The following features are **not** certified or supported in this release:
 
@@ -79,79 +173,3 @@ The following features are **not** certified or supported in this release:
 
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 
-### Meet Kubernetes resource name restrictions
-
-Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.
-
-The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
-
-* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
-* A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
-* A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
-* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/managing-operators/using-helm#weblogic-domain-management" >}})).
-
-The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
-* All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lowercase and substitute a hyphen (`-`) for each underscore (`_`).
-* A `domainUID` is required to be no more than 45 characters.
-* WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits.
-
-When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
-
-### Creating and managing WebLogic domains
-
-You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
-For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
-
-If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
-with a specific configuration or applications deployed, then you can create the domain custom resource
-manually to deploy your domain.  This process is documented in [this
-sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
-
-### Modifying domain configurations
-
-You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
-
-When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
-
-For Domain in Image and Domain in PV, you can use [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
-
-Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
-parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret. However, note the scenarios for which configuration overrides [are _not_ supported]({{< relref "/managing-domains/configoverrides#unsupported-overrides" >}}).
-
-For Model in Image, you use [Runtime Updates]({{<relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
-
-### About the Domain resource
-
-For more information, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
-
-### Managing lifecycle operations
-
-You can perform lifecycle operations on WebLogic Servers, clusters, or domains.
-See [Starting and stopping]({{< relref "/managing-domains/domain-lifecycle/startup.md" >}}) and [Restarting]({{< relref "/managing-domains/domain-lifecycle/restarting.md" >}}) servers.
-
-### Scaling clusters
-
-The operator lets you initiate scaling of clusters in various ways:
-
-* [Using kubectl to edit the Domain resource]({{< relref "/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-directly" >}})
-* [Using the operator's REST APIs]({{< relref "/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
-* [Using WLDF policies]({{< relref "/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
-* [Using a Prometheus action]({{< relref "/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})
-
-### About domain events
-
-The operator generates Kubernetes events at key points during domain processing.
-For more information, see [Domain events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}).
-
-### Accessing and monitoring domains
-
-To access the domain using WLST, console, T3, or a load balancer,  or to export Prometheus-compatible metrics,
-see [Access and monitor domains]({{< relref "/managing-domains/accessing-the-domain/" >}}).
-
-### Logging
-
-To tune log file location and rotation, see [Log Files]({{< relref "/managing-domains/accessing-the-domain/logs.md" >}}).
-
-To export operator or domain log files, see the [Elastic Stack]({{< relref "/samples/elastic-stack/" >}}) examples.

@@ -6,7 +6,6 @@ description: "Learn about the available Java integration tests."
 weight: 4
 ---
 
-
 The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator image is in a container registry visible to the Kubernetes cluster.
 
 

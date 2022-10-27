@@ -22,9 +22,10 @@ You can deploy, delete, and manage domain resources while an operator is running
 A completely installed and running WebLogic Kubernetes Operator environment includes:
 
 - A Kubernetes cluster.
-- A Kubernetes custom resource definition (CRD) that, when installed,
-  enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
+- A pair of Kubernetes custom resource definitions (CRD) for domain and cluster resource that, when installed,
+  enables the Kubernetes API server and the operator to monitor and manage their resource instances.
 - One or more operator runtimes, each deployed to a different namespace, that monitor Kubernetes namespaces for domain resources.
+- A WebLogic domain resource conversion webhook that runs in a single namespacre in the Kubernetes cluster, that is shared by the operator runtimes, and that handles the automatic conversion of older versions of the domain resource.
 - Each operator is associated with a local Kubernetes service account for security purposes. The service account is deployed to the same namespace as the operator.
 
 When an operator runtime detects a domain,

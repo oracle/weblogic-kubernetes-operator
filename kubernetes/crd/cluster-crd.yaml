@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3c1dd670396edaa66773c2de84ea6d50a05f4618c2515d1005dc2c4029790d17
+    weblogic.sha256: 53299f8b85e950b6c69b5fabd130221c735761f914d2b7fa46882cdee8da6715
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -75,7 +75,7 @@ spec:
                   further cluster members in the sorted list that are not already
                   started. If cluster members are started because of their related
                   entries under `managedServers`, then this cluster may have more
-                  cluster members running than its `replicas` count. Defaults to `spec.replicas`,
+                  cluster members running than its `replicas` count. Defaults to `domain.spec.replicas`,
                   which defaults 1.
                 minimum: 0
                 type: integer
@@ -2906,7 +2906,8 @@ spec:
                   must be started, the operator will wait until a Managed Server Pod
                   is in the `Ready` state before starting the next Managed Server
                   instance. A value of 0 means all Managed Server instances will start
-                  in parallel. Defaults to 0.
+                  in parallel. Defaults to `domain.spec.maxClusterConcurrentStartup`,
+                  which defaults to 0.
                 minimum: 0
                 type: integer
               restartVersion:
@@ -2973,7 +2974,10 @@ spec:
                       type: string
                 type: array
               observedGeneration:
-                description: The generation observed by the WebLogic operator.
+                description: The Cluster resource generation observed by the WebLogic
+                  operator. If the Cluster resource exists, then this value will match
+                  the 'cluster.metadata.generation'  when the 'cluster.status' correctly
+                  reflects the latest cluster resource changes.
                 type: integer
             type: object
         type: object

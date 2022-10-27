@@ -7,7 +7,6 @@ description: "Run the operator and WebLogic domains managed by the operator when
 
 {{< table_of_contents >}}
 
-
 ### Overview
 
 {{% notice note %}}

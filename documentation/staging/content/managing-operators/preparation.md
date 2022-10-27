@@ -301,7 +301,6 @@ If you want to limit the operator so that it can access only resources in its lo
 This may be necessary in environments where the operator cannot have cluster-scoped privileges,
 such as may happen on OpenShift platforms when running the operator with a `Dedicated` namespace strategy.
 
-
 #### Choose a domain namespace selection strategy
 
 Before installing your operator,
