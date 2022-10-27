@@ -3,9 +3,10 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SCALE_REPLICAS_TOO_HIGH;
 
@@ -25,7 +26,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_SCALE_REPLICA
 public class ClusterScaleAdmissionChecker extends ClusterAdmissionChecker {
 
   /** Construct a ClusterUpdateAdmissionChecker. */
-  public ClusterScaleAdmissionChecker(@NotNull ClusterResource proposedCluster) {
+  public ClusterScaleAdmissionChecker(@Nonnull ClusterResource proposedCluster) {
     this.proposedCluster = proposedCluster;
   }
 

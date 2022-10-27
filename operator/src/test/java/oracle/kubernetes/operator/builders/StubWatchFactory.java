@@ -22,7 +22,6 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * A test-time replacement for the factory that creates Watch objects, allowing tests to specify
@@ -97,7 +96,7 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
    * @return a test double for the requested watch
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  @NotNull
+  @Nonnull
   public Watchable<T> createWatch(ApiClient client, Call call, Type type) {
     try {
       addRecordedParameters(getParameters(call));
@@ -119,7 +118,7 @@ public class StubWatchFactory<T> implements WatchFactory<T> {
     }
   }
 
-  @NotNull
+  @Nonnull
   private Map<String, String> getParameters(Call call) {
     final Matcher matcher = URL_PARAMETERS.matcher(call.request().url().toString());
     final Map<String, String> recordedParams = new HashMap<>();

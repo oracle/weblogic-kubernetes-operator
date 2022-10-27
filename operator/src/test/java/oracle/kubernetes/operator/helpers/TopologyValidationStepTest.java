@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -37,7 +38,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -257,7 +257,7 @@ class TopologyValidationStepTest {
       }
     }
 
-    @NotNull
+    @Nonnull
     private WlsServerConfig createServerWithNoPorts() {
       WlsServerConfig server = new WlsServerConfig(MANAGED_SERVER1, LISTEN_ADDRESS, 0);
       server.setListenPort(null);
@@ -389,7 +389,7 @@ class TopologyValidationStepTest {
       ensureNoClustersAreEmpty();
     }
 
-    @NotNull
+    @Nonnull
     private String createName() {
       return createdName = createNameWithLength(totalLength - domain.getDomainUid().length());
     }

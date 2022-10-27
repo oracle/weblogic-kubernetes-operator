@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
@@ -29,7 +30,6 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ public class NamespaceTest {
   private final Set<String> currentNamespaces = new HashSet<>();
   private final DomainNamespaces domainNamespaces = createDomainNamespaces();
 
-  @NotNull
+  @Nonnull
   public static DomainNamespaces createDomainNamespaces() {
     return new DomainNamespaces(null);
   }
@@ -134,7 +134,7 @@ public class NamespaceTest {
     return new DomainResource().withMetadata(new V1ObjectMeta().namespace(ns).name(createUid(ns)));
   }
 
-  @NotNull
+  @Nonnull
   private String createUid(String ns) {
     return "uid-" + ns;
   }

@@ -28,7 +28,6 @@ import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
@@ -209,7 +208,7 @@ public class DomainStatus {
    * reason, message and retry information. Since failures are sorted first, a failure will always be returned
    * if one is present.
    */
-  @NotNull
+  @Nonnull
   public DomainCondition getSummaryCondition() {
     return conditions.stream()
           .filter(this::maySupplyStatusMessage)
@@ -217,7 +216,7 @@ public class DomainStatus {
   }
 
   // Returns a condition with null reason, message and retry information.
-  @NotNull
+  @Nonnull
   private DomainCondition createEmptyCondition() {
     return new DomainCondition(AVAILABLE);
   }

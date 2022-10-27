@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -43,8 +44,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
@@ -369,7 +368,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           }
         }
 
-        private boolean isJobTerminated(@NotNull V1Pod jobPod) {
+        private boolean isJobTerminated(@Nonnull V1Pod jobPod) {
           return Optional.of(jobPod)
               .map(V1Pod::getStatus)
               .map(V1PodStatus::getContainerStatuses).orElseGet(Collections::emptyList).stream()

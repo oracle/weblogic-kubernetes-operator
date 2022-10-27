@@ -5,13 +5,13 @@ package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_REPLICAS_CANNOT_BE_HONORED;
 
@@ -34,8 +34,8 @@ public class ClusterUpdateAdmissionChecker extends ClusterScaleAdmissionChecker 
   private final ClusterResource existingCluster;
 
   /** Construct a ClusterUpdateAdmissionChecker. */
-  public ClusterUpdateAdmissionChecker(@NotNull ClusterResource existingCluster,
-                                       @NotNull ClusterResource proposedCluster) {
+  public ClusterUpdateAdmissionChecker(@Nonnull ClusterResource existingCluster,
+                                       @Nonnull ClusterResource proposedCluster) {
     super(proposedCluster);
     this.existingCluster = existingCluster;
   }
@@ -68,7 +68,7 @@ public class ClusterUpdateAdmissionChecker extends ClusterScaleAdmissionChecker 
         .orElse(false);
   }
 
-  private boolean isProposedSpecUnchanged(@NotNull ClusterSpec existingSpec) {
+  private boolean isProposedSpecUnchanged(@Nonnull ClusterSpec existingSpec) {
     return Objects.equals(existingSpec, proposedCluster.getSpec());
   }
 }
