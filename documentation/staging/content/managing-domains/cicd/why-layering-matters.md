@@ -6,7 +6,6 @@ weight: 2
 description: "Learn why container image layering affects CI/CD processes."
 ---
 
-
 #### How does layering affect our CI/CD process?
 
 Now that we know more about layering, let’s talk about why it is important to our

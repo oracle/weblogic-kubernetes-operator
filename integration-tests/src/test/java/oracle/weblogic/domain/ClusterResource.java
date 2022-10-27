@@ -4,6 +4,7 @@
 package oracle.weblogic.domain;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -11,7 +12,6 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -206,7 +206,7 @@ public class ClusterResource implements KubernetesObject {
     return this;
   }
 
-  @NotNull
+  @Nonnull
   public ClusterSpec getSpec() {
     return spec;
   }

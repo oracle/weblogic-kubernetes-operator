@@ -5,7 +5,6 @@ weight: 9
 description: "Sample for using the operator to set up a WLS cluster on the Tanzu Kubernetes Service."
 ---
 
-
 This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
 After performing the sample steps, your WLS domain with a Model in Image domain source type runs on a TKG Kubernetes cluster instance. After the domain has been provisioned, you can monitor it using the WebLogic Server Administration console.
 
@@ -132,7 +131,6 @@ NAME                                 READY   STATUS    RESTARTS   AGE
 weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
-
 ### Create an image
 
   - [Image creation prerequisites](#image-creation-prerequisites)
@@ -153,7 +151,6 @@ $ mkdir /tmp/mii-sample
 $ cp -r /root/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
 ```
 
-
 **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
 Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
@@ -169,7 +166,6 @@ $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/lat
 $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
   -o /tmp/mii-sample/model-images/imagetool.zip
 ```
-
 
 To set up the WebLogic Image Tool, run the following commands:
 ```shell
@@ -211,7 +207,6 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
   - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
-
 
 ### Staging a ZIP file of the archive
 
@@ -668,7 +663,6 @@ $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx --force
 ```shell
 $ helm install ingress-nginx ingress-nginx/ingress-nginx
 ```
-
 
 Create ingress for accessing the application deployed in the cluster and to access the Administration console.
 

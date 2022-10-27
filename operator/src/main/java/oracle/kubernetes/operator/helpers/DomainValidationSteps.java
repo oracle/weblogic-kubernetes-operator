@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -29,7 +30,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
-import org.jetbrains.annotations.NotNull;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
@@ -148,7 +148,7 @@ public class DomainValidationSteps {
       }
     }
 
-    @NotNull
+    @Nonnull
     private String getErrorMessage(List<String> fatalValidationFailures, List<String> validationFailures) {
       String errorMsg;
       if (fatalValidationFailures.isEmpty()) {

@@ -170,7 +170,6 @@ You are responsible for creating the secret. If no secrets are required, then om
 credentials when the operator image is stored in a private registry, see
 [Customizing operator image name, pull secret, and private registry]({{<relref "/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}}).
 
-
 Examples:
 - Using YAML:
   ```yaml
@@ -391,7 +390,6 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   the operator's Helm release.
   See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
 Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
 
@@ -474,7 +472,6 @@ Example:
 ```yaml
 elasticSearchProtocol: https
 ```
-
 
 ##### `createLogStashConfigMap`
 Specifies whether a ConfigMap named `weblogic-operator-logstash-cm` should be created during `helm install`.
@@ -595,6 +592,7 @@ Example:
 ```yaml
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 ```
+
 ##### `tokenReviewAuthentication`
 If set to `true`, `tokenReviewAuthentication` specifies whether the the operator's REST API should:
    * Use Kubernetes token review API for authenticating users.

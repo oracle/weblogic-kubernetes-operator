@@ -15,6 +15,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
@@ -72,8 +74,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.Model;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -461,14 +461,14 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return getJobPodSpec(jobs.get(0)).getContainers();
   }
 
-  @NotNull
+  @Nonnull
   private List<AuxiliaryImage> getAuxiliaryImages(String...images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
     Arrays.stream(images).forEach(image -> auxiliaryImageList.add(getAuxiliaryImage(image)));
     return auxiliaryImageList;
   }
 
-  @NotNull
+  @Nonnull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
     return new AuxiliaryImage().image(image);
   }

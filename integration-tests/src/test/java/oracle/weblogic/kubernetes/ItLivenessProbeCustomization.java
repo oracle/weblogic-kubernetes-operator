@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
@@ -558,7 +559,7 @@ class ItLivenessProbeCustomization {
     return exception != null && exception.getResponseBody().contains(expectedMsg);
   }
 
-  @NotNull
+  @Nonnull
   private static DomainResource createDomainResource(String domainName) {
 
     // create the domain CR

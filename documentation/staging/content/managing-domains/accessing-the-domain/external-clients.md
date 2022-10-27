@@ -8,7 +8,6 @@ description: "Give WebLogic applications access to WebLogic JMS or EJB resources
 
 {{< table_of_contents >}}
 
-
 ### Overview
 
 If a WebLogic EJB or JMS resource is located in the same

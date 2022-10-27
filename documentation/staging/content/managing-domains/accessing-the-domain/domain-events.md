@@ -7,7 +7,6 @@ description = "Monitor domain resources using operator-generated events about re
 
 {{< table_of_contents >}}
 
-
 ### Overview
 
 This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Most of the operator-generated events are associated with a domain resource, and those events are included in the domain resource object as well. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.

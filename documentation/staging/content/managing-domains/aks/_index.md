@@ -7,7 +7,6 @@ description: "Deploy WebLogic Server on Azure Kubernetes Service."
 
 {{< table_of_contents >}}
 
-
 ### Introduction
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
@@ -318,7 +317,7 @@ Review the following useful resources.
 
 #### Store the TLS/SSL certificate in the Key Vault
 
-1. Base 64 encode the certifcate file; omit the `-w0` for macOS:
+1. Base 64 encode the certificate file; omit the `-w0` for macOS:
 
     ```bash
     base64 myIdentity.jks -w0 >mycert.txt

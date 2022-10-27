@@ -5,12 +5,9 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that the operator expands into a full domain home during runtime."
 ---
 
-
 {{< table_of_contents >}}
 
-
 ### Introduction
-
 
 This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 

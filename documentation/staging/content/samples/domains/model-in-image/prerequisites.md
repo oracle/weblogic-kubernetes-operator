@@ -4,7 +4,6 @@ date: 2019-02-23T17:32:31-05:00
 weight: 1
 ---
 
-
 ### Prerequisites for all domain types
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
@@ -203,7 +202,6 @@ weight: 1
 > __NOTE__: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
 A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. You must perform all these steps _before_ you create your domain.
-
 
 ##### Set up and initialize an infrastructure database
 

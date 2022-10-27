@@ -29,10 +29,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import org.jetbrains.annotations.Nullable;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 
