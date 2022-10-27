@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /** A do-nothing step that can be used as a base for testing. It has no next step. */
 public class TerminalStep extends Step {
   private boolean executed;
-  private AtomicInteger executionCount = new AtomicInteger(0);
+  private final AtomicInteger executionCount = new AtomicInteger(0);
 
   public TerminalStep() {
     super(null);

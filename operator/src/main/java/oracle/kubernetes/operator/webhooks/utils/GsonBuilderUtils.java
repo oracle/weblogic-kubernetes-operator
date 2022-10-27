@@ -70,6 +70,7 @@ public class GsonBuilderUtils {
     return getGsonBuilder().toJson(map, Map.class);
   }
 
+  @SuppressWarnings("unchecked")
   public static Map<String, Object> readMap(String map) {
     return getGsonBuilder().fromJson(map, Map.class);
   }

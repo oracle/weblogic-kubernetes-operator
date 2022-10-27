@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -16,7 +17,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.jetbrains.annotations.NotNull;
 
 import static java.lang.System.lineSeparator;
 
@@ -72,7 +72,7 @@ public abstract class AdmissionChecker {
     return getClusterSizeOptional(clusterStatus).orElse(0);
   }
 
-  int getDomainReplicaCount(@NotNull DomainResource domain) {
+  int getDomainReplicaCount(@Nonnull DomainResource domain) {
     return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getReplicas).orElse(1);
   }
 

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -47,7 +48,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -199,7 +199,7 @@ class ShutdownManagedServerStepTest {
     return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec);
   }
 
-  @NotNull
+  @Nonnull
   private List<V1Container> addEnvToWLSContainer(List<V1EnvVar> env) {
     List<V1Container> containers = new ArrayList<>();
     V1Container container = new V1Container().name(KubernetesConstants.WLS_CONTAINER_NAME).env(env);
@@ -207,7 +207,7 @@ class ShutdownManagedServerStepTest {
     return containers;
   }
 
-  @NotNull
+  @Nonnull
   private List<V1EnvVar> addShutdownEnvVars() {
     List<V1EnvVar> env = new ArrayList<>();
     addEnvVar(env, "SHUTDOWN_TYPE", ShutdownType.GRACEFUL.toString());
