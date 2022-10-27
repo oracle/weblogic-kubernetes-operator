@@ -64,5 +64,5 @@ public interface ProcessingConstants {
 
   String SHUTDOWN_WITH_HTTP_SUCCEEDED = "SHUTDOWN_WITH_HTTP_SUCCEEDED";
   String DOMAIN_INTROSPECTION_COMPLETE = "Domain introspection complete";
-  String DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE = "domainRecheckOrScheduledStatusUpdate";
+  String SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED = "skipStatusUpdateIfSSINotRecorded";
 }

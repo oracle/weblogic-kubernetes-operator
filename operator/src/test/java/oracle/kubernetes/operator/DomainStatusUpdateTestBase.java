@@ -76,12 +76,12 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EV
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -1688,7 +1688,7 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
 
     scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
-    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     info.setServerStartupInfo(null);
 
     updateDomainStatus();
@@ -1701,7 +1701,7 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
-    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
@@ -1712,7 +1712,7 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
 
-    testSupport.addToPacket(DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));

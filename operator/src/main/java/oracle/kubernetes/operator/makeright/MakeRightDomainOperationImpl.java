@@ -207,7 +207,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
     if (!wasStartedFromEvent()) {
-      packet.put(ProcessingConstants.DOMAIN_RECHECK_OR_SCHEDULED_STATUS_UPDATE, Boolean.TRUE);
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     }
     return packet;
   }
