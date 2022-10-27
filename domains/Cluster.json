@@ -654,7 +654,10 @@
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "serverName"
+      ]
     },
     "Map": {
       "type": "object"
@@ -1143,5 +1146,8 @@
       "description": "The current status of the operation of the WebLogic cluster. Updated automatically by the operator.",
       "$ref": "#/definitions/ClusterStatus"
     }
-  }
+  },
+  "required": [
+    "spec"
+  ]
 }
