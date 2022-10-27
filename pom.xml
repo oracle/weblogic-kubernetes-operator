@@ -602,7 +602,7 @@
     <maven-surefire-plugin-version>3.0.0-M7</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.2.0</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.0-M5</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.3.2</maven-javadoc-plugin-version>
+    <maven-javadoc-plugin-version>3.4.1</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0-M5</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.2.0</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
