@@ -42,7 +42,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -339,12 +338,12 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(packet);
     }
 
-    @NotNull
+    @Nonnull
     private Boolean shutdownAttemptSucceeded(Packet packet) {
       return Optional.ofNullable((Boolean)packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED)).orElse(false);
     }
 
-    @NotNull
+    @Nonnull
     private Boolean serverNotShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
     }

@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.webhooks;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -16,7 +17,6 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
@@ -125,7 +125,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }
 
-  @NotNull
+  @Nonnull
   private List<V1EnvVar> createEnvVarListWithReservedName() {
     List<V1EnvVar> list = new ArrayList<>();
     list.add(new V1EnvVar().name(SERVER_NAME).value("haha"));

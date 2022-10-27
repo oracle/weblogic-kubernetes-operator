@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.webhooks.resource;
 
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import jakarta.ws.rs.Consumes;
@@ -17,8 +19,6 @@ import oracle.kubernetes.operator.webhooks.model.AdmissionRequest;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.operator.webhooks.model.AdmissionReview;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATION_FAILED;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.readAdmissionReview;
@@ -117,15 +117,15 @@ public class AdmissionWebhookResource extends BaseResource {
     return validate(request);
   }
 
-  private AdmissionResponse validate(@NotNull AdmissionRequest request) throws ApiException {
+  private AdmissionResponse validate(@Nonnull AdmissionRequest request) throws ApiException {
     LOGGER.fine("Validating " +  request.getObject() + " against " + request.getOldObject()
         + " Kind = " + request.getKind() + " uid = " + request.getUid() + " resource = " + request.getResource()
         + " subResource = " + request.getSubResource());
     return getAdmissionChecker(request).validate().uid(getUid(request));
   }
 
-  @NotNull
-  private AdmissionChecker getAdmissionChecker(@NotNull AdmissionRequest request) throws ApiException {
+  @Nonnull
+  private AdmissionChecker getAdmissionChecker(@Nonnull AdmissionRequest request) throws ApiException {
     return request.getRequestKind().getAdmissionChecker(request);
   }
 }

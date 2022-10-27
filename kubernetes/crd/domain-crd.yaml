@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6c271191a86ea2a5ff138c7772075e2867ac7cbb6c04ab4133f94e6a69508662
+    weblogic.sha256: 869d5b8e0c547afc1f704e7a4a37ff8623be6606ec8c5e51c9555304835a6464
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -9186,6 +9186,8 @@ spec:
                       description: 'Changes to this field cause the operator to restart
                         WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
                       type: string
+                  required:
+                  - serverName
                 type: array
             type: object
           status:
