@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
@@ -26,8 +28,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.apache.commons.codec.binary.Base64;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.logging.MessageKeys.VALIDATING_WEBHOOK_CONFIGURATION_CREATED;
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_PLURAL;
@@ -49,6 +49,7 @@ public class WebhookHelper {
   public static final String DOMAIN_RESOURCES = DOMAIN_PLURAL;
   public static final String CLUSTER_RESOURCES = CLUSTER_PLURAL;
   public static final String ADMISSION_REVIEW_VERSION = "v1";
+  public static final String CREATE = "CREATE";
   public static final String UPDATE = "UPDATE";
   public static final String SIDE_EFFECT_NONE = "None";
   public static final String SCOPE = "Namespaced";
@@ -133,7 +134,7 @@ public class WebhookHelper {
     private V1RuleWithOperations createRule() {
       return new V1RuleWithOperations()
           .addApiGroupsItem(APP_GROUP)
-          .operations(Collections.singletonList(UPDATE))
+          .operations(Arrays.asList(CREATE, UPDATE))
           .scope(SCOPE);
     }
 
@@ -141,13 +142,14 @@ public class WebhookHelper {
       return createRule().apiVersions(createList(DOMAIN_VERSION)).resources(createList(DOMAIN_RESOURCES));
     }
 
-    @NotNull
+    @Nonnull
     private List<String> createList(String item) {
       return Collections.singletonList(item);
     }
 
     private V1RuleWithOperations createRuleForCluster() {
-      return createRule().apiVersions(createList(CLUSTER_VERSION)).resources(createList(CLUSTER_RESOURCES));
+      return createRule().apiVersions(createList(CLUSTER_VERSION))
+          .resources(Arrays.asList(CLUSTER_RESOURCES, "*/scale"));
     }
 
     private V1ObjectMeta createMetadata(Map<String, String> labels) {
@@ -155,7 +157,7 @@ public class WebhookHelper {
     }
 
     @Nullable
-    private byte[] getCaBundle(@NotNull Certificates certificates) {
+    private byte[] getCaBundle(@Nonnull Certificates certificates) {
       return Optional.of(certificates).map(Certificates::getWebhookCertificateData)
           .map(Base64::decodeBase64).orElse(null);
     }

@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 2
 ---
 
-#### Contents
+### Contents
 
  - [Overview](#overview)
  - Image creation
@@ -318,7 +318,6 @@ The model files:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-
 #### Creating the image with WIT
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
@@ -482,7 +481,6 @@ Run the following `kubectl` commands to deploy the required secrets:
   ```
 
   {{% /expand %}}
-
 
 #### Domain resource
 
@@ -797,127 +795,18 @@ spec:
   ```
   {{% /expand %}}
 
-Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
-
-  {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-  ```shell
-    $ ./wl-pod-wait.sh -?
-    ```
-    ```
-    Usage:
-
-      wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
-         [-p expected_pod_count] \
-         [-t timeout_secs] \
-         [-q]
-
-      Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
-
-    Parameters:
-
-      -d <domain_uid> : Defaults to 'sample-domain1'.
-
-      -n <namespace>  : Defaults to 'sample-domain1-ns'.
-
-      -p 0            : Wait until there are no running WebLogic Server pods
-                        for a domain. The default.
-
-      -p <pod_count>  : Wait until all of the following are true
-                        for exactly 'pod_count' WebLogic Server pods
-                        in the domain:
-                        - ready
-                        - same 'weblogic.domainRestartVersion' label value as
-                          the domain resource's 'spec.restartVersion'
-                        - same 'weblogic.introspectVersion' label value as
-                          the domain resource's 'spec.introspectVersion'
-                        - same image as the the domain resource's image
-
-      -t <timeout>    : Timeout in seconds. Defaults to '1000'.
-
-      -q              : Quiet mode. Show only a count of wl pods that
-                        have reached the desired criteria.
-
-      -?              : This help.
-  ```
-  {{% /expand %}}
-
-  {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
-  ```
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   namespace='sample-domain1-ns'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID='sample-domain1'
-
-  @@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                          VERSION  IMAGE  READY  PHASE
-  --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Pending'
-
-  @@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                          VERSION  IMAGE  READY  PHASE
-  --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Running'
-
-
-  @@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME  VERSION  IMAGE  READY  PHASE
-  ----  -------  -----  -----  -----
-
-  @@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           VERSION  IMAGE                    READY    PHASE
-  -----------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-
-  @@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           VERSION  IMAGE                    READY    PHASE
-  -----------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-
-  @@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY    PHASE
-  --------------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-
-  @@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY    PHASE
-  --------------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-
-  @@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY   PHASE
-  --------------------------------  -------  -----------------------  ------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-
-
-  @@ [2020-04-30T13:53:14][seconds=152] Info: Success!
-
-  ```
-  {{% /expand %}}
-
+For a more detailed view of this activity,
+you can use the `waitForDomain.sh` sample lifecycle script.
+This script provides useful information about a domain's pods and
+optionally waits for its `Completed` status condition to become `True`.
+A `Completed` domain indicates that all of its expected
+pods have reached a `ready` state
+plus their target `restartVersion`, `introspectVersion`, and `image`.
+For example:
+```shell
+$ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecycle
+$ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p Completed
+```
 
 If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 

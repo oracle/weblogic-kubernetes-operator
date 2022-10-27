@@ -6,17 +6,11 @@ weight: 5
 description: "This document describes domain introspection in the Oracle WebLogic Server in Kubernetes environment."
 ---
 
-#### Contents
+This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
 
-- [Overview](#overview)
-- [When introspection occurs automatically](#when-introspection-occurs-automatically)
-- [Initiating introspection](#initiating-introspection)
-- [Failed introspection](#failed-introspection)
-- [Introspection use cases](#introspection-use-cases)
+{{< table_of_contents >}}
 
-#### Overview
-
-This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.
+### Overview
 
 To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
@@ -30,13 +24,13 @@ Introspection ensures that:
 3. For Model in Image, the operator can generate the WebLogic domain home, including the final domain configuration.
 4. For Domain in PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}) along with the operator-generated overrides to generate the final configuration overrides.
 
-#### When introspection occurs automatically
+### When introspection occurs automatically
 
 Introspection automatically occurs when:
 1. The operator is starting a WebLogic Server instance when there are currently no other servers running. This occurs when the operator first starts servers for a domain or when starting servers following a full domain shutdown.
 2. For Model in Image, the operator determines that at least one WebLogic Server instance that is currently running must be shut down and restarted. This could be a rolling of one or more clusters, the shut down and restart of one or more WebLogic Server instances, or a combination.
 
-#### Initiating introspection
+### Initiating introspection
 
 Sometimes, such as for the [use cases](#introspection-use-cases), it is desirable to explicitly initiate introspection. To initiate introspection, change the value of your Domain `introspectVersion` field.
 
@@ -68,7 +62,7 @@ Labels:         weblogic.createdByOperator=true
 
 When a domain's `spec.introspectVersion` is changed, the `weblogic.introspectVersion` label of each WebLogic Server pod is updated to the new `introspectVersion` value, either when the operator restarts the pod or when the operator determines that the pod does not need to be restarted.
 
-#### Failed introspection
+### Failed introspection
 
 Sometimes the Kubernetes Job, named `DOMAIN_UID-introspector`, created for the introspection will fail.
 

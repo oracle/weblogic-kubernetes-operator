@@ -5,28 +5,9 @@ weight: 4
 description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that the operator expands into a full domain home during runtime."
 ---
 
-
-### Contents
-
-   - [Introduction](#introduction)
-     - [Model in Image domain types (WLS, JRF, and Restricted JRF)](#model-in-image-domain-types-wls-jrf-and-restricted-jrf)
-     - [Use cases](#use-cases)
-     - [Sample directory structure](#sample-directory-structure)
-     - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
-   - [References](#references)
-   - Sample steps
-     - [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
-     - [Additional prerequisites for JRF domains]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-     - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
-     - [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
-     - [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-     - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
-     - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
-     - [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}})
-
+{{< table_of_contents >}}
 
 ### Introduction
-
 
 This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
@@ -120,11 +101,15 @@ Location | Description |
 `model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
 `model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
 `ingresses` | Ingress resources. |
-`utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, `introspectVersion`, image name, and ready state. |
 `utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
 `utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
 `utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
+
+In addition, this sample makes use of the `waitForDomain.sh` sample lifecycle script
+that is located in the operator source `kubernetes/samples/scripts/domain-lifecycle` directory.
+This is a utility script that optionally waits for the pods in a domain
+to reach their expected `restartVersion`, `introspectVersion`, `Completed`, `image`, and `ready` state.
 
 #### Ensuring your Kubernetes cluster can access images
 

@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
@@ -204,7 +203,7 @@ public class DomainSpec extends BaseConfiguration {
       "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   /**
    * The image pull secrets for the WebLogic Server image.
@@ -338,7 +337,7 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImage();
   }
 
-  V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
+  String getMonitoringExporterImagePullPolicy() {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
@@ -582,11 +581,11 @@ public class DomainSpec extends BaseConfiguration {
     this.image = image;
   }
 
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  public void setImagePullPolicy(@Nullable V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 

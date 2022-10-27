@@ -6,12 +6,10 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
-import static io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
 
 public interface TestConstants {
 
@@ -277,7 +275,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.0.7");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.0");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -316,7 +314,7 @@ public interface TestConstants {
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String NODE_IP = System.getProperty("wko.it.node.ip", "");
   public static final String [] FSS_DIR = System.getProperty("wko.it.fss.dir","").split(",");
-  public static final ImagePullPolicyEnum IMAGE_PULL_POLICY = ImagePullPolicyEnum.IFNOTPRESENT;
+  public static final String IMAGE_PULL_POLICY = "IfNotPresent";
 
   //OKD constants
   public static final boolean OKD =
@@ -381,4 +379,9 @@ public interface TestConstants {
   public static final Long FAILURE_RETRY_LIMIT_MINUTES =
       Long.valueOf(getNonEmptySystemProperty("failure.retry.limit.minutes", "10"));
   String YAML_MAX_FILE_SIZE_PROPERTY = "-Dwdt.config.yaml.max.file.size=25000000";
+
+  // metrics server constants
+  public static final String METRICS_SERVER_YAML =
+      "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+
 }

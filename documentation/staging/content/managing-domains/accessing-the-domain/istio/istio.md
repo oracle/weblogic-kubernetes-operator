@@ -5,28 +5,9 @@ weight: 6
 description: "Run the operator and WebLogic domains managed by the operator when Istio sidecar injection is enabled."
 ---
 
-#### Contents
+{{< table_of_contents >}}
 
-- [Overview](#overview)
-- [Limitations](#limitations)
-- [Determining the Istio version](#determining-the-istio-version)
-- [Setting up an operator with Istio support](#setting-up-an-operator-with-istio-support)
-- [Creating a domain with Istio support](#creating-a-domain-with-istio-support)
-  - [Configuring the domain resource](#configuring-the-domain-resource)
-  - [Applying a Domain YAML file](#applying-a-domain-yaml-file)
-  - [Exposing applications in Istio-enabled domains](#exposing-applications-in-istio-enabled-domains)
-- [Traffic management](#traffic-management)
-- [Distributed tracing](#distributed-tracing)
-- [Automatically added network channels](#automatically-added-network-channels)
-  - [Network channel for Istio versions v1.10 and later](#network-channel-for-istio-versions-v110-and-later)
-  - [Network channel for WebLogic EJB and servlet session state replication traffic](#network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
-- [Security](#security)
-  - [Mutual TLS](#mutual-tls)
-  - [Authorization policy](#authorization-policy)
-  - [Destination rule](#destination-rule)
-  - [Ingress gateway](#ingress-gateway)
-
-#### Overview
+### Overview
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
@@ -41,16 +22,22 @@ If your applications have suitable tracing code in them, then you will also be a
 use distributed tracing, such as Jaeger, to trace requests across domains and to
 other components and services that have tracing enabled.
 
+WebLogic Kubernetes Operator assumes that you are familiar with Istio. If you are new to
+Istio, we strongly recommend reading the documentation and working through the `Bookinfo`
+sample application to familiarize yourself with the mesh and verify that it is working properly in your environment, before proceeding to work with the operator.
+
 To learn more about Istio,
 see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
 
-#### Limitations
+### Limitations
 
 The current support for Istio has these limitations:
 
 * The operator supports Istio versions 1.10 and later,
   and has been tested with single and multicluster
   Istio installations from 1.10 up to 1.13.2.
+
+* This operator version 4.0 is incompatible with Red Hat OpenShift version 4.11.x and above.
 
 * You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
   with a `channelName` of `default`, `default-secure`, and `default-admin`.
@@ -63,7 +50,7 @@ The current support for Istio has these limitations:
   then see
   [Use WLST]({{< relref "/managing-domains/accessing-the-domain/wlst.md" >}}).  
 
-#### Determining the Istio version
+### Determining the Istio version
 
 To see the Istio build version that is installed, use the `istioctl version` command.  For example:
 
@@ -74,7 +61,7 @@ control plane version: 1.11.1
 data plane version: 1.11.1 (1 proxies)
 ```
 
-#### Setting up an operator with Istio support
+### Setting up an operator with Istio support
 
 Istio support requires labeling the operator namespace and
 your domain namespaces to enable Istio automatic
@@ -88,20 +75,13 @@ create the namespace in which you want to run the operator and label it.
 ```shell
 $ kubectl create namespace weblogic-operator
 ```
-For a non-OpenShift service mesh, label the namespace as follows:
+Label the namespace as follows:
 
 ```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
 After the namespace is labeled, you can [install the operator]({{< relref "/managing-operators/installation.md" >}}).
-
-When using an OpenShift service mesh, because it does not support namespace-wide Istio sidecar injection, you must set the
-annotation for the operator pod-level sidecar injection when installing or updating the operator using Helm,
-with the `--set` option, as follows:
-
-`--set "annotations.sidecar\.istio\.io/inject=true"`
-
 
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the Envoy container `istio-proxy`.
@@ -117,7 +97,7 @@ $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yam
 
 In the second command, change `weblogic-operator-xxx-xxx` to the name of your pod.
 
-#### Creating a domain with Istio support
+### Creating a domain with Istio support
 
 Setting up Istio support for a domain requires only enabling Istio automatic sidecar injection.
 
@@ -129,32 +109,16 @@ and label it for automatic injection before deploying your domain.
 $ kubectl create namespace domain1
 ```
 
-For a non-OpenShift environment:
-
 ```shell
 $ kubectl label namespace domain1 istio-injection=enabled
-```
-
-For an OpenShift environment, you do not need to label the namespace for Istio sidecar injection, instead add the following
-annotation at the pod level in the domain resource.  
-
-```
-...
-spec:
-  ...
-  serverPod:
-     annotations:
-        sidecar.istio.io/inject=true
-  ...
 ```
 
 ##### Configuring the domain resource
 
 Beginning with WebLogic Kubernetes Operator release 4.0, you no longer have to provide the `domain.spec.configuration.istio` section to
-enable Istio support for a domain.  Enabling the sidecar injection at the namespace level alone or annotation at `serverPod`
-level for OpenShift is sufficient.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
+enable Istio support for a domain.  The `domain.spec.configuration.istio` is no longer a valid field in the schema.
 
-##### Applying a Domain YAML file
+#### Applying a Domain YAML file
 
 Apply a Domain YAML file by:
 
@@ -188,7 +152,7 @@ sample-domain1-managed-server2.sample-domain1-ns                   SYNCED     SY
 weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 ```
 
-##### Exposing applications in Istio-enabled domains
+#### Exposing applications in Istio-enabled domains
 
 When a domain is running with Istio support, you should use the Istio ingress
 gateway to provide external access to applications, instead of using an ingress
@@ -259,7 +223,7 @@ Refer to [Determining the ingress IP and ports](https://istio.io/latest/docs/set
 
 For more information about providing ingress using Istio, see the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
-#### Traffic management
+### Traffic management
 
 Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
@@ -274,7 +238,7 @@ then to the individual Managed Servers.
 
 To learn more, see [Istio traffic management](https://istio.io/docs/concepts/traffic-management/).
 
-#### Distributed tracing
+### Distributed tracing
 
 Istio provides distributed tracing capabilities, including the ability to view
 traces in Jaeger.  To use distributed tracing though, first you will need to
@@ -288,14 +252,14 @@ as shown in the previous image.
 
 To learn more, see [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/).
 
-#### Automatically added network channels
+### Automatically added network channels
 
 The operator will automatically
 add network channels to each WebLogic Server
 when Istio is enabled for a domain.
 
 
-##### Network channel for Istio versions v1.10 and later
+#### Network channel for Istio versions v1.10 and later
 
 _Background_:
 
@@ -325,16 +289,16 @@ readiness probe is bound to the server pod's network interface:
 |----|----|----|--------|-----|
 |`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP address | `http`| No |
 
-##### Network channel for WebLogic EJB and servlet session state replication traffic
+#### Network channel for WebLogic EJB and servlet session state replication traffic
 
 WebLogic Kubernetes Operator versions 4.0 and later support WebLogic EJB and servlet session state replication traffic in
 an Istio service mesh; it uses the default channel of the domain for replication.
 
-#### Security
+### Security
 
 Istio provides rich sets of security features that you can use to secure the Istio service mesh environments.  For details, see Istio [Security](https://istio.io/latest/docs/concepts/security/).   The following are some sample scenarios.
 
-##### Mutual TLS
+#### Mutual TLS
 
 By default, all traffic between the Istio sidecar proxies use mutual TLS within the mesh. However, service within the mesh can still be accessed by other pods outside the mesh.  For example, you have `domain-1`  deployed with sidecar injection, therefore within the mesh, and another domain, `domain-2`, deployed without sidecar injection, therefore outside of the mesh. Services within `domain-2` can still access the services within `domain-1`, however the traffic will be `Plain` unencrypted traffic.   This is because by default, Istio configures the traffic using the `PERMISSIVE` mode, which means it can accept both `Plain` and `mutual TLS` traffic.  You can restrict this behavior by allowing only `mutual TLS` traffic by locking down the entire mesh or by namespace within the mesh.   
 
@@ -368,7 +332,7 @@ EOF
 
 See Istio [Mutual TLS Migration](https://istio.io/latest/docs/tasks/security/authentication/mtls-migration).
 
-##### Authorization policy
+#### Authorization policy
 
 Istio provides policy-based authorization using `AuthorizationPolicy`.  You can set up policies to deny or allow access to services deployed in the mesh.  For example, if you want to limit access to a particular service in the domain from another namespace only with a service account.
 
@@ -410,7 +374,7 @@ spec:
 
 See Istio [Authorization Policy](https://istio.io/latest/docs/reference/config/security/authorization-policy/).
 
-##### Destination rule
+#### Destination rule
 
 Istio allows you to define traffic management polices applied to the service after the routing has occurred. You can use it to control load balancing, connection pool size from the sidecar, and outlier detection settings to detect and evict unhealthy hosts from the load balancing pool. You can also set up a service-level mutual TLS requirement instead of entire mesh or namespace-based.
 
@@ -448,7 +412,7 @@ spec:
 
 See Istio [Destination Rule](https://istio.io/latest/docs/reference/config/networking/destination-rule/).
 
-##### Ingress gateway
+#### Ingress gateway
 
 Ingress gateway provides similar functions to `Kubernetes Ingress` but with more advanced functionality.
 

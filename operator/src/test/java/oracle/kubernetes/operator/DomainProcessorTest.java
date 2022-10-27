@@ -166,6 +166,7 @@ class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final String CLUSTER2 = "cluster-2";
+  private static final String CLUSTER3 = "Cluster-3";
   private static final String INDEPENDENT_SERVER = "server-1";
   private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
@@ -175,6 +176,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
 
   static final String DOMAIN_NAME = "base_domain";
+  public static final String NEW_DOMAIN_UID = "56789";
   static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
@@ -228,7 +230,7 @@ class DomainProcessorTest {
 
   V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
-          .addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("True"));
+          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
   }
 
   V1JobStatus createNotCompletedStatus() {
@@ -302,7 +304,6 @@ class DomainProcessorTest {
     configureDomain(domain).configureCluster(originalInfo, clusterResource1.getClusterName());
     testSupport.defineResources(clusterResource1);
     originalInfo.addClusterResource(clusterResource1);
-
     processor.registerDomainPresenceInfo(originalInfo);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -667,8 +668,8 @@ class DomainProcessorTest {
   }
 
   private V1PodStatus createReadyStatus() {
-    return new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
-          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True"));
+    return new V1PodStatus().phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
   }
 
   private V1Secret createCredentialsSecret() {
@@ -789,6 +790,20 @@ class DomainProcessorTest {
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     processor.createMakeRightOperation(originalInfo).interrupt().forDeletion().withExplicitRecheck().execute();
+
+    assertThat(getRunningServices(), empty());
+    assertThat(getRunningPods(), empty());
+    assertThat(getRunningPDBs(), empty());
+  }
+
+  @Test
+  void whenDomainMarkedForDeletion_removeAllPodsServicesAndPodDisruptionBudgets() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+
+    domain.getMetadata().setDeletionTimestamp(OffsetDateTime.now());
+    // MakeRightOperation is created without forDeletion() similar to list or MODIFIED watch
+    processor.createMakeRightOperation(originalInfo).interrupt().withExplicitRecheck().execute();
 
     assertThat(getRunningServices(), empty());
     assertThat(getRunningPods(), empty());
@@ -1123,7 +1138,7 @@ class DomainProcessorTest {
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
-        .spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.CLUSTERIP));
+        .spec(new V1ServiceSpec().type("ClusterIP"));
   }
 
   private V1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
@@ -1236,6 +1251,7 @@ class DomainProcessorTest {
   void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
     establishPreviousIntrospection(null);
     jobStatusSupplier.setJobStatus(createNotCompletedStatus());
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
@@ -1253,6 +1269,7 @@ class DomainProcessorTest {
     jobStatusSupplier.setJobStatus(createTimedOutStatus());
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     testSupport.doOnCreate(JOB, (j -> assignUid((V1Job) j)));
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).interrupt().execute();
   }
@@ -1264,6 +1281,7 @@ class DomainProcessorTest {
   @Test
   void whenIntrospectionJobTimedOut_activeDeadlineIncreased() throws Exception {
     TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
+
     runMakeRight_withIntrospectionTimeout();
 
     executeScheduledRetry();
@@ -1317,7 +1335,7 @@ class DomainProcessorTest {
 
 
   V1JobStatus createTimedOutStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("DeadlineExceeded"));
   }
 
@@ -1343,7 +1361,7 @@ class DomainProcessorTest {
   }
 
   V1JobStatus createBackoffStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded"));
   }
 
@@ -1376,7 +1394,7 @@ class DomainProcessorTest {
 
   private V1Job asFailedJob(V1Job job) {
     job.setStatus(new V1JobStatus().addConditionsItem(
-        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+        new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded")));
     return job;
   }
@@ -1947,15 +1965,15 @@ class DomainProcessorTest {
     assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7099));
 
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
 
   }
 
@@ -2039,13 +2057,13 @@ class DomainProcessorTest {
 
     // default  is not set
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
         equalTo(null));
 
@@ -2078,7 +2096,7 @@ class DomainProcessorTest {
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(
             new V1ServiceSpec()
-                .type(V1ServiceSpec.TypeEnum.NODEPORT)
+                .type("NodePort")
                 .addPortsItem(new V1ServicePort().nodePort(30701)));
   }
 
@@ -2108,12 +2126,12 @@ class DomainProcessorTest {
   }
 
   private boolean isHeadless(V1ServiceSpec serviceSpec) {
-    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+    return "ClusterIP".equals(serviceSpec.getType())
         && "None".equals(serviceSpec.getClusterIP());
   }
 
   private boolean isClusterIP(V1ServiceSpec serviceSpec) {
-    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+    return "ClusterIP".equals(serviceSpec.getType())
         && serviceSpec.getClusterIP() == null;
   }
 
@@ -2267,7 +2285,7 @@ class DomainProcessorTest {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).stream().anyMatch(name::equals);
   }
 
-  private V1HTTPGetAction.SchemeEnum getContainerReadinessScheme(List<V1Pod> pods, String podName) {
+  private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
     return pods.stream()
           .filter(pod -> isNamedPod(pod, podName))
           .findFirst()
@@ -2292,9 +2310,9 @@ class DomainProcessorTest {
     domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 
-    for (int numRetries = 0; numRetries < DomainPresence.getFailureRetryMaxCount(); numRetries++) {
+    for (int numRetries = 0; numRetries < 5; numRetries++) {
       processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
-      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
+      time += domain.getFailureRetryIntervalSeconds();
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
@@ -2330,7 +2348,14 @@ class DomainProcessorTest {
   @Test
   void whenClusterResourceAdded_listClusterResources() {
     processor.registerDomainPresenceInfo(originalInfo);
-    final String CLUSTER3 = "Cluster-3";
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
+    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  }
+
+  private void addClustersAndDispatchClusterWatch() {
     for (String clusterName : List.of(CLUSTER, CLUSTER2, CLUSTER3)) {
       configureDomain(domain).configureCluster(originalInfo, clusterName);
       testSupport.defineResources(createClusterResource(NS, clusterName));
@@ -2338,12 +2363,29 @@ class DomainProcessorTest {
     final Response<ClusterResource> item = new Response<>("ADDED", testSupport
         .<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER3));
 
-
     processor.dispatchClusterWatch(item);
+  }
 
-    assertThat(originalInfo.getClusterResource(CLUSTER), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER2), notNullValue());
-    assertThat(originalInfo.getClusterResource(CLUSTER3), notNullValue());
+  @Test
+  void whenDomainAndClusterResourcesAddedAtSameTime_introspectorJobHasCorrectOwnerReference() {
+    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
+    domain.getOrCreateStatus().addCondition(new DomainCondition(AVAILABLE).withStatus(false));
+    setupNewDomainResource(NEW_DOMAIN_UID);
+    processor.registerDomainPresenceInfo(originalInfo);
+    addClustersAndDispatchClusterWatch();
+
+    assertThat(getIntrospectorJobOwnerReferenceUid(), equalTo(NEW_DOMAIN_UID));
+  }
+
+  private void setupNewDomainResource(String newUid) {
+    testSupport.deleteResources(domain);
+    testSupport.defineResources(newDomain.withMetadata(newDomain.getMetadata().uid(newUid)));
+    testSupport.failOnDelete(JOB, getJobName(), NS, HTTP_BAD_REQUEST);
+  }
+
+  private String getIntrospectorJobOwnerReferenceUid() {
+    return Optional.ofNullable((V1Job) testSupport.getResourceWithName(JOB, getJobName())).map(V1Job::getMetadata)
+        .map(m -> m.getOwnerReferences().stream().findFirst().orElse(null).getUid()).orElse(null);
   }
 
   @Test

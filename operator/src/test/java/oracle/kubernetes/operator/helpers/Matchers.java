@@ -55,58 +55,58 @@ public class Matchers {
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-          String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy) {
+          String name, String image, String imagePullPolicy) {
     return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
             AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
   static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, V1ResourceRequirements resources) {
+      String name, String image, String imagePullPolicy, V1ResourceRequirements resources) {
     return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy,
         AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
         AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME, resources);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String sourceWDTInstallHome) {
+      String name, String image, String imagePullPolicy, String sourceWDTInstallHome) {
     return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
             AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+      String name, String image, String imagePullPolicy,
       String sourceWDTInstallHome, String sourceModelHome) {
     return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
             sourceModelHome, null));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+      String name, String image, String imagePullPolicy,
       String sourceWDTInstallHome, String sourceModelHome, V1ResourceRequirements resources) {
     return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
         sourceModelHome, resources));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command) {
+      String name, String image, String imagePullPolicy, String command) {
     return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, null, TEST_VOLUME_NAME, null);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command,
+      String name, String image, String imagePullPolicy, String command,
       V1ResourceRequirements resources) {
     return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, null, TEST_VOLUME_NAME,
         resources);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy, String command, String serverName) {
+      String name, String image, String imagePullPolicy, String command, String serverName) {
     return hasLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, serverName,
         TEST_VOLUME_NAME, null);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasLegacyAuxiliaryImageInitContainer(
-      String name, String image, V1Container.ImagePullPolicyEnum imagePullPolicy,
+      String name, String image, String imagePullPolicy,
       String command, String serverName, String volume, V1ResourceRequirements resources) {
     return hasItem(createLegacyAuxiliaryImageInitContainer(name, image, imagePullPolicy, command,
         volume, serverName, resources));
@@ -166,7 +166,7 @@ public class Matchers {
   }
 
   private static V1Container createAuxiliaryImageInitContainer(String name, String image,
-                                                               V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                                               String imagePullPolicy,
                                                                String sourceWDTInstallHome, String sourceModelHome,
                                                                V1ResourceRequirements resources) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
@@ -180,7 +180,7 @@ public class Matchers {
   }
 
   private static V1Container createLegacyAuxiliaryImageInitContainer(String name, String image,
-                                                                     V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                                                     String imagePullPolicy,
                                                                      String command, String volumeName,
                                                                      String serverName,
                                                                      V1ResourceRequirements resources) {

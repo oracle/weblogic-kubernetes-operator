@@ -42,6 +42,13 @@ spec:
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
+  # **NOTE**:
+  # This example uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
+  # documentation for details.
   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -107,7 +114,7 @@ spec:
 
   # The desired behavior for starting a specific cluster's member servers
   clusters:
-  - name: cluster-1
+  - name: sample-domain1-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -128,7 +135,7 @@ spec:
 apiVersion: "weblogic.oracle/v1"
 kind: Cluster
 metadata:
-  name: cluster-1
+  name: sample-domain1-cluster-1
   # Update this with the namespace your domain will run in:
   namespace: sample-domain1-ns
   labels:
@@ -137,3 +144,4 @@ metadata:
 
 spec:
   replicas: 2
+  clusterName: cluster-1

@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 
 public class EffectiveClusterSpecCommonImpl implements EffectiveClusterSpec {
@@ -34,7 +32,7 @@ public class EffectiveClusterSpecCommonImpl implements EffectiveClusterSpec {
   }
 
   @Override
-  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
+  public String getClusterSessionAffinity() {
     return clusterSpec.getClusterSessionAffinity();
   }
 
@@ -54,7 +52,7 @@ public class EffectiveClusterSpecCommonImpl implements EffectiveClusterSpec {
   }
 
   @Override
-  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
+  public String getRestartPolicy() {
     return clusterSpec.getRestartPolicy();
   }
 

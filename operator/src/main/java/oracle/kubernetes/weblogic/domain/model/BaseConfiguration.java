@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -130,7 +129,7 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
   }
 
-  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+  public void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
     serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
   }
 
@@ -186,11 +185,11 @@ public abstract class BaseConfiguration {
     serverPod.addReadinessGate(readinessGate);
   }
 
-  public V1PodSpec.RestartPolicyEnum getRestartPolicy() {
+  public String getRestartPolicy() {
     return serverPod.getRestartPolicy();
   }
 
-  void setRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+  void setRestartPolicy(String restartPolicy) {
     serverPod.setRestartPolicy(restartPolicy);
   }
 

@@ -64,7 +64,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1ReplicaSet;
 import io.kubernetes.client.openapi.models.V1ReplicaSetList;
 import io.kubernetes.client.openapi.models.V1Role;
@@ -598,7 +597,7 @@ public class Kubernetes {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName)
       throws ApiException {
     V1Pod pod = getPod(namespace, labelSelectors, podName);
     if (pod != null && pod.getStatus() != null) {
@@ -1568,6 +1567,18 @@ public class Kubernetes {
 
     getLogger().warning("Cluster Custom Resource '" + clusterResName + "' not found in namespace " + namespace);
     return null;
+  }
+
+  /**
+   * Get the Cluster Custom Resource.
+   *
+   * @param clusterResName name of the cluster custom resource
+   * @param namespace name of namespace
+   * @return cluster custom resource or null if ClusterResource does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static ClusterResource getClusterCustomResource(String clusterResName, String namespace) throws ApiException {
+    return getClusterCustomResource(clusterResName,namespace, CLUSTER_VERSION);
   }
   
   /**

@@ -3,18 +3,10 @@ title: "Use port forwarding"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 3
-description: "Use port forwarding to access WebLogic Server Administration Consoles and WLST."
+description: "Use port forwarding to access WebLogic Server administration consoles and WLST."
 ---
 
-### Contents
-
-* [Overview](#overview)
-* [Set up Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access)
-* [Port forward to an Administration Server Pod  ](#port-forward-to-an-administration-server-pod)
-  * [Port forward example](#port-forward-example)
-  * [Port forward notes and warnings](#port-forward-notes-and-warnings)
-  * [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match)
-  * [Terminating port forwarding](#terminating-port-forwarding)
+{{< table_of_contents >}}
 
 ### Overview
 
@@ -28,7 +20,7 @@ from a private local network without exposing WebLogic's ports to a public netwo
 
 Here are the steps:
 
-1. Set up [WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access).
+1. Set up [Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access).
 1. If you are setting up WLST access
 and your port forwarding local port is not going to be the same as the
 port number on the WebLogic Administration Server Pod,
@@ -136,7 +128,7 @@ When one or more custom administration channels are configured | internal-admin$
 ### Port forward to an Administration Server Pod    
 
 If you have
-[set up WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access),
+[set up Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access),
 then you can run a `kubectl port-forward` command to access such a channel. The command:
 * By default, opens a port of your choosing on `localhost`
   on the machine where you run the command.
@@ -171,7 +163,7 @@ For example, if you have a WebLogic domain with:
 * An Administration Server named `admin-server` listening on non-SSL listen port `7001`
 * No administration port or administration channels configured on the Administration Server
 
-And, you have [set up WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access) for this domain,
+And, you have [set up Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access) for this domain,
 then you can run either of the following commands to forward local port `32015` to
 the Administration Server Pod:
 

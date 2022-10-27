@@ -62,7 +62,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
@@ -288,7 +287,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    list.add(info.getDomain());
+    if (info.isNotDeleting()) {
+      list.add(info.getDomain());
+    }
   }
 
   private void onDeleteEvent(CoreV1Event event) {
@@ -734,7 +735,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     });
   }
 
-
   /**
    * Dispatch the Domain event to the appropriate handler.
    *
@@ -1003,7 +1003,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return domainUid;
     }
 
-    @NotNull
+    @Nonnull
     private Packet createPacket() {
       Packet packet = new Packet();
       packet

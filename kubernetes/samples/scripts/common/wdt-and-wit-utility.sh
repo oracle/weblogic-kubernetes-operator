@@ -87,6 +87,7 @@ DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
 download() {
   local fileUrl="${1}"
+  local zipFile="${2}"
 
   local curl_res=1
   max=20
@@ -97,7 +98,7 @@ download() {
     for proxy in "${https_proxy}" "${https_proxy2}"; do
 	  echo @@ "Info:  Downloading $fileUrl with https_proxy=\"$proxy\""
 	  https_proxy="${proxy}" \
-	    curl --silent --show-error --connect-timeout 10 -O -L $fileUrl
+	    curl --silent --show-error --connect-timeout 10 -fL $fileUrl -o $zipFile
 	  curl_res=$?
 	  [ $curl_res -eq 0 ] && break
 	done
@@ -255,17 +256,21 @@ install_wdt() {
 
   WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 
-  if [ "$WDT_VERSION" == "LATEST" ]; then
-    WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/$WDT_INSTALL_ZIP_FILE"}
-  else
-    WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+  echo @@ " Info: WDT_INSTALL_ZIP_URL is '$WDT_INSTALL_ZIP_URL'"
+  if [ -z ${WDT_INSTALL_ZIP_URL} ]; then
+    echo @@ "WDT_INSTALL_ZIP_URL is not set"
+    if [ "$WDT_VERSION" == "LATEST" ]; then
+      WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/$WDT_INSTALL_ZIP_FILE"}
+    else
+      WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+    fi
   fi
 
   local save_dir=`pwd`
   cd $WDT_DIR || return 1
 
   echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL "
-  download $WDT_INSTALL_ZIP_URL || return 1
+  download $WDT_INSTALL_ZIP_URL  $WDT_INSTALL_ZIP_FILE || return 1
 
   if [ ! -f $WDT_INSTALL_ZIP_FILE ]; then
     cd $save_dir
@@ -304,20 +309,22 @@ install_wit() {
 
   WIT_INSTALL_ZIP_FILE="${WIT_INSTALL_ZIP_FILE:-imagetool.zip}"
 
-  if [ "$WIT_VERSION" == "LATEST" ]; then
-    WIT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/latest/download/$WIT_INSTALL_ZIP_FILE"}
-  else
-    WIT_INSTALL_ZIP_URL=${WIT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/download/release-$WIT_VERSION/$WIT_INSTALL_ZIP_FILE"}
+  echo @@ " Info: WIT_INSTALL_ZIP_URL is '$WIT_INSTALL_ZIP_URL'"
+  if [ -z ${WIT_INSTALL_ZIP_URL} ]; then
+    echo @@ "WIT_INSTALL_ZIP_URL is not set"
+    if [ "$WIT_VERSION" == "LATEST" ]; then
+      WIT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/latest/download/$WIT_INSTALL_ZIP_FILE"}
+    else
+      WIT_INSTALL_ZIP_URL=${WIT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/download/release-$WIT_VERSION/$WIT_INSTALL_ZIP_FILE"}
+    fi
   fi
-
-
 
   local save_dir=`pwd`
 
   echo @@ "imagetool.sh not found in ${imagetoolBinDir}. Installing imagetool..."
 
   echo @@ "Info:  Downloading $WIT_INSTALL_ZIP_URL "
-  download $WIT_INSTALL_ZIP_URL || return 1
+  download $WIT_INSTALL_ZIP_URL $WIT_INSTALL_ZIP_FILE || return 1
 
   if [ ! -f $WIT_INSTALL_ZIP_FILE ]; then
     cd $save_dir

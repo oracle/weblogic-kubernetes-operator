@@ -42,7 +42,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -54,8 +53,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 public class ShutdownManagedServerStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private String serverName;
-  private V1Pod pod;
+  private final String serverName;
+  private final V1Pod pod;
 
   private ShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
     super(next);
@@ -237,7 +236,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     boolean isTCPProtocol(V1ContainerPort port) {
-      return V1ContainerPort.ProtocolEnum.TCP.equals(port.getProtocol());
+      return "TCP".equals(port.getProtocol());
     }
 
     private WlsServerConfig getWlsServerConfig() {
@@ -339,12 +338,12 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(packet);
     }
 
-    @NotNull
+    @Nonnull
     private Boolean shutdownAttemptSucceeded(Packet packet) {
       return Optional.ofNullable((Boolean)packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED)).orElse(false);
     }
 
-    @NotNull
+    @Nonnull
     private Boolean serverNotShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
     }
@@ -360,7 +359,7 @@ public class ShutdownManagedServerStep extends Step {
 
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
     private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
-    private String serverName;
+    private final String serverName;
     private HttpAsyncRequestStep requestStep;
 
     ShutdownManagedServerResponseStep(String serverName, Step next) {

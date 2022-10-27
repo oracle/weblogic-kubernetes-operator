@@ -10,9 +10,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -36,7 +36,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -91,6 +90,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpassw
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -108,7 +108,6 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
-  static String clusterName = "cluster-1";
   String wlClusterName = "cluster-1";
 
 
@@ -296,7 +295,7 @@ class ItDiagnosticsFailedCondition {
     }
   }
 
-  @NotNull
+  @Nonnull
   private String getClusterResName(String domainName) {
     return domainName + "-" + this.wlClusterName;
   }
@@ -315,27 +314,32 @@ class ItDiagnosticsFailedCondition {
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
-    DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
-        BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterResName);
+    try {
+      DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
+          BASE_IMAGES_REPO_SECRET_NAME, encryptionSecretName, 100, image, clusterResName);
 
-    logger.info("Creating domain");
-    createDomainAndVerify(domain, domainNamespace);
+      logger.info("Creating domain");
+      createDomainAndVerify(domain, domainNamespace);
 
-    //check the desired completed, available and failed statuses
-    checkStatus(domainName, "False", "False", "True");
+      //check the desired completed, available and failed statuses
+      checkStatus(domainName, "False", "False", "True");
 
-    // remove after debug
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    logger.info("Patching cluster resource using patch string {0} ", patchStr);
-    assertTrue(!patchClusterCustomResource(clusterResName, domainNamespace,
-        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
-
-    deleteDomainResource(domainNamespace, domainName);
-    deleteClusterCustomResource(clusterResName, domainNamespace);
+      // remove after debug
+      String patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 10}"
+          + "]";
+      V1Patch patch = new V1Patch(patchStr);
+      logger.info("Patching cluster resource using patch string {0} ", patchStr);
+      assertFalse(patchClusterCustomResource(clusterResName, domainNamespace,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
+    } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
+      deleteDomainResource(domainNamespace, domainName);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
+    }
   }
 
   /**
@@ -433,7 +437,7 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain resource with incorrect image pull secret");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image, clusterResName);
-    domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    domain.getSpec().imagePullPolicy("Always");
 
     try {
       logger.info("Creating domain");
@@ -738,7 +742,8 @@ class ItDiagnosticsFailedCondition {
       getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);
 
       domain = createClusterResourceAndAddReferenceToDomain(
-          clusterResName, clusterName, domainNamespace, domain, replicaCount);
+          clusterResName, wlClusterName, domainNamespace, domain, replicaCount);
+
       createDomainAndVerify(domain, domainNamespace);
 
       String adminServerPodName = domainName + "-admin-server";
@@ -855,8 +860,7 @@ class ItDiagnosticsFailedCondition {
     setPodAntiAffinity(domain);
 
 
-    ClusterResource cluster = createClusterResource(clusterResName,
-        clusterName, domNamespace, replicaCount);
+    ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domNamespace, replicaCount);
     logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
 
     createClusterAndVerify(cluster);
@@ -907,12 +911,9 @@ class ItDiagnosticsFailedCondition {
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
 
-    ClusterResource cluster = createClusterResource(clusterResName,
-        clusterName, domNamespace, replicaCount);
-    logger.info("Creating cluster resource{0} in namespace {1}",
-        domainUid + "-" + clusterName, domNamespace);
+    ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
     createClusterAndVerify(cluster);
-
 
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));

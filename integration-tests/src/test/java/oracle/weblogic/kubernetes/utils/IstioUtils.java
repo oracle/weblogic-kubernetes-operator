@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -413,7 +412,7 @@ public class IstioUtils {
         e.printStackTrace();
         fail("Failed to read configuration file");
       }
-      V1Container.ImagePullPolicyEnum imagePullPolicy = IMAGE_PULL_POLICY;
+      String imagePullPolicy = IMAGE_PULL_POLICY;
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(monexpImage)
           .imagePullPolicy(imagePullPolicy)

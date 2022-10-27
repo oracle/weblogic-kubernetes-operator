@@ -117,7 +117,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenJobConditionTypeFailed_reportNotComplete() {
-    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.FAILED)));
+    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed")));
 
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
@@ -126,7 +126,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   void whenJobConditionStatusFalse_reportNotComplete() {
     cachedJob.status(
         new V1JobStatus().addConditionsItem(
-            new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("False")));
+            new V1JobCondition().type("Complete").status("False")));
 
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
@@ -141,7 +141,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   @Test
   void whenJobConditionTypeFailedWithNoStatus_reportNotFailed() {
     cachedJob.status(new V1JobStatus().addConditionsItem(
-        new V1JobCondition().type(V1JobCondition.TypeEnum.FAILED).status("")));
+        new V1JobCondition().type("Failed").status("")));
 
     assertThat(JobWatcher.isFailed(cachedJob), is(false));
   }
@@ -166,10 +166,10 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   }
 
   private V1Job markJobCompleted(V1Job job) {
-    return job.status(new V1JobStatus().addConditionsItem(createCondition(V1JobCondition.TypeEnum.COMPLETE)));
+    return job.status(new V1JobStatus().addConditionsItem(createCondition("Complete")));
   }
 
-  private V1JobCondition createCondition(V1JobCondition.TypeEnum type) {
+  private V1JobCondition createCondition(String type) {
     return new V1JobCondition().type(type).status("True");
   }
 
@@ -192,13 +192,13 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(
-        createCondition(V1JobCondition.TypeEnum.FAILED).reason(reason)));
+        createCondition("Failed").reason(reason)));
   }
 
   @SuppressWarnings("SameParameterValue")
   private V1Job setFailedConditionWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().conditions(
-            List.of(new V1JobCondition().type(V1JobCondition.TypeEnum.FAILED).status("True").reason(reason))));
+            List.of(new V1JobCondition().type("Failed").status("True").reason(reason))));
   }
 
   @Test
@@ -229,7 +229,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenJobHasNoFailedCondition_getFailedReasonReturnsNull() {
-    cachedJob.status(new V1JobStatus().addConditionsItem(createCondition(V1JobCondition.TypeEnum.COMPLETE)));
+    cachedJob.status(new V1JobStatus().addConditionsItem(createCondition("Complete")));
 
     assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }

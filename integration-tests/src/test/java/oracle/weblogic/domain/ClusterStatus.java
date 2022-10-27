@@ -3,6 +3,9 @@
 
 package oracle.weblogic.domain;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -42,6 +45,15 @@ public class ClusterStatus {
               + "Cluster members will be started by the operator if this value is larger than zero.",
       allowableValues = "range[0,infinity]")
   private Integer replicasGoal;
+
+  @ApiModelProperty(
+      value = "The generation observed by the WebLogic operator.",
+      allowableValues = "range[0,infinity]")
+  private Integer observedGeneration;
+
+  @ApiModelProperty(
+      value = "Current service state of the cluster.")
+  private List<ClusterCondition> conditions = new ArrayList<>();
 
   public ClusterStatus clusterName(String clusterName) {
     this.clusterName = clusterName;
@@ -145,6 +157,49 @@ public class ClusterStatus {
     this.replicasGoal = replicasGoal;
   }
 
+  public ClusterStatus conditions(List<ClusterCondition> conditions) {
+    this.conditions = conditions;
+    return this;
+  }
+
+  public List<ClusterCondition> conditions() {
+    return conditions;
+  }
+
+  /**
+   * Adds condition item.
+   * @param conditionsItem Condition
+   * @return this
+   */
+  public ClusterStatus addConditionsItem(ClusterCondition conditionsItem) {
+    if (conditions == null) {
+      conditions = new ArrayList<>();
+    }
+    conditions.add(conditionsItem);
+    return this;
+  }
+
+  public List<ClusterCondition> getConditions() {
+    return conditions;
+  }
+
+  public void setConditions(List<ClusterCondition> conditions) {
+    this.conditions = conditions;
+  }
+
+  public Integer getObservedGeneration() {
+    return observedGeneration;
+  }
+
+  public ClusterStatus observedGeneration(int observedGeneration) {
+    this.observedGeneration = observedGeneration;
+    return this;
+  }
+
+  public void setObservedGeneration(int observedGeneration) {
+    this.observedGeneration = observedGeneration;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -154,6 +209,8 @@ public class ClusterStatus {
         .append("maximumReplicas", maximumReplicas)
         .append("mimimumReplicas", minimumReplicas)
         .append("replicasGoal", replicasGoal)
+        .append("observedGeneration", observedGeneration)
+        .append("conditions", conditions)
         .toString();
   }
 
@@ -166,6 +223,8 @@ public class ClusterStatus {
         .append(maximumReplicas)
         .append(minimumReplicas)
         .append(replicasGoal)
+        .append(observedGeneration)
+        .append(conditions)
         .toHashCode();
   }
 
@@ -186,6 +245,8 @@ public class ClusterStatus {
         .append(maximumReplicas, rhs.maximumReplicas)
         .append(minimumReplicas, rhs.minimumReplicas)
         .append(replicasGoal, rhs.replicasGoal)
+        .append(observedGeneration, rhs.observedGeneration)
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .isEquals();
   }
 }

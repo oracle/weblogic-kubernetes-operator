@@ -257,12 +257,6 @@ clusterSizePaddingValidationEnabled: true
 # The default value is false.
 #tokenReviewAuthentication: false
 
-# domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds specify the number of introspector job
-# retries for a Domain and the interval in seconds between these retries, respectively.
-# Defaults to 5 retries and 10 seconds between each retry.
-# domainPresenceFailureRetryMaxCount: 5
-# domainPresenceFailureRetrySeconds: 10
-
 # runAsuser specifies the UID to run the operator and conversion webhook container processes. 
 # If not specified, it defaults to the user specified in the operator's container image.
 #runAsUser: 1000

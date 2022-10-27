@@ -260,8 +260,8 @@ class PodCompatibilityTest {
   void whenImagePullPoliciesDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
-            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER),
-            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS));
+            new V1Container().imagePullPolicy("Never"),
+            new V1Container().imagePullPolicy("Always"));
 
     assertThat(
         compatibility.getScopedIncompatibility(DOMAIN),
@@ -275,8 +275,8 @@ class PodCompatibilityTest {
   void whenImagePullPoliciesDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
-            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.NEVER),
-            new V1Container().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS));
+            new V1Container().imagePullPolicy("Never"),
+            new V1Container().imagePullPolicy("Always"));
 
     assertThat(
         compatibility.getScopedIncompatibility(UNKNOWN), blankOrNullString());

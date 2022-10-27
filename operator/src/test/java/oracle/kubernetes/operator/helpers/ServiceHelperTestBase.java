@@ -8,7 +8,6 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterService;
@@ -44,7 +43,7 @@ public class ServiceHelperTestBase {
         .withKind(KubernetesConstants.CLUSTER)
         .withMetadata(new V1ObjectMeta().namespace(NS).name(TEST_CLUSTER).uid(KUBERNETES_UID))
         .spec(new ClusterSpec().withClusterName(TEST_CLUSTER)
-            .withClusterService(new ClusterService().withSessionAffinity(V1ServiceSpec.SessionAffinityEnum.CLIENTIP))));
+            .withClusterService(new ClusterService().withSessionAffinity("ClientIP"))));
     return dpi;
   }
 }

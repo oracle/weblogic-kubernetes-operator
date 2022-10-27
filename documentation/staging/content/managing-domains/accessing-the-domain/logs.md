@@ -6,11 +6,7 @@ weight: 9
 description: "Configure WebLogic Server and domain log settings."
 ---
 
-### Contents
-
- - [Overview](#overview)
- - [WebLogic Server log file location](#weblogic-server-log-file-location)
- - [WebLogic Server log file rotation and size](#weblogic-server-log-file-rotation-and-size)
+{{< table_of_contents >}}
 
 ### Overview
 
@@ -116,4 +112,3 @@ set logging attributes using system properties that start with `weblogic.log.`
 and that end with the corresponding Log MBean attribute name.
 
   For example, you can include `-Dweblogic.log.FileMinSize=1000 -Dweblogic.log.FileCount=10 -Dweblogic.log.RotateLogOnStartup=true` in `domain.spec.serverPod.env.name.JAVA_OPTIONS` to set the behavior for all WebLogic Servers in your domain. For information about setting `JAVA_OPTIONS`, see [Domain resource]({{< relref "/managing-domains/domain-resource/_index.md#jvm-memory-and-java-option-environment-variables" >}}).
-

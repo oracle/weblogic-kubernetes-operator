@@ -5,7 +5,6 @@ weight: 7
 description: "Kubernetes ServiceAccounts for the operator."
 ---
 
-
 ### WebLogic Kubernetes Operator ServiceAccounts
 
 When the operator is installed, the Helm chart property, `serviceAccount`, can

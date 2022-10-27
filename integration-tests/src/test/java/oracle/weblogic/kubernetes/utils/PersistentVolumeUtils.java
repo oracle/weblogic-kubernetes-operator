@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -26,7 +27,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.jetbrains.annotations.NotNull;
 
 import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
@@ -183,7 +183,7 @@ public class PersistentVolumeUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("5Gi"))
-            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RECYCLE)
+            .persistentVolumeReclaimPolicy("Recycle")
             .accessModes(Arrays.asList("ReadWriteMany")))
         .metadata(new V1ObjectMeta()
             .name(pvName)
@@ -225,7 +225,7 @@ public class PersistentVolumeUtils {
     }
   }
 
-  @NotNull
+  @Nonnull
   private static Path createPVHostPathDir(String pvName, String className) {
     Path pvHostPath = null;
     LoggingFacade logger = getLogger();
@@ -339,7 +339,7 @@ public class PersistentVolumeUtils {
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("10Gi"))
-            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN)
+            .persistentVolumeReclaimPolicy("Retain")
             .accessModes(Arrays.asList("ReadWriteMany")))
         .metadata(new V1ObjectMeta()
             .name("pv-test" + nameSuffix)

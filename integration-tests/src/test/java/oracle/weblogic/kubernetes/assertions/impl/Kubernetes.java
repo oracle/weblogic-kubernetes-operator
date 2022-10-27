@@ -155,7 +155,7 @@ public class Kubernetes {
           && pod.getStatus().getConditions().stream() != null) {
         // get the podCondition with the 'Ready' type field
         V1PodCondition v1PodInitializedCondition = pod.getStatus().getConditions().stream()
-            .filter(v1PodCondition -> V1PodCondition.TypeEnum.INITIALIZED.equals(v1PodCondition.getType()))
+            .filter(v1PodCondition -> "Initialized".equals(v1PodCondition.getType()))
             .findAny()
             .orElse(null);
 
@@ -201,7 +201,7 @@ public class Kubernetes {
           && pod.getStatus().getConditions().stream() != null) {
         // get the podCondition with the 'Ready' type field
         V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-            .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
+            .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
             .findAny()
             .orElse(null);
 
@@ -376,7 +376,7 @@ public class Kubernetes {
     if (pod != null && pod.getStatus() != null && pod.getStatus().getConditions() != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 
@@ -835,15 +835,15 @@ public class Kubernetes {
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition
-                -> V1JobCondition.TypeEnum.COMPLETE.equals(v1JobCondition.getType())
-                || V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+                -> "Complete".equals(v1JobCondition.getType())
+                || "Failed".equals(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
         if (jobCondition != null) {
           completionStatus = jobCondition.getStatus().equalsIgnoreCase("true");
-          if (jobCondition.getType().equals(V1JobCondition.TypeEnum.FAILED)) {
+          if (jobCondition.getType().equals("Failed")) {
             logger.severe("Job {0} failed", jobName);
-          } else if (jobCondition.getType().equals(V1JobCondition.TypeEnum.COMPLETE)) {
+          } else if (jobCondition.getType().equals("Complete")) {
             logger.info("Job {0} completed successfully ", jobName);
           }
         }
@@ -961,7 +961,7 @@ public class Kubernetes {
     if (pod != null) {
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 

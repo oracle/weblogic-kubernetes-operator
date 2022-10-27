@@ -5,25 +5,7 @@ weight: 12
 description: "General advice for debugging and monitoring the operator."
 ---
 
-### Contents
-
-- [Troubleshooting a particular domain resource](#troubleshooting-a-particular-domain-resource)
-- [Check Helm status](#check-helm-status)
-- [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
-- [Check the operator deployment](#check-the-operator-deployment)
-- [Check the conversion webhook deployment](#check-the-conversion-webhook-deployment)
-- [Check common operator issues](#check-common-operator-issues)
-- [Check for operator events](#check-for-operator-events)
-- [Check for conversion webhook events](#check-for-conversion-webhook-events)
-- [Check the operator log](#check-the-operator-log)
-- [Check the conversion webhook log](#check-the-conversion-webhook-log)
-- [Operator ConfigMap](#operator-configmap)
-- [Force the operator to restart](#force-the-operator-to-restart)
-- [Operator and conversion webhook logging level](#operator-and-conversion-webhook-logging-level)
-- [Troubleshooting the conversion webhook](#troubleshooting-the-conversion-webhook)
-  - [Ensure the conversion webhook is deployed and running](#ensure-the-conversion-webhook-is-deployed-and-running)
-  - [Check for runtime errors during conversion](#check-for-runtime-errors-during-conversion)
-- [See also](#see-also)
+{{< table_of_contents >}}
 
 ### Troubleshooting a particular domain resource
 
@@ -36,10 +18,12 @@ An operator runtime is installed into a Kubernetes cluster and maintained using 
 For information about how to list your installed Helm releases and get each release's configuration,
 see [Useful Helm operations]({{<relref "/managing-operators/using-helm#useful-helm-operations">}}).
 
-### Ensure the operator CRD is installed
+### Ensure the operator CRDs are installed
 
-When you install and run an operator, the installation should have deployed a domain custom resource to the cluster.
-To check, verify that the following command lists a CRD with the name `domains.weblogic.oracle`:
+When you install and run an operator, the installation should have deployed a domain custom resource
+and a cluster custom resource to the cluster.
+To check, verify that the following command lists a CRD with the name `domains.weblogic.oracle`
+and another CRD with the name `clusters.weblogic.oracle`:
 
 ```text
 $ kubectl get crd
@@ -48,14 +32,15 @@ $ kubectl get crd
 The command output should look something like the following:
 
 ```text
-NAME                                   CREATED AT
-domains.weblogic.oracle                2021-09-27T18:46:38Z
+NAME                                    CREATED AT
+clusters.weblogic.oracle                2022-10-15T03:45:27Z
+domains.weblogic.oracle                 2022-10-15T03:45:27Z
 ```
 
-When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like `kubectl get domains` will fail.
+When a domain or cluster CRD is not installed, the operator runtimes will not be able to monitor domains or clusters, and commands like `kubectl get domains` will fail.
 
-Typically, the operator automatically installs the CRD for the Domain type when the operator first starts. However,
-if the domain CRD was not installed, for example, if the operator lacked sufficient permission to install it, then
+Typically, the operator automatically installs each CRD when the operator first starts. However,
+if a CRD was not installed, for example, if the operator lacked sufficient permission to install it, then
 refer to the operator [Prepare for installation]({{< relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}}) documentation.
 
 ### Check the operator deployment
@@ -98,6 +83,7 @@ A pod `describe` usefully includes any events that might be associated with the 
 
 ### Check the conversion webhook deployment
 
+All operators in a Kubernetes cluster share a single conversion webhook deployment.
 Verify that the conversion webhook is deployed and running by listing all deployments with the `weblogic.webhookName` label.
 
 ```text
@@ -159,7 +145,6 @@ $ kubectl -n WH_NAMESPACE get events --sort-by='.lastTimestamp'
 ### Check the operator log
 
 Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
-
 
 - Find your operator.
   ```shell

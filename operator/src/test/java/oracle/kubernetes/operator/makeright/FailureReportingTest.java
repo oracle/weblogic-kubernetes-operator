@@ -50,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -416,7 +415,7 @@ class FailureReportingTest {
       return getMatchingConditions(nextAction.getPacket());
     }
 
-    @NotNull
+    @Nonnull
     private Set<DomainCondition> getMatchingConditions(Packet packet) {
       return DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)

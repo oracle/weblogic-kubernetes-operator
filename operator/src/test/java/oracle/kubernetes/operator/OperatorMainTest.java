@@ -26,6 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -60,7 +61,6 @@ import org.glassfish.grizzly.http.server.HttpHandlerRegistration;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -463,7 +463,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     return Arrays.stream(namespaces).filter(domainNamespaces::isStarting).collect(Collectors.toList());
   }
 
-  @NotNull
+  @Nonnull
   DomainRecheck createDomainRecheck() {
     return new DomainRecheck(delegate);
   }

@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -228,7 +229,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     if (wasStartedFromEvent()) {
       result.add(createStatusInitializationStep());
     }
-    if (deleting) {
+    if (deleting || domainHasDeletionTimestamp()) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
       result.add(createListClusterResourcesStep(getNamespace()));
@@ -237,6 +238,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     }
 
     return Step.chain(result);
+  }
+
+  private boolean domainHasDeletionTimestamp() {
+    return Optional.ofNullable(liveInfo.getDomain()).map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getDeletionTimestamp).isPresent();
   }
 
   private static Step createListClusterResourcesStep(String domainNamespace) {
@@ -362,8 +368,13 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
-      DomainPresenceInfo.fromPacket(packet).ifPresent(info -> info.setDeleting(false));
+      DomainPresenceInfo.fromPacket(packet).ifPresent(info -> updateCache(info, callResponse.getResult()));
       return doNext(packet);
+    }
+
+    private void updateCache(DomainPresenceInfo info, DomainResource domain) {
+      info.setDeleting(false);
+      info.setDomain(domain);
     }
 
     @Override

@@ -11,7 +11,6 @@ import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 public class ManagedServer extends Server implements Comparable<ManagedServer> {
   /** The name of the Managed Server. Required. */
@@ -20,10 +19,10 @@ public class ManagedServer extends Server implements Comparable<ManagedServer> {
   @Description("The name of the Managed Server. This name must match the name of a Managed Server instance or of a "
       + "dynamic cluster member name from a server template already defined in the WebLogic domain configuration. "
       + "Required.")
-  @NotNull
+  @Nonnull
   private String serverName;
 
-  @NotNull
+  @Nonnull
   public String getServerName() {
     return serverName;
   }

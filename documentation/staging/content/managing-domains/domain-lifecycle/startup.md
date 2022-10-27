@@ -7,48 +7,19 @@ description: "There are fields on the Domain that specify which WebLogic Server 
 started, or restarted. To start, stop, or restart servers, modify these fields on the Domain."
 ---
 
-### Contents
+This document describes approaches for stopping, starting, rolling, and restarting WebLogic Server instances in a Kubernetes environment.
 
-- [Introduction](#introduction)
-- [Starting and stopping servers](#starting-and-stopping-servers)
-  - [`serverStartPolicy` rules](#serverstartpolicy-rules)
-  - [Available `serverStartPolicy` values](#available-serverstartpolicy-values)
-  - [Administration Server start and stop rules](#administration-server-start-and-stop-rules)
-  - [Standalone Managed Server start and stop rules](#standalone-managed-server-start-and-stop-rules)
-  - [Clustered Managed Server start and stop rules](#clustered-managed-server-start-and-stop-rules)
-- [Server start state](#server-start-state)
-- [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
-  - [Normal running state](#normal-running-state)
-  - [Shut down all the servers](#shut-down-all-the-servers)
-  - [Only start the Administration Server](#only-start-the-administration-server)
-  - [Shut down a cluster](#shut-down-a-cluster)
-  - [Shut down a specific standalone server](#shut-down-a-specific-standalone-server)
-  - [Force a specific clustered Managed Server to start](#force-a-specific-clustered-managed-server-to-start)
-- [Shutdown options](#shutdown-options)
-  - [Shutdown environment variables](#shutdown-environment-variables)
-  - [`shutdown` rules](#shutdown-rules)
-- [Restarting servers](#restarting-servers)
-  - [Fields that cause servers to be restarted](#fields-that-cause-servers-to-be-restarted)
-- [Rolling restarts](#rolling-restarts)
-- [Draining a node and PodDisruptionBudget](#draining-a-node-and-poddisruptionbudget)
-- [Common restarting scenarios](#common-restarting-scenarios)
-  - [Using `restartVersion` to force the operator to restart servers](#using-restartversion-to-force-the-operator-to-restart-servers)
-  - [Restart all the servers in the domain](#restart-all-the-servers-in-the-domain)
-  - [Restart all the servers in the cluster](#restart-all-the-servers-in-the-cluster)
-  - [Restart the Administration Server](#restart-the-administration-server)
-  - [Restart a standalone or clustered Managed Server](#restart-a-standalone-or-clustered-managed-server)
-  - [Full domain restarts](#full-domain-restarts)
-- [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
+{{< table_of_contents >}}
 
 ### Introduction
 
-There are fields on the Domain that specify which servers should be running,
-which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
+There are fields on the Domain and the Cluster that specify which servers should be running,
+which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain or the Cluster
 (for example, by using `kubectl` or the Kubernetes REST API).  The operator will detect the changes and apply them.
 
 ### Starting and stopping servers
 
-The `serverStartPolicy` and `replicas` fields of the Domain controls which servers should be running.
+The `serverStartPolicy` and `replicas` fields of the Domain and the Cluster control which servers should be running, where a Cluster `replicas` field defaults to the corresponding Domain value.
 The operator monitors these fields and creates or deletes the corresponding WebLogic Server instance Pods.
 
 {{% notice note %}} Do not use the WebLogic Server Administration Console to start or stop servers.
@@ -56,7 +27,11 @@ The operator monitors these fields and creates or deletes the corresponding WebL
 
 #### `serverStartPolicy` rules
 
-You can specify the `serverStartPolicy` property at the domain, cluster, and server levels. Each level supports a different set of values.
+You can specify the `serverStartPolicy` property at the `domain.spec` Domain level,
+the `cluster.spec` Cluster level,
+the `domain.spec.managedServers` Managed Server level,
+or the `domain.spec.adminServer` Administration Server level.
+Each level supports a different set of values.
 
 #### Available `serverStartPolicy` values
 | Level | Default Value | Supported Values                 |
@@ -112,6 +87,9 @@ For example:
     replicas: 3
 ```
 
+The `domain.spec.replicas` field is the default for all clusters. Individual clusters
+may customize their replicas using `cluster.spec.replicas`.
+
 #### Shut down all the servers
 Sometimes you need to completely shut down the domain (for example, take it out of service).
 ```
@@ -137,15 +115,17 @@ Sometimes you want to start the Administration Server only, that is, take the Ma
 #### Shut down a cluster
 To shut down a cluster (for example, take it out of service), add it to the Domain and set its `serverStartPolicy` to `Never`.
 ```
-  kind: Domain
+  kind: Cluster
   metadata:
-    name: domain1
+    name: domain1-cluster1
   spec:
-    clusters:
-    - clusterName: "cluster1"
-      serverStartPolicy: Never
+    clusterName: "cluster1"
+    serverStartPolicy: Never
     ...
 ```
+
+A Cluster resource must be referenced from the `domain.spec.clusters` and must have a `.spec.clusterName`
+that matches the corresponding cluster in the domain's WebLogic configuration.
 
 #### Shut down a specific standalone server
 To shut down a specific standalone server, add it to the Domain and set its `serverStartPolicy` to `Never`.
@@ -192,8 +172,10 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 
 ### Shutdown options
 
-The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
-`clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
+The Domain and Cluster YAML files include the field `serverPod` that is available under
+`domain.spec`, `domain.adminServer`, each entry of `domain.spec.managedServers`,
+and `cluster.spec`.
+The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
 The `shutdown` field of `serverPod` controls how managed servers will be shut down and has the following four properties:
 `shutdownType`, `timeoutSeconds`, `ignoreSessions` and `waitForAllSessions`. The operator runtime monitors these properties but will not restart any server pods solely to adjust the shutdown options.
@@ -237,7 +219,7 @@ You can specify the `serverPod` field, including the `shutdown` field, at the do
 then the shutdown configuration for a specific server is the combination of all of the relevant values with each field
 having the value from the `shutdown` field at the most specific scope.  
 
-For instance, given the following Domain YAML file:
+For instance, given the following Domain YAML and Cluster YAML files:
 ```
   kind: Domain
   metadata:
@@ -248,10 +230,7 @@ For instance, given the following Domain YAML file:
         shutdownType: Graceful
         timeoutSeconds: 45
     clusters:
-    - clusterName: "cluster1"
-      serverPod:
-        shutdown:
-          ignoreSessions: true
+    - name: "domain1-cluster1"
     managedServers:
     - serverName: "cluster1_server1"
       serverPod:
@@ -259,6 +238,20 @@ For instance, given the following Domain YAML file:
           timeoutSeconds: 60
           ignoreSessions: false
     ...
+```
+
+```
+  kind: Cluster
+  metadata:
+    name: domain1-cluster1
+    labels:
+      weblogic.domainUID: sample-domain1
+  spec:
+    clusterName: cluster1
+    replicas: 2
+    serverPod:
+      shutdown:
+        ignoreSessions: true
 ```
 
 Graceful shutdown is used for all servers in the domain because this is specified at the domain level and is not overridden at
@@ -311,8 +304,8 @@ such a label or annotation by modifying the `restartVersion`.
 
 Clustered servers that need to be restarted are gradually restarted (for example, "rolling restarted") so that the cluster is not taken out of service and in-flight work can be migrated to other servers in the cluster.
 
-The `maxUnavailable` field on the Domain determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
-It can be specified at the domain and cluster levels and defaults to 1 (that is, by default, clustered servers are restarted one at a time).
+The `maxUnavailable` field on the Cluster determines how many of the cluster's servers may be taken out of service at a time when doing a rolling restart.
+It can be specified at the cluster level and defaults to 1 (that is, by default, clustered servers are restarted one at a time).
 
 When using in-memory session replication, Oracle WebLogic Server employs a primary-secondary session replication model to provide high availability of application session state (that is, HTTP and EJB sessions).
 The primary server creates a primary session state on the server to which the client first connects, and a secondary replica on another WebLogic Server instance in the cluster.
@@ -327,7 +320,7 @@ If you are supplying updated models or secrets for a running Model in Image doma
 
 A Kubernetes cluster administrator can [drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) for repair, upgrade, or scaling down the Kubernetes cluster.
 
-Beginning in version 3.2, the operator takes advantage of the [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets) feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster's server pods evicted simultaneously is determined by the `maxUnavailable` field on the Domain resource. The `.spec.minAvailable` field of the PDB for a cluster is calculated from the difference of the current `replicas` count and `maxUnavailable` value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a `maxUnavailable` of `1`, the `.spec.minAvailable` for PDB is set to `2`. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster's Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see [Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) and [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+Beginning in version 3.2, the operator takes advantage of the [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets) feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster's server pods evicted simultaneously is determined by the `maxUnavailable` field on the Cluster resource. The `.spec.minAvailable` field of the PDB for a cluster is calculated from the difference of the current `replicas` count and `maxUnavailable` value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a `maxUnavailable` of `1`, the `.spec.minAvailable` for PDB is set to `2`. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster's Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see [Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) and [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
 
 ### Common restarting scenarios
 
@@ -364,16 +357,18 @@ Set `restartVersion` at the domain level to a new value.
 Set `restartVersion` at the cluster level to a new value.
 
 ```
-  kind: Domain
+  kind: Cluster
   metadata:
-    name: domain1
+    name: domain1-cluster1
   spec:
-    clusters:
-    - clusterName : "cluster1"
-      restartVersion: "5"
-      maxUnavailable: 2
+    clusterName : "cluster1"
+    restartVersion: "5"
+    maxUnavailable: 2
     ...
 ```
+
+A Cluster resource must be referenced from the `domain.spec.clusters` and must have a `.spec.clusterName`
+that matches the corresponding cluster in the domain's WebLogic configuration.
 
 #### Restart the Administration Server
 
@@ -440,5 +435,5 @@ have to specify the `serverStartPolicy` as the default value is `IfNeeded`.
 
 ### Domain lifecycle sample scripts
 
-See the [Life cycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}})
-for scripts that help with initiating domain life cycle operations.
+See the [Lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}})
+for scripts that help with initiating domain lifecycle operations.

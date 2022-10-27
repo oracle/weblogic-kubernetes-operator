@@ -6,7 +6,6 @@ description: "Sample for creating an FMW Infrastructure domain home on an existi
 PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
-
 The sample scripts demonstrate the creation of an FMW Infrastructure domain home on an
 existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts
 also generate the domain resource YAML file, which can then be used to start the Kubernetes

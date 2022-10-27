@@ -8,16 +8,13 @@ description: "This document describes how to customize the liveness and readines
 
 This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
 
-#### Contents
+{{< table_of_contents >}}
 
-* [Liveness probe customization](#liveness-probe-customization)
-* [Readiness probe customization](#readiness-probe-customization)
-
-#### Liveness probe customization
+### Liveness probe customization
 
 The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.  The default success and failure threshold values are 1.  If a pod fails the liveness probe, Kubernetes will restart that container.
 
-You can customize the liveness probe initial delay, interval, timeout, and failure threshold using the `livenessProbe` attribute under the `serverPod` element of the domain resource.
+You can customize the liveness probe initial delay, interval, timeout, and failure threshold using the `livenessProbe` attribute under the `serverPod` element of the domain or cluster resource.
 
 Following is an example configuration to change the liveness probe interval, timeout, and failure threshold value.
 ```yaml
@@ -30,7 +27,7 @@ Following is an example configuration to change the liveness probe interval, tim
 
 **Note**: The liveness probe success threshold value must always be 1. See [Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) in the Kubernetes documentation for more details.
 
-After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the following configuration examples). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
+After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource, or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the following configuration examples). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
 
 
 * The `spec.livenessProbeCustomScript` domain resource attribute affects all WebLogic Server instance Pods in the domain.
@@ -81,7 +78,7 @@ The following operator-populated environment variables are available for use in 
 
 * A custom liveness probe must not fail (exit non-zero) when the WebLogic Server instance itself is unavailable. This could be the case when the WebLogic Server instance is booting or about to boot.
 
-#### Readiness probe customization
+### Readiness probe customization
 
 Here are the options for customizing the readiness probe and its tuning:
 
@@ -105,4 +102,4 @@ Here are the options for customizing the readiness probe and its tuning:
   (which applies to all pods in the domain),
   `domain.spec.adminServer.serverPod`,
   `domain.spec.managedServers[*].serverPod`,
-  or `domain.spec.clusters[*].serverPod`.
+  or `cluster.spec.serverPod`.

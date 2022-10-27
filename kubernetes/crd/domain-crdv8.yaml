@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: a9978851bbc86ce4653d328db25d01661829c8531a6971c001fdaa1a00bfa5a6
+    weblogic.sha256: c38a380dfaccb49e337eab874c1ee806677c263ac31885363b43913f00542760
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -13,7 +13,7 @@ spec:
     kind: Domain
     plural: domains
     shortNames:
-    - dom
+      - dom
     singular: domain
   preserveUnknownFields: false
   scope: Namespaced
@@ -39,7 +39,7 @@ spec:
                   properties:
                     image:
                       description: The WebLogic Monitoring Exporter sidecar container
-                        image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.5
+                        image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0
                       type: string
                     imagePullPolicy:
                       description: The image pull policy for the WebLogic Monitoring
@@ -66,6 +66,19 @@ spec:
                         instance, including the ports of built-in channels or network
                         access points (NAPs).
                       type: number
+                    resources:
+                      description: Memory and CPU minimum requirements and limits for
+                        the Monitoring Exporter sidecar. See `kubectl explain pods.spec.containers.resources`.
+                      properties:
+                        requests:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        limits:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
                   type: object
                 configuration:
                   description: Models and overrides affecting the WebLogic domain configuration.
@@ -268,6 +281,146 @@ spec:
                       name:
                         type: string
                   type: array
+                fluentdSpecification:
+                  description: Automatic fluentd sidecar injection. If specified, the
+                    operator will deploy a sidecar container alongside each WebLogic
+                    Server instance that runs the fluentd, Optionally, the introspector
+                    job pod can be enabled to deploy with the fluentd sidecar container.
+                    WebLogic Server instances that are already running when the `fluentdSpecification`
+                    field is created or deleted, will not be affected until they are
+                    restarted. When any given server is restarted for another reason,
+                    such as a change to the `restartVersion`, then the newly created
+                    pod  will have the fluentd sidecar or not, as appropriate
+                  properties:
+                    image:
+                      description: The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1
+                      type: string
+                    imagePullPolicy:
+                      description: The image pull policy for the Fluentd sidecar container
+                        image. Legal values are Always, Never, and IfNotPresent. Defaults
+                        to Always if image ends in :latest; IfNotPresent, otherwise.
+                      enum:
+                        - Always
+                        - Never
+                        - IfNotPresent
+                      type: string
+                    fluentdConfiguration:
+                      description: The fluentd configuration text, specify your own
+                        custom fluentd configuration.
+                      type: string
+                    elasticSearchCredentials:
+                      description: 'Fluentd elastic search credentials. A Kubernetes
+                      secret in the same namespace of the domain. It must contains
+                      4 keys: elasticsearchhost - ElasticSearch Host Service Address,
+                      elasticsearchport - Elastic Search Service Port, elasticsearchuser
+                      - Elastic Search Service User Name, elasticsearchpassword -
+                      Elastic Search User Password'
+                      type: string
+                    resources:
+                      description: Memory and CPU minimum requirements and limits for
+                        the fluentd container. See `kubectl explain pods.spec.containers.resources`.
+                      properties:
+                        requests:
+                          additionalProperties:
+                            type: string
+                          type: object
+                        limits:
+                          additionalProperties:
+                            type: string
+                          type: object
+                      type: object
+                    watchIntrospectorLogs:
+                      description: Fluentd will watch introspector logs
+                      type: boolean
+                    env:
+                      description: A list of environment variables to set in the fluentd
+                        container. See `kubectl explain pods.spec.containers.env`.
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          value:
+                            type: string
+                          valueFrom:
+                            type: object
+                            properties:
+                              secretKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                  key:
+                                    type: string
+                                required:
+                                  - key
+                              resourceFieldRef:
+                                type: object
+                                properties:
+                                  divisor:
+                                    type: object
+                                    properties:
+                                      number:
+                                        type: number
+                                      format:
+                                        type: string
+                                        enum:
+                                          - DECIMAL_EXPONENT
+                                          - DECIMAL_SI
+                                          - BINARY_SI
+                                  resource:
+                                    type: string
+                                  containerName:
+                                    type: string
+                                required:
+                                  - resource
+                              configMapKeyRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                                  key:
+                                    type: string
+                                required:
+                                  - key
+                              fieldRef:
+                                type: object
+                                properties:
+                                  apiVersion:
+                                    type: string
+                                  fieldPath:
+                                    type: string
+                                required:
+                                  - fieldPath
+                        required:
+                          - name
+                      type: array
+                    volumeMounts:
+                      description: Volume mounts for fluentd container
+                      items:
+                        type: object
+                        properties:
+                          mountPath:
+                            type: string
+                          mountPropagation:
+                            type: string
+                          name:
+                            type: string
+                          readOnly:
+                            type: boolean
+                          subPath:
+                            type: string
+                          subPathExpr:
+                            type: string
+                        required:
+                          - mountPath
+                          - name
+                      type: array
+                  type: object
                 domainUID:
                   description: Domain unique identifier. It is recommended that this
                     value be unique to assist in future work to identify related domains
@@ -433,6 +586,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                               type: object
@@ -620,6 +775,8 @@ spec:
                                   type: string
                                 runAsUserName:
                                   type: string
+                                hostProcess:
+                                  type: boolean
                                 gmsaCredentialSpecName:
                                   type: string
                               type: object
@@ -728,8 +885,6 @@ spec:
                               ephemeral:
                                 type: object
                                 properties:
-                                  readOnly:
-                                    type: boolean
                                   volumeClaimTemplate:
                                     type: object
                                     properties:
@@ -796,6 +951,8 @@ spec:
                                                   type: object
                                                 manager:
                                                   type: string
+                                                subresource:
+                                                  type: string
                                                 time:
                                                   format: date-time
                                                   type: string
@@ -817,6 +974,18 @@ spec:
                                         properties:
                                           storageClassName:
                                             type: string
+                                          dataSourceRef:
+                                            type: object
+                                            properties:
+                                              apiGroup:
+                                                type: string
+                                              kind:
+                                                type: string
+                                              name:
+                                                type: string
+                                            required:
+                                              - kind
+                                              - name
                                           volumeName:
                                             type: string
                                           resources:
@@ -1538,13 +1707,13 @@ spec:
                                   - IfNotPresent
                               command:
                                 description: The command for this init container. Defaults
-                                  to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
+                                  to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
                                   This is an advanced setting for customizing the container
                                   command for copying files from the container image
                                   to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                                   environment variable to reference the value configured
                                   in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                                  to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer
+                                  to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer
                                   to the temporary directory created by the operator
                                   that resolves to the auxiliary image's internal emptyDir
                                   volume.
@@ -1575,6 +1744,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -1610,6 +1781,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -1708,6 +1888,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -1723,6 +1905,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -1758,6 +1942,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -2036,6 +2229,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -2071,6 +2266,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -2156,6 +2360,8 @@ spec:
                               livenessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -2191,6 +2397,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -2289,6 +2504,8 @@ spec:
                                         type: string
                                       runAsUserName:
                                         type: string
+                                      hostProcess:
+                                        type: boolean
                                       gmsaCredentialSpecName:
                                         type: string
                                   procMount:
@@ -2304,6 +2521,8 @@ spec:
                               startupProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -2339,6 +2558,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -2617,6 +2845,8 @@ spec:
                               readinessProbe:
                                 type: object
                                 properties:
+                                  terminationGracePeriodSeconds:
+                                    type: number
                                   failureThreshold:
                                     type: number
                                   periodSeconds:
@@ -2652,6 +2882,15 @@ spec:
                                         type: array
                                         items:
                                           type: string
+                                  grpc:
+                                    type: object
+                                    properties:
+                                      port:
+                                        type: number
+                                      service:
+                                        type: string
+                                    required:
+                                      - port
                                   httpGet:
                                     type: object
                                     properties:
@@ -2857,6 +3096,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                                - key
+                                                - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -2874,6 +3136,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                    - key
+                                                    - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:
@@ -2940,6 +3225,29 @@ spec:
                                             additionalProperties:
                                               type: string
                                             type: object
+                                      namespaceSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                                - key
+                                                - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
                                       topologyKey:
                                         type: string
                                       namespaces:
@@ -2957,6 +3265,29 @@ spec:
                                         type: object
                                         properties:
                                           labelSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                  required:
+                                                    - key
+                                                    - operator
+                                              matchLabels:
+                                                additionalProperties:
+                                                  type: string
+                                                type: object
+                                          namespaceSelector:
                                             type: object
                                             properties:
                                               matchExpressions:
@@ -3229,6 +3560,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               fsGroupChangePolicy:
@@ -3419,6 +3752,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -3528,8 +3863,6 @@ spec:
                                 ephemeral:
                                   type: object
                                   properties:
-                                    readOnly:
-                                      type: boolean
                                     volumeClaimTemplate:
                                       type: object
                                       properties:
@@ -3596,6 +3929,8 @@ spec:
                                                     type: object
                                                   manager:
                                                     type: string
+                                                  subresource:
+                                                    type: string
                                                   time:
                                                     format: date-time
                                                     type: string
@@ -3617,6 +3952,18 @@ spec:
                                           properties:
                                             storageClassName:
                                               type: string
+                                            dataSourceRef:
+                                              type: object
+                                              properties:
+                                                apiGroup:
+                                                  type: string
+                                                kind:
+                                                  type: string
+                                                name:
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
                                             volumeName:
                                               type: string
                                             resources:
@@ -4339,13 +4686,13 @@ spec:
                                     - IfNotPresent
                                 command:
                                   description: The command for this init container.
-                                    Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
+                                    Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
                                     This is an advanced setting for customizing the
                                     container command for copying files from the container
                                     image to the auxiliary image emptyDir volume. Use
                                     the `$AUXILIARY_IMAGE_PATH` environment variable
                                     to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                    which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
+                                    which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
                                     to refer to the temporary directory created by the
                                     operator that resolves to the auxiliary image's
                                     internal emptyDir volume.
@@ -4376,6 +4723,8 @@ spec:
                                 livenessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -4411,6 +4760,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -4509,6 +4867,8 @@ spec:
                                           type: string
                                         runAsUserName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         gmsaCredentialSpecName:
                                           type: string
                                     procMount:
@@ -4524,6 +4884,8 @@ spec:
                                 startupProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -4559,6 +4921,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -4837,6 +5208,8 @@ spec:
                                 readinessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -4872,6 +5245,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -4957,6 +5339,8 @@ spec:
                                 livenessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -4992,6 +5376,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -5090,6 +5483,8 @@ spec:
                                           type: string
                                         runAsUserName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         gmsaCredentialSpecName:
                                           type: string
                                     procMount:
@@ -5105,6 +5500,8 @@ spec:
                                 startupProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -5140,6 +5537,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -5418,6 +5824,8 @@ spec:
                                 readinessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -5453,6 +5861,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -5660,6 +6077,29 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
                                         topologyKey:
                                           type: string
                                         namespaces:
@@ -5677,6 +6117,29 @@ spec:
                                           type: object
                                           properties:
                                             labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                      - key
+                                                      - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            namespaceSelector:
                                               type: object
                                               properties:
                                                 matchExpressions:
@@ -5743,6 +6206,29 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
                                         topologyKey:
                                           type: string
                                         namespaces:
@@ -5760,6 +6246,29 @@ spec:
                                           type: object
                                           properties:
                                             labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                      - key
+                                                      - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            namespaceSelector:
                                               type: object
                                               properties:
                                                 matchExpressions:
@@ -5953,6 +6462,7 @@ spec:
                   full domain shut down. For the FromModel `domainHomeSourceType`,
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
+                  The introspectVersion value must be a valid label value in Kubernetes.
                   See also `domains.spec.configuration.overrideDistributionStrategy`.'
                   type: string
                 dataHome:
@@ -6040,6 +6550,8 @@ spec:
                               type: string
                             runAsUserName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             gmsaCredentialSpecName:
                               type: string
                           type: object
@@ -6223,6 +6735,8 @@ spec:
                               type: string
                             runAsUserName:
                               type: string
+                            hostProcess:
+                              type: boolean
                             gmsaCredentialSpecName:
                               type: string
                           type: object
@@ -6330,8 +6844,6 @@ spec:
                           ephemeral:
                             type: object
                             properties:
-                              readOnly:
-                                type: boolean
                               volumeClaimTemplate:
                                 type: object
                                 properties:
@@ -6398,6 +6910,8 @@ spec:
                                               type: object
                                             manager:
                                               type: string
+                                            subresource:
+                                              type: string
                                             time:
                                               format: date-time
                                               type: string
@@ -6419,6 +6933,18 @@ spec:
                                     properties:
                                       storageClassName:
                                         type: string
+                                      dataSourceRef:
+                                        type: object
+                                        properties:
+                                          apiGroup:
+                                            type: string
+                                          kind:
+                                            type: string
+                                          name:
+                                            type: string
+                                        required:
+                                          - kind
+                                          - name
                                       volumeName:
                                         type: string
                                       resources:
@@ -7137,13 +7663,13 @@ spec:
                               - IfNotPresent
                           command:
                             description: The command for this init container. Defaults
-                              to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
+                              to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
                               This is an advanced setting for customizing the container
                               command for copying files from the container image to
                               the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                               environment variable to reference the value configured
                               in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                              to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer to
+                              to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to
                               the temporary directory created by the operator that resolves
                               to the auxiliary image's internal emptyDir volume.
                             type: string
@@ -7173,6 +7699,8 @@ spec:
                           livenessProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -7208,6 +7736,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -7306,6 +7843,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -7321,6 +7860,8 @@ spec:
                           startupProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -7356,6 +7897,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -7634,6 +8184,8 @@ spec:
                           readinessProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -7669,6 +8221,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -7754,6 +8315,8 @@ spec:
                           livenessProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -7789,6 +8352,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -7887,6 +8459,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -7902,6 +8476,8 @@ spec:
                           startupProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -7937,6 +8513,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -8215,6 +8800,8 @@ spec:
                           readinessProbe:
                             type: object
                             properties:
+                              terminationGracePeriodSeconds:
+                                type: number
                               failureThreshold:
                                 type: number
                               periodSeconds:
@@ -8250,6 +8837,15 @@ spec:
                                     type: array
                                     items:
                                       type: string
+                              grpc:
+                                type: object
+                                properties:
+                                  port:
+                                    type: number
+                                  service:
+                                    type: string
+                                required:
+                                  - port
                               httpGet:
                                 type: object
                                 properties:
@@ -8455,6 +9051,29 @@ spec:
                                         additionalProperties:
                                           type: string
                                         type: object
+                                  namespaceSelector:
+                                    type: object
+                                    properties:
+                                      matchExpressions:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            values:
+                                              type: array
+                                              items:
+                                                type: string
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                          required:
+                                            - key
+                                            - operator
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
                                   topologyKey:
                                     type: string
                                   namespaces:
@@ -8472,6 +9091,29 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                                - key
+                                                - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -8538,6 +9180,29 @@ spec:
                                         additionalProperties:
                                           type: string
                                         type: object
+                                  namespaceSelector:
+                                    type: object
+                                    properties:
+                                      matchExpressions:
+                                        type: array
+                                        items:
+                                          type: object
+                                          properties:
+                                            values:
+                                              type: array
+                                              items:
+                                                type: string
+                                            key:
+                                              type: string
+                                            operator:
+                                              type: string
+                                          required:
+                                            - key
+                                            - operator
+                                      matchLabels:
+                                        additionalProperties:
+                                          type: string
+                                        type: object
                                   topologyKey:
                                     type: string
                                   namespaces:
@@ -8555,6 +9220,29 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                              required:
+                                                - key
+                                                - operator
+                                          matchLabels:
+                                            additionalProperties:
+                                              type: string
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -8609,7 +9297,7 @@ spec:
                         description: The mount path. The files in the path are populated
                           from the same named directory in the images supplied by each
                           container in `serverPod.auxiliaryImages`. Each volume must
-                          be configured with a different mount path. Required.
+                          be configured with a different mount path. Defaults to '/auxiliary'.
                         type: string
                       name:
                         description: The name of the volume. Required.
@@ -8734,6 +9422,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               fsGroupChangePolicy:
@@ -8924,6 +9614,8 @@ spec:
                                     type: string
                                   runAsUserName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   gmsaCredentialSpecName:
                                     type: string
                               procMount:
@@ -9033,8 +9725,6 @@ spec:
                                 ephemeral:
                                   type: object
                                   properties:
-                                    readOnly:
-                                      type: boolean
                                     volumeClaimTemplate:
                                       type: object
                                       properties:
@@ -9101,6 +9791,8 @@ spec:
                                                     type: object
                                                   manager:
                                                     type: string
+                                                  subresource:
+                                                    type: string
                                                   time:
                                                     format: date-time
                                                     type: string
@@ -9122,6 +9814,18 @@ spec:
                                           properties:
                                             storageClassName:
                                               type: string
+                                            dataSourceRef:
+                                              type: object
+                                              properties:
+                                                apiGroup:
+                                                  type: string
+                                                kind:
+                                                  type: string
+                                                name:
+                                                  type: string
+                                              required:
+                                                - kind
+                                                - name
                                             volumeName:
                                               type: string
                                             resources:
@@ -9844,13 +10548,13 @@ spec:
                                     - IfNotPresent
                                 command:
                                   description: The command for this init container.
-                                    Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
+                                    Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
                                     This is an advanced setting for customizing the
                                     container command for copying files from the container
                                     image to the auxiliary image emptyDir volume. Use
                                     the `$AUXILIARY_IMAGE_PATH` environment variable
                                     to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                    which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
+                                    which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
                                     to refer to the temporary directory created by the
                                     operator that resolves to the auxiliary image's
                                     internal emptyDir volume.
@@ -9881,6 +10585,8 @@ spec:
                                 livenessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -9916,6 +10622,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -10014,6 +10729,8 @@ spec:
                                           type: string
                                         runAsUserName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         gmsaCredentialSpecName:
                                           type: string
                                     procMount:
@@ -10029,6 +10746,8 @@ spec:
                                 startupProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -10064,6 +10783,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -10342,6 +11070,8 @@ spec:
                                 readinessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -10377,6 +11107,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -10462,6 +11201,8 @@ spec:
                                 livenessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -10497,6 +11238,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -10595,6 +11345,8 @@ spec:
                                           type: string
                                         runAsUserName:
                                           type: string
+                                        hostProcess:
+                                          type: boolean
                                         gmsaCredentialSpecName:
                                           type: string
                                     procMount:
@@ -10610,6 +11362,8 @@ spec:
                                 startupProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -10645,6 +11399,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -10923,6 +11686,8 @@ spec:
                                 readinessProbe:
                                   type: object
                                   properties:
+                                    terminationGracePeriodSeconds:
+                                      type: number
                                     failureThreshold:
                                       type: number
                                     periodSeconds:
@@ -10958,6 +11723,15 @@ spec:
                                           type: array
                                           items:
                                             type: string
+                                    grpc:
+                                      type: object
+                                      properties:
+                                        port:
+                                          type: number
+                                        service:
+                                          type: string
+                                      required:
+                                        - port
                                     httpGet:
                                       type: object
                                       properties:
@@ -11165,6 +11939,29 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
                                         topologyKey:
                                           type: string
                                         namespaces:
@@ -11182,6 +11979,29 @@ spec:
                                           type: object
                                           properties:
                                             labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                      - key
+                                                      - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            namespaceSelector:
                                               type: object
                                               properties:
                                                 matchExpressions:
@@ -11248,6 +12068,29 @@ spec:
                                               additionalProperties:
                                                 type: string
                                               type: object
+                                        namespaceSelector:
+                                          type: object
+                                          properties:
+                                            matchExpressions:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  values:
+                                                    type: array
+                                                    items:
+                                                      type: string
+                                                  key:
+                                                    type: string
+                                                  operator:
+                                                    type: string
+                                                required:
+                                                  - key
+                                                  - operator
+                                            matchLabels:
+                                              additionalProperties:
+                                                type: string
+                                              type: object
                                         topologyKey:
                                           type: string
                                         namespaces:
@@ -11265,6 +12108,29 @@ spec:
                                           type: object
                                           properties:
                                             labelSelector:
+                                              type: object
+                                              properties:
+                                                matchExpressions:
+                                                  type: array
+                                                  items:
+                                                    type: object
+                                                    properties:
+                                                      values:
+                                                        type: array
+                                                        items:
+                                                          type: string
+                                                      key:
+                                                        type: string
+                                                      operator:
+                                                        type: string
+                                                    required:
+                                                      - key
+                                                      - operator
+                                                matchLabels:
+                                                  additionalProperties:
+                                                    type: string
+                                                  type: object
+                                            namespaceSelector:
                                               type: object
                                               properties:
                                                 matchExpressions:

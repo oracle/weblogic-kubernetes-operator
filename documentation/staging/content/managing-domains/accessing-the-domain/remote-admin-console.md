@@ -2,10 +2,13 @@
 title: "Use the Remote Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
-weight: 1
-description: "Use the WebLogic Remote Console to manage domains running in Kubernetes."
+weight: 1.5
+description: "Use the WebLogic Remote Console with domains running in Kubernetes."
 ---
 
+{{< table_of_contents >}}
+
+### Introduction
 The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
 It is an _alternative_ to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
@@ -17,11 +20,14 @@ or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx).
 Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
 For example, a WebLogic Server 12.2.1.4 slim installer download is approximately 180 MB smaller.
 
-The Remote Console is deployed as a standalone Java program, which can connect to multiple WebLogic Server Administration Servers using REST APIs.
+The Remote Console is deployed as a standalone application, which can connect to multiple WebLogic Server Administration Servers using REST APIs.
 You connect to the Remote Console and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server's administration port to which you want to connect.
 
-**Note**:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
+**Notes:**  
+  * An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
+  * If your domain home type is either [Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) or [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), then do not use the WebLogic Remote Console to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
 
 {{% notice warning %}}
 Externally exposing administrative, RMI, or T3 capable WebLogic channels
@@ -37,25 +43,23 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
 
 1. Install, configure, and start the Remote Console according to these [instructions](https://oracle.github.io/weblogic-remote-console/setup/).
 
-   **NOTE**: These instructions assume that you are installing and running the Remote Console Java program externally to your Kubernetes cluster.
+   **NOTE**: These instructions assume that you are installing and running the Remote Console externally to your Kubernetes cluster.
 
-1. When you first connect your browser to the Remote Console, which is at `http://localhost:8012` by default, the console will prompt you with a login dialog for a WebLogic Server Administration Server URL. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
+1. When you first launch the Remote Console, it will prompt you with a login dialog for a WebLogic Server Administration Server URL. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
    * Deploy a load balancer with [ingress path routing rules](#configure-ingress-path-routing-rules).
 
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
 
-   **Note**: If you want to customize the Remote Console listen address,
-     then see [Specify a Listen Address for the Remote Console Host](https://oracle.github.io/weblogic-remote-console/userguide/advanced-settings/#listen_address). This is useful if you want to run the Remote Console
-     on a different machine than your browser, or if you want the Remote Console to use SSL.
+   **Note**: If you want the Remote Console to use SSL to connect to the WebLogic Server Administration Server,
+     then see [Connect to a WebLogic domain using SSL/TLS](https://oracle.github.io/weblogic-remote-console/userguide/advanced-settings/#ssl).
 
 
 #### Use an Administration Server `NodePort`
 
-For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the following URL after you have connected to the Remote Console
-with your browser and it
-prompts for the location of your WebLogic Server Administration Server:
+For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the following URL after you have launched the Remote Console
+ and it prompts for the location of your WebLogic Server Administration Server:
 
 ```
 http://hostname:adminserver-NodePort/
@@ -115,7 +119,7 @@ see [Use a `NodePort` for WLST]({{< relref "/managing-domains/accessing-the-doma
    Administration Server Pod according to these
    [instructions]({{< relref "/managing-domains/accessing-the-domain/port-forward.md" >}}).
 
-   **NOTE:** If you plan to run the Remote Console Java program
+   **NOTE:** If you plan to run the Remote Console
    on a different machine than the port forwarding command,
    then the port forwarding command needs to specify a `--address` parameter
    with the IP address of the machine that is hosting the command.

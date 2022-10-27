@@ -6,16 +6,7 @@ weight: 6
 description: "Configure or dynamically change the namespaces that a running operator manages."
 ---
 
-### Contents
-
-- [Overview](#overview)
-- [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
-- [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace)
-- [Check the namespaces that a running operator manages](#check-the-namespaces-that-a-running-operator-manages)
-- [Altering namespaces for a running operator](#altering-namespaces-for-a-running-operator)
-  - [Add a Kubernetes namespace to a running operator](#add-a-kubernetes-namespace-to-a-running-operator)
-  - [Delete a Kubernetes namespace from a running operator](#delete-a-kubernetes-namespace-from-a-running-operator)
-  - [Recreate a previously deleted Kubernetes namespace with a running operator](#recreate-a-previously-deleted-kubernetes-namespace-with-a-running-operator)
+{{< table_of_contents >}}
 
 ### Overview
 
@@ -237,7 +228,7 @@ the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace).
 {{% /notice %}}
 
-####  Delete a Kubernetes namespace from a running operator
+#### Delete a Kubernetes namespace from a running operator
 
 The following are steps for deleting namespaces that are managed by a running operator.
 
