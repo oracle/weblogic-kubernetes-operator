@@ -66,7 +66,6 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
@@ -799,7 +798,7 @@ public class DomainStatusUpdater {
               CLUSTER_MESSAGE_LIMIT, createUnavailableClustersMessage(unavailableClusters));
         }
 
-        @NotNull
+        @Nonnull
         private List<String> createUnavailableClustersMessage(List<ClusterCheck> unavailableClusters) {
           return unavailableClusters.stream().map(ClusterCheck::createNotReadyMessage).collect(Collectors.toList());
         }

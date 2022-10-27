@@ -55,21 +55,22 @@ This FAQ discusses tuning these parameters so WebLogic Server instances run effi
 
 You can set Kubernetes memory and CPU requests and limits in a
 [Domain or Cluster YAML file]({{< relref "/managing-domains/domain-resource" >}})
-using its `spec.serverPod.resources` stanza,
-and you can override the setting for individual WebLogic Server instances or clusters using the
-`serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`.
+using its `domain.spec.serverPod.resources` stanza,
+and you can override the setting for individual WebLogic Server instances using the
+`serverPod.resources` element in `domain.spec.adminServer`, or `domain.spec.managedServers`. You can override the
+setting for member servers of a cluster using the `cluster.spec.serverPod` element.
 Note that the introspector job pod uses the same settings
 as the WebLogic Administration Server pod.
 
 Values set in the `.serverPod` stanzas for a more specific type of pod, override
 the same values if they are also set for a more general type of pod, and inherit
 any other values set in the more general pod.
-The `spec.adminServer.serverPod`, `spec.managedServers.serverPod`,
-and `spec.clusters.serverPod` stanzas all inherit from and override
-the `spec.serverPod` stanza. When a `spec.managedServers.serverPod` stanza
+The `domain.spec.adminServer.serverPod`, `domain.spec.managedServers.serverPod`,
+and `cluster.spec.serverPod` stanzas all inherit from and override
+the `domain.spec.serverPod` stanza. When a `domain.spec.managedServers.serverPod` stanza
 refers to a pod that is part of a cluster, it inherits
-from and overrides from its cluster's `spec.clusters.serverPod` setting (if any),
-which in turn inherits from and overrides the domain's `spec.serverPod` setting.
+from and overrides from its cluster's `cluster.spec.serverPod` setting (if any),
+which in turn inherits from and overrides the domain's `domain.spec.serverPod` setting.
 
 ```yaml
   spec:
