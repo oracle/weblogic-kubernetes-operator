@@ -462,12 +462,8 @@ public class Domain {
         secretName, opServiceAccount, opNamespace, secretToken);
 
     // decode the secret encoded token
-    String decodedToken;
-    if (!OKD) {
-      decodedToken = new String(Base64.getDecoder().decode(secretToken));
-    } else {
-      decodedToken = secretToken;
-    }
+    String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
+    
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
 
