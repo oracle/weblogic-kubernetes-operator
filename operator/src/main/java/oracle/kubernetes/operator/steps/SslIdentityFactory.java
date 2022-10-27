@@ -9,14 +9,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import javax.annotation.Nonnull;
 
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.jetbrains.annotations.NotNull;
 
 public interface SslIdentityFactory {
 
-  @NotNull
+  @Nonnull
   KeyPair createKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException;
 
   String convertToPEM(Object object) throws IOException;

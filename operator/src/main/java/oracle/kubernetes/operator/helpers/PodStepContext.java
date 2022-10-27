@@ -80,7 +80,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
@@ -355,7 +354,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return  name;
   }
 
-  @NotNull
+  @Nonnull
   private String getPortNamePrefix(String name) {
     // Use first 12 characters of port name as prefix due to 15 character port name limit
     return name.substring(0, 12);
