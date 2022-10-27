@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -102,6 +103,7 @@ public class Secret {
    */
   public static boolean hasToken(String saSecretName, String namespace) throws ApiException {
     V1Secret secret = Kubernetes.getSecret(saSecretName, namespace);
+    getLogger().info(Yaml.dump(secret));
     if (secret != null) {
       Map<String, byte[]> data = Optional.of(secret).map(V1Secret::getData).orElse(Collections.emptyMap());
       return data.containsKey("token");
