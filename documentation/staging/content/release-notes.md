@@ -74,7 +74,7 @@ draft: false
   * This resource can be used with [Kubernetes Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) or similar technologies to scale WebLogic clusters.
 
 * Status and Events updates:
-  * The [Conditions]({{< ref "#changes-to-domain-schema" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated. 
+  * The [Conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated.
   * The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads.
   * Failures are distinguished between those that require customer intervention and those that are potentially temporary and will be retried.
 
@@ -129,7 +129,7 @@ draft: false
   * Added `.spec.failureRetryIntervalSeconds` and `.spec.failureRetryLimitMinutes` for configuration of failure retry timing.
   * Added `.spec.serverPod.maxReadyWaitTimeSeconds` for configuring maximum time before considering servers as stalled during startup.
 
-* [Condition status]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}}) updates.
+* Condition status updates.
   * Added or updated Conditions to clearly reflect the current state of the domain:
     * The `Completed` condition is set to `True` when no failures are detected, plus all expected pods are `ready`, at their target image(s), `restartVersion`, and `introspectVersion`.
     * The `Available` condition is set to `True` when a sufficient number of pods are `ready`. This condition can be `True` even when `Completed` is `False`, a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods that are not `ready`.

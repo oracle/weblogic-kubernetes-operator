@@ -14,7 +14,7 @@ This document describes domain failure retry processing in the Oracle WebLogic S
 
 The WebLogic Kubernetes Operator may encounter various failures during its processing of a Domain resource.
 Failures are reported using Kubernetes events and [conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}})
-in the `spec.status` field in the Domain resource,
+in the `status.conditions` field in the Domain resource,
 see [Domain debugging]({{< relref "/managing-domains/debugging#check-the-domain-status" >}}).
 Failures fall into different categories and are handled differently by the operator, where most failures lead to automatic retries.
 Refer to [Retry behavior]({{< relref "#retry-behavior" >}}) on tuning failure retry limits and intervals.

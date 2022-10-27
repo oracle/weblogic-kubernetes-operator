@@ -272,7 +272,7 @@ spec:
      * Deleting or adding an application.
      * The MBean changes are committed in the running domain and effective immediately.
    * Expected outcome after the introspector job completes:
-     * The domain `Available` condition status is set to `True`.
+     * The domain `Completed` condition status is set to `True`.
        See [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}})
        for more information.
      * The `weblogic.introspectVersion` label on all pods will be set to match the `domain.spec.introspectVersion`.
@@ -344,7 +344,6 @@ During an online update, the operator will rerun the introspector job, which
 in turn attempts online WebLogic configuration changes to the running domain.
 You can monitor an update's status using its domain resource's status conditions
 and its WebLogic Server pod labels.
-See [Status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}}) for details.
 
 For example, for the domain status
 you can check the domain resource `domain.status` stanza
@@ -353,6 +352,8 @@ and for the WebLogic pod labels you can use
 `kubectl -n MY_NAMESPACE get pods --show-labels` plus
 optionally add `--watch` to watch the pods as they change over time.
 
+The `ConfigChangesPendingRestart` condition in `domain.status` contains information about the progress
+of the online update. See [Status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}) for details.
 
 Here are some of the expected WebLogic pod labels after an online update success:
 
