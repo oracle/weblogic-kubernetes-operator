@@ -35,6 +35,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
@@ -461,7 +462,12 @@ public class Domain {
         secretName, opServiceAccount, opNamespace, secretToken);
 
     // decode the secret encoded token
-    String decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    String decodedToken;
+    if (!OKD) {
+      decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    } else {
+      decodedToken = secretToken;
+    }
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
 
