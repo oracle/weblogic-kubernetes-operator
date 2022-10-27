@@ -16,57 +16,19 @@ WebLogic Server supports two types of clustering configurations, configured and 
 
 For more in-depth information on support for scaling WebLogic clusters in Kubernetes, see [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
 
-WebLogic Kubernetes Operator 4.0 introduces a new Kubernetes resource, called a Cluster resource, that is of custom resource type `Cluster`.  Cluster resources are monitored by the WebLogic Kubernetes operator. A cluster resource references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  The Cluster resource enables the `/scale` subresource which allows it to be scaled up or down via an HTTP endpoint.
+WebLogic Kubernetes Operator 4.0 introduces a new custom resource, `Cluster`.  A cluster resource references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  The Cluster resource enables the `/scale` subresource which allows it to be scaled up or down via an HTTP endpoint.  With the introduction of the `Cluster` resource, the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) is now fully supported and can be used to autoscale individual WebLogic clusters.
 
 For more in-depth information on the scale subresource, see [Scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource).
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
-* [On-demand, updating the Domain or Cluster directly (using `kubectl`)](#on-demand-updating-the-domain-or-cluster-directly).
 * [kubectl CLI commands](#kubectl-cli-commands).
+* [On-demand, updating the Cluster or Domain directly (using `kubectl`)](#on-demand-updating-the-cluster-or-domain-directly).
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
 * [Kubernetes Horizontal Pod Autoscalar (HPA)](#kubernetes-horizontal-pod-autoscalar-hpa).
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
-#### On-demand, updating the Domain or Cluster directly
-##### Updating the Domain directly
-The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field of a Domain. This can be done by using `kubectl`. More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
-```shell
-$ kubectl edit domain domain1 -n [namespace]
-```
-Here we are editing a Domain named `domain1`. The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
-```yaml
-spec:
-  ...
-  clusters:
-    - clusterName: cluster-1
-      replicas: 1
-  ...
-```
-
-Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the Domain (unless you want to customize another property of the cluster).
-```yaml
-spec:
-  ...
-  replicas: 1
-  ...
-```
-In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
-
-##### Updating the Cluster directly
-To scale an individual WebLogic cluster directly, one can simply edit the `replicas` field of its associated Cluster resource. This can be done by using `kubectl`. More specifically, you can modify the Cluster directly by using the `kubectl edit` command.  For example:
-```shell
-$ kubectl edit cluster cluster-1 -n [namespace]
-```
-Here we are editing a Cluster named `cluster-1`. The `kubectl edit` command will open the Cluster definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
-```yaml
-spec:
-  ...
-  clusterName: cluster-1
-  replicas: 1
-  ...
-```
 #### kubectl CLI commands
 The Kubernetes command-line tool, kubectl, can be used to manually scale WebLogic clusters with the following commands:
 
@@ -92,6 +54,40 @@ $ kubectl patch cluster cluster-1 --type=merge -p '{"spec":{"replicas":3}}'
 $ kubectl get clusters cluster-1 -o jsonpath='{.spec.replicas}'
   3
 ```
+
+#### On-demand, updating the Cluster or Domain directly
+##### Updating the Cluster directly
+To scale an individual WebLogic cluster directly, one can simply edit the `replicas` field of its associated Cluster resource. This can be done by using `kubectl`. More specifically, you can modify the Cluster directly by using the `kubectl edit` command.  For example:
+```shell
+$ kubectl edit cluster cluster-1 -n [namespace]
+```
+Here we are editing a Cluster named `cluster-1`. The `kubectl edit` command will open the Cluster definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+```yaml
+spec:
+  ...
+  clusterName: cluster-1
+  replicas: 1
+  ...
+```
+##### Updating the Domain directly
+To scale a WebLogic cluster, that does not reference a Cluster resource or the Cluster resource does not have the `replicas` field specified, modify the value of the `replicas` field of a Domain by using the `kubectl edit` command.  For example:
+```shell
+$ kubectl edit domain domain1 -n [namespace]
+```
+Here we are editing a Domain named `domain1`. The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+```yaml
+spec:
+  ...
+  replicas: 1
+  ...
+```
+Alternatively, you can specify a default `replicas` value for all the WebLogic clusters.  If you do this, then you don't need to list any Cluster resources in the Domain (unless you want to customize another property of the cluster).
+
+{{% notice note %}}
+The `domain.spec.replicas` field affects any WebLogic clusters that do not specify a reference to a corresponding Cluster resource in the Domain resource or the corresponding Cluster resource does not have the `replicas` field specified.
+{{% /notice %}}
+In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section, which can be used for scaling WebLogic clusters.
+
 #### Calling the operator's REST scale API
 
 Scaling up or scaling down a WebLogic cluster provides increased reliability of customer applications as well as optimization of resource usage. In Kubernetes environments, scaling WebLogic clusters involves scaling the number of corresponding Pods in which Managed Server instances are running. Because the operator manages the life cycle of a WebLogic domain, the operator exposes a REST API that allows an authorized actor to request scaling of a WebLogic cluster.
@@ -188,9 +184,11 @@ In response to a change in the `replicas` field in the Cluster resource, the ope
 #### Supported Autoscaling Controllers
 While continuing to support automatic scaling of WebLogic clusters with the WebLogic Diagnostic Framework (WLDF) and Prometheus, Operator 4.0 now supports the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
 ##### Kubernetes Horizontal Pod Autoscalar (HPA)
-Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
+Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. In order to scale based on "resource metrics" (like CPU, memory, or any custom metrics), an implementation of the `Metrics API` must be deployed to the Kubernetes cluster.  One such implementation of the `Metrics API` is the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/).  Prometheus offers the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter), which implements the Kubernetes resource metrics, custom metrics, and external metrics APIs and is also suitable for use with the Horizontal Pod Autoscaler.
 
-1. Since this example will scale a WebLogic cluster based on CPU utilization, then there is a precondition that the Kubernetes Metrics Server be installed in the cluster:
+The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
+
+1. We will deploy the Kubernetes Metrics Server to the Kubernetes cluster since we will illustrate scaling of a WebLogic cluster based on CPU utilization:
 ```shell
 $ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 ```
