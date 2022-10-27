@@ -130,6 +130,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -350,7 +351,7 @@ class DomainProcessorTest {
     cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
 
     processor.createMakeRightOperation(newInfo)
-        .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED))
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED))
         .execute();
 
     assertThat(testSupport.getNumItemsRun(), equalTo(0));
@@ -526,7 +527,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
 
-    processor.createMakeRightOperation(newInfo).execute();
+    processor.createMakeRightOperation(newInfo).withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
@@ -2218,7 +2219,8 @@ class DomainProcessorTest {
   void whenDomainIsNotValid_dontBringUpServers() {
     defineDuplicateServerNames();
 
-    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(originalInfo)
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(originalInfo, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -2235,7 +2237,8 @@ class DomainProcessorTest {
   void whenDomainIsNotValid_updateStatus() {
     defineDuplicateServerNames();
 
-    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(originalInfo)
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));

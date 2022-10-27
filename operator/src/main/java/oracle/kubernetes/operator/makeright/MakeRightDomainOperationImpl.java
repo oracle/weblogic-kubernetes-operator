@@ -70,7 +70,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
 
-
   /**
    * Create the operation.
    *
@@ -207,6 +206,9 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
+    if (!wasStartedFromEvent()) {
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
+    }
     return packet;
   }
 
@@ -224,7 +226,9 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    result.add(createStatusInitializationStep());
+    if (wasStartedFromEvent()) {
+      result.add(createStatusInitializationStep());
+    }
     if (deleting || domainHasDeletionTimestamp()) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
