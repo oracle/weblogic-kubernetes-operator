@@ -119,12 +119,7 @@ public class Secret {
    * @param secretName secret name to get the encoded token
    * @return the encoded token of the secret
    */
-  public static String getSecretEncodedToken(String namespace, String secretName) {
-    testUntil(
-        () -> hasToken(secretName, namespace),
-        getLogger(),
-        "Waiting for token to be populated in secret");
-
+  public static String getSecretEncodedToken(String namespace, String secretName) {    
     List<V1Secret> v1Secrets = new ArrayList<>();
 
     V1SecretList secretList = listSecrets(namespace);
