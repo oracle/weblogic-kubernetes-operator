@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
@@ -31,8 +32,6 @@ import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -101,12 +100,12 @@ class CrdHelperTest {
   enum TestSubject {
     DOMAIN {
       @Override
-      @NotNull
+      @Nonnull
       protected String getExpectedCrdName() {
         return KubernetesConstants.DOMAIN_CRD_NAME;
       }
 
-      @NotNull
+      @Nonnull
       @Override
       String getLatestCrdVersion() {
         return KubernetesConstants.DOMAIN_VERSION;
@@ -125,12 +124,12 @@ class CrdHelperTest {
       }
     }, CLUSTER {
       @Override
-      @NotNull
+      @Nonnull
       protected String getExpectedCrdName() {
         return KubernetesConstants.CLUSTER_CRD_NAME;
       }
 
-      @NotNull
+      @Nonnull
       @Override
       String getLatestCrdVersion() {
         return KubernetesConstants.CLUSTER_VERSION;

@@ -12,7 +12,6 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.utils.OperatorUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("unused")
 public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<DomainStatus> {
@@ -22,7 +21,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
   private String expectedMessage;
   private OffsetDateTime expectedTransitionTime;
 
-  private DomainStatusConditionMatcher(@NotNull DomainConditionType expectedType) {
+  private DomainStatusConditionMatcher(@Nonnull DomainConditionType expectedType) {
     this.expectedType = expectedType;
   }
 
@@ -35,7 +34,7 @@ public class DomainStatusConditionMatcher extends TypeSafeDiagnosingMatcher<Doma
     return this;
   }
 
-  DomainStatusConditionMatcher withReason(@NotNull DomainFailureReason reason) {
+  DomainStatusConditionMatcher withReason(@Nonnull DomainFailureReason reason) {
     expectedReason = reason;
     return this;
   }

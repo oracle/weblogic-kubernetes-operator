@@ -30,7 +30,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.utils.OperatorUtils;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 
@@ -171,12 +170,12 @@ public class RollingHelper {
         return work;
       }
 
-      @NotNull
+      @Nonnull
       private Step createServersStep(Collection<StepAndPacket> serverRestarts) {
         return new ServersThatCanRestartNowStep(serverRestarts);
       }
 
-      @NotNull
+      @Nonnull
       private RollSpecificClusterStep createPerClusterStep(Map.Entry<String, Queue<StepAndPacket>> entry) {
         return new RollSpecificClusterStep(entry.getKey(), entry.getValue());
       }
@@ -273,7 +272,7 @@ public class RollingHelper {
         return getInfo().getMinAvailable(clusterName);
       }
 
-      @NotNull
+      @Nonnull
       private List<String> getReadyServers(WlsDomainConfig config) {
         return Optional.ofNullable(config)
               .map(this::getClusterConfig)

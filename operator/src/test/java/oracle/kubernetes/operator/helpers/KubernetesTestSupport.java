@@ -87,7 +87,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -1198,7 +1197,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       }
     }
 
-    @NotNull
+    @Nonnull
     private Operation getOperation(RequestParams requestParams) {
       return requestParams.call.equals("getVersion")
             ? Operation.getVersion

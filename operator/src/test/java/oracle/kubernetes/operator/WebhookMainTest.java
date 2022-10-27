@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -49,8 +50,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.junit.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -645,7 +644,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     return getMatchRules(configuration, resource).size() == 1;
   }
 
-  @NotNull
+  @Nonnull
   private List<V1RuleWithOperations> getMatchRules(V1ValidatingWebhookConfiguration configuration, String resource) {
     return getRules(configuration).stream().filter(r -> isResourceEquals(resource, r)).collect(Collectors.toList());
   }
