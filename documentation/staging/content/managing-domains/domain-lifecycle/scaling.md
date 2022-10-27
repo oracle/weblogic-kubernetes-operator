@@ -24,6 +24,7 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 
 * [kubectl CLI commands](#kubectl-cli-commands).
 * [On-demand, updating the Cluster or Domain directly (using `kubectl`)](#on-demand-updating-the-cluster-or-domain-directly).
+* [Using Domain Lifecycle Sample Scripts](#using-domain-lifecycle-sample-scripts).
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
 * [Kubernetes Horizontal Pod Autoscalar (HPA)](#kubernetes-horizontal-pod-autoscalar-hpa).
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
@@ -56,6 +57,7 @@ $ kubectl get clusters cluster-1 -o jsonpath='{.spec.replicas}'
 ```
 
 #### On-demand, updating the Cluster or Domain directly
+On-demand scaling (the ability to scale a cluster manually) of WebLogic clusters can be done by directly updating the `.spec.replicas` field of the Cluster or Domain resources.
 ##### Updating the Cluster directly
 To scale an individual WebLogic cluster directly, one can simply edit the `replicas` field of its associated Cluster resource. This can be done by using `kubectl`. More specifically, you can modify the Cluster directly by using the `kubectl edit` command.  For example:
 ```shell
@@ -70,23 +72,24 @@ spec:
   ...
 ```
 ##### Updating the Domain directly
-To scale a WebLogic cluster, that does not reference a Cluster resource or the Cluster resource does not have the `replicas` field specified, modify the value of the `replicas` field of a Domain by using the `kubectl edit` command.  For example:
+To scale a WebLogic cluster, that does not reference a Cluster resource or the Cluster resource does not have the `.spec.replicas` field specified, modify the value of the `replicas` field of a Domain by using the `kubectl edit` command.  
+{{% notice note %}}
+The `domain.spec.replicas` field is the default `replicas` for all clusters in a domain. It affects any WebLogic clusters that do not have a corresponding Cluster resource and any WebLogic clusters with a Cluster resource that do not have the `.spec.replicas` field specified.
+{{% /notice %}}
+For example:
 ```shell
 $ kubectl edit domain domain1 -n [namespace]
 ```
-Here we are editing a Domain named `domain1`. The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
+Here we are editing a Domain named `domain1`. The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster(s) by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
 ```yaml
 spec:
   ...
   replicas: 1
   ...
 ```
-Alternatively, you can specify a default `replicas` value for all the WebLogic clusters.  If you do this, then you don't need to list any Cluster resources in the Domain (unless you want to customize another property of the cluster).
 
-{{% notice note %}}
-The `domain.spec.replicas` field affects any WebLogic clusters that do not specify a reference to a corresponding Cluster resource in the Domain resource or the corresponding Cluster resource does not have the `replicas` field specified.
-{{% /notice %}}
-In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section, which can be used for scaling WebLogic clusters.
+#### Using Domain Lifecycle Sample Scripts
+Beginning in version 3.1.0, the operator provides sample lifecycle scripts, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section, which can be used for scaling WebLogic clusters.
 
 #### Calling the operator's REST scale API
 
