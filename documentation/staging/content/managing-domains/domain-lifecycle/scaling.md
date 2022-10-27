@@ -23,7 +23,9 @@ For more in-depth information on the scale subresource, see [Scale subresource](
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
 * [On-demand, updating the Domain or Cluster directly (using `kubectl`)](#on-demand-updating-the-domain-or-cluster-directly).
+* [kubectl CLI commands](#kubectl-cli-commands).
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api).
+* [Kubernetes Horizontal Pod Autoscalar (HPA)](#kubernetes-horizontal-pod-autoscalar-hpa).
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api).
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api).
 
@@ -154,7 +156,7 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
-  verbs: ["get", "list", "patch", update"]
+  verbs: ["get", "list", "patch", "update"]
 ---
 ```
 ##### Operator REST endpoints
@@ -181,9 +183,11 @@ When the operator receives a scaling request, it will:
 * Verifies that the specified cluster has a corresponding Cluster resource defined or else creates one if necessary.
 * Initiate scaling by setting the `replicas` field within the corresponding Cluster resource.
 
-In response to a change in the `replicas` field, in the Cluster resource, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.
+In response to a change in the `replicas` field in the Cluster resource, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.
 
-#### Kubernetes Horizontal Pod Autoscalar (HPA)
+#### Supported Autoscaling Controllers
+While continuing to support automatic scaling of WebLogic clusters with the WebLogic Diagnostic Framework (WLDF) and Prometheus, Operator 4.0 now supports the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
+##### Kubernetes Horizontal Pod Autoscalar (HPA)
 Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the `/scale` subresource. The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric:
 
 1. Since this example will scale a WebLogic cluster based on CPU utilization, then there is a precondition that the Kubernetes Metrics Server be installed in the cluster:
@@ -223,7 +227,7 @@ $ kubectl exec --stdin --tty sample-domain1-managed-server1 -- /bin/bash
 
 For more in-depth information on the Kubernetes Horizontal Pod Autoscalar, see [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
 
-#### Using a WLDF policy rule and script action to call the operator's REST scale API
+##### Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
@@ -297,7 +301,6 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 * [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
 * [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
 
-
 ##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
 The script `scalingAction.sh`, specified in the WLDF script action, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
@@ -317,7 +320,7 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
-  verbs: ["get", "list", "patch", update"]
+  verbs: ["get", "list", "patch", "update"]
 ---
 #
 # creating role-bindings for cluster role
@@ -356,7 +359,7 @@ roleRef:
 ---
 ```
 
-#### Using a Prometheus alert action to call the operator's REST scale API
+##### Using a Prometheus alert action to call the operator's REST scale API
 In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
