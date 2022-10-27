@@ -6,7 +6,6 @@ description: "Review the project coding standards."
 weight: 5
 ---
 
-
 This project has adopted the following coding standards:
 
 * Code should be formatted using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html).

@@ -7,7 +7,6 @@ description: "Use the operator's REST services."
 
 {{< table_of_contents >}}
 
-
 ### Introduction
 
 The operator provides an optional REST API for advanced users.
@@ -140,8 +139,6 @@ typically a self-signed certificate for external communication is not considered
 A certificate signed by a commercial certificate authority is more widely accepted and
 should contain valid host names, expiration dates, and key constraints.
 {{% /notice %}}
-
-
 
 ### Sample operator REST client script
 

@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -54,7 +55,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.jetbrains.annotations.NotNull;
 
 import static java.io.File.createTempFile;
 import static java.nio.file.Files.copy;
@@ -1191,7 +1191,7 @@ public class DomainUtils {
    * @param domainNamespace the namespace
    * @param domainUid the UID
    */
-  @NotNull
+  @Nonnull
   public static DomainResource getAndValidateInitialDomain(String domainNamespace, String domainUid) {
     DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -1210,7 +1210,7 @@ public class DomainUtils {
    * @param regex check string
    * @return true if regex found, false otherwise.
    */
-  @NotNull
+  @Nonnull
   public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
     // get the domain status message
     StringBuffer getDomainInfoCmd = new StringBuffer("kubectl get domain/");

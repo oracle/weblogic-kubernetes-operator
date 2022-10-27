@@ -1084,7 +1084,7 @@ window.onload = function() {
           }
         },
         "observedGeneration": {
-          "description": "The generation observed by the WebLogic operator.",
+          "description": "The Cluster resource generation observed by the WebLogic operator. If the Cluster resource exists, then this value will match the \u0027cluster.metadata.generation\u0027  when the \u0027cluster.status\u0027 correctly reflects the latest cluster resource changes.",
           "type": "integer"
         }
       }
@@ -1404,7 +1404,7 @@ window.onload = function() {
           "type": "string"
         },
         "observedGeneration": {
-          "description": "The generation observed by the WebLogic operator.",
+          "description": "The Domain resource generation observed by the WebLogic operator. This value will match the \u0027domain.metadata.generation\u0027  when the \u0027domain.status\u0027 correctly reflects the latest resource changes.",
           "type": "integer"
         },
         "clusters": {
@@ -1489,7 +1489,10 @@ window.onload = function() {
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "serverName"
+      ]
     },
     "Map": {
       "type": "object"

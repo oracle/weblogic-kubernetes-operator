@@ -5,8 +5,6 @@ weight: 2
 description: "Sample for using Fluentd for WebLogic domain and operator's logs."
 ---
 
-
-
 This document describes to how to configure a WebLogic domain to use Fluentd to send log information to Elasticsearch.
 
 Here's the general mechanism for how this works:
@@ -340,7 +338,6 @@ The following is the default `fluentd` configuration if `fluentdConfiguration` i
         </match>
 
 ```
-
 
 #### Verify logs are exported to Elasticsearch
 

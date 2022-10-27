@@ -5,9 +5,7 @@ weight: 8
 description: "Sample for using the operator to set up a WLS cluster on the Azure Kubernetes Service."
 ---
 
-
 {{< table_of_contents >}}
-
 
 ### Introduction
 

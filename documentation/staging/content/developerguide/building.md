@@ -6,7 +6,6 @@ description: "Learn about the operator build process."
 weight: 3
 ---
 
-
 The operator is built using [Apache Maven](http://maven.apache.org).  The build machine will also need to have Docker installed.
 
 To build the operator, issue the following command in the project directory:

@@ -93,7 +93,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.junit.MatcherAssert;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1148,22 +1147,22 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
-  @NotNull
+  @Nonnull
   protected String getAuxiliaryImageVolumeName() {
     return getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
   }
 
-  @NotNull
+  @Nonnull
   protected static String getAuxiliaryImageVolumeName(String testVolumeName) {
     return AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
   }
 
-  @NotNull
+  @Nonnull
   protected static String getLegacyAuxiliaryImageVolumeName() {
     return COMPATIBILITY_MODE + getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
   }
 
-  @NotNull
+  @Nonnull
   protected String getLegacyAuxiliaryImageVolumeName(String testVolumeName) {
     return COMPATIBILITY_MODE + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
   }
@@ -1346,14 +1345,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return ImmutableMap.of("serverPod", createServerPod(auxiliaryImages));
   }
 
-  @NotNull
+  @Nonnull
   private static Map<String, Object> createServerPod(List<Object> auxiliaryImages) {
     Map<String, Object> serverPod = new LinkedHashMap<>();
     serverPod.put("auxiliaryImages", auxiliaryImages);
     return serverPod;
   }
 
-  @NotNull
+  @Nonnull
   private static Map<String, Object> createServerPod(List<Object> auxiliaryImages, Map<String, Object> resources) {
     Map<String, Object> serverPod = new LinkedHashMap<>();
     serverPod.put("auxiliaryImages", auxiliaryImages);
@@ -1361,14 +1360,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return serverPod;
   }
 
-  @NotNull
+  @Nonnull
   private static Map<String, Object> createWebLogicCredentialsSecret() {
     Map<String, Object> webLogicCredentialsSecret = new LinkedHashMap<>();
     webLogicCredentialsSecret.put("name", "webLogicCredentialsSecretName");
     return webLogicCredentialsSecret;
   }
 
-  @NotNull
+  @Nonnull
   static Map<String, Object> createMetadata() {
     Map<String, Object> metadata = new LinkedHashMap<>();
     metadata.put("name", "domain1");
@@ -1388,7 +1387,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
             TEST_VOLUME_NAME);
   }
 
-  @NotNull
+  @Nonnull
   private static Map<String, Object> createAuxiliaryImage(String image, String imagePullPolicy,
                                                           String command, String volume) {
     Map<String, Object> auxiliaryImage = new LinkedHashMap<>();
@@ -1410,7 +1409,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return createAuxiliaryImageVolume(TEST_VOLUME_NAME, mountPath);
   }
 
-  @NotNull
+  @Nonnull
   static Map<String, Object> createAuxiliaryImageVolume(String name, String mountPath) {
     Map<String, Object> auxiliaryImageVolumes = new LinkedHashMap<>();
     auxiliaryImageVolumes.put("name", name);
@@ -1418,7 +1417,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return auxiliaryImageVolumes;
   }
 
-  @NotNull
+  @Nonnull
   static Map<String, Object> createAuxiliaryImageVolume(String name, String mountPath, String sizeLimit,
                                                                 String medium) {
     Map<String, Object> auxiliaryImageVolume = new LinkedHashMap<>();
@@ -1489,7 +1488,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
                     .mountPath(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
-  @NotNull
+  @Nonnull
   List<AuxiliaryImage> getAuxiliaryImages(String... images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
     Arrays.stream(images).forEach(image -> auxiliaryImageList
@@ -1497,7 +1496,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return auxiliaryImageList;
   }
 
-  @NotNull
+  @Nonnull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
     return new AuxiliaryImage().image(image);
   }

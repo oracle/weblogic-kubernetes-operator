@@ -8,7 +8,6 @@ description: "Configure WebLogic Server and domain log settings."
 
 {{< table_of_contents >}}
 
-
 ### Overview
 
 The operator can automatically override WebLogic Server, domain, and introspector `.log` and `.out` locations.

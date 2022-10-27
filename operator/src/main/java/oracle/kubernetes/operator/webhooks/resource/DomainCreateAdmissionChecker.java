@@ -3,12 +3,13 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * DomainCreateAdmissionChecker provides the validation functionality for the validating webhook. It takes
@@ -31,7 +32,7 @@ public class DomainCreateAdmissionChecker extends AdmissionChecker {
   /**
    * Construct a DomainCreateAdmissionChecker.
    */
-  public DomainCreateAdmissionChecker(@NotNull DomainResource proposedDomain) {
+  public DomainCreateAdmissionChecker(@Nonnull DomainResource proposedDomain) {
     this.proposedDomain = proposedDomain;
   }
 
