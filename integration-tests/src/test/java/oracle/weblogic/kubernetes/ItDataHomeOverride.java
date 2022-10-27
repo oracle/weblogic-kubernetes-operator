@@ -15,6 +15,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -43,6 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify dataHome override with different dataHome setting in the domain spec")
 @IntegrationTest
+@Tag("oke-parallel")
+@Tag("kind-parallel")
 class ItDataHomeOverride {
 
   // domain constants
