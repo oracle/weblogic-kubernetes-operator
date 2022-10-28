@@ -91,7 +91,7 @@ For information about how to diagnose failures, see [debugging]({{< relref "mana
   The `Failed` condition is removed from the domain status when the underlying failure is resolved.
 - The `message` attribute contains an error message with details of the failure.
 - The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
--The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
+- The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
 {{%expand "Click here for an example of a domain status with a Failed condition." %}}
 ```
 Status:
@@ -119,7 +119,7 @@ Status:
 #### `Completed`
 - The `status` attribute of a `Completed` condition indicates whether the desired state of the
   Domain resource has been fully achieved.
-- The `status` attribute is set to `True` when:
+- The `status` attribute is set to `True` when all of the following are true:
   * There are no `Failed` conditions, for example, no failures are detected.
   * One of the following conditions are met:
     * All WebLogic Server pods that are expected to be running are `ready` at their target image or images,
@@ -189,9 +189,10 @@ The following is a list of condition types for a Cluster resource.
 - The `status` attribute of a `Completed` condition indicates whether the desired state of the
   Cluster resource has been fully achieved.
 - The `status` attribute is set to `True` when:
-- All server pods in the cluster that are expected to be running are ready at their target
-  image or images, `restartVersion`, and `introspectVersion`
-- There are no pending server shutdown requests.
+  * There are no `Failed` `domain.status.conditions`.
+  * No WebLogic Server pods are expected to be running, _or_ all server pods in the cluster that are expected to be running are ready at their target
+    image or images, `restartVersion`, and `introspectVersion`
+  * There are no pending server shutdown requests.
 
 #### `Available` {id="cluster-available"}
 - The `status` attribute is set to  `True` when a sufficient number of WebLogic Server pods are
@@ -200,8 +201,8 @@ The following is a list of condition types for a Cluster resource.
     or if it is not configured, in the `domain.spec.replicas` field.
   * When some server pods for the cluster are temporarily not ready, and the number of such
     server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
-  * The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
-    pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.
+- The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
+  pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.
 
 ### Condition life cycle
 
