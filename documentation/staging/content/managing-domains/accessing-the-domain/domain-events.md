@@ -29,11 +29,11 @@ The domain events have been enhanced in 4.0. Here is a summary of the changes in
     * Have a better failure categorization (see [Operator-generated event types](#operator-generated-event-types) for more details).
     * Include the categorization information in the event message.
     * Provide more information in the event message to indicate what has gone wrong, what you need to do to resolve the problem, and if the operator will [retry]({{< relref "/managing-domains/domain-lifecycle/retry.md" >}}) the failed operation.
-* Added four event types, `Available`, `Unavailable`, `Incomplete`, and `FailureResolved`, to record
-  the transition of their corresponding [domain resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
-* Added seven event types, `ClusterAvailable`, `ClusterChanged`, `ClusterCompleted`, `ClusterCreated`,
+* Added four event types: `Available`, `Unavailable`, `Incomplete`, and `FailureResolved`, to record
+  the transition of their corresponding [Domain resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
+* Added seven event types: `ClusterAvailable`, `ClusterChanged`, `ClusterCompleted`, `ClusterCreated`,
   `ClusterDeleted`, `ClusterIncomplete`, and `ClusterUnavailable`, to record the transition of their
-  corresponding [cluster resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" >}}).
+  corresponding [Cluster resource status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-cluster-conditions" >}}).
 
 ### Operator-generated event types
 
@@ -55,16 +55,16 @@ The operator generates these event types in a domain namespace, which indicate t
  * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
  * `Unavailable`: The domain resource is unavailable, which means the domain does not have a sufficient number of servers active.
  * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
- * `FailureResolved`: The [failure condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}) that the domain was in has been resolved.
+ * `FailureResolved`: The [failure condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}) that the domain was in, has been resolved.
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
  * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain.
- * `ClusterCreated`: A new cluster resource is created.
- * `ClusterChanged`: A change has been made to an existing cluster resource.
- * `ClusterDeleted`: An existing cluster resource has been deleted.
+ * `ClusterCreated`: A new Cluster resource is created.
+ * `ClusterChanged`: A change has been made to an existing Cluster resource.
+ * `ClusterDeleted`: An existing Cluster resource has been deleted.
  * `ClusterAvailable`: An existing cluster is available, which means a sufficient number of its servers have reached the ready state.
  * `ClusterCompleted`: The cluster is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
- * `ClusterIncomplete`: The cluster is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+ * `ClusterIncomplete`: The cluster is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, or introspect version.
  * `ClusterUnvailable`: The cluster is unavailable because an insufficient number of its servers that are expected to be running are ready.
  * `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
  * `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
