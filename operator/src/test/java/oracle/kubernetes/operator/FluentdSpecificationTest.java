@@ -10,7 +10,6 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -59,7 +58,7 @@ class FluentdSpecificationTest {
   @Test
   void testDefaultImagePullPolicy() {
     FluentdSpecification spec = new FluentdSpecification();
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
   }
 
   @Test

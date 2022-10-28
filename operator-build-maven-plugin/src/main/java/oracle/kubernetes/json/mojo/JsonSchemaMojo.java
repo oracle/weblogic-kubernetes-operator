@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.mojosupport.FileSystem;
 import org.apache.maven.plugin.AbstractMojo;
@@ -19,7 +20,6 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.jetbrains.annotations.NotNull;
 
 @Mojo(
     name = "generate",
@@ -87,7 +87,7 @@ public class JsonSchemaMojo extends AbstractMojo {
     }
   }
 
-  @NotNull
+  @Nonnull
   String getRootName() {
     return new File(getOutputFile()).getName().split("\\.")[0];
   }

@@ -53,7 +53,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
-import org.jetbrains.annotations.NotNull;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_INCOMPLETE;
@@ -536,7 +535,7 @@ public class JobHelper {
         }
       }
 
-      @NotNull
+      @Nonnull
       private Boolean isDomainIntrospectionComplete(CallResponse<String> callResponse) {
         return Optional.ofNullable(callResponse).map(CallResponse::getResult)
             .map(r -> r.contains(DOMAIN_INTROSPECTION_COMPLETE)).orElse(false);
@@ -754,7 +753,7 @@ public class JobHelper {
           return jobName.equals(status.getName()) && getTerminatedExitCode(status) == 0;
         }
 
-        @NotNull
+        @Nonnull
         private Integer getTerminatedExitCode(V1ContainerStatus status) {
           return Optional.ofNullable(status.getState())
               .map(V1ContainerState::getTerminated)

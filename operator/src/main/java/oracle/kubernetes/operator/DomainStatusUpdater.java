@@ -66,7 +66,6 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_FATAL_ERROR;
@@ -88,6 +87,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -570,6 +570,20 @@ public class DomainStatusUpdater {
     void modifyStatus(DomainStatus domainStatus) { // no-op; modification happens in the context itself.
     }
 
+    @Override
+    public NextAction apply(Packet packet) {
+      return shouldSkipDomainStatusUpdate(packet)
+              ? doNext(getNext().getNext(), packet) : super.apply(packet);
+    }
+
+    private boolean shouldSkipDomainStatusUpdate(Packet packet) {
+      boolean domainRecheckOrScheduledStatusUpdate =
+              (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return (domainRecheckOrScheduledStatusUpdate)
+              && info.getServerStartupInfo() == null;
+    }
+
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
       private final WlsDomainConfig config;
       private final Set<String> expectedRunningServers;
@@ -799,7 +813,7 @@ public class DomainStatusUpdater {
               CLUSTER_MESSAGE_LIMIT, createUnavailableClustersMessage(unavailableClusters));
         }
 
-        @NotNull
+        @Nonnull
         private List<String> createUnavailableClustersMessage(List<ClusterCheck> unavailableClusters) {
           return unavailableClusters.stream().map(ClusterCheck::createNotReadyMessage).collect(Collectors.toList());
         }
@@ -825,10 +839,20 @@ public class DomainStatusUpdater {
         }
 
         private boolean noApplicationServersReady() {
-          return getInfo().getServerStartupInfo().stream()
-              .map(DomainPresenceInfo.ServerInfo::getName)
-              .filter(this::isApplicationServer)
-              .noneMatch(StatusUpdateContext.this::isServerReady);
+          return isAdminOnlyDomain() && getInfo().getAdminServerName() != null
+                  ? isServerNotReady(getInfo().getAdminServerName()) : noManagedServersReady();
+        }
+
+        private boolean noManagedServersReady() {
+          return getServerStartupInfos()
+                  .stream()
+                  .map(DomainPresenceInfo.ServerInfo::getName)
+                  .filter(this::isApplicationServer)
+                  .noneMatch(StatusUpdateContext.this::isServerReady);
+        }
+
+        private Collection<DomainPresenceInfo.ServerStartupInfo> getServerStartupInfos() {
+          return Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList());
         }
 
         // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
@@ -1006,11 +1030,11 @@ public class DomainStatusUpdater {
 
         private boolean isReadyCondition(Object condition) {
           return (condition instanceof V1PodCondition)
-              && V1PodCondition.TypeEnum.READY.equals(((V1PodCondition)condition).getType());
+              && "Ready".equals(((V1PodCondition)condition).getType());
         }
 
         private boolean isPhaseRunning(V1PodStatus status) {
-          return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
+          return "Running".equals(status.getPhase());
         }
 
         private void updateClusterStatus(ClusterStatus clusterStatus) {

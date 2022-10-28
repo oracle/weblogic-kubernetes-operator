@@ -318,7 +318,6 @@ The model files:
 
 A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) in the Model in Image user documentation.
 
-
 #### Creating the image with WIT
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
@@ -482,7 +481,6 @@ Run the following `kubectl` commands to deploy the required secrets:
   ```
 
   {{% /expand %}}
-
 
 #### Domain resource
 

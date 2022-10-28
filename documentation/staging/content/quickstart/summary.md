@@ -4,6 +4,7 @@ date: 2019-02-22T15:44:42-05:00
 draft: false
 weight: 5
 ---
+
 Here's some insight into what's happening under the covers during the Quick Start tutorial.
 
 - The Quick Start guide first installs the WebLogic Kubernetes Operator, then creates a domain using the _Model in Image_ domain home source type.
@@ -18,7 +19,7 @@ Here's some insight into what's happening under the covers during the Quick Star
   - To learn more about auxiliary images, see the [user guide]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
   - If you want to step through the auxiliary image creation process, follow the instructions in the Advanced [do-it-yourself](#advanced-do-it-yourself) section.
 
-- The operator detects the domain resource and deploys the domain's WebLogic Server Administration Server and Managed Server pods.
+- The operator detects the domain and cluster resources, and deploys their WebLogic Server Administration Server and Managed Server pods.
 
 ### Advanced do-it-yourself
 
@@ -168,7 +169,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
 
 1. Prepare the domain resource.
 
-    a. Download the [sample domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar.
+    a. Download the domain and cluster resource [sample YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/quick-start/domain-resource.yaml) to a file called `/tmp/quickstart/domain-resource.yaml` or similar.
 
     b. If you chose a different name and tag for the auxiliary image you created, then update the image field under the `spec.configuration.model.auxiliaryImages`
     section to use that name and tag. For example, if you named the auxiliary image `my-aux-image:v1`, then update the `spec.configuration.model.auxiliaryImages` section as shown.

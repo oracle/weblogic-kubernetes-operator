@@ -133,7 +133,7 @@ class PodHelperTest {
   void whenPodPhaseNotRunning_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
-                .phase(V1PodStatus.PhaseEnum.PENDING)
+                .phase("Pending")
                 .addConditionsItem(new V1PodCondition()));
 
     assertThat(PodHelper.hasReadyStatus(pod), is(false));
@@ -143,8 +143,8 @@ class PodHelperTest {
   void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
-                .phase(V1PodStatus.PhaseEnum.RUNNING)
-                .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.INITIALIZED)));
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Initialized")));
 
     assertThat(PodHelper.hasReadyStatus(pod), is(false));
   }
@@ -153,8 +153,8 @@ class PodHelperTest {
   void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
-                .phase(V1PodStatus.PhaseEnum.RUNNING)
-                .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY)));
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Ready")));
 
     assertThat(PodHelper.hasReadyStatus(pod), is(false));
   }
@@ -163,8 +163,8 @@ class PodHelperTest {
   void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
-                .phase(V1PodStatus.PhaseEnum.RUNNING)
-                .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True")));
+                .phase("Running")
+                .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
 
     assertThat(PodHelper.hasReadyStatus(pod), is(true));
   }

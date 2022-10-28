@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ContainerState;
@@ -43,8 +44,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
@@ -125,7 +124,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {
         for (V1JobCondition cond : conds) {
-          if (V1JobCondition.TypeEnum.COMPLETE.equals(cond.getType()) && "True".equals(cond.getStatus())) {
+          if ("Complete".equals(cond.getType()) && "True".equals(cond.getStatus())) {
             // Job is complete!
             LOGGER.info(MessageKeys.JOB_IS_COMPLETE, job.getMetadata().getName(), status);
             return true;
@@ -165,10 +164,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   private static boolean isJobConditionFailed(V1JobCondition jobCondition) {
-    return V1JobCondition.TypeEnum.FAILED.equals(getType(jobCondition)) && getStatus(jobCondition).equals("True");
+    return "Failed".equals(getType(jobCondition)) && getStatus(jobCondition).equals("True");
   }
 
-  private static V1JobCondition.TypeEnum getType(V1JobCondition jobCondition) {
+  private static String getType(V1JobCondition jobCondition) {
     return Optional.ofNullable(jobCondition).map(V1JobCondition::getType).orElse(null);
   }
 
@@ -185,7 +184,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
-        if (V1JobCondition.TypeEnum.FAILED.equals(cond.getType()) && "True".equals(cond.getStatus())) {
+        if ("Failed".equals(cond.getType()) && "True".equals(cond.getStatus())) {
           return cond.getReason();
         }
       }
@@ -369,7 +368,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           }
         }
 
-        private boolean isJobTerminated(@NotNull V1Pod jobPod) {
+        private boolean isJobTerminated(@Nonnull V1Pod jobPod) {
           return Optional.of(jobPod)
               .map(V1Pod::getStatus)
               .map(V1PodStatus::getContainerStatuses).orElseGet(Collections::emptyList).stream()

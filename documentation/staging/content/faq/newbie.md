@@ -37,6 +37,8 @@ To learn how, see [Get help]({{< relref "/introduction/get-help.md" >}}).
 
 When using the operator, each deployed domain is specified by a domain resource that you define which describes important aspects of the domain. These include the location of the WebLogic Server image you wish to use, a unique identifier for the domain called the `domain-uid`, any PVs or PVC the domain pods will need to mount, the WebLogic clusters and servers which you want to be running, and the location of its domain home.
 
+Beginning with operator 4.0, WebLogic clusters that are part of the domain configuration may be associated with a cluster resource. The cluster resource makes it easier to scale the number of member servers currently running using `kubectl scale`, the Kubernetes built-in Horizontal Pod Autoscaling, or similar tools. This cluster resource must be referenced from the domain resource. 
+
 Multiple deployments of the same domain are supported by specifying a unique `domain-uid` string for each deployed domain and specifying a different domain resource. The `domain-uid` is in turn used by the operator as the name-prefix and/or label for the domain's Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain's deployments optionally can by customized by specifying configuration overrides in the domain resource -- which, for example, is useful for overriding the configuration of a data source URL, user name, or password.
 
 The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator [samples]({{< relref "/samples/_index.md" >}}) show how to create domains using WLST and using WDT.
@@ -65,7 +67,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 * _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
 
-* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/admin-console.md" >}}).
+* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/managing-domains/accessing-the-domain/remote-admin-console.md" >}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?

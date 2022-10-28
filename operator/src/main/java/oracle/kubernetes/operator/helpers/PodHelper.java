@@ -202,15 +202,15 @@ public class PodHelper {
   }
 
   private static boolean isRunning(@Nonnull V1PodStatus status) {
-    return V1PodStatus.PhaseEnum.RUNNING.equals(status.getPhase());
+    return "Running".equals(status.getPhase());
   }
 
   private static boolean isReadyCondition(V1PodCondition condition) {
-    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && "True".equals(condition.getStatus());
+    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
-    return V1PodCondition.TypeEnum.READY.equals(condition.getType()) && !"True".equals(condition.getStatus());
+    return "Ready".equals(condition.getType()) && !"True".equals(condition.getStatus());
   }
 
   /**
@@ -242,7 +242,7 @@ public class PodHelper {
    * @param pod the pod to check
    */
   public static boolean isFailed(V1Pod pod) {
-    if (V1PodStatus.PhaseEnum.FAILED.equals(getPhase(pod))) {
+    if ("Failed".equals(getPhase(pod))) {
       LOGGER.severe(MessageKeys.POD_IS_FAILED, pod.getMetadata().getName());
       return true;
     }
@@ -254,11 +254,11 @@ public class PodHelper {
    * @param pod the pod to check
    */
   public static boolean isPending(V1Pod pod) {
-    return V1PodStatus.PhaseEnum.PENDING.equals(getPhase(pod));
+    return "Pending".equals(getPhase(pod));
   }
 
   @Nullable
-  private static V1PodStatus.PhaseEnum getPhase(V1Pod pod) {
+  private static String getPhase(V1Pod pod) {
     return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse(null);
   }
 
@@ -280,7 +280,7 @@ public class PodHelper {
    * @return True if the pod status shows that the pod is evicted, false otherwise
    */
   public static boolean isEvicted(@Nonnull V1PodStatus status) {
-    return V1PodStatus.PhaseEnum.FAILED.equals(status.getPhase())
+    return "Failed".equals(status.getPhase())
         && EVICTED_REASON.equals(status.getReason());
   }
 

@@ -245,7 +245,7 @@ public class DomainStatus {
     }
     DomainStatus rhs = (DomainStatus) other;
     return new EqualsBuilder()
-        .append(conditions, rhs.conditions)
+        .append(DomainResource.sortList(conditions), DomainResource.sortList(rhs.conditions))
         .append(message, rhs.message)
         .append(reason, rhs.reason)
         .append(servers, rhs.servers)

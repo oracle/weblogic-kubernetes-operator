@@ -23,7 +23,7 @@ First, install the operator.
 
 1. Set up Helm with the location of the operator Helm chart using this format: `helm repo add <helm-chart-repo-name> <helm-chart-repo-url>`
 
-    ```
+    ```shell
     $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update  
     ```
  1. Install the operator using this format: `helm install <helm-release-name> <helm-chart-repo-name>/weblogic-operator ...`

@@ -228,7 +228,7 @@ the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace).
 {{% /notice %}}
 
-####  Delete a Kubernetes namespace from a running operator
+#### Delete a Kubernetes namespace from a running operator
 
 The following are steps for deleting namespaces that are managed by a running operator.
 

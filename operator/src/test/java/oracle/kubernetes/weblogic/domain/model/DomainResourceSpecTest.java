@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import oracle.kubernetes.operator.KubernetesConstants;
 import org.junit.jupiter.api.Test;
 
@@ -86,13 +85,13 @@ class DomainResourceSpecTest {
     DomainSpec spec1 = new DomainSpec().withFluentdConfiguration(true,
         "mycred", "<matcher/>");
     spec1.getFluentdSpecification().setImage("myimage:v1");
-    spec1.getFluentdSpecification().setImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    spec1.getFluentdSpecification().setImagePullPolicy("Always");
 
     assertThat(spec1.getFluentdSpecification().getWatchIntrospectorLogs(), equalTo(true));
     assertThat(spec1.getFluentdSpecification().getElasticSearchCredentials(), equalTo("mycred"));
     assertThat(spec1.getFluentdSpecification().getFluentdConfiguration(), notNullValue());
     assertThat(spec1.getFluentdSpecification().getFluentdConfiguration(), equalTo("<matcher/>"));
-    assertThat(spec1.getFluentdSpecification().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(spec1.getFluentdSpecification().getImagePullPolicy(), equalTo("Always"));
     assertThat(spec1.getFluentdSpecification().getImage(), equalTo("myimage:v1"));
 
 
@@ -101,7 +100,6 @@ class DomainResourceSpecTest {
   private String getLatestDefaultImage() {
     String defaultImageName = KubernetesConstants.DEFAULT_IMAGE
         .substring(0, KubernetesConstants.DEFAULT_IMAGE.indexOf(':'));
-    String latestImage = defaultImageName + KubernetesConstants.LATEST_IMAGE_SUFFIX;
-    return latestImage;
+    return defaultImageName + KubernetesConstants.LATEST_IMAGE_SUFFIX;
   }
 }

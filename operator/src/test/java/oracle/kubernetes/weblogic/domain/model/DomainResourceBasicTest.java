@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -53,7 +52,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(EffectiveServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(spec.getImagePullSecrets(), empty());
   }
 
@@ -88,10 +87,10 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
     configureDomain(domain).withDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo("Always"));
     assertThat(
         info.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+        equalTo("Always"));
   }
 
   @Test
@@ -110,7 +109,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     EffectiveServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(spec.getImagePullPolicy(), equalTo("Always"));
   }
 
   @Test
@@ -120,17 +119,17 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     EffectiveServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
   }
 
   @Test
   void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
-    configureDomain(domain).withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    configureDomain(domain).withDefaultImagePullPolicy("Always");
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo("Always"));
     assertThat(
         info.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+        equalTo("Always"));
   }
 
   @Test

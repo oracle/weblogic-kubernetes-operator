@@ -8,6 +8,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.Application;
@@ -37,7 +39,6 @@ import oracle.kubernetes.operator.webhooks.model.Scale;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -77,6 +78,7 @@ import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeCo
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeDomainToMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeMap;
 import static oracle.kubernetes.operator.webhooks.utils.GsonBuilderUtils.writeScaleToMap;
+import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.DOMAIN_NAME;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -106,6 +108,9 @@ class WebhookRestTest extends RestTestBase {
   private static final String REJECT_MESSAGE_CLUSTER_NOT_FOUND =
       "Exception: io.kubernetes.client.openapi.ApiException: Cluster %s not found";
 
+  public static final String KIND_ADMISSION_REVIEW = "AdmissionReview";
+
+
   private final AdmissionReview domainReview = createDomainAdmissionReview();
   private final AdmissionReview clusterReview = createClusterAdmissionReview();
   private final AdmissionReview scaleReview = createScaleAdmissionReview();
@@ -121,8 +126,12 @@ class WebhookRestTest extends RestTestBase {
 
   private final ConversionReviewModel conversionReview = createConversionReview();
 
+  private AdmissionReview createAdmissionReview() {
+    return new AdmissionReview().apiVersion(V1).kind(KIND_ADMISSION_REVIEW);
+  }
+
   private AdmissionReview createDomainAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createDomainAdmissionRequest());
+    return createAdmissionReview().request(createDomainAdmissionRequest());
   }
 
   private AdmissionRequest createDomainAdmissionRequest() {
@@ -146,7 +155,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private AdmissionReview createClusterAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createClusterAdmissionRequest());
+    return createAdmissionReview().request(createClusterAdmissionRequest());
   }
 
   private AdmissionRequest createClusterAdmissionRequest() {
@@ -170,7 +179,7 @@ class WebhookRestTest extends RestTestBase {
   }
 
   private AdmissionReview createScaleAdmissionReview() {
-    return new AdmissionReview().apiVersion(V1).kind("AdmissionReview").request(createScaleAdmissionRequest());
+    return createAdmissionReview().request(createScaleAdmissionRequest());
   }
 
   private AdmissionRequest createScaleAdmissionRequest() {
@@ -670,14 +679,13 @@ class WebhookRestTest extends RestTestBase {
   }
 
   @Test
-  @Disabled("Cluster replicas are no longer included in Domain specification")
-  void whenClusterReplicasChangedUnsetAndReadDomainFailed404_rejectItWithException() {
+  void whenClusterReplicasChangedUnsetAndListDomainFailed404_rejectItWithException() {
     testSupport.defineResources(proposedDomain);
     existingCluster.getSpec().withReplicas(GOOD_REPLICAS);
     proposedCluster.getSpec().withReplicas(null);
     setExistingAndProposedCluster();
 
-    testSupport.failOnRead(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_FORBIDDEN);
+    testSupport.failOnList(KubernetesTestSupport.DOMAIN, NS, HTTP_FORBIDDEN);
 
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
 
@@ -743,7 +751,7 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview review = createScaleAdmissionReview();
     AdmissionRequest request = review.getRequest();
     Map<String, String> kind = new HashMap<>();
-    kind.put("kind", "blabal");
+    kind.put("kind", "blabla");
     request.setKind(kind);
     testSupport.defineResources(validScale);
     setProposedScale(validScale);
@@ -751,6 +759,19 @@ class WebhookRestTest extends RestTestBase {
     AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(review);
 
     assertThat(isAllowed(responseReview), equalTo(true));
+  }
+
+  @Test
+  void whenNewClusterUseReservedEnvName_rejectIt() {
+    List<V1EnvVar> envs = new ArrayList<>();
+    V1EnvVar env = new V1EnvVar().name(DOMAIN_NAME).value("yyyyy");
+    envs.add(env);
+    existingCluster.getSpec().setEnv(envs);
+    setProposedCluster(existingCluster);
+
+    AdmissionReview responseReview = sendValidatingRequestAsAdmissionReview(clusterReview);
+
+    assertThat(isAllowed(responseReview), equalTo(false));
   }
 
   private AdmissionReview sendValidatingRequestAsAdmissionReview(AdmissionReview admissionReview) {

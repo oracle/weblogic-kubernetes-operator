@@ -130,6 +130,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -229,7 +230,7 @@ class DomainProcessorTest {
 
   V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
-          .addConditionsItem(new V1JobCondition().type(V1JobCondition.TypeEnum.COMPLETE).status("True"));
+          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
   }
 
   V1JobStatus createNotCompletedStatus() {
@@ -350,7 +351,7 @@ class DomainProcessorTest {
     cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
 
     processor.createMakeRightOperation(newInfo)
-        .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED))
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED))
         .execute();
 
     assertThat(testSupport.getNumItemsRun(), equalTo(0));
@@ -526,7 +527,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
 
-    processor.createMakeRightOperation(newInfo).execute();
+    processor.createMakeRightOperation(newInfo).withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
@@ -667,8 +668,8 @@ class DomainProcessorTest {
   }
 
   private V1PodStatus createReadyStatus() {
-    return new V1PodStatus().phase(V1PodStatus.PhaseEnum.RUNNING)
-          .addConditionsItem(new V1PodCondition().type(V1PodCondition.TypeEnum.READY).status("True"));
+    return new V1PodStatus().phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
   }
 
   private V1Secret createCredentialsSecret() {
@@ -1137,7 +1138,7 @@ class DomainProcessorTest {
                 .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
-        .spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.CLUSTERIP));
+        .spec(new V1ServiceSpec().type("ClusterIP"));
   }
 
   private V1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
@@ -1334,7 +1335,7 @@ class DomainProcessorTest {
 
 
   V1JobStatus createTimedOutStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("DeadlineExceeded"));
   }
 
@@ -1360,7 +1361,7 @@ class DomainProcessorTest {
   }
 
   V1JobStatus createBackoffStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded"));
   }
 
@@ -1393,7 +1394,7 @@ class DomainProcessorTest {
 
   private V1Job asFailedJob(V1Job job) {
     job.setStatus(new V1JobStatus().addConditionsItem(
-        new V1JobCondition().status("True").type(V1JobCondition.TypeEnum.FAILED)
+        new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded")));
     return job;
   }
@@ -1964,15 +1965,15 @@ class DomainProcessorTest {
     assertThat(getContainerReadinessPort(runningPods,"test-domain-admin-server"), equalTo(7099));
 
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
 
   }
 
@@ -2056,13 +2057,13 @@ class DomainProcessorTest {
 
     // default  is not set
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server1"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-managed-server2"),
-        equalTo(V1HTTPGetAction.SchemeEnum.HTTPS));
+        equalTo("HTTPS"));
     assertThat(getContainerReadinessScheme(runningPods,"test-domain-admin-server"),
         equalTo(null));
 
@@ -2095,7 +2096,7 @@ class DomainProcessorTest {
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(
             new V1ServiceSpec()
-                .type(V1ServiceSpec.TypeEnum.NODEPORT)
+                .type("NodePort")
                 .addPortsItem(new V1ServicePort().nodePort(30701)));
   }
 
@@ -2125,12 +2126,12 @@ class DomainProcessorTest {
   }
 
   private boolean isHeadless(V1ServiceSpec serviceSpec) {
-    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+    return "ClusterIP".equals(serviceSpec.getType())
         && "None".equals(serviceSpec.getClusterIP());
   }
 
   private boolean isClusterIP(V1ServiceSpec serviceSpec) {
-    return V1ServiceSpec.TypeEnum.CLUSTERIP.equals(serviceSpec.getType())
+    return "ClusterIP".equals(serviceSpec.getType())
         && serviceSpec.getClusterIP() == null;
   }
 
@@ -2218,7 +2219,8 @@ class DomainProcessorTest {
   void whenDomainIsNotValid_dontBringUpServers() {
     defineDuplicateServerNames();
 
-    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(originalInfo)
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(originalInfo, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -2235,7 +2237,8 @@ class DomainProcessorTest {
   void whenDomainIsNotValid_updateStatus() {
     defineDuplicateServerNames();
 
-    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(originalInfo)
+        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
@@ -2282,7 +2285,7 @@ class DomainProcessorTest {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).stream().anyMatch(name::equals);
   }
 
-  private V1HTTPGetAction.SchemeEnum getContainerReadinessScheme(List<V1Pod> pods, String podName) {
+  private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
     return pods.stream()
           .filter(pod -> isNamedPod(pod, podName))
           .findFirst()

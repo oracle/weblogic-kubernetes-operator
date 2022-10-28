@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -49,8 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
@@ -325,7 +324,7 @@ public class JobStepContext extends BasePodStepContext {
         .orElse(TuningParameters.getInstance().getActiveJobInitialDeadlineSeconds());
   }
 
-  @NotNull
+  @Nonnull
   private Long getNumDeadlineIncreases() {
     return Math.min(TuningParameters.getInstance().getActiveDeadlineMaxNumIncrements(), info.getNumDeadlineIncreases());
   }
@@ -384,22 +383,11 @@ public class JobStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
   }
 
-  protected List<V1EnvVar> createEnv(V1Container c) {
-    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
-      getEnvironmentVariables()
-              .forEach(envVar -> addIfMissing(initContainerEnvVars,
-                  envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
-    }
-    return initContainerEnvVars;
-  }
-
   @Override
   protected V1PodSpec createPodSpec() {
     V1PodSpec podSpec = super.createPodSpec()
             .activeDeadlineSeconds(getActiveDeadlineSeconds())
-            .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+            .restartPolicy("Never")
             .serviceAccountName(info.getDomain().getSpec().getServiceAccountName())
             .addVolumesItem(new V1Volume().name(SECRETS_VOLUME).secret(getSecretsVolume()))
             .addVolumesItem(
@@ -431,7 +419,7 @@ public class JobStepContext extends BasePodStepContext {
       addWdtSecretVolume(podSpec);
     }
 
-    if (podSpec.getAffinity().equals(getDefaultAntiAffinity())) {
+    if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
     return podSpec;

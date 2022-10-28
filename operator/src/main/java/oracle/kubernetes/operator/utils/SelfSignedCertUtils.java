@@ -18,6 +18,7 @@ import java.security.spec.RSAPublicKeySpec;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
+import javax.annotation.Nonnull;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
@@ -39,7 +40,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
@@ -125,7 +125,7 @@ public final class SelfSignedCertUtils {
             .setProvider(new BouncyCastleProvider()).getCertificate(certificateBuilder.build(contentSigner));
   }
 
-  @NotNull
+  @Nonnull
   private static GeneralNames getSAN(String cert) {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
     String namespace = getOperatorNamespace();

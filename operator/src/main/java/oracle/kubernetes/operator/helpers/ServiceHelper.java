@@ -137,10 +137,10 @@ public class ServiceHelper {
   }
 
   static boolean isNodePortType(V1Service service) {
-    return V1ServiceSpec.TypeEnum.NODEPORT.equals(getSpecType(service));
+    return "NodePort".equals(getSpecType(service));
   }
 
-  private static V1ServiceSpec.TypeEnum getSpecType(V1Service service) {
+  private static String getSpecType(V1Service service) {
     return Optional.ofNullable(service.getSpec()).map(V1ServiceSpec::getType).orElse(null);
   }
 
@@ -184,8 +184,8 @@ public class ServiceHelper {
   }
 
   static String getAppProtocol(String protocol) {
-    List<String> httpProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTP));
-    List<String> httpsProtocols = new ArrayList<>(Arrays.asList(PROTOCOL_HTTPS));
+    List<String> httpProtocols = new ArrayList<>(List.of(PROTOCOL_HTTP));
+    List<String> httpsProtocols = new ArrayList<>(List.of(PROTOCOL_HTTPS));
     List<String> tlsProtocols = new ArrayList<>(Arrays.asList("t3s", "ldaps", "iiops", "cbts", "sips", PROTOCOL_ADMIN));
 
     String appProtocol = PROTOCOL_TCP;
@@ -357,8 +357,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected V1ServiceSpec.TypeEnum getSpecType() {
-      return V1ServiceSpec.TypeEnum.CLUSTERIP;
+    protected String getSpecType() {
+      return "ClusterIP";
     }
 
     @Override
@@ -470,10 +470,10 @@ public class ServiceHelper {
 
     private boolean isProtocolMatch(V1ServicePort one, V1ServicePort two) {
       if (one.getProtocol() == null) {
-        return two.getProtocol() == null || V1ServicePort.ProtocolEnum.TCP.equals(two.getProtocol());
+        return two.getProtocol() == null || "TCP".equals(two.getProtocol());
       }
       if (two.getProtocol() == null) {
-        return V1ServicePort.ProtocolEnum.TCP.equals(one.getProtocol());
+        return "TCP".equals(one.getProtocol());
       }
       return one.getProtocol().equals(two.getProtocol());
     }
@@ -484,7 +484,7 @@ public class ServiceHelper {
           .appProtocol(appProtocol)
           .port(port)
           .appProtocol(appProtocol)
-          .protocol(V1ServicePort.ProtocolEnum.TCP);
+          .protocol("TCP");
     }
 
     V1ServicePort createSipUdpServicePort(String portName, Integer port, String appProtocol) {
@@ -493,7 +493,7 @@ public class ServiceHelper {
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
           .appProtocol(appProtocol)
           .port(port)
-          .protocol(V1ServicePort.ProtocolEnum.UDP);
+          .protocol("UDP");
     }
 
     protected boolean isSipProtocol(String protocol) {
@@ -539,13 +539,13 @@ public class ServiceHelper {
 
     abstract Map<String, String> getServiceAnnotations();
 
-    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
+    String getSessionAffinity() {
       return null;
     }
 
     protected abstract void logServiceCreated(String messageKey);
 
-    protected abstract V1ServiceSpec.TypeEnum getSpecType();
+    protected abstract String getSpecType();
 
     protected abstract List<V1ServicePort> createServicePorts();
 
@@ -810,8 +810,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected V1ServiceSpec.TypeEnum getSpecType() {
-      return V1ServiceSpec.TypeEnum.CLUSTERIP;
+    protected String getSpecType() {
+      return "ClusterIP";
     }
 
     @Override
@@ -873,7 +873,7 @@ public class ServiceHelper {
     }
 
     @Override
-    V1ServiceSpec.SessionAffinityEnum getSessionAffinity() {
+    String getSessionAffinity() {
       return getClusterSpec().getClusterSessionAffinity();
     }
   }
@@ -915,8 +915,8 @@ public class ServiceHelper {
     }
 
     @Override
-    protected V1ServiceSpec.TypeEnum getSpecType() {
-      return V1ServiceSpec.TypeEnum.NODEPORT;
+    protected String getSpecType() {
+      return "NodePort";
     }
 
     @Override

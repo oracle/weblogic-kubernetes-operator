@@ -3,11 +3,14 @@
 
 package oracle.kubernetes.operator.webhooks.resource;
 
+import java.util.List;
+import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.webhooks.model.AdmissionResponse;
+import oracle.kubernetes.operator.webhooks.model.AdmissionResponseStatus;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * ClusterCreateAdmissionChecker provides the validation functionality for the validating webhook. It takes a
@@ -25,7 +28,7 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   private final AdmissionResponse response = new AdmissionResponse();
 
   /** Construct a ClusterCreateAdmissionChecker. */
-  public ClusterCreateAdmissionChecker(@NotNull ClusterResource proposedCluster) {
+  public ClusterCreateAdmissionChecker(@Nonnull ClusterResource proposedCluster) {
     this.proposedCluster = proposedCluster;
   }
 
@@ -33,11 +36,20 @@ public class ClusterCreateAdmissionChecker extends AdmissionChecker {
   AdmissionResponse validate() {
     LOGGER.fine("Validating new ClusterResource " + proposedCluster);
     response.allowed(isProposedChangeAllowed());
+    if (!response.isAllowed()) {
+      return response.status(new AdmissionResponseStatus().message(createMessage()));
+    }
     return response;
   }
 
   @Override
   public boolean isProposedChangeAllowed() {
-    return true;
+    return hasNoFatalValidationErrors();
+  }
+
+  boolean hasNoFatalValidationErrors() {
+    List<String> failures = proposedCluster.getFatalValidationFailures();
+    messages.addAll(failures);
+    return failures.isEmpty();
   }
 }

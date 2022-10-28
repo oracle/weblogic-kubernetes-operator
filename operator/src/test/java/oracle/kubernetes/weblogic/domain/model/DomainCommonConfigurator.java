@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -333,7 +332,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+  public DomainConfigurator withRestartPolicy(String restartPolicy) {
     getDomainSpec().setRestartPolicy(restartPolicy);
     return this;
   }
@@ -624,7 +623,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+    public ServerConfigurator withRestartPolicy(String restartPolicy) {
       server.setRestartPolicy(restartPolicy);
       return this;
     }
@@ -813,7 +812,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+    public ClusterConfigurator withRestartPolicy(String restartPolicy) {
       clusterSpec.setRestartPolicy(restartPolicy);
       return this;
     }

@@ -3,12 +3,13 @@
 
 package oracle.kubernetes.operator.makeright;
 
+import javax.annotation.Nonnull;
+
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 
 public class DomainPresenceStep extends Step {
 
@@ -36,7 +37,7 @@ public class DomainPresenceStep extends Step {
     return Step.chain(next, getNext());
   }
 
-  @NotNull
+  @Nonnull
   private Boolean isDomainShuttingDown(Packet packet) {
     return DomainPresenceInfo.fromPacket(packet)
         .map(DomainPresenceInfo::getDomain)
