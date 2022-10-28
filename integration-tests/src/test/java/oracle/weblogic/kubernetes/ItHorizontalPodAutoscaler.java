@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -34,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
@@ -45,6 +47,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -250,7 +253,21 @@ public class ItHorizontalPodAutoscaler {
 
     // check cluster is scaled up
     for (int i = 1; i <= 4; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+      final int j = i;
+      testUntil(
+          withLongRetryPolicy,
+          assertDoesNotThrow(() -> checkHPAAndServiceExists(managedServerPrefix + j,
+                  domainNamespace),
+              String.format("serviceExists failed with ApiException for service %s in namespace %s",
+                  managedServerPrefix + j, domainNamespace)),
+          logger,
+          "service {0} to exist in namespace {1}",
+          managedServerPrefix + j,
+          managedServerPrefix + j);
+
+      logger.info("Waiting for pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     // the command to increase cpu load is ran for 30 sec, after that
@@ -258,7 +275,8 @@ public class ItHorizontalPodAutoscaler {
     for (int i = 3; i <= 4; i++) {
       final int j = i;
       testUntil(withLongRetryPolicy,
-          assertDoesNotThrow(() -> podDoesNotExist(managedServerPrefix + j, domainUid, domainNamespace),
+          assertDoesNotThrow(() -> checkHPAAndpodDoesNotExist(
+              managedServerPrefix + j, domainUid, domainNamespace),
               String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
                   managedServerPrefix + i, domainNamespace)),
           logger,
@@ -287,5 +305,15 @@ public class ItHorizontalPodAutoscaler {
      * ns-qsjlcw   hpacluster   Cluster/hpacluster   <unknown>/50%    2         4         2          18m
      */
     return result.stdout().contains("%/");
+  }
+
+  private Callable<Boolean> checkHPAAndpodDoesNotExist(String podName, String domainUid, String namespace) {
+    verifyHPA(namespace, clusterResName);
+    return podDoesNotExist(podName, domainUid, namespace);
+  }
+
+  private Callable<Boolean> checkHPAAndServiceExists(String serviceName, String namespace) {
+    verifyHPA(namespace, clusterResName);
+    return serviceExists(serviceName, null, namespace);
   }
 }
