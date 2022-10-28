@@ -117,7 +117,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The common utility class for model-in-image tests.
  */
 public class CommonMiiTestUtils {
-  
+
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
@@ -138,9 +138,9 @@ public class CommonMiiTestUtils {
       int replicaCount
   ) {
     return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
-        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"));
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"), false, null);
   }
-  
+
   /**
    * Create a basic Kubernetes domain resource and wait until the domain is fully up.
    *
@@ -159,9 +159,37 @@ public class CommonMiiTestUtils {
       String imageName,
       String adminServerPodName,
       String managedServerPrefix,
+      int replicaCount,
+      List<String> clusterNames) {
+    return createMiiDomainAndVerify(domainNamespace, domainUid, imageName,
+        adminServerPodName, managedServerPrefix, replicaCount, clusterNames, false, null);
+  }
+
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames names of clusters
+   * @param setDataHome whether to set dataHome in the domain spec
+   * @param dataHome dataHome override in the domain spec
+   * @return DomainResource
+   */
+  public static DomainResource createMiiDomainAndVerify(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      String adminServerPodName,
+      String managedServerPrefix,
       int replicaCount, 
-      List<String> clusterNames
-  ) {
+      List<String> clusterNames,
+      boolean setDataHome,
+      String dataHome) {
+
     LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
@@ -200,6 +228,13 @@ public class CommonMiiTestUtils {
         replicaCount,
         clusterNames
     );
+
+    // set the dataHome in the domain spec
+    if (setDataHome) {
+      DomainSpec domainSpec = domain.getSpec();
+      domainSpec.dataHome(dataHome);
+      domain.spec(domainSpec);
+    }
 
     createDomainAndVerify(domain, domainNamespace);
 
@@ -328,6 +363,9 @@ public class CommonMiiTestUtils {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IfNeeded")
             .serverPod(new oracle.weblogic.domain.ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
