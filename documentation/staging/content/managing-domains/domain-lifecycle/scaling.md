@@ -228,7 +228,7 @@ operations on a cluster. These policies monitor one or more types of WebLogic Se
 in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
-#### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
+##### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
 
 1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh) script to `$DOMAIN_HOME/bin/scripts` so that it's accessible within the Administration Server pod. For more information, see [Configuring Script Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
@@ -295,7 +295,7 @@ A more in-depth description and example on using WLDF's Policies and Actions com
 * [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
 * [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
 
-#### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
+##### Create ClusterRoleBindings to allow a namespace user to query WLS Kubernetes cluster information
 The script `scalingAction.sh`, specified in the WLDF script action, needs the appropriate RBAC permissions granted for the service account user (in the namespace in which the WebLogic domain is deployed) to query the Kubernetes API server for both configuration and runtime information of the Domain.
 The following is an example YAML file for creating the appropriate Kubernetes ClusterRole bindings:
 
