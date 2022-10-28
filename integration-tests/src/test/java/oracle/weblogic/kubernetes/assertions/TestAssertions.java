@@ -603,9 +603,10 @@ public class TestAssertions {
     LoggingFacade logger = getLogger();
     return () -> {
       DomainResource domain = getDomainCustomResource(domainUid, namespace);
-      if (domain != null && domain.getStatus() != null && !domain.getStatus().getConditions().isEmpty()) {
+      if (domain != null && domain.getStatus() != null && domain.getStatus().getConditions() != null
+          && !domain.getStatus().getConditions().isEmpty()) {
         boolean match = domain.getStatus().getConditions().stream()
-            .anyMatch(condition -> condition.getReason().contains(statusReason));
+            .anyMatch(condition -> condition.getReason() != null && condition.getReason().contains(statusReason));
         return match;
       } else {
         if (domain == null) {
