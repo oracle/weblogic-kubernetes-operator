@@ -576,7 +576,7 @@ public class DomainStatusUpdater {
               ? doNext(getNext().getNext(), packet) : super.apply(packet);
     }
 
-    private static boolean shouldSkipDomainStatusUpdate(Packet packet) {
+    private boolean shouldSkipDomainStatusUpdate(Packet packet) {
       boolean domainRecheckOrScheduledStatusUpdate =
               (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
