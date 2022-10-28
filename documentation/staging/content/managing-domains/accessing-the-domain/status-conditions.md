@@ -201,14 +201,14 @@ The following is a list of condition types for a Cluster resource.
     or if it is not configured, in the `domain.spec.replicas` field.
   * When some server pods for the cluster are temporarily not ready, and the number of such
     server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
-- The `status` attribute is also set to `True` when no WebLogic Server pods are running and this 
+- The `status` attribute is also set to `True` when no WebLogic Server pods are running and this
   is the expected state, such as when `cluster.spec.replicas` is set to `0`, or when
   `cluster.spec.serverStartPolicy` is set to `Never`.
-- **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed` 
-  condition is `False`, a `Failed` condition is reported on the Domain resource, or the cluster 
+- **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed`
+  condition is `False`, a `Failed` condition is reported on the Domain resource, or the cluster
   has up to `cluster.spec.maxUnavailable` pods that are not ready.
 
-### Condition life cycle
+### Conditions life cycle
 
 After the operator detects a Cluster or Domain resource, it will ensure that each resource always has
 exactly one occurrence of an `Available` and of a `Completed` condition. The operator will not
