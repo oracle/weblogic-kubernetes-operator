@@ -188,7 +188,7 @@ The following is a list of condition types for a Cluster resource.
 #### `Completed` {id="cluster-completed"}
 - The `status` attribute of a `Completed` condition indicates whether the desired state of the
   Cluster resource has been fully achieved.
-- The `status` attribute is set to `True` when:
+- The `status` attribute is set to `True` when all of the following are true:
   * There are no `Failed` `domain.status.conditions`.
   * No WebLogic Server pods are expected to be running, _or_ all server pods in the cluster that are expected to be running are ready at their target
     image or images, `restartVersion`, and `introspectVersion`
@@ -201,8 +201,12 @@ The following is a list of condition types for a Cluster resource.
     or if it is not configured, in the `domain.spec.replicas` field.
   * When some server pods for the cluster are temporarily not ready, and the number of such
     server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
-- The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
-  pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.
+- The `status` attribute is also set to `True` when no WebLogic Server pods are running and this 
+  is the expected state, such as when `cluster.spec.replicas` is set to `0`, or when
+  `cluster.spec.serverStartPolicy` is set to `Never`.
+- **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed` 
+  condition is `False`, a `Failed` condition is reported on the Domain resource, or the cluster 
+  has up to `cluster.spec.maxUnavailable` pods that are not ready.
 
 ### Condition life cycle
 
