@@ -175,35 +175,47 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.4.0 to current.
+   * Operator upgrade from 3.4.3 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.0 to current")
+  @DisplayName("Upgrade Operator from 3.4.3 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom340ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom340ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.0", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom343ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom343ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.3", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.4.1 to current.
+   * Operator upgrade from 3.4.4 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.1 to current")
+  @DisplayName("Upgrade Operator from 3.4.4 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom341ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom341ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.1", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom344ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom344ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Auxiliary Image Domain upgrade from Operator v3.4.1 to current.
+   * Auxiliary Image Domain upgrade from Operator 3.4.1 to current.
    */
   @Test
   @DisplayName("Upgrade 3.4.1 Auxiliary Domain(v8 schema) Image to current")
   void testOperatorWlsAuxDomainUpgradeFrom341ToCurrent() {
-    logger.info("Starting test to upgrade Domain with Auxiliary Image with v8 schema to current");
+    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom341ToCurrent " 
+         + "to upgrade Domain with Auxiliary Image with v8 schema to current");
     upgradeWlsAuxDomain("3.4.1");
+  }
+
+  /**
+   * Auxiliary Image Domain upgrade from Operator 3.4.4 to current.
+   */
+  @Test
+  @DisplayName("Upgrade 3.4.4 Auxiliary Domain(v8 schema) Image to current")
+  void testOperatorWlsAuxDomainUpgradeFrom344ToCurrent() {
+    logger.info("Starting testOperatorWlsAuxDomainUpgradeFrom344ToCurrent " 
+        + "to upgrade Domain with Auxiliary Image with v8 schema to current");
+    upgradeWlsAuxDomain("3.4.4");
   }
 
   /**
