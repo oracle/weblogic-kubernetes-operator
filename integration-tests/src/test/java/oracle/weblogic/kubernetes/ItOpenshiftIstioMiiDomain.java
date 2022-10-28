@@ -290,8 +290,6 @@ class ItOpenshiftIstioMiiDomain {
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
                 .putAnnotationsItem("sidecar.istio.io/inject", "true")
-                .annotations((Map<String, String>) new HashMap()
-                    .put("sidecar.istio.io/inject", "true"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false -Dweblogic.rjvm.enableprotocolswitch=true"))
