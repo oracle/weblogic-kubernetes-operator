@@ -272,7 +272,8 @@ spec:
      * Deleting or adding an application.
      * The MBean changes are committed in the running domain and effective immediately.
    * Expected outcome after the introspector job completes:
-     * The domain `Available` condition status is set to `True`.
+     * The domain `Completed` condition status is set to `True`.
+       For more information, see [Domain conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}).
      * The `weblogic.introspectVersion` label on all pods will be set to match the `domain.spec.introspectVersion`.
    * Actions required:
      * None.
@@ -350,85 +351,8 @@ and for the WebLogic pod labels you can use
 `kubectl -n MY_NAMESPACE get pods --show-labels` plus
 optionally add `--watch` to watch the pods as they change over time.
 
-Here is how to interpret each domain resource's `domain.status.conditions` type:
-
- 1. The `Progressing` type.
-    * `Status` attribute is `True` when a domain resource change is being processed by the operator,
-      such as when:
-       * The operator is processing a new domain resource or a change to an existing domain resource.
-       * The introspector is running.
-       * Servers are starting.
-       * A roll is in progress.
-    * `Status` becomes `False` or unset after a failure, but can return to `True` if/when there is a retry.
-    * `Status` becomes `False` or unset after a success.
-    * _Note:_ This condition may 'blink' on and off during a roll or pod restart.
-
- 1. The `Available` type.
-    * `Status` attribute is `True` when:
-      * Processing successfully completes without error
-        (introspection job, syntax checks, and such).
-      * The operator is starting or has started all desired WebLogic Server pods
-        (not including any servers that may be shutting down).
-    * `Status` is `False` or unset:
-      * Servers are rolling/starting or a failure has occurred.
-    * _Note:_ This condition may 'blink' on and off while
-      processing a domain resource change or during a roll.
-    * For example, after a successful online update,
-      you will see something like this in the domain resource `domain.status` section:
-      ```yaml
-      status:
-        clusters:
-        - clusterName: cluster-1
-          maximumReplicas: 5
-          minimumReplicas: 0
-          readyReplicas: 2
-          replicas: 2
-          replicasGoal: 2
-        conditions:
-        - lastTransitionTime: "2021-01-26T18:43:14.377Z"
-          reason: ServersReady
-          status: "True"
-          type: Available
-      ```
-
- 1. The `Failed` type.
-    * `Status` attribute is `True` after a failure
-      including validation errors or an introspector failure.
-      * In this case, the condition's `message` attribute will display an error message.
-    * `Status` becomes `False` or unset after any succesful retry.
-    * _Note:_ A `Failed` condition's status is _not_ set to `True` if the
-      domain resource is successfully processed but one or more WebLogic Server
-      pods is failing to start. In this case, Kubernetes will periodically
-      try and restart the pod(s), and the `Available` type
-      may remain `True`.
-
- 1. The `ConfigChangesPendingRestart` type.
-    * `Status` attribute is `True` if all of the following are true:
-      * The domain resource attribute
-        `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.
-      * The domain resource attribute
-        `domain.spec.configuration.model.onlineUpdate.enabled` is `True`.
-      * There were model changes and these changes modify non-dynamic WebLogic configuration.
-      * Processing successfully completed, including the introspector job.
-      * The administrator has not subsequently rolled/restarted each WebLogic Server pod
-        (to propagate the pending non-dynamic changes).
-        * See the following description of WebLogic pod labels to see which pods are awaiting restart.
-    * For example:
-      ```
-      Status:
-        ...
-        Conditions:
-          Last Transition Time:  2021-01-20T15:09:15.209Z
-          Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
-
-      The following non-dynamic attribute(s) have been changed on MBeans
-      that require server re-start:
-      MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
-      Attributes changed : Value
-          Reason:                      Online update applied, introspectVersion updated to 82
-          Status:                      True
-          Type:                        ConfigChangesPendingRestart
-      ```
+The `ConfigChangesPendingRestart` condition in `domain.status` contains information about the progress
+of the online update. See [ConfigChangesPendingRestart condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#configchangespendingrestart" >}}) for details.
 
 Here are some of the expected WebLogic pod labels after an online update success:
 
