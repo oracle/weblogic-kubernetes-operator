@@ -510,8 +510,6 @@ class DomainProcessorTest {
     testSupport.defineResources(clusterResource);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     info.getDomain().getSpec().getClusters().add(new V1LocalObjectReference().name(CLUSTER));
-    info.setServerPod(ADMIN_NAME, createServerPod(ADMIN_NAME, null));
-    info.getServerPod(ADMIN_NAME).setStatus(createReadyStatus());
 
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 

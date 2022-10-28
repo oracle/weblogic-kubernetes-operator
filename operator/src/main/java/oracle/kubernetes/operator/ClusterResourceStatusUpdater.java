@@ -22,7 +22,6 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
-import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -35,7 +34,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -89,24 +87,10 @@ public class ClusterResourceStatusUpdater {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
-      if (isAdminServerNotReady(info)) {
-        return doNext(packet);
-      }
       Step step = Optional.ofNullable(info.getDomain())
           .map(domain -> createUpdateClusterResourceStatusSteps(packet, info.getClusterResources()))
           .orElse(null);
       return doNext(chainStep(step, getNext()), packet);
-    }
-
-    private Boolean isAdminServerNotReady(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(i -> i.getAdminServerName())
-          .map(s -> isAdminServerNotReady(info, s)).orElse(false);
-    }
-
-    @NotNull
-    private Boolean isAdminServerNotReady(DomainPresenceInfo info, String adminServerName) {
-      return Optional.ofNullable(info).map(i -> i.getServerPod(adminServerName))
-          .map(p -> !PodHelper.isReady(p)).orElse(false);
     }
 
     private static Step chainStep(Step one, Step two) {
