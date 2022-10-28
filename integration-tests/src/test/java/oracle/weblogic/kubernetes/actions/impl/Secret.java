@@ -14,9 +14,11 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -102,6 +104,7 @@ public class Secret {
    */
   public static boolean hasToken(String saSecretName, String namespace) throws ApiException {
     V1Secret secret = Kubernetes.getSecret(saSecretName, namespace);
+    getLogger().info(Yaml.dump(secret));
     if (secret != null) {
       Map<String, byte[]> data = Optional.of(secret).map(V1Secret::getData).orElse(Collections.emptyMap());
       return data.containsKey("token");
@@ -116,12 +119,7 @@ public class Secret {
    * @param secretName secret name to get the encoded token
    * @return the encoded token of the secret
    */
-  public static String getSecretEncodedToken(String namespace, String secretName) {
-    testUntil(
-        () -> hasToken(secretName, namespace),
-        getLogger(),
-        "Waiting for token to be populated in secret");
-
+  public static String getSecretEncodedToken(String namespace, String secretName) {    
     List<V1Secret> v1Secrets = new ArrayList<>();
 
     V1SecretList secretList = listSecrets(namespace);
@@ -132,14 +130,21 @@ public class Secret {
     for (V1Secret v1Secret : v1Secrets) {
       if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
-          if (v1Secret.getData() != null) {
-            byte[] encodedToken = v1Secret.getData().get("token");
-            return Base64.getEncoder().encodeToString(encodedToken);
+          if (OKD) {
+            for (Map.Entry<String, String> annotation : v1Secret.getMetadata().getAnnotations().entrySet()) {
+              if (annotation.getKey().equals("openshift.io/token-secret.value")) {
+                return annotation.getValue();
+              }
+            }
+          } else {
+            if (v1Secret.getData() != null) {
+              byte[] encodedToken = v1Secret.getData().get("token");
+              return Base64.getEncoder().encodeToString(encodedToken);
+            }
           }
         }
       }
     }
-
     return "";
   }
 
