@@ -265,7 +265,7 @@ class ItMultiDomainModels {
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
-    String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
+    String miiAuxiliaryImage1Tag = "mdmauxi-image" + MII_BASIC_IMAGE_TAG;
     createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, archiveList, modelList);
 
     // admin/managed server name here should match with model yaml
