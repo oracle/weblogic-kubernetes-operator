@@ -352,7 +352,7 @@ and for the WebLogic pod labels you can use
 optionally add `--watch` to watch the pods as they change over time.
 
 The `ConfigChangesPendingRestart` condition in `domain.status` contains information about the progress
-of the online update. See [Status conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions#types-of-domain-conditions" >}}) for details.
+of the online update. See [ConfigChangesPendingRestart condition]({{< relref "/managing-domains/accessing-the-domain/status-conditions#configchangespendingrestart" >}}) for details.
 
 Here are some of the expected WebLogic pod labels after an online update success:
 

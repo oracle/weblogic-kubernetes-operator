@@ -82,16 +82,17 @@ The following attributes can be found in a condition:
 
 The following is a list of condition types for a Domain resource.
 
-- `Failed`
-    * The desired state of the Domain resource cannot be achieved due to failures encountered in
-      processing the Domain resource.
-      For information about how to diagnose failures, see [debugging]({{< relref "managing-domains/debugging.md" >}}).
-    * The `status` attribute is always `True` for a `Failed` condition.
-      The `Failed` condition is removed from the domain status when the underlying failure is resolved.
-    * The `message` attribute contains an error message with details of the failure.
-    * The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
-    * The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
-      {{%expand "Click here for an example of a domain status with a Failed condition." %}}
+#### `Failed`
+
+- The desired state of the Domain resource cannot be achieved due to failures encountered in
+  processing the Domain resource.
+For information about how to diagnose failures, see [debugging]({{< relref "managing-domains/debugging.md" >}}).
+- The `status` attribute is always `True` for a `Failed` condition.
+  The `Failed` condition is removed from the domain status when the underlying failure is resolved.
+- The `message` attribute contains an error message with details of the failure.
+- The `reason` attribute is set to one of the reasons listed in [domain failure reasons]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-reasons" >}}).
+-The `severity` attribute is set to one of the severity levels listed in [domain failure severities]({{< relref "managing-domains/domain-lifecycle/retry#domain-failure-severities" >}}).
+{{%expand "Click here for an example of a domain status with a Failed condition." %}}
 ```
 Status:
   ...
@@ -114,45 +115,47 @@ Status:
     Type:                  Rolling
 ```
 {{% /expand %}}
-- `Completed`
-    * The `status` attribute of a `Completed` condition indicates whether the desired state of the
-      Domain resource has been fully achieved.
-    * The `status` attribute is set to `True` when:
-      * There are no `Failed` conditions, for example, no failures are detected.
-      * One of the following conditions are met:
-        * All WebLogic Server pods that are expected to be running are `ready` at their target image or images,
-          `restartVersion`, and `introspectVersion`.
-        * No WebLogic Server pods are running and this is the expected state.
-        * The domain is configured to have a `spec.serverStartPolicy` value of `AdminOnly` and the
-          Administration Server pod is running and ready.
-      * There are no pending server shutdown requests.
-- `Available`
-    * The `status` attribute is set to `True` when a sufficient number of pods are ready such that
-      all of the following are true:
-        * At least one WebLogic Server pod is ready.
-        * Every non-clustered server with a `serverStartPolicy` value of `IfNeeded` or `Always` is ready.
-        * Every Cluster resource referenced by the domain has `True` in its `Available` condition.
-          Clusters that are configured with a `replicas` value of `0` or a `serverStartPolicy` value of `Never`
-          are ignored.
-    * **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed` condition is `False`,
-      a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods
-      that are not ready.
 
-- `ConfigChangesPendingRestart`
-  * This condition tracks the progress of [runtime updates]({{< relref "managing-domains/model-in-image/runtime-updates">}})
-    to the WebLogic Deploy Tool model of a Model in Image domain home source type.
-  * The `status` attribute is `True` if all of the following are true:
-    * The Domain resource attribute
-      `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.
-    * The Domain resource attribute
-      `domain.spec.configuration.model.onlineUpdate.enabled` is `True`.
-    * There were model changes and these changes modify non-dynamic WebLogic configuration.
-    * Processing successfully completed, including the introspector job.
-    * The administrator has not subsequently rolled or restarted each WebLogic Server pod
-      (to propagate the pending non-dynamic changes).
-  * The `ConfigChangesPendingRestart` condition is removed from the domain status when pending
-    non-dynamic runtime updates complete their processing due to a roll or restart.
-  * For how to see which pods are awaiting restart using WebLogic pod labels, see [Online update status and labels]({{< relref "managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" >}}).
+#### `Completed`
+- The `status` attribute of a `Completed` condition indicates whether the desired state of the
+  Domain resource has been fully achieved.
+- The `status` attribute is set to `True` when:
+  * There are no `Failed` conditions, for example, no failures are detected.
+  * One of the following conditions are met:
+    * All WebLogic Server pods that are expected to be running are `ready` at their target image or images,
+      `restartVersion`, and `introspectVersion`.
+    * No WebLogic Server pods are running and this is the expected state.
+    * The domain is configured to have a `spec.serverStartPolicy` value of `AdminOnly` and the
+      Administration Server pod is running and ready.
+  * There are no pending server shutdown requests.
+
+#### `Available`
+- The `status` attribute is set to `True` when a sufficient number of pods are ready such that
+  all of the following are true:
+  * At least one WebLogic Server pod is ready.
+  * Every non-clustered server with a `serverStartPolicy` value of `IfNeeded` or `Always` is ready.
+  * Every Cluster resource referenced by the domain has `True` in its `Available` condition.
+    Clusters that are configured with a `replicas` value of `0` or a `serverStartPolicy` value of `Never`
+    are ignored.
+- **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed` condition is `False`,
+  a `Failed` condition is reported, or a cluster has up to `cluster.spec.maxUnavailable` pods
+  that are not ready.
+
+#### `ConfigChangesPendingRestart`
+- This condition tracks the progress of [runtime updates]({{< relref "managing-domains/model-in-image/runtime-updates">}})
+  to the WebLogic Deploy Tool model of a Model in Image domain home source type.
+- The `status` attribute is `True` if all of the following are true:
+  * The Domain resource attribute
+    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.
+  * The Domain resource attribute
+    `domain.spec.configuration.model.onlineUpdate.enabled` is `True`.
+  * There were model changes and these changes modify non-dynamic WebLogic configuration.
+  * Processing successfully completed, including the introspector job.
+  * The administrator has not subsequently rolled or restarted each WebLogic Server pod
+    (to propagate the pending non-dynamic changes).
+- The `ConfigChangesPendingRestart` condition is removed from the domain status when pending
+  non-dynamic runtime updates complete their processing due to a roll or restart.
+- For how to see which pods are awaiting restart using WebLogic pod labels, see [Online update status and labels]({{< relref "managing-domains/model-in-image/runtime-updates#online-update-status-and-labels" >}}).
 {{%expand "Click here for an example of a domain status with a ConfigChangesPendingRestart condition." %}}
 ```
 Status:
@@ -171,35 +174,36 @@ Status:
 ```
 {{% /expand %}}
 
-- `Rolling`
-  * This condition indicates that the operator is rolling the server pods in a domain, such as after it
-    has detected an update to the Domain resource or Model in Image model that requires it to
-    perform a [rolling restart]({{< relref "managing-domains/domain-lifecycle/startup#rolling-restarts" >}}) of the domain.
-  * The `status` attribute is always `True` for a `Rolling` condition.
-  * The `Rolling` condition is removed from the domain status when the rolling is completed.
+#### `Rolling`
+- This condition indicates that the operator is rolling the server pods in a domain, such as after it
+  has detected an update to the Domain resource or Model in Image model that requires it to
+  perform a [rolling restart]({{< relref "managing-domains/domain-lifecycle/startup#rolling-restarts" >}}) of the domain.
+- The `status` attribute is always `True` for a `Rolling` condition.
+- The `Rolling` condition is removed from the domain status when the rolling is completed.
 
 
 ### Types of cluster conditions
 
 The following is a list of condition types for a Cluster resource.
-- `Completed`
-    * The `status` attribute of a `Completed` condition indicates whether the desired state of the
-      Cluster resource has been fully achieved.
-    * The `status` attribute is set to `True` when:
-        * All server pods in the cluster that are expected to be running are ready at their target
-          image or images, `restartVersion`, and `introspectVersion`
-        * There are no pending server shutdown requests.
-- `Available`
-    * The `status` attribute is set to  `True` when a sufficient number of WebLogic Server pods are
-      ready in the cluster:
-      * All WebLogic Server pods in the cluster are ready, as configured in the `cluster.spec.replicas`,
-        or if it is not configured, in the `domain.spec.replicas` field.
-      * When some server pods for the cluster are temporarily not ready, and the number of such
-        server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
-    * The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
-      pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.
+#### `Completed` {id="cluster-completed"}
+- The `status` attribute of a `Completed` condition indicates whether the desired state of the
+  Cluster resource has been fully achieved.
+- The `status` attribute is set to `True` when:
+- All server pods in the cluster that are expected to be running are ready at their target
+  image or images, `restartVersion`, and `introspectVersion`
+- There are no pending server shutdown requests.
 
-### Notes on conditions
+#### `Available` {id="cluster-available"}
+- The `status` attribute is set to  `True` when a sufficient number of WebLogic Server pods are
+  ready in the cluster:
+  * All WebLogic Server pods in the cluster are ready, as configured in the `cluster.spec.replicas`,
+    or if it is not configured, in the `domain.spec.replicas` field.
+  * When some server pods for the cluster are temporarily not ready, and the number of such
+    server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
+  * The `status` attribute is set to `False` if fewer than the sufficient number of WebLogic Server
+    pods are ready in the cluster, or servers are rolling/starting, or a failure has occurred.
+
+### Condition life cycle
 
 After the operator detects a Cluster or Domain resource, it will ensure that each resource always has
 exactly one occurrence of an `Available` and of a `Completed` condition. The operator will not
@@ -213,12 +217,16 @@ added when they apply, and are removed when they no longer apply.
 The `Failure` condition is the only condition that can have multiple occurrences. This occurs when
 there are multiple concurrent failures of different types.
 
+### Conditions and generations
+
 Use `metadata.generation` and `status.observedGeneration` in Domain and Cluster resources
 to detect when their conditions and other status are up-to-date. Specifically, conditions may not
 be up-to-date when `domain.status.observedGeneration` generation does not equal
 `domain.metadata.generation`, or when `cluster.status.observedGeneration` does not equal
 `cluster.metadata.generation` in any of the domain's Cluster resources. This may indicate either
 the operator is in the process of updating the status or the operator is not running.
+
+### Conditions and events
 
 A corresponding event is generated when an `Available`, `Completed`, `Failure`, or `Rolling`
 condition has changed. For details, see [operator-generated event types]({{< relref "managing-domains/accessing-the-domain/domain-events#operator-generated-event-types">}}).
