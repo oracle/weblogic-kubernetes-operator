@@ -3,13 +3,11 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +20,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
@@ -46,30 +45,22 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -97,8 +88,6 @@ class ItOpenshiftIstioMiiDomain {
   private final String workManagerName = "newWM";
   private final int replicaCount = 2;
 
-  private static String testWebAppWarLoc = null;
-
   private static LoggingFacade logger = null;
 
   /**
@@ -121,6 +110,10 @@ class ItOpenshiftIstioMiiDomain {
     // edit service member roll to include operator and domain namespace so that 
     // Openshift service mesh can add istio side cars to the operator and WebLogic pods.
     Path smrYaml = Paths.get(WORK_DIR, "openshift", "servicememberroll.yaml");
+    assertDoesNotThrow(() -> {
+      deleteQuietly(smrYaml.getParent().toFile());
+      Files.createDirectories(smrYaml.getParent());
+    });
     assertDoesNotThrow(() -> {
       FileUtils.copy(Paths.get(RESOURCE_DIR, "openshift", "servicememberroll.yaml"),
           smrYaml);
@@ -208,9 +201,6 @@ class ItOpenshiftIstioMiiDomain {
                                       replicaCount,
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
                               configMapName);
-    domain.spec().serverPod()
-        .annotations((Map<String, String>) new HashMap().put("sidecar.istio.io/inject", "true"));
-    domain.spec().configuration().istio().localhostBindingsEnabled(true);
     logger.info(Yaml.dump(domain));
 
     // create model in image domain
@@ -233,6 +223,7 @@ class ItOpenshiftIstioMiiDomain {
     templateMap.put("DUID", domainUid);
     templateMap.put("ADMIN_SERVICE",adminServerPodName);
     templateMap.put("CLUSTER_SERVICE", clusterService);
+    templateMap.put("testwebapp", "sample-war");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
@@ -267,79 +258,10 @@ class ItOpenshiftIstioMiiDomain {
     assertTrue(checkConsole, "Failed to access WebLogic console");
     logger.info("WebLogic console is accessible");
 
-    Path archivePath = Paths.get(testWebAppWarLoc);
-    
-    StringBuffer headerString = null;
-    headerString = new StringBuffer("-H 'host: ");
-    headerString.append(domainNamespace + ".org")
-        .append(" ' ");
-    StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
-    curlString.append(" --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT);
-    curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-        .append(headerString.toString())
-        .append("-H X-Requested-By:MyClient ")
-        .append("-H Accept:application/json  ")
-        .append("-H Content-Type:multipart/form-data ")
-        .append("-H Prefer:respond-async ")
-        .append("-F \"model={ name: '")
-        .append("testwebapp")
-        .append("', targets: [ ")
-        .append(clusterName)
-        .append(" ] }\" ")
-        .append(" -F \"sourcePath=@")
-        .append(archivePath.toString() + "\" ")
-        .append("-X POST http://" + gatewayUrl)
-        .append("/management/weblogic/latest/edit/appDeployments); ")
-        .append("echo ${status}");
-
-    logger.info("deployUsingRest: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("deployUsingRest: caught unexpected exception {0}", ex);
-    }
-
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
-    String url = "http://" + gatewayUrl + "/testwebapp/index.jsp";
+    String url = "http://" + gatewayUrl + "/sample-war/index.jsp";
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
-
-    //Verify the dynamic configuration update
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
-
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    verifyIntrospectorRuns(domainUid, domainNamespace);
-
-    String wmRuntimeUrl  = "http://" + gatewayUrl + "/management/weblogic/latest/domainRuntime"
-           + "/serverRuntimes/managed-server1/applicationRuntimes"
-           + "/testwebapp/workManagerRuntimes/newWM/"
-           + "maxThreadsConstraintRuntime ";
-
-    boolean checkWm =
-          checkAppUsingHostHeader(wmRuntimeUrl, domainNamespace + ".org");
-    assertTrue(checkWm, "Failed to access WorkManagerRuntime");
-    logger.info("Found new work manager runtime");
-
-    verifyPodsNotRolled(domainNamespace, pods);
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
   private Domain createDomainResource(String domainUid, String domNamespace,
@@ -365,8 +287,11 @@ class ItOpenshiftIstioMiiDomain {
                 .name(adminSecretName)
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IfNeeded")
+            .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
+                .putAnnotationsItem("sidecar.istio.io/inject", "true")
+                .annotations((Map<String, String>) new HashMap()
+                    .put("sidecar.istio.io/inject", "true"))
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false -Dweblogic.rjvm.enableprotocolswitch=true"))
@@ -378,11 +303,13 @@ class ItOpenshiftIstioMiiDomain {
                 .clusterName(clusterName)
                 .replicas(replicaCount))
             .configuration(new Configuration()
-                     .model(new Model()
-                         .domainType("WLS")
-                         .configMap(configmapName)
-                         .onlineUpdate(new OnlineUpdate().enabled(true))
-                         .runtimeEncryptionSecret(encryptionSecretName))
+                .istio(new Istio()
+                    .localhostBindingsEnabled(Boolean.TRUE))
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .onlineUpdate(new OnlineUpdate().enabled(true))
+                    .runtimeEncryptionSecret(encryptionSecretName))
             .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     return domain;
