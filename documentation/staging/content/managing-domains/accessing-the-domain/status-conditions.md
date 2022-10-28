@@ -196,11 +196,11 @@ The following is a list of condition types for a Cluster resource.
 
 #### `Available` {id="cluster-available"}
 - The `status` attribute is set to  `True` when a sufficient number of WebLogic Server pods are
-  ready in the cluster:
-  * All WebLogic Server pods in the cluster are ready, as configured in the `cluster.spec.replicas`,
-    or if it is not configured, in the `domain.spec.replicas` field.
-  * When some server pods for the cluster are temporarily not ready, and the number of such
-    server pods is fewer than the number specified in `cluster.spec.maxUnavailable`.
+  ready in the cluster. This includes either:
+  * All WebLogic Server pods in the cluster are ready, as configured in the `cluster.spec.replicas` field,
+    or if it is not configured, then in the `domain.spec.replicas` field.
+  * Some of the expected server pods for the cluster are temporarily not ready, and the number of
+    `not ready` server pods is less than or equal to `cluster.spec.maxUnavailable` which defaults to `1`.
 - The `status` attribute is also set to `True` when no WebLogic Server pods are running and this
   is the expected state, such as when `cluster.spec.replicas` is set to `0`, or when
   `cluster.spec.serverStartPolicy` is set to `Never`.
