@@ -1708,11 +1708,13 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
-    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
-    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
+  void whenServerStartupInfoIsNull_availableIsFalse() {
+    defineScenario().notStarting("server1", "server2")
+        .withCluster("cluster3", "server3", "server4")
+        .notStarting("server3", "server4")
+        .build();
+    info.setServerStartupInfo(null);
 
-    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
