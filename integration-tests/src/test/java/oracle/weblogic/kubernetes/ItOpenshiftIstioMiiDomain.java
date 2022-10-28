@@ -302,7 +302,7 @@ class ItOpenshiftIstioMiiDomain {
                 .replicas(replicaCount))
             .configuration(new Configuration()
                 .istio(new Istio()
-                    .localhostBindingsEnabled(Boolean.TRUE))
+                    .localhostBindingsEnabled(Boolean.FALSE))
                 .model(new Model()
                     .domainType("WLS")
                     .configMap(configmapName)
