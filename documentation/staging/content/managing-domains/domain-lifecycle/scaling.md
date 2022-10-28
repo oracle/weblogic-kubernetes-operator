@@ -14,7 +14,7 @@ This document describes approaches for scaling WebLogic clusters in a Kubernetes
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by defining each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template. With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/clust/dynamic_clusters.html#GUID-DA7F7FAD-49AA-4F3D-8A05-0D9921B96971).
 
-WebLogic Kubernetes Operator 4.0 introduces a new custom resource, `Cluster`.  A cluster resource references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  Since the Cluster resource enables the Kubernetes [Scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource), the `kubectl scale` command and the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) are fully supported for scaling individual WebLogic clusters.
+WebLogic Kubernetes Operator 4.0 introduces a new custom resource, `Cluster`.  A [Cluster resource]({{< relref "/managing-domains/domain-resource.md" >}}) references an individual WebLogic cluster and its configuration.  It also controls how many member servers are running along with potentially any additional Kubernetes resources that are specific to that WebLogic cluster.  Since the Cluster resource enables the Kubernetes [Scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource), the `kubectl scale` command and the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) are fully supported for scaling individual WebLogic clusters.
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
@@ -68,7 +68,7 @@ spec:
   ...
 ```
 ##### Updating the Domain directly
-To scale every WebLogic cluster in a domain that does not have a corresponding Cluster resource, or that has a Cluster resource which does not specify a `cluster.spec.replicas` field, modify the `domain.spec.replicas` using the `kubectl edit` command:
+To scale every WebLogic cluster in a domain that does not have a corresponding Cluster resource, or that has a Cluster resource which does not specify a `cluster.spec.replicas` field, modify the `domain.spec.replicas` field using the `kubectl edit` command:
 
 ```shell
 $ kubectl edit domain domain1 -n [namespace]
@@ -82,7 +82,7 @@ spec:
 ```
 
 #### Using Domain Lifecycle Sample Scripts
-Beginning in version 3.1.0, the operator provides sample lifecycle scripts, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section, which can be used for scaling WebLogic clusters.
+Beginning in version 3.1.0, the operator provides sample lifecycle scripts, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/managing-domains/domain-lifecycle/scripts.md" >}}) section, which can be used for scaling WebLogic clusters.
 
 #### Calling the operator's REST scale API
 
