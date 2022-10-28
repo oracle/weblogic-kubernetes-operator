@@ -106,8 +106,8 @@ class DomainPresenceInfoTest {
   }
 
   @Test
-  void whenNoServersDefined_getServerStartupInfoReturnsEmptyCollection() {
-    assertThat(info.getServerStartupInfo(), empty());
+  void whenNoServersDefined_getServerStartupInfoReturnsNull() {
+    assertThat(info.getServerStartupInfo(), nullValue());
   }
 
   @Test

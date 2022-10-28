@@ -1256,6 +1256,48 @@ encrypt_decrypt_domain_secret() {
 }
 
 # prepare mii server
+restorAppAndLibs() {
+
+  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
+  local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
+
+  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
+    do
+
+        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
+
+        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
+        # zip entry doesn't exists
+        cd ${DOMAIN_HOME}/bin || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        ret=$?
+        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
+
+        # expand the archive apps and shared lib to the wlsdeploy/* directories
+        # the config.xml is referencing them from that path
+        # exclude standalone app module in wlsdeploy/applications/*.xml since it is included int zipped up domain config
+        # zip, the original xml in the archive may have wdt tokenized notations.
+        cd ${DOMAIN_HOME} || return 1
+        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*"
+        if [ $? -ne 0 ] ; then
+          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          return 1
+        fi
+    done
+
+}
 
 prepareMIIServer() {
 
@@ -1289,54 +1331,16 @@ prepareMIIServer() {
   fi
   encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
-  # restore the config zip
-  #
+  # We restore the app and libs from the archive first,  the domain zip may contain any standalone application
+  # modules under wlsdeploy/applications/*.xml.  In the next step, if any standalon application module exists collected
+  # during introspection, it will overwrite the tokenized version in the archive.
+    
+  trace "Model-in-Image: Restoring apps and libraries"
+  restorAppAndLibs || return 1
+
   trace "Model-in-Image: Restore domain config"
   restoreDomainConfig || return 1
 
-  # restore the archive apps and libraries
-  #
-  trace "Model-in-Image: Restoring apps and libraries"
-
-  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
-  local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
-
-  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
-    do
-
-        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
-        cd ${DOMAIN_HOME}/lib || exitOrLoop
-        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
-        ret=$?
-        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
-          "${IMG_ARCHIVES_ROOTDIR}/${file}"
-          exitOrLoop
-        fi
-
-        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
-        # zip entry doesn't exists
-        cd ${DOMAIN_HOME}/bin || exitOrLoop
-        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        ret=$?
-        if [ $ret -ne 0 ] && [ $ret -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
-          "${IMG_ARCHIVES_ROOTDIR}/${file}"
-          exitOrLoop
-        fi
-
-        # expand the archive apps and shared lib to the wlsdeploy/* directories
-        # the config.xml is referencing them from that path
-
-        cd ${DOMAIN_HOME} || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
-        if [ $? -ne 0 ] ; then
-          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          return 1
-        fi
-        # No need to have domainLibraries in domain home
-        rm -fr ${WLSDEPLOY_DOMAINLIB}
-    done
   return 0
 }
 
