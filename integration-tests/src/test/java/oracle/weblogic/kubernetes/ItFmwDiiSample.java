@@ -7,7 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -18,6 +20,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +41,10 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
@@ -46,6 +53,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
@@ -96,6 +104,7 @@ public class ItFmwDiiSample {
   private static Stream<String> paramProvider() {
     return Arrays.stream(params);
   }
+  private static Map<String, String> envMap = null;
 
   /**
    * Start DB service and create RCU schema.
@@ -149,6 +158,23 @@ public class ItFmwDiiSample {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
+    // env variables to override default values in sample scripts
+    envMap = new HashMap<>();
+
+    if (WIT_DOWNLOAD_URL != null) {
+      logger.info("@@@ DEBUG WIT_DOWNLOAD_URL is: " + WIT_DOWNLOAD_URL);
+      String witDownloadUrl = getActualLocationIfNeeded(WIT_DOWNLOAD_URL, WIT);
+      logger.info("@@@ DEBUG The actual witDownloadUrl is: " + witDownloadUrl);
+      envMap.put("witInstallZipUrl", witDownloadUrl);
+    }
+
+    if (WDT_DOWNLOAD_URL != null) {
+      logger.info("WDT_DOWNLOAD_URL is: " + WDT_DOWNLOAD_URL);
+      String wdtDownloadUrl = getActualLocationIfNeeded(WDT_DOWNLOAD_URL, WDT);
+      logger.info("The actual wdtDownloadUrl is: " + wdtDownloadUrl);
+      envMap.put("wdtInstallZipUrl", wdtDownloadUrl);
+    }
+    logger.info("Env. variables to the script {0}", envMap);
   }
 
   /**
@@ -194,8 +220,7 @@ public class ItFmwDiiSample {
 
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
-    final CommandParams params = new CommandParams().defaults();
-    params.command("sh "
+    String command1 = "sh "
             + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
             + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
             + " -u " + ADMIN_USERNAME_DEFAULT
@@ -203,15 +228,20 @@ public class ItFmwDiiSample {
             + " -q " + RCUSYSPASSWORD
             + " -b host"
             + " -o "
-            + Paths.get(sampleBase.toString()));
-
+            + Paths.get(sampleBase.toString());
+    ExecResult result1 = Command.withParams(
+            new CommandParams()
+                .command(command1)
+                .env(envMap)
+                .redirect(true)
+                .verbose(true)
+    ).executeAndReturnResult();
+    boolean success =
+            result1 != null
+                && result1.exitValue() == 0;
     logger.info("Going to run sample create-domain.sh");
-    testUntil(
-        () -> {
-          return Command.withParams(params).execute();
-        },
-        logger,
-        "Running sample create-domain.sh to create domain.yaml");
+    testUntil(() -> success,
+        logger, "Failed to create domain.yaml");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
