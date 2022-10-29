@@ -1710,6 +1710,17 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
+
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
   void whenServerStartupInfoIsNull_availableIsFalse() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(2);
     info.getReferencedClusters().forEach(testSupport::defineResources);
