@@ -396,9 +396,11 @@ public class TestAssertions {
                                                             String statusReason) {
     LoggingFacade logger = getLogger();
     return () -> {
-      if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
-        logger.info("domain status reason: {0}", domain.getStatus().getReason());
-        return domain.getStatus().getReason().equalsIgnoreCase(statusReason);
+      if (domain != null && domain.getStatus() != null && domain.getStatus().getConditions() != null
+          && !domain.getStatus().getConditions().isEmpty()) {
+        boolean match = domain.getStatus().getConditions().stream()
+            .anyMatch(condition -> condition.getReason() != null && condition.getReason().contains(statusReason));
+        return match;
       } else {
         if (domain == null) {
           logger.info("domain is null");
