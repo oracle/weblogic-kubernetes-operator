@@ -74,7 +74,7 @@ draft: false
   * This resource can be used with [Kubernetes Horizontal Pod Autoscaling (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) or similar technologies to scale WebLogic clusters.
 
 * Status and Events updates:
-  * The [Conditions]({{< ref "#changes-to-domain-schema" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated. 
+  * The [Conditions]({{< relref "/managing-domains/accessing-the-domain/status-conditions.md" >}}) and [Events]({{< relref "/managing-domains/accessing-the-domain/domain-events.md" >}}) generated about Domain and Cluster resources have been significantly updated.
   * The operator more clearly communicates when the domain or individual clusters have reached the intended state or significant availability for your application workloads.
   * Failures are distinguished between those that require customer intervention and those that are potentially temporary and will be retried.
 

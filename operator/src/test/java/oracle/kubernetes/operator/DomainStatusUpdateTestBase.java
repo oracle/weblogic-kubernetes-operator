@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -101,6 +102,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -1716,6 +1718,27 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
+  void whenServerStartupInfoIsNull_availableIsFalse() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .build();
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+  }
+
+  private Collection<ClusterCondition> getClusterConditions() {
+    return testSupport.<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1")
+        .getStatus().getConditions();
   }
 
   @SuppressWarnings("SameParameterValue")
