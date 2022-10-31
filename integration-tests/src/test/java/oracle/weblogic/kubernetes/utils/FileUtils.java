@@ -303,6 +303,35 @@ public class FileUtils {
   }
 
   /**
+   * Create a directory in a pod in specified namespace.
+   * @param namespace The Kubernetes namespace that the pod is in
+   * @param pod The name of the Kubernetes pod where the command is expected to run
+   * @param container The container in the Pod where the command is to be run. If no
+   *                         container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param directoryToCreate namespace in which the pod exists
+   */
+  public static void deleteDirectories(String namespace,
+                                       String pod,
+                                       String container,
+                                       boolean redirectToStdout,
+                                       List<String> directoryToCreate) {
+    //Create directories.
+    directoryToCreate.forEach(newDir -> {
+      String deleteCmd = "rm -rf " + newDir;
+      getLogger().info("dir to delete {0} ", deleteCmd);
+
+      try {
+        ExecResult execResult = execCommand(namespace,
+            pod, container, redirectToStdout,"/bin/sh", "-c", deleteCmd);
+        getLogger().info("Directory created " + execResult.stdout());
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
+  }
+
+  /**
    * Copy file from source directory to destination directory.
    *
    * @param source path of source file
