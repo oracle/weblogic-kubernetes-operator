@@ -19,12 +19,14 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -45,7 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -187,7 +189,7 @@ class ItRecoveryDomainInPV  {
     // and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
-    DomainResource domain = new DomainResource()
+    Domain domain  = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -203,13 +205,14 @@ class ItRecoveryDomainInPV  {
             .imagePullSecrets(Arrays.asList(
                 new V1LocalObjectReference()
                     .name(BASE_IMAGES_REPO_SECRET_NAME))) 
-            .webLogicCredentialsSecret(new V1LocalObjectReference()
-                .name(wlSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/" + domainNamespace + "logs/" + domainUid)
             .dataHome("")
-            .serverStartPolicy("IfNeeded")
+            .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod() 
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
@@ -229,14 +232,17 @@ class ItRecoveryDomainInPV  {
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
-            .configuration(new Configuration()
-                ));
+            .addClustersItem(new Cluster() //cluster
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
     // verify the admin server service created
-    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     assertTrue(getPodUid(domainNamespace, adminServerPodName, "Initial domain startup"),
           String.format("Get pod uid failed for podName %s in namespace %s", adminServerPodName,
             domainNamespace));
@@ -263,13 +269,20 @@ class ItRecoveryDomainInPV  {
     runJmsClientOnAdminPod("send",
         "ClusterJmsServer@managed-2@jms.UniformDistributedTestQueue");
 
-    boolean scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 1);
+
+    boolean scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, clusterName, 1),
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+
     checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server(2) stopped");
 
-    scalingSuccess = scaleAllClustersInDomain(domainUid, domainNamespace, 2);
+    scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, clusterName, 2),
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(scalingSuccess,
         String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
     

@@ -1274,7 +1274,7 @@ public class CommonTestUtils {
   public static String getActualLocationIfNeeded(
       String location,
       String type
-    ) throws RuntimeException {
+  ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
       actualLocation = location + "/download/" + getInstallerFileName(type);
