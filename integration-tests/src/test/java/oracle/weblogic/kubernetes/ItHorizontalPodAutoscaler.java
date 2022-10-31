@@ -296,6 +296,7 @@ public class ItHorizontalPodAutoscaler {
     params.command("kubectl get hpa " + hpaName + " -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
+    logger.info("Get HPA result " + result);
     /* check if hpa output contains something like 7%/50%
      * kubectl get hpa --all-namespaces
      * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
