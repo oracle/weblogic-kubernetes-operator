@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -81,6 +82,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -100,6 +102,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -416,7 +419,7 @@ abstract class DomainStatusUpdateTestBase {
     info.setServerPod("server1", null);
     info.setServerPod("server2", null);
     info.setServerPod("server3", null);
-    info.setServerStartupInfo(null);
+    info.setServerStartupInfo(Collections.emptyList());
   }
 
   @Test
@@ -1223,6 +1226,24 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenServersInAClusterAreNotInRunningState_clusterIsNotAvailableAndNotCompleted() {
+    defineScenario()
+            .withCluster("cluster1", "ms1", "ms2")
+            .withServersReachingState(STARTING_STATE, "ms1", "ms2").build();
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition condition = clusterStatus.getConditions().get(0);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+    condition = clusterStatus.getConditions().get(1);
+    assertThat(condition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(condition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
   void withServersShuttingDown_domainIsNotCompleted() {
     defineScenario().withServers("server1").withServersReachingState(SHUTTING_DOWN_STATE, "server1").build();
 
@@ -1611,6 +1632,17 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAdminOnlyAndAdminServerNameNotSetInDomainPresenceInfo_availableIsFalse() {
+    info.setAdminServerName(null);
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
   void whenAdminOnly_completedIsTrue() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
@@ -1642,6 +1674,71 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+  }
+
+  @Test
+  void whenDomainRecheckOrScheduledStatusUpdateAndSSINotConstructed_verifyDomainStatusNotUpdated() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2).withMaxUnavailable(1);
+    ScenarioBuilder scenarioBuilder = defineScenario();
+    scenarioBuilder.withCluster("cluster1", "server1", "server2")
+        .withServersReachingState(STARTING_STATE, "server1", "server2")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+
+    scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
+  }
+
+  @Test
+  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnly_availableIsTrue() {
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().build();
+
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
+  }
+
+  @Test
+  void whenDomainRecheckOrScheduleStatusUpdateAndAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
+    defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
+
+    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
+  void whenServerStartupInfoIsNull_availableIsFalse() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .build();
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+  }
+
+  private Collection<ClusterCondition> getClusterConditions() {
+    return testSupport.<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1")
+        .getStatus().getConditions();
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -1752,6 +1849,7 @@ abstract class DomainStatusUpdateTestBase {
     @Nonnull
     private List<DomainPresenceInfo.ServerStartupInfo> createServerStartupInfo(WlsDomainConfig domainConfig) {
       return domainConfig.getAllServers().stream()
+            .filter(c -> !isAdminServer(c))
             .filter(this::isLive)
             .map(config -> new DomainPresenceInfo.ServerStartupInfo(config, "", null))
             .collect(Collectors.toList());
@@ -1759,6 +1857,10 @@ abstract class DomainStatusUpdateTestBase {
 
     private boolean isLive(WlsServerConfig serverConfig) {
       return !nonStartedServers.contains(serverConfig.getName());
+    }
+
+    private boolean isAdminServer(WlsServerConfig serverConfig) {
+      return ADMIN.equals(serverConfig.getName());
     }
 
     private Map<String,String> createStateMap() {

@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -795,12 +796,16 @@ class ManagedServersUpStepTest {
     }
 
     static ServerStartupInfo getServerStartupInfo(String serverName) {
-      for (ServerStartupInfo startupInfo : info.getServerStartupInfo()) {
+      for (ServerStartupInfo startupInfo : getServerStartupInfos()) {
         if (startupInfo.serverConfig.getName().equals(serverName)) {
           return startupInfo;
         }
       }
       return null;
+    }
+
+    private static Collection<ServerStartupInfo> getServerStartupInfos() {
+      return Optional.ofNullable(info.getServerStartupInfo()).orElse(Collections.emptyList());
     }
 
     @Override

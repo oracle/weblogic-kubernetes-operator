@@ -2,7 +2,7 @@
 title: "Monitoring exporter"
 date: 2019-02-23T17:39:19-05:00
 draft: false
-weight: 10
+weight: 11
 description: "Use the WebLogic Monitoring Exporter to export Prometheus-compatible metrics."
 ---
 

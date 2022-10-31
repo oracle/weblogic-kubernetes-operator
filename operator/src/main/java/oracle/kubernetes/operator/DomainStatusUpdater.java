@@ -87,6 +87,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -569,6 +570,20 @@ public class DomainStatusUpdater {
     void modifyStatus(DomainStatus domainStatus) { // no-op; modification happens in the context itself.
     }
 
+    @Override
+    public NextAction apply(Packet packet) {
+      return shouldSkipDomainStatusUpdate(packet)
+              ? doNext(getNext().getNext(), packet) : super.apply(packet);
+    }
+
+    private boolean shouldSkipDomainStatusUpdate(Packet packet) {
+      boolean domainRecheckOrScheduledStatusUpdate =
+              (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return (domainRecheckOrScheduledStatusUpdate)
+              && info.getServerStartupInfo() == null;
+    }
+
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
       private final WlsDomainConfig config;
       private final Set<String> expectedRunningServers;
@@ -824,10 +839,20 @@ public class DomainStatusUpdater {
         }
 
         private boolean noApplicationServersReady() {
-          return getInfo().getServerStartupInfo().stream()
-              .map(DomainPresenceInfo.ServerInfo::getName)
-              .filter(this::isApplicationServer)
-              .noneMatch(StatusUpdateContext.this::isServerReady);
+          return isAdminOnlyDomain() && getInfo().getAdminServerName() != null
+                  ? isServerNotReady(getInfo().getAdminServerName()) : noManagedServersReady();
+        }
+
+        private boolean noManagedServersReady() {
+          return getServerStartupInfos()
+                  .stream()
+                  .map(DomainPresenceInfo.ServerInfo::getName)
+                  .filter(this::isApplicationServer)
+                  .noneMatch(StatusUpdateContext.this::isServerReady);
+        }
+
+        private Collection<DomainPresenceInfo.ServerStartupInfo> getServerStartupInfos() {
+          return Optional.ofNullable(getInfo().getServerStartupInfo()).orElse(Collections.emptyList());
         }
 
         // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
@@ -918,7 +943,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean isClusterIntentionallyShutDown() {
-          return startedServers.isEmpty();
+          return getInfo().getServerStartupInfo() != null && startedServers.isEmpty();
         }
 
         private boolean sufficientServersReady() {
