@@ -862,14 +862,14 @@ public class DomainStatusUpdater {
 
         private boolean isAdminOnlyDomain() {
           return isAdminOnlyServerStartPolicy()
-                  || isOnlyAdminServerExpectedRunningInDomain();
+                  || isOnlyAdminServerRunningInDomain();
         }
 
         private boolean isAdminOnlyServerStartPolicy() {
           return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.ADMIN_ONLY;
         }
 
-        private boolean isOnlyAdminServerExpectedRunningInDomain() {
+        private boolean isOnlyAdminServerRunningInDomain() {
           return status.getServers().size() == 1
                   && status.getServers().get(0).getServerName().equals(getInfo().getAdminServerName());
         }
