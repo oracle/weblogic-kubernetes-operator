@@ -749,7 +749,11 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersReady();
+          return isDomainWithNeverStartPolicy() || (!haveTooManyReplicas() && allIntendedServersReady());
+        }
+
+        private boolean isDomainWithNeverStartPolicy() {
+          return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.NEVER;
         }
 
         private boolean haveTooManyReplicas() {
@@ -835,7 +839,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean isUnavailable(@Nonnull ClusterCheck clusterCheck) {
-          return !clusterCheck.isAvailable();
+          return !clusterCheck.isAvailableOrIntentionallyShutdown();
         }
 
         private boolean noApplicationServersReady() {
@@ -857,11 +861,21 @@ public class DomainStatusUpdater {
 
         // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
         private boolean isApplicationServer(String serverName) {
-          return isAdminOnlyDomain() || !isAdminServer(serverName);
+          return !isAdminServer(serverName);
         }
 
         private boolean isAdminOnlyDomain() {
+          return isAdminOnlyServerStartPolicy()
+                  || isOnlyAdminServerRunningInDomain();
+        }
+
+        private boolean isAdminOnlyServerStartPolicy() {
           return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.ADMIN_ONLY;
+        }
+
+        private boolean isOnlyAdminServerRunningInDomain() {
+          return expectedRunningServers.size() == 1
+                  && expectedRunningServers.contains(getInfo().getAdminServerName());
         }
 
         private boolean isAdminServer(String serverName) {
@@ -906,6 +920,10 @@ public class DomainStatusUpdater {
         }
 
         boolean isAvailable() {
+          return sufficientServersReady();
+        }
+
+        boolean isAvailableOrIntentionallyShutdown() {
           return isClusterIntentionallyShutDown() || sufficientServersReady();
         }
 
