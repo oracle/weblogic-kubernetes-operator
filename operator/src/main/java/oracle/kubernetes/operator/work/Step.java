@@ -11,12 +11,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
 /** Individual step in a processing flow. */
 public abstract class Step {
+
+  private static final String ABORT_STEP = "abortStep";
   private Step next;
 
   /** Create a step with no next step. */
@@ -59,29 +60,6 @@ public abstract class Step {
    */
   public static Step chain(List<Step> stepGroups) {
     return chain(stepGroups.toArray(new Step[0]));
-  }
-
-  /**
-   * Inserts a step into a chain of steps before the first step whose name is specified. The name is given without
-   * its package and/or outer class. If no step with the specified class is found, the step will be inserted at the end.
-   * @param stepToInsert the step to insert
-   * @param stepClassName the name of the class before which to insert the new step
-   */
-  public void insertBefore(Step stepToInsert, @Nullable String stepClassName) {
-    Step step = this;
-    while (step.getNext() != null && !isSpecifiedStep(step.getNext(), stepClassName)) {
-      step = step.getNext();
-    }
-    stepToInsert.next = step.getNext();
-    step.next = stepToInsert;
-  }
-
-  private boolean isSpecifiedStep(Step step, String stepClassName) {
-    return stepClassName != null && hasSpecifiedClassName(step.getClass().getName(), stepClassName);
-  }
-
-  private boolean hasSpecifiedClassName(String name, String stepClassName) {
-    return name.endsWith("." + stepClassName) || name.endsWith("$" + stepClassName);
   }
 
   private static int getFirstNonNullIndex(Step[] stepGroups) {
@@ -308,31 +286,31 @@ public abstract class Step {
    */
   protected NextAction doForkJoin(
       Step step, Packet packet, Collection<StepAndPacket> startDetails) {
-    return doSuspend(
-        step,
-        fiber -> {
-          CompletionCallback callback =
-              new JoinCompletionCallback(fiber, packet, startDetails.size()) {
-                @Override
-                public void onCompletion(Packet p) {
-                  int current = count.decrementAndGet();
-                  if (current == 0) {
-                    // no need to synchronize throwables as all fibers are done
-                    if (throwables.isEmpty()) {
-                      fiber.resume(packet);
-                    } else if (throwables.size() == 1) {
-                      fiber.terminate(throwables.get(0), packet);
-                    } else {
-                      fiber.terminate(new MultiThrowable(throwables), packet);
-                    }
-                  }
-                }
-              };
-          // start forked fibers
-          for (StepAndPacket sp : startDetails) {
-            fiber.createChildFiber().start(sp.step, sp.packet, callback);
-          }
-        });
+    return doSuspend(step, new ChildFiberExecution(packet, startDetails));
+  }
+
+  private static class ChildFiberExecution implements Consumer<AsyncFiber> {
+    private final Packet packet;
+    private final Collection<StepAndPacket> startDetails;
+
+    ChildFiberExecution(Packet packet, Collection<StepAndPacket> startDetails) {
+      this.packet = packet;
+      this.startDetails = startDetails;
+    }
+
+    @Override
+    public void accept(AsyncFiber fiber) {
+      CompletionCallback callback = new JoinCompletionCallback(fiber, packet, startDetails.size());
+
+      for (StepAndPacket sp : startDetails) {
+        fiber.createChildFiber().start(sp.step, sp.packet, callback);
+      }
+    }
+  }
+
+  protected NextAction doForkJoinAbort(Step step, Packet packet) {
+    packet.put(ABORT_STEP, step);
+    return doEnd(packet);
   }
 
   /** Multi-exception. */
@@ -354,15 +332,15 @@ public abstract class Step {
     }
   }
 
-  private abstract static class JoinCompletionCallback implements CompletionCallback {
-    protected final AsyncFiber fiber;
-    protected final Packet packet;
+  static class JoinCompletionCallback implements CompletionCallback, ForkJoinEnder {
+    protected final AsyncFiber parentFiber;
+    protected final Packet parentPacket;
     protected final AtomicInteger count;
     protected final List<Throwable> throwables = new ArrayList<>();
 
-    JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
-      this.fiber = fiber;
-      this.packet = packet;
+    JoinCompletionCallback(AsyncFiber parentFiber, Packet parentPacket, int initialCount) {
+      this.parentFiber = parentFiber;
+      this.parentPacket = parentPacket;
       this.count = new AtomicInteger(initialCount);
     }
 
@@ -371,15 +349,70 @@ public abstract class Step {
       synchronized (throwables) {
         throwables.add(throwable);
       }
-      int current = count.decrementAndGet();
-      if (current == 0) {
-        // no need to synchronize throwables as all fibers are done
-        if (throwables.size() == 1) {
-          fiber.terminate(throwable, packet);
+
+      if (count.decrementAndGet() == 0) {
+        terminateFiber();  // no need to synchronize on throwables, as all fibers are complete
+      }
+    }
+
+    private void terminateFiber() {
+      if (throwables.size() == 1) {
+        parentFiber.terminate(throwables.get(0), parentPacket);
+      } else {
+        parentFiber.terminate(new MultiThrowable(throwables), parentPacket);
+      }
+    }
+
+    @Override
+    public void onCompletion(Packet p) {  // is this called if we cancel the fiber? It should be.
+      if (p != null && p.containsKey(ABORT_STEP)) {
+        abortForkJoin(p);
+      } else if (count.decrementAndGet() == 0) {
+        if (throwables.isEmpty()) {   // no need to synchronize on throwables, as all fibers are complete
+          parentFiber.resume(parentPacket);  // the join step needs to find that
         } else {
-          fiber.terminate(new MultiThrowable(throwables), packet);
+          terminateFiber();
         }
       }
+    }
+
+    @Override
+    public void abortForkJoin(Packet p) {
+      parentFiber.cancelChildFibersAndResume(parentPacket, p.getValue(ABORT_STEP));
+    }
+  }
+
+  /**
+   * A callback for fibers which are children of those started by a doForkJoin. This is necessary to enable
+   * the doForkJoinAbort call to work.
+   */
+  public static class JoinCompletionChildFiberCallback implements CompletionCallback {
+
+    private final AsyncFiber parentFiber;
+    private final Packet parentPacket;
+
+    public JoinCompletionChildFiberCallback(AsyncFiber parentFiber, Packet parentPacket) {
+      this.parentFiber = parentFiber;
+      this.parentPacket = parentPacket;
+    }
+
+    @Override
+    public void onCompletion(Packet packet) {
+      final ForkJoinEnder callback = parentFiber.getForkJoinEnder();
+      if (callback == null) {
+        copyAbortStepToParent(packet);
+      } else {
+        callback.abortForkJoin(packet);
+      }
+    }
+
+    private void copyAbortStepToParent(Packet packet) {
+      parentPacket.put(ABORT_STEP, packet.get(ABORT_STEP));
+    }
+
+    @Override
+    public void onThrowable(Packet packet, Throwable throwable) {
+      copyAbortStepToParent(packet);
     }
   }
 

@@ -60,6 +60,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
    */
   public static final String DEBUG_FIBER = "debugFiber";
 
+  private static final ExitCallback NULL_EXIT_CALLBACK = () -> {};
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
@@ -569,6 +570,31 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
    */
   public Packet getPacket() {
     return na.getPacket();
+  }
+
+
+  @Override
+  public void cancelChildFibersAndResume(Packet packet, Step next) {
+    na.setNext(next);
+    if (children != null) {
+      for (Fiber child: children) {
+        child.cancelAndExitCallback(true, NULL_EXIT_CALLBACK);
+      }
+    }
+    resume(packet);
+  }
+
+  @Override
+  public ForkJoinEnder getForkJoinEnder() {
+    Fiber fiber = this;
+    while (fiber != null && !fiber.isForkJoinChild()) {
+      fiber = fiber.parent;
+    }
+    return fiber == null ? null : (ForkJoinEnder) fiber.completionCallback;
+  }
+
+  private boolean isForkJoinChild() {
+    return completionCallback instanceof ForkJoinEnder;
   }
 
   /**

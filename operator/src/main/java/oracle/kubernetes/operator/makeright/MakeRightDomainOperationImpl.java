@@ -175,20 +175,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return liveInfo;
   }
 
-  @Override
-  public void setLiveInfo(@Nonnull DomainPresenceInfo info) {
-    this.liveInfo = info;
-  }
-
-  @Override
-  public void clear() {
-    this.eventData = null;
-    this.explicitRecheck = false;
-    this.deleting = false;
-    this.willInterrupt = false;
-    this.inspectionRun = false;
-  }
-
 
   @Override
   public boolean wasInspectionRun() {

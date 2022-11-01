@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -40,4 +40,18 @@ public interface AsyncFiber {
    * @return a new child fiber
    */
   Fiber createChildFiber();
+
+  /**
+   * Instructs the fiber to cancel all of its child fibers. It then alters the next step of the fiber
+   * to the specified step and resumes the fiber.
+   * @param packet the fiber's packet, needed to resume it
+   * @param nextStep the next step for the fiber to execute
+   */
+  void cancelChildFibersAndResume(Packet packet, Step nextStep);
+
+  /**
+   * Returns the nearest parent of this fiber which initiated a fork join.
+   * @return a fiber waiting on a fork join, or null if no such parent fiber is found.
+   */
+  ForkJoinEnder getForkJoinEnder();
 }

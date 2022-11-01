@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -53,16 +54,22 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.meterware.simplestub.Stub.createStub;
 import static java.util.Collections.emptyMap;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.allOf;
@@ -101,8 +108,8 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
                   .mapToObj(ManagedServerUpIteratorStepTest::getManagedServerName).toArray(String[]::new);
   private final AtomicBoolean stopping = new AtomicBoolean(false);
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
+  private final WatchTuning tuning = new FakeWatchTuning();
   private final PodWatcher watcher = createWatcher(NS, stopping, INITIAL_RESOURCE_VERSION);
-  final WatchTuning tuning = new FakeWatchTuning();
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -140,8 +147,9 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     return new DomainResource()
             .withApiVersion(KubernetesConstants.DOMAIN_VERSION)
             .withKind(KubernetesConstants.DOMAIN)
-            .withMetadata(new V1ObjectMeta().namespace(NS).name(DOMAIN_NAME).uid(KUBERNETES_UID))
-            .withSpec(createDomainSpec());
+            .withMetadata(new V1ObjectMeta().namespace(NS).name(UID).uid(KUBERNETES_UID))
+            .withSpec(createDomainSpec())
+            .withStatus(new DomainStatus());
   }
 
   private DomainSpec createDomainSpec() {
@@ -322,6 +330,32 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
             .addDomainPresenceInfo(info);
+  }
+
+  @Test
+  void whenCachedServerDoesNotExistAfterTimeout_reportFailure() {
+    testSupport.failOnResource(POD, LegalNames.toPodName(UID, MS1), NS, 404);
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
+    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION, createStub(MakeRightDomainOperationStub.class));
+
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(READY_DETECTION_DELAY, TimeUnit.SECONDS);
+
+    assertThat(domain, hasCondition(FAILED).withReason(SERVER_POD));
+  }
+
+  abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {
+
+    @Override
+    public MakeRightDomainOperation withExplicitRecheck() {
+      return this;
+    }
+
+    @Override
+    public MakeRightDomainOperation interrupt() {
+      return this;
+    }
   }
 
   @Test

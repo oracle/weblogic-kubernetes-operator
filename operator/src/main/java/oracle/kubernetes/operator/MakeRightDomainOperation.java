@@ -36,14 +36,6 @@ public interface MakeRightDomainOperation extends PacketComponent {
    */
   MakeRightDomainOperation withEventData(EventData eventData);
 
-  /**
-   * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the
-   * DomainPresenceInfo.ServerStartupInfo value has not yet been constructed..
-   */
-  default MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
-    return this;
-  }
-
   MakeRightDomainOperation interrupt();
 
   /**
@@ -68,10 +60,6 @@ public interface MakeRightDomainOperation extends PacketComponent {
 
   @Nonnull
   DomainPresenceInfo getPresenceInfo();
-
-  void setLiveInfo(@Nonnull DomainPresenceInfo info);
-
-  void clear();
 
   @Override
   default void addToPacket(Packet packet) {

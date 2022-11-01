@@ -35,8 +35,8 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.jetbrains.annotations.Nullable;
 
-import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 
@@ -199,60 +199,61 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
 
+    @Nullable
+    private String getResource() {
+      return this.initialResource == null ? this.resourceName : getMetadata(this.initialResource).getName();
+    }
+
+    static class WaitForPodResponseContext {
+
+      private final DomainPresenceInfo info;
+      private final String serverName;
+      private final CallResponse<V1Pod> callResponse;
+
+      WaitForPodResponseContext(Packet packet, CallResponse<V1Pod> callResponse) {
+        info = DomainPresenceInfo.fromPacket(packet).orElseThrow(); // always present
+        serverName = packet.getValue(SERVER_NAME);
+
+        this.callResponse = callResponse;
+      }
+
+      // Return true if pod is cached but not found in explicit read.
+      private boolean cachedPodNotFound() {
+        if (callResponse.getResult() != null) {
+          return false;  // this indicates that a pod was found.
+        }
+
+        return Optional.ofNullable(serverName).map(info::getServerPod).isPresent();
+      }
+    }
+
     protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
       return new DefaultResponseStep<>(getNext()) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+          final WaitForPodResponseContext context = new WaitForPodResponseContext(packet, callResponse);
 
-          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-          String serverName = (String)packet.get(SERVER_NAME);
-          String resource = initialResource == null ? resourceName : getMetadata(initialResource).getName();
-          if (callResponse != null) {
-            if (info != null) {
-              Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
-                  info.setServerPodFromEvent(getPodLabel(result), result));
-              if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
-                LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
-                removeCallback(resource, callback);
-                return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
-              }
-            }
-
-            if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
-              callback.proceedFromWait(callResponse.getResult());
-              return doEnd(packet);
-            }
-          }
-
-          if (shouldWait()) {
-            if ((callback.getRecheckCount() % RECHECK_DEBUG_COUNT) == 0) {
-              LOGGER.fine(LOG_WAITING_COUNT,  serverName, callback.getRecheckCount());
-            }
+          if (context.cachedPodNotFound()) {
+            removeCallback(getResource(), callback);
+            return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps("not found"), packet);
+          } else if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return doEnd(packet);
+          } else if (shouldWait()) {
+            logWaitingMessage(context);
             // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
             return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                     getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
           } else {
-            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
-            removeCallback(resource, callback);
-            // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
-            return doNext(nextStepFactory.createMakeDomainRightStep(callback, info, getNext()), packet);
+            removeCallback(getResource(), callback);
+            return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps("recheck count exceeded"), packet);
           }
         }
 
-        private String getPodLabel(V1Pod pod) {
-          return Optional.ofNullable(pod)
-                  .map(V1Pod::getMetadata)
-                  .map(V1ObjectMeta::getLabels)
-                  .map(m -> m.get(LabelConstants.SERVERNAME_LABEL))
-                  .orElse(null);
-        }
-
-        private V1Pod getServerPod(DomainPresenceInfo info, String serverName) {
-          return Optional.ofNullable(serverName).map(info::getServerPod).orElse(null);
-        }
-
-        private boolean isNotFoundOnRead(CallResponse<?> callResponse) {
-          return callResponse.getResult() == null;
+        private void logWaitingMessage(WaitForPodResponseContext context) {
+          if ((callback.getRecheckCount() % RECHECK_DEBUG_COUNT) == 0) {
+            LOGGER.fine(LOG_WAITING_COUNT,  context.serverName, callback.getRecheckCount());
+          }
         }
 
         private boolean shouldWait() {
@@ -311,12 +312,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       LOGGER.fine(MessageKeys.WAITING_FOR_POD_READY, name);
     }
 
-    @Override
-    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
-      // Return true if cached pod is not null but pod not found in explicit read, false otherwise.
-      return (cachedPod != null) && isNotFoundOnRead;
-    }
-
   }
 
   private class WaitForPodDeleteStep extends WaitForPodStatusStep {
@@ -327,11 +322,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     @Override
     protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
       return new WaitForDeleteResponseStep(callback);
-    }
-
-    @Override
-    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
-      return false;
     }
 
     // A pod is considered deleted when reading its value from Kubernetes returns null.

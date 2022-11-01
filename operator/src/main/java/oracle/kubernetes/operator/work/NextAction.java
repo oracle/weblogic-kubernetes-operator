@@ -90,6 +90,10 @@ public final class NextAction implements BreadCrumbFactory {
     suspend(next, fiber -> fiber.scheduleOnce(delay, unit, () -> fiber.resume(p)));
   }
 
+  void setNext(Step next) {
+    this.next = next;
+  }
+
   /**
    * Returns the next step.
    *

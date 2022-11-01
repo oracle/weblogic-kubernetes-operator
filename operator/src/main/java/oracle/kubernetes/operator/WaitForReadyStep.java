@@ -8,19 +8,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -29,14 +24,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
-
-  static NextStepFactory nextStepFactory = WaitForReadyStep::createMakeDomainRightStep;
-
-  protected static Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
-                                           DomainPresenceInfo info, Step next) {
-    return new CallBuilder().readDomainAsync(info.getDomainUid(),
-            info.getNamespace(), new MakeRightDomainStep<>(callback, null));
-  }
 
   static int getWatchBackstopRecheckDelaySeconds() {
     return TuningParameters.getInstance().getWatchTuning().getWatchBackstopRecheckDelay();
@@ -75,15 +62,6 @@ abstract class WaitForReadyStep<T> extends Step {
    * @return true if processing can proceed
    */
   abstract boolean isReady(T resource);
-
-  /**
-   * Returns true if the cached resource is not found during periodic listing.
-   * @param cachedResource cached resource to check
-   * @param isNotFoundOnRead Boolean indicating if resource is not found in call response.
-   *
-   * @return true if cached resource not found on read
-   */
-  abstract boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead);
 
   /**
    * Returns true if the callback for this resource should be processed. This is typically used to exclude
@@ -194,7 +172,7 @@ abstract class WaitForReadyStep<T> extends Step {
         .start(
             createReadAndIfReadyCheckStep(callback),
             packet.copy(),
-            null);
+            new JoinCompletionChildFiberCallback(fiber, packet));
   }
 
   Step createReadAndIfReadyCheckStep(Callback callback) {
@@ -236,30 +214,6 @@ abstract class WaitForReadyStep<T> extends Step {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return doNext(createReadAsyncStep(resourceName, info.getNamespace(),
               info.getDomainUid(), responseStep), packet);
-    }
-
-  }
-
-  static class MakeRightDomainStep<V> extends DefaultResponseStep<V> {
-    public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
-    private final WaitForReadyStep<?>.Callback callback;
-
-    MakeRightDomainStep(WaitForReadyStep<?>.Callback callback, Step next) {
-      super(next);
-      this.callback = callback;
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V> callResponse) {
-      MakeRightDomainOperation makeRightDomainOperation =
-              (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
-      if (makeRightDomainOperation != null) {
-        makeRightDomainOperation.clear();
-        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((DomainResource) callResponse.getResult()));
-        makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
-      }
-      callback.fiber.terminate(new Exception(WAIT_TIMEOUT_EXCEEDED), packet);
-      return super.onSuccess(packet, callResponse);
     }
 
   }
@@ -316,12 +270,6 @@ abstract class WaitForReadyStep<T> extends Step {
     int getRecheckCount() {
       return recheckCount.get();
     }
-  }
-
-  // an interface to provide a hook for unit testing.
-  interface NextStepFactory {
-    Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
-                                                   DomainPresenceInfo info, Step next);
   }
 
 }

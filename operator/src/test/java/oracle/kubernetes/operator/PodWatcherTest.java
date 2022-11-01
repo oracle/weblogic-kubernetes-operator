@@ -28,9 +28,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
-import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -40,6 +39,8 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasValue;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -48,17 +49,18 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
-  private static final String NS = "ns";
-  private static final String NAME = "test";
+  private static final String POD_NAME = "test";
   private static final int RECHECK_SECONDS = 10;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
   private final List<LogRecord> logRecords = new java.util.ArrayList<>();
+  private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @Override
   protected TestUtils.ConsoleHandlerMemento configureOperatorLogger() {
     return super.configureOperatorLogger()
-          .collectLogMessages(logRecords, getMessageKeys())
+          .collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED)
           .withLogLevel(java.util.logging.Level.FINE)
           .ignoringLoggedExceptions(ApiException.class);
   }
@@ -68,21 +70,8 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
   public void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
-  }
 
-  private String[] getMessageKeys() {
-    return new String[] {
-        getPodFailedMessageKey(),
-        getMakeRightDomainStepKey()
-    };
-  }
-
-  private String getPodFailedMessageKey() {
-    return INTROSPECTOR_POD_FAILED;
-  }
-
-  private String getMakeRightDomainStepKey() {
-    return EXECUTE_MAKE_RIGHT_DOMAIN;
+    testSupport.addDomainPresenceInfo(info);
   }
 
   @Override
@@ -128,11 +117,11 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
   }
 
   private V1Pod createPod() {
-    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(NAME));
+    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(POD_NAME));
   }
 
   private V1Pod createIntrospectorPod() {
-    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(NAME + DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX));
+    return new V1Pod().metadata(new V1ObjectMeta().namespace(NS).name(POD_NAME + DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX));
   }
 
   @Test
@@ -237,13 +226,12 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
   }
 
   @Test
-  void whenPodCreatedAndNotReadyAfterTimeout_executeMakeRightDomain() {
+  void whenPodCreatedAndNotReadyAfterTimeout_reportFailure() {
     executeWaitForReady();
 
     testSupport.setTime(10, TimeUnit.SECONDS);
 
-    assertThat(terminalStep.wasRun(), is(true));
-    assertThat(logRecords, containsFine(getMakeRightDomainStepKey()));
+    assertThat(testSupport.getPacket(), hasValue(instanceOf(DomainStatusUpdater.FailureStep.class)));
   }
 
   @Test
@@ -294,7 +282,7 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
     try {
       testSupport.addDomainPresenceInfo(new DomainPresenceInfo(NS, "domain1"));
-      testSupport.runSteps(watcher.waitForReady(NAME, terminalStep));
+      testSupport.runSteps(watcher.waitForReady(POD_NAME, terminalStep));
       for (Function<V1Pod,V1Pod> modifier : modifiers) {
         watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
       }
@@ -310,7 +298,7 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
     try {
       testSupport.addDomainPresenceInfo(new DomainPresenceInfo(NS, "domain1"));
-      testSupport.runSteps(watcher.waitForReady(NAME, terminalStep));
+      testSupport.runSteps(watcher.waitForReady(POD_NAME, terminalStep));
     } finally {
       stopping.set(true);
     }
@@ -388,7 +376,7 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     testSupport.defineResources(createPod());
     try {
       testSupport.runSteps(watcher.waitForDelete(createPod(), terminalStep));
-      testSupport.failOnResource(KubernetesTestSupport.POD, NAME, NS, HTTP_NOT_FOUND);
+      testSupport.failOnResource(KubernetesTestSupport.POD, POD_NAME, NS, HTTP_NOT_FOUND);
       testSupport.setTime(10, TimeUnit.SECONDS);
 
       assertThat(terminalStep.getExecutionCount(), is(1));

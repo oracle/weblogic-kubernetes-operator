@@ -30,9 +30,11 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInRelativeOrder;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,7 +56,6 @@ class FiberTest {
   private final Step step1 = new BasicStep(1);
   private final Step step2 = new BasicStep(2);
   private final Step step3 = new BasicStep(3);
-  private final ChildFiberStep childFiberStep = new ChildFiberStep(step3, step1, step2);
   private final Step retry = new RetryStep();
   private final Step error = new ThrowableStep();
   private final Step suspend = new SuspendingStep(this::recordFiber);
@@ -167,16 +168,98 @@ class FiberTest {
 
   @Test
   void whenChildFibersCreated_runAllSteps() {
-    runSteps(childFiberStep);
+    runSteps(new ChildFiberStep(step3, step1, step2));
 
     assertThat(stepList, contains(step1, step2, step3));
   }
 
   @Test
   void whenChildFibersCreated_runSynchronizationStepLast() {
-    runSteps(childFiberStep);
+    runSteps(new ChildFiberStep(step3, step1, step2));
 
     assertThat(stepList, containsInRelativeOrder(step2, step3));
+  }
+
+  @Test
+  void whenLastChildFiberThrowsException_captureIt() {
+    runSteps(new ChildFiberStep(step1, step2, error));
+
+    assertThat(throwableList, contains(instanceOf(RuntimeException.class)));
+  }
+
+  @Test
+  void whenFirstChildFiberThrowsException_captureIt() {
+    runSteps(new ChildFiberStep(step1, error, step2));
+
+    assertThat(throwableList, contains(instanceOf(RuntimeException.class)));
+  }
+
+  @Test
+  void whenMultipleChildFibersAtEndThrowException_captureThemInMultiThrowable() {
+    runSteps(new ChildFiberStep(step1, step2, error, error));
+
+    assertThat(throwableList, contains(instanceOf(Step.MultiThrowable.class)));
+    assertThat(((Step.MultiThrowable) throwableList.get(0)).getThrowables(), hasSize(2));
+  }
+
+  @Test
+  void whenMultipleChildFibersAtStartThrowException_captureThemInMultiThrowable() {
+    runSteps(new ChildFiberStep(step1, error, error, step2));
+
+    assertThat(throwableList, contains(instanceOf(Step.MultiThrowable.class)));
+    assertThat(((Step.MultiThrowable) throwableList.get(0)).getThrowables(), hasSize(2));
+  }
+
+
+  // 1. fiber has no children, no preexisting and is not on a thread
+  // create myCallback to invoke the callback on exit
+  // isWillCall is false
+  // returns false (fiber is now canceled)
+
+  // 2. fiber has no children, no preexisting and is on a thread
+  // create myCallback to invoke the callback on exit and sets it on the fiber
+  // isWillCall is true
+  // executes the callback to decrement the count
+  // returns true (fiber is not canceled, and will be later)
+
+
+  @Test
+  void whenChildFiberAbortsAForkJoin_cancelRemainingChildren() {
+    final Step failingChild2 = new FailingChildStep(step2);
+    runSteps(new ChildFiberStep(error, step1, failingChild2, step3));
+
+    assertThat(stepList, not(hasItem(step3)));
+  }
+
+  @Test
+  void whenChildFiberAbortsAForkJoin_doNotRunNormalNextStep() {
+    final Step failingChild2 = new FailingChildStep(step2);
+    runSteps(new ChildFiberStep(error, step1, failingChild2, step3));
+
+    assertThat(stepList, not(hasItem(error)));
+  }
+
+  @Test
+  void whenChildFiberAbortsAForkJoin_runAfterAbortStep() {
+    final Step afterAbortStep = step2;
+    final Step failingChild2 = new FailingChildStep(afterAbortStep);
+    runSteps(new ChildFiberStep(error, step1, failingChild2, step3));
+
+    assertThat(stepList, contains(step1, failingChild2, afterAbortStep));
+  }
+
+  static class FailingChildStep extends BasicStep {
+    private final Step nextStep;
+
+    FailingChildStep(Step nextStep) {
+      this.nextStep = nextStep;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      recordStep(packet);
+      return doForkJoinAbort(nextStep, packet);
+    }
   }
 
   @Test
@@ -210,7 +293,7 @@ class FiberTest {
 
   @Test
   void whenChildFibersCreated_createBreadCrumbsForChildFibers() {
-    runSteps(childFiberStep);
+    runSteps(new ChildFiberStep(step3, step1, step2));
 
     assertThat(fiber.getBreadCrumbString(), containsString("child-1: [FiberTest$Basic (1)"));
   }
