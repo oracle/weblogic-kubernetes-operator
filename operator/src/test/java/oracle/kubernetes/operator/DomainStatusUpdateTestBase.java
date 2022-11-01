@@ -1621,6 +1621,16 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenDomainHasNeverStartPolicy_completedIsTrue() {
+    configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+    defineScenario().build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(TRUE));
+  }
+
+  @Test
   void whenAdminOnlyAndAdminServerIsNotReady_availableIsFalse() {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().withServersReachingState(STARTING_STATE, "admin").build();

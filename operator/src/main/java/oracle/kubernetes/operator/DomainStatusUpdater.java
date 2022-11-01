@@ -749,7 +749,11 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersReady();
+          return isDomainWithNeverStartPolicy() || (!haveTooManyReplicas() && allIntendedServersReady());
+        }
+
+        private boolean isDomainWithNeverStartPolicy() {
+          return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.NEVER;
         }
 
         private boolean haveTooManyReplicas() {
