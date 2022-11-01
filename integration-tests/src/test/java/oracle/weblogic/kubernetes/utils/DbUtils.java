@@ -281,6 +281,12 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
+    testUntil(
+        assertDoesNotThrow(() -> checkDBPodNameReady(dbNamespace, dbPodNamePrefix),
+            String.format("DB pod %s is not ready yet in namespace %s", dbPodNamePrefix, dbNamespace)),
+        logger,
+            "Oracle DB pod to be ready in namespace {0}", dbNamespace);
+
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
@@ -299,6 +305,17 @@ public class DbUtils {
     checkDbReady(msg, dbPodName, dbNamespace);
 
     dbMap.put(dbNamespace, dbPodName);
+  }
+
+  private static Callable<Boolean> checkDBPodNameReady(String dbNamespace, String dbPodNamePrefix) {
+    return (() -> {
+      // wait for the Oracle DB pod to be ready
+      String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
+          String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
+              dbNamespace));
+
+      return (dbPodName != null);
+    });
   }
 
   /**
