@@ -332,8 +332,7 @@ abstract class DomainStatusUpdateTestBase {
                         .withStateGoal(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
-              .addCondition(new DomainCondition(AVAILABLE).withStatus(false)
-                  .withMessage(LOGGER.formatMessage(NO_APPLICATION_SERVERS_READY)))
+              .addCondition(new DomainCondition(AVAILABLE).withStatus(true))
               .addCondition(new DomainCondition(COMPLETED).withStatus(true)));
 
     testSupport.clearNumCalls();
@@ -1041,7 +1040,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountIsZero_domainIsNotAvailable() {
+  void whenReplicaCountIsZero_domainIsAvailable() {
     defineScenario()
           .withDynamicCluster("cluster1", 3, 4)
           .notStarting("ms1", "ms2", "ms3", "ms4")
@@ -1049,7 +1048,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
   }
 
   @Test
@@ -1275,7 +1274,7 @@ abstract class DomainStatusUpdateTestBase {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
     assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(TRUE));
   }
 
@@ -1752,12 +1751,29 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenClusterIntentionallyShutdown_clusterAvailableIsFalseAndDomainAvailableIsTrue() {
+    configureDomain()
+        .configureCluster(info, "cluster1").withReplicas(0);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .notStarting("server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
+  }
+
+  @Test
   void whenClusterIntentionallyShutdownAndSSINotConstructed_clusterAndDomainAvailableIsFalse() {
     configureDomain()
         .configureCluster(info, "cluster1").withReplicas(0);
     info.getReferencedClusters().forEach(testSupport::defineResources);
     defineScenario()
-        .withCluster("cluster1", "server31", "server2")
+        .withCluster("cluster1", "server1", "server2")
         .notStarting("server1", "server2")
         .build();
     info.setServerStartupInfo(null);
