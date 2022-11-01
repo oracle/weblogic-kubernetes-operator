@@ -230,13 +230,6 @@ public class ItFmwDiiSample {
             + " -b host"
             + " -o "
             + Paths.get(sampleBase.toString());
-    /*ExecResult result1 = Command.withParams(
-            new CommandParams()
-                .command(command1)
-                .env(envMap)
-                .redirect(true)
-                .verbose(true)
-    ).executeAndReturnResult();*/
     testUntil(
         () -> {
           ExecResult result1 = Command.withParams(
