@@ -1108,7 +1108,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenClusterIsIntentionallyShutdown_establishClusterAvailableConditionTrue() {
+  void whenClusterIsIntentionallyShutdown_establishClusterAvailableConditionFalse() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(0).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 0).build();
     info.getReferencedClusters().forEach(testSupport::defineResources);
@@ -1119,7 +1119,7 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(clusterStatus.getConditions().size(), equalTo(2));
     ClusterCondition condition = clusterStatus.getConditions().get(0);
     assertThat(condition.getType(), equalTo(ClusterConditionType.AVAILABLE));
-    assertThat(condition.getStatus(), equalTo(TRUE));
+    assertThat(condition.getStatus(), equalTo(FALSE));
   }
 
   @Test
@@ -1739,6 +1739,24 @@ abstract class DomainStatusUpdateTestBase {
   private Collection<ClusterCondition> getClusterConditions() {
     return testSupport.<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1")
         .getStatus().getConditions();
+  }
+
+  @Test
+  void whenClusterIntentionallyShutdownAndSSINotConstructed_clusterAndDomainAvailableIsFalse() {
+    configureDomain()
+        .configureCluster(info, "cluster1").withReplicas(0);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+    defineScenario()
+        .withCluster("cluster1", "server31", "server2")
+        .notStarting("server1", "server2")
+        .build();
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
   }
 
   @SuppressWarnings("SameParameterValue")

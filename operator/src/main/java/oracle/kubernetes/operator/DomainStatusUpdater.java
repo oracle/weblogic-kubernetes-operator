@@ -835,7 +835,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean isUnavailable(@Nonnull ClusterCheck clusterCheck) {
-          return !clusterCheck.isAvailable();
+          return !clusterCheck.isAvailableOrIntentionallyShutdown();
         }
 
         private boolean noApplicationServersReady() {
@@ -906,6 +906,10 @@ public class DomainStatusUpdater {
         }
 
         boolean isAvailable() {
+          return sufficientServersReady();
+        }
+
+        boolean isAvailableOrIntentionallyShutdown() {
           return isClusterIntentionallyShutDown() || sufficientServersReady();
         }
 
