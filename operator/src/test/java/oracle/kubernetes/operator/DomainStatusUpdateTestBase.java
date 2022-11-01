@@ -1040,7 +1040,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountIsZero_domainIsAvailable() {
+  void whenReplicaCountIsZeroAndAdminServerRunning_domainIsAvailable() {
     defineScenario()
           .withDynamicCluster("cluster1", 3, 4)
           .notStarting("ms1", "ms2", "ms3", "ms4")
@@ -1266,7 +1266,7 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void withClusterIntentionallyShutdown_domainIsCompleted() {
+  void withClusterIntentionallyShutdownAndAdminServerRunning_domainIsAvailableAndCompleted() {
     defineScenario()
           .withCluster("cluster1", "ms1", "ms2")
           .notStarting("ms1", "ms2")
