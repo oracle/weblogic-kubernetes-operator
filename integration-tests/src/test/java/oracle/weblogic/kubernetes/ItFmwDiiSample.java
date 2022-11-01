@@ -230,18 +230,27 @@ public class ItFmwDiiSample {
             + " -b host"
             + " -o "
             + Paths.get(sampleBase.toString());
-    ExecResult result1 = Command.withParams(
+    /*ExecResult result1 = Command.withParams(
             new CommandParams()
                 .command(command1)
                 .env(envMap)
                 .redirect(true)
                 .verbose(true)
-    ).executeAndReturnResult();
-    boolean success =
-            result1 != null
-                && result1.exitValue() == 0;
-    logger.info("Going to run sample create-domain.sh");
-    testUntil(() -> success,
+    ).executeAndReturnResult();*/
+    testUntil(
+        () -> {
+          ExecResult result1 = Command.withParams(
+              new CommandParams()
+                .command(command1)
+                .env(envMap)
+                .redirect(true)
+                .verbose(true)
+           ).executeAndReturnResult();
+          boolean success =
+              result1 != null
+                  && result1.exitValue() == 0;
+          return success;
+        },
         logger, "Failed to create domain.yaml");
 
     //If the tests are running in kind cluster, push the image to kind registry
