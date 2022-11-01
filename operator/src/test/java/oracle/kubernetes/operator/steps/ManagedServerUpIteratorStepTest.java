@@ -76,6 +76,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -343,6 +344,20 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     testSupport.setTime(READY_DETECTION_DELAY, TimeUnit.SECONDS);
 
     assertThat(domain, hasCondition(FAILED).withReason(SERVER_POD));
+  }
+
+  @Test
+  void whenCachedServerDoesNotExistAfterTimeout_clearPopulatedFlag() {
+    info.setPopulated(true);
+    testSupport.failOnResource(POD, LegalNames.toPodName(UID, MS1), NS, 404);
+    configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
+    addWlsCluster(CLUSTER1, MS1, MS2);
+    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION, createStub(MakeRightDomainOperationStub.class));
+
+    invokeStepWithServerStartupInfos();
+    testSupport.setTime(READY_DETECTION_DELAY, TimeUnit.SECONDS);
+
+    assertThat(info.isPopulated(), is(false));
   }
 
   abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {

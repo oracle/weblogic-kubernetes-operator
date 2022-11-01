@@ -37,7 +37,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.common.logging.MessageKeys.CACHED_POD_NOT_FOUND;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
+import static oracle.kubernetes.common.logging.MessageKeys.POD_READY_TIMED_OUT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 
 /**
@@ -204,17 +206,22 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return this.initialResource == null ? this.resourceName : getMetadata(this.initialResource).getName();
     }
 
-    static class WaitForPodResponseContext {
+    class WaitForPodResponseContext {
 
       private final DomainPresenceInfo info;
       private final String serverName;
+      private final Packet packet;
       private final CallResponse<V1Pod> callResponse;
+      private final WaitForReadyStep<V1Pod>.Callback callback;
 
-      WaitForPodResponseContext(Packet packet, CallResponse<V1Pod> callResponse) {
-        info = DomainPresenceInfo.fromPacket(packet).orElseThrow(); // always present
-        serverName = packet.getValue(SERVER_NAME);
+      WaitForPodResponseContext(
+          Packet packet, CallResponse<V1Pod> callResponse, WaitForReadyStep<V1Pod>.Callback callback) {
+        this.info = DomainPresenceInfo.fromPacket(packet).orElseThrow(); // always present
+        this.serverName = packet.getValue(SERVER_NAME);
+        this.packet = packet;
 
         this.callResponse = callResponse;
+        this.callback = callback;
       }
 
       // Return true if pod is cached but not found in explicit read.
@@ -225,28 +232,32 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
         return Optional.ofNullable(serverName).map(info::getServerPod).isPresent();
       }
+
+      private NextAction abortForkJoin(String messageKey) {
+        info.setPopulated(false);
+        removeCallback(getResource(), this.callback);
+        final String message = LOGGER.formatMessage(messageKey, resourceName);
+        return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps(message), packet);
+      }
     }
 
     protected ResponseStep<V1Pod> resumeIfReady(Callback callback) {
       return new DefaultResponseStep<>(getNext()) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-          final WaitForPodResponseContext context = new WaitForPodResponseContext(packet, callResponse);
+          final WaitForPodResponseContext context = new WaitForPodResponseContext(packet, callResponse, callback);
 
           if (context.cachedPodNotFound()) {
-            removeCallback(getResource(), callback);
-            return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps("not found"), packet);
+            return context.abortForkJoin(CACHED_POD_NOT_FOUND);
           } else if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doEnd(packet);
-          } else if (shouldWait()) {
+          } else if (recheckCountNoExceeded()) {
             logWaitingMessage(context);
-            // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
             return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                     getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
           } else {
-            removeCallback(getResource(), callback);
-            return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps("recheck count exceeded"), packet);
+            return context.abortForkJoin(POD_READY_TIMED_OUT);
           }
         }
 
@@ -256,7 +267,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           }
         }
 
-        private boolean shouldWait() {
+        private boolean recheckCountNoExceeded() {
           return callback.incrementAndGetRecheckCount() <= getWatchBackstopRecheckCount();
         }
       };
