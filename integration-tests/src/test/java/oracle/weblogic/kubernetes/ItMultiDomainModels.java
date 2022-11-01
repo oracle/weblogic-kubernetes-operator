@@ -292,7 +292,7 @@ class ItMultiDomainModels {
     unzipWDTInstallationFile(auxiliaryImageDir.toString());
 
     // create image1 with model and wdt installation files
-    String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
+    String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "mdmauxi";
     createAuxiliaryImage(auxiliaryImageDir.toString(),
         Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
 
