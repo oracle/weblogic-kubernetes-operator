@@ -870,7 +870,8 @@ public class DomainStatusUpdater {
         }
 
         private boolean isOnlyAdminServerExpectedRunningInDomain() {
-          return status.getServers().size() == 1 && isAdminServer(getInfo().getAdminServerName());
+          return status.getServers().size() == 1
+                  && status.getServers().get(0).getServerName().equals(getInfo().getAdminServerName());
         }
 
         private boolean isAdminServer(String serverName) {
