@@ -1705,6 +1705,16 @@ public class TestActions {
   }
 
   /**
+   * Install PrometheusAdapter.
+   *
+   * @param params prometheus adapter parameters for Helm values
+   * @return true if the prometheus adapter is successfully installed, false otherwise.
+   */
+  public static boolean installPrometheusAdapter(HelmParams params) {
+    return Helm.install(params, null);
+  }
+
+  /**
    * Uninstall the Prometheus release.
    *
    * @param params the parameters to Helm uninstall command, release name and namespace

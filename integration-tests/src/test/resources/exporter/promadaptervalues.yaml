@@ -1,0 +1,15 @@
+prometheus-adapter:
+
+  rules:
+    custom:
+      - seriesQuery: '{__name__=~"myapplication_api_response_time_.*",namespace!="",pod!=""}'
+        resources:
+          overrides:
+            namespace:
+              resource: namespace
+            pod:
+              resource: pod
+        name:
+          matches: ^(.*)
+          as: "myapplication_api_response_time_avg"
+        metricsQuery: 1000 * (sum(rate(myapplication_api_response_time_sum[5m]) > 0) by (<<.GroupBy>>) / sum(rate(myapplication_api_response_time_count[5m]) > 0) by (<<.GroupBy>>))

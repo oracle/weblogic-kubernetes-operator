@@ -70,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheusAdapter;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
@@ -430,6 +431,58 @@ public class MonitoringUtils {
 
     return prometheusParams;
   }
+
+  /**
+   * Install Prometheus adapter and wait up to five minutes until the prometheus adapter pods are ready.
+   *
+   * @param promAdapterReleaseName the prometheus adapter release name
+   * @param promAdapterNamespace the prometheus adapter namespace
+   * @return the prometheus Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheusAdapter(String promAdapterReleaseName,
+
+                                                            String promAdapterNamespace) {
+    LoggingFacade logger = getLogger();
+    Path srcPromAdapterFile = Paths.get(RESOURCE_DIR, "exporter", "promadaptervalues.yaml");
+
+    // Helm install parameters
+    HelmParams promAdapterHelmParams = new HelmParams()
+        .releaseName(promAdapterReleaseName)
+        .namespace(promAdapterNamespace)
+        .repoUrl(PROMETHEUS_REPO_URL)
+        .repoName(PROMETHEUS_REPO_NAME)
+        .chartName("prometheus-adapter")
+        .chartValuesFile(srcPromAdapterFile.toString());
+
+
+    // install prometheus
+    logger.info("Installing prometheus in namespace {0}", promAdapterNamespace);
+    assertTrue(installPrometheusAdapter(promAdapterHelmParams),
+        String.format("Failed to install prometheus in namespace %s", promAdapterNamespace));
+    logger.info("Prometheus Adapter installed in namespace {0}", promAdapterNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus adapter release {0} status in namespace {1}",
+        promAdapterReleaseName, promAdapterNamespace);
+    assertTrue(isHelmReleaseDeployed(promAdapterReleaseName, promAdapterNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promAdapterReleaseName, promAdapterNamespace));
+    logger.info("Prometheus adapter release {0} status is deployed in namespace {1}",
+        promAdapterReleaseName, promAdapterNamespace);
+
+    // wait for the promethues adapter pod to be ready
+    logger.info("Wait for the promethues adapter pod is ready in namespace {0}", promAdapterNamespace);
+    /* TODO
+    testUntil(
+        assertDoesNotThrow(() -> isPrometheusReady(promAdapterNamespace, promAdapterReleaseName),
+            "prometheusIsReady failed with ApiException"),
+        logger,
+        "prometheus to be running in namespace {0}",
+        promAdapterNamespace);
+    */
+    return promAdapterHelmParams;
+  }
+
 
   /**
    * Install Grafana and wait up to five minutes until the grafana pod is ready.
