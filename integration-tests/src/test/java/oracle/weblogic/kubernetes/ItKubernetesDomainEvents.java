@@ -408,7 +408,7 @@ class ItKubernetesDomainEvents {
     assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
             DOMAIN_COMPLETED, timestamp));
     logger.info("verify the only 1 ClusterCompleted event for domain is generated");
-    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
+    assertEquals(2, getOpGeneratedEventCount(domainNamespace3, domainUid,
         CLUSTER_COMPLETED, timestamp));
   }
 

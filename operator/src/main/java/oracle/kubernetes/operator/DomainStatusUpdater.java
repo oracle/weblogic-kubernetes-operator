@@ -943,7 +943,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean isClusterIntentionallyShutDown() {
-          return startedServers.isEmpty();
+          return getInfo().getServerStartupInfo() != null && startedServers.isEmpty();
         }
 
         private boolean sufficientServersReady() {
