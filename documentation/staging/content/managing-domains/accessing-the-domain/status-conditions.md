@@ -210,7 +210,7 @@ The following is a list of condition types for a Cluster resource.
   - If a cluster and domain both have a `serverStartPolicy` of `IfNeeded`,
     `cluster.spec.replicas` is `4`,
     and `cluster.spec.maxUnavailable` is `1` (the default),
-    then the cluster `Available` will be `True` only when three are four of its pods are `ready`. 
+    then the cluster `Available` will be `True` only when three or four of its pods are `ready`.
 - **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed`
   condition is `False`, a `Failed` condition is reported on the Domain resource, or the cluster
   has up to `cluster.spec.maxUnavailable` pods that are not ready.
