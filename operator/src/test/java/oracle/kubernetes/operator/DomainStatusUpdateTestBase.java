@@ -1736,6 +1736,16 @@ abstract class DomainStatusUpdateTestBase {
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
   }
 
+  @Test
+  void whenDomainOnlyHasAdminServer_availableIsTrue() {
+    configureDomain().configureAdminServer();
+    defineScenario().build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
+  }
+
   private Collection<ClusterCondition> getClusterConditions() {
     return testSupport.<ClusterResource>getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1")
         .getStatus().getConditions();

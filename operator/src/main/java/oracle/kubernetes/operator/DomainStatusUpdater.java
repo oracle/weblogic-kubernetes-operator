@@ -857,11 +857,20 @@ public class DomainStatusUpdater {
 
         // when the domain start policy is ADMIN_ONLY, the admin server is considered to be an application server.
         private boolean isApplicationServer(String serverName) {
-          return isAdminOnlyDomain() || !isAdminServer(serverName);
+          return !isAdminServer(serverName);
         }
 
         private boolean isAdminOnlyDomain() {
+          return isAdminOnlyServerStartPolicy()
+                  || isOnlyAdminServerExpectedRunningInDomain();
+        }
+
+        private boolean isAdminOnlyServerStartPolicy() {
           return getDomain().getSpec().getServerStartPolicy() == ServerStartPolicy.ADMIN_ONLY;
+        }
+
+        private boolean isOnlyAdminServerExpectedRunningInDomain() {
+          return status.getServers().size() == 1 && isAdminServer(getInfo().getAdminServerName());
         }
 
         private boolean isAdminServer(String serverName) {
