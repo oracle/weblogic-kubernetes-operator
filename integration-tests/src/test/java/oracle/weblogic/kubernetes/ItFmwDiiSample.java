@@ -229,17 +229,15 @@ public class ItFmwDiiSample {
             + " -b host"
             + " -o "
             + Paths.get(sampleBase.toString());
-    testUntil(
-        () -> {
-          return Command.withParams(
+
+    boolean result = Command.withParams(
               new CommandParams()
                 .command(command1)
                 .env(envMap)
                 .redirect(true)
                 .verbose(true)
-           ).execute();
-        },
-        logger, "Running sample create-domain.sh  to create domain.yaml");
+              ).execute();
+    assertTrue(result, "Failed to create domain.yaml for Fmw Dii Sample");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
@@ -265,8 +263,8 @@ public class ItFmwDiiSample {
     params1.command("kubectl apply -f "
             + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
-    boolean result = Command.withParams(params1).execute();
-    assertTrue(result, "Failed to create domain custom resource");
+    boolean result1 = Command.withParams(params1).execute();
+    assertTrue(result1, "Failed to create domain custom resource");
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
