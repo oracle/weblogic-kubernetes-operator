@@ -20,7 +20,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -232,17 +231,13 @@ public class ItFmwDiiSample {
             + Paths.get(sampleBase.toString());
     testUntil(
         () -> {
-          ExecResult result1 = Command.withParams(
+          return Command.withParams(
               new CommandParams()
                 .command(command1)
                 .env(envMap)
                 .redirect(true)
                 .verbose(true)
-           ).executeAndReturnResult();
-          logger.info("During creating domain.yaml result1 != null is: {0}, exitValue is: {1}",
-              result1 != null, result1.exitValue());
-          return result1 != null
-                  && result1.exitValue() == 0;
+           ).execute();
         },
         logger, "Running sample create-domain.sh  to create domain.yaml");
 
