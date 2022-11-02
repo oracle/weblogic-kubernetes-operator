@@ -244,7 +244,7 @@ public class ItFmwDiiSample {
           return result1 != null
                   && result1.exitValue() == 0;
         },
-        logger, "Failed to create domain.yaml");
+        logger, "Running sample create-domain.sh  to create domain.yaml");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
