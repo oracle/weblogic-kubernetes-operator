@@ -198,20 +198,20 @@ The following is a list of condition types for a Cluster resource.
 - The `status` attribute is set to `True` when a sufficient number of WebLogic Server pods are
   ready in the cluster. Both of the following must be true:
   - At least one pod in the cluster is expected to run and is `ready`.
-  - The number of `not ready` server pods which are expected to run
-    is less than or equal to `cluster.spec.maxUnavailable` which defaults to `1`.
+  - The number of `not ready` server pods, which are expected to run,
+    is less than or equal to the value of `cluster.spec.maxUnavailable`, which defaults to `1`.
 - Examples:
-  - If a cluster has `serverStartPolicy` `Never` or `replicas` `0`,
-    or a cluster is in a domain with `serverStartPolicy` `AdminOnly` or `Never`,
-    then the cluster will have `Available` `False`.
+  - If a cluster has a `serverStartPolicy` of `Never`, or `replicas` is `0`,
+    or a cluster is in a domain with `serverStartPolicy` of `AdminOnly` or `Never`,
+    then the cluster will have an `Available` condition that is `False`.
   - If a cluster and domain both have a `serverStartPolicy` of `IfNeeded`,
     and `cluster.spec.replicas` is `1`,
-    then the cluster `Available` will be `True` only when its single pod is `ready`. 
+    then the cluster will have an `Available` condition that is `True` only when its single pod is ready. 
   - If a cluster and domain both have a `serverStartPolicy` of `IfNeeded`,
     `cluster.spec.replicas` is `4`,
     and `cluster.spec.maxUnavailable` is `1` (the default),
-    then the cluster `Available` will be `True` only when three or four of its pods are `ready`.
-- **Note**: The `Available` `status` can be `True` even when the `status` for the `Completed`
+    then the cluster will have an `Available` condition  that is `True` only when three or four of its pods are ready.
+- **Note**: The `Available` condition's `status` can be `True` even when the `status` for the `Completed`
   condition is `False`, a `Failed` condition is reported on the Domain resource, or the cluster
   has up to `cluster.spec.maxUnavailable` pods that are not ready.
 
