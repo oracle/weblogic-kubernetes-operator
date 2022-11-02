@@ -239,10 +239,10 @@ public class ItFmwDiiSample {
                 .redirect(true)
                 .verbose(true)
            ).executeAndReturnResult();
-          boolean success =
-              result1 != null
+          logger.info("During creating domain.yaml result1 != null is: {0}, exitValue is: {1}",
+              result1 != null, result1.exitValue());
+          return result1 != null
                   && result1.exitValue() == 0;
-          return success;
         },
         logger, "Failed to create domain.yaml");
 
