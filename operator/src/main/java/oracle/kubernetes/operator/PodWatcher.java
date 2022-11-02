@@ -201,11 +201,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
 
-    @Nullable
-    private String getResource() {
-      return this.initialResource == null ? this.resourceName : getMetadata(this.initialResource).getName();
-    }
-
     class WaitForPodResponseContext {
 
       private final DomainPresenceInfo info;
@@ -238,6 +233,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         removeCallback(getResource(), this.callback);
         final String message = LOGGER.formatMessage(messageKey, resourceName);
         return doForkJoinAbort(DomainStatusUpdater.createServerPodFailureSteps(message), packet);
+      }
+
+      @Nullable
+      private String getResource() {
+        return initialResource == null ? resourceName : getMetadata(initialResource).getName();
       }
     }
 
