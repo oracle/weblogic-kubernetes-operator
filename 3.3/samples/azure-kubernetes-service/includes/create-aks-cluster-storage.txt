@@ -15,7 +15,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     | Option name | Value | Notes |
     |-------------------|---------------|-------|
     | `name` | `$AKS_PERS_STORAGE_ACCOUNT_NAME` | The storage account name can contain only lowercase letters and numbers, and must be between 3 and 24 characters in length. |
-    | `sku`  | `Premium_LRS` | Only `Premium_LRS` and `Premium_ZRS` work for NFS share, see the [Azure Files NFS Share Documentation](https://docs.microsoft.com/azure/storage/files/storage-files-how-to-create-nfs-shares?tabs=azure-portal#applies-to)|
+    | `sku`  | `Premium_LRS` | Only `Premium_LRS` and `Premium_ZRS` work for NFS share, see the [Azure Files NFS Share Documentation](https://docs.microsoft.com/azure/storage/files/storage-files-how-to-create-nfs-shares?tabs=azure-portal#applies-to).|
     | `https-only` | `false` | You can't mount an NFS file share unless you disable secure transfer. |
     | `default-action` | `Deny` | For security, we suggest that you deny access by default and choose to allow access from the AKS cluster network. |
 
@@ -58,11 +58,35 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
     The command provisions an NFS file share with NFS 4.1 or above.
 
-3. Configure network security.
+3. Assign the AKS cluster **Contributor** role to access the storage account.
 
-    You must configure the network security allowing access from AKS cluster to the storage account.
+    You must configure role assignment allowing access from AKS cluster to the storage account.
 
-    First, you must get the virtual network name and the subnet name of the AKS cluster. 
+    Get `objectId` of the AKS cluster with the following command and save it with variable `AKS_OBJECT_ID`:
+
+    ```shell
+    $ AKS_OBJECT_ID=$(az aks show --name ${AKS_CLUSTER_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "identity.principalId" -o tsv)
+    ```
+
+    Get Id of the storage account with the following command:
+
+    ```shell
+    $ STORAGE_ACCOUNT_ID=$(az storage account show --name ${AKS_PERS_STORAGE_ACCOUNT_NAME} --resource-group ${AKS_PERS_RESOURCE_GROUP} --query "id" -o tsv)
+    ```
+
+    Now, you are able to create a role assignment to grant the AKS cluster **Contributor** in the scope of the storage account. Then, the AKS cluster is able to access the file share.
+
+    ```shell
+    $ az role assignment create --assignee "${AKS_OBJECT_ID}" \
+      --role "Contributor" \
+      --scope "${STORAGE_ACCOUNT_ID}"
+    ```
+
+4. Configure network security.
+
+    You must configure the network security allowing access from AKS cluster to the file share.
+
+    First, you must get the virtual network name and the subnet name of the AKS cluster.
 
     Run the following commands to get network information:
 
@@ -72,7 +96,10 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     $ echo ${aksMCRGName}
 
     # get network name of AKS cluster
-    $ aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+    $ aksNetworkName=$(az graph query -q "Resources \
+        | where type =~ 'Microsoft.Network/virtualNetworks' \
+        | where resourceGroup  =~ '${aksMCRGName}' \
+        | project name = name" --query "data[0].name"  -o tsv)
     $ echo ${aksNetworkName}
 
     # get subnet name of AKS agent pool
@@ -109,7 +136,7 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     ```
 
     Now you must create a network rule to allow access from AKS cluster.
-    The following command enables access from AKS subnet to the storage account: 
+    The following command enables access from AKS subnet to the storage account:
 
     ```shell
     $ az storage account network-rule add \
@@ -132,9 +159,9 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 
 ##### Create Storage Class and PVC
 
-This sample will dynamically create and use a persistent volume with Azure Files in AKS.  These features are passed to Kubernetes using YAML files.  
+This sample will dynamically create and use a persistent volume with Azure Files in AKS.  These features are passed to Kubernetes using YAML files.
 
-The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  
+The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.
 
 A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
 
@@ -169,10 +196,10 @@ Completed
 
 ##### Apply generated configuration files
 
-In order to define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory. 
+To define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory.
 
-The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use value `${AKS_PERS_RESOURCE_GROUP}` as "resourceGroup", `${AKS_PERS_STORAGE_ACCOUNT_NAME}` as "storageAccount", 
-`${AKS_PERS_SHARE_NAME}` as "shareName", and the Storage Class name is `azurefile-csi-nfs`. 
+The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use value `${AKS_PERS_RESOURCE_GROUP}` as "resourceGroup", `${AKS_PERS_STORAGE_ACCOUNT_NAME}` as "storageAccount",
+`${AKS_PERS_SHARE_NAME}` as "shareName", and the Storage Class name is `azurefile-csi-nfs`.
 
 This sample uses Azure Files Container Storage Interface (CSI) drivers to manage the NFS file share, provisioner is `file.csi.azure.com`, see the [Azure Files CSI drivers documentation](https://docs.microsoft.com/azure/aks/azure-files-csi).
 
@@ -194,7 +221,7 @@ allowVolumeExpansion: true
 EOF
 ```
 
-We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  The `pvc.yaml` file has exactly the same Storage Class name as created previously. This is required. 
+We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  The `pvc.yaml` file has exactly the same Storage Class name as created previously. This is required.
 The following command displays the YAML content of `pvc.yaml`.
 
 ```shell

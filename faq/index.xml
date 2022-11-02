@@ -19,15 +19,6 @@ WebLogic Server is not open source. Licensing is required for each running WebLo
     </item>
     
     <item>
-      <title>Namespace management</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</link>
-      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>This document is now located in the operator user guide, see Namespace management.</description>
-    </item>
-    
-    <item>
       <title>Cannot pull image</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/cannot-pull-image/</link>
       <pubDate>Sat, 23 Mar 2019 08:08:19 -0400</pubDate>
@@ -79,55 +70,6 @@ When connecting to a database that does not have GRID, the only type of WebLogic
     </item>
     
     <item>
-      <title>Using OCI File Storage (FSS) for persistent volumes</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/oci-fss-pv/</link>
-      <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/oci-fss-pv/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use OCI File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling, as demonstrated in the operator persistent volume sample, will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
-File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
-    </item>
-    
-    <item>
-      <title>Using an OCI load balancer</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/oci-lb/</link>
-      <pubDate>Wed, 25 Sep 2019 12:41:38 -0400</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/oci-lb/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), then you can have OCI automatically provision load balancers for you by creating a Service of type LoadBalancer instead of (or in addition to) installing an ingress controller like Traefik.
-OKE Kubernetes worker nodes typically do not have public IP addresses. This means that the NodePort services created by the operator are not usable, because they would expose ports on the worker node&amp;rsquo;s private IP addresses only, which are not reachable from outside the cluster.</description>
-    </item>
-    
-    <item>
-      <title>Providing access to a PersistentVolumeClaim</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/volumes/</link>
-      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/volumes/</guid>
-      <description>I need to provide an instance with access to a PersistentVolumeClaim.
-Some applications need access to a file, either to read data or to provide additional logging beyond what is built into the operator. One common way of doing that within Kubernetes is to create a PersistentVolumeClaim (PVC) and map it to a file. The domain configuration can then be used to provide access to the claim across the domain, within a single cluster, or for a single server.</description>
-    </item>
-    
-    <item>
-      <title>Providing access to a ConfigMap</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/configmaps/</link>
-      <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/configmaps/</guid>
-      <description>I need to provide an instance with access to a ConfigMap.
-Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
-    </item>
-    
-    <item>
-      <title>External WebLogic clients</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</link>
-      <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Contents Overview Load balancer tunneling Adding a WebLogic custom channel When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes Kubernetes NodePorts NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes Enabling unknown host access When is it necessary to enable unknown host access? How to enable unknown host access Configuring WebLogic Server affinity load balancing algorithms Configuring external listen addresses for WebLogic default channels Security notes Optional reading Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
-    </item>
-    
-    <item>
       <title>Coherence requirements</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/coherence-requirements/</link>
       <pubDate>Mon, 12 Aug 2019 12:41:38 -0400</pubDate>
@@ -144,7 +86,19 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/</guid>
-      <description>Contents Introduction Setting resource requests and limits in a Domain resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
+      <description>Contents Introduction Setting resource requests and limits in a Domain or Cluster resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
+    </item>
+    
+    <item>
+      <title>Handling security validations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</guid>
+      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
+Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
+SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
+WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
     </item>
     
     <item>
@@ -158,18 +112,6 @@ To do this:
 First, set a label on the nodes on which the WebLogic Server pods will run. For example:
 $ kubectl label nodes name=weblogic-pods In the Domain CR, set a nodeSelector: a selector which must match a node&amp;rsquo;s labels for the pod to be scheduled on that node. See kubectl explain pods.spec.nodeSelector.
 You can set nodeSelector labels for WebLogic Server pods, all server pods in a cluster, or all server pods in a domain.</description>
-    </item>
-    
-    <item>
-      <title>Handling security validations</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</link>
-      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</guid>
-      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
-Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
-SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
-WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
     </item>
     
   </channel>
