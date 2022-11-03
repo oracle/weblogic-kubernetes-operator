@@ -254,7 +254,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify all the cluster servers pods will be shutdown.
    * Verify the following conditions are generated:
    * type: Completed, status: true
-   * type: Available, status: False
+   * type: Available, status: true
    * Verify no Failed type condition generated.
    */
   @Test
@@ -289,7 +289,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
       // verify the condition Available type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
@@ -303,7 +303,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify all the cluster servers pods will be shutdown.
    * Verify the following conditions are generated:
    * type: Completed, status: true
-   * type: Available, status: False
+   * type: Available, status: true
    * Verify no Failed type condition generated.
    */
   @Test
@@ -337,7 +337,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
       // verify the condition Available type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
