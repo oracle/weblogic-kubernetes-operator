@@ -237,7 +237,8 @@ public class ItFmwDiiSample {
                 .redirect(true)
                 .verbose(true)
               ).execute();
-    assertTrue(result, "Failed to create domain.yaml for Fmw Dii Sample");
+    assertTrue(result, "Failed to create domain.yaml. This could be a transient env issue because of "
+        + "'getaddrinfo' failure in the socket.py script. Please check the test out to confirm");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
