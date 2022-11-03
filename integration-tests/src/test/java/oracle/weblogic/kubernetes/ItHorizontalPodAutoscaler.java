@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.METRICS_SERVER_YAML;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -243,8 +244,10 @@ public class ItHorizontalPodAutoscaler {
 
   private void createLoadOnCpuAndVerifyAutoscaling() {
     // execute command to increase cpu usage
+    int duration = (OKE_CLUSTER == true) ? 60 : 30;
     String cmd = "kubectl exec -t " + managedServerPrefix + "1 -n "
-        + domainNamespace + "  -- timeout --foreground -s 2 30 dd if=/dev/zero of=/dev/null";
+        + domainNamespace + "  -- timeout --foreground -s 2 "
+        + duration + " dd if=/dev/zero of=/dev/null";
     CommandParams params = new CommandParams().defaults();
     params.command(cmd);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
