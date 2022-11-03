@@ -23,7 +23,7 @@ spec:
       #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
       #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
       auxiliaryImages:
-      - image: "ghcr.io/oracle/quick-start-aux-image:v1"
+      - image: "phx.ocir.io/weblogick8s/quick-start-aux-image:v1"
         #imagePullPolicy: IfNotPresent
         #sourceWDTInstallHome: /auxiliary/weblogic-deploy
         #sourceModelHome: /auxiliary/models
