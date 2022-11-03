@@ -192,7 +192,8 @@ spec:
 {{- end }}
 ---
   {{ $chartVersion := .Chart.Version }}
-  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
+  {{ $releaseNamespace := .Release.Namespace }}
+  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion $releaseNamespace) | trim }}
   {{- if and (ne $webhookExists "true") (not .operatorOnly) }}
     # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "v1"
