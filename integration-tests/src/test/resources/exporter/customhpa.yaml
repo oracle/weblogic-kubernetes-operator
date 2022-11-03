@@ -1,0 +1,20 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: custommetrics-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: weblogic.oracle/v1
+    kind: Cluster
+    name: hpacustomcluster
+  minReplicas: 2
+  maxReplicas: 3
+  metrics:
+    - type: Pods
+      pods:
+        metric:
+          name: sum_of_total_opened_sessions_exporter_app
+        target:
+          type: AverageValue
+          averageValue: 15

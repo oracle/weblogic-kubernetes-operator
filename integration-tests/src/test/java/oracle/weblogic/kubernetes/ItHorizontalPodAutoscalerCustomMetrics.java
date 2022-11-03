@@ -4,16 +4,22 @@
 package oracle.weblogic.kubernetes;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -22,7 +28,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
-import org.junit.jupiter.api.AfterAll;
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -31,35 +37,34 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.METRICS_SERVER_YAML;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheusAdapter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
@@ -83,7 +88,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String encryptionSecretName;
   private static final String domainUid = "hpacustomdomain";
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-  private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
+  private static String managedServerPrefix = String.format("%s-%s-%s", domainUid, wlClusterName, MANAGED_SERVER_NAME_BASE);
   static DomainResource domain = null;
 
   private static String opServiceAccount = null;
@@ -93,6 +98,10 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static  String monitoringExporterDir;
   private static  String monitoringExporterSrcDir;
   private static  String monitoringExporterAppDir;
+  private static NginxParams nginxHelmParams = null;
+  private static int nodeportshttp = 0;
+  private static int nodeportshttps = 0;
+  private static String nginxNamespace = null;
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
@@ -112,7 +121,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterWebApp", "monitoringexp").toString();
@@ -128,6 +137,10 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     logger.info("Get a unique namespace for monitoring");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     monitoringNS = namespaces.get(2);
+
+    logger.info("Get a unique namespace for nginx");
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    nginxNamespace = namespaces.get(3);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
@@ -154,7 +167,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
     logger.info("create and verify WebLogic domain image using model in image with model files");
-    String miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
+    String miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
+        MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
@@ -174,7 +188,17 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName
     );
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
+      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+    }
+    logger.info("NGINX http node port: {0}", nodeportshttp);
+    logger.info("NGINX https node port: {0}", nodeportshttps);
     // create cluster resouce with limits and requests in serverPod
     ClusterResource clusterResource =
         createClusterResource(clusterResName, wlClusterName, domainNamespace, replicaCount);
@@ -193,11 +217,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
-    if (!OKD) {
-      assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
-          domainNamespace,
-          domainUid), "Failed to install Prometheus");
-    }
 
     // check admin server is up and running for domain1
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -214,65 +233,36 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    */
   @Test
   void testHPAWithMetricsServer() {
-    // install metrics server
-    installMetricsServer();
-
-    // create hpa with autoscale
-    createHPA();
-
-    // create load on cpu and verify scale up/scale down
-    createLoadOnCpuAndVerifyAutoscaling();
-  }
-
-  /**
-   * Delete metrics server.
-   */
-  @AfterAll
-  public static void cleanUp() {
-    if (!SKIP_CLEANUP) {
-      getLogger().info("After All cleanUp() method called");
-      // delete metrics server
-      CommandParams params = new CommandParams().defaults();
-      params.command("kubectl delete -f " + METRICS_SERVER_YAML);
-      ExecResult result = Command.withParams(params).executeAndReturnResult();
-      if (result.exitValue() != 0) {
-        getLogger().info(
-            "Failed to uninstall metrics server, result " + result);
-      } else {
-        getLogger().info("uninstalled metrics server");
-      }
+    if (!OKD) {
+      assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
+          domainNamespace,
+          domainUid), "Failed to install Prometheus");
+      assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter("testprometheusadapter",
+          monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
     }
-  }
 
-  /**
-   * Install metrics server to collect container resource metrics.
-   */
-  private void installMetricsServer() {
-    // install metrics server
-    CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + METRICS_SERVER_YAML);
-    ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to install metrics server, result " + result);
+    // create hpa with custom metrics
+    createHPA();
+    String exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
+    String clusterService = domainUid + "-cluster-cluster-1";
+    int managedServerPort = 8001;
+    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+    clusterNameMsPortMap.put(wlClusterName, managedServerPort);
 
-    // patch metrics server for fix this error
-    // x509: cannot validate certificate for 192.168.65.4 because it doesn't contain any IP SANs
-    String patchCmd = "kubectl patch deployment metrics-server -n kube-system --type 'json' "
-        + "-p '[{\"op\": \"add\", \"path\": \"/spec/template/spec/containers/0/args/-\","
-        + "\"value\": \"--kubelet-insecure-tls\"}]'";
-    new CommandParams().defaults();
-    params.command(patchCmd);
-    result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 0,
-        "Failed to patch metrics server, result " + result);
-
-    // check pods are in ready status
-    testUntil(
-        podReady("metrics-server", null, "kube-system"),
-        logger,
-        "{0} to be ready in namespace {1}",
-        "metrics-server",
-        "kube-system");
+    if (!OKD) {
+      String ingressClassName = nginxHelmParams.getIngressClassName();
+      List<String> ingressHostList
+          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+          false, ingressClassName, false, 0);
+      verifyMonExpAppAccessThroughNginx(ingressHostList.get(0), 1, nodeportshttp);
+      // Need to expose the admin server external service to access the console in OKD cluster only
+    } else {
+      String hostName = createRouteForOKD(clusterService, domainNamespace);
+      logger.info("hostName = {0} ", hostName);
+      verifyMonExpAppAccess(1,hostName);
+    }
+    //check hpa scaled up to one more server
+    checkPodReadyAndServiceExists(managedServerPrefix + 3, domainUid, domainNamespace);
   }
 
   /**
@@ -280,9 +270,25 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    * maintaining min replicas 2 and max replicas 4.
    */
   private void createHPA() {
+    logger.info("create a staging location for custom hpa scripts");
+    String customhpaFileDir = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+        "custom" + releaseSuffix).toString();
+    Path fileTemp = Paths.get(customhpaFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for custom hpa");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for custom hpa");
+
+    logger.info("copy the promvalues.yaml to staging location");
+    Path srcHPAFile = Paths.get(RESOURCE_DIR, "exporter", "customhpa.yaml");
+    Path targetHPAFile = Paths.get(fileTemp.toString(), "customhpa.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcHPAFile, targetHPAFile,
+        StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+    String oldValue = "default";
+    assertDoesNotThrow(() -> replaceStringInFile(targetHPAFile.toString(),
+        oldValue,
+        domainNamespace), "Failed to replace String ");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl autoscale cluster " + clusterResName
-        + " --cpu-percent=50 --min=2 --max=4 -n " + domainNamespace);
+    params.command("kubectl apply -f " + targetHPAFile);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to create hpa or autoscale, result " + result);
@@ -295,39 +301,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         domainNamespace);
   }
 
-  private void createLoadOnCpuAndVerifyAutoscaling() {
-    // execute command to increase cpu usage
-    String cmd = "kubectl exec -t " + managedServerPrefix + "1 -n "
-        + domainNamespace + "  -- timeout --foreground -s 2 30 dd if=/dev/zero of=/dev/null";
-    CommandParams params = new CommandParams().defaults();
-    params.command(cmd);
-    ExecResult result = Command.withParams(params).executeAndReturnResult();
-    assertTrue(result.exitValue() == 124,
-        "Command failed to increase cpu usage, result " + result);
-
-    // check cluster is scaled up
-    for (int i = 1; i <= 4; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // the command to increase cpu load is ran for 30 sec, after that
-    // it takes some time to autoscale down the cluster
-    for (int i = 3; i <= 4; i++) {
-      final int j = i;
-      testUntil(withLongRetryPolicy,
-          assertDoesNotThrow(() -> podDoesNotExist(managedServerPrefix + j, domainUid, domainNamespace),
-              String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
-                  managedServerPrefix + i, domainNamespace)),
-          logger,
-          "pod {0} to be deleted in namespace {1}",
-          managedServerPrefix + i,
-          domainNamespace);
-    }
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-  }
-
   // verify hpa is getting the metrics
   private boolean verifyHPA(String namespace, String hpaName) {
     CommandParams params = new CommandParams().defaults();
@@ -337,13 +310,11 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     /* check if hpa output contains something like 7%/50%
      * kubectl get hpa --all-namespaces
      * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-     * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         4         2          18m
-     * when its not ready, it looks
-     * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-     * ns-qsjlcw   hpacluster   Cluster/hpacluster   <unknown>/50%    2         4         2          18m
+     * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         3        3          18m
      */
     return result.stdout().contains("%/");
   }
+
   private void installPrometheus(String promChartVersion,
                                         String domainNS,
                                         String domainUid
@@ -375,5 +346,4 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     }
     logger.info("Prometheus is running");
   }
-
 }

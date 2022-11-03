@@ -1,15 +1,15 @@
-prometheus-adapter:
 
-  rules:
-    custom:
-      - seriesQuery: '{__name__=~"myapplication_api_response_time_.*",namespace!="",pod!=""}'
-        resources:
-          overrides:
-            namespace:
-              resource: namespace
-            pod:
-              resource: pod
-        name:
-          matches: ^(.*)
-          as: "myapplication_api_response_time_avg"
-        metricsQuery: 1000 * (sum(rate(myapplication_api_response_time_sum[5m]) > 0) by (<<.GroupBy>>) / sum(rate(myapplication_api_response_time_count[5m]) > 0) by (<<.GroupBy>>))
+rules:
+  default: false
+  custom:
+    - seriesQuery: '{__name__=~"wls_webapp_config_sessions_opened_total_count",pod!="",namespace!="", app="wls-exporter"}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          pod:
+            resource: pod
+      name:
+        matches: ^(.*)
+        as: "sum_of_total_opened_sessions_exporter_app"
+      metricsQuery: sum(wls_webapp_config_sessions_opened_total_count{app="wls-exporter"})

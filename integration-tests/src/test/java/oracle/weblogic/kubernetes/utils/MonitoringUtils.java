@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -39,6 +40,7 @@ import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
@@ -70,7 +72,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
-import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheusAdapter;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
@@ -441,7 +442,9 @@ public class MonitoringUtils {
    */
   public static HelmParams installAndVerifyPrometheusAdapter(String promAdapterReleaseName,
 
-                                                            String promAdapterNamespace) {
+                                                            String promAdapterNamespace,
+                                                             String prometheusHost,
+                                                             int prometheusPort) {
     LoggingFacade logger = getLogger();
     Path srcPromAdapterFile = Paths.get(RESOURCE_DIR, "exporter", "promadaptervalues.yaml");
 
@@ -455,10 +458,13 @@ public class MonitoringUtils {
         .chartValuesFile(srcPromAdapterFile.toString());
 
 
-    // install prometheus
-    logger.info("Installing prometheus in namespace {0}", promAdapterNamespace);
-    assertTrue(installPrometheusAdapter(promAdapterHelmParams),
-        String.format("Failed to install prometheus in namespace %s", promAdapterNamespace));
+    // install prometheus adapter
+    logger.info("Installing prometheus adapter in namespace {0}", promAdapterNamespace);
+    Map<String, Object> chartValues = new HashMap<>();
+    chartValues.put("prometheus.url", "http://" + prometheusHost);
+    chartValues.put("prometheus.port", prometheusPort);
+    assertTrue(Helm.install(promAdapterHelmParams, chartValues),
+        String.format("Failed to install prometheus adapter in namespace %s", promAdapterNamespace));
     logger.info("Prometheus Adapter installed in namespace {0}", promAdapterNamespace);
 
     // list Helm releases matching operator release name in operator namespace
