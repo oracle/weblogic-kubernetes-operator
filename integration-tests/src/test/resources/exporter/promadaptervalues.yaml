@@ -11,5 +11,6 @@ rules:
             resource: pod
       name:
         matches: ^(.*)
-        as: "sum_of_total_opened_sessions_exporter_app"
-      metricsQuery: sum(wls_webapp_config_sessions_opened_total_count{app="wls-exporter"})
+        as: "total_opened_sessions_exporter_app"
+      metricsQuery: wls_webapp_config_sessions_opened_total_count{<<.LabelMatchers>>,app='wls-exporter'}
+      #metricsQuery: sum(wls_webapp_config_sessions_opened_total_count{<<.LabelMatchers>>,app='wls-exporter'}) by (<<.GroupBy>>)

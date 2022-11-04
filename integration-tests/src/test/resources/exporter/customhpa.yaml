@@ -14,7 +14,7 @@ spec:
     - type: Pods
       pods:
         metric:
-          name: sum_of_total_opened_sessions_exporter_app
+          name: total_opened_sessions_exporter_app
         target:
           type: AverageValue
           averageValue: 15

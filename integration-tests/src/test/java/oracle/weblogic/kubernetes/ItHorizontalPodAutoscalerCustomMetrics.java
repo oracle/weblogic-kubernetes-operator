@@ -310,10 +310,10 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         "Failed to create hpa or autoscale, result " + result);
     // wait till autoscaler could get the current cpu utilization to make sure it is ready
     testUntil(withStandardRetryPolicy,
-        () -> verifyHPA(domainNamespace, clusterResName),
+        () -> verifyHPA(domainNamespace, "custommetrics-hpa"),
         logger,
-        "",
-        clusterResName,
+        "Get sum_of_total_opened_sessions_exporter_app from hpa {0} in namespace {1}",
+        "custommetrics-hpa",
         domainNamespace);
   }
 
@@ -328,6 +328,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
      * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
      * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         3        3          18m
      */
+    logger.info(result.stdout());
     return result.stdout().contains(hpaName);
   }
 
