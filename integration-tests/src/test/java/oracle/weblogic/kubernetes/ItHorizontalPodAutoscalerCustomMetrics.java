@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPrometheusAdapterClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringExporterTempDir;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
@@ -119,6 +120,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   static PrometheusParams promHelmParams = null;
   private static String releaseSuffix = "hpatest";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
+  private static String prometheusAdapterReleaseName = "prometheus-adapter" + releaseSuffix;
   private static String hostPortPrometheus = null;
   private static String prometheusDomainRegexValue = null;
   private static int nodeportPrometheus;
@@ -191,6 +193,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
       cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
+      cleanupPrometheusAdapterClusterRoles();
     }
     domain = createDomainResource(
         domainUid,
@@ -249,7 +252,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
           domainNamespace,
           domainUid), "Failed to install Prometheus");
-      prometheusAdapterHelmParams = assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter("testprometheusadapter",
+      prometheusAdapterHelmParams = assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter(
+          prometheusAdapterReleaseName,
           monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
     }
 
@@ -324,7 +328,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
      * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
      * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         3        3          18m
      */
-    return result.stdout().contains("%/");
+    return result.stdout().contains(hpaName);
   }
 
   private void installPrometheus(String promChartVersion,

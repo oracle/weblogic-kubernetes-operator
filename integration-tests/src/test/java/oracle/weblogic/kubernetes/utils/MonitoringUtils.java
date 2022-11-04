@@ -45,6 +45,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
+import oracle.weblogic.kubernetes.assertions.impl.RoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.apache.commons.io.FileUtils;
 
@@ -626,6 +627,39 @@ public class MonitoringUtils {
     } catch (Exception ex) {
       //ignoring
       logger.info("getting exception during delete artifacts for grafana and prometheus");
+    }
+  }
+
+  /**
+   * Extra clean up for Prometheus and  Grafana artifacts.
+   *
+   */
+  public static void cleanupPrometheusAdapterClusterRoles() {
+    //extra cleanup
+    String prometheusAdapterReleaseName = "prometheus-adapter";
+    try {
+      if (ClusterRole.clusterRoleExists(prometheusAdapterReleaseName + "-resource-reader")) {
+        Kubernetes.deleteClusterRole(prometheusAdapterReleaseName + "-resource-reader");
+      }
+      if (ClusterRole.clusterRoleExists(prometheusAdapterReleaseName + "-resource-reader")) {
+        Kubernetes.deleteClusterRole(prometheusAdapterReleaseName + "-resource-reader");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-hpa-controller")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-hpa-controller");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-resource-reader")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-resource-reader");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-system-auth-delegator")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-system-auth-delegator");
+      }
+      if (RoleBinding.roleBindingExists(prometheusAdapterReleaseName + "-auth-reader", "kube-system")) {
+        Kubernetes.deleteNamespacedRoleBinding("kube-system", prometheusAdapterReleaseName + "-auth-reader");
+      }
+
+    } catch (Exception ex) {
+      //ignoring
+      logger.info("getting exception during delete artifacts for prometheus adapter");
     }
   }
 
