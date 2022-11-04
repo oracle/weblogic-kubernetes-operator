@@ -330,6 +330,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the livenessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -667,6 +679,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReady(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the readinessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -724,6 +748,18 @@ class ItLivenessProbeCustomization {
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
         checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
             managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+
+    // check the admin server is up and running
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReady(managedServerPodName, domainUid, domainNamespace);
       }
     }
   }
