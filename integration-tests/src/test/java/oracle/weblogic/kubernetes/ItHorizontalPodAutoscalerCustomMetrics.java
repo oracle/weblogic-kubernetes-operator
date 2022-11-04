@@ -23,12 +23,15 @@ import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -45,7 +48,11 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
@@ -59,6 +66,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringExporterTempDir;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheusAdapter;
@@ -70,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -88,7 +97,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String encryptionSecretName;
   private static final String domainUid = "hpacustomdomain";
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
-  private static String managedServerPrefix = String.format("%s-%s-%s", domainUid, wlClusterName, MANAGED_SERVER_NAME_BASE);
+  private static String managedServerPrefix = String.format("%s-%s-%s",
+      domainUid, wlClusterName, MANAGED_SERVER_NAME_BASE);
   static DomainResource domain = null;
 
   private static String opServiceAccount = null;
@@ -112,6 +122,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String hostPortPrometheus = null;
   private static String prometheusDomainRegexValue = null;
   private static int nodeportPrometheus;
+  private Path targetHPAFile;
+  private HelmParams prometheusAdapterHelmParams = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -237,7 +249,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
           domainNamespace,
           domainUid), "Failed to install Prometheus");
-      assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter("testprometheusadapter",
+      prometheusAdapterHelmParams = assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter("testprometheusadapter",
           monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
     }
 
@@ -280,7 +292,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     logger.info("copy the promvalues.yaml to staging location");
     Path srcHPAFile = Paths.get(RESOURCE_DIR, "exporter", "customhpa.yaml");
-    Path targetHPAFile = Paths.get(fileTemp.toString(), "customhpa.yaml");
+    targetHPAFile = Paths.get(fileTemp.toString(), "customhpa.yaml");
     assertDoesNotThrow(() -> Files.copy(srcHPAFile, targetHPAFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "default";
@@ -296,7 +308,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     testUntil(withStandardRetryPolicy,
         () -> verifyHPA(domainNamespace, clusterResName),
         logger,
-        "Get current cpu utilization from hpa {0} in namespace {1}",
+        "",
         clusterResName,
         domainNamespace);
   }
@@ -346,4 +358,38 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     }
     logger.info("Prometheus is running");
   }
+
+  /**
+   * Delete created resources.
+   */
+  @AfterAll
+  public void tearDownAll() {
+
+    // uninstall NGINX release
+    logger.info("Uninstalling NGINX");
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams.getHelmParams()))
+          .as("Test uninstallNginx1 returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl delete -f " + targetHPAFile);
+    ExecResult result = Command.withParams(params).executeAndReturnResult();
+    assertTrue(result.exitValue() == 0,
+        "Failed to delete hpa , result " + result);
+    if (prometheusAdapterHelmParams != null) {
+      Helm.uninstall(prometheusAdapterHelmParams);
+    }
+    if (!OKD) {
+      deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+      deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
+      deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + prometheusReleaseName);
+
+    }
+    deleteNamespace(monitoringNS);
+    deleteMonitoringExporterTempDir(monitoringExporterDir);
+  }
+
 }
