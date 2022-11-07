@@ -301,6 +301,7 @@ public interface TestConstants {
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");
   public static final String FSS_DIR = System.getProperty("wko.it.fss.dir", "");
+  public static final String IMAGE_PULL_POLICY = "IfNotPresent";
 
   //OKD constants
   public static final boolean OKD =
