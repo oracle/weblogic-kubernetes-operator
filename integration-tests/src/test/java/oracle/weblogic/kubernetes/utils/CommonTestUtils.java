@@ -1273,8 +1273,7 @@ public class CommonTestUtils {
    */
   public static String getActualLocationIfNeeded(
       String location,
-      String type,
-      String downloadDir
+      String type
   ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
