@@ -402,6 +402,8 @@ def isSecureModeEnabledForDomain(topology):
   secureModeEnabled = False
   if 'SecurityConfiguration' in topology and 'SecureMode' in topology['SecurityConfiguration'] and 'SecureModeEnabled' in topology['SecurityConfiguration']['SecureMode']:
     secureModeEnabled = topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled']
+  elif 'ServerStartMode' in topology and topology['ServerStartMode'] == 'secure':
+    secureModeEnabled = True
   else:
     is_production_mode_enabled = False
     if 'ProductionModeEnabled' in topology:
