@@ -83,7 +83,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to a create MII domain and test autoscaling using HPA")
+@DisplayName("Test to a create MII domain and test autoscaling using HPA and"
+    + "custom metrics provided via use of monitoring exporter and prometheus and prometheus adapter")
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
@@ -146,7 +147,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
-    logger.info("Get a unique namespace for monitoring");
+    logger.info("Get a unique namespace for prometheus and prometheus adapter");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     monitoringNS = namespaces.get(2);
 
@@ -240,7 +241,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
 
   /**
-   * Test autoscaling using HPA by increasing the CPU usage.
+   * Test autoscaling using HPA with custom WLS metrics, collected by Monitoring Exporter
+   * and exposed via Prometheus and Prometheus Adapter.
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
