@@ -505,7 +505,7 @@ public class PodUtils {
 
   /**
    * Get pod name with given prefix.
-   * @param namespace namespace where database exists
+   * @param namespace namespace where pod exists
    * @return pod name
    * @throws ApiException if Kubernetes client API call fails
    */

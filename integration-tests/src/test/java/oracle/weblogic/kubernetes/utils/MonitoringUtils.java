@@ -441,7 +441,7 @@ public class MonitoringUtils {
    *
    * @param promAdapterReleaseName the prometheus adapter release name
    * @param promAdapterNamespace the prometheus adapter namespace
-   * @return the prometheus Helm installation parameters
+   * @return the prometheus adapter Helm installation parameters
    */
   public static HelmParams installAndVerifyPrometheusAdapter(String promAdapterReleaseName,
                                                             String promAdapterNamespace,
