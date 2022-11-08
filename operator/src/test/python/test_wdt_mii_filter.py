@@ -341,5 +341,8 @@ class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
     return self.WLS_CRED_PASSWORD
 
+  def wlsVersionEarlierThan(self, version):
+    return False
+
 if __name__ == '__main__':
   unittest.main()
