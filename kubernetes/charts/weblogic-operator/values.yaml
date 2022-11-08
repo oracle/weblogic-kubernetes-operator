@@ -183,7 +183,7 @@ preserveWebhook: false
 #affinity:
 
 # tolerations and taints work together to ensure that pods are not scheduled on inappropriate nodes. If the tolerations value is specified,
-# then this content will be added to teh operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+# then this content will be added to the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
 # for more information on tolerations and taints.
 #tolerations:
 
