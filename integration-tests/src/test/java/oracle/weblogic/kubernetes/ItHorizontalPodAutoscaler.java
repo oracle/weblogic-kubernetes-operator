@@ -55,9 +55,14 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * Test Horizontal Pod Autoscaler using Kubernetes Metrics Server
+ * by increasing the CPU utilization.
+ * This test is not run on OKE as the CPU utilization is not
+ * going up intermittently after increasing the load.
+ */
 @DisplayName("Test to a create MII domain and test autoscaling using HPA")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 public class ItHorizontalPodAutoscaler {
   private static String domainNamespace = null;
