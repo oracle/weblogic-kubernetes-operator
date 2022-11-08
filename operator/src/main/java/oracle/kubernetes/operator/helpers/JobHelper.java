@@ -236,7 +236,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job) || isInProgressJobOutdated(packet, job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processExistingIntrospectorJob(getNext()), packet).withDebugComment(job, this::jobDescription);
@@ -253,10 +253,16 @@ public class JobHelper {
                          + ", started at " + job.getMetadata().getCreationTimestamp();
       }
 
-      private boolean isInProgressJobOutdated(V1Job job) {
+      private boolean isInProgressJobOutdated(Packet packet, V1Job job) {
         return Optional.ofNullable(job)
-            .map(j -> hasNotCompleted(j) && (hasAnyImageChanged(j) || hasIntrospectVersionChanged(j)))
+            .map(j -> hasNotCompleted(j) && isJobOutdated(packet, j))
             .orElse(false);
+      }
+
+      private boolean isJobOutdated(Packet packet, @Nonnull V1Job job) {
+        return hasAnyImageChanged(job)
+            || hasIntrospectVersionChanged(job)
+            || isInspectionRequiredAndGenerationChanged(packet);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -335,6 +341,10 @@ public class JobHelper {
             .orElse(null);
       }
 
+      private boolean isInspectionRequiredAndGenerationChanged(Packet packet) {
+        return MakeRightDomainOperation.isInspectionRequired(packet) && isDomainGenerationChanged(packet, false);
+      }
+
       private boolean isKnownFailedJob(V1Job job) {
         return getUid(job).equals(getLastFailedUid());
       }
@@ -392,16 +402,16 @@ public class JobHelper {
       }
 
       private boolean isBringingUpNewDomain(Packet packet) {
-        return getNumRunningServers() == 0 && creatingServers(info) && isDomainGenerationChanged(packet);
+        return getNumRunningServers() == 0 && creatingServers(info) && isDomainGenerationChanged(packet, true);
       }
 
       private int getNumRunningServers() {
         return info.getServerNames().size();
       }
 
-      private boolean isDomainGenerationChanged(Packet packet) {
+      private boolean isDomainGenerationChanged(Packet packet, boolean defaultValue) {
         return Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
-                .map(gen -> !gen.equals(getDomainGeneration())).orElse(true);
+                .map(gen -> !gen.equals(getDomainGeneration())).orElse(defaultValue);
       }
 
       private String getDomainGeneration() {

@@ -101,6 +101,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -1076,6 +1077,78 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getConfigurator().withIntrospectVersion(null);
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineIntrospectionWithIntrospectVersionLabel(null);
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndMIIJobGenerationChanged_createNewJob() {
+    final Long DOMAIN_GENERATION = 4L;
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    domain.getMetadata().setGeneration(DOMAIN_GENERATION);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION - 1));
+    defineIntrospectionWithIntrospectVersionLabel(null);
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndMIIJobGenerationUnchanged_doNotCreateNewJob() {
+    final Long DOMAIN_GENERATION = 4L;
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    domain.getMetadata().setGeneration(DOMAIN_GENERATION);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION));
+    defineIntrospectionWithIntrospectVersionLabel(null);
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndMIIJobGenerationMissingFromPacket_doNotCreateNewJob() {
+    final Long DOMAIN_GENERATION = 4L;
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+    domain.getMetadata().setGeneration(DOMAIN_GENERATION);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+
+    defineIntrospectionWithIntrospectVersionLabel(null);
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep());
+
+    assertThat(affectedJob, nullValue());
+  }
+
+  @Test
+  void whenJobInProgressAndNonMIIJobGenerationChanged_doNotCreateNewJob() {
+    final Long DOMAIN_GENERATION = 4L;
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+
+    getConfigurator().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    domain.getMetadata().setGeneration(DOMAIN_GENERATION);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION - 1));
     defineIntrospectionWithIntrospectVersionLabel(null);
     testSupport.doOnCreate(JOB, this::recordJob);
 
