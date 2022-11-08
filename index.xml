@@ -986,7 +986,7 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/</guid>
-      <description>Contents Introduction Setting resource requests and limits in a Domain or Cluster resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
+      <description>Contents Introduction Setting resource requests and limits in a Domain or Cluster resource Determining Pod Quality Of Service Java heap size and memory resource considerations Importance of setting heap size and memory resources Default heap sizes Configuring heap size CPU resource considerations Operator sample heap and resource configuration Burstable pods and JDK active processor count calculation Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References Introduction The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned where the optimal values depend on your workload, applications, and the Kubernetes environment.</description>
     </item>
     
     <item>

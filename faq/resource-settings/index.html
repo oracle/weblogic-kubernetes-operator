@@ -12,20 +12,20 @@
     <title>Pod memory and CPU resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1667792650" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1667792650" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1667924706" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1667924706" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1667792650"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1667924706"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1667792650"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1667792650"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1667924706"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1667924706"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1667792650"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1667924706"></script>
 
     
   </div>
@@ -3619,6 +3619,7 @@
     <li><a href="#cpu-resource-considerations">CPU resource considerations</a>
       <ul>
         <li><a href="#operator-sample-heap-and-resource-configuration">Operator sample heap and resource configuration</a></li>
+        <li><a href="#burstable-pods-and-jdk-active-processor-count-calculation">Burstable pods and JDK active processor count calculation</a></li>
         <li><a href="#configuring-cpu-affinity">Configuring CPU affinity</a></li>
         <li><a href="#measuring-jvm-heap-pod-cpu-and-pod-memory">Measuring JVM heap, Pod CPU, and Pod memory</a></li>
       </ul>
@@ -3664,6 +3665,7 @@
     <li><a href="#cpu-resource-considerations">CPU resource considerations</a>
       <ul>
         <li><a href="#operator-sample-heap-and-resource-configuration">Operator sample heap and resource configuration</a></li>
+        <li><a href="#burstable-pods-and-jdk-active-processor-count-calculation">Burstable pods and JDK active processor count calculation</a></li>
         <li><a href="#configuring-cpu-affinity">Configuring CPU affinity</a></li>
         <li><a href="#measuring-jvm-heap-pod-cpu-and-pod-memory">Measuring JVM heap, Pod CPU, and Pod memory</a></li>
       </ul>
@@ -3827,6 +3829,12 @@ sample-domain1-managed-server1    0/1     Pending   0          65s
 <p>Similarly, the operator samples configure CPU and memory resource requests to at least <code>250m</code> and <code>768Mi</code> respectively.</p>
 <p>There&rsquo;s no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod&rsquo;s is <code>burstable</code>.</p>
 <p>If you wish to set resource requests or limits differently on a sample Domain or Cluster YAML file or template, see <a href="#setting-resource-requests-and-limits-in-a-domain-or-cluster-resource">Setting resource requests and limits in a Domain or Cluster resource</a>. Or, for samples that generate their Domain resource using an &ldquo;inputs&rdquo; YAML file, see the <code>serverPodMemoryRequest</code>, <code>serverPodMemoryLimit</code>, <code>serverPodCpuRequest</code>, and <code>serverPodCpuLimit</code> parameters in the sample&rsquo;s <code>create-domain.sh</code> inputs file.</p>
+<h4 id="burstable-pods-and-jdk-active-processor-count-calculation">Burstable pods and JDK active processor count calculation</h4>
+<p>If you have <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-burstable">Burstable Pods</a> that configure the CPU resource requests but have no CPU limits, then the JDK can incorrectly calculate the active processor count. The JDK interprets the value of the <code>--cpu-shares</code> parameter (which maps to <code>spec.containers[].resources.requests.cpu</code>) to limit how many CPUs the current process can use, as explained in <a href="https://bugs.openjdk.org/browse/JDK-8288367">JDK-8288367</a>. This might cause the JVM to use fewer CPUs than available, leading to an under utilization of CPU resources when running in a Kubernetes environment. Updating the JDK to newer versions, <code>JDK 8u371</code> or <code>JDK 11.0.17</code>, fixes this.</p>
+
+<div class="notices note" ><p>To override the number of CPUs that the JVM automatically detects and uses when creating threads for various subsystems, use the <code>-XX:ActiveProcessorCount</code> Java option.</p>
+</div>
+
 <h4 id="configuring-cpu-affinity">Configuring CPU affinity</h4>
 <p>A Kubernetes hosted WebLogic Server may exhibit high lock contention in comparison to an on-premises deployment. This lock contention may be due to a lack of CPU cache affinity or scheduling latency when workloads move between different CPU cores.</p>
 <p>In an on-premises deployment, CPU cache affinity, and therefore reduced lock contention, can be achieved by binding WLS Java process to a particular CPU core(s) (using the <code>taskset</code> command).</p>
@@ -6262,19 +6270,19 @@ Note that some Kubernetes environments may not allow changing the CPU management
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1667792650"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1667924706"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1667792650"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1667792650"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1667924706"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1667924706"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1667792650"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1667924706"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
