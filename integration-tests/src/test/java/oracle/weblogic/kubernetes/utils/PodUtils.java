@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
+import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
@@ -500,5 +501,26 @@ public class PodUtils {
     Matcher matcher = pattern.matcher(introspectorLog);
 
     return matcher.find();
+  }
+
+  /**
+   * Get pod name with given prefix.
+   * @param namespace namespace where database exists
+   * @return pod name
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodName(String namespace, String podPrefix) throws ApiException {
+    String podName = null;
+    V1PodList pods = null;
+    pods = Kubernetes.listPods(namespace, null);
+    if (pods.getItems().size() != 0) {
+      for (V1Pod pod : pods.getItems()) {
+        if (pod != null && pod.getMetadata().getName().startsWith(podPrefix)) {
+          podName = pod.getMetadata().getName();
+          break;
+        }
+      }
+    }
+    return podName;
   }
 }

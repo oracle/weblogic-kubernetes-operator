@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -1042,6 +1043,21 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isPrometheusReady(String namespace, String releaseName) {
     return Prometheus.isReady(namespace, releaseName);
+  }
+
+  /**
+   * Check if the prometheus pods are running in a given namespace.
+   * @param namespace in which to check for the prometheus pods
+   * @param podName prometheus adapter pod name
+   * @return true if found and running otherwise false
+   */
+  public static Callable<Boolean> isPrometheusAdapterReady(String namespace, String podName) {
+    Map<String,String> labelMapPromSvc = new HashMap<>();
+    labelMapPromSvc.put("name", "prometheus-adapter");
+
+    return () -> {
+      return (Kubernetes.isPodReady(namespace, (Map<String, String>) null, podName));
+    };
   }
 
   /**

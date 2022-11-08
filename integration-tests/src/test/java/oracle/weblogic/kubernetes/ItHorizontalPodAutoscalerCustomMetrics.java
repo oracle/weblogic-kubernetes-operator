@@ -20,6 +20,7 @@ import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
+import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -36,13 +37,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -72,9 +73,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheusAdapter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -111,7 +110,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static  String monitoringExporterAppDir;
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
-  private static int nodeportshttps = 0;
   private static String nginxNamespace = null;
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
@@ -188,13 +186,13 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
     String className = "ItMonitoringExporterWebApp";
-    if (!OKD) {
-      logger.info("create pv and pvc for monitoring");
-      assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
-      assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
-      cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
-      cleanupPrometheusAdapterClusterRoles();
-    }
+
+    logger.info("create pv and pvc for monitoring");
+    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+    cleanupPromGrafanaClusterRoles(prometheusReleaseName, null);
+    cleanupPrometheusAdapterClusterRoles();
+
     domain = createDomainResource(
         domainUid,
         domainNamespace,
@@ -203,17 +201,15 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         new String[]{TEST_IMAGES_REPO_SECRET_NAME},
         encryptionSecretName
     );
-    if (!OKD) {
-      // install and verify NGINX
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-      String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
-      logger.info("NGINX service name: {0}", nginxServiceName);
-      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
-    }
+    // install and verify NGINX
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
+    logger.info("NGINX service name: {0}", nginxServiceName);
+    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);
-    logger.info("NGINX https node port: {0}", nodeportshttps);
+
     // create cluster resouce with limits and requests in serverPod
     ClusterResource clusterResource =
         createClusterResource(clusterResName, wlClusterName, domainNamespace, replicaCount);
@@ -246,37 +242,37 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   /**
    * Test autoscaling using HPA by increasing the CPU usage.
    */
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   void testHPAWithMetricsServer() {
-    if (!OKD) {
-      assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
-          domainNamespace,
-          domainUid), "Failed to install Prometheus");
-      prometheusAdapterHelmParams = assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter(
-          prometheusAdapterReleaseName,
-          monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
-    }
 
-    // create hpa with custom metrics
-    createHPA();
-    String exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
-    String clusterService = domainUid + "-cluster-cluster-1";
+    assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
+        domainNamespace,
+        domainUid), "Failed to install Prometheus");
+    prometheusAdapterHelmParams = assertDoesNotThrow(() -> installAndVerifyPrometheusAdapter(
+        prometheusAdapterReleaseName,
+        monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
+    // wait till prometheus adapter could get the current custom metrics
+    // total_opened_sessions_exporter_app to make sure it is ready
+    testUntil(withStandardRetryPolicy,
+        () -> verifyCustomMetricsExposed(domainNamespace,"total_opened_sessions_exporter_app"),
+        logger,
+        "Get current total_opened_sessions_exporter_app from prometheus adapter in namespace {0}",
+        domainNamespace);
+
     int managedServerPort = 8001;
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(wlClusterName, managedServerPort);
 
-    if (!OKD) {
-      String ingressClassName = nginxHelmParams.getIngressClassName();
-      List<String> ingressHostList
-          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
-          false, ingressClassName, false, 0);
-      verifyMonExpAppAccessThroughNginx(ingressHostList.get(0), 1, nodeportshttp);
-      // Need to expose the admin server external service to access the console in OKD cluster only
-    } else {
-      String hostName = createRouteForOKD(clusterService, domainNamespace);
-      logger.info("hostName = {0} ", hostName);
-      verifyMonExpAppAccess(1,hostName);
-    }
+    String ingressClassName = nginxHelmParams.getIngressClassName();
+    List<String> ingressHostList
+        = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+        false, ingressClassName, false, 0);
+    // create hpa with custom metrics
+    createHPA();
+    //invoke app 50 times to generate metrics with number of opened sessions > 15
+    verifyMonExpAppAccessThroughNginx(ingressHostList.get(0), 1, nodeportshttp);
+
     //check hpa scaled up to one more server
     checkPodReadyAndServiceExists(managedServerPrefix + 3, domainUid, domainNamespace);
   }
@@ -294,7 +290,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for custom hpa");
 
-    logger.info("copy the promvalues.yaml to staging location");
+    logger.info("copy the customhpa.yaml to staging location");
     Path srcHPAFile = Paths.get(RESOURCE_DIR, "exporter", "customhpa.yaml");
     targetHPAFile = Paths.get(fileTemp.toString(), "customhpa.yaml");
     assertDoesNotThrow(() -> Files.copy(srcHPAFile, targetHPAFile,
@@ -308,13 +304,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to create hpa or autoscale, result " + result);
-    // wait till autoscaler could get the current cpu utilization to make sure it is ready
-    testUntil(withStandardRetryPolicy,
-        () -> verifyHPA(domainNamespace, "custommetrics-hpa"),
-        logger,
-        "Get sum_of_total_opened_sessions_exporter_app from hpa {0} in namespace {1}",
-        "custommetrics-hpa",
-        domainNamespace);
+    assertTrue(verifyHPA(domainNamespace, "custommetrics-hpa"));
   }
 
   // verify hpa is getting the metrics
@@ -323,13 +313,19 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     params.command("kubectl get hpa " + hpaName + " -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
-    /* check if hpa output contains something like 7%/50%
-     * kubectl get hpa --all-namespaces
-     * NAMESPACE   NAME         REFERENCE            TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
-     * ns-qsjlcw   hpacluster   Cluster/hpacluster   4%/50%    2         3        3          18m
-     */
     logger.info(result.stdout());
     return result.stdout().contains(hpaName);
+  }
+
+  // verify custom metrics is exposed via prometheus adapter
+  private boolean verifyCustomMetricsExposed(String namespace, String customMetric) {
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1/namespaces/"
+        + namespace + "/pods/%2A/" + customMetric + "  | jq .");
+
+    ExecResult result = Command.withParams(params).executeAndReturnResult();
+    logger.info(result.stdout());
+    return result.stdout().contains(customMetric);
   }
 
   private void installPrometheus(String promChartVersion,
@@ -349,10 +345,6 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
       hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
-      if (OKD) {
-        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
-            + "-service", monitoringNS) + ":" + nodeportPrometheus;
-      }
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -386,15 +378,14 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     if (prometheusAdapterHelmParams != null) {
       Helm.uninstall(prometheusAdapterHelmParams);
     }
-    if (!OKD) {
-      deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
-      deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
-      deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
-      deletePersistentVolume("pv-test" + prometheusReleaseName);
-
+    if (promHelmParams != null) {
+      Prometheus.uninstall(promHelmParams.getHelmParams());
     }
+    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
+    deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+    deletePersistentVolume("pv-test" + prometheusReleaseName);
     deleteNamespace(monitoringNS);
     deleteMonitoringExporterTempDir(monitoringExporterDir);
   }
-
 }
