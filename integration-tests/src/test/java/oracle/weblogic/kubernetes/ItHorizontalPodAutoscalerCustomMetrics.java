@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create MII domain and test autoscaling using HPA and"
     + "custom metrics provided via use of monitoring exporter and prometheus and prometheus adapter")
 @IntegrationTest
-@Tag("oke-parallel")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String domainNamespace = null;
