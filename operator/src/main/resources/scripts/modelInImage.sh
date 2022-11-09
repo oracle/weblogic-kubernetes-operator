@@ -989,6 +989,7 @@ wdtUpdateModelDomain() {
 
   ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
+  cat ${WDT_OUTPUT}
 
   if [ $ret -ne 0 ]; then
     if [ "true" == "${CREATED_JRF_PRIMODIAL}" ] ; then
