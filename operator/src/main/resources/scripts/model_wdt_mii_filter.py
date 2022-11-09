@@ -144,6 +144,13 @@ class OfflineWlstEnv(object):
   def getModel(self):
     return self.model
 
+  def wlsVersionEarlierThan(self, version):
+    # unconventional import within function definition for unit testing
+    from weblogic.management.configuration import LegalHelper
+    # WLS Domain versions supported by operator are 12.2.1.3 + patches, 12.2.1.4
+    # and 14.1.1.0 so current version will only be one of these that are listed.
+    return LegalHelper.versionEarlierThan("14.1.1.0", version)
+
 class SecretManager(object):
 
   def __init__(self, env):

@@ -89,7 +89,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -525,11 +524,16 @@ public class CommonLBTestUtils {
     for (String domainUid : domainUids) {
       // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
       String adminServerPodName = domainUid + "-admin-server";
-      deployApplication(domainNamespace, domainUid, adminServerPodName, clusterViewAppPath);
+      testUntil(() -> deployApplication(domainNamespace, domainUid, adminServerPodName, clusterViewAppPath),
+          getLogger(),
+          "deploying application {0} to pod {1} in namespace {2} succeeds",
+          clusterViewAppPath,
+          adminServerPodName,
+          domainNamespace);
     }
   }
 
-  private static void deployApplication(String namespace, String domainUid, String adminServerPodName,
+  private static boolean deployApplication(String namespace, String domainUid, String adminServerPodName,
                                         Path clusterViewAppPath) {
     getLogger().info("Getting node port for admin server default channel");
     int serviceNodePort = assertDoesNotThrow(() ->
@@ -545,7 +549,7 @@ public class CommonLBTestUtils {
         targets, clusterViewAppPath, null, domainUid + "clusterview");
     assertNotNull(result, "Application deployment failed");
     getLogger().info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+    return result.stdout().equals("202");
   }
 
   /**

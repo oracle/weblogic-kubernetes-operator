@@ -10,7 +10,8 @@ draft: false
 
 | Date               | Version  | Change - See also, [Change log](#change-log).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 |--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| October 31, 2022   | v4.0.0   | New Cluster resource for Horizontal Pod Autoscaling (HPA). Domain resource "v9" with auxiliary image simplification, improved status reporting, and improved failure retry predictability and transparency. Istio and other service mesh support enabled automatically. Kubernetes 1.24 and 1.25 support. Minimum Kubernetes version is now 1.21.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| November 4, 2022   | v4.0.1   | Resolved an issue where introspection would fail because the function `wlsVersionEarlierThan` was missing.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| November 2, 2022   | v4.0.0   | New Cluster resource for Horizontal Pod Autoscaling (HPA). Domain resource "v9" with auxiliary image simplification, improved status reporting, and improved failure retry predictability and transparency. Istio and other service mesh support enabled automatically. Kubernetes 1.24 and 1.25 support. Minimum Kubernetes version is now 1.21.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | October 26, 2022   | v3.4.4   | Support added to specify resource requests and limits for Monitoring Exporter sidecar containers. This release of the operator is compatible with running in the same Kubernetes cluster as additional operators from the upcoming 4.0 release.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | August 25, 2022    | v3.4.3   | Resolved an issue related to introspector failure for non-English locales and improved concurrency for managing configuration override files.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | August 9, 2022     | v3.4.2   | Updated several dependencies, including the Oracle Linux base for the container image.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -59,6 +60,10 @@ draft: false
 
 ### Change log
 
+#### Operator 4.0.1
+
+* Resolved an issue where introspection would fail because the function `wlsVersionEarlierThan` was missing.
+
 #### Operator 4.0.0
 
 ##### Major Themes
@@ -96,7 +101,7 @@ draft: false
 
 * This release also introduces a new custom resource, the `weblogic.oracle/v1` Cluster resource.
   * This Cluster resource configures a specific WebLogic cluster and allows customers to scale that cluster using the Kubernetes Horizontal Pod Autoscaling (HPA) or similar technologies.
-  * The Cluster resource `.spec` schema is similar to and replaces the former `weblogic.oracle/v8` Domain resource `.spec.clusters[*]` content. 
+  * The Cluster resource `.spec` schema is similar to and replaces the former `weblogic.oracle/v8` Domain resource `.spec.clusters[*]` content.
   * The Cluster resource `.status` schema mirrors the content of the Domain resource `.status.clusters[*]` content.
 
 * This release simplifies [upgrading the operator]({{< relref "/managing-operators/installation.md" >}}).
@@ -119,6 +124,8 @@ draft: false
   * Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
   * Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
   * Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
+  * Default change for `domain.spec.configuration.model.wdtInstallHome` to `/aux/weblogic-deploy` if `spec.configuration.model.AuxiliaryImages` are specified, and to `/u01/wdt/weblogic-deploy` otherwise. It previously always defaulted to `/u01/wdt/weblogic-deploy`.
+  * Default change for `domain.spec.configuration.model.wdtModelHome` to `/aux/models` if `spec.configuration.model.AuxiliaryImages` are specified, and to `/u01/wdt/models` otherwise. It previously always defaulted to `/u01/wdt/models`. 
 
 * Cluster changes.
   * Moved content under `.spec.clusters[*]` to the new Cluster resource `.spec`.
@@ -249,7 +256,7 @@ draft: false
 * Support for the networking changes included with Istio 1.10 ([#2538](https://github.com/oracle/weblogic-kubernetes-operator/pull/2538)).
 * Support for accessing the WebLogic Server Administration Console through `kubectl port-forward` ([#2520](https://github.com/oracle/weblogic-kubernetes-operator/pull/2520)).
 * Prevent insecure file system warnings related to the "umask 027" requirement ([#2533](https://github.com/oracle/weblogic-kubernetes-operator/pull/2533)).
-* Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
+* Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
 * Additional validation for container port names and WebLogic Network Access Point (NAP) names that will be used as container ports ([#2542](https://github.com/oracle/weblogic-kubernetes-operator/pull/2542)).
 
 #### Operator 3.3.1
@@ -260,7 +267,7 @@ draft: false
 
 #### Operator 3.3.0
 
-* [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/).
+* [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/).
 * Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
 * Improved the ability of the operator to use an existing introspection ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
 * Upgraded core dependency versions, including upgrading the Kubernetes Java Client to 13.0.0 ([#2466](https://github.com/oracle/weblogic-kubernetes-operator/pull/2466)).

@@ -46,6 +46,10 @@ spec:
       affinity:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
@@ -192,7 +196,8 @@ spec:
 {{- end }}
 ---
   {{ $chartVersion := .Chart.Version }}
-  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion) | trim }}
+  {{ $releaseNamespace := .Release.Namespace }}
+  {{ $webhookExists := include "utils.verifyExistingWebhookDeployment" (list $chartVersion $releaseNamespace) | trim }}
   {{- if and (ne $webhookExists "true") (not .operatorOnly) }}
     # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "v1"

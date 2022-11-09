@@ -25,8 +25,8 @@ You can:
 The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.4.4.
-This release was published on October 26, 2022.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 4.0.1.
+This release was published on November 4, 2022.
 ***
 
 ## Documentation
@@ -36,7 +36,7 @@ Documentation for the operator is [available here](https://oracle.github.io/webl
 This documentation includes information for users and for developers.  It provides samples, reference material, security
 information and a [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide if you just want to get up and running quickly.
 
-Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), and [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/).
+Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/), and [3.4.x](https://oracle.github.io/weblogic-kubernetes-operator/3.4/).
 
 ## Backward compatibility guidelines
 
