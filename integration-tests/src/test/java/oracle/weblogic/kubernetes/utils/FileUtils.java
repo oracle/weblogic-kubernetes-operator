@@ -303,7 +303,7 @@ public class FileUtils {
   }
 
   /**
-   * Create a directory in a pod in specified namespace.
+   * Delete directories in a pod in the specified namespace.
    * @param namespace The Kubernetes namespace that the pod is in
    * @param pod The name of the Kubernetes pod where the command is expected to run
    * @param container The container in the Pod where the command is to be run. If no
@@ -316,7 +316,7 @@ public class FileUtils {
                                        String container,
                                        boolean redirectToStdout,
                                        List<String> directoryToCreate) {
-    //Create directories.
+    //Delete directories.
     directoryToCreate.forEach(newDir -> {
       String deleteCmd = "rm -rf " + newDir;
       getLogger().info("dir to delete {0} ", deleteCmd);
