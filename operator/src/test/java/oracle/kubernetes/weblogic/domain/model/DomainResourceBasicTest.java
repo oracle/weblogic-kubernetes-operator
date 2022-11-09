@@ -227,6 +227,21 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
+  void afterReplicaCountMaxUnavailableSetForDomain_canReadMinAvailable() {
+    configureDomain(domain).withMaxUnavailable(2).withDefaultReplicaCount(5);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
+  void afterReplicaCountMaxSetOnClusterUnavailableSetForDomain_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5);
+    configureDomain(domain).withMaxUnavailable(2);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
   void afterMaxUnavailableSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxUnavailable(5);
 
@@ -234,7 +249,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
-  void whenNotSpecified_maxUnavailableHasDefault() {
+  void whenNotSpecifiedForBothDClusterAndDomain_maxUnavailableHasDefault() {
     configureCluster("cluster1");
     configureDomain(domain).withMaxUnavailable(null);
 
@@ -243,7 +258,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
-  void whenNotSpecified_maxUnavailableFromDomain() {
+  void whenNotSpecifiedForCluster_maxUnavailableFromDomain() {
     configureCluster("cluster1");
     configureDomain(domain).withMaxUnavailable(2);
 
