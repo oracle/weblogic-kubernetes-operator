@@ -73,6 +73,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
@@ -93,6 +94,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.LabelConstants.OBSERVED_CLUSTER_GENERATION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.OBSERVED_DOMAIN_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
@@ -147,8 +150,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     return isCustomerItem(entry) || PATCHABLE_OPERATOR_KEYS.contains(entry.getKey());
   }
 
-  private static final Set<String> PATCHABLE_OPERATOR_KEYS
-        = Set.of(INTROSPECTION_STATE_LABEL, OPERATOR_VERSION, MODEL_IN_IMAGE_DOMAINZIP_HASH, SHA256_ANNOTATION);
+  private static final Set<String> PATCHABLE_OPERATOR_KEYS = Set.of(INTROSPECTION_STATE_LABEL, OPERATOR_VERSION,
+      MODEL_IN_IMAGE_DOMAINZIP_HASH, SHA256_ANNOTATION, OBSERVED_DOMAIN_GENERATION_LABEL,
+      OBSERVED_CLUSTER_GENERATION_LABEL);
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
@@ -212,6 +216,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   DomainResource getDomain() {
     return info.getDomain();
+  }
+
+  ClusterResource getCluster(String clusterName) {
+    return info.getClusterResource(clusterName);
   }
 
   private String getDomainName() {
@@ -443,6 +451,10 @@ public abstract class PodStepContext extends BasePodStepContext {
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
     Optional.ofNullable(productVersion)
           .ifPresent(pv -> result.put(LabelConstants.OPERATOR_VERSION, pv));
+    Optional.ofNullable(getDomain().getMetadata()).map(m -> m.getGeneration())
+        .ifPresent(generation -> result.put(OBSERVED_DOMAIN_GENERATION_LABEL, String.valueOf(generation)));
+    Optional.ofNullable(getCluster(getClusterName())).map(c -> c.getMetadata()).map(m -> m.getGeneration())
+        .ifPresent(generation -> result.put(OBSERVED_CLUSTER_GENERATION_LABEL, String.valueOf(generation)));
 
     if (addRestartRequiredLabel) {
       result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");

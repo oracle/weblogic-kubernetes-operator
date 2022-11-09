@@ -123,6 +123,8 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.OBSERVED_CLUSTER_GENERATION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.OBSERVED_DOMAIN_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -486,7 +488,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenMakeRightRun_updateDomainStatus() {
+  void whenMakeRightRun_updateDomainStatusAndObservedDomainGeneration() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -501,10 +503,26 @@ class DomainProcessorTest {
     assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
     assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
+    assertThat(getObservedDomainGeneration(ADMIN_NAME), is("2"));
+    assertThat(getObservedDomainGeneration(getManagedServerName(1)), is("2"));
+    assertThat(getObservedDomainGeneration(getManagedServerName(2)), is("2"));
+  }
+
+  private String getObservedDomainGeneration(String name) {
+    return getObservedGeneration(name, "DOMAIN");
+  }
+
+  private String getObservedGeneration(String name, String generationType) {
+    return generationType.equals("DOMAIN") ? getPodLabels(name).get(OBSERVED_DOMAIN_GENERATION_LABEL)
+        : getPodLabels(name).get(OBSERVED_CLUSTER_GENERATION_LABEL);
+  }
+
+  private Map<String, String> getPodLabels(String name) {
+    return testSupport.<V1Pod>getResourceWithName(POD, UID + "-" + name).getMetadata().getLabels();
   }
 
   @Test
-  void whenMakeRightRun_updateClusterResourceStatus() {
+  void whenMakeRightRun_updateClusterResourceStatusAndObservedClusterGeneration() {
     ClusterResource clusterResource = createClusterResource(NS, CLUSTER);
     clusterResource.getMetadata().generation(2L);
     testSupport.defineResources(clusterResource);
@@ -515,10 +533,12 @@ class DomainProcessorTest {
 
     ClusterResource updatedClusterResource = testSupport
         .getResourceWithName(KubernetesTestSupport.CLUSTER, CLUSTER);
+
     assertThat(updatedClusterResource.getStatus(), notNullValue());
     assertThat(updatedClusterResource.getStatus().getMinimumReplicas(), equalTo(0));
     assertThat(updatedClusterResource.getStatus().getMaximumReplicas(), equalTo(5));
     assertThat(updatedClusterResource.getStatus().getObservedGeneration(), equalTo(2L));
+    assertThat(getObservedGeneration(getManagedServerName(1), "CLUSTER"), is("2"));
   }
 
   @Test
