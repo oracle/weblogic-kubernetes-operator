@@ -451,9 +451,9 @@ public abstract class PodStepContext extends BasePodStepContext {
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
     Optional.ofNullable(productVersion)
           .ifPresent(pv -> result.put(LabelConstants.OPERATOR_VERSION, pv));
-    Optional.ofNullable(getDomain().getMetadata()).map(m -> m.getGeneration())
+    Optional.ofNullable(getDomain().getMetadata()).map(V1ObjectMeta::getGeneration)
         .ifPresent(generation -> result.put(OBSERVED_DOMAIN_GENERATION_LABEL, String.valueOf(generation)));
-    Optional.ofNullable(getCluster(getClusterName())).map(c -> c.getMetadata()).map(m -> m.getGeneration())
+    Optional.ofNullable(getCluster(getClusterName())).map(ClusterResource::getMetadata).map(V1ObjectMeta::getGeneration)
         .ifPresent(generation -> result.put(OBSERVED_CLUSTER_GENERATION_LABEL, String.valueOf(generation)));
 
     if (addRestartRequiredLabel) {
