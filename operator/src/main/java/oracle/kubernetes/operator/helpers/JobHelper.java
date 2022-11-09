@@ -262,7 +262,7 @@ public class JobHelper {
       private boolean isJobOutdated(Packet packet, @Nonnull V1Job job) {
         return hasAnyImageChanged(job)
             || hasIntrospectVersionChanged(job)
-            || isInspectionRequiredAndGenerationChanged(packet);
+            || isInspectionRequiredAndGenerationChanged(packet, job);
       }
 
       private boolean hasNotCompleted(V1Job job) {
@@ -341,8 +341,21 @@ public class JobHelper {
             .orElse(null);
       }
 
-      private boolean isInspectionRequiredAndGenerationChanged(Packet packet) {
-        return MakeRightDomainOperation.isInspectionRequired(packet) && isDomainGenerationChanged(packet, false);
+      private boolean isInspectionRequiredAndGenerationChanged(Packet packet, V1Job job) {
+        return MakeRightDomainOperation.isInspectionRequired(packet) && isJobDomainGenerationOutdated(job);
+      }
+
+      private boolean isJobDomainGenerationOutdated(V1Job job) {
+        return Optional.ofNullable(getDomainGenerationFromJob(job))
+            .map(gen -> !gen.equals(getDomainGeneration())).orElse(true);
+      }
+
+      String getDomainGenerationFromJob(V1Job job) {
+        return Optional.ofNullable(job)
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(m -> m.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+            .orElse(null);
       }
 
       private boolean isKnownFailedJob(V1Job job) {
@@ -402,16 +415,16 @@ public class JobHelper {
       }
 
       private boolean isBringingUpNewDomain(Packet packet) {
-        return getNumRunningServers() == 0 && creatingServers(info) && isDomainGenerationChanged(packet, true);
+        return getNumRunningServers() == 0 && creatingServers(info) && isDomainGenerationChanged(packet);
       }
 
       private int getNumRunningServers() {
         return info.getServerNames().size();
       }
 
-      private boolean isDomainGenerationChanged(Packet packet, boolean defaultValue) {
+      private boolean isDomainGenerationChanged(Packet packet) {
         return Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
-                .map(gen -> !gen.equals(getDomainGeneration())).orElse(defaultValue);
+                .map(gen -> !gen.equals(getDomainGeneration())).orElse(true);
       }
 
       private String getDomainGeneration() {

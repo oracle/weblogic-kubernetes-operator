@@ -311,7 +311,8 @@ public class JobStepContext extends BasePodStepContext {
           .namespace(getNamespace())
           .putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, getIntrospectVersionLabel())
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
-          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true"));
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
+          .putLabelsItem(LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION, getDomainGeneration()));
   }
 
   private long getActiveDeadlineSeconds() {
@@ -642,6 +643,13 @@ public class JobStepContext extends BasePodStepContext {
 
   private String getIntrospectVersionLabel() {
     return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
+  }
+
+  private String getDomainGeneration() {
+    return Optional.ofNullable(getDomain().getMetadata())
+        .map(V1ObjectMeta::getGeneration)
+        .map(String::valueOf)
+        .orElse(null);
   }
 
   @Override

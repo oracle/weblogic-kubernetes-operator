@@ -813,6 +813,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     testSupport.defineResources(createIntrospectorJobWithIntrospectVersionLabel(introspectVersion));
   }
 
+  private void defineIntrospectionWithDomainGenerationLabel(Long domainGeneration) {
+    testSupport.defineResources(createIntrospectorJobWithDomainGenerationLabel(String.valueOf(domainGeneration)));
+  }
+
   @Test
   void whenPreviousFailedJobExists_deleteIt() {
     ignoreJobCreatedAndDeletedLogs();
@@ -1094,8 +1098,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getConfigurator().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     domain.getMetadata().setGeneration(DOMAIN_GENERATION);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION - 1));
-    defineIntrospectionWithIntrospectVersionLabel(null);
+    defineIntrospectionWithDomainGenerationLabel(DOMAIN_GENERATION - 1);
     testSupport.doOnCreate(JOB, this::recordJob);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
@@ -1112,8 +1115,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getConfigurator().withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
     domain.getMetadata().setGeneration(DOMAIN_GENERATION);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION));
-    defineIntrospectionWithIntrospectVersionLabel(null);
+    defineIntrospectionWithDomainGenerationLabel(DOMAIN_GENERATION);
     testSupport.doOnCreate(JOB, this::recordJob);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
@@ -1122,7 +1124,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobInProgressAndMIIJobGenerationMissingFromPacket_doNotCreateNewJob() {
+  void whenJobInProgressAndMIIJobGenerationMissingFromJobMetadata_createNewJob() {
     final Long DOMAIN_GENERATION = 4L;
     ignoreIntrospectorFailureLogs();
     ignoreJobCreatedAndDeletedLogs();
@@ -1131,12 +1133,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     domain.getMetadata().setGeneration(DOMAIN_GENERATION);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
 
-    defineIntrospectionWithIntrospectVersionLabel(null);
     testSupport.doOnCreate(JOB, this::recordJob);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
 
-    assertThat(affectedJob, nullValue());
+    assertThat(affectedJob, notNullValue());
   }
 
   @Test
@@ -1148,8 +1149,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getConfigurator().withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
     domain.getMetadata().setGeneration(DOMAIN_GENERATION);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
-    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, String.valueOf(DOMAIN_GENERATION - 1));
-    defineIntrospectionWithIntrospectVersionLabel(null);
+    defineIntrospectionWithDomainGenerationLabel(DOMAIN_GENERATION - 1);
     testSupport.doOnCreate(JOB, this::recordJob);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep());
@@ -1356,6 +1356,12 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private V1Job createIntrospectorJobWithIntrospectVersionLabel(String introspectVersion) {
     V1Job job = createIntrospectorJob(UID);
     job.getMetadata().putLabelsItem(LabelConstants.INTROSPECTION_STATE_LABEL, introspectVersion);
+    return job;
+  }
+
+  private V1Job createIntrospectorJobWithDomainGenerationLabel(String domainGeneration) {
+    V1Job job = createIntrospectorJob(UID);
+    job.getMetadata().putLabelsItem(INTROSPECTION_DOMAIN_SPEC_GENERATION, domainGeneration);
     return job;
   }
 
