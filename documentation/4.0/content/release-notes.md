@@ -124,6 +124,8 @@ draft: false
   * Added `.spec.configuration.model.auxiliaryImages` for simplified configuration of auxiliary images.
   * Added several additional advanced settings related to auxiliary images including `.spec.configuration.model.auxiliaryImageVolumeMountPath`, `.spec.configuration.model.auxiliaryImageVolumeMedium`, and `.spec.configuration.model.auxiliaryImageVolumeSizeLimit`.
   * Removed `.spec.serverPod.auxiliaryImages` and `.spec.auxiliaryImageVolumes` as part of the simplification effort.
+  * Default change for `domain.spec.configuration.model.wdtInstallHome` to `/aux/weblogic-deploy` if `spec.configuration.model.AuxiliaryImages` are specified, and to `/u01/wdt/weblogic-deploy` otherwise. It previously always defaulted to `/u01/wdt/weblogic-deploy`.
+  * Default change for `domain.spec.configuration.model.wdtModelHome` to `/aux/models` if `spec.configuration.model.AuxiliaryImages` are specified, and to `/u01/wdt/models` otherwise. It previously always defaulted to `/u01/wdt/models`. 
 
 * Cluster changes.
   * Moved content under `.spec.clusters[*]` to the new Cluster resource `.spec`.
