@@ -244,15 +244,15 @@ $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
-Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v2","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1",...
-API Version:  weblogic.oracle/v2
+Annotations:  kubectl.kubernetes.io/last-applied-configuration={"apiVersion":"weblogic.oracle/v8","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"domain1",...
+API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
   Cluster Name:        
   Creation Timestamp:  2019-01-10T14:50:52Z
   Generation:          1
   Resource Version:    3700284
-  Self Link:           /apis/weblogic.oracle/v2/namespaces/default/domains/domain1
+  Self Link:           /apis/weblogic.oracle/v8/namespaces/default/domains/domain1
   UID:                 2023ae0a-14e7-11e9-b751-fa163e855ac8
 Spec:
   Admin Server:
