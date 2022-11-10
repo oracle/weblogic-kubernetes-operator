@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -226,10 +227,58 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
+  void afterReplicaCountMaxUnavailableSetForDomain_canReadMinAvailable() {
+    configureDomain(domain).withMaxUnavailable(2).withDefaultReplicaCount(5);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
+  void afterReplicaCountMaxSetOnClusterUnavailableSetForDomain_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5);
+    configureDomain(domain).withMaxUnavailable(2);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
   void afterMaxUnavailableSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxUnavailable(5);
 
     assertThat(info.getMaxUnavailable("cluster1"), equalTo(5));
+  }
+
+  @Test
+  void whenNotSpecifiedForBothDClusterAndDomain_maxUnavailableHasDefault() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxUnavailable(null);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(DEFAULT_MAX_CLUSTER_UNAVAILABLE));
+  }
+
+  @Test
+  void whenNotSpecifiedForCluster_maxUnavailableFromDomain() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxUnavailable(2);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(2));
+  }
+
+  @Test
+  void whenNoClusterSpec_maxUnavailableHasDefault() {
+    assertThat(info.getMaxUnavailable("cluster-with-no-spec"),
+        equalTo(DEFAULT_MAX_CLUSTER_UNAVAILABLE));
+  }
+
+  @Test
+  void whenBothClusterAndDomainSpecified_maxUnavailableFromCluster() {
+    configureCluster("cluster1").withMaxUnavailable(5);
+    configureDomain(domain).withMaxUnavailable(4);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(5));
   }
 
   @Test

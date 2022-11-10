@@ -7,7 +7,7 @@ Description: "Use the operator's REST services."
 
 
 
-The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations.  Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
+The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations.
 
 You can access most of the REST services using `GET`, for example:
 

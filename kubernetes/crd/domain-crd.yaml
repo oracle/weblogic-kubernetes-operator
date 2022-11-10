@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 57dd4476255aa691791bccf16629c0cc5a5aceb1da44c5fefac307ac3428734b
+    weblogic.sha256: 3a81ece5d88c85957a5d5e4a1b6c068cdca4355afd80a5a6598cbfade313871f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -502,6 +502,13 @@ spec:
                   if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID>
                   if `domainHomeSourceType` is FromModel.
                 type: string
+              maxClusterUnavailable:
+                default: 1
+                description: The maximum number of cluster members that can be temporarily
+                  unavailable. You can override this default on a per cluster basis
+                  by setting the cluster's `maxUnavailable` field. Defaults to 1.
+                minimum: 1
+                type: integer
               logHomeLayout:
                 default: ByServers
                 description: Control how log files under `logHome` are organized when

@@ -4,10 +4,10 @@
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
 
 topology:
     Name: "wls-domain1"
+    ProductionModeEnabled: 'true'
     AdminServerName: "admin-server"
     Cluster:
         "cluster-1":
