@@ -297,7 +297,7 @@ public class Domain {
     StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"").append(configMapName).append("\"")
+        .append(" \"value\":  \"" + configMapName + "\"")
         .append(" }]");
     logger.info("Configmap patch string: {0}", patchStr);
 
