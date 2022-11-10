@@ -25,8 +25,8 @@ public interface LabelConstants {
   String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
   String INTROSPECTION_DOMAIN_SPEC_GENERATION = "weblogic.domainSpecGeneration";
   String TO_BE_ROLLED_LABEL = "weblogic.awaitingPodRoll";
-  String OBSERVED_DOMAIN_GENERATION_LABEL = "weblogic.observedDomainGeneration";
-  String OBSERVED_CLUSTER_GENERATION_LABEL = "weblogic.observedClusterGeneration";
+  String DOMAIN_OBSERVED_GENERATION_LABEL = "weblogic.domainObservedGeneration";
+  String CLUSTER_OBSERVED_GENERATION_LABEL = "weblogic.clusterObservedGeneration";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

@@ -119,12 +119,12 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTER_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAIN_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.OBSERVED_CLUSTER_GENERATION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.OBSERVED_DOMAIN_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -513,8 +513,8 @@ class DomainProcessorTest {
   }
 
   private String getObservedGeneration(String name, String generationType) {
-    return generationType.equals("DOMAIN") ? getPodLabels(name).get(OBSERVED_DOMAIN_GENERATION_LABEL)
-        : getPodLabels(name).get(OBSERVED_CLUSTER_GENERATION_LABEL);
+    return generationType.equals("DOMAIN") ? getPodLabels(name).get(DOMAIN_OBSERVED_GENERATION_LABEL)
+        : getPodLabels(name).get(CLUSTER_OBSERVED_GENERATION_LABEL);
   }
 
   private Map<String, String> getPodLabels(String name) {

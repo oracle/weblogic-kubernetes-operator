@@ -91,11 +91,11 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTER_OBSERVED_GENERATION_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAIN_OBSERVED_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
-import static oracle.kubernetes.operator.LabelConstants.OBSERVED_CLUSTER_GENERATION_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.OBSERVED_DOMAIN_GENERATION_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
@@ -151,8 +151,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private static final Set<String> PATCHABLE_OPERATOR_KEYS = Set.of(INTROSPECTION_STATE_LABEL, OPERATOR_VERSION,
-      MODEL_IN_IMAGE_DOMAINZIP_HASH, SHA256_ANNOTATION, OBSERVED_DOMAIN_GENERATION_LABEL,
-      OBSERVED_CLUSTER_GENERATION_LABEL);
+      MODEL_IN_IMAGE_DOMAINZIP_HASH, SHA256_ANNOTATION, DOMAIN_OBSERVED_GENERATION_LABEL,
+      CLUSTER_OBSERVED_GENERATION_LABEL);
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
@@ -452,9 +452,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(productVersion)
           .ifPresent(pv -> result.put(LabelConstants.OPERATOR_VERSION, pv));
     Optional.ofNullable(getDomain().getMetadata()).map(V1ObjectMeta::getGeneration)
-        .ifPresent(generation -> result.put(OBSERVED_DOMAIN_GENERATION_LABEL, String.valueOf(generation)));
+        .ifPresent(generation -> result.put(DOMAIN_OBSERVED_GENERATION_LABEL, String.valueOf(generation)));
     Optional.ofNullable(getCluster(getClusterName())).map(ClusterResource::getMetadata).map(V1ObjectMeta::getGeneration)
-        .ifPresent(generation -> result.put(OBSERVED_CLUSTER_GENERATION_LABEL, String.valueOf(generation)));
+        .ifPresent(generation -> result.put(CLUSTER_OBSERVED_GENERATION_LABEL, String.valueOf(generation)));
 
     if (addRestartRequiredLabel) {
       result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
