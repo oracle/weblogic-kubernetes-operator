@@ -672,6 +672,7 @@ public class LoadBalancerUtils {
    * @param clusterNameMSPortMap the map with key as cluster name and the value as managed server port of the cluster
    * @param setIngressHost if false does not set ingress host
    * @param tlsSecret name of the TLS secret if any
+   * @param ingressTraefikClass the ingressClass for Traefik
    * @return list of ingress hosts
    */
   public static List<String> createTraefikIngressForDomainAndVerify(
@@ -680,11 +681,11 @@ public class LoadBalancerUtils {
       int nodeport,
       Map<String, Integer> clusterNameMSPortMap,
       boolean setIngressHost,
-      String tlsSecret) {
+      String tlsSecret,
+      String ingressTraefikClass) {
 
     LoggingFacade logger = getLogger();
     // create an ingress in domain namespace
-    final String ingressTraefikClass = null;
     String ingressName = domainUid + "-" + ingressTraefikClass;
 
     List<String> ingressHostList =
