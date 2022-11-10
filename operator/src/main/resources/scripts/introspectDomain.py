@@ -2004,11 +2004,23 @@ def getRealListenPort(template):
 
 # Derive the default value for SecureMode of a domain
 def isSecureModeEnabledForDomain(domain):
-  secureModeEnabled = false
-  if domain.getSecurityConfiguration().getSecureMode() != None:
-    secureModeEnabled = domain.getSecurityConfiguration().getSecureMode().isSecureModeEnabled()
+  secureModeEnabled = False
+
+  # Do not use domain.getSecurityConfiguration().getSecureMode()
+  # it will result in cie error in MII domain created by ServerStartMode: secure
+  # switched to use lsa() to avoid cie not exposing the function
+
+  cd('/SecurityConfiguration/' + domain.getName())
+  childs = ls(returnType='c', returnMap='true')
+  if 'SecureMode' in childs:
+    cd('SecureMode/NO_NAME_0')
+    attributes = ls(returnType='a', returnMap='true')
+    if attributes['SecureModeEnabled']:
+      secureModeEnabled = True
   else:
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
+
+
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):
