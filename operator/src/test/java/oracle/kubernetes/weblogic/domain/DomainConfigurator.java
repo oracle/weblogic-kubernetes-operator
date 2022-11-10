@@ -243,6 +243,11 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  public DomainConfigurator withMaxUnavailable(Integer maxUnavailable) {
+    getDomainSpec().setMaxClusterUnavailable(maxUnavailable);
+    return this;
+  }
+
   public DomainConfigurator withClusterReference(String clusterResourceName) {
     getDomainSpec().getClusters().add(new V1LocalObjectReference().name(clusterResourceName));
     return this;

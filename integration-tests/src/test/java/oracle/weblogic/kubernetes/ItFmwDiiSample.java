@@ -235,7 +235,6 @@ public class ItFmwDiiSample {
     assertTrue(result1, "Failed to create domain.yaml. This could be a transient env issue because of "
         + "'getaddrinfo' failure in the socket.py script. Please check the test out to confirm");
 
-
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
       String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost", "domain-home-in-image");
