@@ -49,7 +49,7 @@ hugo -s 3.2 -d "${outdir}/3.2" -b https://oracle.github.io/weblogic-kubernetes-o
 hugo -s 3.3 -d "${outdir}/3.3" -b https://oracle.github.io/weblogic-kubernetes-operator/3.3
 
 echo "Copying static files into place..."
-cp -R charts domains swagger "${outdir}"
+cp -R charts domains "${outdir}"
 
 echo "Successfully generated documentation in ${outdir}..."
 

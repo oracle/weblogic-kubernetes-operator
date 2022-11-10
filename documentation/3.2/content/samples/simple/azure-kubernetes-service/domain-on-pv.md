@@ -313,7 +313,7 @@ We need to set up the domain configuration for the WebLogic domain.
     serverPodMemoryLimit: "1.5Gi"
     serverPodCpuLimit: "250m"
 
-    javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
+    javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
     ```
 
     Notice that the `Limit` and `Request` values are the same for each of `serverPodMemory` and `serverPodCpu`.  This is intentional.  To learn why, see [Create a Pod that gets assigned a QoS class of Guaranteed](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed).  You must have allocated sufficient CPU and memory resources so that the pod can be scheduled for running by Kubernetes.  This is an example of **capacity planning**, a very important Kubernetes success factor. For more details on capacity planning with AKS, see [Azure Kubernetes Service Cluster Capacity Planning
