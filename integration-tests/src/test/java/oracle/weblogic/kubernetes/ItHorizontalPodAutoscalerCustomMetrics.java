@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.apache.commons.io.FileUtils;
@@ -51,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -73,9 +75,9 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheusAdapter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -115,6 +117,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
+  private static final String SESSMIGR_APP_WAR_NAME = "sessmigr-war";
+  private static final String SESSMIGT_APP_URL = SESSMIGR_APP_WAR_NAME + "/?getCounter";
   private static String monitoringNS = null;
   static PrometheusParams promHelmParams = null;
   private static String releaseSuffix = "hpatest";
@@ -246,7 +250,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
-  void testHPAWithMetricsServer() {
+  void testHPAWithCustomMetricsServer() {
 
     assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
         domainNamespace,
@@ -255,11 +259,11 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         prometheusAdapterReleaseName,
         monitoringNS, K8S_NODEPORT_HOST, nodeportPrometheus), "Failed to install Prometheus Adapter");
     // wait till prometheus adapter could get the current custom metrics
-    // total_opened_sessions_exporter_app to make sure it is ready
+    // total_opened_sessions_myear_app to make sure it is ready
     testUntil(withStandardRetryPolicy,
-        () -> verifyCustomMetricsExposed(domainNamespace,"total_opened_sessions_exporter_app"),
+        () -> verifyCustomMetricsExposed(domainNamespace,"total_opened_sessions_myear_app"),
         logger,
-        "Get current total_opened_sessions_exporter_app from prometheus adapter in namespace {0}",
+        "Get current total_opened_sessions_myear_app from prometheus adapter in namespace {0}",
         domainNamespace);
 
     int managedServerPort = 8001;
@@ -272,11 +276,35 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         false, ingressClassName, false, 0);
     // create hpa with custom metrics
     createHPA();
-    //invoke app 50 times to generate metrics with number of opened sessions > 15
-    verifyMonExpAppAccessThroughNginx(ingressHostList.get(0), 1, nodeportshttp);
-
+    //invoke app 20 times to generate metrics with number of opened sessions > 15
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/" + SESSMIGT_APP_URL,
+            ingressHostList.get(0),
+            ADMIN_USERNAME_DEFAULT,
+            ADMIN_PASSWORD_DEFAULT,
+            K8S_NODEPORT_HOST,
+            nodeportshttp);
+    logger.info("Executing curl command " + curlCmd);
+    for (int i = 0; i < 50; i++) {
+      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd));
+    }
     //check hpa scaled up to one more server
     checkPodReadyAndServiceExists(managedServerPrefix + 3, domainUid, domainNamespace);
+    //reboot server1 and server2 to kill open sessions
+    assertDoesNotThrow(() -> deletePod(managedServerPrefix + 1, domainNamespace));
+    assertDoesNotThrow(() -> deletePod(managedServerPrefix + 2, domainNamespace));
+    // wait until reboot
+    for (int i = 1; i < 4; i++) {
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+    //wait for new metric to fetch
+    testUntil(
+        withStandardRetryPolicy,
+        () -> verifyHPA(domainNamespace, "0/15"),
+        logger,
+        "Checking if total_open_session metric is 0");
+
+    checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
   }
 
   /**
@@ -310,13 +338,13 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   }
 
   // verify hpa is getting the metrics
-  private boolean verifyHPA(String namespace, String hpaName) {
+  private boolean verifyHPA(String namespace, String expectedOutput) {
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl get hpa " + hpaName + " -n " + namespace);
+    params.command("kubectl get hpa custommetrics-hpa -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info(result.stdout());
-    return result.stdout().contains(hpaName);
+    return result.stdout().contains(expectedOutput);
   }
 
   // verify custom metrics is exposed via prometheus adapter

@@ -3,7 +3,7 @@
 rules:
   default: false
   custom:
-    - seriesQuery: '{__name__=~"wls_webapp_config_sessions_opened_total_count",pod!="",namespace!="", app="wls-exporter"}'
+    - seriesQuery: '{__name__=~"wls_webapp_config_sessions_opened_total_count",pod!="",namespace!="", app="myear"}'
       resources:
         overrides:
           namespace:
@@ -12,5 +12,5 @@ rules:
             resource: pod
       name:
         matches: ^(.*)
-        as: "total_opened_sessions_exporter_app"
-      metricsQuery: wls_webapp_config_sessions_opened_total_count{<<.LabelMatchers>>,app='wls-exporter'}
+        as: "total_opened_sessions_myear_app"
+      metricsQuery: wls_webapp_config_sessions_opened_total_count{<<.LabelMatchers>>,app='myear'}

@@ -10,13 +10,18 @@ spec:
     apiVersion: weblogic.oracle/v1
     kind: Cluster
     name: hpacustomcluster
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
   minReplicas: 2
   maxReplicas: 3
   metrics:
     - type: Pods
       pods:
         metric:
-          name: total_opened_sessions_exporter_app
+          name: total_opened_sessions_myear_app
         target:
           type: AverageValue
           averageValue: 15

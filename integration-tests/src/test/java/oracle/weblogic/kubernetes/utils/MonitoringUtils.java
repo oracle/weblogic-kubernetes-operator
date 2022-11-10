@@ -1032,15 +1032,6 @@ public class MonitoringUtils {
         logger,
         "Verify NGINX can access the monitoring exporter metrics \n"
             + "from all managed servers in the domain via http");
-    /*
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 100))
-        .as("Verify NGINX can access the monitoring exporter metrics "
-            + "from all managed servers in the domain via http")
-        .withFailMessage("NGINX can not access the monitoring exporter metrics "
-            + "from one or more of the managed servers via http")
-        .isTrue();
-
-     */
   }
 
   /**
