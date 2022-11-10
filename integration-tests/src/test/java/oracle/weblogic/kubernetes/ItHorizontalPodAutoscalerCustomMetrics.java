@@ -250,7 +250,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
    */
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
-  void testHPAWithCustomMetricsServer() {
+  void testHPAWithCustomMetrics() {
 
     assertDoesNotThrow(() -> installPrometheus(PROMETHEUS_CHART_VERSION,
         domainNamespace,
