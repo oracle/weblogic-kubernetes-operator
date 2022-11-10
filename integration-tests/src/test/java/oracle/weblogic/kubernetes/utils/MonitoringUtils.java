@@ -1076,10 +1076,10 @@ public class MonitoringUtils {
               + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
           monitoringExporterSrcDir, proxyHost, httpsproxy);
     } else {
-      command = "cd %s && mvn clean install -Dmaven.test.skip=true "
+      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
           + " &&   docker build . -t "
           + imageName
-          + monitoringExporterSrcDir;
+          + monitoringExporterSrcDir);
     }
     logger.info("Executing command " + command);
     assertTrue(Command

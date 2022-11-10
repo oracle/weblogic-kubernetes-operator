@@ -146,7 +146,7 @@ class ItIstioCrossDomainTransaction {
     //Start oracleDB
     assertDoesNotThrow(
         () -> startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort),
-        String.format("Failed to start Oracle DB"));
+        "Failed to start Oracle DB");
 
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
