@@ -152,11 +152,13 @@ class ItProductionSecureMode {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
             "weblogicenc", "weblogicenc");
 
+    // Add ServerStartMode section in domainInfo section 
+    // instead of SecurityConfiguration in topology section
+    // This will trigger a new path while WebLogic configuration
     pathToEnableSSLYaml = Paths.get(WORK_DIR + "/enablessl.yaml");
-    String yamlString = "topology:\n"
-        + "  SecurityConfiguration: \n"
-        + "    SecureMode: \n"
-        + "         SecureModeEnabled: true \n"
+    String yamlString = "domainInfo:\n"
+        + "         ServerStartMode: 'secure' \n"
+        + "topology: \n"
         + "  ServerTemplate: \n"
         + "    \"cluster-1-template\": \n"
         + "       ListenPort: '7001' \n"
