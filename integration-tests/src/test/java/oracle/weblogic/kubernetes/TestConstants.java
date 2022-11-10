@@ -284,6 +284,7 @@ public interface TestConstants {
       getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.38.6");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
+
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
 
