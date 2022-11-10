@@ -488,7 +488,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenMakeRightRun_updateDomainStatusAndObservedDomainGeneration() {
+  void whenMakeRightRun_updateDomainStatusAndDomainObservedGeneration() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -503,12 +503,12 @@ class DomainProcessorTest {
     assertThat(getStateGoal(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
     assertThat(updatedDomain.getStatus().getObservedGeneration(), equalTo(2L));
-    assertThat(getObservedDomainGeneration(ADMIN_NAME), is("2"));
-    assertThat(getObservedDomainGeneration(getManagedServerName(1)), is("2"));
-    assertThat(getObservedDomainGeneration(getManagedServerName(2)), is("2"));
+    assertThat(getDomainObservedGeneration(ADMIN_NAME), is("2"));
+    assertThat(getDomainObservedGeneration(getManagedServerName(1)), is("2"));
+    assertThat(getDomainObservedGeneration(getManagedServerName(2)), is("2"));
   }
 
-  private String getObservedDomainGeneration(String name) {
+  private String getDomainObservedGeneration(String name) {
     return getObservedGeneration(name, "DOMAIN");
   }
 
@@ -522,7 +522,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenMakeRightRun_updateClusterResourceStatusAndObservedClusterGeneration() {
+  void whenMakeRightRun_updateClusterResourceStatusAndClusterObservedGeneration() {
     ClusterResource clusterResource = createClusterResource(NS, CLUSTER);
     clusterResource.getMetadata().generation(2L);
     testSupport.defineResources(clusterResource);
