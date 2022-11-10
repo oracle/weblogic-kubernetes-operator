@@ -445,7 +445,6 @@ public class ItFmwSample {
    * @param fmwImage image name of FMW
 ]   * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
-   * @throws Exception if any error occurs when setting up RCU database
    */
 
   private static void setupDBBySample(String dbImage, String fmwImage,

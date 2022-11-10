@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -138,7 +137,7 @@ public class CommonMiiTestUtils {
       int replicaCount
   ) {
     return createMiiDomainAndVerify(domainNamespace, domainUid, imageName, 
-        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList("cluster-1"), false, null);
+        adminServerPodName, managedServerPrefix, replicaCount, List.of("cluster-1"), false, null);
   }
 
   /**
@@ -910,7 +909,7 @@ public class CommonMiiTestUtils {
 
     StringBuffer curlString = new StringBuffer("curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    curlString.append("http://" + hostAndPort)
+    curlString.append("http://").append(hostAndPort)
         .append(resourcePath)
         .append("/")
         .append(" --silent --show-error ");
@@ -1091,13 +1090,13 @@ public class CommonMiiTestUtils {
                       .addContainersItem(
                           createfixPVCOwnerContainer(pvName,
                               "/shared")) // mounted under /shared inside pod
-                      .volumes(Arrays.asList(
+                      .volumes(List.of(
                           new V1Volume()
                               .name(pvName)
                               .persistentVolumeClaim(
                                   new V1PersistentVolumeClaimVolumeSource()
                                       .claimName(pvcName))))
-                      .imagePullSecrets(Arrays.asList(
+                      .imagePullSecrets(List.of(
                           new V1LocalObjectReference()
                               .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
 
@@ -1140,8 +1139,7 @@ public class CommonMiiTestUtils {
         commandToExecuteInsidePod, podName, domainNamespace);
     V1Pod serverPod = assertDoesNotThrow(() ->
             Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
-            podName, domainNamespace));
+        String.format("Could not get the server Pod %s in namespace %s", podName, domainNamespace));
 
     ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
         "/bin/sh", "-c", commandToExecuteInsidePod),
@@ -1399,16 +1397,14 @@ public class CommonMiiTestUtils {
     }
     String imagePullPolicy = "IfNotPresent";
     // create patch string
-    StringBuffer patchStr = new StringBuffer("[")
-        .append("{\"op\":  \"" + addOrReplace + "\",")
+    StringBuffer patchStr = new StringBuffer("[").append("{\"op\":  \"").append(addOrReplace).append("\",")
         .append(" \"path\": \"/spec/configuration/model")
         .append("/auxiliaryImages/")
         .append(auxiliaryImageIndex)
         .append("\", ")
         .append("\"value\":  {\"image\": \"")
         .append(auxiliaryImageName)
-        .append("\", ")
-        .append("\"imagePullPolicy\": \"" + imagePullPolicy + "\" ")
+        .append("\", ").append("\"imagePullPolicy\": \"").append(imagePullPolicy).append("\" ")
         .append("\"}}]");
 
     logger.info("Patch domain with auxiliary image patch string: " + patchStr);

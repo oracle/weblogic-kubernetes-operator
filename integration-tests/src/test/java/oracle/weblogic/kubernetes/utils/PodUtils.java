@@ -492,8 +492,7 @@ public class PodUtils {
 
     // get the introspector log message
     String introspectorLog = assertDoesNotThrow(()
-        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector",
-              new Boolean(false), new Integer(300), new Boolean(true)));
+        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector", false, 300, true));
 
     // match regex in domain info
     Pattern pattern = Pattern.compile(regex);

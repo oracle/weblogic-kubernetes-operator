@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -877,8 +878,7 @@ public class MonitoringUtils {
             + " -X GET http://admin:12345678@%s/api/dashboards",
         hostPort);
     testUntil(
-        assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-            String.format("Check access to grafana dashboard")),
+        assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"), "Check access to grafana dashboard"),
         logger,
         "Check access to grafana dashboard");
     logger.info("installing grafana dashboard");
@@ -1015,7 +1015,7 @@ public class MonitoringUtils {
       isFound = response.contains(searchKey);
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
-      logger.info("Can't execute command " + command + ex.getStackTrace());
+      logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     return isFound;
@@ -1047,7 +1047,7 @@ public class MonitoringUtils {
       isFound = response.contains(searchKey);
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
-      logger.info("Can't execute command " + command + ex.getStackTrace());
+      logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     return isFound;
@@ -1076,10 +1076,10 @@ public class MonitoringUtils {
               + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
           monitoringExporterSrcDir, proxyHost, httpsproxy);
     } else {
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
+      command = "cd %s && mvn clean install -Dmaven.test.skip=true "
           + " &&   docker build . -t "
           + imageName
-          + monitoringExporterSrcDir);
+          + monitoringExporterSrcDir;
     }
     logger.info("Executing command " + command);
     assertTrue(Command
