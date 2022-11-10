@@ -34,7 +34,7 @@ Useful Helm operations Show the available operator configuration values and thei
       <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.2/userguide/managing-operators/the-rest-api/</guid>
-      <description>The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
+      <description>The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations.
 You can access most of the REST services using GET, for example:
 To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters All of the REST services require authentication.</description>
     </item>

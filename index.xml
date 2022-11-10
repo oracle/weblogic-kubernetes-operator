@@ -286,15 +286,6 @@ A WDT archive ZIP file that contains your applications. A WDT model that describ
     </item>
     
     <item>
-      <title>Swagger</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/reference/swagger/</link>
-      <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/reference/swagger/</guid>
-      <description>View the Swagger REST API documentation here.</description>
-    </item>
-    
-    <item>
       <title>Prepare for a domain</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prepare/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
