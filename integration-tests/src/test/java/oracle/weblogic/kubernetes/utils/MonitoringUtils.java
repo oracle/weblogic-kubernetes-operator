@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -39,10 +40,12 @@ import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
+import oracle.weblogic.kubernetes.assertions.impl.RoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.apache.commons.io.FileUtils;
 
@@ -75,6 +78,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusAdapterReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -91,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -432,6 +437,63 @@ public class MonitoringUtils {
   }
 
   /**
+   * Install Prometheus adapter and wait up to five minutes until the prometheus adapter pods are ready.
+   *
+   * @param promAdapterReleaseName the prometheus adapter release name
+   * @param promAdapterNamespace the prometheus adapter namespace
+   * @return the prometheus adapter Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheusAdapter(String promAdapterReleaseName,
+                                                            String promAdapterNamespace,
+                                                             String prometheusHost,
+                                                             int prometheusPort) {
+    LoggingFacade logger = getLogger();
+    Path srcPromAdapterFile = Paths.get(RESOURCE_DIR, "exporter", "promadaptervalues.yaml");
+
+    // Helm install parameters
+    HelmParams promAdapterHelmParams = new HelmParams()
+        .releaseName(promAdapterReleaseName)
+        .namespace(promAdapterNamespace)
+        .repoUrl(PROMETHEUS_REPO_URL)
+        .repoName(PROMETHEUS_REPO_NAME)
+        .chartName("prometheus-adapter")
+        .chartValuesFile(srcPromAdapterFile.toString());
+
+
+    // install prometheus adapter
+    logger.info("Installing prometheus adapter in namespace {0}", promAdapterNamespace);
+    Map<String, Object> chartValues = new HashMap<>();
+    chartValues.put("prometheus.url", "http://" + prometheusHost);
+    chartValues.put("prometheus.port", prometheusPort);
+    assertTrue(Helm.install(promAdapterHelmParams, chartValues),
+        String.format("Failed to install prometheus adapter in namespace %s", promAdapterNamespace));
+    logger.info("Prometheus Adapter installed in namespace {0}", promAdapterNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus adapter release {0} status in namespace {1}",
+        promAdapterReleaseName, promAdapterNamespace);
+    assertTrue(isHelmReleaseDeployed(promAdapterReleaseName, promAdapterNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promAdapterReleaseName, promAdapterNamespace));
+    logger.info("Prometheus adapter release {0} status is deployed in namespace {1}",
+        promAdapterReleaseName, promAdapterNamespace);
+
+    // wait for the promethues adapter pod to be ready
+    logger.info("Wait for the promethues adapter pod is ready in namespace {0}", promAdapterNamespace);
+    String podName = assertDoesNotThrow(() -> getPodName(promAdapterNamespace, "prometheus-adapter"),
+        "Can't find prometheus-adapter pod");
+    testUntil(
+        assertDoesNotThrow(() -> isPrometheusAdapterReady(promAdapterNamespace, podName),
+            "prometheusAdapterIsReady failed with ApiException"),
+        logger,
+        "prometheus adapter to be running in namespace {0}",
+        promAdapterNamespace);
+
+    return promAdapterHelmParams;
+  }
+
+
+  /**
    * Install Grafana and wait up to five minutes until the grafana pod is ready.
    *
    * @param grafanaReleaseName the grafana release name
@@ -567,6 +629,39 @@ public class MonitoringUtils {
     } catch (Exception ex) {
       //ignoring
       logger.info("getting exception during delete artifacts for grafana and prometheus");
+    }
+  }
+
+  /**
+   * Extra clean up for Prometheus Adapter artifacts.
+   *
+   */
+  public static void cleanupPrometheusAdapterClusterRoles() {
+    //extra cleanup
+    String prometheusAdapterReleaseName = "prometheus-adapter";
+    try {
+      if (ClusterRole.clusterRoleExists(prometheusAdapterReleaseName + "-resource-reader")) {
+        Kubernetes.deleteClusterRole(prometheusAdapterReleaseName + "-resource-reader");
+      }
+      if (ClusterRole.clusterRoleExists(prometheusAdapterReleaseName + "-server-resources")) {
+        Kubernetes.deleteClusterRole(prometheusAdapterReleaseName + "-server-resources");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-hpa-controller")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-hpa-controller");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-resource-reader")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-resource-reader");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusAdapterReleaseName + "-system-auth-delegator")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusAdapterReleaseName + "-system-auth-delegator");
+      }
+      if (RoleBinding.roleBindingExists(prometheusAdapterReleaseName + "-auth-reader", "kube-system")) {
+        Kubernetes.deleteNamespacedRoleBinding("kube-system", prometheusAdapterReleaseName + "-auth-reader");
+      }
+
+    } catch (Exception ex) {
+      //ignoring
+      logger.info("getting exception during delete artifacts for prometheus adapter");
     }
   }
 
@@ -937,15 +1032,6 @@ public class MonitoringUtils {
         logger,
         "Verify NGINX can access the monitoring exporter metrics \n"
             + "from all managed servers in the domain via http");
-    /*
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 100))
-        .as("Verify NGINX can access the monitoring exporter metrics "
-            + "from all managed servers in the domain via http")
-        .withFailMessage("NGINX can not access the monitoring exporter metrics "
-            + "from one or more of the managed servers via http")
-        .isTrue();
-
-     */
   }
 
   /**
