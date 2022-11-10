@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -245,13 +245,13 @@ public class BuildApplication {
     //final String podName = "weblogic-build-pod-" + namespace;
     V1Pod podBody = new V1Pod()
         .spec(new V1PodSpec()
-            .containers(List.of(container
+            .containers(Arrays.asList(container
                 .name("weblogic-container")
                 .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                 .imagePullPolicy(IMAGE_PULL_POLICY)
                 .addCommandItem("sleep")
                 .addArgsItem("600")))
-            .imagePullSecrets(List.of(new V1LocalObjectReference()
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference()
                 .name(BASE_IMAGES_REPO_SECRET_NAME)))) // the persistent volume claim used by the test
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
