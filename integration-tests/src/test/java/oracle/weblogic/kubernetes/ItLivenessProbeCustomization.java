@@ -95,7 +95,6 @@ class ItLivenessProbeCustomization {
   private static final int replicaCount = 1;
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerPodName2 = domainUid2 + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String APPCHECK_SCRIPT = "customLivenessProbe.sh";
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
@@ -327,6 +326,18 @@ class ItLivenessProbeCustomization {
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
         checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
             managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
       }
     }
 
@@ -667,6 +678,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the readinessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -724,6 +747,18 @@ class ItLivenessProbeCustomization {
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
         checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
             managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
       }
     }
   }
