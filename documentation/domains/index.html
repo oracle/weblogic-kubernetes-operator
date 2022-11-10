@@ -1222,6 +1222,12 @@ window.onload = function() {
           "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
+        "maxClusterUnavailable": {
+          "default": 1.0,
+          "description": "The maximum number of cluster members that can be temporarily unavailable. You can override this default on a per cluster basis by setting the cluster\u0027s `maxUnavailable` field. Defaults to 1.",
+          "type": "integer",
+          "minimum": 1.0
+        },
         "logHomeLayout": {
           "default": "ByServers",
           "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",

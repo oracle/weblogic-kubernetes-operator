@@ -61,8 +61,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private ServerStartPolicy serverStartPolicy;
 
-  @Description(
-      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
+  @Description("The maximum number of cluster members that can be temporarily unavailable. "
+      + "Defaults to `domain.spec.maxClusterUnavailable`, which defaults to 1.")
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
