@@ -669,8 +669,13 @@ class ItKubernetesDomainEvents {
   void testK8SEventsDelete() {
     OffsetDateTime timestamp = now();
     createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    deleteDomainCustomResource(domainUid, domainNamespace2);
+
+    // Delete the cluster resource before deleting the containing domain resource in order
+    // to make sure that ClusterDeleted event is logged. The operator ignores all K8S events
+    // for a cluster if it is not referenced by a domain that is managed by the operator.
     deleteClusterCustomResource(cluster1Name, domainNamespace2);
+    deleteDomainCustomResource(domainUid, domainNamespace2);
+
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
