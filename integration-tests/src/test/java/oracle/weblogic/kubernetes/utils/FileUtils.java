@@ -309,15 +309,15 @@ public class FileUtils {
    * @param container The container in the Pod where the command is to be run. If no
    *                         container name is provided than the first container in the Pod is used.
    * @param redirectToStdout copy process output to stdout
-   * @param directoryToCreate namespace in which the pod exists
+   * @param directoryToDelete directories to be deleted
    */
   public static void deleteDirectories(String namespace,
                                        String pod,
                                        String container,
                                        boolean redirectToStdout,
-                                       List<String> directoryToCreate) {
+                                       List<String> directoryToDelete) {
     //Delete directories.
-    directoryToCreate.forEach(newDir -> {
+    directoryToDelete.forEach(newDir -> {
       String deleteCmd = "rm -rf " + newDir;
       getLogger().info("dir to delete {0} ", deleteCmd);
 
