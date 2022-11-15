@@ -79,7 +79,7 @@ The operator automatically updates the `status` section of a deployed domain or 
 
 Here are some references you can use for the fields in these sections:
 
-- See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
+- See [Domain and cluster spec elements](#domain-and-cluster-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See the Domain Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
 - See the Cluster Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md).
 - Use [kubectl explain](#using-kubectl-explain) from the command line.
@@ -208,16 +208,13 @@ Elements related to the customization of liveness and readiness probes:
 
 Cluster spec elements:
 
-* `clusterService` - Customization affecting the generation of ClusterIP Service for the WebLogic Server clusters. 
-
-  Sub-elements related to the `clusterService` element:
-
-  * `sessionAffinity`: This is an advanced setting that is only applicable when the `kube-proxy` is running in the non-default proxy modes such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable the session affinity based on the client's IP addresses. See the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies) for more information. Must be `ClientIP` or `None`. Defaults to `None`.
+For a complete list of the Cluster spec elements, see [Cluster Spec](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md#cluster-spec). The following paragraph has additional context information for the `clusterServer.sessionAffinity` element.
+* `sessionAffinity`: This is an advanced setting that is only applicable when the `kube-proxy` is running in the non-default proxy modes such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. See the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies) for more information. Must be `ClientIP` or `None`. Defaults to `None`.
 
   **Note:** This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables). 
 
 {{% notice note %}}
-For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
+For additional domain and cluster resource attribute reference material, see [Domain and cluster resource attribute references](#domain-and-cluster-resource-attribute-references).
 {{% /notice %}}
 
 ### JVM memory and Java option environment variables
