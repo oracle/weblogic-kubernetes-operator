@@ -47,7 +47,7 @@ The specification of the operation of the WebLogic cluster. Required.
 | --- | --- | --- |
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
-| `sessionAffinity` | string | Supports "ClientIP" and "None". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies |
+| `sessionAffinity` | string | Advanced setting to enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#domain-and-cluster-spec-elements |
 
 ### Server Pod
 
