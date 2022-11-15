@@ -97,7 +97,7 @@ getDomainResources() {
   if [ $? -eq 0 ]; then
     kubectl get domain \
             -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-            --all-namespaces=true | egrep "$domain_regex" >> $2
+            --all-namespaces=true | grep -E "$domain_regex" >> $2
   fi
 
   # now, get all non-namespaced types with -l $LABEL_SELECTOR
