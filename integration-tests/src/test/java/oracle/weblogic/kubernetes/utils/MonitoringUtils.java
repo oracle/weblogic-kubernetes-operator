@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -972,8 +973,7 @@ public class MonitoringUtils {
             + " -X GET http://admin:12345678@%s/api/dashboards",
         hostPort);
     testUntil(
-        assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-            String.format("Check access to grafana dashboard")),
+        assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"), "Check access to grafana dashboard"),
         logger,
         "Check access to grafana dashboard");
     logger.info("installing grafana dashboard");
@@ -1101,7 +1101,7 @@ public class MonitoringUtils {
       isFound = response.contains(searchKey);
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
-      logger.info("Can't execute command " + command + ex.getStackTrace());
+      logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     return isFound;
@@ -1133,7 +1133,7 @@ public class MonitoringUtils {
       isFound = response.contains(searchKey);
       logger.info("isFound value:" + isFound);
     } catch (Exception ex) {
-      logger.info("Can't execute command " + command + ex.getStackTrace());
+      logger.info("Can't execute command " + command + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     return isFound;

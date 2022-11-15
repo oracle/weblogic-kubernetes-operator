@@ -1140,7 +1140,7 @@ public class CommonMiiTestUtils {
         commandToExecuteInsidePod, podName, domainNamespace);
     V1Pod serverPod = assertDoesNotThrow(() ->
             Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
+        String.format("Could not get the server Pod %s in namespace %s",
             podName, domainNamespace));
 
     ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,

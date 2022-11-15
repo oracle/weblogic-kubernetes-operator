@@ -84,10 +84,10 @@ class ItOperatorRestart {
     logger = getLogger();
 
     // get namespaces
-    assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
+    assertNotNull(namespaces.get(0), "Namespace namespaces.get(0) is null");
     opNamespace = namespaces.get(0);
 
-    assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
+    assertNotNull(namespaces.get(1), "Namespace namespaces.get(1) is null");
     domainNamespace = namespaces.get(1);
 
     // install the operator
@@ -256,7 +256,7 @@ class ItOperatorRestart {
                   creationTime);
             }
         },
-        String.format("Failed to get creationTimestamp for managed server pods"));
+        "Failed to get creationTimestamp for managed server pods");
 
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
