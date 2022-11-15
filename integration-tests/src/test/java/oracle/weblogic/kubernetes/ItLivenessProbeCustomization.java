@@ -347,8 +347,7 @@ class ItLivenessProbeCustomization {
   }
 
   /**
-   * Patch the domain with custom livenessProbe failureThreshold and
-   * successThreshold value in serverPod.
+   * Patch the domain with custom livenessProbe failureThreshold and successThreshold value in serverPod.
    * Verify the domain is restarted.
    * Verify failureThreshold and successThreshold value is updated.
    * Verify the failureThreshold runtime behavior.
