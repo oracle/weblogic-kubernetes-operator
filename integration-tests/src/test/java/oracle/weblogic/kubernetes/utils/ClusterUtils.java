@@ -236,7 +236,7 @@ public class ClusterUtils {
         .append(domainUid)
         .append("/clusters/")
         .append(clusterName)
-        .append("/scale").toString();
+        .append("/scale");
 
     CommandParams params = Command
         .defaultCommandParams()
