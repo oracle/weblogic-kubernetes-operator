@@ -89,7 +89,6 @@ class ItLivenessProbeCustomization {
 
   // domain constants
   private static final String domainUid = "liveprobecustom";
-  private static final String domainUid2 = "liveprobecustom2";
   private static final String MII_IMAGE_NAME = "liveprobecustom-mii";
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int replicaCount = 1;
@@ -99,12 +98,9 @@ class ItLivenessProbeCustomization {
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
   private static final String appPath = "sample-war/index.jsp";
-  private static final String WEBLOGIC_CREDENTIALS = "weblogic-credentials";
-  private static final String ENCRYPTION_SECRET = "encryptionsecret";
 
   private static LoggingFacade logger = null;
   private static File tempFile = null;
-  private static String imageName = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -173,7 +169,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -202,10 +198,10 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
-        assertTrue(afterRestartCount - beforeRestartCount == 1,
+        assertEquals(1, afterRestartCount - beforeRestartCount,
             String.format("Liveness probe did not start the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
       }
@@ -232,7 +228,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -247,10 +243,10 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container, which should be 1 after positive test case
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("restart count is: {0}", afterRestartCount);
-        assertTrue(afterRestartCount - beforeRestartCount == 0,
+        assertEquals(0, afterRestartCount - beforeRestartCount,
             String.format("Liveness probe starts the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
       }
@@ -292,7 +288,7 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
         assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, server1Name, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 server1Name, domainNamespace));
     logger.info("Restart count before liveness probe {0}", beforeRestartCount);
 
@@ -300,7 +296,7 @@ class ItLivenessProbeCustomization {
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
         true, "/bin/sh", "-c", "chmod +x " + destLocation),
         String.format("Failed to change permissions for file %s in pod %s", destLocation, server1Name));
-    assertTrue(execResult.exitValue() == 0,
+    assertEquals(0, execResult.exitValue(),
         String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
             execResult.stderr(), execResult.stdout()));
     logger.info("File permissions changed inside pod");
@@ -330,9 +326,9 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, server1Name, null),
-        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+        String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             server1Name, domainNamespace));
-    assertTrue(afterRestartCount - beforeRestartCount == 1,
+    assertEquals(1, afterRestartCount - beforeRestartCount,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
             server1Name, domainNamespace));
 
@@ -451,7 +447,7 @@ class ItLivenessProbeCustomization {
         int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                     managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -477,7 +473,7 @@ class ItLivenessProbeCustomization {
         int afterDelayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
         assertEquals(beforeRestartCount, afterDelayRestartCount, "The pod was restarted after 45s, "
@@ -491,7 +487,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
                 getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
