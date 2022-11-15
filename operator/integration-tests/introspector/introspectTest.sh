@@ -603,7 +603,7 @@ waitForPod() {
     fi
     echo -n "."
     sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
+    status=`kubectl -n $NAMESPACE get pods 2>&1 | grep -E $pod_name | awk '{print $2}'`
   done
   echo "  ($((SECONDS - startsecs)) seconds)"
 }

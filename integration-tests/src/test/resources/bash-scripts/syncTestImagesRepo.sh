@@ -49,7 +49,7 @@ dockerPullPushImage() {
 
 dockerPullPushImages() {
  file="images.properties"
- egrep -v '^#' $file | grep -v "^$" |
+ grep -E -v '^#' $file | grep -v "^$" |
    while IFS=";" read -r f1 f2 
    do
      # printf 'Source Location : [%s], Target: [%s] \n' "$f1" "$f2"
