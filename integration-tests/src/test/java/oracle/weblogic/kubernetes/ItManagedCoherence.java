@@ -148,8 +148,6 @@ class ItManagedCoherence {
   @Test
   @DisplayName("Two cluster domain with a Coherence cluster and test interaction with cache data")
   void testMultiClusterCoherenceDomain() {
-    String ingressName = domainUid + "-ingress-host-routing";
-    String channelName = "tcp-80";
 
     // create a DomainHomeInImage image using WebLogic Image Tool
     String domImage = createAndVerifyDomainImage();
@@ -159,10 +157,8 @@ class ItManagedCoherence {
 
     if (OKD) {
       String cluster1HostName = domainUid + "-cluster-cluster-1";
-      String cluster2HostName = domainUid + "-cluster-cluster-2";
 
       final String cluster1IngressHost = createRouteForOKD(cluster1HostName, domainNamespace);
-      final String cluster2IngressHost = createRouteForOKD(cluster2HostName, domainNamespace);
 
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
@@ -174,9 +170,9 @@ class ItManagedCoherence {
       for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
       }
-      // clusterNameMsPortMap.put(clusterName, managedServerPort);
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true, null);
+      createTraefikIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap, true, null,
+          traefikHelmParams.getReleaseName());
 
       String clusterHostname = domainUid + "." + domainNamespace + ".cluster-1.test";
       // get ingress service Nodeport
