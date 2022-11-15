@@ -108,7 +108,7 @@ DESCRIPTION:
 ```
 **NOTE**: The `VERSION` field's value may be different, depending on the operator version you are using.
 
-### Domain spec elements
+### Domain and cluster spec elements
 
 The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
 
@@ -205,6 +205,16 @@ The elements `serverStartPolicy`, `serverPod` and `serverService` are repeated u
 
 Elements related to the customization of liveness and readiness probes:
 * See [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
+
+Cluster spec elements:
+
+* `clusterService` - Customization affecting the generation of ClusterIP Service for the WebLogic Server clusters. 
+
+  Sub-elements related to the `clusterService` element:
+
+  * `sessionAffinity`: This is an advanced setting that is only applicable when the `kube-proxy` is running in the non-default proxy modes such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable the session affinity based on the client's IP addresses. See the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies) for more information. Must be `ClientIP` or `None`. Defaults to `None`.
+
+  **Note:** This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables). 
 
 {{% notice note %}}
 For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
