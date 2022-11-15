@@ -405,13 +405,12 @@ class ItMiiDomain {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    Thread accountingThread = null;
     List<Integer> appAvailability = new ArrayList<Integer>();
 
     logger.info("Start a thread to keep track of the application's availability");
     // start a new thread to collect the availability data of the application while the
     // main thread performs patching operation, and checking of the results.
-    accountingThread =
+    Thread accountingThread =
         new Thread(
             () -> {
               collectAppAvailability(
@@ -804,7 +803,7 @@ class ItMiiDomain {
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource {0} in namespace {1} with image {2}",
+        String.format("Failed to patch the domain resource %s in namespace %s with image %s",
             domainResourceName, namespace, image));
   }
 

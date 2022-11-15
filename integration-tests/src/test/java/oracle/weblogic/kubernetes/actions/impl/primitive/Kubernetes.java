@@ -1085,7 +1085,7 @@ public class Kubernetes {
 
   /**
    * Gets namespace.
-   * @name name of namespace.
+   * @param name name of namespace.
    * @return V1Namespace  Namespace object from the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -2536,7 +2536,6 @@ public class Kubernetes {
    * @param namespace name of the namespace
    * @param name name of the job
    * @return true if delete was successful
-   * @throws ApiException when deletion of job fails
    */
   public static boolean deleteJob(String namespace, String name) {
 

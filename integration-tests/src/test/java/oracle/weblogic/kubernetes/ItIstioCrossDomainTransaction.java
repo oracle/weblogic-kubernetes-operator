@@ -144,10 +144,9 @@ class ItIstioCrossDomainTransaction {
     createBaseRepoSecret(domain2Namespace);
 
     //Start oracleDB
-    assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort);
-      String.format("Failed to start Oracle DB");
-    });
+    assertDoesNotThrow(
+        () -> startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort),
+        "Failed to start Oracle DB");
 
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
@@ -200,16 +199,12 @@ class ItIstioCrossDomainTransaction {
       Files.copy(source2, target.resolve(source2.getFileName()), StandardCopyOption.REPLACE_EXISTING);
     });
 
-    assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
-      String.format("Failed to update %s with namespace %s",
-            WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
-    });
-    assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
-      String.format("Failed to update %s with namespace %s",
-            WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
-    });
+    assertDoesNotThrow(
+        () -> addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace),
+        String.format("Failed to update %s with namespace %s", WDT_MODEL_DOMAIN1_PROPS, domain1Namespace));
+    assertDoesNotThrow(
+        () -> addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace),
+        String.format("Failed to update %s with namespace %s", WDT_MODEL_DOMAIN2_PROPS, domain2Namespace));
 
   }
 

@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
 import java.util.List;
+import java.util.Objects;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -304,7 +305,7 @@ public class WebLogicImageTool {
     }
 
     // download WDT if it is not in the expected location
-    if (params.wdtVersion() != null && params.wdtVersion() != "NONE") {
+    if (params.wdtVersion() != null && !Objects.equals(params.wdtVersion(), "NONE")) {
       if (!downloadWdt(params.wdtVersion())) {
         return false;
       }
@@ -343,7 +344,7 @@ public class WebLogicImageTool {
     }
 
     // download WDT if it is not in the expected location
-    if (params.wdtVersion() != null && params.wdtVersion() != "NONE") {
+    if (params.wdtVersion() != null && !Objects.equals(params.wdtVersion(), "NONE")) {
       if (!downloadWdt(params.wdtVersion())) {
         return new ExecResult(1, "failed to download WDT with version " + params.wdtVersion(),
             "failed to download WDT with version " + params.wdtVersion());

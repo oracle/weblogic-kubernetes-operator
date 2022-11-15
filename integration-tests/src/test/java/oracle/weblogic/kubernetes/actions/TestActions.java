@@ -493,8 +493,6 @@ public class TestActions {
    * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithWLDF(String clusterName,
                                              String domainUid,

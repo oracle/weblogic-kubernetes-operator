@@ -230,7 +230,6 @@ public class BuildApplication {
    *
    * @param namespace name of the namespace in which to create the temporary pod
    * @return V1Pod created pod object
-   * @throws ApiException when create pod fails
    */
   public static V1Pod setupWebLogicPod(String namespace, V1Container container) {
     final LoggingFacade logger = getLogger();
