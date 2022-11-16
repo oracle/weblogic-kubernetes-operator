@@ -258,7 +258,7 @@ public class InitializeWebhookIdentityStep extends Step {
             .labels(labels);
   }
 
-  final class WebhookIdentity {
+  static final class WebhookIdentity {
 
     private final String webhookKey;
     private final byte[] webhookCert;

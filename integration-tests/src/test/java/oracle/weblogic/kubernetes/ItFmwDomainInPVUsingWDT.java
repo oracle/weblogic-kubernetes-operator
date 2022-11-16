@@ -131,7 +131,7 @@ class ItFmwDomainInPVUsingWDT {
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
+        + "dbUrl %s, dbListenerPost %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);

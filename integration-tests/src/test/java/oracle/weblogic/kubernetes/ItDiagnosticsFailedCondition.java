@@ -333,6 +333,7 @@ class ItDiagnosticsFailedCondition {
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
       assertFalse(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
+      testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
@@ -694,7 +695,7 @@ class ItDiagnosticsFailedCondition {
       assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
           rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
           String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-              + "dbUrl %s, dbListenerPost $s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
+              + "dbUrl %s, dbListenerPost %s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",

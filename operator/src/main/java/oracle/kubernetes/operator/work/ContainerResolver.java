@@ -8,9 +8,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * This class determines an instance of {@link Container} for the runtime.
  *
- * <p>ContainerResolver uses a static field to keep the instance of the resolver object. Typically,
- * a server may set its custom container resolver using the static method {@link
- * #setInstance(ContainerResolver)}
+ * <p>ContainerResolver uses a static field to keep the instance of the resolver object.
  */
 public abstract class ContainerResolver {
 
