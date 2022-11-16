@@ -23,7 +23,6 @@ You can use the API as an alternative method for getting a list of WebLogic doma
 or for getting certain aspects of a domain's status (for example, instead of calling `kubectl get domain MYDOMAIN -o yaml`).
 You also can use the REST API as an alternative approach for initiating scaling operations
 (instead of using the Kubernetes API or command line to alter a domain resource's `replicas` values).
-Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 
 #### Configure the operator's external REST HTTPS interface
 

@@ -189,13 +189,12 @@ class ItElasticLogging {
 
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
-            String.format("Failed to install Elasticsearch"));
+            "Failed to install Elasticsearch");
     assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
-        String.format("Failed to install Kibana"));
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs), "Failed to install Kibana");
     assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator
@@ -300,7 +299,7 @@ class ItElasticLogging {
     // verify log level query results
     withStandardRetryPolicy.untilAsserted(
         () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
-            String.format("Query logs of level=INFO failed")));
+            "Query logs of level=INFO failed"));
 
     logger.info("Query logs of level=INFO succeeded");
   }

@@ -95,7 +95,6 @@ class ItLivenessProbeCustomization {
   private static final int replicaCount = 1;
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerPodName2 = domainUid2 + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String APPCHECK_SCRIPT = "customLivenessProbe.sh";
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
@@ -172,7 +171,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -205,7 +204,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -234,7 +233,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -252,7 +251,7 @@ class ItLivenessProbeCustomization {
         // It should not increase since the Pod should not be started
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("[2] restart count is: {0}", afterRestartCount);
         assertEquals(0, afterRestartCount - beforeRestartCount,
@@ -330,6 +329,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the livenessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -356,7 +367,7 @@ class ItLivenessProbeCustomization {
         int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                     managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -382,7 +393,7 @@ class ItLivenessProbeCustomization {
         int afterDelayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
         assertEquals(beforeRestartCount, afterDelayRestartCount, "The pod was restarted after 45s, "
@@ -396,7 +407,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
                 getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -496,7 +507,7 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
         assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, server1Name, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 server1Name, domainNamespace));
     logger.info("Restart count before liveness probe {0}", beforeRestartCount);
 
@@ -534,7 +545,7 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, server1Name, null),
-        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+        String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             server1Name, domainNamespace));
     assertTrue(afterRestartCount - beforeRestartCount == 1,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
@@ -667,6 +678,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the readinessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -726,6 +749,18 @@ class ItLivenessProbeCustomization {
             managedServerPodsCreationTime.get(managedServerPodName));
       }
     }
+
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
   }
 
   /**
@@ -743,13 +778,12 @@ class ItLivenessProbeCustomization {
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = WEBLOGIC_CREDENTIALS;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(WEBLOGIC_CREDENTIALS, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    String encryptionSecretName = ENCRYPTION_SECRET;
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(ENCRYPTION_SECRET, domainNamespace, "weblogicenc", "weblogicenc");
 
 
     DomainResource domain = createDomainResource(domainUid);
@@ -850,7 +884,7 @@ class ItLivenessProbeCustomization {
         .append("bash-scripts")
         .append("/")
         .append(APPCHECK_SCRIPT);
-    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff.toString());
+    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff);
 
     final String wdtModelFileForMiiDomain = "model-multiclusterdomain-singlesampleapp-wls.yaml";
     logger.info("Create image with model file and verify");
