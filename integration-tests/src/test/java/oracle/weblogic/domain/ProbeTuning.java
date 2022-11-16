@@ -19,6 +19,15 @@ public class ProbeTuning {
   @ApiModelProperty("The number of seconds with no response that indicates a failure.")
   private Integer timeoutSeconds;
 
+  @ApiModelProperty("Number of times the check is performed before giving up. Giving up in "
+      + "case of liveness probe means restarting the container. In case of readiness probe, the Pod will be "
+      + "marked Unready. Defaults to 1.")
+  Integer failureThreshold = null;
+
+  @ApiModelProperty("Minimum number of times the check needs to pass for the probe to be considered successful"
+      + " after having failed. Defaults to 1. Must be 1 for liveness Probe.")
+  private Integer successThreshold = null;
+
   public ProbeTuning initialDelaySeconds(Integer initialDelaySeconds) {
     this.initialDelaySeconds = initialDelaySeconds;
     return this;
@@ -70,12 +79,48 @@ public class ProbeTuning {
     this.timeoutSeconds = timeoutSeconds;
   }
 
+  public ProbeTuning failureThreshold(Integer failureThreshold) {
+    this.failureThreshold = failureThreshold;
+    return this;
+  }
+
+  public Integer failureThreshold() {
+    return failureThreshold;
+  }
+
+  public Integer getFailureThreshold() {
+    return failureThreshold;
+  }
+
+  public void setFailureThreshold(Integer failureThreshold) {
+    this.failureThreshold = failureThreshold;
+  }
+
+  public ProbeTuning successThreshold(Integer successThreshold) {
+    this.successThreshold = successThreshold;
+    return this;
+  }
+
+  public Integer successThreshold() {
+    return successThreshold;
+  }
+
+  public Integer getSuccessThreshold() {
+    return successThreshold;
+  }
+
+  public void setSuccessThreshold(Integer successThreshold) {
+    this.successThreshold = successThreshold;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("initialDelaySeconds", initialDelaySeconds)
         .append("periodSeconds", periodSeconds)
         .append("timeoutSeconds", timeoutSeconds)
+        .append("failureThreshold", failureThreshold)
+        .append("successThreshold", successThreshold)
         .toString();
   }
 
@@ -93,6 +138,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds, rhs.initialDelaySeconds)
         .append(periodSeconds, rhs.periodSeconds)
         .append(timeoutSeconds, rhs.timeoutSeconds)
+        .append(failureThreshold, rhs.failureThreshold)
+        .append(successThreshold, rhs.successThreshold)
         .isEquals();
   }
 
@@ -102,6 +149,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds)
         .append(periodSeconds)
         .append(timeoutSeconds)
+        .append(failureThreshold)
+        .append(successThreshold)
         .toHashCode();
   }
 }
