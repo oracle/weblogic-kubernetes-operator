@@ -225,18 +225,20 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     final List<Step> result = new ArrayList<>();
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
-    result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    if (wasStartedFromEvent()) {
-      result.add(createStatusInitializationStep());
+    if (!getPresenceInfo().isClusterEventOnly()) {
+      result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
+      if (wasStartedFromEvent()) {
+        result.add(createStatusInitializationStep());
+      }
+      if (deleting || domainHasDeletionTimestamp()) {
+        result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
+      } else {
+        result.add(createListClusterResourcesStep(getNamespace()));
+        result.add(createDomainValidationStep(getDomain()));
+        result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
+      }
     }
-    if (deleting || domainHasDeletionTimestamp()) {
-      result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
-    } else {
-      result.add(createListClusterResourcesStep(getNamespace()));
-      result.add(createDomainValidationStep(getDomain()));
-      result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
-    }
-
+    
     return Step.chain(result);
   }
 

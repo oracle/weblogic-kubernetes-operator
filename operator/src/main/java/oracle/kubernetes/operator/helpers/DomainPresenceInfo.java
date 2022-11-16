@@ -72,6 +72,7 @@ public class DomainPresenceInfo implements PacketComponent {
   private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
+  private final AtomicBoolean isClusterEventOnly = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
@@ -83,6 +84,9 @@ public class DomainPresenceInfo implements PacketComponent {
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
   private String adminServerName;
+
+  // For cluster event only case, where a cluster resource is not referenced by a domain
+  private String clusterName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
@@ -112,6 +116,18 @@ public class DomainPresenceInfo implements PacketComponent {
     this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
+  }
+
+  /**
+   * Create presence for a domain.
+   *
+   * @param namespace Namespace
+   * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
+   * @param clusterName the cluster name for a cluster that does not belong to a domain
+   */
+  public DomainPresenceInfo(String namespace, String domainUid, String clusterName) {
+    this(namespace, domainUid);
+    this.clusterName = clusterName;
   }
 
   private static <K, V> boolean removeIfPresentAnd(
@@ -465,6 +481,10 @@ public class DomainPresenceInfo implements PacketComponent {
     return pdb == null ? null : pdb.getMetadata();
   }
 
+  public String getClusterName() {
+    return clusterName;
+  }
+
   /**
    * Handles a delete event. If the cached pod is newer than the one associated with the event, ignores the attempt
    * as out-of-date and returns false; otherwise deletes the pod and returns true.
@@ -714,6 +734,14 @@ public class DomainPresenceInfo implements PacketComponent {
 
   public void setPopulated(boolean populated) {
     isPopulated.set(populated);
+  }
+
+  public boolean isClusterEventOnly() {
+    return isClusterEventOnly.get();
+  }
+
+  public void setClusterEventOnly(boolean clusterEventOnly) {
+    isClusterEventOnly.set(clusterEventOnly);
   }
 
   /**

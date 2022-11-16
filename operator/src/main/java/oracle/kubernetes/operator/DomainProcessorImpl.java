@@ -351,16 +351,21 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
-    final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
-    if (isNewDomain(cachedInfo)) {
-      return true;
-    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo) || liveInfo.isDomainProcessingHalted(cachedInfo)) {
-      return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
+    if (liveInfo.isClusterEventOnly()) {
       return true;
     } else {
-      cachedInfo.setDomain(liveInfo.getDomain());
-      return false;
+      final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
+      if (isNewDomain(cachedInfo)) {
+        return true;
+      } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
+          || liveInfo.isDomainProcessingHalted(cachedInfo)) {
+        return false;
+      } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
+        return true;
+      } else {
+        cachedInfo.setDomain(liveInfo.getDomain());
+        return false;
+      }
     }
   }
 
@@ -697,42 +702,72 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private void handleAddedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
-      LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
-      createMakeRightOperation(info)
-          .interrupt()
-          .withExplicitRecheck()
-          .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getClusterName()))
-          .execute();
-    });
+    List<DomainPresenceInfo> domains =
+        getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    if (domains.isEmpty()) {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
+      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster).execute();
+    } else {
+      domains.forEach(info -> {
+        LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
+        createMakeRightOperation(info)
+            .interrupt()
+            .withExplicitRecheck()
+            .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getMetadata().getName()))
+            .execute();
+      });
+    }
   }
 
   private void handleModifiedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
-      ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
-      if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
-        return;
-      }
+    List<DomainPresenceInfo> domains =
+        getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    if (domains.isEmpty()) {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
+      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster).execute();
+    } else {
+      domains.forEach(info -> {
+        ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
+        if (cachedResource == null || !cluster.isGenerationChanged(cachedResource)) {
+          return;
+        }
 
-      LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getClusterName(), info.getDomainUid());
-      createMakeRightOperation(info)
-          .interrupt()
-          .withExplicitRecheck()
-          .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getClusterName()))
-          .execute();
-    });
+        LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
+        createMakeRightOperation(info)
+            .interrupt()
+            .withExplicitRecheck()
+            .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getMetadata().getName()))
+            .execute();
+      });
+    }
   }
 
   private void handleDeletedCluster(ClusterResource cluster) {
-    getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName()).forEach(info -> {
-      LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getClusterName(), info.getDomainUid());
-      info.removeClusterResource(cluster.getClusterName());
-      createMakeRightOperation(info)
-          .interrupt()
-          .withExplicitRecheck()
-          .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getClusterName()))
-          .execute();
-    });
+    List<DomainPresenceInfo> domains =
+        getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    if (domains.isEmpty()) {
+      LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
+      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster).execute();
+    } else {
+      domains.forEach(info -> {
+        LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getMetadata().getName(), info.getDomainUid());
+        info.removeClusterResource(cluster.getClusterName());
+        createMakeRightOperation(info)
+            .interrupt()
+            .withExplicitRecheck()
+            .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getMetadata().getName()))
+            .execute();
+      });
+    }
+  }
+
+  @Override
+  public MakeRightDomainOperation createMakeRightOperationForClusterEvent(
+      EventItem clusterEvent, ClusterResource cluster) {
+    DomainPresenceInfo info = new DomainPresenceInfo(cluster.getNamespace(), null, cluster.getMetadata().getName());
+    info.setClusterEventOnly(true);
+    return delegate.createMakeRightOperation(this, info).interrupt()
+        .withEventData(new EventData(clusterEvent).resourceName(cluster.getMetadata().getName()));
   }
 
   /**
@@ -874,10 +909,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       Optional.ofNullable(debugPrefix).ifPresent(prefix -> packet.put(Fiber.DEBUG_FIBER, prefix));
 
       if (operation.isWillInterrupt()) {
-        gate.startFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
+        gate.startFiber(getFiberKey(), firstStep, packet, createCompletionCallback());
       } else {
-        gate.startFiberIfNoCurrentFiber(presenceInfo.getDomainUid(), firstStep, packet, createCompletionCallback());
+        gate.startFiberIfNoCurrentFiber(getFiberKey(), firstStep, packet, createCompletionCallback());
       }
+    }
+
+    // for a cluster event only DomainMakeRightOperation, the cluster is not associated with a domain.
+    // use the cluster resource name as the key associated with a fiber.
+    private String getFiberKey() {
+      return presenceInfo.getDomainUid() == null ? presenceInfo.getClusterName() : presenceInfo.getDomainUid();
     }
 
     private CompletionCallback createCompletionCallback() {
