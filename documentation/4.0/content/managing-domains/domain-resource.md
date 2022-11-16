@@ -212,7 +212,7 @@ Elements related to the customization of liveness and readiness probes:
 
 For a complete list of the Cluster spec elements, see [Cluster Spec](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md#cluster-spec).
 
-Additional information for the `cluster.spec.clusterService.sessionAffinity` element:
+Additional information for the `clusterService.sessionAffinity` element:
 
 * `sessionAffinity`: This is an advanced setting that is applicable only when the `kube-proxy` is running in non-default proxy modes, such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. For more information, see the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies). Must be `ClientIP` or `None`. Defaults to `None`.
 

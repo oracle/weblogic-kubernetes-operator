@@ -16,7 +16,7 @@ public class ClusterService extends KubernetesResource {
   @Description(
       "Advanced setting to enable client IP based session affinity. "
           + "Must be ClientIP or None. Defaults to None. More info: "
-          + "https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#domain-and-cluster-spec-elements")
+          + "https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#cluster-spec-elements")
   @Default(strDefault = "None")
   private String sessionAffinity;
 
