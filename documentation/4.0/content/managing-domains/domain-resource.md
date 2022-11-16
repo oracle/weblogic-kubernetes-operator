@@ -110,7 +110,7 @@ DESCRIPTION:
 
 ### Domain and cluster spec elements
 
-The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
+The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers. The Cluster `spec` section contains elements for configuring the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. For a complete list of the Cluster spec elements, see [Cluster Spec](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md#cluster-spec).
 
 Elements related to domain identification, container image, and domain home:
 
@@ -206,10 +206,9 @@ The elements `serverStartPolicy`, `serverPod` and `serverService` are repeated u
 Elements related to the customization of liveness and readiness probes:
 * See [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
 
-Cluster spec elements:
 
-For a complete list of the Cluster spec elements, see [Cluster Spec](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md#cluster-spec). The following paragraph has additional context information for the `clusterServer.sessionAffinity` element.
-* `sessionAffinity`: This is an advanced setting that is only applicable when the `kube-proxy` is running in the non-default proxy modes such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. See the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies) for more information. Must be `ClientIP` or `None`. Defaults to `None`.
+Additional information for the `cluster.spec.clusterService.sessionAffinity` element:
+* `sessionAffinity`: This is an advanced setting that is applicable only when the `kube-proxy` is running in non-default proxy modes, such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. For more information, see the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies). Must be `ClientIP` or `None`. Defaults to `None`.
 
   **Note:** This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables). 
 
