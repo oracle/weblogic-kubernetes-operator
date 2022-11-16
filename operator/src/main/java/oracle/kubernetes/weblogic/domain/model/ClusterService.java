@@ -14,9 +14,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class ClusterService extends KubernetesResource {
 
   @Description(
-      "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. "
+      "Advanced setting to enable client IP based session affinity. "
           + "Must be ClientIP or None. Defaults to None. More info: "
-          + "https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies")
+          + "https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#cluster-spec-elements")
   @Default(strDefault = "None")
   private String sessionAffinity;
 
