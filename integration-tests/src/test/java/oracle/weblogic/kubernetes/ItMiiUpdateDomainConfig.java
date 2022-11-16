@@ -16,7 +16,6 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -119,7 +118,7 @@ class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static int replicaCount = 2;
+  private static final int replicaCount = 2;
   private static final String domainUid = "mii-add-config";
   private static final String pvName = getUniqueName(domainUid + "-pv-");
   private static final String pvcName = getUniqueName(domainUid + "-pvc-");
@@ -275,8 +274,8 @@ class ItMiiUpdateDomainConfig {
           .append("/JMSServers/TestClusterJmsServer")
           .append("?fields=notes&links=none\"")
           .append(" --silent ").toString();
-    logger.info("checkJmsServerConfig: curl command {0}", new String(curlString));
-    verifyCommandResultContainsMsg(new String(curlString), "${DOMAIN_UID}~##!'%*$(ls)");
+    logger.info("checkJmsServerConfig: curl command {0}", curlString);
+    verifyCommandResultContainsMsg(curlString, "${DOMAIN_UID}~##!'%*$(ls)");
   }
 
   /**
@@ -751,7 +750,7 @@ class ItMiiUpdateDomainConfig {
   // and JMS connection is load balanced across all servers
   private static Callable<Boolean> runJmsClient(String javaCmd) {
     return (()  -> {
-      ExecResult result = assertDoesNotThrow(() -> exec(new String(javaCmd), true));
+      ExecResult result = assertDoesNotThrow(() -> exec(javaCmd, true));
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
       return ((result.exitValue() == 0));
@@ -761,7 +760,7 @@ class ItMiiUpdateDomainConfig {
 
   private static void createDatabaseSecret(
         String secretName, String username, String password,
-        String dburl, String domNamespace) throws ApiException {
+        String dburl, String domNamespace) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -775,8 +774,7 @@ class ItMiiUpdateDomainConfig {
 
   }
 
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
+  private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
@@ -924,7 +922,7 @@ class ItMiiUpdateDomainConfig {
         commandToExecuteInsidePod, podName, domainNamespace);
     V1Pod serverPod = assertDoesNotThrow(() ->
             Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
+        String.format("Could not get the server Pod %s in namespace %s",
             podName, domainNamespace));
 
     ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,

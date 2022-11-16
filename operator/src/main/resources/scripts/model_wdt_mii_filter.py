@@ -376,32 +376,36 @@ def getAdministrationPort(server, topology):
   return port
 
 
-def isAdministrationPortEnabledForServer(server, topology):
+def isAdministrationPortEnabledForServer(server, model):
   administrationPortEnabled = False
   if 'AdministrationPortEnabled' in server:
     administrationPortEnabled = server['AdministrationPortEnabled']
   else:
-    administrationPortEnabled = isAdministrationPortEnabledForDomain(topology)
+    administrationPortEnabled = isAdministrationPortEnabledForDomain(model)
   return administrationPortEnabled
 
 
-def isAdministrationPortEnabledForDomain(topology):
+def isAdministrationPortEnabledForDomain(model):
   administrationPortEnabled = False
-
+  topology = model['topology']
   if 'AdministrationPortEnabled' in topology:
     administrationPortEnabled = topology['AdministrationPortEnabled']
   else:
     # AdministrationPortEnabled is not explicitly set so going with the default
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
-    administrationPortEnabled = isSecureModeEnabledForDomain(topology)
+    administrationPortEnabled = isSecureModeEnabledForDomain(model)
   return administrationPortEnabled
 
 
 # Derive the default value for SecureMode of a domain
-def isSecureModeEnabledForDomain(topology):
+def isSecureModeEnabledForDomain(model):
   secureModeEnabled = False
+  topology = model['topology']
+  domain_info = model['domainInfo']
   if 'SecurityConfiguration' in topology and 'SecureMode' in topology['SecurityConfiguration'] and 'SecureModeEnabled' in topology['SecurityConfiguration']['SecureMode']:
     secureModeEnabled = topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled']
+  elif 'ServerStartMode' in domain_info and domain_info['ServerStartMode'] == 'secure':
+    secureModeEnabled = True
   else:
     is_production_mode_enabled = False
     if 'ProductionModeEnabled' in topology:
@@ -449,7 +453,7 @@ def _get_ssl_listen_port(server):
     ssl_listen_port = ssl['ListenPort']
     if ssl_listen_port is None:
       ssl_listen_port = "7002"
-  elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
+  elif ssl is None and isSecureModeEnabledForDomain(model):
     ssl_listen_port = "7002"
   return ssl_listen_port
 
@@ -480,8 +484,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
       customAdminChannelPort = nap['ListenPort']
       _writeAdminChannelPortForwardNAP(name='internal-admin' + str(index), server=server,
                                        listen_port=customAdminChannelPort, protocol='admin')
-
-  if isAdministrationPortEnabledForServer(server, model['topology']):
+  if isAdministrationPortEnabledForServer(server, model):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif index == 0:
@@ -493,7 +496,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
       ssl_listen_port = ssl['ListenPort']
       if ssl_listen_port is None:
         ssl_listen_port = "7002"
-    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
+    elif ssl is None and isSecureModeEnabledForDomain(model):
       ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
