@@ -71,7 +71,7 @@ $ kubectl describe cluster <cluster-resource-name> -n <namespace>
 
 ### Domain and cluster resource attribute references
 
-The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domainUID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the `domainUID` should be unique across the cluster.  The `domainUID`, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different. Similarly, the cluster resource `metadata` section names the Cluster and its namespace. The `metadata.name` of a cluster resource must be referenced from the `spec.clusters` field of the domain resource. This name does not need to be the same as the name of the WebLogic cluster. The `spec.clusterName` field of the cluster resource must name the WebLogic cluster from the domain configuration. 
+The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domainUID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the `domainUID` should be unique across the cluster.  The `domainUID`, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different. Similarly, the cluster resource `metadata` section names the Cluster and its namespace. The `metadata.name` of a cluster resource must be referenced from the `spec.clusters` field of the domain resource. This name does not need to be the same as the name of the WebLogic cluster. The `spec.clusterName` field of the cluster resource must name the WebLogic cluster from the domain configuration.
 
 The domain resource `spec` section describes the intended running state of the domain, including intended runtime state of WebLogic Server instances, and details about Kubernetes Pod or Service generation, such as resource constraints, scheduling requirements, or volume mounts. The cluster resource `spec` section describes the intended number of member servers of that cluster to run and can set or override the other settings inherited from the domain resource.
 
@@ -79,7 +79,7 @@ The operator automatically updates the `status` section of a deployed domain or 
 
 Here are some references you can use for the fields in these sections:
 
-- See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
+- See [Domain and cluster spec elements](#domain-and-cluster-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See the Domain Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
 - See the Cluster Resource [reference document](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md).
 - Use [kubectl explain](#using-kubectl-explain) from the command line.
@@ -108,9 +108,11 @@ DESCRIPTION:
 ```
 **NOTE**: The `VERSION` field's value may be different, depending on the operator version you are using.
 
-### Domain spec elements
+### Domain and cluster spec elements
 
-The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
+The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers. The Cluster `spec` section contains elements for configuring the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members.
+
+#### Domain spec elements
 
 Elements related to domain identification, container image, and domain home:
 
@@ -206,8 +208,18 @@ The elements `serverStartPolicy`, `serverPod` and `serverService` are repeated u
 Elements related to the customization of liveness and readiness probes:
 * See [Liveness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#liveness-probe-customization" >}}) for details about the elements related to liveness probe customization and [Readiness probe customization]({{< relref "/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}) for details about the elements related to readiness probe customization.
 
+#### Cluster spec elements
+
+For a complete list of the Cluster spec elements, see [Cluster Spec](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Cluster.md#cluster-spec).
+
+Additional information for the `clusterService.sessionAffinity` element:
+
+* `sessionAffinity`: This is an advanced setting that is applicable only when the `kube-proxy` is running in non-default proxy modes, such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. For more information, see the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies). Must be `ClientIP` or `None`. Defaults to `None`.
+
+  **Note:** This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables).
+
 {{% notice note %}}
-For additional domain resource attribute reference material, see [Domain resource attribute references](#domain-resource-attribute-references).
+For additional domain and cluster resource attribute reference material, see [Domain and cluster resource attribute references](#domain-and-cluster-resource-attribute-references).
 {{% /notice %}}
 
 ### JVM memory and Java option environment variables
