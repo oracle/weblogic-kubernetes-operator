@@ -829,7 +829,7 @@ class ItConfigDistributionStrategy {
         HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
         logger.info("Http response status code {0} \n Http response body {1} ", response.statusCode(), response.body());
         return response.statusCode() == 200 && response.body().contains("Connection successful");
-      }, logger, "Waiting for http response code 200 and message Connection successful");
+      }, logger, "http response code 200 and message Connection successful");
     }
   }
 
