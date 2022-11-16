@@ -12,20 +12,20 @@
     <title>Domain and Cluster resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1668397323" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1668397323" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1668641619" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1668641619" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1668397323"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1668641619"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1668397323"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1668397323"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1668641619"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1668641619"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1668397323"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1668641619"></script>
 
     
   </div>
@@ -3590,7 +3590,12 @@
     <li><a href="#deploying-domain-and-cluster-resource-yaml-files">Deploying domain and cluster resource YAML files</a></li>
     <li><a href="#domain-and-cluster-resource-attribute-references">Domain and cluster resource attribute references</a></li>
     <li><a href="#using-kubectl-explain">Using <code>kubectl explain</code></a></li>
-    <li><a href="#domain-spec-elements">Domain spec elements</a></li>
+    <li><a href="#domain-and-cluster-spec-elements">Domain and cluster spec elements</a>
+      <ul>
+        <li><a href="#domain-spec-elements">Domain spec elements</a></li>
+        <li><a href="#cluster-spec-elements">Cluster spec elements</a></li>
+      </ul>
+    </li>
     <li><a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a></li>
     <li><a href="#pod-generation">Pod generation</a></li>
   </ul>
@@ -3626,7 +3631,12 @@
     <li><a href="#deploying-domain-and-cluster-resource-yaml-files">Deploying domain and cluster resource YAML files</a></li>
     <li><a href="#domain-and-cluster-resource-attribute-references">Domain and cluster resource attribute references</a></li>
     <li><a href="#using-kubectl-explain">Using <code>kubectl explain</code></a></li>
-    <li><a href="#domain-spec-elements">Domain spec elements</a></li>
+    <li><a href="#domain-and-cluster-spec-elements">Domain and cluster spec elements</a>
+      <ul>
+        <li><a href="#domain-spec-elements">Domain spec elements</a></li>
+        <li><a href="#cluster-spec-elements">Cluster spec elements</a></li>
+      </ul>
+    </li>
     <li><a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a></li>
     <li><a href="#pod-generation">Pod generation</a></li>
   </ul>
@@ -3669,7 +3679,7 @@ you may need to update the operator by running <code>helm upgrade</code> to be a
 <p>The operator automatically updates the <code>status</code> section of a deployed domain or cluster resource to describe the actual running state, including WebLogic Server instance runtime states and current health.</p>
 <p>Here are some references you can use for the fields in these sections:</p>
 <ul>
-<li>See <a href="#domain-spec-elements">Domain spec elements</a>, <a href="#pod-generation">Pod Generation</a>, and <a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a> in this doc.</li>
+<li>See <a href="#domain-and-cluster-spec-elements">Domain and cluster spec elements</a>, <a href="#pod-generation">Pod Generation</a>, and <a href="#jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</a> in this doc.</li>
 <li>See the Domain Resource <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/4.0/documentation/domains/Domain.md">reference document</a>.</li>
 <li>See the Cluster Resource <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/4.0/documentation/domains/Cluster.md">reference document</a>.</li>
 <li>Use <a href="#using-kubectl-explain">kubectl explain</a> from the command line.</li>
@@ -3691,8 +3701,9 @@ you may need to update the operator by running <code>helm upgrade</code> to be a
 </span></span><span style="display:flex;"><span>     the WebLogic domain configuration. Defaults to the value of
 </span></span><span style="display:flex;"><span>     <span style="color:#e6db74">`</span>metadata.name<span style="color:#e6db74">`</span>.
 </span></span></code></pre></div><p><strong>NOTE</strong>: The <code>VERSION</code> field&rsquo;s value may be different, depending on the operator version you are using.</p>
-<h3 id="domain-spec-elements">Domain spec elements</h3>
-<p>The Domain <code>spec</code> section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.</p>
+<h3 id="domain-and-cluster-spec-elements">Domain and cluster spec elements</h3>
+<p>The Domain <code>spec</code> section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers. The Cluster <code>spec</code> section contains elements for configuring the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members.</p>
+<h4 id="domain-spec-elements">Domain spec elements</h4>
 <p>Elements related to domain identification, container image, and domain home:</p>
 <ul>
 <li><code>domainUID</code>: Domain unique identifier. This identifier is required to be no more than 45 characters (for more details, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/manage-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of <code>metadata.name</code>.</li>
@@ -3800,8 +3811,17 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
 <ul>
 <li>See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/#liveness-probe-customization">Liveness probe customization</a> for details about the elements related to liveness probe customization and <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/#readiness-probe-customization">Readiness probe customization</a> for details about the elements related to readiness probe customization.</li>
 </ul>
+<h4 id="cluster-spec-elements">Cluster spec elements</h4>
+<p>For a complete list of the Cluster spec elements, see <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/4.0/documentation/domains/Cluster.md#cluster-spec">Cluster Spec</a>.</p>
+<p>Additional information for the <code>clusterService.sessionAffinity</code> element:</p>
+<ul>
+<li>
+<p><code>sessionAffinity</code>: This is an advanced setting that is applicable only when the <code>kube-proxy</code> is running in non-default proxy modes, such as <a href="https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace">User space (legacy) proxy mode</a> and <a href="https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs">IPVS proxy mode</a>. It is used to enable session affinity based on the client&rsquo;s IP addresses. For more information, see the <a href="https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies">Virtual IPs and service proxies</a>. Must be <code>ClientIP</code> or <code>None</code>. Defaults to <code>None</code>.</p>
+<p><strong>Note:</strong> This setting is not applicable when the <code>kube-proxy</code> is running in the default <a href="https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables"><code>iptables</code> proxy mode</a>.</p>
+</li>
+</ul>
 
-<div class="notices note" ><p>For additional domain resource attribute reference material, see <a href="#domain-resource-attribute-references">Domain resource attribute references</a>.</p>
+<div class="notices note" ><p>For additional domain and cluster resource attribute reference material, see <a href="#domain-and-cluster-resource-attribute-references">Domain and cluster resource attribute references</a>.</p>
 </div>
 
 <h3 id="jvm-memory-and-java-option-environment-variables">JVM memory and Java option environment variables</h3>
@@ -6334,19 +6354,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1668397323"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1668641619"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1668397323"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1668397323"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1668641619"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1668641619"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1668397323"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1668641619"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
