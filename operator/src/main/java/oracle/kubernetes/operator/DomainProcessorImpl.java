@@ -62,6 +62,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
@@ -764,10 +765,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public MakeRightDomainOperation createMakeRightOperationForClusterEvent(
       EventItem clusterEvent, ClusterResource cluster) {
-    DomainPresenceInfo info = new DomainPresenceInfo(cluster.getNamespace(), null, cluster.getMetadata().getName());
-    info.setClusterEventOnly(true);
-    return delegate.createMakeRightOperation(this, info).interrupt()
+    return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
+        .interrupt()
         .withEventData(new EventData(clusterEvent).resourceName(cluster.getMetadata().getName()));
+  }
+
+  @NotNull
+  private DomainPresenceInfo createInfoForClusterEventOnly(ClusterResource cluster) {
+    return new DomainPresenceInfo(cluster.getNamespace(), null, cluster.getMetadata().getName());
   }
 
   /**
@@ -918,7 +923,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     // for a cluster event only DomainMakeRightOperation, the cluster is not associated with a domain.
     // use the cluster resource name as the key associated with a fiber.
     private String getFiberKey() {
-      return presenceInfo.getDomainUid() == null ? presenceInfo.getClusterName() : presenceInfo.getDomainUid();
+      return presenceInfo.isClusterEventOnly() ? presenceInfo.getClusterName() : presenceInfo.getDomainUid();
     }
 
     private CompletionCallback createCompletionCallback() {

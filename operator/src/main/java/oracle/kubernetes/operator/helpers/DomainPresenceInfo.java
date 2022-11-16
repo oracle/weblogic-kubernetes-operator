@@ -72,7 +72,6 @@ public class DomainPresenceInfo implements PacketComponent {
   private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicBoolean isClusterEventOnly = new AtomicBoolean(false);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
@@ -737,11 +736,7 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   public boolean isClusterEventOnly() {
-    return isClusterEventOnly.get();
-  }
-
-  public void setClusterEventOnly(boolean clusterEventOnly) {
-    isClusterEventOnly.set(clusterEventOnly);
+    return domainUid == null && clusterName != null;
   }
 
   /**
