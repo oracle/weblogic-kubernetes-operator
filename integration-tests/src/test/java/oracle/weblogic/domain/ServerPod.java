@@ -230,6 +230,11 @@ public class ServerPod {
     return this;
   }
 
+  public ServerPod livenessProbe(ProbeTuning livenessProbe) {
+    this.livenessProbe = livenessProbe;
+    return this;
+  }
+
   public ProbeTuning livenessProbe() {
     return livenessProbe;
   }
