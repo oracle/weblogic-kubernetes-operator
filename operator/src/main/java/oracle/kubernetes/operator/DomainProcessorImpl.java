@@ -768,7 +768,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public MakeRightDomainOperation createMakeRightOperationForClusterEvent(
       EventItem clusterEvent, ClusterResource cluster) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
-        .interrupt()
         .withEventData(new EventData(clusterEvent).resourceName(cluster.getMetadata().getName()));
   }
 
@@ -818,7 +817,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+    createMakeRightOperation(new DomainPresenceInfo(domain)).forDeletion().withExplicitRecheck()
         .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }
