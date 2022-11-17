@@ -40,7 +40,6 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
-import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -54,6 +53,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.utils.CommonUtils.getLegalVolumeName;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
@@ -72,8 +72,6 @@ public class JobStepContext extends BasePodStepContext {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
-  private static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
-  private static final String VOLUME_NAME_SUFFIX = "-volume";
   private static final String CONFIGMAP_TYPE = "cm";
   private static final String SECRET_TYPE = "st";
   // domainTopology is null if this is 1st time we're running job for this domain
@@ -508,19 +506,12 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private String getVolumeName(String resourceName, String type) {
-    return getName(resourceName, type);
-  }
-
-  private String getName(String resourceName, String type) {
-    return resourceName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
-            ? getShortName(resourceName, type)
-            : resourceName + VOLUME_NAME_SUFFIX;
-  }
-
-  private String getShortName(String resourceName, String type) {
-    String volumeSuffix = VOLUME_NAME_SUFFIX + "-" + type + "-"
-            + Optional.ofNullable(ChecksumUtils.getMD5Hash(resourceName)).orElse("");
-    return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
+    try {
+      return getLegalVolumeName(resourceName, type);
+    } catch (Exception ex) {
+      LOGGER.severe(MessageKeys.EXCEPTION, ex);
+      return resourceName;
+    }
   }
 
   protected String getContainerName() {

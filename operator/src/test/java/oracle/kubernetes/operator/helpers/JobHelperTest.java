@@ -71,6 +71,7 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
+import static oracle.kubernetes.common.utils.CommonUtils.getMD5Hash;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -98,7 +99,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
-import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
@@ -140,9 +140,9 @@ class JobHelperTest extends DomainValidationTestBase {
    * time the job ran.
    */
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
-  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getMD5Hash(LONG_RESOURCE_NAME);
-  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getMD5Hash(SECOND_LONG_RESOURCE_NAME);
-  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getMD5Hash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getHash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getHash(SECOND_LONG_RESOURCE_NAME);
+  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getHash(LONG_RESOURCE_NAME);
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
   public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = LONG_RESOURCE_NAME
         .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
@@ -167,6 +167,14 @@ class JobHelperTest extends DomainValidationTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<LogRecord> logRecords = new ArrayList<>();
+
+  private static String getHash(String data) {
+    try {
+      return getMD5Hash(data);
+    } catch (Exception ex) {
+      return null;
+    }
+  }
 
   @BeforeEach
   public void setup() throws Exception {
