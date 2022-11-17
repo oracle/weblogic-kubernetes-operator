@@ -662,92 +662,15 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Test DomainDeleted and ClusterDeleted events are logged when domain and resource are deleted,
-   * domain first and cluster second.
+   * Test DomainDeleted and ClusterDeleted events are logged when domain and resource are deleted.
    */
   @Test
-  @DisplayName("Test domain and cluster events for deleting domain then cluster")
-  void testK8SEventsDelete1() {
+  @DisplayName("Test domain and cluster events for deleting domain and cluster resources")
+  void testK8SEventsDelete() {
     OffsetDateTime timestamp = now();
     createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
     deleteDomainCustomResource(domainUid, domainNamespace2);
     deleteClusterCustomResource(cluster1Name, domainNamespace2);
-
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
-
-    //verify domain deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
-    //verify cluster deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
-  }
-
-  /**
-   * Test DomainDeleted and ClusterDeleted events are logged when domain and cluster are deleted,
-   * cluster first and domain second.
-   */
-  @Test
-  @DisplayName("Test domain and cluster events for deleting cluster then domain")
-  void testK8SEventsDelete2() {
-    OffsetDateTime timestamp = now();
-    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    deleteClusterCustomResource(cluster1Name, domainNamespace2);
-    deleteDomainCustomResource(domainUid, domainNamespace2);
-
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
-
-    //verify domain deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
-    //verify cluster deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
-  }
-
-  /**
-   * Test DomainDeleted and ClusterDeleted events are logged when domain and cluster are deleted,
-   * domain first and cluster second with a delay in between.
-   */
-  @Test
-  @DisplayName("Test domain and cluster events for deleting domain then cluster with delay in between")
-  void testK8SEventsDelete3() {
-    OffsetDateTime timestamp = now();
-    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    deleteDomainCustomResource(domainUid, domainNamespace2);
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      // ignore
-    }
-    deleteClusterCustomResource(cluster1Name, domainNamespace2);
-
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
-
-    //verify domain deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
-    //verify cluster deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
-  }
-
-  /**
-   * Test DomainDeleted and ClusterDeleted events are logged when domain and cluster are deleted,
-   * cluster first and domain second with a delay in between.
-   */
-  @Test
-  @DisplayName("Test domain and cluster events for deleting cluster then domain with delay in between")
-  void testK8SEventsDelete4() {
-    OffsetDateTime timestamp = now();
-    createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
-    deleteClusterCustomResource(cluster1Name, domainNamespace2);
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      // ignore
-    }
-    deleteDomainCustomResource(domainUid, domainNamespace2);
 
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
