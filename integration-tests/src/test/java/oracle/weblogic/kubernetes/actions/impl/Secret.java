@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -120,9 +121,18 @@ public class Secret {
     for (V1Secret v1Secret : v1Secrets) {
       if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
         if (v1Secret.getMetadata().getName().equals(secretName)) {
-          if (v1Secret.getData() != null) {
-            byte[] encodedToken = v1Secret.getData().get("token");
-            return Base64.getEncoder().encodeToString(encodedToken);
+          if (OKD) {
+            for (Map.Entry<String, String> annotation : v1Secret.getMetadata().getAnnotations().entrySet()) {
+              if (annotation.getKey().equals("openshift.io/token-secret.value")) {
+                return annotation.getValue();
+              }
+            }
+            return null;
+          } else {
+            if (v1Secret.getData() != null) {
+              byte[] encodedToken = v1Secret.getData().get("token");
+              return Base64.getEncoder().encodeToString(encodedToken);
+            }
           }
         }
       }
