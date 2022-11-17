@@ -12,7 +12,7 @@ import oracle.kubernetes.common.CommonConstants;
 
 public class CommonUtils {
 
-  private static CheckedFunction<String, String> getShortName = CommonUtils::getShortName;
+  private static CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
 
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
   public static final String VOLUME_NAME_SUFFIX = "-volume";
@@ -52,33 +52,13 @@ public class CommonUtils {
    */
   public static String getLegalVolumeName(String volumeName) throws NoSuchAlgorithmException {
     return volumeName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH)
-        ? getShortName.apply(volumeName)
+        ? getShortName(volumeName)
         : volumeName;
-  }
-
-  /**
-   * Returns a truncated volume name if the name exceeds the max allowed limit of characters for volume name.
-   * @param volumeName volume name
-   * @param type volume type
-   * @return truncated volume name if the name exceeds the limit, else return volumeName
-   * @throws NoSuchAlgorithmException Thrown when particular cryptographic algorithm
-   *                                  is not available in the environment.
-   */
-  public static String getLegalVolumeName(String volumeName, String type) throws NoSuchAlgorithmException {
-    return volumeName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
-        ? getShortName(volumeName, type)
-        : volumeName + VOLUME_NAME_SUFFIX;
   }
 
 
   private static String getShortName(String resourceName) throws NoSuchAlgorithmException {
-    String volumeSuffix = Optional.ofNullable(getMD5Hash(resourceName)).orElse("");
-    return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
-  }
-
-  private static String getShortName(String resourceName, String type) throws NoSuchAlgorithmException {
-    String volumeSuffix = VOLUME_NAME_SUFFIX + "-" + type + "-"
-        + Optional.ofNullable(getMD5Hash(resourceName)).orElse("");
+    String volumeSuffix = Optional.ofNullable(getMD5Hash.apply(resourceName)).orElse("");
     return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
   }
 

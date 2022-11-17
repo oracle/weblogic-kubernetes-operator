@@ -51,9 +51,9 @@ class SchemaConversionUtilsTest {
   private final ConversionAdapter converterv8 = new ConversionAdapter(API_VERSION_V8);
   private Map<String, Object> v8Domain;
 
-  private static CommonUtils.CheckedFunction<String, String> getShortName = SchemaConversionUtilsTest::getShortName;
+  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = SchemaConversionUtilsTest::getMD5Hash;
 
-  private static String getShortName(String s) throws NoSuchAlgorithmException {
+  private static String getMD5Hash(String s) throws NoSuchAlgorithmException {
     throw new NoSuchAlgorithmException();
   }
 
@@ -633,7 +633,7 @@ class SchemaConversionUtilsTest {
   @Test
   void testV8DomainWithLongAuxiliaryImageVolumeNameAndMessageDigestThrowsException_volumeNameIsNotChanged()
       throws NoSuchFieldException {
-    mementos.add(StaticStubSupport.install(CommonUtils.class, "getShortName", getShortName));
+    mementos.add(StaticStubSupport.install(CommonUtils.class, "getMD5Hash", getMD5Hash));
 
     Map<String, Object> auxImageVolume = ((Map<String, Object>)
         ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));

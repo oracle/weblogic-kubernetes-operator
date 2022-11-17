@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.File;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -53,6 +55,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
+import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.common.utils.CommonUtils.getLegalVolumeName;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
@@ -76,6 +80,7 @@ public class JobStepContext extends BasePodStepContext {
   private static final String SECRET_TYPE = "st";
   // domainTopology is null if this is 1st time we're running job for this domain
   private final WlsDomainConfig domainTopology;
+  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
   private V1Job jobModel;
   private Step conflictStep;
 
@@ -512,6 +517,18 @@ public class JobStepContext extends BasePodStepContext {
       LOGGER.severe(MessageKeys.EXCEPTION, ex);
       return resourceName;
     }
+  }
+
+  private String getLegalVolumeName(String volumeName, String type) throws NoSuchAlgorithmException {
+    return volumeName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
+        ? getShortName(volumeName, type)
+        : volumeName + VOLUME_NAME_SUFFIX;
+  }
+
+  private String getShortName(String resourceName, String type) throws NoSuchAlgorithmException {
+    String volumeSuffix = VOLUME_NAME_SUFFIX + "-" + type + "-"
+        + Optional.ofNullable(getMD5Hash.apply(resourceName)).orElse("");
+    return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
   }
 
   protected String getContainerName() {
