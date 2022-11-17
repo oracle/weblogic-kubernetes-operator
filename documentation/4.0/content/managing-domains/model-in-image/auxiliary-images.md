@@ -198,7 +198,7 @@ spec:
       - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
         value: model-in-image:WLS-AI-v1
       - name: AUXILIARY_IMAGE_CONTAINER_NAME
-        value: comp-operator-aux-container1
+        value: compat-operator-aux-container1
       image: model-in-image:WLS-AI-v1
       imagePullPolicy: IfNotPresent
       name: compat-operator-aux-container1
