@@ -620,7 +620,7 @@ class SchemaConversionUtilsTest {
   void testV8DomainWithLongAuxiliaryImageVolumeName_convertedVolumeNameIsTruncated() throws NoSuchAlgorithmException {
     Map<String, Object> auxImageVolume = ((Map<String, Object>)
         ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
-    auxImageVolume.put("name", "test-domain-aux-image-volume");
+    auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");
     getDomainSpec(v8Domain).put("auxiliaryImageVolumes",  Collections.singletonList(auxImageVolume));
 
     converter.convert(v8Domain);
@@ -637,13 +637,13 @@ class SchemaConversionUtilsTest {
 
     Map<String, Object> auxImageVolume = ((Map<String, Object>)
         ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
-    auxImageVolume.put("name", "test-domain-aux-image-volume");
+    auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");
     getDomainSpec(v8Domain).put("auxiliaryImageVolumes",  Collections.singletonList(auxImageVolume));
 
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasJsonPath("$.spec.serverPod.volumes[0].name",
         equalTo(CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
-            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + "test-domain-aux-image-volume"))));
+            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + "test-domain-aux-image-volume-test-domain-aux-image-volume"))));
   }
 }
