@@ -198,21 +198,21 @@ spec:
       - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
         value: model-in-image:WLS-AI-v1
       - name: AUXILIARY_IMAGE_CONTAINER_NAME
-        value: compatibility-mode-operator-aux-container1
+        value: comp-operator-aux-container1
       image: model-in-image:WLS-AI-v1
       imagePullPolicy: IfNotPresent
-      name: compatibility-mode-operator-aux-container1
+      name: compat-operator-aux-container1
       volumeMounts:
       - mountPath: /tmpAuxiliaryImage
-        name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+        name: compat-ai-vol-auxiliaryimagevolume1
       - mountPath: /weblogic-operator/scripts
         name: weblogic-scripts-cm-volume
     volumeMounts:
     - mountPath: /auxiliary
-      name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+      name: compat-ai-vol-auxiliaryimagevolume1
     volumes:
     - emptyDir: {}
-      name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+      name: compat-ai-vol-auxiliaryimagevolume1
 ```
 
 ### Domain upgrade tool to manually upgrade the `weblogic.oracle/v8` schema domain resource

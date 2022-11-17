@@ -38,7 +38,6 @@ import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class SchemaConversionUtils {
-
   private static final String API_VERSION = "apiVersion";
   private static final String METADATA = "metadata";
   private static final String ANNOTATIONS = "annotations";
