@@ -768,6 +768,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public MakeRightDomainOperation createMakeRightOperationForClusterEvent(
       EventItem clusterEvent, ClusterResource cluster) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
+        .interrupt()
         .withEventData(new EventData(clusterEvent).resourceName(cluster.getMetadata().getName()));
   }
 
