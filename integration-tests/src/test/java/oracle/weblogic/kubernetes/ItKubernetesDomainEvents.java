@@ -662,7 +662,7 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Test DomainDeleted and ClusterDeleted events are logged when domain and resource are deleted.
+   * Test DomainDeleted and ClusterDeleted events are logged when domain and cluster resources are deleted.
    */
   @Test
   @DisplayName("Test domain and cluster events for deleting domain and cluster resources")
