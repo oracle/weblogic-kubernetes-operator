@@ -707,16 +707,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void handleAddedCluster(ClusterResource cluster) {
     List<DomainPresenceInfo> hostingDomains =
         getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster).execute();
     if (hostingDomains.isEmpty()) {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
-      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster).execute();
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
         createMakeRightOperation(info)
             .interrupt()
             .withExplicitRecheck()
-            .withEventData(new EventData(EventItem.CLUSTER_CREATED).resourceName(cluster.getMetadata().getName()))
             .execute();
       });
     }
@@ -725,9 +724,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void handleModifiedCluster(ClusterResource cluster) {
     List<DomainPresenceInfo> hostingDomains =
         getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster).execute();
     if (hostingDomains.isEmpty()) {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
-      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster).execute();
     } else {
       hostingDomains.forEach(info -> {
         ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
@@ -739,7 +738,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         createMakeRightOperation(info)
             .interrupt()
             .withExplicitRecheck()
-            .withEventData(new EventData(EventItem.CLUSTER_CHANGED).resourceName(cluster.getMetadata().getName()))
             .execute();
       });
     }
@@ -748,9 +746,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void handleDeletedCluster(ClusterResource cluster) {
     List<DomainPresenceInfo> hostingDomains =
         getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
+    createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster).execute();
     if (hostingDomains.isEmpty()) {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
-      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_DELETED, cluster).execute();
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER_DELETED, cluster.getMetadata().getName(), info.getDomainUid());
@@ -758,7 +756,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         createMakeRightOperation(info)
             .interrupt()
             .withExplicitRecheck()
-            .withEventData(new EventData(EventItem.CLUSTER_DELETED).resourceName(cluster.getMetadata().getName()))
             .execute();
       });
     }
@@ -818,7 +815,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).forDeletion().withExplicitRecheck()
+    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
         .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }
