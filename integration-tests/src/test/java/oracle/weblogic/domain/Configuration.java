@@ -19,6 +19,9 @@ public class Configuration {
   @ApiModelProperty("Configuration for OPSS security.")
   private Opss opss;
 
+  @ApiModelProperty("Istio service mesh integration")
+  private Istio istio;
+
   @ApiModelProperty(
       "A list of names of the secrets for WebLogic configuration overrides or model.")
   private List<String> secrets;
@@ -165,6 +168,23 @@ public class Configuration {
 
   public void setOverridesConfigMap(String overridesConfigMap) {
     this.overridesConfigMap = overridesConfigMap;
+  }
+
+  public Configuration istio(Istio istio) {
+    this.istio = istio;
+    return this;
+  }
+
+  public Istio istio() {
+    return istio;
+  }
+
+  public Istio getIstio() {
+    return istio;
+  }
+
+  public void setIstio(Istio istio) {
+    this.istio = istio;
   }
 
   public Configuration introspectorJobActiveDeadlineSeconds(
