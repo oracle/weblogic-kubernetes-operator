@@ -14,11 +14,9 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.util.Yaml;
-import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
@@ -49,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -194,7 +193,7 @@ class ItOpenshiftIstioMiiDomain {
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
                                       domainNamespace,
                                       adminSecretName,
                                       TEST_IMAGES_REPO_SECRET_NAME,
@@ -203,6 +202,9 @@ class ItOpenshiftIstioMiiDomain {
                               MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
                               configMapName);
     logger.info(Yaml.dump(domain));
+
+    domain = createClusterResourceAndAddReferenceToDomain(
+        domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
@@ -270,13 +272,13 @@ class ItOpenshiftIstioMiiDomain {
     assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
-  private Domain createDomainResource(String domainUid, String domNamespace,
+  private DomainResource createDomainResource(String domainUid, String domNamespace,
            String adminSecretName, String repoSecretName,
            String encryptionSecretName, int replicaCount,
            String miiImage, String configmapName) {
 
     // create the domain CR
-    Domain domain = new Domain()
+    DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
         .metadata(new V1ObjectMeta()
@@ -289,9 +291,8 @@ class ItOpenshiftIstioMiiDomain {
             .imagePullPolicy("IfNotPresent")
             .addImagePullSecretsItem(new V1LocalObjectReference()
                 .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
@@ -303,9 +304,6 @@ class ItOpenshiftIstioMiiDomain {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(createAdminServer())
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount))
             .configuration(new Configuration()
                 .istio(new Istio()
                     .localhostBindingsEnabled(Boolean.FALSE))
