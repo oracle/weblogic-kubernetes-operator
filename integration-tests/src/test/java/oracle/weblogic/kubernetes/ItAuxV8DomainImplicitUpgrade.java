@@ -277,7 +277,7 @@ class ItAuxV8DomainImplicitUpgrade {
     assertNotNull(containerList, "/spec/serverPod/InitContainers is null");
     containerList.forEach(container -> {
       logger.info("The Init Container name is: {0} ", container.getName());
-      if (container.getName().equalsIgnoreCase("compatibility-mode-operator-aux-container1")) {
+      if (container.getName().equalsIgnoreCase("compat-operator-aux-container1")) {
         logger.info("The Compatiblity Init Container found");
         foundCompatiblityContainer = true;
       }
