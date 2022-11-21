@@ -383,7 +383,9 @@ class ItMiiDynamicUpdatePart1 {
     assertTrue(p2Success,
         String.format("replica patching to 1 failed for cluster %s in namespace %s",
             clusterName, helper.domainNamespace));
-    checkPodReadyAndServiceExists(helper.managedServerPrefix + "1", domainUid, helper.domainNamespace);
+    for (int i = 1; i <= helper.replicaCount; i++) {
+      checkPodReadyAndServiceExists(helper.managedServerPrefix + i, domainUid, helper.domainNamespace);
+    }
 
     // get the creation time of the server pods before patching
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
