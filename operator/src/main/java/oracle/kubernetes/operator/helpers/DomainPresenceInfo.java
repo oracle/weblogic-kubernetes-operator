@@ -736,7 +736,7 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   public boolean isClusterEventOnly() {
-    return domainUid == null && clusterName != null;
+    return domainUid == null && domain.get() == null && clusterName != null;
   }
 
   /**
