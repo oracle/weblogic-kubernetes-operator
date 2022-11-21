@@ -454,7 +454,7 @@ class ItKubernetesDomainEvents {
 
       assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster via patching");
       logger.info("verify the ClusterChanged event is generated");
-      checkEvent(opNamespace, domainNamespace3, domainUid, CLUSTER_CHANGED, "Normal", timestamp);
+      checkEvent(opNamespace, domainNamespace3, null, CLUSTER_CHANGED, "Normal", timestamp);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -679,7 +679,7 @@ class ItKubernetesDomainEvents {
     //verify domain deleted event
     checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
     //verify cluster deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace2, null, CLUSTER_DELETED, "Normal", timestamp);
   }
 
   /**
