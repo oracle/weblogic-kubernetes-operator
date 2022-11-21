@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -1259,6 +1260,24 @@ public class EventHelper {
         DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
         return doNext(packet);
       }
+    }
+  }
+
+  public static class ClusterResourceEventData extends EventData {
+
+    private final ClusterResource resource;
+
+    public ClusterResourceEventData(EventItem eventItem, ClusterResource resource) {
+      super(eventItem);
+      this.resource = resource;
+    }
+
+    @Override
+    public String getUID() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getUid)
+          .orElse("");
     }
   }
 }

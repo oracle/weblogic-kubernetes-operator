@@ -34,6 +34,7 @@ import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
@@ -766,7 +767,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       EventItem clusterEvent, ClusterResource cluster) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
         .interrupt()
-        .withEventData(new EventData(clusterEvent).resourceName(cluster.getMetadata().getName()));
+        .withEventData(createClusterResourceEventData(clusterEvent, cluster));
+  }
+
+  private EventData createClusterResourceEventData(EventItem clusterEvent, ClusterResource cluster) {
+    return new ClusterResourceEventData(clusterEvent, cluster).resourceName(cluster.getMetadata().getName());
   }
 
   @NotNull
