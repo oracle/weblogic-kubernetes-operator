@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 public interface EffectiveClusterSpec {
@@ -26,7 +24,7 @@ public interface EffectiveClusterSpec {
    */
   Map<String, String> getClusterAnnotations();
 
-  V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity();
+  String getClusterSessionAffinity();
 
   /**
    * Returns the list of initContainers.
@@ -49,7 +47,7 @@ public interface EffectiveClusterSpec {
    */
   Shutdown getShutdown();
 
-  V1PodSpec.RestartPolicyEnum getRestartPolicy();
+  String getRestartPolicy();
 
   String getRuntimeClassName();
 

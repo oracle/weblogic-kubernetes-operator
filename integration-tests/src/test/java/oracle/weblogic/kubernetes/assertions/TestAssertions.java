@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -13,6 +14,9 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Yaml;
+import oracle.weblogic.domain.ClusterCondition;
+import oracle.weblogic.domain.ClusterResource;
+import oracle.weblogic.domain.ClusterStatus;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerStatus;
@@ -40,12 +44,15 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getClusterCustomResource;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -420,6 +427,172 @@ public class TestAssertions {
   }
 
   /**
+   * Check the status cluster in the domain matches status in the cluster resource.
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
+   * @param clusterName  name of cluster
+   * @return true if the status matches, false otherwise
+   */
+  public static Callable<Boolean> clusterStatusMatchesDomain(String domainUid, String namespace,
+                                                   String clusterName) throws ApiException {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      DomainResource domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, namespace));
+      logger.info("Domain resource : " + Yaml.dump(domain));
+      if (domain.getSpec().getClusters().stream().anyMatch(cluster -> cluster.getName().contains(clusterName))) {
+
+        if (domain != null && domain.getStatus() != null) {
+          List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+          logger.info(Yaml.dump(clusterStatusList));
+
+          for (ClusterStatus domainClusterStatus : clusterStatusList) {
+            boolean match = true;
+            if (domainClusterStatus.getClusterName().equalsIgnoreCase(clusterName)) {
+              logger.info("Checking cluster resource status for cluster {0} status {1}",
+                  domainClusterStatus.getClusterName(), domainClusterStatus.toString());
+              ClusterResource clusterRes = getClusterCustomResource(domainUid + "-" + clusterName,
+                  namespace, CLUSTER_VERSION);
+              assertNotNull(clusterRes, "ClusterResource does not exists");
+              assertNotNull(clusterRes.getStatus(), "ClusterResource status is null");
+              logger.info("Cluster Resource status : " + Yaml.dump(clusterRes.getStatus()));
+              ClusterStatus clusterResourceStatus = clusterRes.getStatus();
+              if (domainClusterStatus.getMaximumReplicas() != clusterResourceStatus.getMaximumReplicas()) {
+                logger.info("MaximumReplicas {0} number in domain.status does not match  ClusterResource status {1}",
+                    domainClusterStatus.getMaximumReplicas(), clusterResourceStatus.getMaximumReplicas());
+                match = false;
+              }
+              if (domainClusterStatus.getMinimumReplicas() != clusterResourceStatus.getMinimumReplicas()) {
+                logger.info("MinimumReplicas {0} number in domain.status does not match  ClusterResource status {1}",
+                    domainClusterStatus.getMinimumReplicas(), clusterResourceStatus.getMinimumReplicas());
+                match = false;
+              }
+              if (domainClusterStatus.getObservedGeneration() != clusterResourceStatus.getObservedGeneration()) {
+                logger.info("ObservedGeneration {0} number in domain.status does not match  "
+                        + "clusterResource ObservedGeneration status {1}",
+                    domainClusterStatus.getObservedGeneration(), clusterResourceStatus.getObservedGeneration());
+                match = false;
+              }
+              if (domainClusterStatus.getReplicasGoal() != clusterResourceStatus.getReplicasGoal()) {
+                logger.info("ReplicasGoal {0} number in domain.status does not match  ClusterResource status {1}",
+                    domainClusterStatus.getReplicasGoal(), clusterResourceStatus.getReplicasGoal());
+                match = false;
+              }
+              if (domainClusterStatus.getReplicasGoal() > 0) {
+                if (domainClusterStatus.getReadyReplicas() != clusterResourceStatus.getReadyReplicas()) {
+                  logger.info("ReadyReplicas {0} number in domain.status does not match  ClusterResource status {1}",
+                      domainClusterStatus.getReadyReplicas(), clusterResourceStatus.getReadyReplicas());
+                  match = false;
+                }
+                if (domainClusterStatus.getReplicas() != clusterResourceStatus.getReplicas()) {
+                  logger.info("Replicas {0} number in domain.status does not match  ClusterResource status {1}",
+                      domainClusterStatus.getReplicas(), clusterResourceStatus.getReplicas());
+                  match = false;
+                }
+              }
+              return match;
+            }
+          }
+        } else {
+          if (domain == null) {
+            logger.info("domain is null");
+          } else {
+            logger.info("domain status is null");
+          }
+        }
+      } else {
+        logger.info("Cluster with name {0} is not in the domain spec", clusterName);
+      }
+      return false;
+    };
+  }
+
+  /**
+   * Check the status conditions for cluster in the domain matches status conditions in the cluster resource.
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
+   * @param clusterName name of cluster
+   * @param conditionType conditions type
+   * @param expectedStatus expected status
+   * @return true if the status matches, false otherwise
+  */
+  public static Callable<Boolean> clusterStatusConditionsMatchesDomain(String domainUid, String namespace,
+                                                                       String clusterName,
+                                                                       String conditionType, String expectedStatus)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      DomainResource domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, namespace));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+        logger.info(Yaml.dump(clusterStatusList));
+        for (ClusterStatus domainClusterStatus : clusterStatusList) {
+          if (domainClusterStatus.getClusterName().equalsIgnoreCase(clusterName)) {
+            logger.info("Checking cluster resource status for cluster {0} status {1}",
+                domainClusterStatus.getClusterName(), domainClusterStatus.toString());
+            ClusterResource clusterRes = getClusterCustomResource(domainUid + "-"
+                + clusterName, namespace, CLUSTER_VERSION);
+            assertNotNull(clusterRes, "ClusterResource does not exists");
+            assertNotNull(clusterRes.getStatus(), "ClusterResource status is null");
+            logger.info("Cluster Resource status : " + Yaml.dump(clusterRes.getStatus()));
+            ClusterStatus clusterResourceStatus = clusterRes.getStatus();
+            List<ClusterCondition> clusterResConditionList = clusterResourceStatus.getConditions();
+            List<ClusterCondition> domainClusterConditionList = domainClusterStatus.getConditions();
+            logger.info("Domain Cluster conditions : " + Yaml.dump(domainClusterConditionList));
+            logger.info("Cluster Resource conditions : " + Yaml.dump(clusterResConditionList));
+            boolean foundConditionTypeInClusterResource = false;
+            boolean foundConditionTypeInDomainStatusCluster = false;
+            OffsetDateTime lastTransitionTimeClusterRes = null;
+            OffsetDateTime lastTransitionTimeDomainCluster = null;
+            for (ClusterCondition clusterResCondition : clusterResConditionList) {
+              if (clusterResCondition.getType().equalsIgnoreCase(conditionType)) {
+                if (expectedStatus.equals(clusterResCondition.getStatus())) {
+                  lastTransitionTimeClusterRes = clusterResCondition.getLastTransitionTime();
+                  foundConditionTypeInClusterResource = true;
+                  logger.info("Found matching condition type {0} and status {1} for cluster resource {2}",
+                      clusterResCondition.getType(), clusterResCondition.getStatus(),
+                      clusterResourceStatus.getClusterName());
+                }
+              }
+            }
+            for (ClusterCondition domainClusterCondition : domainClusterConditionList) {
+              if (domainClusterCondition.getType().equalsIgnoreCase(conditionType)) {
+                if (expectedStatus.equals(domainClusterCondition.getStatus())) {
+                  foundConditionTypeInDomainStatusCluster = true;
+                  lastTransitionTimeDomainCluster = domainClusterCondition.getLastTransitionTime();
+                  logger.info("Found matching condition type {0} and status {1} for domain status cluster {2} ",
+                      domainClusterCondition.getType(), domainClusterCondition.getStatus(),
+                      domainClusterStatus.getClusterName());
+                }
+              }
+            }
+            boolean isTransitionTimeSame = (lastTransitionTimeDomainCluster != null
+                && lastTransitionTimeDomainCluster.isEqual(lastTransitionTimeClusterRes));
+            if (!isTransitionTimeSame) {
+              logger.info("Found not matching condition lastTransitionTime {0} "
+                      + "for domain cluster status and cluster resource status {1} ",
+                  lastTransitionTimeDomainCluster, lastTransitionTimeClusterRes);
+            }
+            //commented out check for lastTransition time until OWLS-102910 will be fixed
+            //return (foundConditionTypeInClusterResource &&
+            // foundConditionTypeInDomainStatusCluster && isTransitionTimeSame);
+            return (foundConditionTypeInClusterResource && foundConditionTypeInDomainStatusCluster);
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
    * Check the status reason of the domain matches the given reason.
    * @param domainUid  domain uid
    * @param namespace namespace in which the domain resource exists
@@ -431,9 +604,10 @@ public class TestAssertions {
     LoggingFacade logger = getLogger();
     return () -> {
       DomainResource domain = getDomainCustomResource(domainUid, namespace);
-      if (domain != null && domain.getStatus() != null && !domain.getStatus().getConditions().isEmpty()) {
+      if (domain != null && domain.getStatus() != null && domain.getStatus().getConditions() != null
+          && !domain.getStatus().getConditions().isEmpty()) {
         boolean match = domain.getStatus().getConditions().stream()
-            .anyMatch(condition -> condition.getReason().contains(statusReason));
+            .anyMatch(condition -> condition.getReason() != null && condition.getReason().contains(statusReason));
         return match;
       } else {
         if (domain == null) {
@@ -869,6 +1043,21 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isPrometheusReady(String namespace, String releaseName) {
     return Prometheus.isReady(namespace, releaseName);
+  }
+
+  /**
+   * Check if the prometheus pods are running in a given namespace.
+   * @param namespace in which to check for the prometheus pods
+   * @param podName prometheus adapter pod name
+   * @return true if found and running otherwise false
+   */
+  public static Callable<Boolean> isPrometheusAdapterReady(String namespace, String podName) {
+    Map<String,String> labelMapPromSvc = new HashMap<>();
+    labelMapPromSvc.put("name", "prometheus-adapter");
+
+    return () -> {
+      return (Kubernetes.isPodReady(namespace, (Map<String, String>) null, podName));
+    };
   }
 
   /**

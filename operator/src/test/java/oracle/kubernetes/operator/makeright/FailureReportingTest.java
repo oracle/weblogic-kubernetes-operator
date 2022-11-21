@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.Processors;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.calls.SimulatedStep;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
@@ -49,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -94,7 +94,8 @@ class FailureReportingTest {
   private final MakeRightExecutorStub executor = Stub.createNiceStub(MakeRightExecutorStub.class);
   private final DomainProcessorDelegateStub delegate
       = Stub.createStrictStub(DomainProcessorDelegateStub.class, testSupport);
-  private final MakeRightDomainOperation makeRight = new MakeRightDomainOperationImpl(executor, delegate, info);
+  private final MakeRightDomainOperation makeRight = new MakeRightDomainOperationImpl(executor, delegate, info)
+      .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED));
   private final TerminalStep terminalStep = new TerminalStep();
   private String introspectionString = INFO_MESSAGE;
   private Step steps;
@@ -414,7 +415,7 @@ class FailureReportingTest {
       return getMatchingConditions(nextAction.getPacket());
     }
 
-    @NotNull
+    @Nonnull
     private Set<DomainCondition> getMatchingConditions(Packet packet) {
       return DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)

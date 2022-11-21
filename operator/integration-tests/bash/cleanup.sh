@@ -486,7 +486,7 @@ genericDelete() {
     ${KUBERNETES_CLI} get pvc \
       -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
       --all-namespaces=true \
-      | egrep -e "($3)" | patchPVCFinalizer
+      | grep -E -e "($3)" | patchPVCFinalizer
   fi
 
   while : ; do
@@ -497,14 +497,14 @@ genericDelete() {
     ${KUBERNETES_CLI} get $1 \
         -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
-        | egrep -e "($3)" | sort > $resfile_yes 2>&1
+        | grep -E -e "($3)" | sort > $resfile_yes 2>&1
     artcount_yes="`cat $resfile_yes | wc -l`"
 
     # leftover non-namespaced artifacts
     ${KUBERNETES_CLI} get $2 \
         -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
-        | egrep -e "($3)" | sort > $resfile_no 2>&1
+        | grep -E -e "($3)" | sort > $resfile_no 2>&1
     artcount_no="`cat $resfile_no | wc -l`"
 
     artcount_total=$((artcount_yes + artcount_no))

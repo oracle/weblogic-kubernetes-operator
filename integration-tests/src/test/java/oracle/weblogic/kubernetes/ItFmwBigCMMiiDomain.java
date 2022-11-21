@@ -23,6 +23,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
@@ -83,15 +84,12 @@ class ItFmwBigCMMiiDomain {
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
-  private String domainUid = "jrfdomain-mii";
-  private String adminServerPodName = domainUid + "-admin-server";
-  private String managedServerPrefix = domainUid + "-managed-server";
-  private int replicaCount = 1;
-  private String adminSecretName = domainUid + "-weblogic-credentials";
-  private String encryptionSecretName = domainUid + "-encryptionsecret";
-  private String rcuaccessSecretName = domainUid + "-rcu-access";
-  private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
-  private String opsswalletfileSecretName = domainUid + "opss-wallet-file-secret";
+  private final String domainUid = "jrfdomain-mii";
+  private final int replicaCount = 1;
+  private final String adminSecretName = domainUid + "-weblogic-credentials";
+  private final String encryptionSecretName = domainUid + "-encryptionsecret";
+  private final String rcuaccessSecretName = domainUid + "-rcu-access";
+  private final String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
   static int dbNodePort;
 
   /**
@@ -127,7 +125,7 @@ class ItFmwBigCMMiiDomain {
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
+        + "dbUrl %s, dbListenerPost %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     dbNodePort = getDBNodePort(dbNamespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
@@ -212,7 +210,7 @@ class ItFmwBigCMMiiDomain {
         propVal.toString()), "Can't replace the string BIGDATAREPLACE in " + targetModelFile);
     assertDoesNotThrow(() -> replaceStringInFile(targetModelFile.toString(),
         "@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@",
-        String.format("%s:%s", K8S_NODEPORT_HOST, Integer.toString(dbNodePort))),
+        String.format("%s:%s", K8S_NODEPORT_HOST, dbNodePort)),
         "Can't replace the string @@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@ in " + targetModelFile);
 
     final List<String> modelList = Collections.singletonList(targetModelFile.toString());
@@ -250,8 +248,8 @@ class ItFmwBigCMMiiDomain {
         for (var item : items) {
           if (item.getMetadata().getName().contains("introspect")) {
             logger.info("Found ConfigMap " + item.getMetadata().getName());
-            logger.info("Found ConfigMap size " + item.toString().getBytes("UTF-8").length + " bytes");
-            cmTotalSize = cmTotalSize + item.toString().getBytes("UTF-8").length;
+            logger.info("Found ConfigMap size " + item.toString().getBytes(UTF_8).length + " bytes");
+            cmTotalSize = cmTotalSize + item.toString().getBytes(UTF_8).length;
             itemsCM.add(item);
           }
         }

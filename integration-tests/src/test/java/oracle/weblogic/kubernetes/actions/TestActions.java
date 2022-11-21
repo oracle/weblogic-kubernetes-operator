@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -494,8 +493,6 @@ public class TestActions {
    * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithWLDF(String clusterName,
                                              String domainUid,
@@ -1515,7 +1512,7 @@ public class TestActions {
    * @return the status phase of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static V1PodStatus.PhaseEnum getPodStatusPhase(String namespace, String labelSelectors, String podName)
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName)
       throws ApiException {
     return Pod.getPodStatusPhase(namespace, labelSelectors, podName);
   }
@@ -1543,6 +1540,23 @@ public class TestActions {
    **/
   public static String getPodLog(String podName, String namespace, String container) throws ApiException {
     return Pod.getPodLog(podName, namespace, container);
+  }
+
+  /**
+   * Get a pod's log.
+   *
+   * @param podName name of the pod
+   * @param namespace name of the namespace
+   * @param container name of the container
+   * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
+   * @param follow whether to follow the log stream of the pod
+   * @return log as a String
+   * @throws ApiException if Kubernetes client API call fails
+   **/
+  public static String getPodLog(String podName, String namespace, String container, Boolean previous,
+                                 Integer sinceSeconds,Boolean follow) throws ApiException {
+    return Pod.getPodLog(podName, namespace, container, previous, sinceSeconds, follow);
   }
 
   /**

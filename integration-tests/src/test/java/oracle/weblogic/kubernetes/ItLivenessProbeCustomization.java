@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
@@ -27,7 +28,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.jetbrains.annotations.NotNull;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -45,10 +46,12 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -59,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -91,7 +95,6 @@ class ItLivenessProbeCustomization {
   private static final int replicaCount = 1;
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static final String adminServerPodName2 = domainUid2 + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String APPCHECK_SCRIPT = "customLivenessProbe.sh";
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
@@ -168,7 +171,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -201,7 +204,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -230,7 +233,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -248,7 +251,7 @@ class ItLivenessProbeCustomization {
         // It should not increase since the Pod should not be started
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("[2] restart count is: {0}", afterRestartCount);
         assertEquals(0, afterRestartCount - beforeRestartCount,
@@ -326,6 +329,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the livenessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -352,7 +367,7 @@ class ItLivenessProbeCustomization {
         int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                     managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -378,7 +393,7 @@ class ItLivenessProbeCustomization {
         int afterDelayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
         assertEquals(beforeRestartCount, afterDelayRestartCount, "The pod was restarted after 45s, "
@@ -392,7 +407,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
                 getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -457,6 +472,95 @@ class ItLivenessProbeCustomization {
                 domainUid2, domainNamespace));
   }
 
+  /**
+   * Verify liveness probe by killing managed server process 3 times to kick pod container auto-restart.
+   */
+  @Test
+  @DisplayName("Test liveness probe of pod")
+  void testLivenessProbe() {
+    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain, "Got null domain resource");
+
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+
+    String serverNamePrefix = domainUid + "-cluster-1-" + MANAGED_SERVER_NAME_BASE;
+
+    // create file to kill server process
+    File killServerScript = assertDoesNotThrow(() -> createScriptToKillServer(),
+        "Failed to create script to kill server");
+    logger.info("File/script created to kill server {0}", killServerScript);
+
+    String server1Name = serverNamePrefix + "1";
+    checkPodReady(server1Name, domainUid, domainNamespace);
+
+    // copy script to pod
+    String destLocation = "/u01/killserver.sh";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, server1Name, "weblogic-server",
+        killServerScript.toPath(), Paths.get(destLocation)),
+        String.format("Failed to copy file %s to pod %s in namespace %s",
+            killServerScript, server1Name, domainNamespace));
+    logger.info("File copied to Pod {0} in namespace {1}", server1Name, domainNamespace);
+
+    // get the restart count of the container in pod before liveness probe restarts
+    final int beforeRestartCount =
+        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, server1Name, null),
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
+                server1Name, domainNamespace));
+    logger.info("Restart count before liveness probe {0}", beforeRestartCount);
+
+    // change file permissions
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
+        true, "/bin/sh", "-c", "chmod +x " + destLocation),
+        String.format("Failed to change permissions for file %s in pod %s", destLocation, server1Name));
+    assertTrue(execResult.exitValue() == 0,
+        String.format("Failed to change file %s permissions, stderr %s stdout %s", destLocation,
+            execResult.stderr(), execResult.stdout()));
+    logger.info("File permissions changed inside pod");
+
+    /* First, kill the managed server process in the container three times to cause the node manager to
+     * mark the server 'failed not restartable'. This in turn is detected by the liveness probe, which
+     * initiates a container restart.
+     */
+    for (int i = 0; i < 3; i++) {
+      execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, server1Name, null,
+          true, "/bin/sh", "-c", destLocation + " " + server1Name),
+          String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
+              server1Name, domainNamespace));
+      logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
+          execResult.exitValue(), execResult.stdout(), execResult.stderr());
+
+      try {
+        Thread.sleep(2 * 1000);
+      } catch (InterruptedException ie) {
+        // ignore
+      }
+    }
+
+    // check pod is ready
+    checkPodReady(server1Name, domainUid, domainNamespace);
+
+    // get the restart count of the container in pod after liveness probe restarts
+    int afterRestartCount = assertDoesNotThrow(() ->
+            getContainerRestartCount(domainNamespace, null, server1Name, null),
+        String.format("Failed to get the restart count of the container from pod %s in namespace %s",
+            server1Name, domainNamespace));
+    assertTrue(afterRestartCount - beforeRestartCount == 1,
+        String.format("Liveness probe did not start the container in pod %s in namespace %s",
+            server1Name, domainNamespace));
+
+    for (int j = 1; j <= replicaCount; j++) {
+      String managedServerPodName = domainUid + "-cluster-1-" + MANAGED_SERVER_NAME_BASE + j;
+      String expectedStr = "Hello World, you have reached server " + "cluster-1-" + MANAGED_SERVER_NAME_BASE + j;
+      checkAppIsRunning(
+          domainNamespace,
+          managedServerPodName,
+          expectedStr);
+    }
+  }
+
   private boolean failedWithExpectedErrorMsg(boolean succeeded, ApiException exception, String expectedErrorMsg) {
     return !succeeded || hasExpectedException(exception, expectedErrorMsg);
   }
@@ -465,7 +569,7 @@ class ItLivenessProbeCustomization {
     return exception != null && exception.getResponseBody().contains(expectedMsg);
   }
 
-  @NotNull
+  @Nonnull
   private static DomainResource createDomainResource(String domainName) {
 
     // create the domain CR
@@ -574,6 +678,18 @@ class ItLivenessProbeCustomization {
       }
     }
 
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
+
     // check the readinessProbe failureThreshold and successThreshold after the domain got patched
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -633,6 +749,18 @@ class ItLivenessProbeCustomization {
             managedServerPodsCreationTime.get(managedServerPodName));
       }
     }
+
+    // check the admin server is up and running
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // check the managed servers are up and running
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+    }
   }
 
   /**
@@ -650,13 +778,12 @@ class ItLivenessProbeCustomization {
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = WEBLOGIC_CREDENTIALS;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(WEBLOGIC_CREDENTIALS, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    String encryptionSecretName = ENCRYPTION_SECRET;
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(ENCRYPTION_SECRET, domainNamespace, "weblogicenc", "weblogicenc");
 
 
     DomainResource domain = createDomainResource(domainUid);
@@ -719,7 +846,7 @@ class ItLivenessProbeCustomization {
           appPath,
           expectedStr),
         logger,
-        "Checking if application {0} IS running on pod {1} in namespace {2}",
+        "application {0} is running on pod {1} in namespace {2}",
         appPath,
         podName,
         namespace);
@@ -740,7 +867,7 @@ class ItLivenessProbeCustomization {
           appPath,
           expectedStr),
         logger,
-        "Checking if application {0} is NOT running on pod {1} in namespace {2}",
+        "app {0} is not running on pod {1} in namespace {2}",
         appPath,
         podName,
         namespace);
@@ -757,7 +884,7 @@ class ItLivenessProbeCustomization {
         .append("bash-scripts")
         .append("/")
         .append(APPCHECK_SCRIPT);
-    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff.toString());
+    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff);
 
     final String wdtModelFileForMiiDomain = "model-multiclusterdomain-singlesampleapp-wls.yaml";
     logger.info("Create image with model file and verify");
@@ -785,5 +912,23 @@ class ItLivenessProbeCustomization {
     return tempFile;
   }
 
-
+  /**
+   * Create a script to kill server.
+   * @return a File object
+   * @throws IOException if can not create a file
+   */
+  private File createScriptToKillServer() throws IOException {
+    File killServerScript = File.createTempFile("killserver", ".sh");
+    //deletes the file when VM terminates
+    killServerScript.deleteOnExit();
+    try (FileWriter fw = new FileWriter(killServerScript)) {
+      fw.write("#!/bin/bash\n");
+      fw.write("jps\n");
+      fw.write("jps | grep Server\n");
+      fw.write("jps | grep Server | awk '{print $1}'\n");
+      fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
+    }
+    killServerScript.setExecutable(true, false);
+    return killServerScript;
+  }
 }

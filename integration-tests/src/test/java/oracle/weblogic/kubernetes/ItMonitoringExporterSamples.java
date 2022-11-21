@@ -486,7 +486,7 @@ class ItMonitoringExporterSamples {
                                                            Map<String, String> labels,
                                                            String secretName) throws ApiException {
     //build webhook image
-    V1Container.ImagePullPolicyEnum imagePullPolicy = IMAGE_PULL_POLICY;
+    String imagePullPolicy = IMAGE_PULL_POLICY;
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
@@ -519,7 +519,7 @@ class ItMonitoringExporterSamples {
    * @param secretName webhook image secret name
    */
   private static void createWebHook(String image,
-                                    V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                    String imagePullPolicy,
                                     String namespace,
                                     String secretName) throws ApiException {
     Map<String, String> labels = new HashMap<>();
@@ -574,7 +574,7 @@ class ItMonitoringExporterSamples {
             .ports(Arrays.asList(
                 new V1ServicePort()
                     .port(8080)
-                    .protocol(V1ServicePort.ProtocolEnum.TCP)))
+                    .protocol("TCP")))
             .selector(labels));
 
     logger.info("Create service for webhook in namespace {0}",
@@ -640,7 +640,7 @@ class ItMonitoringExporterSamples {
    * @param secretName coordinator secret name
    */
   private static void createCoordinator(String image,
-                                        V1Container.ImagePullPolicyEnum imagePullPolicy,
+                                        String imagePullPolicy,
                                         String namespace,
                                         String secretName) throws ApiException {
     if (coordinatorDepl == null) {
@@ -658,7 +658,7 @@ class ItMonitoringExporterSamples {
               .selector(new V1LabelSelector()
                   .matchLabels(labels))
               .strategy(new V1DeploymentStrategy()
-                  .type(V1DeploymentStrategy.TypeEnum.RECREATE))
+                  .type("Recreate"))
               .template(new V1PodTemplateSpec()
                   .metadata(new V1ObjectMeta()
                       .labels(labels))
@@ -702,7 +702,7 @@ class ItMonitoringExporterSamples {
                   new V1ServicePort()
                       .port(8999)
                       .targetPort(new IntOrString(8999))))
-              .type(V1ServiceSpec.TypeEnum.NODEPORT)
+              .type("NodePort")
               .selector(labels));
 
       logger.info("Create service for coordinator in namespace {0}",

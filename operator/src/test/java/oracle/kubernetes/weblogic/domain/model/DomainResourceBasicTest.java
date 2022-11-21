@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -16,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
 import static oracle.kubernetes.operator.KubernetesConstants.LATEST_IMAGE_SUFFIX;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -53,7 +53,7 @@ class DomainResourceBasicTest extends DomainTestBase {
   // Confirms the value of fields that are constant across the domain
   private void verifyStandardFields(EffectiveServerSpec spec) {
     assertThat(spec.getImage(), equalTo(DEFAULT_IMAGE));
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
     assertThat(spec.getImagePullSecrets(), empty());
   }
 
@@ -88,10 +88,10 @@ class DomainResourceBasicTest extends DomainTestBase {
   void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
     configureDomain(domain).withDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo("Always"));
     assertThat(
         info.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+        equalTo("Always"));
   }
 
   @Test
@@ -110,7 +110,7 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     EffectiveServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(spec.getImagePullPolicy(), equalTo("Always"));
   }
 
   @Test
@@ -120,17 +120,17 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     EffectiveServerSpec spec = domain.getAdminServerSpec();
 
-    assertThat(spec.getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.IFNOTPRESENT));
+    assertThat(spec.getImagePullPolicy(), equalTo("IfNotPresent"));
   }
 
   @Test
   void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
-    configureDomain(domain).withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    configureDomain(domain).withDefaultImagePullPolicy("Always");
 
-    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+    assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo("Always"));
     assertThat(
         info.getServer("aServer", "aCluster").getImagePullPolicy(),
-        equalTo(V1Container.ImagePullPolicyEnum.ALWAYS));
+        equalTo("Always"));
   }
 
   @Test
@@ -227,10 +227,58 @@ class DomainResourceBasicTest extends DomainTestBase {
   }
 
   @Test
+  void afterReplicaCountMaxUnavailableSetForDomain_canReadMinAvailable() {
+    configureDomain(domain).withMaxUnavailable(2).withDefaultReplicaCount(5);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
+  void afterReplicaCountMaxSetOnClusterUnavailableSetForDomain_canReadMinAvailable() {
+    configureCluster("cluster1").withReplicas(5);
+    configureDomain(domain).withMaxUnavailable(2);
+
+    assertThat(info.getMinAvailable("cluster1"), equalTo(3));
+  }
+
+  @Test
   void afterMaxUnavailableSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxUnavailable(5);
 
     assertThat(info.getMaxUnavailable("cluster1"), equalTo(5));
+  }
+
+  @Test
+  void whenNotSpecifiedForBothDClusterAndDomain_maxUnavailableHasDefault() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxUnavailable(null);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(DEFAULT_MAX_CLUSTER_UNAVAILABLE));
+  }
+
+  @Test
+  void whenNotSpecifiedForCluster_maxUnavailableFromDomain() {
+    configureCluster("cluster1");
+    configureDomain(domain).withMaxUnavailable(2);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(2));
+  }
+
+  @Test
+  void whenNoClusterSpec_maxUnavailableHasDefault() {
+    assertThat(info.getMaxUnavailable("cluster-with-no-spec"),
+        equalTo(DEFAULT_MAX_CLUSTER_UNAVAILABLE));
+  }
+
+  @Test
+  void whenBothClusterAndDomainSpecified_maxUnavailableFromCluster() {
+    configureCluster("cluster1").withMaxUnavailable(5);
+    configureDomain(domain).withMaxUnavailable(4);
+
+    assertThat(info.getMaxUnavailable("cluster1"),
+        equalTo(5));
   }
 
   @Test

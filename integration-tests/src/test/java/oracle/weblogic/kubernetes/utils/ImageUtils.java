@@ -24,7 +24,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -544,17 +543,6 @@ public class ImageUtils {
         String.format("createSecret failed for %s", secretName));
     assertTrue(secretCreated, String.format("createSecret failed while creating secret %s in namespace %s",
         secretName, namespace));
-  }
-
-  /**
-   * Create a registry secret in the specified namespace to pull base images.
-   *
-   * @param namespace the namespace in which the secret will be created
-   */
-  public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
-      createBaseRepoSecret(namespace);
-    }
   }
 
   /**

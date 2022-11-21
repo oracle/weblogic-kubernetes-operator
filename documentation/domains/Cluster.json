@@ -78,12 +78,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "sourceModelHome": {
           "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
@@ -135,11 +130,7 @@
         "sessionAffinity": {
           "default": "None",
           "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
-          "type": "string",
-          "enum": [
-            "ClientIP",
-            "None"
-          ]
+          "type": "string"
         },
         "annotations": {
           "description": "The annotations to be added to generated resources.",
@@ -166,12 +157,12 @@
           "$ref": "#/definitions/ServerService"
         },
         "maxUnavailable": {
-          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.",
+          "description": "The maximum number of cluster members that can be temporarily unavailable. Defaults to `domain.spec.maxClusterUnavailable`, which defaults to 1.",
           "type": "integer",
           "minimum": 1
         },
         "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 1.",
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 1.",
           "type": "integer",
           "minimum": 0
         },
@@ -201,7 +192,7 @@
           ]
         },
         "maxConcurrentStartup": {
-          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0.",
+          "description": "The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to `domain.spec.maxClusterConcurrentStartup`, which defaults to 0.",
           "type": "integer",
           "minimum": 0
         },
@@ -209,7 +200,10 @@
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "clusterName"
+      ]
     },
     "ClusterStatus": {
       "type": "object",
@@ -255,7 +249,7 @@
           }
         },
         "observedGeneration": {
-          "description": "The generation observed by the WebLogic operator.",
+          "description": "The Cluster resource generation observed by the WebLogic operator. If the Cluster resource exists, then this value will match the \u0027cluster.metadata.generation\u0027  when the \u0027cluster.status\u0027 correctly reflects the latest cluster resource changes.",
           "type": "integer"
         }
       }
@@ -393,6 +387,12 @@
           "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
+        "maxClusterUnavailable": {
+          "default": 1,
+          "description": "The maximum number of cluster members that can be temporarily unavailable. You can override this default on a per cluster basis by setting the cluster\u0027s `maxUnavailable` field. Defaults to 1.",
+          "type": "integer",
+          "minimum": 1
+        },
         "logHomeLayout": {
           "default": "ByServers",
           "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",
@@ -458,12 +458,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "maxClusterConcurrentStartup": {
           "default": 0,
@@ -580,7 +575,7 @@
           "type": "string"
         },
         "observedGeneration": {
-          "description": "The generation observed by the WebLogic operator.",
+          "description": "The Domain resource generation observed by the WebLogic operator. This value will match the \u0027domain.metadata.generation\u0027  when the \u0027domain.status\u0027 correctly reflects the latest resource changes.",
           "type": "integer"
         },
         "clusters": {
@@ -602,12 +597,7 @@
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "fluentdConfiguration": {
           "description": "The fluentd configuration text, specify your own custom fluentd configuration.",
@@ -670,7 +660,10 @@
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
         }
-      }
+      },
+      "required": [
+        "serverName"
+      ]
     },
     "Map": {
       "type": "object"
@@ -733,18 +726,13 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0",
           "type": "string"
         },
         "imagePullPolicy": {
           "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "IfNotPresent",
-            "Never"
-          ]
+          "type": "string"
         },
         "configuration": {
           "x-kubernetes-preserve-unknown-fields": "true",
@@ -951,12 +939,7 @@
         },
         "restartPolicy": {
           "description": "Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. See `kubectl explain pods.spec.restartPolicy`.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "Never",
-            "OnFailure"
-          ]
+          "type": "string"
         },
         "maxPendingWaitTimeSeconds": {
           "description": "The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the running state before it considers the pod failed. Defaults to 5 minutes.",
@@ -1033,14 +1016,7 @@
         },
         "podPhase": {
           "description": "Phase of the WebLogic Server pod. Possible values are: Pending, Succeeded, Failed, Running, or Unknown.",
-          "type": "string",
-          "enum": [
-            "Failed",
-            "Pending",
-            "Running",
-            "Succeeded",
-            "Unknown"
-          ]
+          "type": "string"
         },
         "clusterName": {
           "description": "WebLogic cluster name, if the server is a member of a cluster.",
@@ -1176,5 +1152,8 @@
       "description": "The current status of the operation of the WebLogic cluster. Updated automatically by the operator.",
       "$ref": "#/definitions/ClusterStatus"
     }
-  }
+  },
+  "required": [
+    "spec"
+  ]
 }

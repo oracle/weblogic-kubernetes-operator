@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -90,7 +89,7 @@ public class DomainSpec {
       "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   @ApiModelProperty("A list of image pull secrets for the WebLogic Server image.")
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
@@ -429,20 +428,20 @@ public class DomainSpec {
     this.image = image;
   }
 
-  public DomainSpec imagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public DomainSpec imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
 
-  public V1Container.ImagePullPolicyEnum imagePullPolicy() {
+  public String imagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return imagePullPolicy;
   }
 
-  public void setImagePullPolicy(V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public void setImagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 

@@ -29,10 +29,10 @@ import static oracle.kubernetes.operator.BaseMain.probesHome;
 
 public class CoreDelegateImpl implements CoreDelegate {
 
-  protected String buildVersion;
-  protected SemanticVersion productVersion;
-  protected KubernetesVersion kubernetesVersion;
-  protected Engine engine;
+  protected final String buildVersion;
+  protected final SemanticVersion productVersion;
+  protected final KubernetesVersion kubernetesVersion;
+  protected final Engine engine;
   protected final String deploymentImpl;
   protected final String deploymentBuildTime;
 

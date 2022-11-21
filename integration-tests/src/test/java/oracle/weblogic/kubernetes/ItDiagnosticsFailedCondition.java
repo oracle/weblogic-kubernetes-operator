@@ -10,9 +10,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -36,7 +36,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -296,7 +295,7 @@ class ItDiagnosticsFailedCondition {
     }
   }
 
-  @NotNull
+  @Nonnull
   private String getClusterResName(String domainName) {
     return domainName + "-" + this.wlClusterName;
   }
@@ -334,6 +333,7 @@ class ItDiagnosticsFailedCondition {
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
       assertFalse(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
+      testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
@@ -438,7 +438,7 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain resource with incorrect image pull secret");
     DomainResource domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image, clusterResName);
-    domain.getSpec().imagePullPolicy(V1Container.ImagePullPolicyEnum.ALWAYS);
+    domain.getSpec().imagePullPolicy("Always");
 
     try {
       logger.info("Creating domain");
@@ -695,7 +695,7 @@ class ItDiagnosticsFailedCondition {
       assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
           rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
           String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-              + "dbUrl %s, dbListenerPost $s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
+              + "dbUrl %s, dbListenerPost %s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",

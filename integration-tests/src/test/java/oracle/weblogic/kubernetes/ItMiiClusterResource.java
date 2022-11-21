@@ -24,6 +24,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -47,12 +48,15 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusConditionsMatchesDomain;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterStatusMatchesDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -236,7 +240,6 @@ class ItMiiClusterResource {
           managedServer1Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
     }
-
     logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
     String patchStr2 = "["
         + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
@@ -277,7 +280,138 @@ class ItMiiClusterResource {
   }
 
   /**
-   * Create a WebLogic domain DR with domain level replica set to zero.
+   * Create WebLogic domain DR with domain level replica set to zero.
+   * Patch the domain resource to add cluster resource CR1
+   * Make sure only managed servers from cluster-1 comes up
+   * Make sure cluster resource cluster-1 status matches domain status
+   * Patch the domain resource to replace the resource  CR1 with CR2
+   * Make sure managed servers from CR1 goes down and managed servers
+   * from CR2 comes up.
+   * Make sure cluster resource cluster-2 status matches domain status
+   * Scale up the cluster CR2
+   * Make sure cluster resource cluster-2 status matches domain status
+   */
+  @Test
+  @DisplayName("Verify domain status for clusters matches cluster resource status")
+  void testDomainStatusMatchesClusterResourceStatus() {
+
+    String domainUid = "domain10";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServer1Prefix = domainUid +  "-c1-managed-server";
+    String managedServer2Prefix = domainUid + "-c2-managed-server";
+
+    String cluster1Res   = domainUid + "-cluster-1";
+    String cluster2Res   = domainUid + "-cluster-2";
+    String cluster1Name  = "cluster-1";
+    String cluster2Name  = "cluster-2";
+
+    String configMapName = domainUid + "-configmap";
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    logger.info("Creating ClusterResource {0} in namespace {1}",cluster1Res, domainNamespace);
+    createClusterAndVerify(cluster);
+
+    ClusterResource cluster2 = createClusterResource(
+        cluster2Res, cluster2Name, domainNamespace, replicaCount);
+    logger.info("Creating ClusterResource {0} in namespace {1} ",cluster2Res, domainNamespace);
+    createClusterAndVerify(cluster2);
+    createModelConfigMap(domainUid,configMapName);
+    
+    // create and deploy domain resource
+    DomainResource domain = createDomainResource(domainUid,
+        domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+    logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(cluster1Res));
+    createDomainAndVerify(domain, domainNamespace);
+
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServer1Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServer1Prefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() -> {
+          testUntil(
+              clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
+              "Cluster Resource status matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                      "Available", "True"), getLogger(),
+                  "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                      "Completed", "True"), getLogger(),
+                  "Cluster Resource status condition type matches domain.status");
+        }
+    );
+    logger.info("Patch domain resource by replacing cluster-1 with cluster-2");
+    String patchStr2 = "["
+        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/name\", \"value\":"
+        + " \"" + cluster2Res + "\""
+        + "}]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr2);
+    V1Patch patch2 = new V1Patch(patchStr2);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch2, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase2 = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
+
+    // check managed server pods from cluster-1 are shutdown
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServer1Prefix + i,domainUid,domainNamespace);
+    }
+
+    // verify managed server pods from cluster-2 are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServer2Prefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
+    }
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() -> {
+
+      testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+          "Cluster Resource status matches domain.status");
+      testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+      testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+    });
+    kubernetesCLIScaleCluster(cluster2Res,domainNamespace,3);
+    checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
+    logger.info("Cluster is scaled up to replica count 3");
+    logger.info("Check cluster resource status is mirror of domain.status");
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+        }
+    );
+    // Clean up resources
+    deleteDomainResource(domainUid, domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
+    deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+  }
+
+  /**
+   * Create a WebLogic Domain Resource with domain level replica set to zero.
    * Create  kubernates cluster resources CR which corresponds to a 
    * WebLogic cluster cluster-1 in model file.
    * Associate Cluster Resource CR with Domain Resource DR  
@@ -632,12 +766,14 @@ class ItMiiClusterResource {
    * Create a WebLogic domain resource DR with domain level replica set to zero.
    * Create and deploy two cluster resources CR1 and CR2
    * Create and deploy the domain with two cluster resources CR1 and CR2
-   * Scale only the cluster CR2 and make sure no new server from CR1 is up 
+   * Verify status and conditions are matching for domain.status and cluster resource status
+   * Scale only the cluster CR2 and make sure no new server from CR1 is up
+   * Verify status and conditions are matching for domain.status and cluster resource status
    * Scale all the clusters in the namesapce using 
    *   KUBERNETES_CLI scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1
    *   KUBERNETES_CLI scale cluster --initial-replicas=1 --replicas=5  --all -n ns
-   * This command must fails as there is no cluster with currentreplica set to 1
+   * This command must fail as there is no cluster with currentreplica set to 1
    */
   @Test
   @DisplayName("Verify various kubernetes CLI scale options")
@@ -700,10 +836,43 @@ class ItMiiClusterResource {
           managedPod2Prefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedPod2Prefix + i, domainUid, domainNamespace);
     }
+    //verify status and conditions are matching for domain.status and cluster resource status
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster1Name), getLogger(),
+              "Cluster Resource status matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster1Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+        }
+    );
     // Scaling one Cluster(2) does not affect other Cluster(1)
     kubernetesCLIScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedPod2Prefix + "3", domainUid, domainNamespace);
     checkPodDoesNotExist(managedPod1Prefix + "3", domainUid, domainNamespace);
+
+    //verify status and conditions after scaling
+    assertDoesNotThrow(() -> {
+          testUntil(clusterStatusMatchesDomain(domainUid, domainNamespace, cluster2Name), getLogger(),
+              "Cluster Resource status matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Available", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+          testUntil(clusterStatusConditionsMatchesDomain(domainUid, domainNamespace, cluster2Name,
+                  "Completed", "True"), getLogger(),
+              "Cluster Resource status condition type matches domain.status");
+        }
+    );
 
     // Scale all clusters in the namesapce to replicas set to 4
     // KUBERNETES_CLI scale cluster --replicas=4 --all -n namesapce
@@ -830,6 +999,34 @@ class ItMiiClusterResource {
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster2Res,domainNamespace);
+  }
+
+  /**
+   * Create a new Cluster resource with custom livenessProbe successThreshold value in serverPod to an invalid value.
+   * Verify the create operation failed.
+   */
+  @Test
+  @DisplayName("Test custom livenessProbe invalid successThreshold in serverPod")
+  void testCustomLivenessProbeNegativeSuccessThreshold() {
+    String domainUid     = "domain10";
+    String cluster1Name  = "cluster-1";
+
+    String cluster1Res     = domainUid + "-cluster-1";
+
+    // create and deploy cluster resource(s)
+    ClusterResource cluster = createClusterResource(
+        cluster1Res, cluster1Name, domainNamespace, replicaCount);
+    cluster.getSpec().serverPod(new ServerPod().livenessProbe(new ProbeTuning().successThreshold(2)));
+    logger.info("Creating Cluster Resource {0} in namespace {1}",cluster1Res, domainNamespace);
+
+    Exception exception = null;
+    try {
+      createClusterCustomResource(cluster);
+    } catch (Exception e) {
+      exception = e;
+    }
+    assertNotNull(exception,
+        String.format("Create cluster resource %s in namespace %s should fail", cluster1Res, domainNamespace));
   }
 
   // Create a domain resource with replicas count ZERO

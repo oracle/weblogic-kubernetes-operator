@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -236,7 +237,7 @@ class ItInitContainers {
       logger.info("Caught unexpected exception while calling getPodLog for pod "
           + podName
           + ex.getMessage()
-          + ex.getStackTrace());
+          + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     if (podLog != null) {

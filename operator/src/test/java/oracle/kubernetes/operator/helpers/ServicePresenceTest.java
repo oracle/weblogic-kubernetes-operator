@@ -510,7 +510,7 @@ class ServicePresenceTest {
                 createMetadata()
                     .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
                     .putLabelsItem(SERVERNAME_LABEL, SERVER))
-            .spec(new V1ServiceSpec().type(V1ServiceSpec.TypeEnum.NODEPORT));
+            .spec(new V1ServiceSpec().type("NodePort"));
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -22,7 +23,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Boolean.FALSE;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_TRIGGER_CHANGED;
@@ -60,7 +60,7 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
   private Exception exception;
 
   /** Construct a DomainAdmissionChecker. */
-  public DomainUpdateAdmissionChecker(@NotNull DomainResource existingDomain, @NotNull DomainResource proposedDomain) {
+  public DomainUpdateAdmissionChecker(@Nonnull DomainResource existingDomain, @Nonnull DomainResource proposedDomain) {
     this.existingDomain = existingDomain;
     this.proposedDomain = proposedDomain;
   }
@@ -98,7 +98,7 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
         .orElse(false);
   }
 
-  private boolean isProposedSpecUnchanged(@NotNull DomainSpec existingSpec) {
+  private boolean isProposedSpecUnchanged(@Nonnull DomainSpec existingSpec) {
     return Objects.equals(existingSpec, proposedDomain.getSpec());
   }
 
@@ -136,25 +136,25 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return allValid;
   }
 
-  @NotNull
+  @Nonnull
   private String getDomainReplicasTooHighMsg(List<String> list) {
     return list.size() > 1 ? DOMAIN_REPLICAS_TOO_HIGH_MULTIPLE_CLUSTERS : DOMAIN_REPLICAS_TOO_HIGH;
   }
 
-  @NotNull
+  @Nonnull
   private String getDomainReplicasCannotBeHonoredMsg(List<String> list) {
     return list.size() > 1 ? DOMAIN_REPLICAS_CANNOT_BE_HONORED_MULTIPLE_CLUSTERS : DOMAIN_REPLICAS_CANNOT_BE_HONORED;
   }
 
-  @NotNull
-  private List<ClusterStatus> getClusterStatusList(@NotNull DomainResource domain) {
+  @Nonnull
+  private List<ClusterStatus> getClusterStatusList(@Nonnull DomainResource domain) {
     return Optional.of(domain)
         .map(DomainResource::getStatus)
         .map(DomainStatus::getClusters)
         .orElse(Collections.emptyList());
   }
 
-  private Boolean isReplicaCountValid(@NotNull DomainResource domain, @NotNull ClusterStatus status) {
+  private Boolean isReplicaCountValid(@Nonnull DomainResource domain, @Nonnull ClusterStatus status) {
     boolean isValid = false;
     try {
       isValid = getProposedReplicaCount(domain, getCluster(domain, status.getClusterName())) <= getClusterSize(status);
@@ -167,7 +167,7 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return isValid;
   }
 
-  private int getProposedReplicaCount(@NotNull DomainResource domain, ClusterSpec clusterSpec) {
+  private int getProposedReplicaCount(@Nonnull DomainResource domain, ClusterSpec clusterSpec) {
     return Optional.ofNullable(clusterSpec).map(ClusterSpec::getReplicas).orElse(getDomainReplicaCount(domain));
   }
 
@@ -200,13 +200,13 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return warnings;
   }
 
-  private ClusterSpec getCluster(@NotNull DomainResource domain, String clusterName) throws ApiException {
+  private ClusterSpec getCluster(@Nonnull DomainResource domain, String clusterName) throws ApiException {
     List<ClusterResource> clusters = getClusters(domain.getNamespace());
     return clusters.stream().filter(cluster -> clusterName.equals(cluster.getClusterName())
         && isReferenced(domain, cluster)).findFirst().map(ClusterResource::getSpec).orElse(null);
   }
 
-  private boolean isReferenced(@NotNull DomainResource domain, ClusterResource cluster) {
+  private boolean isReferenced(@Nonnull DomainResource domain, ClusterResource cluster) {
     String name = Optional.ofNullable(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getName).orElse("");
     return Optional.of(domain).map(DomainResource::getSpec).map(DomainSpec::getClusters)
         .orElse(Collections.emptyList()).stream().anyMatch(ref -> name.equals(ref.getName()));
@@ -252,11 +252,11 @@ public class DomainUpdateAdmissionChecker extends AdmissionChecker {
     return !isEqualCollection(existingDomain.getAuxiliaryImages(), proposedDomain.getAuxiliaryImages());
   }
 
-  private String getImage(@NotNull DomainResource existingDomain) {
+  private String getImage(@Nonnull DomainResource existingDomain) {
     return Optional.of(existingDomain).map(DomainResource::getSpec).map(DomainSpec::getImage).orElse(null);
   }
 
-  private boolean noAuxiliaryImagesConfigured(@NotNull DomainResource domain) {
+  private boolean noAuxiliaryImagesConfigured(@Nonnull DomainResource domain) {
     return domain.getAuxiliaryImages() == null;
   }
 }

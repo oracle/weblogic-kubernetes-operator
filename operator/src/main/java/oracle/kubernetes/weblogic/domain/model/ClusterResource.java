@@ -3,11 +3,14 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -15,7 +18,6 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -64,7 +66,7 @@ public class ClusterResource implements KubernetesObject {
   @Expose
   @Valid
   @Description("The specification of the operation of the WebLogic cluster. Required.")
-  @NotNull
+  @Nonnull
   private ClusterSpec spec = new ClusterSpec();
 
   /**
@@ -238,7 +240,7 @@ public class ClusterResource implements KubernetesObject {
     return this;
   }
 
-  @NotNull
+  @Nonnull
   public ClusterSpec getSpec() {
     return spec;
   }
@@ -263,7 +265,7 @@ public class ClusterResource implements KubernetesObject {
   }
 
   /**
-   * Returns true if the cluster resourcehas a later generation than the passed-in cached cluster resource.
+   * Returns true if the cluster resource has a later generation than the passed-in cached cluster resource.
    * @param cachedResource another presence info against which to compare this one.
    */
   public boolean isGenerationChanged(ClusterResource cachedResource) {
@@ -274,5 +276,32 @@ public class ClusterResource implements KubernetesObject {
 
   private Optional<Long> getGeneration() {
     return Optional.ofNullable(getMetadata().getGeneration());
+  }
+
+  // used by the validating webhook
+  public List<String> getFatalValidationFailures() {
+    return new ClusterValidator().getFatalValidationFailures();
+  }
+
+  class ClusterValidator extends Validator {
+    // for validating webhook
+    private List<String> getFatalValidationFailures() {
+      addClusterInvalidMountPaths(ClusterResource.this);
+      addClusterReservedEnvironmentVariables(ClusterResource.this, getMetadata().getName());
+      verifyClusterLivenessProbeSuccessThreshold(ClusterResource.this, getMetadata().getName());
+      verifyClusterContainerNameValid(ClusterResource.this, getMetadata().getName());
+      verifyClusterContainerPortNameValidInPodSpec(ClusterResource.this, getMetadata().getName());
+      return failures;
+    }
+
+    @Override
+    void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
+      if (isPortNameTooLong(port)) {
+        failures.add(DomainValidationMessages.exceedMaxContainerPortName(
+            getMetadata().getName(),
+            prefix + "." + name,
+            port.getName()));
+      }
+    }
   }
 }

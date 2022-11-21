@@ -62,7 +62,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
@@ -1004,7 +1003,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return domainUid;
     }
 
-    @NotNull
+    @Nonnull
     private Packet createPacket() {
       Packet packet = new Packet();
       packet
@@ -1013,6 +1012,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion()));
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
       return packet;
     }
 

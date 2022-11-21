@@ -116,7 +116,7 @@ The `startCluster.sh` script starts a cluster by patching the `spec.serverStartP
 ```
 $ startCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
 [INFO]Patching start policy of cluster 'cluster-1' from 'Never' to 'IfNeeded'.
-domain.weblogic.oracle/domain1 patched
+cluster.weblogic.oracle/cluster-1 patched
 [INFO] Successfully patched cluster 'cluster-1' with 'IfNeeded' start policy!.
 ```
 
@@ -126,7 +126,7 @@ The `stopCluster.sh` script shuts down a cluster by patching the `spec.serverSta
 ```
 $ stopCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1
 [INFO] Patching start policy of cluster 'cluster-1' from 'IfNeeded' to 'Never'.
-domain.weblogic.oracle/domain1 patched
+cluster.weblogic.oracle/cluster-1 patched
 [INFO] Successfully patched cluster 'cluster-1' with 'Never' start policy!
 ```
 
@@ -139,7 +139,7 @@ The `rollCluster.sh` script updates the value of the `spec.restartVersion` attri
 ```
 $ rollCluster.sh -c cluster-1 -d domain1 -n weblogic-domain-1
 [2021-03-24T04:03:27.521000Z][INFO] Patching restartVersion for cluster 'cluster-1' to '2'.
-domain.weblogic.oracle/domain1 patched
+cluster.weblogic.oracle/cluster-1 patched
 [2021-03-24T04:03:27.669000Z][INFO] Successfully patched restartVersion for cluster 'cluster-1'!
 ```
 
@@ -147,7 +147,7 @@ Use the following command to roll the WebLogic cluster servers with a specific `
 ```
 $ rollCluster.sh -r v2 -c cluster-1 -d domain1 -n weblogic-domain-1
 [2021-03-24T13:46:16.833000Z][INFO] Patching restartVersion for cluster 'cluster-1' to 'v2'.
-domain.weblogic.oracle/domain1 patched
+cluster.weblogic.oracle/cluster-1 patched
 [2021-03-24T13:46:16.975000Z][INFO] Successfully patched restartVersion for cluster 'cluster-1'!
 ```
 
@@ -157,7 +157,7 @@ The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.rep
 ```
 $ scaleCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1 -r 3
 [2021-02-26T19:04:14.335000Z][INFO] Patching replicas for cluster 'cluster-1' to '3'.
-domain.weblogic.oracle/domain1 patched
+cluster.weblogic.oracle/cluster-1 patched
 [2021-02-26T19:04:14.466000Z][INFO] Successfully patched replicas for cluster 'cluster-1'!
 ```
 

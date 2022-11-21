@@ -32,7 +32,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -46,6 +46,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -66,6 +67,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -142,9 +144,10 @@ class ItMiiDomain {
   private String domainUid1 = "domain2";
   private String miiImagePatchAppV2 = null;
   private String miiImageAddSecondApp = null;
-  private String miiImage = null;
   private static LoggingFacade logger = null;
   private static volatile boolean mainThreadDone = false;
+  private static String miiDomainNegativeNamespace = null;
+  private String encryptionSecretName = "encryptionsecret";
 
   /**
    * Install Operator.
@@ -152,7 +155,7 @@ class ItMiiDomain {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -165,9 +168,11 @@ class ItMiiDomain {
     domainNamespace = namespaces.get(1);
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domainNamespace1 = namespaces.get(2);
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    miiDomainNegativeNamespace = namespaces.get(3);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1);
+    installAndVerifyOperator(opNamespace, domainNamespace, domainNamespace1, miiDomainNegativeNamespace);
   }
 
   /**
@@ -401,13 +406,12 @@ class ItMiiDomain {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    Thread accountingThread = null;
     List<Integer> appAvailability = new ArrayList<Integer>();
 
     logger.info("Start a thread to keep track of the application's availability");
     // start a new thread to collect the availability data of the application while the
     // main thread performs patching operation, and checking of the results.
-    accountingThread =
+    Thread accountingThread =
         new Thread(
             () -> {
               collectAppAvailability(
@@ -647,16 +651,30 @@ class ItMiiDomain {
     checkPodReadyAndServiceExists(managedServerPrefix + 1, domainUid, domainNamespace);
   }
 
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterEach
-  public void tearDown() {
-    // delete mii domain images created for parameterized test
-    if (miiImage != null) {
-      deleteImage(miiImage);
-    }
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * Verify the error message should be logged in the operator log.
+   */
+  @Test
+  @Order(7)
+  @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
+  void testOperatorLogSevereMsg() {
+    String domainUid = "miidomainnegative";
+    createMiiDomainNegative(domainUid, miiDomainNegativeNamespace);
+
+    // verify the error msg is logged in the operator log
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
+            + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
+
+    // verify the admin server is not created
+    checkPodDoesNotExist(domainUid + "-" + ADMIN_SERVER_NAME_BASE, domainUid, miiDomainNegativeNamespace);
   }
 
+  @AfterAll
   public void tearDownAll() {
     // delete the domain images created in the test class
     if (miiImagePatchAppV2 != null) {
@@ -786,7 +804,7 @@ class ItMiiDomain {
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource {0} in namespace {1} with image {2}",
+        String.format("Failed to patch the domain resource %s in namespace %s with image %s",
             domainResourceName, namespace, image));
   }
 
@@ -1176,4 +1194,67 @@ class ItMiiDomain {
     assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * The error message should be logged in the operator log.
+   *
+   * @param domainUid the uid of the domain to be created
+   * @param domainNamespace namespace in which the domain will be created
+   */
+  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
+
+    // create registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
+    createTestRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create the domain CR without encryption secret created
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/u01/" + domainNamespace + "/domains/" + domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
+
+    setPodAntiAffinity(domain);
+
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
+        domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+    createDomainAndVerify(domain, domainNamespace);
+  }
 }

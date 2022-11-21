@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -115,7 +114,7 @@ public abstract class DomainConfigurator {
    * @param imagepullpolicy the new policy
    * @return this object
    */
-  public DomainConfigurator withDefaultImagePullPolicy(V1Container.ImagePullPolicyEnum imagepullpolicy) {
+  public DomainConfigurator withDefaultImagePullPolicy(String imagepullpolicy) {
     getDomainSpec().setImagePullPolicy(imagepullpolicy);
     return this;
   }
@@ -241,6 +240,11 @@ public abstract class DomainConfigurator {
 
   public DomainConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown) {
     getDomainSpec().setMaxClusterConcurrentShutdown(maxConcurrentShutdown);
+    return this;
+  }
+
+  public DomainConfigurator withMaxUnavailable(Integer maxUnavailable) {
+    getDomainSpec().setMaxClusterUnavailable(maxUnavailable);
     return this;
   }
 
@@ -494,7 +498,7 @@ public abstract class DomainConfigurator {
    * @param restartPolicy restart policy to be set to this DomainConfigurator
    * @return this object
    */
-  public abstract DomainConfigurator withRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy);
+  public abstract DomainConfigurator withRestartPolicy(String restartPolicy);
 
   /**
    * Add readiness gate to the pod configuration.

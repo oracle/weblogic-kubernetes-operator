@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.DomainFailureMessages;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -25,7 +26,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
-import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH;
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH;
@@ -255,7 +255,7 @@ public class WlsConfigValidator {
     }
   }
 
-  @NotNull
+  @Nonnull
   private Boolean isPortInUseByDynamicServer(int exporterPort, WlsClusterConfig cluster) {
     return Optional.ofNullable(cluster.getDynamicServersConfig())
           .map(WlsDynamicServersConfig::getServerTemplate)
@@ -320,7 +320,7 @@ public class WlsConfigValidator {
 
   }
 
-  @NotNull
+  @Nonnull
   private String[] getTopologyClusterNames() {
     return Optional.ofNullable(domainConfig).map(WlsDomainConfig::getClusterNames).orElse(new String[0]);
   }

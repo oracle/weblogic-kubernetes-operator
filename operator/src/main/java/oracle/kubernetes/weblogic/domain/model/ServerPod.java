@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -113,7 +112,7 @@ class ServerPod extends KubernetesResource {
   @Description("Restart policy for all containers within the Pod. One of Always, OnFailure, Never. Default to Always. "
       + "More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy. "
       + "See `kubectl explain pods.spec.restartPolicy`.")
-  private V1PodSpec.RestartPolicyEnum restartPolicy = null;
+  private String restartPolicy = null;
 
   @Description("RuntimeClassName refers to a RuntimeClass object in the node.k8s.io group, which should be used to run "
       + "this Pod. If no RuntimeClass resource matches the named class, the Pod will not be run. If unset or empty, "
@@ -676,11 +675,11 @@ class ServerPod extends KubernetesResource {
     readinessGates.add(readinessGate);
   }
 
-  V1PodSpec.RestartPolicyEnum getRestartPolicy() {
+  String getRestartPolicy() {
     return restartPolicy;
   }
 
-  void setRestartPolicy(V1PodSpec.RestartPolicyEnum restartPolicy) {
+  void setRestartPolicy(String restartPolicy) {
     this.restartPolicy = restartPolicy;
   }
 

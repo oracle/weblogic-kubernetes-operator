@@ -20,7 +20,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -228,20 +227,15 @@ public class ItFmwDiiSample {
             + " -b host"
             + " -o "
             + Paths.get(sampleBase.toString());
-    ExecResult result1 = Command.withParams(
+    boolean result1 = Command.withParams(
             new CommandParams()
                 .command(command1)
                 .env(envMap)
                 .redirect(true)
                 .verbose(true)
-    ).executeAndReturnResult();
-    boolean success =
-            result1 != null
-                && result1.exitValue() == 0;
-    logger.info("Going to run sample create-domain.sh");
-    testUntil(() -> success,
-        logger, "Failed to create domain.yaml");
-
+            ).execute();
+    assertTrue(result1, "Failed to create domain.yaml. This could be a transient env issue because of "
+        + "'getaddrinfo' failure in the socket.py script. Please check the test out to confirm");
 
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {

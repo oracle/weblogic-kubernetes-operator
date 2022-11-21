@@ -398,10 +398,10 @@ class ItLiftAndShiftFromOnPremDomain {
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
           "NAMESPACE=onprem-domain", "NAMESPACE=" + domainNamespace);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
-          "weblogic-credentials <user> <password>", "weblogic-credentials " + ADMIN_USERNAME_DEFAULT
+          "weblogic-credentials \"<user>\" <password>", "weblogic-credentials " + ADMIN_USERNAME_DEFAULT
               + " " + ADMIN_PASSWORD_DEFAULT);
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
-          "scott <password>", "scott tiger");
+          "\"scott\" <password>", "scott tiger");
       replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/create_k8s_secrets.sh",
           "runtime-encryption-secret <password>", "runtime-encryption-secret welcome1");
     } catch (IOException ioex) {

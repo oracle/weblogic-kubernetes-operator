@@ -1105,7 +1105,8 @@ class MII_DomainConfigGenerator(Generator):
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \
               "%s/config/diagnostics %s/config/startup %s/config/configCache %s/config/nodemanager " \
-              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml" % (
+              "%s/wlsdeploy/applications/*.xml " \
+              "%s/config/security %s/config/fmwconfig/servers/*/logging.xml" % ( self.domain_home,
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home,
               self.domain_home, self.domain_home, self.domain_home, self.domain_home, self.domain_home)
     os.system(packcmd)
@@ -2003,11 +2004,23 @@ def getRealListenPort(template):
 
 # Derive the default value for SecureMode of a domain
 def isSecureModeEnabledForDomain(domain):
-  secureModeEnabled = false
-  if domain.getSecurityConfiguration().getSecureMode() != None:
-    secureModeEnabled = domain.getSecurityConfiguration().getSecureMode().isSecureModeEnabled()
+  secureModeEnabled = False
+
+  # Do not use domain.getSecurityConfiguration().getSecureMode()
+  # it will result in cie error in MII domain created by ServerStartMode: secure
+  # switched to use lsa() to avoid cie not exposing the function
+
+  cd('/SecurityConfiguration/' + domain.getName())
+  childs = ls(returnType='c', returnMap='true')
+  if 'SecureMode' in childs:
+    cd('SecureMode/NO_NAME_0')
+    attributes = ls(returnType='a', returnMap='true')
+    if attributes['SecureModeEnabled']:
+      secureModeEnabled = True
   else:
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
+
+
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):

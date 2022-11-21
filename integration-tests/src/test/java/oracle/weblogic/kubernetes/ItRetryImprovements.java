@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -23,35 +25,48 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceForDomainInImage;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createMiiDomainResourceWithConfigMap;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.findStringInDomainStatusMessage;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.findStringInOperatorLog;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkInUncompletedIntroPodLogContainsRegex;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContainsRegex;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -74,12 +89,13 @@ class ItRetryImprovements {
   // domain constants
   private static final String clusterName = "cluster-1";
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String domainUid = "domaininimage";
+  private static final String domainUid = "retryimprovementdomain";
   private static final String wdtModelFileForDomainInImage = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
 
   private static LoggingFacade logger = null;
-  private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String opNamespace = null;
+  private static String operatorPodName = null;
 
   /**
    * Install operator.
@@ -106,6 +122,10 @@ class ItRetryImprovements {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, opServiceAccount, false, 0, domainNamespace);
+
+    // get operator pod name
+    operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name is: {0}", operatorPodName);
   }
 
   // This method is needed in this test class to delete uncompleted domain to restore the env
@@ -113,6 +133,7 @@ class ItRetryImprovements {
   public void tearDown() {
     try {
       deleteSecret(wlSecretName, domainNamespace);
+      deleteClusterCustomResource(clusterName, domainNamespace);
 
       Callable<Boolean> domain = domainExists(domainUid, DOMAIN_VERSION, domainNamespace);
       if (domain.call().booleanValue()) {
@@ -134,6 +155,7 @@ class ItRetryImprovements {
   @DisplayName("Create a domain without WLS secret. Verify that retry occurs and handles SEVERE error as designed.")
   void testRetryOccursAsExpectedAndThrowSevereFailures() {
     int replicaCount = 2;
+
     // verify that the operator starts retrying in the intervals specified in domain.spec.failureRetryIntervalSeconds
     // when a SEVERE error occurs and clear message is logged.
     Long failureRetryLimitMinutes = Long.valueOf("1");
@@ -170,7 +192,7 @@ class ItRetryImprovements {
         .append(".*not\\s*found\\s*in\\s*namespace\\s*.*")
         .append(domainNamespace).toString();
 
-    testUntil(() -> findStringInOperatorLog(opNamespace, opLogSevereErrRegex),
+    testUntil(() -> checkPodLogContainsRegex(opLogSevereErrRegex, operatorPodName, opNamespace),
         logger, "SEVERE error found in Operator log");
   }
 
@@ -182,6 +204,7 @@ class ItRetryImprovements {
   @DisplayName("Verify that retry stops after the issue is fixed and the domain starts successfully.")
   void testRetryStoppedAfterIssueFixed() {
     int replicaCount = 2;
+
     // verify that the operator starts retrying when a SEVERE error occurs
     Long failureRetryLimitMinutes = Long.valueOf("5");
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
@@ -263,6 +286,7 @@ class ItRetryImprovements {
   void testRetryOccursAsExpectedAndThrowWarning() {
     int replicaMaxCount = 5;
     int replicaCount = 6;
+
     // create a domain with replicas = 6 that exceeds the maximum cluster size of 5
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}", domainUid, domainNamespace);
     DomainResource domain = createDomainResourceForRetryTest(FAILURE_RETRY_LIMIT_MINUTES, replicaCount, true);;
@@ -283,8 +307,8 @@ class ItRetryImprovements {
         logger, "warningMsgRegex is found in domain status message");
 
     // verify that WARNING and warningMsgRegex message found in Operator log
-    testUntil(() -> findStringInOperatorLog(opNamespace, ".*WARNING" + warningMsgRegex),
-        logger, "warningMsgRegex is found in Operator log");
+    testUntil(() -> checkPodLogContainsRegex(warningMsgRegex, operatorPodName, opNamespace),
+        logger, "{0} is found in Operator log", warningMsgRegex);
 
     // verify that the cluster is up and running
     verifyDomainExistsAndServerStarted(replicaMaxCount);
@@ -313,26 +337,100 @@ class ItRetryImprovements {
 
     // verify that warningMsgRegex message is gone in domain status message
     testUntil(() -> ! findStringInDomainStatusMessage(domainNamespace, domainUid, warningMsgRegex),
-        logger, "warningMsgRegex is not found in domain status message");
+        logger, "{0} is not found in domain status message", warningMsgRegex);
 
     // verify that the cluster is still up and running
     verifyDomainExistsAndServerStarted(replicaMaxCount);
   }
 
+  /**
+   * Create a domain-in-image domain before the secret for admin credentials is created.
+   * Verify that retry stops after failureRetryLimitMinutes expired.
+   */
+  @Test
+  @DisplayName("Verify that retry stops after failureRetryLimitMinutes expired")
+  void testRetryStoppedAfterfailureRetryLimitMinutesExpired() {
+    int replicaCount = 2;
+
+    // create a domain-in-image domain before the secret is created
+    Long failureRetryLimitMinutes = Long.valueOf("1");
+    DomainResource domain = createDomainResourceForRetryTest(failureRetryLimitMinutes, replicaCount,false);
+    createDomainForRetryTest(domain);
+
+    String retryDoneMsgRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*")
+        .append(failureRetryLimitMinutes.toString())
+        .append("\\s*minutes.*Please\\s*resolve.*update\\s*domain.spec.introspectVersion\\s*")
+        .append(".*to\\s*force\\s*another\\s*retry.*").toString();
+
+    // verify that the operator stops retry after failure retry limit minutes expired
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryDoneMsgRegex),
+        logger, "The operator stops retry after failure retry limit minutes expired");
+  }
+
+  /**
+   * Create a model-in-image domain with bad model file from configmap
+   * the domain should fail to start with SEVERE error in introspector log and Operator log
+   * and the Operator should start retrying. Verify that error in introspector log is logged to Operator log.
+   */
+  @Test
+  @DisplayName("Creating a domain with bad model file from configmap and "
+      + "verify that retry occurs and error in introspector logged in the Operator log")
+  void testRetryOccursAndErrorFromIntrospectorLoggedInOperator() throws Exception {
+    Long failureRetryLimitMinutes = Long.valueOf("1");
+    int replicaCount = 2;
+
+    String badModelFileCm = "bad-model-in-cm";
+    String badModelFileName = "bad-model-file.yaml";
+    Path badModelFile = Paths.get(MODEL_DIR, badModelFileName);
+
+    logger.info("Creating a domain resource with bad model file from configmap");
+    DomainResource domain =
+        createDomainResourceForRetryTestWithConfigMap(failureRetryLimitMinutes,
+        replicaCount, badModelFile, badModelFileCm);
+    createDomainAndVerify(domain, domainNamespace);
+
+    String createDomainFailedMsgRegex = new StringBuffer(".*SEVERE.*createDomain\\s*was\\s*unable\\s*to\\s*load.*")
+        .append(badModelFileName).toString();
+    String retryDoneMsgRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*")
+        .append(failureRetryLimitMinutes.toString())
+        .append("\\s*minutes.*Please\\s*resolve.*update\\s*domain.spec.introspectVersion\\s*")
+        .append(".*to\\s*force\\s*another\\s*retry.*").toString();
+
+    // verify that retryDoneMsgRegex message found in domain status message
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryDoneMsgRegex),
+        logger, "{0} is found in domain status message", retryDoneMsgRegex);
+
+    // verify that SEVERE and createDomainFailedMsgRegex message found in Operator log
+    testUntil(() -> checkPodLogContainsRegex(createDomainFailedMsgRegex, operatorPodName, opNamespace),
+        logger, "{0} is found in Operator log", createDomainFailedMsgRegex);
+
+    // verify that SEVERE and createDomainFailedMsgRegex message found in Operator log
+    testUntil(() -> checkInUncompletedIntroPodLogContainsRegex(createDomainFailedMsgRegex,
+        domainUid, domainNamespace),
+        logger, "{0} is found in introspector log", createDomainFailedMsgRegex);
+
+    Callable<Boolean> configMapExist = assertDoesNotThrow(() -> configMapExist(domainNamespace, badModelFileCm));
+
+    if (configMapExist.call().booleanValue()) {
+      deleteConfigMap(badModelFileCm, domainNamespace);
+    }
+  }
+
   private void verifyDomainExistsAndServerStarted(int replicaCount) {
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger, "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
+        domainUid, domainNamespace);
 
     // check that admin service/pod exists in the domain namespace
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     logger.info("Checking that admin service/pod {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
+
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
@@ -341,6 +439,7 @@ class ItRetryImprovements {
       // check that ms service/pod exists in the domain namespace
       logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
+
       checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
   }
@@ -376,5 +475,53 @@ class ItRetryImprovements {
     assertNotNull(domain, "domain is null");
 
     return domain;
+  }
+
+
+  private static DomainResource createDomainResourceForRetryTestWithConfigMap(Long failureRetryLimitMinutes,
+                                                                              int replicaCount,
+                                                                              Path modelFile,
+                                                                              String configmapName) {
+    final List<Path> modelList = Collections.singletonList(modelFile);
+    String imageName = MII_BASIC_IMAGE_NAME;
+    String imageTag = "empty-domain-image";
+    String encryptionSecretName = "encryptionsecret";
+
+    // build an image with empty WebLogic domain
+    buildMIIandPushToRepo(imageName, imageTag, null);
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
+    logger.info("creating a config map containing the bad model file");
+    createConfigMapFromFiles(configmapName, modelList, domainNamespace);
+
+    logger.info("Creating a domain resource with bad model file from configmap");
+    DomainResource domain = createMiiDomainResourceWithConfigMap(domainUid,
+        domainNamespace, clusterName, wlSecretName, BASE_IMAGES_REPO_SECRET_NAME,
+        encryptionSecretName, replicaCount, imageName + ":" + imageTag,
+        configmapName, 30L, failureRetryLimitMinutes);
+    assertNotNull(domain, "domain is null");
+
+    return domain;
+  }
+
+  private static void createDomainForRetryTest(DomainResource domain) {
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, DOMAIN_VERSION),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace)),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
   }
 }

@@ -13,7 +13,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
@@ -41,6 +40,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -204,7 +204,7 @@ public class DomainSpec extends BaseConfiguration {
       "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
-  private V1Container.ImagePullPolicyEnum imagePullPolicy;
+  private String imagePullPolicy;
 
   /**
    * The image pull secrets for the WebLogic Server image.
@@ -258,6 +258,14 @@ public class DomainSpec extends BaseConfiguration {
   @Range(minimum = 0)
   @Default(intDefault = 1)
   private Integer maxClusterConcurrentShutdown;
+
+  @Description(
+      "The maximum number of cluster members that can be temporarily unavailable. You can override this default "
+      + "on a per cluster basis by setting the cluster's `maxUnavailable` field. Defaults to 1."
+  )
+  @Range(minimum = 1)
+  @Default(intDefault = 1)
+  private Integer maxClusterUnavailable;
 
   @Description("The wait time in seconds before the start of the next retry after a Severe failure. Defaults to 120.")
   @Range(minimum = 0)
@@ -338,7 +346,7 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImage();
   }
 
-  V1Container.ImagePullPolicyEnum getMonitoringExporterImagePullPolicy() {
+  String getMonitoringExporterImagePullPolicy() {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
@@ -582,11 +590,11 @@ public class DomainSpec extends BaseConfiguration {
     this.image = image;
   }
 
-  public V1Container.ImagePullPolicyEnum getImagePullPolicy() {
+  public String getImagePullPolicy() {
     return Optional.ofNullable(imagePullPolicy).orElse(CommonUtils.getInferredImagePullPolicy(getImage()));
   }
 
-  public void setImagePullPolicy(@Nullable V1Container.ImagePullPolicyEnum imagePullPolicy) {
+  public void setImagePullPolicy(@Nullable String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
   }
 
@@ -800,6 +808,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN);
   }
 
+  public Integer getMaxClusterUnavailable() {
+    return Optional.ofNullable(maxClusterUnavailable)
+        .orElse(DEFAULT_MAX_CLUSTER_UNAVAILABLE);
+  }
+
   @Nullable
   String getConfigOverrides() {
     return Optional.ofNullable(configuration).map(Configuration::getOverridesConfigMap).orElse(null);
@@ -971,8 +984,9 @@ public class DomainSpec extends BaseConfiguration {
             .append("logHomeLayout", logHomeLayout)
             .append("logHomeEnabled", logHomeEnabled)
             .append("managedServers", managedServers)
-            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
-            .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
+            .append("maxClusterConcurrentShutdown", maxClusterConcurrentShutdown)
+            .append("maxClusterConcurrentStartup", maxClusterConcurrentStartup)
+            .append("maxClusterUnavailable", maxClusterUnavailable)
             .append("monitoringExporter", monitoringExporter)
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
@@ -1004,6 +1018,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
+            .append(maxClusterUnavailable)
             .append(monitoringExporter)
             .append(replicas)
             .append(serverStartPolicy)
@@ -1047,6 +1062,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
+            .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
             .append(fluentdSpecification, rhs.getFluentdSpecification());
     return builder.isEquals();
   }
@@ -1073,6 +1089,10 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
     this.maxClusterConcurrentShutdown = maxClusterConcurrentShutdown;
+  }
+
+  public void setMaxClusterUnavailable(Integer maxClusterUnavailable) {
+    this.maxClusterUnavailable = maxClusterUnavailable;
   }
 
   public AdminServer getAdminServer() {
@@ -1143,7 +1163,7 @@ public class DomainSpec extends BaseConfiguration {
     }
 
     private int getMaxUnavailableFor(ClusterSpec clusterSpec) {
-      return hasMaxUnavailable(clusterSpec) ? clusterSpec.getMaxUnavailable() : 1;
+      return hasMaxUnavailable(clusterSpec) ? clusterSpec.getMaxUnavailable() : getMaxClusterUnavailable();
     }
 
     private int getReplicaCountFor(ClusterSpec clusterSpec) {

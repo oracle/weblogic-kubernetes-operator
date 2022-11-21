@@ -602,9 +602,9 @@ class AdminPodHelperTest extends PodHelperTestBase {
   void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
     Map<String, Object> auxiliaryImage2 =
-        createAuxiliaryImage("wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -615,11 +615,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(getCreatedPodSpecInitContainers(),
         allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                 "wdt-image:v1",
-                V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER),
             Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
                 "wdt-image:v2",
-                V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                "IfNotPresent",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER)));
     assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName(TEST_VOLUME_NAME)).emptyDir(
@@ -633,7 +633,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(CUSTOM_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent",
             CUSTOM_COMMAND_SCRIPT);
 
     convertDomainWithLegacyAuxImages(
@@ -687,9 +687,9 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT),
+                    "wdt-image:v1", "IfNotPresent"),
                     Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                            "wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT)));
+                            "wdt-image:v2", "IfNotPresent")));
     assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -713,9 +713,9 @@ class AdminPodHelperTest extends PodHelperTestBase {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
     Map<String, Object> auxiliaryImage2 =
-        createAuxiliaryImage("wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v2", "IfNotPresent");
 
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
@@ -725,10 +725,10 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                "wdt-image:v1", "IfNotPresent",
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER),
                 Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                    "wdt-image:v2", V1Container.ImagePullPolicyEnum.IFNOTPRESENT,
+                    "wdt-image:v2", "IfNotPresent",
                     AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER)));
     assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
             hasItem(new V1Volume().name(getLegacyAuxiliaryImageVolumeName("test")).emptyDir(
@@ -746,7 +746,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME, CUSTOM_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =
-        createAuxiliaryImage("wdt-image:v1", V1Container.ImagePullPolicyEnum.IFNOTPRESENT);
+        createAuxiliaryImage("wdt-image:v1", "IfNotPresent");
     convertDomainWithLegacyAuxImages(
             createLegacyDomainMap(
                     createDomainSpecMap(

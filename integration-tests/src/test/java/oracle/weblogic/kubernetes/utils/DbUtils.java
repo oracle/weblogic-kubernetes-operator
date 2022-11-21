@@ -191,12 +191,12 @@ public class DbUtils {
                 new V1ServicePort()
                     .name("tns")
                     .port(dbListenerPort)
-                    .protocol(V1ServicePort.ProtocolEnum.TCP)
+                    .protocol("TCP")
                     .targetPort(new IntOrString(1521))
                     .nodePort(dbPort)))
             .selector(labels)
-            .sessionAffinity(V1ServiceSpec.SessionAffinityEnum.NONE)
-            .type(V1ServiceSpec.TypeEnum.LOADBALANCER));
+            .sessionAffinity("None")
+            .type("LoadBalancer"));
 
     logger.info("Create service for Oracle DB service in namespace {0}, dbListenerPort: {1}", dbNamespace,
         dbListenerPort);
@@ -227,7 +227,7 @@ public class DbUtils {
                  .rollingUpdate(new V1RollingUpdateDeployment()
                      .maxSurge(new IntOrString(1))
                      .maxUnavailable(new IntOrString(1)))
-                 .type(V1DeploymentStrategy.TypeEnum.ROLLINGUPDATE))
+                 .type("RollingUpdate"))
             .template(new V1PodTemplateSpec()
                 .metadata(new V1ObjectMeta()
                     .labels(labels))
@@ -250,15 +250,15 @@ public class DbUtils {
                                 new V1ContainerPort()
                                 .containerPort(dbListenerPort)
                                 .name("tns")
-                                .protocol(V1ContainerPort.ProtocolEnum.TCP)
+                                .protocol("TCP")
                                 .hostPort(dbListenerPort)))
                             .resources(new V1ResourceRequirements()
                                 .limits(limits)
                                 .requests(requests))
                             .terminationMessagePath("/dev/termination-log")
-                            .terminationMessagePolicy(V1Container.TerminationMessagePolicyEnum.FILE)))
-                    .dnsPolicy(V1PodSpec.DnsPolicyEnum.CLUSTERFIRST)
-                    .restartPolicy(V1PodSpec.RestartPolicyEnum.ALWAYS)
+                            .terminationMessagePolicy("File")))
+                    .dnsPolicy("ClusterFirst")
+                    .restartPolicy("Always")
                     .schedulerName("default-scheduler")
                     .terminationGracePeriodSeconds(30L)
                     .imagePullSecrets(Arrays.asList(
@@ -282,6 +282,12 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
+    testUntil(
+        assertDoesNotThrow(() -> checkDBPodNameReady(dbNamespace, dbPodNamePrefix),
+            String.format("DB pod %s is not ready yet in namespace %s", dbPodNamePrefix, dbNamespace)),
+        logger,
+            "Oracle DB pod to be ready in namespace {0}", dbNamespace);
+
     String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
@@ -300,6 +306,17 @@ public class DbUtils {
     checkDbReady(msg, dbPodName, dbNamespace);
 
     dbMap.put(dbNamespace, dbPodName);
+  }
+
+  private static Callable<Boolean> checkDBPodNameReady(String dbNamespace, String dbPodNamePrefix) {
+    return (() -> {
+      // wait for the Oracle DB pod to be ready
+      String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
+          String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
+              dbNamespace));
+
+      return (dbPodName != null);
+    });
   }
 
   /**
@@ -398,7 +415,7 @@ public class DbUtils {
 
       // get the podCondition with the 'Ready' type field
       V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> V1PodCondition.TypeEnum.READY.equals(v1PodCondition.getType()))
+          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
           .findAny()
           .orElse(null);
 

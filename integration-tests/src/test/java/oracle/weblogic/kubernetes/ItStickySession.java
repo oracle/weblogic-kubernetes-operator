@@ -492,7 +492,7 @@ class ItStickySession {
           .append("/")
           .append(curlUrlPath)
           .append(headerOption)
-          .append(httpHeaderFile).toString();
+          .append(httpHeaderFile);
     }
 
     return curlCmd.toString();

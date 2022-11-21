@@ -12,8 +12,6 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1Container.ImagePullPolicyEnum;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -467,8 +465,7 @@ class ItPodsRestart {
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
   void testServerPodsRestartByChangingImagePullPolicy() {
-    String pullPolicy = KIND_REPO != null 
-        ? ImagePullPolicyEnum.NEVER.getValue() : ImagePullPolicyEnum.ALWAYS.getValue();
+    String pullPolicy = KIND_REPO != null ? "Never" : "Always";
     // get the original domain resource before update
     DomainResource domain1 = DomainUtils.getAndValidateInitialDomain(domainNamespace, domainUid);
 
@@ -476,7 +473,7 @@ class ItPodsRestart {
     podsWithTimeStamps = getPodsWithTimeStamps();
 
     //print out the original imagePullPolicy
-    V1Container.ImagePullPolicyEnum imagePullPolicy = domain1.getSpec().getImagePullPolicy();
+    String imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("Original domain imagePullPolicy is: {0}", imagePullPolicy);
 
     //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Always(If non kind, otherwise Never)
@@ -504,7 +501,7 @@ class ItPodsRestart {
     //print out imagePullPolicy in the new patched domain
     imagePullPolicy = domain1.getSpec().getImagePullPolicy();
     logger.info("In the new patched domain imagePullPolicy is: {0}", imagePullPolicy);
-    assertTrue(imagePullPolicy.getValue().equalsIgnoreCase(pullPolicy),
+    assertTrue(imagePullPolicy.equalsIgnoreCase(pullPolicy),
         "imagePullPolicy was not updated in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state

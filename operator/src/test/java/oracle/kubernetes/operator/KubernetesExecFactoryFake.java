@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -14,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.utils.KubernetesExec;
 import oracle.kubernetes.operator.utils.KubernetesExecFactory;
-import org.jetbrains.annotations.NotNull;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -23,7 +23,7 @@ class KubernetesExecFactoryFake implements KubernetesExecFactory {
   private final Map<String, String> responses = new HashMap<>();
   private final Map<String, Integer> exitCodes = new HashMap<>();
 
-  @NotNull
+  @Nonnull
   public Memento install() throws NoSuchFieldException {
     return StaticStubSupport.install(ServerStatusReader.class, "execFactory", this);
   }

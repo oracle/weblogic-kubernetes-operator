@@ -83,6 +83,10 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.ABORTED_ERROR;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_AVAILABLE;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_CHANGED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_COMPLETED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.CLUSTER_DELETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_AVAILABLE;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
@@ -242,6 +246,8 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
     logger.info("verify the Completed event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+    logger.info("verify the ClusterCompleted event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, CLUSTER_COMPLETED, "Normal", timestamp);
     shutdownDomain(domainUid, domainNamespace1);
   }
 
@@ -389,12 +395,21 @@ class ItKubernetesDomainEvents {
     logger.info("verify the Domain_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid,
             DOMAIN_AVAILABLE, "Normal", timestamp);
+    logger.info("verify the Cluster_Available event is generated");
+    checkEvent(opNamespace, domainNamespace3, domainUid,
+        CLUSTER_AVAILABLE, "Normal", timestamp);
     logger.info("verify the Completed event is generated");
     checkEvent(opNamespace, domainNamespace3,
             domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+    logger.info("verify the ClusterCompleted event is generated");
+    checkEvent(opNamespace, domainNamespace3,
+        domainUid, CLUSTER_COMPLETED, "Normal", timestamp);
     logger.info("verify the only 1 Completed event for domain is generated");
     assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
             DOMAIN_COMPLETED, timestamp));
+    logger.info("verify the only 1 ClusterCompleted event for domain is generated");
+    assertEquals(2, getOpGeneratedEventCount(domainNamespace3, domainUid,
+        CLUSTER_COMPLETED, timestamp));
   }
 
   /**
@@ -438,6 +453,8 @@ class ItKubernetesDomainEvents {
       logger.info("Updating domain resource to set correct replicas size");
 
       assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster via patching");
+      logger.info("verify the ClusterChanged event is generated");
+      checkEvent(opNamespace, domainNamespace3, domainUid, CLUSTER_CHANGED, "Normal", timestamp);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -660,6 +677,8 @@ class ItKubernetesDomainEvents {
 
     //verify domain deleted event
     checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
+    //verify cluster deleted event
+    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
   }
 
   /**

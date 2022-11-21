@@ -7,9 +7,9 @@
 #      $ ./buildDockerImage.sh [-t <image-name>]
 #
 # -------------------------
-FROM ghcr.io/oracle/oraclelinux:8-slim AS jre-build
+FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk18.0.2/f6ad4b4450fd4d298113270ec84f30ee/9/GPL/openjdk-18.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.1/afdd2e245b014143b62ccb916125e3ce/10/GPL/openjdk-19.0.1_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
@@ -18,7 +18,7 @@ RUN set -eux; \
     tar --extract --file /jdk.tar.gz --directory /jdk --strip-components 1; \
     /jdk/bin/jlink --verbose --compress 2 --strip-java-debug-attributes --no-header-files --no-man-pages --output jre --add-modules java.base,java.desktop,java.instrument,java.management,java.naming,java.net.http,java.sql,jdk.attach,jdk.jdi,jdk.unsupported,jdk.crypto.ec,jdk.zipfs
 
-FROM ghcr.io/oracle/oraclelinux:8-slim
+FROM ghcr.io/oracle/oraclelinux:9-slim
 
 LABEL "org.opencontainers.image.authors"="Ryan Eberhard <ryan.eberhard@oracle.com>" \
       "org.opencontainers.image.url"="https://github.com/oracle/weblogic-kubernetes-operator" \

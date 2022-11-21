@@ -169,7 +169,7 @@ public class DeployUtil {
             .backoffLimit(0) // try only once
             .template(new V1PodTemplateSpec()
                 .spec(new V1PodSpec()
-                    .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+                    .restartPolicy("Never")
                     .containers(Arrays.asList(jobContainer
                         .name("deploy-application-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -202,7 +202,7 @@ public class DeployUtil {
     V1Job job = getJob(jobName, namespace);
     if (job != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+          v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {

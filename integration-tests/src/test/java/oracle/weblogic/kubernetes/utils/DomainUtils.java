@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -48,12 +49,12 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.DomainStatus;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.jetbrains.annotations.NotNull;
 
 import static java.io.File.createTempFile;
 import static java.nio.file.Files.copy;
@@ -106,6 +107,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.assertions.impl.Cluster.doesClusterExist;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -778,7 +780,7 @@ public class DomainUtils {
                                       V1Container jobContainer) {
     getLogger().info("Running Kubernetes job to create domain");
     V1PodSpec podSpec = new V1PodSpec()
-        .restartPolicy(V1PodSpec.RestartPolicyEnum.NEVER)
+        .restartPolicy("Never")
         .addContainersItem(jobContainer  // container containing WLST or WDT details
                .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
@@ -828,7 +830,7 @@ public class DomainUtils {
         "Getting the job failed");
     if (job != null && job.getStatus() != null && job.getStatus().getConditions() != null) {
       V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> V1JobCondition.TypeEnum.FAILED.equals(v1JobCondition.getType()))
+          v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
           .findAny()
           .orElse(null);
       if (jobCondition != null) {
@@ -992,6 +994,175 @@ public class DomainUtils {
     return domain;
   }
 
+
+  /**
+   * Create model-in-image type domain resource with configMap.
+   *
+   * @param domainUid unique id of the WebLogic domain
+   * @param domainNamespace domain namespace
+   * @param clusterName names of cluster
+   * @param miiImage name of the image including its tag
+   * @param wlSecretName wls admin secret name
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount replica count of the cluster
+   * @param configmapName name of the configMap containing WebLogic Deploy Tooling model
+   * @param introspectorDeadline seconds of introspector job active deadline
+   * @param failureRetryLimitMinutesArgs the time in minutes before the operator will stop retrying Severe failures
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static  DomainResource createMiiDomainResourceWithConfigMap(String domainUid,
+                                                                     String domainNamespace,
+                                                                     String clusterName,
+                                                                     String wlSecretName,
+                                                                     String repoSecretName,
+                                                                     String encryptionSecretName,
+                                                                     int replicaCount,
+                                                                     String miiImage,
+                                                                     String configmapName,
+                                                                     Long introspectorDeadline,
+                                                                     Long... failureRetryLimitMinutesArgs) {
+    Long failureRetryLimitMinutes =
+        (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
+
+    LoggingFacade logger = getLogger();
+    String clusterResName = domainUid + "-" + clusterName;
+    Map<String, String> keyValueMap = new HashMap<>();
+    keyValueMap.put("testkey", "testvalue");
+
+    // create the domain CR
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(failureRetryLimitMinutes)
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverService(new ServerService()
+                    .annotations(keyValueMap)
+                    .labels(keyValueMap))
+            .adminService(new AdminService()
+                .addChannelsItem(new Channel()
+                    .channelName("default")
+                    .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .runtimeEncryptionSecret(encryptionSecretName))
+            .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+
+    // create cluster resource for the domain
+    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterResName, clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domainNamespace);
+
+    setPodAntiAffinity(domain);
+
+    return domain;
+  }
+
+  /**
+   * Create a domain-in-image type domain resource with configMap.
+   *
+   * @param domainUid unique id of the WebLogic domain
+   * @param domainNamespace domain namespace
+   * @param imageName image name used to create domain-in-image domain
+   * @param wlSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param replicaCount replica count of the cluster
+   * @param configmapName name of the configMap
+   * @param failureRetryLimitMinutesArgs the time in minutes before the operator will stop retrying Severe failures
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceForDomainInImageWithConfigMap(String domainUid,
+                                                                                 String domainNamespace,
+                                                                                 String imageName,
+                                                                                 String wlSecretName,
+                                                                                 String clusterName,
+                                                                                 int replicaCount,
+                                                                                 String configmapName,
+                                                                                 Long... failureRetryLimitMinutesArgs) {
+    Long failureRetryLimitMinutes =
+        (failureRetryLimitMinutesArgs.length == 0) ? FAILURE_RETRY_LIMIT_MINUTES : failureRetryLimitMinutesArgs[0];
+
+    // create the domain custom resource
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
+            .dataHome("/u01/mydata")
+            .domainHomeSourceType("Image")
+            .replicas(replicaCount)
+            .image(imageName)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(TEST_IMAGES_REPO_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(wlSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(failureRetryLimitMinutes)
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                  .model(new Model()
+                      .domainType(WLS_DOMAIN_TYPE)
+                      .configMap(configmapName))
+            .introspectorJobActiveDeadlineSeconds(300L)));
+
+    // create cluster resource for the domain
+    if (!doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterName, clusterName, domainNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    setPodAntiAffinity(domain);
+
+    return domain;
+  }
+
   /**
    * Shutdown domain and verify all the server pods were shutdown.
    *
@@ -1021,7 +1192,7 @@ public class DomainUtils {
    * @param domainNamespace the namespace
    * @param domainUid the UID
    */
-  @NotNull
+  @Nonnull
   public static DomainResource getAndValidateInitialDomain(String domainNamespace, String domainUid) {
     DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -1040,7 +1211,7 @@ public class DomainUtils {
    * @param regex check string
    * @return true if regex found, false otherwise.
    */
-  @NotNull
+  @Nonnull
   public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
     // get the domain status message
     StringBuffer getDomainInfoCmd = new StringBuffer(KUBERNETES_CLI + " get domain/");

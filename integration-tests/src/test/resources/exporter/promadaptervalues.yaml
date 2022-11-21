@@ -1,0 +1,16 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+rules:
+  default: false
+  custom:
+    - seriesQuery: '{__name__=~"wls_webapp_config_sessions_opened_total_count",pod!="",namespace!="", app="myear"}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          pod:
+            resource: pod
+      name:
+        matches: ^(.*)
+        as: "total_opened_sessions_myear_app"
+      metricsQuery: wls_webapp_config_sessions_opened_total_count{<<.LabelMatchers>>,app='myear'}

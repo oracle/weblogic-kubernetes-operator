@@ -170,13 +170,12 @@ class ItElasticLoggingFluentd {
     }
     logger.info("install and verify Elasticsearch");
     elasticsearchParams = assertDoesNotThrow(() -> installAndVerifyElasticsearch(elasticSearchNs),
-            String.format("Failed to install Elasticsearch"));
+            "Failed to install Elasticsearch");
     assertNotNull(elasticsearchParams, "Failed to install Elasticsearch");
 
     // install and verify Kibana
     logger.info("install and verify Kibana");
-    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs),
-        String.format("Failed to install Kibana"));
+    kibanaParams = assertDoesNotThrow(() -> installAndVerifyKibana(elasticSearchNs), "Failed to install Kibana");
     assertNotNull(kibanaParams, "Failed to install Kibana");
 
     // install and verify Operator

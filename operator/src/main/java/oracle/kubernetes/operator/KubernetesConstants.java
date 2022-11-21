@@ -8,7 +8,7 @@ import java.net.HttpURLConnection;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.7";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0";
   String DEFAULT_FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String LATEST_IMAGE_SUFFIX = ":latest";
@@ -37,6 +37,7 @@ public interface KubernetesConstants {
   boolean DEFAULT_INCLUDE_SERVER_OUT_IN_POD_LOG = true;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP = 0;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN = 1;
+  int DEFAULT_MAX_CLUSTER_UNAVAILABLE = 1;
   int MINIMUM_CLUSTER_COUNT = 0;
 
   String WLS_CONTAINER_NAME = "weblogic-server";

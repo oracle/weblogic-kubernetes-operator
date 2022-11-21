@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Range;
@@ -17,7 +16,6 @@ import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -29,7 +27,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   /** The name of the cluster. Required. */
   @Description("The name of the cluster. This value must match the name of a WebLogic cluster already defined "
       + "in the WebLogic domain configuration. Required.")
-  @NotNull
+  @Nonnull
   private String clusterName;
 
   /** The number of replicas to run in the cluster, if specified. */
@@ -45,7 +43,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
       + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 1.")
+      + "running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 1.")
   @Range(minimum = 0)
   private Integer replicas;
 
@@ -63,8 +61,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "domain-lifecycle/startup/#starting-and-stopping-servers.")
   private ServerStartPolicy serverStartPolicy;
 
-  @Description(
-      "The maximum number of cluster members that can be temporarily unavailable. Defaults to 1.")
+  @Description("The maximum number of cluster members that can be temporarily unavailable. "
+      + "Defaults to `domain.spec.maxClusterUnavailable`, which defaults to 1.")
   @Range(minimum = 1)
   private Integer maxUnavailable;
 
@@ -78,7 +76,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
       + "for this cluster in response to a change in the `replicas` count. "
       + "If more Managed Server instances must be started, the operator will wait until a Managed "
       + "Server Pod is in the `Ready` state before starting the next Managed Server instance. "
-      + "A value of 0 means all Managed Server instances will start in parallel. Defaults to 0."
+      + "A value of 0 means all Managed Server instances will start in parallel. "
+      + "Defaults to `domain.spec.maxClusterConcurrentStartup`, which defaults to 0."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentStartup;
@@ -86,8 +85,8 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
   @Description(
           "The maximum number of WebLogic Server instances that will shut down in parallel "
                   + "for this cluster when it is being partially shut down by lowering its replica count. "
-                  + "A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, "
-                  + "which defaults to 1."
+                  + "A value of 0 means there is no limit. "
+                  + "Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1."
   )
   @Range(minimum = 0)
   private Integer maxConcurrentShutdown;
@@ -186,7 +185,7 @@ public class ClusterSpec extends BaseConfiguration implements Comparable<Cluster
     clusterService.addAnnotations(name, value);
   }
 
-  public V1ServiceSpec.SessionAffinityEnum getClusterSessionAffinity() {
+  public String getClusterSessionAffinity() {
     return clusterService.getSessionAffinity();
   }
 

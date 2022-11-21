@@ -115,7 +115,7 @@ class ItPodTemplates {
           "Image",
           "domain1",
           WDT_BASIC_IMAGE_DOMAINHOME),
-        String.format("Creating Domain resource with serverPod template failed"));
+        "Creating Domain resource with serverPod template failed");
   }
 
   /**
@@ -151,7 +151,7 @@ class ItPodTemplates {
 
     //check that label contains domainname in the managed server pod
     assertNotNull(domainname, "Can't find label domainname");
-    assertTrue(domainName.equalsIgnoreCase(domainName),
+    assertTrue(domainname.equalsIgnoreCase(domainName),
         "Can't find expected value for  label domainname, real value is " + domainname);
 
     String myclusterName = managedServerMetadata.getLabels().get("clustername");

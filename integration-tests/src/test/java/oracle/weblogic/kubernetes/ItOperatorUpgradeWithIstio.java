@@ -110,13 +110,25 @@ class ItOperatorUpgradeWithIstio {
   }
 
   /**
-   * Upgrade from Operator v3.4.1 to current with Istio enabled domain.
+   * Upgrade from Operator 3.4.3 to current with Istio enabled domain.
    */
   @Test
-  @DisplayName("Upgrade 3.4.1 Istio Domain(v8) with Istio to current")
-  void testOperatorWlsIstioDomainUpgradeFrom341ToCurrent() {
-    logger.info("Starting test to upgrade Istio Image Domain with Istio with v8 schema to current");
-    upgradeWlsIstioDomain("3.4.1");
+  @DisplayName("Upgrade 3.4.3 Istio Domain(v8) with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom343ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom343ToCurrent" 
+         + " to upgrade Istio Image Domain with Istio with v8 schema to current");
+    upgradeWlsIstioDomain("3.4.3");
+  }
+
+  /**
+   * Upgrade from Operator 3.4.4 to current with Istio enabled domain.
+   */
+  @Test
+  @DisplayName("Upgrade 3.4.4 Istio Domain(v8) with Istio to current")
+  void testOperatorWlsIstioDomainUpgradeFrom344ToCurrent() {
+    logger.info("Starting testOperatorWlsIstioDomainUpgradeFrom344ToCurrent"
+         + " to upgrade Istio Image Domain with Istio with v8 schema to current");
+    upgradeWlsIstioDomain("3.4.4");
   }
 
   /**

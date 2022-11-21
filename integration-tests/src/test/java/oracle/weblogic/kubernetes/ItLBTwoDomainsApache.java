@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVC
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test Apache load balancer handles traffic to one or two backend Weblogic domains.
@@ -248,7 +247,7 @@ class ItLBTwoDomainsApache {
             .storageClassName("apache-storage-class")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("1Gi"))
-            .persistentVolumeReclaimPolicy(V1PersistentVolumeSpec.PersistentVolumeReclaimPolicyEnum.RETAIN))
+            .persistentVolumeReclaimPolicy("Retain"))
         .metadata(new V1ObjectMetaBuilder()
             .withName(apachePvName)
             .build()

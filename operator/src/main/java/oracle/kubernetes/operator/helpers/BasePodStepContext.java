@@ -35,6 +35,7 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
@@ -159,6 +160,17 @@ public abstract class BasePodStepContext extends StepContextBase {
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, auxiliaryImage.getImage());
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name);
     return vars;
+  }
+
+  protected List<V1EnvVar> createEnv(V1Container c) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+      getEnvironmentVariables()
+          .forEach(envVar -> addIfMissing(initContainerEnvVars,
+              envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    }
+    return initContainerEnvVars;
   }
 
   protected V1ResourceRequirements createResources() {
