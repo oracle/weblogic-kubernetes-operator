@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -58,10 +59,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_R
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
  */
-public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
-
-  private final MakeRightExecutor executor;
-  private final DomainProcessorDelegate delegate;
+public class MakeRightDomainOperationImpl extends MakeRightOperationImpl implements MakeRightDomainOperation {
   @Nonnull
   private DomainPresenceInfo liveInfo;
   private boolean explicitRecheck;
@@ -79,8 +77,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    */
   public MakeRightDomainOperationImpl(
       MakeRightExecutor executor, DomainProcessorDelegate delegate, @Nonnull DomainPresenceInfo liveInfo) {
-    this.executor = executor;
-    this.delegate = delegate;
+    super(executor, delegate);
     this.liveInfo = liveInfo;
   }
 
@@ -170,12 +167,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   }
 
   @Override
-  public @Nonnull
-  DomainPresenceInfo getPresenceInfo() {
-    return liveInfo;
-  }
-
-  @Override
   public void setLiveInfo(@Nonnull DomainPresenceInfo info) {
     this.liveInfo = info;
   }
@@ -187,6 +178,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     this.deleting = false;
     this.willInterrupt = false;
     this.inspectionRun = false;
+  }
+
+  @Override
+  public void addToPacket(Packet packet) {
+    MakeRightDomainOperation.super.addToPacket(packet);
   }
 
 
@@ -225,18 +221,16 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     final List<Step> result = new ArrayList<>();
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
-    if (!getPresenceInfo().isClusterEventOnly()) {
-      result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-      if (wasStartedFromEvent()) {
-        result.add(createStatusInitializationStep());
-      }
-      if (deleting || domainHasDeletionTimestamp()) {
-        result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
-      } else {
-        result.add(createListClusterResourcesStep(getNamespace()));
-        result.add(createDomainValidationStep(getDomain()));
-        result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
-      }
+    result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
+    if (wasStartedFromEvent()) {
+      result.add(createStatusInitializationStep());
+    }
+    if (deleting || domainHasDeletionTimestamp()) {
+      result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
+    } else {
+      result.add(createListClusterResourcesStep(getNamespace()));
+      result.add(createDomainValidationStep(getDomain()));
+      result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
     }
     
     return Step.chain(result);
@@ -251,6 +245,10 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return new CallBuilder().listClusterAsync(domainNamespace, new ListClusterResourcesResponseStep());
   }
 
+  @Override
+  public ResourcePresenceInfo getPresenceInfo() {
+    return liveInfo;
+  }
 
   static class ListClusterResourcesResponseStep extends DefaultResponseStep<ClusterList> {
 

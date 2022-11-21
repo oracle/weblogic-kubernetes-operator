@@ -32,6 +32,7 @@ import oracle.kubernetes.common.logging.LoggingFilter;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.logging.OncePerMessageLoggingFilter;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
@@ -42,6 +43,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -339,13 +341,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void runMakeRight(MakeRightDomainOperation operation) {
-    final DomainPresenceInfo liveInfo = operation.getPresenceInfo();
+    final DomainPresenceInfo liveInfo = (DomainPresenceInfo) operation.getPresenceInfo();
     if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
         if (shouldContinue(operation, liveInfo)) {
-          if (!liveInfo.isClusterEventOnly()) {
-            logStartingDomain(liveInfo);
-          }
+          logStartingDomain(liveInfo);
           new DomainPlan(operation, delegate).execute();
         } else {
           logNotStartingDomain(liveInfo);
@@ -354,22 +354,28 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
+  @Override
+  public void runMakeRight(MakeRightClusterOperation operation) {
+    final ClusterPresenceInfo liveInfo = (ClusterPresenceInfo) operation.getPresenceInfo();
+    if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
+      try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
+        new ClusterPlan(operation, delegate).execute();
+      }
+    }
+  }
+
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
-    if (liveInfo.isClusterEventOnly()) {
+    final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
+    if (isNewDomain(cachedInfo)) {
+      return true;
+    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
+        || liveInfo.isDomainProcessingHalted(cachedInfo)) {
+      return false;
+    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
-      final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
-      if (isNewDomain(cachedInfo)) {
-        return true;
-      } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
-          || liveInfo.isDomainProcessingHalted(cachedInfo)) {
-        return false;
-      } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
-        return true;
-      } else {
-        cachedInfo.setDomain(liveInfo.getDomain());
-        return false;
-      }
+      cachedInfo.setDomain(liveInfo.getDomain());
+      return false;
     }
   }
 
@@ -763,20 +769,21 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public MakeRightDomainOperation createMakeRightOperationForClusterEvent(
+  public MakeRightClusterOperation createMakeRightOperationForClusterEvent(
       EventItem clusterEvent, ClusterResource cluster) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
         .interrupt()
         .withEventData(createClusterResourceEventData(clusterEvent, cluster));
   }
 
-  private EventData createClusterResourceEventData(EventItem clusterEvent, ClusterResource cluster) {
-    return new ClusterResourceEventData(clusterEvent, cluster).resourceName(cluster.getMetadata().getName());
+  private ClusterResourceEventData createClusterResourceEventData(EventItem clusterEvent, ClusterResource cluster) {
+    return (ClusterResourceEventData)
+        new ClusterResourceEventData(clusterEvent, cluster).resourceName(cluster.getMetadata().getName());
   }
 
   @NotNull
-  private DomainPresenceInfo createInfoForClusterEventOnly(ClusterResource cluster) {
-    return new DomainPresenceInfo(cluster.getNamespace(), null, cluster.getMetadata().getName());
+  private ClusterPresenceInfo createInfoForClusterEventOnly(ClusterResource cluster) {
+    return new ClusterPresenceInfo(cluster.getNamespace(), cluster);
   }
 
   /**
@@ -892,45 +899,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private static class DomainPlan {
-
-    private final MakeRightDomainOperation operation;
-    private final DomainPresenceInfo presenceInfo;
-    private final FiberGate gate;
-
-    private final Step firstStep;
-    private final Packet packet;
+  private class DomainPlan extends Plan {
 
     public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
-      this.operation = operation;
-      this.presenceInfo = operation.getPresenceInfo();
-      this.firstStep = operation.createSteps();
-      this.packet = operation.createPacket();
-      this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
+      super(operation, delegate);
     }
 
-    private static FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
-      return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
-    }
-
-    private void execute() {
-      LOGGER.fine(MessageKeys.PROCESSING_DOMAIN, operation.getPresenceInfo().getDomainUid());
-      Optional.ofNullable(debugPrefix).ifPresent(prefix -> packet.put(Fiber.DEBUG_FIBER, prefix));
-
-      if (operation.isWillInterrupt()) {
-        gate.startFiber(getFiberKey(), firstStep, packet, createCompletionCallback());
-      } else {
-        gate.startFiberIfNoCurrentFiber(getFiberKey(), firstStep, packet, createCompletionCallback());
-      }
-    }
-
-    // for a cluster event only DomainMakeRightOperation, the cluster is not associated with a domain.
-    // use the cluster resource name as the key associated with a fiber.
-    private String getFiberKey() {
-      return presenceInfo.isClusterEventOnly() ? presenceInfo.getClusterName() : presenceInfo.getDomainUid();
-    }
-
-    private CompletionCallback createCompletionCallback() {
+    @Override
+    public CompletionCallback createCompletionCallback() {
       return new DomainPlanCompletionCallback();
     }
 
@@ -953,7 +929,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   
       private void runFailureSteps(Throwable throwable) {
         gate.startNewFiberIfCurrentFiberMatches(
-            presenceInfo.getDomainUid(),
+            ((DomainPresenceInfo)presenceInfo).getDomainUid(),
             getFailureSteps(throwable),
             packet,
             new FailureReportCompletionCallback());
@@ -996,7 +972,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
-      final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
+      final MakeRightDomainOperation retry = ((MakeRightDomainOperation) operation).createRetry(domainPresenceInfo);
       gate.getExecutor().schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
     }
     
@@ -1009,6 +985,68 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
+  private class ClusterPlan extends Plan {
+
+    public ClusterPlan(MakeRightClusterOperation operation, DomainProcessorDelegate delegate) {
+      super(operation, delegate);
+    }
+
+    @Override
+    public CompletionCallback createCompletionCallback() {
+      return new ClusterPlanCompletionCallback();
+    }
+
+    class ClusterPlanCompletionCallback implements CompletionCallback {
+
+      @Override
+      public void onCompletion(Packet packet) {
+        // no op
+      }
+
+      @Override
+      public void onThrowable(Packet packet, Throwable throwable) {
+        reportFailure(throwable);
+      }
+
+      private void reportFailure(Throwable throwable) {
+        logThrowable(throwable);
+      }
+    }
+  }
+
+  private abstract class Plan {
+
+    final MakeRightOperation operation;
+    protected final ResourcePresenceInfo presenceInfo;
+    protected final FiberGate gate;
+
+    private final Step firstStep;
+    final Packet packet;
+
+    public Plan(MakeRightOperation operation, DomainProcessorDelegate delegate) {
+      this.operation = operation;
+      this.presenceInfo = operation.getPresenceInfo();
+      this.firstStep = operation.createSteps();
+      this.packet = operation.createPacket();
+      this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
+    }
+
+    private FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
+      return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
+    }
+
+    void execute() {
+      Optional.ofNullable(debugPrefix).ifPresent(prefix -> packet.put(Fiber.DEBUG_FIBER, prefix));
+
+      if (operation.isWillInterrupt()) {
+        gate.startFiber(presenceInfo.getResourceName(), firstStep, packet, createCompletionCallback());
+      } else {
+        gate.startFiberIfNoCurrentFiber(presenceInfo.getResourceName(), firstStep, packet, createCompletionCallback());
+      }
+    }
+
+    abstract CompletionCallback createCompletionCallback();
+  }
 
   private class ScheduledStatusUpdater {
     private final String namespace;
@@ -1032,10 +1070,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         Step strategy = Step.chain(new DomainPresenceInfoStep(), ServerStatusReader.createStatusStep(timeoutSeconds));
 
         getStatusFiberGate(getNamespace())
-              .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
+            .startFiberIfNoCurrentFiber(getDomainUid(), strategy, createPacket(), new CompletionCallbackImpl());
       } catch (Exception t) {
         try (ThreadLoggingContext ignored
-                   = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
+                 = setThreadContext().namespace(getNamespace()).domainUid(getDomainUid())) {
           LOGGER.severe(MessageKeys.EXCEPTION, t);
         }
       }

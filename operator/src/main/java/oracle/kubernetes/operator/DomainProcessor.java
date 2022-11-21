@@ -37,7 +37,7 @@ public interface DomainProcessor {
    * @param cluster the cluster resource that the event is associated with
    * @return Make-right operation
    */
-  MakeRightDomainOperation createMakeRightOperationForClusterEvent(
+  MakeRightClusterOperation createMakeRightOperationForClusterEvent(
       EventItem clusterEvent, ClusterResource cluster);
 
   /**

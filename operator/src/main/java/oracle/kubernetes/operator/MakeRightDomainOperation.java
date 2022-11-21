@@ -7,9 +7,8 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -18,7 +17,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightDomainOperation extends PacketComponent {
+public interface MakeRightDomainOperation extends MakeRightOperation {
 
   /**
    * Defines the operation as pertaining to the deletion of a domain.
@@ -33,8 +32,11 @@ public interface MakeRightDomainOperation extends PacketComponent {
   /**
    * Specifies the event that started this operation.
    * @param eventData a description of the event, containing at least the event type.
+   *
+   * @param eventData event data
+   * @return the updated factory
    */
-  MakeRightDomainOperation withEventData(EventData eventData);
+  MakeRightDomainOperation withEventData(EventHelper.EventData eventData);
 
   /**
    * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the
@@ -44,6 +46,11 @@ public interface MakeRightDomainOperation extends PacketComponent {
     return this;
   }
 
+  /**
+   * Modifies the factory to indicate that it should interrupt any current make-right thread.
+   +
+   + @return the updated factory
+   */
   MakeRightDomainOperation interrupt();
 
   /**
@@ -53,21 +60,9 @@ public interface MakeRightDomainOperation extends PacketComponent {
 
   boolean isDeleting();
 
-  boolean isWillInterrupt();
-
   boolean isExplicitRecheck();
 
-  void execute();
-
-  @Nonnull
-  Packet createPacket();
-
-  Step createSteps();
-
   void setInspectionRun();
-
-  @Nonnull
-  DomainPresenceInfo getPresenceInfo();
 
   void setLiveInfo(@Nonnull DomainPresenceInfo info);
 
@@ -103,9 +98,9 @@ public interface MakeRightDomainOperation extends PacketComponent {
    */
   private static boolean domainRequiresIntrospectionInCurrentMakeRight(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-          .map(DomainPresenceInfo::getDomain)
-          .map(DomainResource::isNewIntrospectionRequiredForNewServers)
-          .orElse(false);
+        .map(DomainPresenceInfo::getDomain)
+        .map(DomainResource::isNewIntrospectionRequiredForNewServers)
+        .orElse(false);
   }
 
   static Step createStepsToRerunWithIntrospection(Packet packet) {
@@ -120,4 +115,5 @@ public interface MakeRightDomainOperation extends PacketComponent {
   static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getValue(MAKE_RIGHT_DOMAIN_OPERATION));
   }
+
 }
