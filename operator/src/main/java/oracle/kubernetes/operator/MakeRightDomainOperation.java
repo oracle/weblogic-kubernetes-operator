@@ -33,7 +33,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation {
    * Specifies the event that started this operation.
    * @param eventData a description of the event, containing at least the event type.
    *
-   * @param eventData event data
    * @return the updated factory
    */
   MakeRightDomainOperation withEventData(EventHelper.EventData eventData);
