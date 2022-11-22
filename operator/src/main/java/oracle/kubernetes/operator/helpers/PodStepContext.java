@@ -1177,7 +1177,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
-      convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+      convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE
+          + "ai-vol-", "aux-image-volume-")));
     }
 
     private void adjustContainer(List<V1Container> convertedContainers, V1Container container, V1Pod currentPod) {
@@ -1212,7 +1213,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
-      convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+      convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE
+          + "ai-vol-", "aux-image-volume-")));
     }
 
     private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod recipe, V1Pod currentPod) {
