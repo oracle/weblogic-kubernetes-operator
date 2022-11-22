@@ -133,6 +133,8 @@ kubectl delete pv pv-testalertmanagertest3 --wait=false || true
 kubectl delete pv pv-testgrafanatest3 --wait=false || true
 kubectl delete pv pv-testprometheustest3 --wait=false || true
 
+kubectl delete crd $(kubectl get crd | grep weblogic) || true
+
 kubectl get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs kubectl delete ingressroute || true
 kubectl get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs kubectl delete clusterroles || true
 kubectl get clusterroles --no-headers | awk '/appscode/{print $1}' | xargs kubectl delete clusterroles || true
