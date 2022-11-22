@@ -114,7 +114,7 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
-        {{-   end }}            
+        {{- end }}            
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
