@@ -405,6 +405,11 @@ public class EventHelper {
       public String getPattern() {
         return CLUSTER_CREATED_EVENT_PATTERN;
       }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
     },
     CLUSTER_DELETED {
       @Override
@@ -416,6 +421,11 @@ public class EventHelper {
       public String getPattern() {
         return CLUSTER_DELETED_EVENT_PATTERN;
       }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
     },
     CLUSTER_CHANGED {
       @Override
@@ -426,6 +436,11 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return CLUSTER_CHANGED_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
       }
     },
     CLUSTER_INCOMPLETE {
