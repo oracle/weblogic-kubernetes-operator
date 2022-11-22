@@ -48,7 +48,7 @@ if [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "operator-aux-container"* ]]; then
   else
     trace FINE "Auxiliary Image: Skipping initialization due to a previous successful initialization."
   fi
-elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compatibility-mode-operator-aux-container"* ]]; then
+elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compat-operator-aux-container"* ]]; then
   sucFile="${AUXILIARY_IMAGE_TARGET_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/${AUXILIARY_IMAGE_CONTAINER_NAME}.suc"
   if [ ! -f $sucFile ]; then
     initCompatibilityModeInitContainersWithLegacyAuxImages > /tmp/compatibilityModeInitContainers.out 2>&1
@@ -67,7 +67,7 @@ elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compatibility-mode-operator-aux-co
 else
   trace SEVERE "Invalid auxiliary image container name '$AUXILIARY_IMAGE_CONTAINER_NAME'. " \
                "The auxiliary image container name must start with either 'operator-aux-container' " \
-               "or 'compatibility-mode-operator-aux-container'. Exiting."
+               "or 'compat-operator-aux-container'. Exiting."
   exit 1
 fi
 exit

@@ -59,6 +59,7 @@ public class SchemaConversionUtils {
   private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
 
   public static final String INTERNAL = "Internal";
+
   /**
    * The list of failure reason strings. Hard-coded here to match the values in DomainFailureReason.
    * Validated in tests in the operator.
@@ -683,7 +684,15 @@ public class SchemaConversionUtils {
     return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.get(VOLUME)).equals(((Map)volumeMount).get("name"));
   }
 
-  public static String getDNS1123auxiliaryImageVolumeName(Object name) {
+  private static String getDNS1123auxiliaryImageVolumeName(Object name) {
+    try {
+      return CommonUtils.getLegalVolumeName(getVolumeName(name));
+    } catch (Exception ex) {
+      return getVolumeName(name);
+    }
+  }
+
+  private static String getVolumeName(Object name) {
     return CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
         + AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
   }

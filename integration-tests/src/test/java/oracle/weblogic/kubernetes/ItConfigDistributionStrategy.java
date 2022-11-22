@@ -825,9 +825,11 @@ class ItConfigDistributionStrategy {
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName1 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-      assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
+      testUntil(() -> {
+        HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
+        logger.info("Http response status code {0} \n Http response body {1} ", response.statusCode(), response.body());
+        return response.statusCode() == 200 && response.body().contains("Connection successful");
+      }, logger, "http response code 200 and message Connection successful");
     }
   }
 

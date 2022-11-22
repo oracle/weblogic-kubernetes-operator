@@ -296,7 +296,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
   def test_isAdministrationPortEnabledForDomain(self):
     model = self.getModel()
-    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForDomain(model['topology']))
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForDomain(model))
 
   def test_isAdministrationPortEnabledForServer(self):
     model = self.getModel()
@@ -307,7 +307,15 @@ class WdtUpdateFilterCase(unittest.TestCase):
     # enable Administration port for server
     model['topology']['Server']['admin-server']['AdministrationPortEnabled'] = True
 
-    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model['topology']))
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model))
+
+  def test_isAdministrationPortEnabledForServerFromDomainInfo(self):
+    model = self.getModel()
+
+    # disable Administration port for domain
+    model['domainInfo']['ServerStartMode'] = 'secure'
+
+    self.assertTrue(model_wdt_mii_filter.isAdministrationPortEnabledForServer(model['topology']['Server']['admin-server'], model))
 
   def test_isSecureModeEnabledForDomain(self):
     model = self.getModel()
@@ -317,7 +325,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model['topology']['SecurityConfiguration']['SecureMode'] = {}
     model['topology']['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] = True
 
-    self.assertTrue(model_wdt_mii_filter.isSecureModeEnabledForDomain(model['topology']))
+    self.assertTrue(model_wdt_mii_filter.isSecureModeEnabledForDomain(model))
 
 
   def test_istioVersionRequiresLocalHostBindings(self):

@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.utils.FileUtils;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
@@ -57,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
@@ -457,9 +459,11 @@ public class Domain {
         secretName, opServiceAccount, opNamespace, secretToken);
 
     // decode the secret encoded token
-    String decodedToken = new String(Base64.getDecoder().decode(secretToken));
+    String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
+    
+    assertNotNull(decodedToken, "Couldn't get secret, token is null");
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
@@ -585,8 +589,6 @@ public class Domain {
    * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithWLDF(String clusterName,
                                              String domainUid,
