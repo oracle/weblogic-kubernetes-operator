@@ -17,14 +17,17 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusClustersConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -338,4 +341,50 @@ public class ClusterUtils {
         V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to start cluster resource");
   }
 
+  /**
+   * Check the domain status cluster condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   */
+  public static void checkDomainStatusClusterConditionTypeHasExpectedStatus(String domainUid,
+                                                                            String namespace,
+                                                                            String clusterName,
+                                                                            String conditionType,
+                                                                            String expectedStatus) {
+    checkDomainStatusClusterConditionTypeHasExpectedStatus(domainUid, namespace, clusterName,
+        conditionType, expectedStatus, DOMAIN_VERSION);
+  }
+
+
+  /**
+   * Check the domain status cluster condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   * @param domainVersion version of domain
+   */
+  public static void checkDomainStatusClusterConditionTypeHasExpectedStatus(String domainUid,
+                                                                            String namespace,
+                                                                            String clusterName,
+                                                                            String conditionType,
+                                                                            String expectedStatus,
+                                                                            String domainVersion) {
+    testUntil(
+        withLongRetryPolicy,
+        domainStatusClustersConditionTypeHasExpectedStatus(domainUid, namespace, clusterName, conditionType,
+            expectedStatus, domainVersion),
+        getLogger(),
+        "domain [{0}] status cluster [{1}] condition type [{2}] has expected status [{3}]",
+        domainUid,
+        clusterName,
+        conditionType,
+        expectedStatus);
+  }
 }
