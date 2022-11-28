@@ -145,7 +145,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   private Watch.Response<Object> createHttpGoneErrorResponse(BigInteger nextResourceVersion) {
-    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
+    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion.toString()).toWatchResponse();
   }
 
   private Watch.Response<Object> createHttpGoneErrorWithoutResourceVersionResponse() {
