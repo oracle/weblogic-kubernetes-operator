@@ -1288,6 +1288,22 @@ public class EventHelper {
     }
 
     @Override
+    public String getNamespace() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getNamespace)
+          .orElse("");
+    }
+
+    @Override
+    public String getResourceName() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse("");
+    }
+
+    @Override
     public String getUID() {
       return Optional.of(resource)
           .map(ClusterResource::getMetadata)

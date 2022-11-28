@@ -777,8 +777,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private ClusterResourceEventData createClusterResourceEventData(EventItem clusterEvent, ClusterResource cluster) {
-    return (ClusterResourceEventData)
-        new ClusterResourceEventData(clusterEvent, cluster).resourceName(cluster.getMetadata().getName());
+    return new ClusterResourceEventData(clusterEvent, cluster);
   }
 
   @NotNull
