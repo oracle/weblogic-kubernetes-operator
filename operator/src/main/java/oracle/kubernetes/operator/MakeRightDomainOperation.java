@@ -7,7 +7,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -35,7 +35,7 @@ public interface MakeRightDomainOperation extends MakeRightOperation {
    *
    * @return the updated factory
    */
-  MakeRightDomainOperation withEventData(EventHelper.EventData eventData);
+  MakeRightDomainOperation withEventData(EventData eventData);
 
   /**
    * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the

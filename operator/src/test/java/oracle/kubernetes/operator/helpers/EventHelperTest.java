@@ -29,7 +29,6 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import org.junit.jupiter.api.AfterEach;
@@ -886,7 +885,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreated() {
-    processor.dispatchClusterWatch(new Watch.Response<ClusterResource>("DELETED", cluster1));
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
 
     assertThat("Found CLUSTER_DELETED event",
         containsEvent(getEvents(testSupport), CLUSTER_DELETED_EVENT), is(true));
@@ -894,7 +893,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedMessage() {
-    processor.dispatchClusterWatch(new Watch.Response<ClusterResource>("DELETED", cluster1));
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
 
     assertThat("Found CLUSTER_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -904,7 +903,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedNamespace() {
-    processor.dispatchClusterWatch(new Watch.Response<ClusterResource>("DELETED", cluster1));
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
 
     assertThat("Found CLUSTER_DELETED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
