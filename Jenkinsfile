@@ -231,7 +231,7 @@ pipeline {
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-               defaultValue: '3.7.2'
+               defaultValue: '3.10.2'
         )
         choice(name: 'ISTIO_VERSION',
                description: 'Istio version',
