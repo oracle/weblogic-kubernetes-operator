@@ -148,7 +148,7 @@ pipeline {
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-               defaultValue: '3.7.2'
+               defaultValue: '3.10.2'
         )
         string(name: 'ISTIO_VERSION',
                description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
