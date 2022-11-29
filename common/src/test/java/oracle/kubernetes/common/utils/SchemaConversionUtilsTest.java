@@ -5,6 +5,7 @@ package oracle.kubernetes.common.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,6 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import oracle.kubernetes.common.CommonConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V8;
 import static oracle.kubernetes.common.CommonConstants.API_VERSION_V9;
 import static org.hamcrest.Matchers.contains;
@@ -47,11 +51,16 @@ class SchemaConversionUtilsTest {
   private final ConversionAdapter converterv8 = new ConversionAdapter(API_VERSION_V8);
   private Map<String, Object> v8Domain;
 
+  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = SchemaConversionUtilsTest::getMD5Hash;
+
+  private static String getMD5Hash(String s) throws NoSuchAlgorithmException {
+    throw new NoSuchAlgorithmException();
+  }
+
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(CommonTestUtils.silenceLogger());
     mementos.add(BaseTestUtils.silenceJsonPathLogger());
-    
     v8Domain = readAsYaml(DOMAIN_V8_AUX_IMAGE30_YAML);
   }
 
@@ -605,5 +614,36 @@ class SchemaConversionUtilsTest {
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(), hasNoJsonPath("$.spec.webLogicCredentialsSecret.namespace"));
+  }
+
+  @Test
+  void testV8DomainWithLongAuxiliaryImageVolumeName_convertedVolumeNameIsTruncated() throws NoSuchAlgorithmException {
+    Map<String, Object> auxImageVolume = ((Map<String, Object>)
+        ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
+    auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");
+    getDomainSpec(v8Domain).put("auxiliaryImageVolumes",  Collections.singletonList(auxImageVolume));
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.spec.serverPod.volumes[0].name",
+        equalTo(CommonUtils.getLegalVolumeName(CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
+            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + (String)auxImageVolume.get("name"))))));
+  }
+
+  @Test
+  void testV8DomainWithLongAuxiliaryImageVolumeNameAndMessageDigestThrowsException_volumeNameIsNotChanged()
+      throws NoSuchFieldException {
+    mementos.add(StaticStubSupport.install(CommonUtils.class, "getMD5Hash", getMD5Hash));
+
+    Map<String, Object> auxImageVolume = ((Map<String, Object>)
+        ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
+    auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");
+    getDomainSpec(v8Domain).put("auxiliaryImageVolumes",  Collections.singletonList(auxImageVolume));
+
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(), hasJsonPath("$.spec.serverPod.volumes[0].name",
+        equalTo(CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
+            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + "test-domain-aux-image-volume-test-domain-aux-image-volume"))));
   }
 }

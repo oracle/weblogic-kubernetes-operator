@@ -9,7 +9,7 @@ public class CommonConstants {
     //not called
   }
 
-  public static final String COMPATIBILITY_MODE = "compatibility-mode-";
+  public static final String COMPATIBILITY_MODE = "compat-";
   public static final String API_VERSION_V9 = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
 
