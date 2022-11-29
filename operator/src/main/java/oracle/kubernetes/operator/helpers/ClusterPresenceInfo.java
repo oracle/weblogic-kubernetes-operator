@@ -11,8 +11,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 
 /**
- * Operator's mapping between custom resource Domain and runtime details about that domain,
- * including the scan and the Pods and Services for servers.
+ * Operator's mapping between custom resource Cluster and runtime details about that cluster.
  */
 public class ClusterPresenceInfo extends ResourcePresenceInfo {
 
@@ -20,7 +19,7 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
   private final ClusterResource cluster;
 
   /**
-   * Create presence for a domain.
+   * Create presence for a cluster resource.
    * @param namespace Namespace
    *
    */

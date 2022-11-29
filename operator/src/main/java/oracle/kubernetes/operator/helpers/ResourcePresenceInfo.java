@@ -6,15 +6,14 @@ package oracle.kubernetes.operator.helpers;
 import oracle.kubernetes.operator.work.PacketComponent;
 
 /**
- * Operator's mapping between custom resource Domain and runtime details about that domain,
- * including the scan and the Pods and Services for servers.
+ * Base class for DomainPresenceInfo and ClusterPresenceInfo.
  */
 public abstract class ResourcePresenceInfo implements PacketComponent {
 
   final String namespace;
 
   /**
-   * Create presence for a domain.
+   * Create presence for a domain or cluster.
    * @param namespace Namespace
    *
    */

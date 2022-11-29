@@ -8,7 +8,8 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.MakeRightOperation;
 
 /**
- * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
+ * A factory which creates and executes steps to align the cached domain or cluster status with the value read
+ * from Kubernetes.
  */
 public abstract class MakeRightOperationImpl implements MakeRightOperation {
 

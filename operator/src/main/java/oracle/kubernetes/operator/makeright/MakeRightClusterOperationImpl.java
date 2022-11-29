@@ -19,7 +19,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
- * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
+ * A factory which creates and executes steps to align the cached cluster status with the value read from Kubernetes.
  */
 public class MakeRightClusterOperationImpl extends MakeRightOperationImpl implements MakeRightClusterOperation {
 
@@ -32,7 +32,7 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl implem
    * Create the operation.
    *  @param executor an object which can be asked to execute the make right
    * @param delegate a class which handles scheduling and other types of processing
-   * @param liveInfo domain presence info read from Kubernetes
+   * @param liveInfo cluster presence info read from Kubernetes
    */
   public MakeRightClusterOperationImpl(
       MakeRightExecutor executor, DomainProcessorDelegate delegate, @Nonnull ClusterPresenceInfo liveInfo) {
