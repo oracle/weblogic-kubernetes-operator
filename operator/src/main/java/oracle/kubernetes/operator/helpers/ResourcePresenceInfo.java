@@ -18,7 +18,7 @@ public abstract class ResourcePresenceInfo implements PacketComponent {
    * @param namespace Namespace
    *
    */
-  public ResourcePresenceInfo(String namespace) {
+  protected ResourcePresenceInfo(String namespace) {
     this.namespace = namespace;
   }
 
@@ -37,6 +37,7 @@ public abstract class ResourcePresenceInfo implements PacketComponent {
   public String toString() {
     StringBuilder sb = new StringBuilder("ResourcePresenceInfo{");
     sb.append(", namespace=").append(namespace);
+    sb.append(", resourceName=").append(getResourceName());
     sb.append("}");
 
     return sb.toString();

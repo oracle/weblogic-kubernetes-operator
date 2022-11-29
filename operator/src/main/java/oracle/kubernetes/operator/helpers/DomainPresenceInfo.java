@@ -746,15 +746,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return getDomainUid();
   }
 
-  /**
-   * Gets the namespace.
-   *
-   * @return Namespace
-   */
-  public String getNamespace() {
-    return namespace;
-  }
-
   // Returns a map of the active servers (those with a known running pod).
   private Map<String, ServerKubernetesObjects> getActiveServers() {
     return servers.entrySet().stream()
