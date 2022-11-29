@@ -14,14 +14,14 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
-import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /**
  * A factory which creates and executes steps to align the cached cluster status with the value read from Kubernetes.
  */
-public class MakeRightClusterOperationImpl extends MakeRightOperationImpl implements MakeRightClusterOperation {
+public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<ClusterPresenceInfo>
+    implements MakeRightClusterOperation {
 
   @Nonnull
   private ClusterPresenceInfo liveInfo;
@@ -89,7 +89,7 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl implem
   }
 
   @Override
-  public ResourcePresenceInfo getPresenceInfo() {
+  public ClusterPresenceInfo getPresenceInfo() {
     return liveInfo;
   }
 }

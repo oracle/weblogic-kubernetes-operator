@@ -35,7 +35,6 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -59,7 +58,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_R
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
  */
-public class MakeRightDomainOperationImpl extends MakeRightOperationImpl implements MakeRightDomainOperation {
+public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainPresenceInfo>
+    implements MakeRightDomainOperation {
   @Nonnull
   private DomainPresenceInfo liveInfo;
   private boolean explicitRecheck;
@@ -246,7 +246,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl impleme
   }
 
   @Override
-  public ResourcePresenceInfo getPresenceInfo() {
+  public DomainPresenceInfo getPresenceInfo() {
     return liveInfo;
   }
 

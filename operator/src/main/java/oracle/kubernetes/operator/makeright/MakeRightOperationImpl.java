@@ -6,12 +6,13 @@ package oracle.kubernetes.operator.makeright;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.MakeRightOperation;
+import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 
 /**
  * A factory which creates and executes steps to align the cached domain or cluster status with the value read
  * from Kubernetes.
  */
-public abstract class MakeRightOperationImpl implements MakeRightOperation {
+public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> implements MakeRightOperation<T> {
 
   final MakeRightExecutor executor;
   final DomainProcessorDelegate delegate;

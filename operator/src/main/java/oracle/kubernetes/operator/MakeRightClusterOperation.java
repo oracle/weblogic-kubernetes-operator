@@ -3,12 +3,13 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightClusterOperation extends MakeRightOperation {
+public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPresenceInfo> {
   /**
    * Set the event data that is associated with this operation.
    *

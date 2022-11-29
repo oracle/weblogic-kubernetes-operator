@@ -341,7 +341,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void runMakeRight(MakeRightDomainOperation operation) {
-    final DomainPresenceInfo liveInfo = (DomainPresenceInfo) operation.getPresenceInfo();
+    final DomainPresenceInfo liveInfo = operation.getPresenceInfo();
     if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
         if (shouldContinue(operation, liveInfo)) {
@@ -356,7 +356,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void runMakeRight(MakeRightClusterOperation operation) {
-    final ClusterPresenceInfo liveInfo = (ClusterPresenceInfo) operation.getPresenceInfo();
+    final ClusterPresenceInfo liveInfo = operation.getPresenceInfo();
     if (delegate.isNamespaceRunning(liveInfo.getNamespace())) {
       try (ThreadLoggingContext ignored = setThreadContext().presenceInfo(liveInfo)) {
         new ClusterPlan(operation, delegate).execute();

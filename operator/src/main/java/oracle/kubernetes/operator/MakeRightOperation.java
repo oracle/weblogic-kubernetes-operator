@@ -13,7 +13,7 @@ import oracle.kubernetes.operator.work.Step;
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightOperation extends PacketComponent {
+public interface MakeRightOperation<T extends ResourcePresenceInfo> extends PacketComponent {
   void execute();
 
   @Nonnull
@@ -23,5 +23,5 @@ public interface MakeRightOperation extends PacketComponent {
 
   boolean isWillInterrupt();
 
-  ResourcePresenceInfo getPresenceInfo();
+  T getPresenceInfo();
 }

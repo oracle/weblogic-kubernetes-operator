@@ -17,7 +17,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 /**
  * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
  */
-public interface MakeRightDomainOperation extends MakeRightOperation {
+public interface MakeRightDomainOperation extends MakeRightOperation<DomainPresenceInfo> {
 
   /**
    * Defines the operation as pertaining to the deletion of a domain.
