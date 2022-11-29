@@ -3,9 +3,19 @@
 
 package oracle.kubernetes.common.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+
 import oracle.kubernetes.common.CommonConstants;
 
 public class CommonUtils {
+
+  private static CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
+
+  public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
+  public static final String VOLUME_NAME_SUFFIX = "-volume";
 
   private CommonUtils() {
     //not called
@@ -33,4 +43,45 @@ public class CommonUtils {
     return value.toLowerCase().replace('_', '-');
   }
 
+  /**
+   * Returns a truncated volume name if the name exceeds the max allowed limit of characters for volume name.
+   * @param volumeName volume name
+   * @return truncated volume name if the name exceeds the limit, else return volumeName
+   * @throws NoSuchAlgorithmException Thrown when particular cryptographic algorithm
+   *                                  is not available in the environment.
+   */
+  public static String getLegalVolumeName(String volumeName) throws NoSuchAlgorithmException {
+    return volumeName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH)
+        ? getShortName(volumeName)
+        : volumeName;
+  }
+
+
+  private static String getShortName(String resourceName) throws NoSuchAlgorithmException {
+    String volumeSuffix = Optional.ofNullable(getMD5Hash.apply(resourceName)).orElse("");
+    return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
+  }
+
+  /**
+   * Gets the MD5 hash of a string.
+   *
+   * @param data input string
+   * @return MD5 hash value of the data, null in case of an exception.
+   */
+  public static String getMD5Hash(String data) throws NoSuchAlgorithmException {
+    return bytesToHex(MessageDigest.getInstance("MD5").digest(data.getBytes(StandardCharsets.UTF_8)));
+  }
+
+  private static String bytesToHex(byte[] hash) {
+    StringBuilder result = new StringBuilder();
+    for (byte b : hash) {
+      result.append(String.format("%02x", b));
+    }
+    return result.toString();
+  }
+
+  @FunctionalInterface
+  public interface CheckedFunction<T, R> {
+    R apply(T t) throws NoSuchAlgorithmException;
+  }
 }

@@ -548,6 +548,177 @@ public class OperatorUtils {
   }
 
   /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
+   * @param opServiceAccount the service account name for operator
+   * @param withRestAPI whether to use REST API
+   * @param externalRestHttpsPort the node port allocated for the external operator REST HTTPS interface
+   * @param opHelmParams the Helm parameters to install operator
+   * @param elkIntegrationEnabled true to enable ELK Stack, false otherwise
+   * @param domainNamespaceSelectionStrategy SelectLabel, RegExp or List, value to tell the operator
+   *                                  how to select the set of namespaces that it will manage
+   * @param domainNamespaceSelector the label or expression value to manage namespaces
+   * @param enableClusterRoleBinding operator cluster role binding
+   * @param loggingLevel logging level of operator
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param openshiftIstioInjection openshift istio enabled
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
+                                                        String opServiceAccount,
+                                                        boolean withRestAPI,
+                                                        int externalRestHttpsPort,
+                                                        HelmParams opHelmParams,
+                                                        boolean elkIntegrationEnabled,
+                                                        String domainNamespaceSelectionStrategy,
+                                                        String domainNamespaceSelector,
+                                                        boolean enableClusterRoleBinding,
+                                                        String loggingLevel,
+                                                        int domainPresenceFailureRetryMaxCount,
+                                                        int domainPresenceFailureRetrySeconds,
+                                                        boolean openshiftIstioInjection,
+                                                        String... domainNamespace) {
+    LoggingFacade logger = getLogger();
+
+    // Create a service account for the unique opNamespace
+    logger.info("Creating service account");
+    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
+        .metadata(new V1ObjectMeta()
+            .namespace(opNamespace)
+            .name(opServiceAccount))));
+    logger.info("Created service account: {0}", opServiceAccount);
+
+
+    // get operator image name
+    String operatorImage = getOperatorImageName();
+    assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
+    logger.info("operator image name {0}", operatorImage);
+
+    // Create Docker registry secret in the operator namespace to pull the image from repository
+    // this secret is used only for non-kind cluster
+    logger.info("Creating Docker registry secret in namespace {0}", opNamespace);
+    createTestRepoSecret(opNamespace);
+
+    // map with secret
+    Map<String, Object> secretNameMap = new HashMap<>();
+    secretNameMap.put("name", TEST_IMAGES_REPO_SECRET_NAME);
+
+    // operator chart values to override
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .imagePullSecrets(secretNameMap)
+        .domainNamespaces(Arrays.asList(domainNamespace))
+        .javaLoggingLevel(loggingLevel)
+        .serviceAccount(opServiceAccount);
+
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+    }
+
+    // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
+    if (opHelmParams.getRepoUrl() == null) {
+      opParams.image(operatorImage);
+    }
+
+    // enable ELK Stack
+    if (elkIntegrationEnabled) {
+      opParams
+          .elkIntegrationEnabled(elkIntegrationEnabled);
+      opParams
+          .elasticSearchHost(ELASTICSEARCH_HOST);
+      opParams
+          .elasticSearchPort(ELASTICSEARCH_HTTP_PORT);
+      opParams
+          .javaLoggingLevel(JAVA_LOGGING_LEVEL_VALUE);
+      opParams
+          .logStashImage(LOGSTASH_IMAGE);
+    }
+
+    if (withRestAPI) {
+      // create externalRestIdentitySecret
+      assertTrue(createExternalRestIdentitySecret(opNamespace, DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME),
+          "failed to create external REST identity secret");
+      opParams
+          .externalRestEnabled(true)
+          .externalRestHttpsPort(externalRestHttpsPort)
+          .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME);
+    }
+    // operator chart values to override
+    if (enableClusterRoleBinding) {
+      opParams.enableClusterRoleBinding(enableClusterRoleBinding);
+    }
+    if (domainNamespaceSelectionStrategy != null) {
+      opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+      if (domainNamespaceSelectionStrategy.equalsIgnoreCase("LabelSelector")) {
+        opParams.domainNamespaceLabelSelector(domainNamespaceSelector);
+      } else if (domainNamespaceSelectionStrategy.equalsIgnoreCase("RegExp")) {
+        opParams.domainNamespaceRegExp(domainNamespaceSelector);
+      }
+    }
+
+    // domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds
+    if (domainPresenceFailureRetryMaxCount >= 0) {
+      opParams.domainPresenceFailureRetryMaxCount(domainPresenceFailureRetryMaxCount);
+    }
+    if (domainPresenceFailureRetrySeconds > 0) {
+      opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
+    }
+
+    // If running on OKD cluster, we need to specify the target
+    if (OKD) {
+      opParams.kubernetesPlatform("OpenShift");
+    }
+    
+    if (openshiftIstioInjection) {
+      opParams.openShiftIstioInjection(openshiftIstioInjection);
+    }
+    
+    // install operator
+    logger.info("Installing operator in namespace {0}", opNamespace);
+    assertTrue(installOperator(opParams),
+        String.format("Failed to install operator in namespace %s", opNamespace));
+    logger.info("Operator installed in namespace {0}", opNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking operator release {0} status in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+    assertTrue(isHelmReleaseDeployed(OPERATOR_RELEASE_NAME, opNamespace),
+        String.format("Operator release %s is not in deployed status in namespace %s",
+            OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("Operator release {0} status is deployed in namespace {1}",
+        OPERATOR_RELEASE_NAME, opNamespace);
+
+    // wait for the operator to be ready
+    logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
+    CommonTestUtils.withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for operator to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                opNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+            "operatorIsReady failed with ApiException"));
+
+    if (withRestAPI) {
+      logger.info("Wait for the operator external service in namespace {0}", opNamespace);
+      CommonTestUtils.withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for operator external service in namespace {0} "
+                      + "(elapsed time {1}ms, remaining time {2}ms)",
+                  opNamespace,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
+              "operator external service is not running"));
+    }
+    return opParams;
+  }
+
+  /**
    * Upgrade WebLogic operator to manage the given domain namespaces.
    *
    * @param opNamespace the operator namespace in which the operator will be upgraded
@@ -636,4 +807,5 @@ public class OperatorUtils {
     logger.info("Operator pod is restarted in namespace {0}", opNamespace);
 
   }
+
 }
