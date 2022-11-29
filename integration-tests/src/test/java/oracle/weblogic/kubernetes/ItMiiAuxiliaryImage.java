@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
@@ -518,6 +519,7 @@ class ItMiiAuxiliaryImage {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(Auxiliary Image)  failed ");
     assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
