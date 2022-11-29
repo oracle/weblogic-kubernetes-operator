@@ -5,8 +5,8 @@ to start up or shut down a specific Managed Server or cluster in a deployed doma
 In addition, it provides sample scripts to force a new introspection of a domain, scale a cluster, or monitor a domain.
 
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain.
-For information on how to start, stop, restart, and scale WebLogic Server instances in your domain,
-see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
+For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see
+[Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle).
 
 - [Prerequisites](#prerequisites)
 - [Cycle a domain](#cycle-a-domain)
