@@ -64,13 +64,6 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   }
 
   @Override
-  public void clear() {
-    this.eventData = null;
-    this.willInterrupt = false;
-  }
-
-
-  @Override
   @Nonnull
   public Packet createPacket() {
     return new Packet().with(delegate).with(liveInfo).with(this);

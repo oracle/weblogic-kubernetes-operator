@@ -971,7 +971,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     private void scheduleRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
-      final MakeRightDomainOperation retry = ((MakeRightDomainOperation) operation).createRetry(domainPresenceInfo);
+      final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
       gate.getExecutor().schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
     }
     
