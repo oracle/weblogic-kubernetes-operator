@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.makeright;
 
-import javax.annotation.Nonnull;
-
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.MakeRightOperation;
@@ -15,7 +13,6 @@ import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
  * from Kubernetes.
  */
 public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> implements MakeRightOperation<T> {
-  @Nonnull
   protected T liveInfo;
   protected boolean willInterrupt;
 

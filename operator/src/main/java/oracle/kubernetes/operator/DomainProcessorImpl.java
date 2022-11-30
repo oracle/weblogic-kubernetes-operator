@@ -898,7 +898,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private class DomainPlan extends Plan {
+  private class DomainPlan extends Plan<MakeRightDomainOperation> {
 
     public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
       super(operation, delegate);
@@ -984,7 +984,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private class ClusterPlan extends Plan {
+  private class ClusterPlan extends Plan<MakeRightClusterOperation> {
 
     public ClusterPlan(MakeRightClusterOperation operation, DomainProcessorDelegate delegate) {
       super(operation, delegate);
@@ -1013,16 +1013,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private abstract class Plan {
+  private abstract class Plan<T extends MakeRightOperation> {
 
-    final MakeRightOperation operation;
+    final T operation;
     protected final ResourcePresenceInfo presenceInfo;
     protected final FiberGate gate;
 
     private final Step firstStep;
     final Packet packet;
 
-    public Plan(MakeRightOperation operation, DomainProcessorDelegate delegate) {
+    public Plan(T operation, DomainProcessorDelegate delegate) {
       this.operation = operation;
       this.presenceInfo = operation.getPresenceInfo();
       this.firstStep = operation.createSteps();
