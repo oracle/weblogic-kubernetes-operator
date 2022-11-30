@@ -271,13 +271,15 @@ Use the Database blade to configure Oracle WebLogic Server to connect to an exis
 
 | Field | Description |
 |-------|-------------|
-| Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • Other |
+| Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • MySQL (Support passwordless connection) {{< line_break >}} • Other |
+| Use passwordless datasource connection | If you select a database type that supports passwordless connection, this checkbox will show up. If selected, configure passwordless connections to datasource. For more information, see [Passwordless connections for Azure services](https://learn.microsoft.com/azure/developer/intro/passwordless-overview). |
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
 | DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
 | Global transactions protocol | Determines the transaction protocol (global transaction processing behavior) for the data source. For more information, see [JDBC Data Source Transaction Options](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jdbca/transactions.html#GUID-4C929E67-5FD7-477B-A749-1EA0F4FD25D4). **IMPORTANT: The correct value for this parameter depends on the selected database type. For PostgreSQL, select EmulateTwoPhaseCommit**. |
 | Database Username	| Enter the user name of your database. |
 | Database Password	| Enter the password for the database user. |
 | Confirm password | Re-enter the value of the preceding field. |
+| User assigned managed identity | Select a user assigned identity that is able to connect to your database. {{< line_break >}} For how to create a database user for your managed identity, see https://aka.ms/javaee-db-identity.|
 
 If you select **Other** as the database type, there are some additional values you must provide. WebLogic Server provides support for application data access to any database using a JDBC-compliant driver. Refer to the [documentation for driver requirements](https://aka.ms/wls-aks-dbdriver).
 
