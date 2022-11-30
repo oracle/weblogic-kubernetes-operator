@@ -519,6 +519,8 @@ class ItMiiAuxiliaryImage {
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(Auxiliary Image)  failed ");
     assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
+    // update introspectVersion to ensure that any introspection started before
+    // auxiliary image was patched, if there is any still running, would be aborted.
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // check the introspector pod log contains the expected error message
