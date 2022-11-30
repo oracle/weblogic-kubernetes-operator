@@ -524,8 +524,8 @@ class ItConfigDistributionStrategy {
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
    * updated. Verifies the overrides are applied only after a domain restart.
    */
-  @Order(4)
-  @Test
+  //@Order(4)
+  //@Test
   @DisplayName("Test overrideDistributionStrategy value OnRestart")
   void testOnRestartOverride() {
 
@@ -628,8 +628,8 @@ class ItConfigDistributionStrategy {
    *
    * <p>Test tries to set the above field to OnRestart and asserts the patching fails.
    */
-  @Order(5)
-  @Test
+  //@Order(5)
+  //@Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
   void testOverrideNegative() {
 
