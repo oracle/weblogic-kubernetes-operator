@@ -304,7 +304,7 @@ class ItWlsSamples {
               "createDomainFilesDir: wlst", "createDomainFilesDir: "
                       +  script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
+              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG_DEFAULT,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
