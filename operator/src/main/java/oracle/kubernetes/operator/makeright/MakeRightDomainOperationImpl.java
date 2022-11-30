@@ -60,11 +60,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_R
  */
 public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainPresenceInfo>
     implements MakeRightDomainOperation {
-  @Nonnull
-  private DomainPresenceInfo liveInfo;
   private boolean explicitRecheck;
   private boolean deleting;
-  private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
 
@@ -144,11 +141,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   @Override
   public boolean isDeleting() {
     return deleting;
-  }
-
-  @Override
-  public boolean isWillInterrupt() {
-    return willInterrupt;
   }
 
   @Override

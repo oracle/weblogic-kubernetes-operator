@@ -23,9 +23,6 @@ import oracle.kubernetes.operator.work.Step;
 public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<ClusterPresenceInfo>
     implements MakeRightClusterOperation {
 
-  @Nonnull
-  private ClusterPresenceInfo liveInfo;
-  private boolean willInterrupt;
   private ClusterResourceEventData eventData;
 
   /**
@@ -66,9 +63,12 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
     executor.runMakeRight(this);
   }
 
-  public boolean isWillInterrupt() {
-    return willInterrupt;
+  @Override
+  public void clear() {
+    this.eventData = null;
+    this.willInterrupt = false;
   }
+
 
   @Override
   @Nonnull
