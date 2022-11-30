@@ -78,6 +78,26 @@ The following operator-populated environment variables are available for use in 
 
 * A custom liveness probe must not fail (exit non-zero) when the WebLogic Server instance itself is unavailable. This could be the case when the WebLogic Server instance is booting or about to boot.
 
+### Automatic Restart of Failed Server Instances by Node Manager
+
+WebLogic Server provides a self-health monitoring feature to improve the reliability and availability of server instances in a domain. If an individual subsystem determines that it can no longer operate consistently and reliably, it registers its health state as `FAILED` with the host server.  Each WebLogic Server instance, in turn, checks the health state of its registered subsystems to determine its overall viability. If one or more of its critical subsystems have reached the `FAILED` state, the server instance marks its health state as `FAILED` to indicate that it cannot reliably host an application.  
+
+Using Node Manager, server self-health monitoring enables the automatic restart of the failed server instances. The operator configures the Node Manager to restart the failed server two times within a one-hour interval. It does this by setting the value of the `RestartMax` property (in the [server startup properties](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244) file) to `2` and the value of the `RestartInterval` property to `3600`. You can change the number of times the Node Manager will attempt to restart the server in a given interval by setting the `RESTART_MAX` and `RESTART_INTERVAL` environment variables in the domain resource using the `env` attribute under the `serverPod` element. 
+
+Use the following configuration to specify the number of times the Node Manager can attempt to restart the server within a given interval using the `RESTART_MAX` and `RESTART_INTERVAL` environment variables.
+```yaml
+    serverPod:
+      env:
+      - name: RESTART_MAX
+        value: "4"
+      - name: RESTART_INTERVAL
+        value: "3600"
+```
+
+If the Node Manager can't restart the failed server and marks the server state as `FAILED_NOT_RESTARTABLE`, then the liveness probe will fail and the WebLogic Server container will be restarted. You can set the `RESTART_MAX` environment variable value to `0` to prevent the Node Manager from restarting the failed server and allow the liveness probe to fail immediately.
+
+See [Server Startup Properties](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244) for more details.
+
 ### Readiness probe customization
 
 Here are the options for customizing the readiness probe and its tuning:
