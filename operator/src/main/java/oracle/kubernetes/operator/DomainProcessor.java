@@ -19,7 +19,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
- * An abstraction for processing a domain.
+ * An abstraction for processing a domain and a cluster.
  */
 public interface DomainProcessor {
 
@@ -32,7 +32,9 @@ public interface DomainProcessor {
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
 
   /**
-   * Ensures that a cluster event is generated for a cluster resource that is not referenced by any domain.
+   * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
+   * or not.
+   *
    * @param clusterEvent the event that needs to be generated
    * @param cluster the cluster resource that the event is associated with
    * @return Make-right operation

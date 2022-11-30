@@ -27,7 +27,8 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
 
   /**
    * Create the operation.
-   *  @param executor an object which can be asked to execute the make right
+   *
+   * @param executor an object which can be asked to execute the make right
    * @param delegate a class which handles scheduling and other types of processing
    * @param liveInfo cluster presence info read from Kubernetes
    */

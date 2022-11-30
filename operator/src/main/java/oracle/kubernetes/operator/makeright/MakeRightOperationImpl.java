@@ -21,7 +21,8 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
 
   /**
    * Create the operation.
-   *  @param executor an object which can be asked to execute the make right
+   *
+   * @param executor an object which can be asked to execute the make right
    * @param delegate a class which handles scheduling and other types of processing
    */
   protected MakeRightOperationImpl(
