@@ -7,7 +7,7 @@ import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 
 /**
- * Defines the operation to bring a running domain into compliance with its domain resource and introspection result.
+ * Defines the operation to log a ClusterCreated/Changed/Deleted event.
  */
 public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPresenceInfo> {
   /**
