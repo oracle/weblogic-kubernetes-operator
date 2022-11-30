@@ -78,7 +78,7 @@ The following operator-populated environment variables are available for use in 
 
 * A custom liveness probe must not fail (exit non-zero) when the WebLogic Server instance itself is unavailable. This could be the case when the WebLogic Server instance is booting or about to boot.
 
-### Automatic Restart of Failed Server Instances by Node Manager
+### Automatic restart of failed server instances by Node Manager
 
 WebLogic Server provides a self-health monitoring feature to improve the reliability and availability of server instances in a domain. If an individual subsystem determines that it can no longer operate consistently and reliably, it registers its health state as `FAILED` with the host server.  Each WebLogic Server instance, in turn, checks the health state of its registered subsystems to determine its overall viability. If one or more of its critical subsystems have reached the `FAILED` state, the server instance marks its health state as `FAILED` to indicate that it cannot reliably host an application.  
 
