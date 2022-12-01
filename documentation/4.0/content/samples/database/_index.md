@@ -145,6 +145,11 @@ spec:
   - image: mysql:5.6
     name: mysql
     env:
+    - name: MYSQL_ROOT_USER
+      valueFrom:
+        secretKeyRef:
+          name: mysql-secret
+          key: root-user
     - name: MYSQL_ROOT_PASSWORD
       valueFrom:
         secretKeyRef:
