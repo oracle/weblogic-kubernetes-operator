@@ -5,24 +5,24 @@
 set -eu
 set -o pipefail
 
-dockerLogin() {
+repoLogin() {
 
-echo "docker login to src ${SOURCE_REPO}"
+echo "${WLSIMG_BUILDER:-docker} login to src ${SOURCE_REPO}"
 echo ${SOURCE_PASSWORD} > pwd.txt
-cat pwd.txt | docker login ${SOURCE_REPO} -u ${SOURCE_USER} --password-stdin 
+cat pwd.txt | ${WLSIMG_BUILDER:-docker} login ${SOURCE_REPO} -u ${SOURCE_USER} --password-stdin 
 rm -rf pwd.txt
 
 # Alternatively use 
-# docker login ${SOURCE_REPO} -u ${SOURCE_USER} -p  ${SOURCE_PASSWORD}
+# ${WLSIMG_BUILDER:-docker} login ${SOURCE_REPO} -u ${SOURCE_USER} -p  ${SOURCE_PASSWORD}
 
-echo "docker login to target ${TARGET_REPO}"
+echo "${WLSIMG_BUILDER:-docker} login to target ${TARGET_REPO}"
 echo ${TARGET_PASSWORD} > pwd.txt
-cat pwd.txt | docker login ${TARGET_REPO} -u ${TARGET_USER} --password-stdin
+cat pwd.txt | ${WLSIMG_BUILDER:-docker} login ${TARGET_REPO} -u ${TARGET_USER} --password-stdin
 rm -rf pwd.txt
 
 }
 
-dockerPullPushImage() {
+repoPullPushImage() {
  
  # Here the source image contains absolute image path
  # and source image contains relative path wrt to TARGET_REPO
@@ -32,28 +32,28 @@ dockerPullPushImage() {
 
  if [ ${DRY_RUN} == "true" ]; then 
    echo "Executing a dry run ..."
-   echo "docker pull ${src_image} "
-   echo "docker tag  ${src_image} ${tgt_image} "
-   echo "docker push ${tgt_image} "
+   echo "${WLSIMG_BUILDER:-docker} pull ${src_image} "
+   echo "${WLSIMG_BUILDER:-docker} tag  ${src_image} ${tgt_image} "
+   echo "${WLSIMG_BUILDER:-docker} push ${tgt_image} "
  else 
    printf 'SRC[%s] TARGET[%s] \n' "${src_image}" "${tgt_image}"
-   docker pull ${src_image}
-   docker tag  ${src_image} ${tgt_image}
-   docker push ${tgt_image}
+   ${WLSIMG_BUILDER:-docker} pull ${src_image}
+   ${WLSIMG_BUILDER:-docker} tag  ${src_image} ${tgt_image}
+   ${WLSIMG_BUILDER:-docker} push ${tgt_image}
 
-   docker rmi -f ${src_image} 
-   docker rmi -f ${tgt_image} 
+   ${WLSIMG_BUILDER:-docker} rmi -f ${src_image} 
+   ${WLSIMG_BUILDER:-docker} rmi -f ${tgt_image} 
  fi
    
 }
 
-dockerPullPushImages() {
+repoPullPushImages() {
  file="images.properties"
  grep -E -v '^#' $file | grep -v "^$" |
    while IFS=";" read -r f1 f2 
    do
      # printf 'Source Location : [%s], Target: [%s] \n' "$f1" "$f2"
-     dockerPullPushImage $f1 $f2 
+     repoPullPushImage $f1 $f2 
    done
  }
 
@@ -83,5 +83,5 @@ if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
   exit -1
 fi
 
-dockerLogin 
-dockerPullPushImages
+repoLogin 
+repoPullPushImages

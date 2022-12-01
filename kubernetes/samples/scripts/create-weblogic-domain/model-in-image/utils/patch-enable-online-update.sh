@@ -53,7 +53,7 @@ set -eu
 set -o pipefail
 
 echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' to enable onlineUpdate to 'true'."
-kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
+${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : 'true'} }]'
 
 cat << EOF

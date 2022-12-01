@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -61,7 +62,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.kubectlScaleCluster;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.kubernetesCLIScaleCluster;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.startCluster;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.stopCluster;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
@@ -268,7 +269,7 @@ class ItMiiClusterResource {
       checkPodReadyAndServiceExists(managedServer2Prefix + i, domainUid, domainNamespace);
     }
 
-    kubectlScaleCluster(cluster2Res,domainNamespace,3);
+    kubernetesCLIScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
 
@@ -388,7 +389,7 @@ class ItMiiClusterResource {
                   "Completed", "True"), getLogger(),
               "Cluster Resource status condition type matches domain.status");
     });
-    kubectlScaleCluster(cluster2Res,domainNamespace,3);
+    kubernetesCLIScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedServer2Prefix + 3, domainUid, domainNamespace);
     logger.info("Cluster is scaled up to replica count 3");
     logger.info("Check cluster resource status is mirror of domain.status");
@@ -747,8 +748,8 @@ class ItMiiClusterResource {
 
     assertTrue(new Command()
         .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
+            .command(KUBERNETES_CLI + " create -f " + destDomainYaml))
+        .execute(), KUBERNETES_CLI + " create failed");
 
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminPodName, domainNamespace);
@@ -769,14 +770,14 @@ class ItMiiClusterResource {
    * Scale only the cluster CR2 and make sure no new server from CR1 is up
    * Verify status and conditions are matching for domain.status and cluster resource status
    * Scale all the clusters in the namesapce using 
-   *   kubectel scale cluster --replicas=4  --all -n namespace
+   *   KUBERNETES_CLI scale cluster --replicas=4  --all -n namespace
    * Scale all the clusters in the namesapce with replica count 1
-   *   kubectel scale cluster --initial-replicas=1 --replicas=5  --all -n ns
+   *   KUBERNETES_CLI scale cluster --initial-replicas=1 --replicas=5  --all -n ns
    * This command must fail as there is no cluster with currentreplica set to 1
    */
   @Test
-  @DisplayName("Verify various kubectl scale options")
-  void testKubectlScaleClusterResource() {
+  @DisplayName("Verify various kubernetes CLI scale options")
+  void testKubernetesCLIScaleClusterResource() {
 
     String domainUid     = "domain6"; 
     String cluster1Name  = "cluster-1";
@@ -856,7 +857,7 @@ class ItMiiClusterResource {
         }
     );
     // Scaling one Cluster(2) does not affect other Cluster(1)
-    kubectlScaleCluster(cluster2Res,domainNamespace,3);
+    kubernetesCLIScaleCluster(cluster2Res,domainNamespace,3);
     checkPodReadyAndServiceExists(managedPod2Prefix + "3", domainUid, domainNamespace);
     checkPodDoesNotExist(managedPod1Prefix + "3", domainUid, domainNamespace);
 
@@ -874,17 +875,17 @@ class ItMiiClusterResource {
     );
 
     // Scale all clusters in the namesapce to replicas set to 4
-    // kubectl scale cluster --replicas=4 --all -n namesapce
+    // KUBERNETES_CLI scale cluster --replicas=4 --all -n namesapce
     String cmd = " --replicas=4 --all ";
-    kubectlScaleCluster(cmd, domainNamespace,true);
+    kubernetesCLIScaleCluster(cmd, domainNamespace,true);
     checkPodReadyAndServiceExists(managedPod1Prefix + "3", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedPod1Prefix + "4", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedPod1Prefix + "4", domainUid, domainNamespace);
 
-    // kubectl command must fail since non of the cluster has the 
+    // KUBERNETES_CLI command must fail since non of the cluster has the 
     // current replicacount set to 1. All have the count of 4 
     cmd = " --replicas=5 --current-replicas=1 --all ";
-    kubectlScaleCluster(cmd, domainNamespace,false);
+    kubernetesCLIScaleCluster(cmd, domainNamespace,false);
 
     deleteDomainResource(domainUid, domainNamespace);
     deleteClusterCustomResourceAndVerify(cluster1Res,domainNamespace);

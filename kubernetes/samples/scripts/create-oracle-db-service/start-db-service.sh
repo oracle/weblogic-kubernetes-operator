@@ -52,10 +52,10 @@ while getopts ":a:p:i:s:n:h:" opt; do
 done
 
 echo "Checking Status for NameSpace [$namespace]"
-domns=`kubectl get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
+domns=`${KUBERNETES_CLI:-kubectl} get ns ${namespace} | grep ${namespace} | awk '{print $1}'`
 if [ -z "${domns}" ]; then
  echo "Adding NameSpace[$namespace] to Kubernetes Cluster"
- kubectl create namespace ${namespace}
+ ${KUBERNETES_CLI:-kubectl} create namespace ${namespace}
  sleep 5
 else
  echo "Skipping the NameSpace[$namespace] Creation ..."
@@ -89,10 +89,10 @@ else
   sed -i -e "s?[#]*type:.*LoadBalancer?type: LoadBalancer?g" ${dbYaml} # default type is ClusterIP
 fi
 
-kubectl delete service oracle-db -n ${namespace} --ignore-not-found
+${KUBERNETES_CLI:-kubectl} delete service oracle-db -n ${namespace} --ignore-not-found
 
 echo "Applying Kubernetes YAML file '${dbYaml}' to start database."
-kubectl apply -f ${dbYaml}
+${KUBERNETES_CLI:-kubectl} apply -f ${dbYaml}
 
 detectPod ${namespace}
 dbpod=${retVal}
@@ -104,12 +104,12 @@ echo " checking pod state for pod ${dbpod} running in ${namespace}"
 checkPodState ${dbpod} ${namespace} "1/1"
 checkService oracle-db ${namespace}
 
-kubectl get po -n ${namespace}
-kubectl get service -n ${namespace}
+${KUBERNETES_CLI:-kubectl} get po -n ${namespace}
+${KUBERNETES_CLI:-kubectl} get service -n ${namespace}
 
-kubectl cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
+${KUBERNETES_CLI:-kubectl} cp ${scriptDir}/common/checkDbState.sh -n ${namespace} ${dbpod}:/home/oracle/
 
-kubectl exec -it ${dbpod} -n ${namespace} -- /bin/bash /home/oracle/checkDbState.sh
+${KUBERNETES_CLI:-kubectl} exec -it ${dbpod} -n ${namespace} -- /bin/bash /home/oracle/checkDbState.sh
 if [ $? != 0  ]; then
  echo "######################";
  echo "[ERROR] Could not create Oracle DB Service, check the pod log for pod ${dbpod} in namespace ${namespace}";
