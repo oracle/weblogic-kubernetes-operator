@@ -5,7 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -627,7 +626,6 @@ class ItWlsSamples {
   }
 
   private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
-    assertDoesNotThrow(() -> logger.info(Files.readString(get(sampleBase.toString(), "create-domain-inputs.yaml"))));
     
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
