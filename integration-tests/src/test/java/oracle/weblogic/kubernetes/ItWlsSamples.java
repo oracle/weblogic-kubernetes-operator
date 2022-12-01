@@ -626,7 +626,6 @@ class ItWlsSamples {
   }
 
   private void updateDomainInputsFile(String domainUid, Path sampleBase, String pvcName) {
-    
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
