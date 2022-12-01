@@ -12,20 +12,20 @@
     <title>Liveness and readiness probes customization :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1668971338" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1668971338" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1669897682" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1669897682" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1668971338"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1669897682"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1668971338"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1668971338"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1669897682"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1669897682"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1668971338"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1669897682"></script>
 
     
   </div>
@@ -3592,6 +3592,7 @@
 <nav id="TableOfContents">
   <ul>
     <li><a href="#liveness-probe-customization">Liveness probe customization</a></li>
+    <li><a href="#automatic-restart-of-failed-server-instances-by-node-manager">Automatic restart of failed server instances by Node Manager</a></li>
     <li><a href="#readiness-probe-customization">Readiness probe customization</a></li>
   </ul>
 </nav>
@@ -3622,6 +3623,7 @@
 <div class="toc"><nav id="TableOfContents">
   <ul>
     <li><a href="#liveness-probe-customization">Liveness probe customization</a></li>
+    <li><a href="#automatic-restart-of-failed-server-instances-by-node-manager">Automatic restart of failed server instances by Node Manager</a></li>
     <li><a href="#readiness-probe-customization">Readiness probe customization</a></li>
   </ul>
 </nav></div>
@@ -3672,6 +3674,18 @@
 <p>A custom liveness probe must not fail (exit non-zero) when the WebLogic Server instance itself is unavailable. This could be the case when the WebLogic Server instance is booting or about to boot.</p>
 </li>
 </ul>
+<h3 id="automatic-restart-of-failed-server-instances-by-node-manager">Automatic restart of failed server instances by Node Manager</h3>
+<p>WebLogic Server provides a self-health monitoring feature to improve the reliability and availability of server instances in a domain. If an individual subsystem determines that it can no longer operate consistently and reliably, it registers its health state as <code>FAILED</code> with the host server.  Each WebLogic Server instance, in turn, checks the health state of its registered subsystems to determine its overall viability. If one or more of its critical subsystems have reached the <code>FAILED</code> state, the server instance marks its health state as <code>FAILED</code> to indicate that it cannot reliably host an application.</p>
+<p>Using Node Manager, server self-health monitoring enables the automatic restart of the failed server instances. The operator configures the Node Manager to restart the failed server a maximum of two times within a one-hour interval. It does this by setting the value of the <code>RestartMax</code> property (in the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244">server startup properties</a> file) to <code>2</code> and the value of the <code>RestartInterval</code> property to <code>3600</code>. You can change the number of times the Node Manager will attempt to restart the server in a given interval by setting the <code>RESTART_MAX</code> and <code>RESTART_INTERVAL</code> environment variables in the domain resource using the <code>env</code> attribute under the <code>serverPod</code> element.</p>
+<p>Use the following configuration to specify the number of times the Node Manager can attempt to restart the server within a given interval using the <code>RESTART_MAX</code> and <code>RESTART_INTERVAL</code> environment variables.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>    <span style="color:#f92672">serverPod</span>:
+</span></span><span style="display:flex;"><span>      <span style="color:#f92672">env</span>:
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">RESTART_MAX</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;4&#34;</span>
+</span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">RESTART_INTERVAL</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;3600&#34;</span>
+</span></span></code></pre></div><p>If the Node Manager can&rsquo;t restart the failed server and marks the server state as <code>FAILED_NOT_RESTARTABLE</code>, then the liveness probe will fail and the WebLogic Server container will be restarted. You can set the <code>RESTART_MAX</code> environment variable value to <code>0</code> to prevent the Node Manager from restarting the failed server and allow the liveness probe to fail immediately.</p>
+<p>See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244">Server Startup Properties</a> for more details.</p>
 <h3 id="readiness-probe-customization">Readiness probe customization</h3>
 <p>Here are the options for customizing the readiness probe and its tuning:</p>
 <ul>
@@ -6099,19 +6113,19 @@ or <code>cluster.spec.serverPod</code>.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1668971338"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1669897682"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1668971338"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1668971338"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1669897682"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1669897682"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1668971338"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1669897682"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
