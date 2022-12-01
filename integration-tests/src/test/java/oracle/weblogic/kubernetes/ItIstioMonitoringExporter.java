@@ -33,7 +33,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
@@ -42,7 +42,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplat
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
@@ -175,13 +175,13 @@ class ItIstioMonitoringExporter {
     String miiImage =
         createMiiImageAndVerify("miimonexp-istio-image", modelList, appList);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
     String exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain2Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
+        domain2Namespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
         "Failed to create image for exporter");
     String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
     String managedServerPrefix = domain2Uid + "-managed-server";
@@ -223,8 +223,8 @@ class ItIstioMonitoringExporter {
     String myImage =
         createMiiImageAndVerify("monexp", modelList, appList);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(myImage);
 
     return myImage;
   }

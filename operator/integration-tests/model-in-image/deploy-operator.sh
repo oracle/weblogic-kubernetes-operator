@@ -13,6 +13,7 @@
 
 TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 
 set -u
 
@@ -43,17 +44,17 @@ if [ -e $WORKDIR/test-out/operator-values.orig ]; then
     echo "@@"
     echo "@@ Operator already running. Skipping."
     echo "@@"
-    echo "@@ log command: kubectl logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
+    echo "@@ log command: ${KUBERNETES_CLI} logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
     exit
   fi
 fi
 
 set +e
 
-kubectl create namespace $DOMAIN_NAMESPACE
-kubectl label ns $DOMAIN_NAMESPACE weblogic-operator=enabled
-kubectl create namespace $OPER_NAMESPACE
-kubectl create serviceaccount -n $OPER_NAMESPACE $OPER_SA
+${KUBERNETES_CLI} create namespace $DOMAIN_NAMESPACE
+${KUBERNETES_CLI} label ns $DOMAIN_NAMESPACE weblogic-operator=enabled
+${KUBERNETES_CLI} create namespace $OPER_NAMESPACE
+${KUBERNETES_CLI} create serviceaccount -n $OPER_NAMESPACE $OPER_SA
 
 helm uninstall $OPER_NAME -n $OPER_NAMESPACE
 
@@ -69,7 +70,7 @@ helm install $OPER_NAME kubernetes/charts/weblogic-operator \
   --wait
 
 
-kubectl get deployments -n $OPER_NAMESPACE
+${KUBERNETES_CLI} get deployments -n $OPER_NAMESPACE
 
 helm get values ${OPER_NAME} -n ${OPER_NAMESPACE} > $WORKDIR/test-out/operator-values.orig 2>&1
 helm list -n ${OPER_NAMESPACE} | awk '{ print $1 }' >> $WORKDIR/test-out/operator-values.orig
@@ -77,5 +78,5 @@ for evar in DOMAIN_NAMESPACE OPER_NAMESPACE OPER_NAME OPER_IMAGE OPER_SA ; do
   echo "${evar}=${!evar}" >> $WORKDIR/test-out/operator-values.orig
 done
 
-echo "@@ log command: kubectl logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
+echo "@@ log command: ${KUBERNETES_CLI} logs -n $OPER_NAMESPACE -c weblogic-operator deployments/weblogic-operator"
 

@@ -19,22 +19,22 @@ fail() {
   exit 1
 }
 
-# Try to execute kubectl to see whether kubectl is available
-validateKubectlAvailable() {
-  if ! [ -x "$(command -v kubectl)" ]; then
-    fail "kubectl is not installed"
+# Try to execute ${KUBERNETES_CLI:-kubectl} to see whether ${KUBERNETES_CLI:-kubectl} is available
+validateKubernetesCLIAvailable() {
+  if ! [ -x "$(command -v ${KUBERNETES_CLI:-kubectl})" ]; then
+    fail "${KUBERNETES_CLI:-kubectl} is not installed"
   fi
 }
 
 usage() {
-  echo usage: ${script} -e email -p password -u username [-s secretName] [-d dockerServer] [-n namespace] [-h]
+  echo usage: ${script} -e email -p password -u username [-s secretName] [-d imageRepo] [-n namespace] [-h]
   echo "  -e email, must be specified."
   echo "  -p password, must be specified."
   echo "  -u username, must be specified."
-  echo "  -s secret name, optional, Use regcred if not specified."
-  echo "  -d docker server, optional, Use docker.io if not specified."
-  echo "  -n namespace, optional. Use the default namespace if not specified"
-  echo "  -h Help"
+  echo "  -s secret name, optional, uses regcred if not specified."
+  echo "  -d image repo, optional, uses container-registry.oracle.com if not specified."
+  echo "  -n namespace, optional, uses the default namespace if not specified."
+  echo "  -h Help."
   exit $1
 }
 
@@ -43,7 +43,7 @@ usage() {
 #
 secretName=regcred
 namespace=default
-dockerServer=container-registry.oracle.com
+imageRepo=container-registry.oracle.com
 while getopts "he:p:u:n:d:s:d:" opt; do
   case $opt in
     e) email="${OPTARG}"
@@ -54,7 +54,7 @@ while getopts "he:p:u:n:d:s:d:" opt; do
     ;;
     s) secretName="${OPTARG}"
     ;;
-    d) dockerServer="${OPTARG}"
+    d) imageRepo="${OPTARG}"
     ;;
     n) namespace="${OPTARG}"
     ;;
@@ -85,20 +85,20 @@ if [ "${missingRequiredOption}" == "true" ]; then
 fi
 
 # check and see if the secret already exists
-result=`kubectl get secret ${secretName} -n ${namespace} --ignore-not-found=true | grep ${secretName} | wc | awk ' { print $1; }'`
+result=`${KUBERNETES_CLI:-kubectl} get secret ${secretName} -n ${namespace} --ignore-not-found=true | grep ${secretName} | wc | awk ' { print $1; }'`
 if [ "${result:=Error}" != "0" ]; then
   fail "The secret ${secretName} already exists in namespace ${namespace}."
 fi
 
 # create the secret
-kubectl -n $namespace create secret docker-registry $secretName \
+${KUBERNETES_CLI:-kubectl} -n $namespace create secret docker-registry $secretName \
   --docker-email=$email \
   --docker-password=$password \
-  --docker-server=$dockerServer \
+  --docker-server=$imageRepo \
   --docker-username=$username 
 
 # Verify the secret exists
-SECRET=`kubectl get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
+SECRET=`${KUBERNETES_CLI:-kubectl} get secret ${secretName} -n ${namespace} | grep ${secretName} | wc | awk ' { print $1; }'`
 if [ "${SECRET}" != "1" ]; then
   fail "The secret ${secretName} was not found in namespace ${namespace}"
 fi

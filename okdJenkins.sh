@@ -79,7 +79,7 @@ checkJavaVersion
 which mvn
 mvn --version
 
-docker version
+${WLSIMG_BUILDER:-docker} version
 
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}

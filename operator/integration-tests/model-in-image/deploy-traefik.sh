@@ -23,6 +23,8 @@
 
 TESTDIR="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
 
 set -eu
 set -o pipefail
@@ -41,7 +43,7 @@ DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 mkdir -p $WORKDIR/test-out
 
 kubehost() {
-  kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  ${KUBERNETES_CLI} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
 }
 
 #
@@ -70,8 +72,8 @@ else
   echo "@@"
   helm uninstall $TRAEFIK_NAME -n $TRAEFIK_NAMESPACE
   echo "@@ Creating traefik namespace '$TRAEFIK_NAMESPACE' and domain namepace '$DOMAIN_NAMESPACE'"
-  kubectl create namespace $TRAEFIK_NAMESPACE
-  kubectl create namespace $DOMAIN_NAMESPACE
+  ${KUBERNETES_CLI} create namespace $TRAEFIK_NAMESPACE
+  ${KUBERNETES_CLI} create namespace $DOMAIN_NAMESPACE
   set -e
 
   cd ${SRCDIR}
@@ -101,10 +103,10 @@ fi
 cat<<EOF
 
     HTTP node port:
-      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
-      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
+      ${KUBERNETES_CLI} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
+      =$(${KUBERNETES_CLI} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
 
     HTTPS node port:
-      kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'
-      =$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
+      ${KUBERNETES_CLI} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}'
+      =$(${KUBERNETES_CLI} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="websecure")].nodePort}')
 EOF

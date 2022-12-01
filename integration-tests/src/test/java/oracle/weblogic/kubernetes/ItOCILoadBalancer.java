@@ -102,9 +102,9 @@ class ItOCILoadBalancer {
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;

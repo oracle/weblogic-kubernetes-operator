@@ -1,0 +1,32 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+
+# Description:
+#
+#  This file lists reg-ex exceptions, one per line, for
+#  cases where direct use of the term kubectl, KUBECTL, or Kubectl
+#  are allowed instead of using the 'KUBERNETES_CLI' constant.
+#
+#  The validateCLI.sh script uses this file.
+#
+
+# Exceptions for setting the default
+
+KUBERNETES_CLI:-kubectl
+KUBECTL_VERSION
+KCLI=.kubectl.
+DEFAULT = .kubectl.
+__kubernetes_cli=.....-kubectl.
+
+# Exceptions for calling 'explain' and similar strings
+
+See kubectl
+See .kubectl
+.m .kubernetes_cli.
+Default is .kubectl
+when using the .kubectl port-forward. pattern
+when describing the domain .kubectl
+Verify call .kubectl scale.
+annotations.put..kubectl.kubernetes.io.last-applied-configuration
+directly using .kubectl.

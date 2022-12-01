@@ -6,6 +6,7 @@
 # Functions that are shared between the create-weblogic-domain.sh and create-weblogic-operator.sh scripts
 #
 
+
 #
 # Function to exit and print an error message
 # $1 - text of message
@@ -158,10 +159,10 @@ deleteK8sObj() {
   fi
 
   echo Checking if object type $1 with name $2 exists
-  K8SOBJ=`kubectl get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
+  K8SOBJ=`${KUBERNETES_CLI:-kubectl} get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
   if [ "${K8SOBJ}" = "1" ]; then
     echo Deleting $2 using $3
-    kubectl delete -f $3
+    ${KUBERNETES_CLI:-kubectl} delete -f $3
   fi
 }
 
@@ -237,7 +238,7 @@ validateNamespace() {
 checkPvExists() {
 
   echo "Checking if the persistent volume ${1} exists"
-  PV_EXISTS=`kubectl get pv | grep ${1} | wc | awk ' { print $1; } '`
+  PV_EXISTS=`${KUBERNETES_CLI:-kubectl} get pv | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PV_EXISTS}" = "1" ]; then
     echo "The persistent volume ${1} already exists"
     PV_EXISTS="true"
@@ -253,7 +254,7 @@ checkPvExists() {
 # $2 - namespace
 checkPvcExists() {
   echo "Checking if the persistent volume claim ${1} in namespace ${2} exists"
-  PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
+  PVC_EXISTS=`${KUBERNETES_CLI:-kubectl} get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
     echo "The persistent volume claim ${1} already exists in namespace ${2}"
     PVC_EXISTS="true"
@@ -270,12 +271,12 @@ checkPvcExists() {
 checkPvState() {
 
   echo "Checking if the persistent volume ${1:?} is ${2:?}"
-  local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  local pv_state=`${KUBERNETES_CLI:-kubectl} get pv $1 -o jsonpath='{.status.phase}'`
   attempts=0
   while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
     attempts=$((attempts + 1))
     sleep 1
-    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+    pv_state=`${KUBERNETES_CLI:-kubectl} get pv $1 -o jsonpath='{.status.phase}'`
   done
   if [ "$pv_state" != "$2" ]; then
     fail "The persistent volume state should be $2 but is $pv_state"

@@ -22,6 +22,7 @@
 
 # Constants
 
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 JOB_NAME="weblogic-command-job"
 
 # Customizable env vars.  See cleanup.sh for an explanation.
@@ -48,8 +49,8 @@ TMP_DIR="$RESULT_DIR"
 # --show-all yields a deprecation warning in stderr in 1.10 in later, since
 # it isn't needed in 1.10 and later.
 
-k8s_minor=`kubectl version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
-k8s_major=`kubectl version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
+k8s_minor=`${KUBERNETES_CLI} version | grep Client | sed 's/.*Minor:"\([0-9]*\)".*/\1/'`
+k8s_major=`${KUBERNETES_CLI} version | grep Client | sed 's/.*Major:"\([0-9]*\)".*/\1/'`
 show_all="--show-all"
 if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
   show_all=""
@@ -77,7 +78,7 @@ launchCommandJob() {
   sed -i -e "s|COMMAND|$command|g" $target_yaml
   sed -i -e "s|PV_ROOT|$PV_ROOT|g" $target_yaml
 
-  echo @@ "Calling 'kubectl create -f $target_yaml'"
+  echo @@ "Calling '${KUBERNETES_CLI} create -f $target_yaml'"
 
   # setup configmap for job that includes archive.sh
 
@@ -86,13 +87,13 @@ launchCommandJob() {
     echo "@@ Could not find $archive_file."
   fi
 
-  kubectl delete job $JOB_NAME --ignore-not-found=true
-  kubectl delete configmap ${JOB_NAME}-configmap --ignore-not-found=true
+  ${KUBERNETES_CLI} delete job $JOB_NAME --ignore-not-found=true
+  ${KUBERNETES_CLI} delete configmap ${JOB_NAME}-configmap --ignore-not-found=true
 
   # deploy the job
 
-  kubectl create configmap ${JOB_NAME}-configmap --from-file $archive_file
-  kubectl create -f $target_yaml
+  ${KUBERNETES_CLI} create configmap ${JOB_NAME}-configmap --from-file $archive_file
+  ${KUBERNETES_CLI} create -f $target_yaml
 
   echo "@@ Waiting for the job to complete..."
 
@@ -103,7 +104,7 @@ launchCommandJob() {
   while : ; do
     sleep 3
     local mnow=`date +%s`
-    job_status=`kubectl get job $JOB_NAME | grep "$JOB_NAME" | awk '{ print $3; }'`
+    job_status=`${KUBERNETES_CLI} get job $JOB_NAME | grep "$JOB_NAME" | awk '{ print $3; }'`
 
     # If the job is status 1 or the pod is status Completed, the job succeeded.
     # If the pod is status Error, we know the job failed.
@@ -114,7 +115,7 @@ launchCommandJob() {
       break
     fi
 
-    local pod_status=`kubectl get pods $show_all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
+    local pod_status=`${KUBERNETES_CLI} get pods $show_all --selector=job-name=$JOB_NAME | grep "$JOB_NAME" | awk '{ print $3 }'`
 
     if [ "$pod_status" = "Completed" ]; then
       echo "@@ Success.  job_status=$job_status pod_status=$pod_status"
@@ -138,22 +139,22 @@ launchCommandJob() {
     sleep 3
   done
 
-  local pods=$(kubectl get pods $show_all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
+  local pods=$(${KUBERNETES_CLI} get pods $show_all --selector=job-name=$JOB_NAME --output=jsonpath={.items..metadata.name})
   local pod
   for pod in $pods; do
     echo @@
-    echo "@@ Calling 'kubectl get pod $pod'"
-    kubectl get pod $pod 2>&1
+    echo "@@ Calling '${KUBERNETES_CLI} get pod $pod'"
+    ${KUBERNETES_CLI} get pod $pod 2>&1
     echo @@
-    echo "@@ Calling 'kubectl logs pod $pod'"
-    kubectl logs $pod 2>&1
+    echo "@@ Calling '${KUBERNETES_CLI} logs pod $pod'"
+    ${KUBERNETES_CLI} logs $pod 2>&1
     echo @@
   done
 
   echo @@ Deleting job and its configmap.
 
-  kubectl delete job $JOB_NAME --ignore-not-found=true
-  kubectl delete configmap ${JOB_NAME}-configmap --ignore-not-found=true
+  ${KUBERNETES_CLI} delete job $JOB_NAME --ignore-not-found=true
+  ${KUBERNETES_CLI} delete configmap ${JOB_NAME}-configmap --ignore-not-found=true
 
   echo @@ Exiting with status $return_status
 

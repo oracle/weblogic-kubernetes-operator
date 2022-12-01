@@ -249,10 +249,10 @@ validateWeblogicImagePullSecret() {
   failIfValidationErrors
 }
 
-# try to execute kubectl to see whether kubectl is available
-validateKubectlAvailable() {
-  if ! [ -x "$(command -v kubectl)" ]; then
-    validationError "kubectl is not installed"
+# try to execute ${KUBERNETES_CLI:-kubectl} to see whether ${KUBERNETES_CLI:-kubectl} is available
+validateKubernetesCLIAvailable() {
+  if ! [ -x "$(command -v ${KUBERNETES_CLI:-kubectl})" ]; then
+    validationError "${KUBERNETES_CLI:-kubectl} is not installed"
   fi
 }
 
@@ -345,7 +345,7 @@ validateLoadBalancer() {
 # $2 - namespace
 validateSecretExists() {
   echo "Checking to see if the secret ${1} exists in namespace ${2}"
-  local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
+  local SECRET=`${KUBERNETES_CLI:-kubectl} get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The secret ${1} was not found in namespace ${2}"
   fi
@@ -360,13 +360,13 @@ validateDomainSecret() {
   failIfValidationErrors
 
   # Verify the secret contains a username
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"' | grep username: | wc | awk ' { print $1; }'`
+  SECRET=`${KUBERNETES_CLI:-kubectl} get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"' | grep username: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does not contain a username"
   fi
 
   # Verify the secret contains a password
-  SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"'| grep password: | wc | awk ' { print $1; }'`
+  SECRET=`${KUBERNETES_CLI:-kubectl} get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"'| grep password: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
     validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does not contain a password"
   fi

@@ -54,6 +54,6 @@ if [ -z ${secret} ]; then
   secret="docker-store"
 fi
 
-kubectl delete secret/${secret} --ignore-not-found
+${KUBERNETES_CLI:-kubectl} delete secret/${secret} --ignore-not-found
 echo "Creating ImagePullSecret on container-registry.oracle.com"
-kubectl create secret docker-registry ${secret} --docker-server=container-registry.oracle.com --docker-username=${username} --docker-password=${password} --docker-email=${email}
+${KUBERNETES_CLI:-kubectl} create secret docker-registry ${secret} --docker-server=container-registry.oracle.com --docker-username=${username} --docker-password=${password} --docker-email=${email}

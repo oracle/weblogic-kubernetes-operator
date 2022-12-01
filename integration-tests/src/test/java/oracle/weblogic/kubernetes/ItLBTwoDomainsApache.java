@@ -37,11 +37,12 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
@@ -128,13 +129,13 @@ class ItLBTwoDomainsApache {
     if (KIND_REPO != null) {
       // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
       // Try the following instead:
-      //   1. docker login
-      //   2. docker pull
-      //   3. docker tag with the KIND_REPO value
-      //   4. docker push to KIND_REPO
-      testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+      //   1. WLSIMG_BUILDER login
+      //   2. WLSIMG_BUILDER pull
+      //   3. WLSIMG_BUILDER tag with the KIND_REPO value
+      //   4. WLSIMG_BUILDER push to KIND_REPO
+      testUntil(() -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
-          "docker login to be successful");
+          WLSIMG_BUILDER + " login to be successful");
 
       testUntil(
           pullImageFromOcirAndPushToKind(APACHE_IMAGE),
@@ -229,7 +230,7 @@ class ItLBTwoDomainsApache {
       kindRepoApacheImage = KIND_REPO + apacheImage.substring(BASE_IMAGES_REPO.length() + 1);
       logger.info("pulling image {0} from OCIR, tag it as image {1} and push to KIND repo",
           apacheImage, kindRepoApacheImage);
-      return dockerPull(apacheImage) && dockerTag(apacheImage, kindRepoApacheImage) && dockerPush(kindRepoApacheImage);
+      return imagePull(apacheImage) && imageTag(apacheImage, kindRepoApacheImage) && imagePush(kindRepoApacheImage);
     });
   }
 

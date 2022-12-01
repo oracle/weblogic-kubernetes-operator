@@ -52,15 +52,16 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
@@ -428,29 +429,29 @@ public class ItMiiDomainModelInPV {
         .redirect(true));
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s doesn't exist", imageName));
-    dockerLoginAndPushImage(image);
+    imageRepoLoginAndPushImage(image);
   }
 
   /**
-   * Login to docker repo and push image.
+   * Login to repo and push image.
    *
    * @param image image to push to repo
    */
-  public static void dockerLoginAndPushImage(String image) {
+  public static void imageRepoLoginAndPushImage(String image) {
     logger = getLogger();
-    // login to docker
-    logger.info("docker login");
-    testUntil(() -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+    // login to repo
+    logger.info(WLSIMG_BUILDER + " login");
+    testUntil(() -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
           logger,
-          "docker login to be successful");
+          WLSIMG_BUILDER + " login to be successful");
 
     // push the image to repo
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+      logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
       testUntil(
-          () -> dockerPush(image),
+          () -> imagePush(image),
           logger,
-          "docker push for image {0} to be successful",
+          WLSIMG_BUILDER + " push for image {0} to be successful",
           image);
     }
   }
