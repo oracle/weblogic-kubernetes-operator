@@ -26,7 +26,7 @@ usage() {
                         more than once. Key will be the file-name(s),
                         value will be file contents. Required.
 
-  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+  -dry ${KUBERNETES_CLI:-kubectl}        : Show the ${KUBERNETES_CLI:-kubectl} commands (prefixed with 'dryun:')
                         but do not perform them.
 
   -dry yaml           : Show the yaml (prefixed with 'dryun:')
@@ -56,7 +56,7 @@ while [ ! "$1" = "" ]; do
     -f)   FILENAMES="${FILENAMES}--from-file=${2} " ;;
     -dry) DRY_RUN="${2}"
           case "$DRY_RUN" in
-            kubectl|yaml) ;;
+            ${KUBERNETES_CLI:-kubectl}|yaml) ;;
             *) echo "Error: Syntax Error. Pass '-?' for usage."
                exit 1
                ;;
@@ -81,12 +81,12 @@ fi
 
 set -eu
 
-if [ "$DRY_RUN" = "kubectl" ]; then
+if [ "$DRY_RUN" = "${KUBERNETES_CLI:-kubectl}" ]; then
 
 cat << EOF
-dryrun:kubectl -n $DOMAIN_NAMESPACE delete configmap $CONFIGMAP_NAME --ignore-not-found
-dryrun:kubectl -n $DOMAIN_NAMESPACE create configmap $CONFIGMAP_NAME $FILENAMES
-dryrun:kubectl -n $DOMAIN_NAMESPACE label  configmap $CONFIGMAP_NAME weblogic.domainUID=$DOMAIN_UID
+dryrun:${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE delete configmap $CONFIGMAP_NAME --ignore-not-found
+dryrun:${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE create configmap $CONFIGMAP_NAME $FILENAMES
+dryrun:${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE label  configmap $CONFIGMAP_NAME weblogic.domainUID=$DOMAIN_UID
 EOF
 
 elif [ "$DRY_RUN" = "yaml" ]; then
@@ -96,7 +96,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
 
   # don't change indent of the sed append commands - the spaces are significant
   #   (we use an ancient form of sed append to stay compatible with old bash on mac)
-  kubectl -n $DOMAIN_NAMESPACE \
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE \
     create configmap $CONFIGMAP_NAME $FILENAMES \
     --dry-run=client -o yaml \
   \
@@ -112,9 +112,9 @@ else
 
   set -x
 
-  kubectl -n $DOMAIN_NAMESPACE delete configmap $CONFIGMAP_NAME --ignore-not-found
-  kubectl -n $DOMAIN_NAMESPACE create configmap $CONFIGMAP_NAME $FILENAMES
-  kubectl -n $DOMAIN_NAMESPACE label  configmap $CONFIGMAP_NAME weblogic.domainUID=$DOMAIN_UID
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE delete configmap $CONFIGMAP_NAME --ignore-not-found
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE create configmap $CONFIGMAP_NAME $FILENAMES
+  ${KUBERNETES_CLI:-kubectl} -n $DOMAIN_NAMESPACE label  configmap $CONFIGMAP_NAME weblogic.domainUID=$DOMAIN_UID
 
 fi
 

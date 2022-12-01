@@ -15,6 +15,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_A
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_PROGRESSING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -140,7 +141,7 @@ public class UpgradeUtils {
   public static Callable<Boolean> checkCrdVersion() {
     return () -> Command
         .withParams(new CommandParams()
-            .command("kubectl get crd domains.weblogic.oracle -o "
+            .command(KUBERNETES_CLI + " get crd domains.weblogic.oracle -o "
                 + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
         .executeAndVerify(DOMAIN_VERSION);
   }
@@ -174,12 +175,12 @@ public class UpgradeUtils {
     if (doesCrdExist) {
       Command
               .withParams(new CommandParams()
-                      .command("kubectl patch crd/domains.weblogic.oracle"
+                      .command(KUBERNETES_CLI + " patch crd/domains.weblogic.oracle"
                               + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
               .execute();
       Command
               .withParams(new CommandParams()
-                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+                      .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
               .execute();
     }
   }

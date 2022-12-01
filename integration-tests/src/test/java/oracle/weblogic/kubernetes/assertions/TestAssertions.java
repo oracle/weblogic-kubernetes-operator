@@ -26,10 +26,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
-import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Grafana;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Image;
 import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
@@ -878,13 +878,13 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a Docker image exists.
+   * Check if an image exists.
    *
    * @param imageName the name of the image to be checked
    * @param imageTag  the tag of the image to be checked
    * @return true if the image does exist, false otherwise
    */
-  public static boolean dockerImageExists(String imageName, String imageTag) {
+  public static boolean imageExists(String imageName, String imageTag) {
     return WitAssertion.doesImageExist(imageName, imageTag);
   }
 
@@ -947,7 +947,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -967,16 +967,16 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return !Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return !Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
-   * Check if the Docker image containing the search string exists.
+   * Check if the image containing the search string exists.
    * @param searchString search string
    * @return true on success
    */
   public static boolean doesImageExist(String searchString) {
-    return Docker.doesImageExist(searchString);
+    return Image.doesImageExist(searchString);
   }
 
   /**

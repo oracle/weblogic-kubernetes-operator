@@ -181,6 +181,21 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
           <version>${exec-maven-plugin-version}</version>
+          <executions>
+            <execution>
+              <id>validate-kubectl-cli</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>../validateCLI.sh</executable>
+                <arguments>
+                  <argument>..</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
 
         <plugin>
@@ -619,10 +634,10 @@
     <maven-release-plugin-version>3.0.0-M7</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.4.1</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0-M7</maven-failsafe-plugin-version>
-    <maven-dependency-plugin-version>3.3.0</maven-dependency-plugin-version>
+    <maven-dependency-plugin-version>3.4.0</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.4.1</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
-    <checkstyle-version>10.4</checkstyle-version>
+    <checkstyle-version>10.5.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -644,7 +659,7 @@
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.2</client-java-version>
-    <kotlin-stdlib-version>1.7.21</kotlin-stdlib-version>
+    <kotlin-stdlib-version>1.7.22</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.1</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>

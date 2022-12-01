@@ -99,6 +99,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -818,7 +819,7 @@ public class Kubernetes {
 
     // kubectl exec -n <some-namespace> <some-pod> -- tar cf - /tmp/foo | tar xf - -C /tmp/bar
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl exec ");
+    sb.append(KUBERNETES_CLI + " exec ");
     if (!isNullOrEmpty(namespace)) {
       sb.append("-n ");
       sb.append(namespace);
@@ -850,7 +851,7 @@ public class Kubernetes {
       String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ");
+    sb.append(KUBERNETES_CLI + " cp ");
     sb.append(srcPath.toString());
     sb.append(" ");
     if (!isNullOrEmpty(namespace)) {
@@ -883,7 +884,7 @@ public class Kubernetes {
       throws IOException, ApiException {
     // kubectl cp <some-namespace>/<some-pod>:/tmp/foo /tmp/bar -c <container>
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ");
+    sb.append(KUBERNETES_CLI + " cp ");
     if (!isNullOrEmpty(namespace)) {
       sb.append(namespace);
       sb.append("/");

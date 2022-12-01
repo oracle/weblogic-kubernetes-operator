@@ -346,10 +346,10 @@ createFileShare() {
 
   # Mount the file share as a volume
   echo Mounting file share as a volume.
-  kubectl apply -f ${scOutput}
-  kubectl get storageclass ${azureFileCsiNfsClassName} -o yaml
-  kubectl apply -f ${pvcOutput}
-  kubectl get pvc ${persistentVolumeClaimName} -o yaml
+  ${KUBERNETES_CLI:-kubectl} apply -f ${scOutput}
+  ${KUBERNETES_CLI:-kubectl} get storageclass ${azureFileCsiNfsClassName} -o yaml
+  ${KUBERNETES_CLI:-kubectl} apply -f ${pvcOutput}
+  ${KUBERNETES_CLI:-kubectl} get pvc ${persistentVolumeClaimName} -o yaml
 
   checkPvcState ${persistentVolumeClaimName} "Bound"
 }
@@ -425,8 +425,8 @@ createWebLogicDomain() {
   echo Creating WebLogic Server domain ${domainUID}
   bash ${dirCreateDomain}/create-domain.sh -i $domain1Output -o ${outputDir} -e -v
 
-  kubectl apply -f ${adminLbOutput}
-  kubectl apply -f ${clusterLbOutput}
+  ${KUBERNETES_CLI:-kubectl} apply -f ${adminLbOutput}
+  ${KUBERNETES_CLI:-kubectl} apply -f ${clusterLbOutput}
 }
 
 waitForJobComplete() {
@@ -442,17 +442,17 @@ waitForJobComplete() {
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
     #    ${domainUID}-${adminServerName}-ext, e.g. domain1-admin-server-ext
     #    ${domainUID}-${adminServerName}-external-lb, e.g domain1-admin-server-external-lb
-    local adminServiceCount=$(kubectl get svc | grep -c "${domainUID}-${adminServerName}")
+    local adminServiceCount=$(${KUBERNETES_CLI:-kubectl} get svc | grep -c "${domainUID}-${adminServerName}")
     if [ ${adminServiceCount} -lt 3 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following services created, .assuming initialManagedServerReplicas=2
     #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    ${domainUID}-${managedServerNameBase}2, e.g. domain1-managed-server2
-    local managedServiceCount=$(kubectl get svc | grep -c "${domainUID}-${managedServerNameBase}")
+    local managedServiceCount=$(${KUBERNETES_CLI:-kubectl} get svc | grep -c "${domainUID}-${managedServerNameBase}")
     if [ ${managedServiceCount} -lt ${initialManagedServerReplicas} ]; then svcState="running"; fi
 
     # If the job is completed, there should have no service in pending status.
-    local pendingCount=$(kubectl get svc | grep -c "pending")
+    local pendingCount=$(${KUBERNETES_CLI:-kubectl} get svc | grep -c "pending")
     if [ ${pendingCount} -ne 0 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following pods running
@@ -460,21 +460,21 @@ waitForJobComplete() {
     #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    to
     #    ${domainUID}-${managedServerNameBase}n, e.g. domain1-managed-servern, n = initialManagedServerReplicas
-    local runningPodCount=$(kubectl get pods | grep "${domainUID}" | grep -c "Running")
+    local runningPodCount=$(${KUBERNETES_CLI:-kubectl} get pods | grep "${domainUID}" | grep -c "Running")
     if [[ $runningPodCount -le ${initialManagedServerReplicas} ]]; then svcState="running"; fi
 
     echo ==============================Current Status==========================================
-    kubectl get svc
+    ${KUBERNETES_CLI:-kubectl} get svc
     echo ""
-    kubectl get pods
+    ${KUBERNETES_CLI:-kubectl} get pods
     echo ======================================================================================
   done
 
   # If all the services are completed, print service details
   # Otherwise, ask the user to refer to document for troubleshooting
   if [ "$svcState" == "completed" ]; then
-    kubectl get pods
-    kubectl get svc
+    ${KUBERNETES_CLI:-kubectl} get pods
+    ${KUBERNETES_CLI:-kubectl} get svc
   else
     echo It takes a little long to create domain, please refer to http://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/#troubleshooting
   fi
@@ -497,17 +497,17 @@ printSummary() {
     echo ""
     echo "Domain ${domainName} was created and was started by the WebLogic Kubernetes Operator"
     echo ""
-    echo "Connect your kubectl to this cluster with this command:"
+    echo "Connect your ${KUBERNETES_CLI:-kubectl} to this cluster with this command:"
     echo "  az aks get-credentials --resource-group ${azureResourceGroupName} --name ${aksClusterName}"
     echo ""
 
     if [ "${exposeAdminNodePort}" = true ]; then
-      adminLbIP=$(kubectl get svc ${domainUID}-${adminServerName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      adminLbIP=$(${KUBERNETES_CLI:-kubectl} get svc ${domainUID}-${adminServerName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
       echo "Administration console access is available at http://${adminLbIP}:${adminPort}/console"
     fi
 
     echo ""
-    clusterLbIP=$(kubectl get svc ${domainUID}-${clusterName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    clusterLbIP=$(${KUBERNETES_CLI:-kubectl} get svc ${domainUID}-${clusterName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
     echo "Cluster external ip is ${clusterLbIP}, after you deploy application to WebLogic Server cluster, you can access it at http://${clusterLbIP}:${managedServerPort}/<your-app-path>"
   fi
   echo ""

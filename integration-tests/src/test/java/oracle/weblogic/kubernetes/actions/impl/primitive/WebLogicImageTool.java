@@ -26,7 +26,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 
 /**
- * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic Docker image.
+ * Implementation of actions that use WebLogic Image Tool to create/update a WebLogic image.
  */
 
 public class WebLogicImageTool {

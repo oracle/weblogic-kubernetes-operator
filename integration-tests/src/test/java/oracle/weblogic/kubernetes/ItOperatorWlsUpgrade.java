@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_C
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -277,10 +278,10 @@ class ItOperatorWlsUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -610,7 +611,7 @@ class ItOperatorWlsUpgrade {
         .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
         .append("}]");
     logger.info("The patch String {0}", patchStr);
-    StringBuffer commandStr = new StringBuffer("kubectl patch domain ");
+    StringBuffer commandStr = new StringBuffer(KUBERNETES_CLI + " patch domain ");
     commandStr.append(domainUid)
               .append(" -n " + domainNamespace)
               .append(" --type 'json' -p='")
@@ -645,8 +646,8 @@ class ItOperatorWlsUpgrade {
 
   /**
    * Replace the fields in domain yaml file with testing attributes.
-   * For example, namespace, domainUid,  and image. Then create domain using kubectl and
-   * verify the domain is created
+   * For example, namespace, domainUid,  and image. Then create domain using
+   * KUBERNETES_CLI and verify the domain is created
    * @param domainType either domain in image(Image) or model in image (FromModel)
    * @param domainNamespace namespace in which to create domain
    * @param externalServiceNameSuffix suffix of externalServiceName
@@ -706,8 +707,8 @@ class ItOperatorWlsUpgrade {
     }
     assertTrue(new Command()
         .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
+            .command(KUBERNETES_CLI + " create -f " + destDomainYaml))
+        .execute(), KUBERNETES_CLI + " create failed");
 
     verifyDomain(domainUid, domainNamespace, externalServiceNameSuffix);
 

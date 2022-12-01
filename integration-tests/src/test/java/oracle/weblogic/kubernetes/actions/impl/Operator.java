@@ -15,7 +15,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR_FOR_JENKINS;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_DOCKER_BUILD_SCRIPT;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchDeployment;
@@ -89,12 +89,12 @@ public class Operator {
   }
 
   /**
-   * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   * Builds an image for the Oracle WebLogic Kubernetes Operator.
    * @param image image name and tag in 'name:tag' format
    * @return true on success
    */
   public static boolean buildImage(String image) {
-    String command = String.format("%s -t %s", OPERATOR_DOCKER_BUILD_SCRIPT, image);
+    String command = String.format("%s -t %s", OPERATOR_IMAGE_BUILD_SCRIPT, image);
     return Command
         .withParams(new CommandParams()
             .command(command))

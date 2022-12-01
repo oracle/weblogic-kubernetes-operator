@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 
@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readString;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.impl.ConfigMap.doesCMExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -204,20 +205,20 @@ public class ConfigMapUtils {
   public static boolean replaceConfigMap(String nameSpace, String configMapName, String fileName) {
     LoggingFacade logger = getLogger();
     boolean result = false;
-    StringBuffer editConfigMap = new StringBuffer("kubectl create configmap ");
+    StringBuffer editConfigMap = new StringBuffer(KUBERNETES_CLI + " create configmap ");
     editConfigMap.append(configMapName);
     editConfigMap.append(" -n ");
     editConfigMap.append(nameSpace);
     editConfigMap.append(" --from-file ");
     editConfigMap.append(Paths.get(fileName));
-    editConfigMap.append(" -o yaml --dry-run=client | kubectl replace -f -");
+    editConfigMap.append(" -o yaml --dry-run=client | " + KUBERNETES_CLI + " replace -f -");
 
-    logger.info("kubectl replace command is {0}", editConfigMap.toString());
+    logger.info(KUBERNETES_CLI + " replace command is {0}", editConfigMap.toString());
     // replace configMap with new file
     ExecResult execResult = assertDoesNotThrow(() -> exec(new String(editConfigMap), true));
 
     if (execResult.exitValue() == 0) {
-      logger.info("kubectl replace returned {0}", execResult.toString());
+      logger.info(KUBERNETES_CLI + " replace returned {0}", execResult.toString());
       result = true;
     } else {
       logger.info("Failed to replace the configmap: " + execResult.stderr());

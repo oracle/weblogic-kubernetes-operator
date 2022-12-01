@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_MAX_CLUSTER_SIZE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -56,11 +57,11 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResourceReturnResponse;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResourceReturnResponse;
@@ -74,7 +75,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -397,8 +398,9 @@ class ItValidateWebhookReplicas {
 
     // use 'kubectl scale' to scale the cluster
     CommandParams params = new CommandParams().defaults();
-    String command =
-        "kubectl scale --replicas=" + replicaCountToPatch + " clusters/" + clusterName + " -n " + domainNamespace;
+    String command = KUBERNETES_CLI + " scale --replicas=" + replicaCountToPatch
+        + " clusters/" + clusterName
+        + " -n " + domainNamespace;
     params.command(command);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     String errorMsg =
@@ -557,9 +559,9 @@ class ItValidateWebhookReplicas {
     String encryptionSecretName = "encryptionsecret";
     String wdtModelFileForMiiDomain = "model-multiclusterdomain-singlesampleapp-wls.yaml";
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     String adminSecretName = "weblogic-credentials";
@@ -630,7 +632,7 @@ class ItValidateWebhookReplicas {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid2, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -671,8 +673,8 @@ class ItValidateWebhookReplicas {
         createMiiImageAndVerify("mii-image", Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
             appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
   }
@@ -702,15 +704,15 @@ class ItValidateWebhookReplicas {
   private Callable<Boolean> tagImageAndPushIfNeeded(String originalImage, String taggedImage) {
     return (() -> {
       boolean result = true;
-      result = result && dockerTag(originalImage, taggedImage);
+      result = result && imageTag(originalImage, taggedImage);
       // push the image to a registry to make the test work in multi node cluster
-      logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
-      result = result && dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME,
+      logger.info("image repo login to registry {0}", TEST_IMAGES_REPO);
+      result = result && imageRepoLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME,
           TEST_IMAGES_REPO_PASSWORD);
       // push image
       if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-        logger.info("docker push image {0} to registry", taggedImage);
-        result = result && dockerPush(taggedImage);
+        logger.info("push image {0} to registry", taggedImage);
+        result = result && imagePush(taggedImage);
       }
       return result;
     });

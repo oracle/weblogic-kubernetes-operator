@@ -61,7 +61,7 @@ usage() {
     IMAGE_PULL_SECRET_NAME: (not set)
     DOMAIN_IMAGE_PULL_SECRET_NAME: (not set)
     DB_NAMESPACE          : default (used by -db and -rcu)
-    DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
+    DB_IMAGE_PULL_SECRET  : repo secret (used by -db and -rcu)
     TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik and by tests)
     TRAEFIK_HTTP_NODEPORT : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
     TRAEFIK_HTTPS_NODEPORT: 30433 (used by -traefik, can be 0 to dynamically choose)
@@ -240,21 +240,21 @@ if [ "$DO_CLEANUP" = "true" ]; then
     "${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}" 
   do
     if [ ! "$DRY_RUN" = "true" ]; then
-      if [ ! -z "$(docker images -q $m_image)" ]; then
-        trace "Info: Forcing model image rebuild by removing old docker image '$m_image'!"
-        docker image rm $m_image
+      if [ ! -z "$(${WLSIMG_BUILDER:-docker} images -q $m_image)" ]; then
+        trace "Info: Forcing model image rebuild by removing old image '$m_image'!"
+        ${WLSIMG_BUILDER:-docker} image rm $m_image
       fi
     else
-      echo "dryrun: [ ! -z "$(docker images -q $m_image)" ] && docker image rm $m_image"
+      echo "dryrun: [ ! -z "$(${WLSIMG_BUILDER:-docker} images -q $m_image)" ] && ${WLSIMG_BUILDER:-docker} image rm $m_image"
     fi
   done
 fi
 
 if [ "$DO_CLEANDB" = "true" ]; then
   doCommand -c "echo ====== CLEANDB ======"
-  doCommand -c "kubectl -n $DB_NAMESPACE delete deployment oracle-db --ignore-not-found"
-  doCommand -c "kubectl -n $DB_NAMESPACE delete service oracle-db --ignore-not-found"
-  doCommand -c "kubectl -n $DB_NAMESPACE delete secret oracle-db-secret --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete deployment oracle-db --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete service oracle-db --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete secret oracle-db-secret --ignore-not-found"
 fi
 
 # 
@@ -328,7 +328,7 @@ if [ "$DO_RCU" = "true" ]; then
   BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 
   # delete old rcu pod in case one is already running from an old test run
-  doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
+  doCommand "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
 
   for _custom_domain_name_ in domain1 domain2
   do
@@ -350,8 +350,8 @@ if [ "$DO_RCU" = "true" ]; then
   done
 
   # The rcu command leaves a pod named 'rcu' running:
-  doCommand "kubectl -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
-  doCommand -c "kubectl -n $DB_NAMESPACE delete secret oracle-rcu-secret --ignore-not-found"
+  doCommand "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete pod rcu --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n $DB_NAMESPACE delete secret oracle-rcu-secret --ignore-not-found"
 
 fi
 
@@ -410,10 +410,10 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
     doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   fi
 
-  doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   waitForDomain 0
 
-  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   waitForDomain Completed
 
   if [ "$OKD" = "true" ]; then
@@ -462,7 +462,7 @@ if [ "$DO_UPDATE1" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
@@ -511,10 +511,10 @@ if [ "$DO_UPDATE2" = "true" ]; then
   fi
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   waitForDomain 0
 
-  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+  doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   waitForDomain Completed
 
   if [ "$OKD" = "true" ]; then
@@ -584,7 +584,8 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
   doCommand -c "export CUSTOM_DOMAIN_NAME=domain1"
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
-  doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
+
+  doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   waitForDomain Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then

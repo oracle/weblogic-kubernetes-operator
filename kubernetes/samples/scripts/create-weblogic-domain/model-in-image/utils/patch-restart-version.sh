@@ -54,13 +54,13 @@ done
 set -eu
 set -o pipefail
 
-currentRV=`kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}'`
+currentRV=`${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.restartVersion}'`
 
 nextRV=$((currentRV + 1))
 
 echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' from restartVersion='${currentRV}' to restartVersion='${nextRV}'."
 
-kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
+${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/restartVersion", "value": "'${nextRV}'" }]'
 
 cat << EOF
@@ -69,7 +69,7 @@ cat << EOF
 
    To wait until pods reach the new restart version and/or to get their status:
 
-      kubectl get pods -n ${DOMAIN_NAMESPACE} --watch
+      ${KUBERNETES_CLI:-kubectl} get pods -n ${DOMAIN_NAMESPACE} --watch
        # (ctrl-c once all pods are running and ready)
 
              -or-
