@@ -305,7 +305,6 @@ class ItMonitoringExporterSamples {
         String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
         checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
-        checkPromGrafanaLatestVersion();
       }
     } finally {
       shutdownDomain(domain1Namespace, domain1Uid);
