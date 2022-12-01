@@ -422,7 +422,8 @@ public class CommonMiiTestUtils {
           getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
         } else {
           getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
-          ClusterSpec spec = new ClusterSpec().withClusterName(clusterName).replicas(replicaCount);
+          ClusterSpec spec =
+              new ClusterSpec().withClusterName(clusterName).replicas(replicaCount).serverStartPolicy("IfNeeded");
           createClusterAndVerify(createClusterResource(clusterResName, domNamespace, spec));
         }
         // set cluster references
