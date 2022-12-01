@@ -106,6 +106,15 @@ spec:
             {{- if .memoryLimits}}
             memory: {{ .memoryLimits }}
             {{- end }}
+        {{- if (eq ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        {{- end }}            
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
@@ -306,6 +315,15 @@ spec:
                 {{- if .memoryLimits}}
                 memory: {{ .memoryLimits }}
                 {{- end }}
+            {{- if (eq ( .kubernetesPlatform | default "Generic") "OpenShift") }}
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                 drop: ["ALL"]
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            {{- end }}
             volumeMounts:
             - name: "weblogic-webhook-cm-volume"
               mountPath: "/deployment/config"

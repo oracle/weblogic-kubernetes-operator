@@ -29,11 +29,11 @@ spec:
         cpu: 250m
         memory: 768Mi
     volumes:
-    - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+    - name: compat-ai-vol-auxiliaryimagevolume1
       emptyDir: {
         }
     initContainers:
-    - name: compatibility-mode-operator-aux-container1
+    - name: compat-operator-aux-container1
       image: model-in-image:WLS-AI-v1
       command:
       - /weblogic-operator/scripts/auxImage.sh
@@ -48,14 +48,14 @@ spec:
       - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
         value: model-in-image:WLS-AI-v1
       - name: AUXILIARY_IMAGE_CONTAINER_NAME
-        value: compatibility-mode-operator-aux-container1
+        value: compat-operator-aux-container1
       volumeMounts:
-      - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+      - name: compat-ai-vol-auxiliaryimagevolume1
         mountPath: /tmpAuxiliaryImage
       - name: weblogic-scripts-cm-volume
         mountPath: /weblogic-operator/scripts
     volumeMounts:
-    - name: compatibility-mode-aux-image-volume-auxiliaryimagevolume1
+    - name: compat-ai-vol-auxiliaryimagevolume1
       mountPath: /auxiliary
   adminServer:
     adminChannelPortForwardingEnabled: false
