@@ -52,7 +52,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -71,9 +71,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * <p>There are three test methods in this class, covering three basic scenarios. </p>
  *
  * <ul>
- *   <li> testMiiWithMultiModelImage: test multiple WDT model files in the Docker image. </li>
+ *   <li> testMiiWithMultiModelImage: test multiple WDT model files in the image. </li>
  *   <li> testMiiWithMultiModelCM: test multiple WDT model files in the domain resource's ConfigMap. </li>
- *   <li> testMiiWithMultipleModelImageAndCM: test multiple WDT files in both of the Docker image
+ *   <li> testMiiWithMultipleModelImageAndCM: test multiple WDT files in both of the image
  *        and the domain resource's ConfigMap. </li>
  * </ul>
  */
@@ -182,7 +182,7 @@ class ItMiiMultiModel {
         Collections.singletonList(MII_BASIC_APP_NAME));
 
     // push the image to a registry to make it accessible in multi-node cluster
-    dockerLoginAndPushImageToRegistry(miiImageMultiModel);
+    imageRepoLoginAndPushImageToRegistry(miiImageMultiModel);
 
   }
 
@@ -248,9 +248,9 @@ class ItMiiMultiModel {
   }
 
   /**
-   * Test that two WDT model files in a model-in-image Docker image are applied in the expected order.
+   * Test that two WDT model files in a model-in-image image are applied in the expected order.
    *
-   * <p>Create a WebLogic domain using a model-in-image Docker image that contains two WDT model files.
+   * <p>Create a WebLogic domain using a model-in-image image that contains two WDT model files.
    * Verify that the effective configuration of the domain is as expected. </p>
    *
    * <p>The two model files specify the same DataSource "TestDataSource" with the connection pool's
@@ -301,12 +301,12 @@ class ItMiiMultiModel {
    * Test that two WDT model files in a model-in-image image and two WDT model files in the domain
    * resource's ConfigMap are handled as expected.
    *
-   * <p>Create a WebLogic domain using a model-in-image Docker image that contains two WDT model files,
+   * <p>Create a WebLogic domain using a model-in-image image that contains two WDT model files,
    * and also using a ConfigMap that contains two more model files.
    * Verify that the effective configuration of the domain is as expected. Note that the model files
    * in the image are ordered independently from the model files in the domain's ConfigMap. </p>
    *
-   * <p>The two model files in the Docker image define the same DataSource "TestDataSource" with
+   * <p>The two model files in the image define the same DataSource "TestDataSource" with
    * the connection pool's MaxCapacity set to 15 and 20 respectively.
    * In addition, the first model defines a second DataSource "TestDataSource2", which is deleted by
    * the second model. When the two model files are applied, the resultant domain will only have

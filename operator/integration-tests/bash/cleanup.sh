@@ -30,6 +30,8 @@
 #
 #   BG_DELETE       Run deletes in background. Default is 'true'.
 #
+#   KUBERNETES_CLI  CLI to run kubernetes commands. Default is 'kubectl'.
+#
 # Dry run option:
 #
 #   To show what the script would do without actually doing
@@ -85,6 +87,7 @@ TMP_DIR="$RESULT_DIR/cleanup_tmp"
 JOB_NAME="weblogic-command-job"
 DRY_RUN="false"
 BG_DELETE="${BG_DELETE:-true}"
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 
 [ "$1" = "-dryrun" ] && DRY_RUN="true"
 
@@ -115,10 +118,10 @@ patchPVCFinalizer() {
   while read line; do
     if [ ! "$DRY_RUN" = "true" ]; then
       set -x
-      kubectl patch pvc $line -p '{"metadata":{"finalizers":null}}'
+      ${KUBERNETES_CLI} patch pvc $line -p '{"metadata":{"finalizers":null}}'
       set +x
     else
-      echo @@ `timestamp` Info: DRYRUN: "kubectl patch pvc $line -p '{\"metadata\":{\"finalizers\":null}}'"
+      echo @@ `timestamp` Info: DRYRUN: "${KUBERNETES_CLI} patch pvc $line -p '{\"metadata\":{\"finalizers\":null}}'"
     fi
   done
 }
@@ -132,7 +135,7 @@ doDeleteByName() {
 
   local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$mypid.$SECONDS"
 
-  kubectl get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
+  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
   # exit silently if nothing to delete
   if [ `cat $tmpfile | wc -l` -eq 0 ]; then
@@ -142,16 +145,16 @@ doDeleteByName() {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ `timestamp` Info: doDeleteByName $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` Info: doDeleteByName $ttextt: ${KUBERNETES_CLI} $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile
   rm $tmpfile
 
   if [ ! "$DRY_RUN" = true ]; then
-    kubectl $FAST_DELETE delete "$@" --ignore-not-found
+    ${KUBERNETES_CLI} $FAST_DELETE delete "$@" --ignore-not-found
   fi
 }
 
-# use for kubectl delete of a potential set, exits silently if nothing found via 'get'
+# use for ${KUBERNETES_CLI} delete of a potential set, exits silently if nothing found via 'get'
 # usage: doDeleteByRange [-n foobar] kind -l labelexpression -l labelexpression ...
 doDeleteByRange() {
 
@@ -160,7 +163,7 @@ doDeleteByRange() {
 
   local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$mypid.$SECONDS"
 
-  kubectl get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
+  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
 
   # exit silently if nothing to delete
   if [ `cat $tmpfile | wc -l` -eq 0 ]; then
@@ -170,12 +173,12 @@ doDeleteByRange() {
 
   local ttextt=""
   [ "$DRY_RUN" = "true" ] && ttextt="DRYRUN"
-  echo @@ `timestamp` Info: doDeleteByRange $ttextt: kubectl $FAST_DELETE delete "$@" --ignore-not-found
+  echo @@ `timestamp` Info: doDeleteByRange $ttextt: ${KUBERNETES_CLI} $FAST_DELETE delete "$@" --ignore-not-found
   cat $tmpfile
   rm $tmpfile
 
   if [ ! "$DRY_RUN" = true ]; then
-    kubectl $FAST_DELETE delete "$@" --ignore-not-found
+    ${KUBERNETES_CLI} $FAST_DELETE delete "$@" --ignore-not-found
   fi
 }
 
@@ -190,9 +193,9 @@ waitForWebLogicPods() {
   echo -n "@@ `timestamp` Info: seconds/introspector-pod-count/wl-pod-count:"
   while [ $((SECONDS - STARTSEC)) -lt $max_secs ]; do
     # WebLogic server pods have the 'weblogic.serverName' label
-    pod_count_wls="$(kubectl --all-namespaces=true get pods -l weblogic.serverName -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
+    pod_count_wls="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
     # Introspector pods have the 'weblogic.domainUID' and 'job-name' labels
-    pod_count_int="$(kubectl --all-namespaces=true get pods -l weblogic.domainUID -l job-name -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
+    pod_count_int="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.domainUID -l job-name -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
     pod_count_tot=$((pod_count_wls + pod_count_int))
       if [ $((pod_count_tot)) -eq 0 ]; then
       break
@@ -204,8 +207,8 @@ waitForWebLogicPods() {
 
   if [ $((pod_count_tot)) -ne 0 ]; then
     echo "@@ `timestamp` Warning: Wait timed out after $max_secs seconds. There are still $pod_count_tot pods running:"
-    kubectl --all-namespaces=true get pods -l weblogic.serverName
-    kubectl --all-namespaces=true get pods -l weblogic.domainUID -l job-name
+    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName
+    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.domainUID -l job-name
   else
     echo "@@ `timestamp` Info: No pods detected after $((SECONDS - STARTSEC)) seconds."
   fi
@@ -224,7 +227,7 @@ waitForLabelPods() {
   local pods
   echo "@@ `timestamp` Info: Waiting $maxwaitsecs for pods to stop running."
   while [ $((mnow - mstart)) -lt $maxwaitsecs ]; do
-    pods=($(kubectl get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
+    pods=($(${KUBERNETES_CLI} get pods --all-namespaces -l $LABEL_SELECTOR -o jsonpath='{range .items[*]}{.metadata.name} {end}'))
     total=${#pods[*]}
     if [ $total -eq 0 ] ; then
         break
@@ -251,20 +254,20 @@ deleteDomains() {
   echo "@@ `timestamp` Info: Setting /tmp/diefast on every WL pod to speedup its demise."
 
   if [ "$DRY_RUN" = "true" ]; then
-    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName \
       -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-      | awk '{ system("echo @@ DRYRUN: kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+      | awk '{ system("echo @@ DRYRUN: '${KUBERNETES_CLI}' -n " $1 " exec " $2 " touch /tmp/diefast") }'
   else
-    kubectl --all-namespaces=true get pods -l weblogic.serverName \
+    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName \
       -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-      | awk '{ system("set -x ; kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+      | awk '{ system("set -x ; '${KUBERNETES_CLI}' -n " $1 " exec " $2 " touch /tmp/diefast") }'
   fi
 
   echo "@@ `timestamp` Info: About to delete each domain."
-  if [ $(kubectl get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
-    for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+  if [ $(${KUBERNETES_CLI} get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
+    for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
     do
-      for dn in $(kubectl -n $ns get domain -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+      for dn in $(${KUBERNETES_CLI} -n $ns get domain -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
       do
         doDeleteByName -n $ns domain $dn
         count=$((count + 1))
@@ -279,7 +282,7 @@ deleteDomains() {
 deleteOperators() {
   echo "@@ `timestamp` Info: Deleting operator deployments."
   local ns
-  for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
     if [ "$BG_DELETE" = "true" ]; then
       doDeleteByRange -n $ns deployments -l weblogic.operatorName &
@@ -294,7 +297,7 @@ deleteOperators() {
 deleteWebLogicPods() {
   echo "@@ `timestamp` Info: Deleting WebLogic pods."
   local ns
-  for ns in $(kubectl get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
   do
     if [ "$BG_DELETE" = "true" ]; then
       # WLS pods
@@ -331,14 +334,14 @@ deleteLabel() {
     # patch PVCs to speedup their deletion
     if [ "$resource_type" = "pvc" ]; then
       echo "@@ `timestamp` Info: Disabling finalizers on pvc resources to speed up their deletion (LABEL_SELECTOR='$LABEL_SELECTOR')."
-      kubectl get pvc \
+      ${KUBERNETES_CLI} get pvc \
         -l "$LABEL_SELECTOR" \
         -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
         --all-namespaces=true \
         | patchPVCFinalizer
     fi
 
-    kubectl get $resource_type \
+    ${KUBERNETES_CLI} get $resource_type \
       -l "$LABEL_SELECTOR" \
       -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
       --all-namespaces=true >> $1
@@ -351,7 +354,7 @@ deleteLabel() {
 
   for resource_type in $NOT_NAMESPACED_TYPES
   do
-    kubectl get $resource_type \
+    ${KUBERNETES_CLI} get $resource_type \
       -l "$LABEL_SELECTOR" \
       -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
       --all-namespaces=true >> $1
@@ -387,7 +390,7 @@ deleteLabel() {
 deleteNamespaces() {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
-      kubectl $FAST_DELETE delete namespace $line --ignore-not-found
+      ${KUBERNETES_CLI} $FAST_DELETE delete namespace $line --ignore-not-found
     fi
   done
 }
@@ -397,7 +400,7 @@ deleteNamespaces() {
 deleteByTypeAndLabel() {
 
   DOMAIN_CRD="domains.weblogic.oracle"
-  if [ ! `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
+  if [ ! `${KUBERNETES_CLI} get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
     DOMAIN_CRD=""
   fi
 
@@ -480,7 +483,7 @@ genericDelete() {
   # patch PVCs to speedup their deletion
   if [ ! "$1" = "${1/pvc//}" ]; then
     echo "@@ `timestamp` Info: Disabling finalizers on pvc resources to speed up their deletion (filter='${3}')."
-    kubectl get pvc \
+    ${KUBERNETES_CLI} get pvc \
       -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
       --all-namespaces=true \
       | grep -E -e "($3)" | patchPVCFinalizer
@@ -491,14 +494,14 @@ genericDelete() {
     resfile_yes="$TMP_DIR/kinv_filtered_yesnamespace.out.tmp"
 
     # leftover namespaced artifacts
-    kubectl get $1 \
+    ${KUBERNETES_CLI} get $1 \
         -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
         | grep -E -e "($3)" | sort > $resfile_yes 2>&1
     artcount_yes="`cat $resfile_yes | wc -l`"
 
     # leftover non-namespaced artifacts
-    kubectl get $2 \
+    ${KUBERNETES_CLI} get $2 \
         -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
         | grep -E -e "($3)" | sort > $resfile_no 2>&1
@@ -562,7 +565,7 @@ genericDelete() {
 
     if [ $((mnow - mstart)) -gt $((maxwaitsecs)) ]; then
       if [ "$mode" = "-wait" ]; then
-        echo "@@ `timestamp` Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via kubectl delete."
+        echo "@@ `timestamp` Warning:  ${maxwaitsecs} seconds reached.   Will try deleting unexpected resources via ${KUBERNETES_CLI} delete."
       else
         echo "@@ `timestamp` Error:  ${maxwaitsecs} seconds reached and possibly ${artcount_total} artifacts remaining.  Giving up."
       fi
@@ -615,9 +618,9 @@ deleteHelmReleases() {
   if [ "$SHARED_CLUSTER" = "true" ]; then
     echo @@ `timestamp` Info: Skipping tiller delete.
     # TBD: According to MarkN no Tiller delete is needed.
-    # kubectl $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
-    # kubectl $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
-    # kubectl $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
+    # ${KUBERNETES_CLI} $FAST_DELETE -n kube-system delete deployment tiller-deploy --ignore-not-found=true
+    # ${KUBERNETES_CLI} $FAST_DELETE delete clusterrolebinding tiller-cluster-rule --ignore-not-found=true
+    # ${KUBERNETES_CLI} $FAST_DELETE -n kube-system delete serviceaccount tiller --ignore-not-found=true
   fi
 }
 
@@ -690,14 +693,14 @@ g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|a
 # genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -wait
 
 #
-# Phase 2: "friendly" kubectl delete left over artifacts individually
+# Phase 2: "friendly" ${KUBERNETES_CLI} delete left over artifacts individually
 #          in no specific order for up to 60 seconds
 #
 
 genericDelete "$g_arg1" "$g_arg2" "$g_arg3" -friendlyDelete
 
 #
-# Phase 3: "--force=true --grace-period=0" kubectl delete left over artifacts individually
+# Phase 3: "--force=true --grace-period=0" ${KUBERNETES_CLI} delete left over artifacts individually
 #          in no specific order for up to 60 seconds
 #
 

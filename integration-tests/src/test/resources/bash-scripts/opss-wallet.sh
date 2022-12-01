@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -125,7 +125,7 @@ set -eu
 
 if [ ${SAVE_WALLET} -eq 1 ] ; then
   echo "@@ Info: Saving wallet from from configmap '${DOMAIN_UID}-weblogic-domain-introspect-cm' in namespace '${DOMAIN_NAMESPACE}' to file '${WALLET_FILE}'."
-  kubectl -n ${DOMAIN_NAMESPACE} \
+  ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} \
     get configmap ${DOMAIN_UID}-weblogic-domain-introspect-cm \
     -o jsonpath='{.data.ewallet\.p12}' \
     > ${WALLET_FILE}

@@ -3,6 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
+KUBERNETES_CLI="${KUBERNETES_CLI:-kubectl}"
+
 usage() {
 
   cat << EOF
@@ -28,7 +30,7 @@ usage() {
                         '-l walletFile=./ewallet.p12'.
                         Can be specified more than once. 
 
-  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+  -dry ${KUBERNETES_CLI}        : Show the ${KUBERNETES_CLI} commands (prefixed with 'dryrun:')
                         but do not perform them. 
 
   -dry yaml           : Show the yaml (prefixed with 'dryun:') but do not
@@ -64,7 +66,7 @@ while [ ! "${1:-}" = "" ]; do
     -f)   FILENAMES="${FILENAMES} --from-file=${2}" ;;
     -dry) DRY_RUN="${2}"
           case "$DRY_RUN" in
-            kubectl|yaml) ;;
+            ${KUBERNETES_CLI}|yaml) ;;
             *) echo "Error: Syntax Error. Pass '-?' for usage."
                exit 1
                ;;
@@ -89,19 +91,19 @@ fi
 
 set -eu
 
-if [ "$DRY_RUN" = "kubectl" ]; then
+if [ "$DRY_RUN" = "${KUBERNETES_CLI}" ]; then
 
 cat << EOF
 dryrun:
 dryrun:echo "@@ Info: Setting up secret '$SECRET_NAME'."
 dryrun:
-dryrun:kubectl -n $NAMESPACE delete secret \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE delete secret \\
 dryrun:  $SECRET_NAME \\
 dryrun:  --ignore-not-found
-dryrun:kubectl -n $NAMESPACE create secret generic \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE create secret generic \\
 dryrun:  $SECRET_NAME \\
 dryrun:  $LITERALS $FILENAMES
-dryrun:kubectl -n $NAMESPACE label  secret \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE label  secret \\
 dryrun:  $SECRET_NAME \\
 dryrun:  weblogic.domainUID=$DOMAIN_UID
 dryrun:
@@ -115,7 +117,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   # don't change indent of the sed '/a' commands - the spaces are significant
   # (we use an old form of sed append to stay compatible with old bash on mac)
 
-  kubectl -n $NAMESPACE \
+  ${KUBERNETES_CLI} -n $NAMESPACE \
   \
   create secret generic \
   $SECRET_NAME $LITERALS $FILENAMES \
@@ -131,8 +133,8 @@ elif [ "$DRY_RUN" = "yaml" ]; then
 
 else
 
-  kubectl -n $NAMESPACE delete secret         $SECRET_NAME --ignore-not-found
-  kubectl -n $NAMESPACE create secret generic $SECRET_NAME $LITERALS $FILENAMES
-  kubectl -n $NAMESPACE label  secret         $SECRET_NAME weblogic.domainUID=$DOMAIN_UID
+  ${KUBERNETES_CLI} -n $NAMESPACE delete secret         $SECRET_NAME --ignore-not-found
+  ${KUBERNETES_CLI} -n $NAMESPACE create secret generic $SECRET_NAME $LITERALS $FILENAMES
+  ${KUBERNETES_CLI} -n $NAMESPACE label  secret         $SECRET_NAME weblogic.domainUID=$DOMAIN_UID
 
 fi

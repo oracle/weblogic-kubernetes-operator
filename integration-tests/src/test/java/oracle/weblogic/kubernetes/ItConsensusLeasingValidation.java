@@ -24,7 +24,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.verifyIntrospectorPodLogContainsExpectedErrorMsg;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -112,8 +112,8 @@ class ItConsensusLeasingValidation {
     String consensusLeasingImageName =
         createMiiImageAndVerify("consensus-leasing-image", modelfile, MII_BASIC_APP_NAME);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(consensusLeasingImageName);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(consensusLeasingImageName);
 
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
@@ -146,8 +146,8 @@ class ItConsensusLeasingValidation {
     String modelfile = "model-database-leasing-clusterdomain-sampleapp.yaml";
     String databaseLeasingImageName = createMiiImageAndVerify("database-leasing-image", modelfile, MII_BASIC_APP_NAME);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(databaseLeasingImageName);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(databaseLeasingImageName);
 
     // create the domain custom resource
     logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",

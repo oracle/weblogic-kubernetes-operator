@@ -87,7 +87,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -935,12 +935,12 @@ class ItUsabilityOperatorHelmChart {
     // get the pre-built image created by IntegrationTestWatcher
     String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -1002,7 +1002,7 @@ class ItUsabilityOperatorHelmChart {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
     String adminServerPodName = domainUid + adminServerPrefix;
@@ -1091,9 +1091,9 @@ class ItUsabilityOperatorHelmChart {
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
     if (createSecret) {
-      // Create Docker registry secret in the operator namespace to pull the image from repository
+      // Create registry secret in the operator namespace to pull the image from repository
       // this secret is used only for non-kind cluster
-      logger.info("Creating Docker registry secret in namespace {0}", operNamespace);
+      logger.info("Creating registry secret in namespace {0}", operNamespace);
       createTestRepoSecret(operNamespace);
 
     }

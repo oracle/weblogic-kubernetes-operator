@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
@@ -49,17 +49,17 @@ function checkJavaVersion {
     exit 1
   fi
 }
-function dockerLogin {
-  echo "Info: about to do docker login"
+function repoLogin {
+  echo "Info: about to do ${WLSIMG_BUILDER:-docker} login"
   if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
-    out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
+    out=$(echo $DOCKER_PASSWORD | ${WLSIMG_BUILDER:-docker} login -u $DOCKER_USERNAME --password-stdin)
     res=$?
     if [ $res -ne 0 ]; then
-      echo 'docker login failed'
+      echo "${WLSIMG_BUILDER:-docker} login failed"
       exit 1
     fi
   else
-    echo "Info: Docker credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
+    echo "Info: Credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
   fi
 }
 
@@ -101,10 +101,11 @@ tar zxf helm.tar.gz
 cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
-echo 'Info: Set up kubectl...'
-curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
-chmod +x ${WORKSPACE}/bin/kubectl
-kubectl version --client=true
+KCLI="kubectl" # this string has a deliberate exclusion in the 'validateCLI.sh' validation check for direct use of the k8s cli
+echo "Info: Set up ${KCLI}..."
+curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBECTL_VERSION}"
+chmod +x ${WORKSPACE}/bin/${KCLI}
+${KCLI} version --client=true
 
 echo 'Info: Set up kind...'
 curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
@@ -124,7 +125,7 @@ ulimit -a
 echo "Info: hard limits"
 ulimit -aH
 
-dockerLogin
+repoLogin
 
 echo 'Info: Run build...'
 mvn clean install
