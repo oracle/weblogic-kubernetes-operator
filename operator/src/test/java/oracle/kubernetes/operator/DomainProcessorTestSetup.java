@@ -33,7 +33,7 @@ public class DomainProcessorTestSetup {
   public static final String KUBERNETES_UID = "12345";
   public static final String KUBERNETES_CLUSTER_UID = "678910";
   public static final String NODE_NAME = "Node1";
-  private static final String CLUSTER_1_NAME = "cluster-1";
+  public static final String CLUSTER_1_NAME = "cluster-1";
   private static final String CLUSTER_2_NAME = "cluster-2";
   public static final ClusterResource cluster1 = DomainProcessorTestSetup.createTestCluster(CLUSTER_1_NAME);
   public static final ClusterResource cluster2 = DomainProcessorTestSetup.createTestCluster(CLUSTER_2_NAME);

@@ -19,6 +19,13 @@ public interface MakeRightExecutor {
   void runMakeRight(MakeRightDomainOperation operation);
 
   /**
+   * Runs the specified make-right for cluster event only.
+   * @param operation a defined make-right operation
+   *
+   */
+  void runMakeRight(MakeRightClusterOperation operation);
+
+  /**
    * Creates steps to process namespaced Kubernetes resources.
    * @param processors the processing to be done
    * @param info the presence info which encapsulates the domain

@@ -454,7 +454,7 @@ class ItKubernetesDomainEvents {
 
       assertTrue(scaleCluster(clusterRes1Name, domainNamespace3, 2), "failed to scale cluster via patching");
       logger.info("verify the ClusterChanged event is generated");
-      checkEvent(opNamespace, domainNamespace3, domainUid, CLUSTER_CHANGED, "Normal", timestamp);
+      checkEvent(opNamespace, domainNamespace3, null, CLUSTER_CHANGED, "Normal", timestamp);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace3);
 
       for (int i = 1; i <= replicaCount; i++) {
@@ -662,15 +662,16 @@ class ItKubernetesDomainEvents {
   }
 
   /**
-   * Test DomainDeleted event is logged when domain resource is deleted.
+   * Test DomainDeleted and ClusterDeleted events are logged when domain and cluster resources are deleted.
    */
   @Test
-  @DisplayName("Test domain events for various domain life cycle changes")
+  @DisplayName("Test domain and cluster events for deleting domain and cluster resources")
   void testK8SEventsDelete() {
     OffsetDateTime timestamp = now();
     createDomain(domainNamespace2, domainUid, pvName2, pvcName2);
     deleteDomainCustomResource(domainUid, domainNamespace2);
     deleteClusterCustomResource(cluster1Name, domainNamespace2);
+
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace2);
     checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace2);
@@ -678,7 +679,7 @@ class ItKubernetesDomainEvents {
     //verify domain deleted event
     checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
     //verify cluster deleted event
-    checkEvent(opNamespace, domainNamespace2, domainUid, CLUSTER_DELETED, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace2, null, CLUSTER_DELETED, "Normal", timestamp);
   }
 
   /**
