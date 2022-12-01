@@ -686,14 +686,20 @@ class ItConfigDistributionStrategy {
         + "attributeTest=true"
         + "&serverType=adminserver"
         + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+    
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      if (response.statusCode() != 200) {
+        logger.info("Response code is not 200 retrying...");
+        return false;
+      }
+      if (configUpdated) {
+        return response.body().contains("MaxMessageSize=100000000");
+      } else {
+        return response.body().contains("MaxMessageSize=10000000");
+      }
+    }, logger, "clusterview app in admin server is accessible after restart");
 
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
-    } else {
-      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
-    }
 
   }
 
