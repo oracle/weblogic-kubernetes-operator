@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -469,15 +468,16 @@ public class FileUtils {
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
-    logger.info("Replacing {0} in {1}", regex, src.toString());
-    Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    String newcontent = content.replaceAll(regex, replacement);
-    logger.info("with {0}", replacement);
-    if (content.equals(newcontent)) {
+    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);    
+    String content = new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
+    if (!content.contains(regex)) {
       logger.info("search string {0} not found to replace with {1}", regex, replacement);
     }
-    Files.write(src, newcontent.getBytes(charset));
+    long oldModified = src.toFile().lastModified();
+    Files.write(src, content.replaceAll(regex, replacement).getBytes(StandardCharsets.UTF_8));
+    if (oldModified == src.toFile().lastModified()) {
+      logger.info("No modification was done to the file");
+    }
   }
 
   /**
