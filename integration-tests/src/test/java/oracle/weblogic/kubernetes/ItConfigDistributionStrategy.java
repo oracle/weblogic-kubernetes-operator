@@ -524,8 +524,8 @@ class ItConfigDistributionStrategy {
    * <p>Verifies after introspector runs the server configuration and JDBC datasource configurations are not
    * updated. Verifies the overrides are applied only after a domain restart.
    */
-  //@Order(4)
-  //@Test
+  @Order(4)
+  @Test
   @DisplayName("Test overrideDistributionStrategy value OnRestart")
   void testOnRestartOverride() {
 
@@ -628,8 +628,8 @@ class ItConfigDistributionStrategy {
    *
    * <p>Test tries to set the above field to OnRestart and asserts the patching fails.
    */
-  //@Order(5)
-  //@Test
+  @Order(5)
+  @Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
   void testOverrideNegative() {
 
@@ -763,11 +763,9 @@ class ItConfigDistributionStrategy {
     */
 
     //test connection pool in all managed servers of dynamic cluster
-    //HttpResponse<String> response = null;
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      //response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
       testUntil(
           () -> {
             HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl,
@@ -781,8 +779,6 @@ class ItConfigDistributionStrategy {
               return false;
             }
 
-            //assertEquals(200, response.statusCode(), "Status code not equals to 200");
-            //assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
             return true;
         },
           logger, "All managed servers get JDBC connection");
