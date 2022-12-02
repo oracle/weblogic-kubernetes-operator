@@ -299,7 +299,7 @@ buildServerPodResources() {
     local cpuRequest="${level2_indent}cpu\: \"${serverPodCpuRequest}\"\n"
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
-    local requests="${level1_indent}requests\: \n$memoryRequest $cpuRequest"
+    local requests="${level1_indent}requests\: \n${memoryRequest}${cpuRequest}"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
@@ -309,7 +309,7 @@ buildServerPodResources() {
     local cpuLimit="${level2_indent}cpu\: \"${serverPodCpuLimit}\"\n"
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
-    local limits="${level1_indent}limits\: \n$memoryLimit $cpuLimit"
+    local limits="${level1_indent}limits\: \n${memoryLimit}${cpuLimit}"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
