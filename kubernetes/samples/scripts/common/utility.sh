@@ -289,24 +289,27 @@ getKubernetesClusterIP() {
 #
 buildServerPodResources() {
 
+  level1_indent="          "
+  level2_indent="${level1_indent}  "
+
   if [ -n "${serverPodMemoryRequest}" ]; then
-    local memoryRequest="         memory\: \"${serverPodMemoryRequest}\"\n"
+    local memoryRequest="${level2_indent}memory\: \"${serverPodMemoryRequest}\"\n"
   fi
   if [ -n "${serverPodCpuRequest}" ]; then
-    local cpuRequest="        cpu\: \"${serverPodCpuRequest}\"\n"
+    local cpuRequest="${level2_indent}cpu\: \"${serverPodCpuRequest}\"\n"
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
-    local requests="       requests\: \n$memoryRequest $cpuRequest"
+    local requests="${level1_indent}requests\: \n$memoryRequest $cpuRequest"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
-    local memoryLimit="         memory\: \"${serverPodMemoryLimit}\"\n"
+    local memoryLimit="${level2_indent}memory\: \"${serverPodMemoryLimit}\"\n"
   fi
   if [ -n "${serverPodCpuLimit}" ]; then
-    local cpuLimit="        cpu\: \"${serverPodCpuLimit}\"\n"
+    local cpuLimit="${level2_indent}cpu\: \"${serverPodCpuLimit}\"\n"
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
-    local limits="       limits\: \n$memoryLimit $cpuLimit"
+    local limits="${level1_indent}limits\: \n$memoryLimit $cpuLimit"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
