@@ -28,6 +28,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
@@ -45,6 +47,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
 
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();
@@ -113,7 +116,6 @@ public class DomainNamespaces {
   void stopNamespace(String ns) {
     namespaceStoppingMap.remove(ns).set(true);
     namespaceStatuses.remove(ns);
-
     clusterWatchers.removeWatcher(ns);
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
@@ -125,6 +127,38 @@ public class DomainNamespaces {
     jobWatchers.removeWatcher(ns);
 
     DomainProcessorImpl.cleanupNamespace(ns);
+  }
+
+  void pauseWatchers(String ns) {
+    LOGGER.info("DEBUG: pausing all watchers");
+    pauseWatcher(clusterWatchers.getWatcher(ns));
+    pauseWatcher(domainWatchers.getWatcher(ns));
+    pauseWatcher(eventWatchers.getWatcher(ns));
+    pauseWatcher(operatorEventWatchers.getWatcher(ns));
+    pauseWatcher(podWatchers.getWatcher(ns));
+    pauseWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
+    pauseWatcher(configMapWatchers.getWatcher(ns));
+    pauseWatcher(jobWatchers.getWatcher(ns));
+  }
+
+  private void pauseWatcher(Watcher watcher) {
+    Optional.ofNullable(watcher).ifPresent(w -> w.pause());
+  }
+
+  void resumeWatchers(String ns) {
+    LOGGER.info("DEBUG: resuming all watchers");
+    resumeWatcher(clusterWatchers.getWatcher(ns));
+    resumeWatcher(domainWatchers.getWatcher(ns));
+    resumeWatcher(eventWatchers.getWatcher(ns));
+    resumeWatcher(operatorEventWatchers.getWatcher(ns));
+    resumeWatcher(podWatchers.getWatcher(ns));
+    resumeWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
+    resumeWatcher(configMapWatchers.getWatcher(ns));
+    resumeWatcher(jobWatchers.getWatcher(ns));
+  }
+
+  private void resumeWatcher(Watcher watcher) {
+    Optional.ofNullable(watcher).ifPresent(w -> w.resume());
   }
 
   ConfigMapWatcher getConfigMapWatcher(String namespace) {
@@ -191,7 +225,8 @@ public class DomainNamespaces {
     NamespacedResources resources = new NamespacedResources(ns, null);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
-    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion), resources.createListSteps());
+    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion),
+        resources.createListSteps(processor.getDelegate()));
   }
 
   public boolean shouldStartNamespace(String ns) {

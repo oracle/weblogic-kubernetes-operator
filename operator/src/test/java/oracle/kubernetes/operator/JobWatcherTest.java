@@ -427,4 +427,8 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     // Override as JobWatcher doesn't currently implement listener for callback
   }
 
+  public void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
+    // Override as JobWatcher doesn't currently implement listener for callback
+  }
+
 }

@@ -100,4 +100,8 @@ public interface DomainProcessor {
   default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
     return Stream.empty();
   }
+
+  default DomainProcessorDelegate getDelegate() {
+    return null;
+  }
 }

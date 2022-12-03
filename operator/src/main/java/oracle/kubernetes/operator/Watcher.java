@@ -121,10 +121,12 @@ abstract class Watcher<T> {
   private void doWatch() {
     setIsDraining(false);
 
+    LOGGER.info("DEBUG: In doWatch.. isDraining is " + isDraining() + ", isStopping() is" + isStopping());
     while (!isDraining()) {
       if (isStopping()) {
         setIsDraining(true);
       } else {
+        setIsDraining(false);
         watchForEvents();
       }
     }
@@ -142,6 +144,16 @@ abstract class Watcher<T> {
 
   protected boolean isStopping() {
     return stopping.get();
+  }
+
+  // Set the stopping state to true to pause watches.
+  protected void pause() {
+    this.stopping.set(true);
+  }
+
+  // Set the stopping state to false to resume watches.
+  protected void resume() {
+    this.stopping.set(false);
   }
 
   private void watchForEvents() {
@@ -168,6 +180,8 @@ abstract class Watcher<T> {
 
         if (isStopping()) {
           setIsDraining(true);
+        } else {
+          setIsDraining(false);
         }
         if (isDraining()) {
           continue;

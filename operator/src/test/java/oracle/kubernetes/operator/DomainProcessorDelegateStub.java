@@ -33,12 +33,19 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   private final FiberTestSupport testSupport;
   private boolean namespaceRunning = true;
   private boolean waitedForIntrospection;
+  private static DomainNamespaces domainNamespaces;
 
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
     this.testSupport = testSupport;
   }
 
   public static DomainProcessorDelegateStub createDelegate(KubernetesTestSupport testSupport) {
+    return createDelegate(testSupport, null);
+  }
+
+  public static DomainProcessorDelegateStub createDelegate(KubernetesTestSupport testSupport,
+                                                           DomainNamespaces namespaces) {
+    domainNamespaces = namespaces;
     return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
   }
 
@@ -58,6 +65,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
     return new PassthroughPodAwaiterStepFactory();
+  }
+
+  @Override
+  public DomainNamespaces getDomainNamespaces() {
+    return domainNamespaces;
   }
 
   @Override

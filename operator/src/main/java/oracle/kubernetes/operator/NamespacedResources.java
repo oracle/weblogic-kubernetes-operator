@@ -49,8 +49,9 @@ class NamespacedResources {
     processors.add(processor);
   }
 
-  Step createListSteps() {
+  Step createListSteps(DomainProcessorDelegate delegate) {
     return Step.chain(
+          getStopWatchersStep(delegate),
           getConfigMapListSteps(),
           getPodEventListSteps(),
           getOperatorEventListSteps(),
@@ -60,8 +61,17 @@ class NamespacedResources {
           getPodDisruptionBudgetListSteps(),
           getDomainListSteps(),
           getClusterListSteps(),
-          new CompletionStep()
+          new CompletionStep(),
+          getResumeWatchersStep(delegate)
     );
+  }
+
+  private Step getStopWatchersStep(DomainProcessorDelegate delegate) {
+    return new StopWatchersStep(delegate);
+  }
+
+  private ResumeWatchersStep getResumeWatchersStep(DomainProcessorDelegate delegate) {
+    return new ResumeWatchersStep(delegate);
   }
 
   private Step getConfigMapListSteps() {
@@ -166,6 +176,36 @@ class NamespacedResources {
     @Override
     public NextAction apply(Packet packet) {
       processors.forEach(p -> p.completeProcessing(packet));
+      return doNext(packet);
+    }
+  }
+
+  class StopWatchersStep extends Step {
+    private final DomainProcessorDelegate delegate;
+
+    StopWatchersStep(DomainProcessorDelegate delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Optional.ofNullable(delegate).map(p -> p.getDomainNamespaces()).ifPresent(ns -> ns.pauseWatchers(namespace));
+      //delegate.getDomainNamespaces().pauseWatchers(namespace);
+      return doNext(packet);
+    }
+  }
+
+  class ResumeWatchersStep extends Step {
+    private final DomainProcessorDelegate delegate;
+
+    ResumeWatchersStep(DomainProcessorDelegate delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Optional.ofNullable(delegate).map(p -> p.getDomainNamespaces()).ifPresent(ns -> ns.resumeWatchers(namespace));
+      //delegate.getDomainNamespaces().pauseWatchers(namespace);
       return doNext(packet);
     }
   }
