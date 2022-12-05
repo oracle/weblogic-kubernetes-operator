@@ -266,9 +266,9 @@ public interface TestConstants {
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.prometheus.chart.version", "15.2.0");
+      getNonEmptySystemProperty("wko.it.prometheus.chart.version", "17.0.0");
   public static final String GRAFANA_CHART_VERSION =
-      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.22.0");
+      getNonEmptySystemProperty("wko.it.grafana.chart.version", "6.44.11");
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
   public static final String GRAFANA_REPO_NAME = "grafana";
