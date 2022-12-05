@@ -12,20 +12,20 @@
     <title>Azure Kubernetes Service (AKS) :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1669897691" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1669897691" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1670279533" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1670279533" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1669897691"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1670279533"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1669897691"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1669897691"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1670279533"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1670279533"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.4";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1669897691"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1670279533"></script>
 
     
   </div>
@@ -4048,7 +4048,11 @@
 <tbody>
 <tr>
 <td>Choose database type</td>
-<td>Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:<br /><br /> • Azure Database for PostgreSQL <br /> • Oracle Database <br /> • Azure SQL <br /> • MySQL <br /> • Other</td>
+<td>From the drop-down menu, select an existing database to which you want Oracle WebLogic Server to connect. The available options are:<br /><br /> • Azure Database for PostgreSQL <br /> • Oracle Database <br /> • Azure SQL <br /> • MySQL (with support for passwordless connection) <br /> • Other</td>
+</tr>
+<tr>
+<td>Use passwordless datasource connection</td>
+<td>If you select a database type that supports passwordless connection, then this check box will appear. If selected, configure passwordless connections to the data source. For more information, see <a href="https://learn.microsoft.com/azure/developer/intro/passwordless-overview">Passwordless connections for Azure services</a>.</td>
 </tr>
 <tr>
 <td>JNDI Name</td>
@@ -4073,6 +4077,10 @@
 <tr>
 <td>Confirm password</td>
 <td>Re-enter the value of the preceding field.</td>
+</tr>
+<tr>
+<td>User assigned managed identity</td>
+<td>Select a user assigned identity that is able to connect to your database. <br /> For how to create a database user for your managed identity, see <a href="https://aka.ms/javaee-db-identity">https://aka.ms/javaee-db-identity</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -6527,19 +6535,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1669897691"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1670279533"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1669897691"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1669897691"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1670279533"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1670279533"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1669897691"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1670279533"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
