@@ -41,3 +41,7 @@ docker-istio-secret
 DB_IMAGE_PULL_SECRET:-docker-secret
 SOURCEDIR:-ai-docker-file
 create-domain-on-aks.sh:.*
+wlsDockerContainer
+wls-docker-container-image
+dii-docker-container
+DockerCluster
