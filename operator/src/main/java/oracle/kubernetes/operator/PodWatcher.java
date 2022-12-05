@@ -132,6 +132,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
+        LOGGER.info("DEBUG: Received pod deleted event for " + PodHelper.getPodName(pod));
         getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
         break;
       case "ERROR":

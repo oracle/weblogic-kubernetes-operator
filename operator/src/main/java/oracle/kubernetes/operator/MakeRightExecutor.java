@@ -32,9 +32,9 @@ public interface MakeRightExecutor {
    */
   default Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info,
                                              DomainProcessorDelegate delegate) {
-    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid());
+    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid(), delegate);
     resources.addProcessing(processors);
-    return resources.createListSteps(delegate);
+    return resources.createListSteps();
   }
 
   /**

@@ -133,12 +133,14 @@ public class DomainNamespaces {
     LOGGER.info("DEBUG: pausing all watchers");
     pauseWatcher(clusterWatchers.getWatcher(ns));
     pauseWatcher(domainWatchers.getWatcher(ns));
+    /*
     pauseWatcher(eventWatchers.getWatcher(ns));
     pauseWatcher(operatorEventWatchers.getWatcher(ns));
     pauseWatcher(podWatchers.getWatcher(ns));
     pauseWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
     pauseWatcher(configMapWatchers.getWatcher(ns));
     pauseWatcher(jobWatchers.getWatcher(ns));
+    */
   }
 
   private void pauseWatcher(Watcher watcher) {
@@ -149,12 +151,14 @@ public class DomainNamespaces {
     LOGGER.info("DEBUG: resuming all watchers");
     resumeWatcher(clusterWatchers.getWatcher(ns));
     resumeWatcher(domainWatchers.getWatcher(ns));
+    /*
     resumeWatcher(eventWatchers.getWatcher(ns));
     resumeWatcher(operatorEventWatchers.getWatcher(ns));
     resumeWatcher(podWatchers.getWatcher(ns));
     resumeWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
     resumeWatcher(configMapWatchers.getWatcher(ns));
     resumeWatcher(jobWatchers.getWatcher(ns));
+    */
   }
 
   private void resumeWatcher(Watcher watcher) {
@@ -222,11 +226,11 @@ public class DomainNamespaces {
    * @param processor processing to be done to bring up any found domains
    */
   Step readExistingResources(String ns, DomainProcessor processor) {
-    NamespacedResources resources = new NamespacedResources(ns, null);
+    NamespacedResources resources = new NamespacedResources(ns, null, processor.getDelegate());
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
     return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion),
-        resources.createListSteps(processor.getDelegate()));
+        resources.createListSteps());
   }
 
   public boolean shouldStartNamespace(String ns) {
@@ -261,6 +265,7 @@ public class DomainNamespaces {
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
       watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
+      getWatcher(namespace).withResourceVersion(resourceVersion).resume();
     }
 
     W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {

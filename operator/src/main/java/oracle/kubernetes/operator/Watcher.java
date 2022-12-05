@@ -98,6 +98,11 @@ abstract class Watcher<T> {
     return resourceVersion;
   }
 
+  Watcher<T> withResourceVersion(String resourceVersion) {
+    this.resourceVersion = resourceVersion;
+    return this;
+  }
+
   /**
    * Sets the listener for watch events.
    *
