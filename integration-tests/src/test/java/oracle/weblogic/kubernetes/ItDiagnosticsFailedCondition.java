@@ -81,9 +81,9 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodP
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
@@ -431,8 +431,8 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    logger.info("Creating a docker secret with invalid credentials");
-    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
+    logger.info("Creating a registry secret with invalid credentials");
+    createImageRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
@@ -726,7 +726,7 @@ class ItDiagnosticsFailedCondition {
           false);
 
       // push the image to a registry to make it accessible in multi-node cluster
-      dockerLoginAndPushImageToRegistry(fmwMiiImage);
+      imageRepoLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
       DomainResource domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,

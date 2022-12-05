@@ -62,7 +62,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.findStringInDomainSta
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkInUncompletedIntroPodLogContainsRegex;
@@ -467,8 +467,8 @@ class ItRetryImprovements {
         WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
         domainUid, false);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domainInImageWithWdtImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domainInImageWithWdtImage);
 
     // Create the repo secret to pull the image this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);

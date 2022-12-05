@@ -36,7 +36,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelF
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -131,8 +131,8 @@ class ItIstioGatewaySessionMigration {
     logger.info("Create image with model file and verify");
     String miiImage = createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, modelList, appList);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to repo registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     // config the domain with Istio ingress with Istio gateway
     String managedServerPrefix = domainUid + "-managed-server";

@@ -13,15 +13,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -226,13 +225,13 @@ public class ClusterResourceStatusUpdater {
 
       // add steps to create events for updating conditions
       Optional.ofNullable(newClusterStatus)
-          .map(ncs -> getClusteStatusConditionEvents(ncs.getConditions())).orElse(Collections.emptyList())
+          .map(ncs -> getClusterStatusConditionEvents(ncs.getConditions())).orElse(Collections.emptyList())
           .stream().map(EventHelper::createClusterResourceEventStep).forEach(result::add);
 
       return new StepAndPacket(Step.chain(result), packet);
     }
 
-    private List<EventData> getClusteStatusConditionEvents(List<ClusterCondition> conditions) {
+    private List<EventData> getClusterStatusConditionEvents(List<ClusterCondition> conditions) {
       List<EventData> list = new ArrayList<>();
       list.addAll(getClusterStatusConditionTrueEvents(conditions));
       list.addAll(getClusterStatusConditionFalseEvents(conditions));
@@ -256,14 +255,14 @@ public class ClusterResourceStatusUpdater {
 
     private EventData toTrueClusterResourceEvent(ClusterCondition condition) {
       return Optional.ofNullable(condition.getType().getAddedEvent())
-          .map(ClusterResourceEventData::new)
+          .map(eventItem -> new ClusterResourceEventData(eventItem, resource))
           .map(this::initializeClusterResourceEventData)
           .orElse(null);
     }
 
     private EventData toFalseClusterResourceEvent(ClusterCondition removedCondition) {
       return Optional.ofNullable(removedCondition.getType().getRemovedEvent())
-          .map(ClusterResourceEventData::new)
+          .map(eventItem -> new ClusterResourceEventData(eventItem, resource))
           .map(this::initializeClusterResourceEventData)
           .orElse(null);
     }
@@ -285,21 +284,6 @@ public class ClusterResourceStatusUpdater {
               getNamespace(),
               createReplacementClusterResource(),
               new ClusterResourceStatusReplaceResponseStep(this));
-    }
-
-    private class ClusterResourceEventData extends EventData {
-
-      public ClusterResourceEventData(EventItem eventItem) {
-        super(eventItem);
-      }
-
-      @Override
-      public String getUID() {
-        return Optional.of(resource)
-            .map(ClusterResource::getMetadata)
-            .map(V1ObjectMeta::getUid)
-            .orElse("");
-      }
     }
   }
 

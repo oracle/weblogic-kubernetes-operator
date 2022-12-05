@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -54,3 +54,6 @@ export INTROSPECTOR_DEADLINE_SECONDS=${INTROSPECTOR_DEADLINE_SECONDS:-600}
 export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-1000}
 export OKD=${OKD:-false}
 export OKE_CLUSTER=${OKE_CLUSTER:-false}
+
+# default Kubernetes CLI
+export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}

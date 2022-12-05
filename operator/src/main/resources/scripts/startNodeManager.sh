@@ -248,8 +248,8 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
 cat <<EOF > ${wl_props_file}
 # Server startup properties
 AutoRestart=true
-RestartMax=2
-RestartInterval=3600
+RestartMax=${RESTART_MAX:-2}
+RestartInterval=${RESTART_INTERVAL:-3600}
 NMHostName=${SERVICE_NAME}
 Arguments=${USER_MEM_ARGS} ${failBootOnErrorOption} ${serverOutOption} ${JAVA_OPTIONS}
 

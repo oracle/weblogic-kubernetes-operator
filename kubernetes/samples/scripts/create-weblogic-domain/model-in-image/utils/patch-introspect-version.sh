@@ -54,13 +54,13 @@ done
 set -eu
 set -o pipefail
 
-currentIV=`kubectl -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.introspectVersion}'`
+currentIV=`${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get domain ${DOMAIN_UID} -o=jsonpath='{.spec.introspectVersion}'`
 
 nextIV=$((currentIV + 1))
 
 echo "@@ Info: Patching domain '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}' from introspectVersion='${currentIV}' to introspectVersion='${nextIV}'."
 
-kubectl -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
+${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} patch domain ${DOMAIN_UID} --type='json' \
   -p='[{"op": "replace", "path": "/spec/introspectVersion", "value": "'${nextIV}'" }]'
 
 cat << EOF

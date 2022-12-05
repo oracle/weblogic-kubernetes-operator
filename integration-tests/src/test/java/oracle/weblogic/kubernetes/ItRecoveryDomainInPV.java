@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
@@ -346,7 +347,7 @@ class ItRecoveryDomainInPV  {
   }
 
   private boolean getPodUid(String nameSpace, String podName, String verbose) {
-    String command = "kubectl -n " + nameSpace + " get pod " + podName + " -o jsonpath='"
+    String command = KUBERNETES_CLI + " -n " + nameSpace + " get pod " + podName + " -o jsonpath='"
         + "{range .items[*]}{@.metadata.name}{\" runAsUser: \"}{@.spec.containers[*].securityContext.runAsUser}"
         + "{\" fsGroup: \"}{@.spec.securityContext.fsGroup}{\" seLinuxOptions: \"}"
         + "{@.spec.securityContext.seLinuxOptions.level}{\"\\n\"}'";

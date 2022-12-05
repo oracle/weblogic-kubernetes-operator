@@ -52,12 +52,14 @@ import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NODE_IP;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
@@ -90,7 +92,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToDockerContainer;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToImageContainer;
 import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDiiImageAndVerify;
@@ -100,7 +102,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScriptInDockerContainer;
+import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScriptInImageContainer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -731,7 +733,7 @@ public class CommonTestUtils {
     final LoggingFacade logger = getLogger();
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(namespace);
     javacCmd.append(" -it ");
     javacCmd.append(podName);
@@ -764,7 +766,7 @@ public class CommonTestUtils {
     final LoggingFacade logger = getLogger();
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javapCmd.append(namespace);
     javapCmd.append(" -it ");
     javapCmd.append(podName);
@@ -791,9 +793,9 @@ public class CommonTestUtils {
   }
 
   /**
-   * Adds proxy extra arguments for docker command.
+   * Adds proxy extra arguments for image builder command.
    **/
-  public static String getDockerExtraArgs() {
+  public static String getImageBuilderExtraArgs() {
     StringBuffer extraArgs = new StringBuffer("");
 
     String httpsproxy = HTTPS_PROXY;
@@ -1099,7 +1101,7 @@ public class CommonTestUtils {
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // Let kubectl choose and allocate a local port number that is not in use
-    StringBuffer cmd = new StringBuffer("kubectl port-forward --address ")
+    StringBuffer cmd = new StringBuffer(KUBERNETES_CLI + " port-forward --address ")
         .append(hostName)
         .append(" pod/")
         .append(adminServerPodName)
@@ -1128,7 +1130,7 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Stop port forward process");
     final StringBuffer getPids = new StringBuffer("ps -ef | ")
-        .append("grep 'kubectl* port-forward ' | grep ")
+        .append("grep '" + KUBERNETES_CLI + "* port-forward ' | grep ")
         .append(domainNamespace)
         .append(" | awk ")
         .append(" '{print $2}'");
@@ -1211,7 +1213,7 @@ public class CommonTestUtils {
 
   /**
    * Connect to WLS running on local machine vis WLST using the forwarded port.
-   * e.g. forwarded port is 32001, in the docker container, WLST script runs command
+   * e.g. forwarded port is 32001, in the image container, WLST script runs command
    * connect('admin_username','admin_password','t3://localhost:32001').
    *
    * @param domainUid domain uid
@@ -1234,17 +1236,17 @@ public class CommonTestUtils {
     ExecResult result = null;
 
     try {
-      // create a dii images to create a WebLogic docker container
+      // create a dii images to create a WebLogic container
       String diiDomainImage = createDiiImageAndVerify(domainUid, domainNamespace,
           diiImageName, diiModelFileName, diiModelPropFileName, null);
       logger.info("Created dii image: {0}", diiDomainImage);
 
-      // create a WLS docker container using the dii images created above
-      result = createAndStartWlsDockerContainerAndVerify(domainUid, containerName, diiDomainImage);
+      // create a WLS container using the dii images created above
+      result = createAndStartWlsImageContainerAndVerify(domainUid, containerName, diiDomainImage);
       if (result.exitValue() == 0) {
-        logger.info("Create WLS docker container succeeded: {0}", result.stdout());
+        logger.info("Create WLS container succeeded: {0}", result.stdout());
       } else {
-        logger.info("Create WLS docker container failed: {0}", result.stderr());
+        logger.info("Create WLS container failed: {0}", result.stderr());
       }
 
       // create WLST property file
@@ -1261,43 +1263,43 @@ public class CommonTestUtils {
           "Failed to write the WLST properties to file");
       logger.info("WLST property file is: {0} ", wlstPropertiesFile.getAbsolutePath());
 
-      // cp WLST script and prop files to the docker container
-      copyFileToDockerContainer(containerName, wlstScriptFilePath, wlstScriptDestPath);
-      copyFileToDockerContainer(containerName, wlstPropertiesFile.getAbsolutePath(), wlstPropDestPath);
+      // cp WLST script and prop files to the container
+      copyFileToImageContainer(containerName, wlstScriptFilePath, wlstScriptDestPath);
+      copyFileToImageContainer(containerName, wlstPropertiesFile.getAbsolutePath(), wlstPropDestPath);
 
       Path filePath = Path.of(wlstPropertiesFile.getAbsolutePath());
       String content = Files.readString(filePath, StandardCharsets.US_ASCII);
       logger.info("Content of WLST property file: {0} ", content);
 
       // accessing WLS vis WLST using the forwarded port
-      result = executeWLSTScriptInDockerContainer(containerName, wlstScriptDestPath, wlstPropDestPath);
+      result = executeWLSTScriptInImageContainer(containerName, wlstScriptDestPath, wlstPropDestPath);
     } catch (Exception ex) {
       logger.info("Failed to access WLS vis WLST using the forwarded port!");
       ex.printStackTrace();
     } finally {
-      stopWlsDockerContainer(containerName);
-      removeWlsDockerContainer(containerName);
+      stopWlsImageContainer(containerName);
+      removeWlsImageContainer(containerName);
     }
 
     return result;
   }
 
   /**
-   * Create a WebLogic docker container.
+   * Create a WebLogic container.
    *
    * @param domainUid domain uid
-   * @param containerName docker container name to create
+   * @param containerName container name to create
    * @param imageName image name with tag
-   * @return ExecResult output of creating docker container
+   * @return ExecResult output of creating container
    */
-  public static ExecResult createAndStartWlsDockerContainerAndVerify(String domainUid,
+  public static ExecResult createAndStartWlsImageContainerAndVerify(String domainUid,
                                                                      String containerName,
                                                                      String imageName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    // create a WebLogic docker container
-    String createContainerCmd = new StringBuffer("docker run -d -p 7001:7001 --name=")
+    // create a WebLogic container
+    String createContainerCmd = new StringBuffer(WLSIMG_BUILDER + " run -d -p 7001:7001 --name=")
         .append(containerName)
         .append(" --network=host ")
         //.append(" --add-host=host.docker.internal:host-gateway ")
@@ -1305,21 +1307,21 @@ public class CommonTestUtils {
         .append(" /u01/oracle/user_projects/domains/")
         .append(domainUid)
         .append("/startWebLogic.sh").toString();
-    logger.info("Command to create a WLS docker container: {0}", createContainerCmd);
+    logger.info("Command to create a WLS container: {0}", createContainerCmd);
 
     try {
       result = exec(createContainerCmd, true);
-      logger.info("Result for WLS docker container creation is {0}", result);
+      logger.info("Result for WLS container creation is {0}", result);
     } catch (Exception ex) {
       logger.info("createContainerCmd: caught unexpected exception {0}", ex);
     }
     assertNotNull(result, "command returns null");
     if (result.exitValue() == 0) {
-      // check if the docker container started
-      logger.info("Wait for docker container {0} starting", containerName);
+      // check if the container started
+      logger.info("Wait for container {0} starting", containerName);
       testUntil(
           withStandardRetryPolicy,
-          isDockerContainerReady(containerName),
+          isImageContainerReady(containerName),
           logger,
           "{0} is started",
           containerName);
@@ -1330,33 +1332,33 @@ public class CommonTestUtils {
   }
 
   /**
-   * Check if a WebLogic docker container is ready.
+   * Check if a WebLogic container is ready.
    *
-   * @param containerName docker container name to check
-   * @return true if a WebLogic docker container is ready, otherwise false
+   * @param containerName container name to check
+   * @return true if a WebLogic container is ready, otherwise false
    */
-  public static Callable<Boolean> isDockerContainerReady(String containerName) {
-    return () -> checkDockerContainerReady(containerName);
+  public static Callable<Boolean> isImageContainerReady(String containerName) {
+    return () -> checkImageContainerReady(containerName);
   }
 
   /**
-   * Check if a WebLogic docker container is in RUNNING mode.
+   * Check if a WebLogic container is in RUNNING mode.
    *
-   * @param containerName docker container name to check
-   * @return true if a WebLogic docker container is in RUNNING mode, otherwise false
+   * @param containerName container name to check
+   * @return true if a WebLogic container is in RUNNING mode, otherwise false
    */
-  public static boolean checkDockerContainerReady(String containerName) {
+  public static boolean checkImageContainerReady(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    // check is a WebLogic docker container RUNNING mode
-    String checkContainerCmd = new StringBuffer("docker logs ").append(containerName).toString();
-    logger.info("Command to check if WLS docker container: {0}", checkContainerCmd);
+    // check is a WebLogic container RUNNING mode
+    String checkContainerCmd = new StringBuffer(WLSIMG_BUILDER + " logs ").append(containerName).toString();
+    logger.info("Command to check if WLS container: {0}", checkContainerCmd);
 
     try {
       result = exec(checkContainerCmd, true);
     } catch (Exception ex) {
-      logger.info("Check docker container status: caught unexpected exception {0}", ex);
+      logger.info("Check container status: caught unexpected exception {0}", ex);
       ex.printStackTrace();
     }
 
@@ -1364,46 +1366,46 @@ public class CommonTestUtils {
   }
 
   /**
-   * Stop a WebLogic docker container.
+   * Stop a WebLogic container.
    *
-   * @param containerName docker container name to stop
-   * @return ExecResult output of creating docker container
+   * @param containerName container name to stop
+   * @return ExecResult output of creating container
    */
-  public static ExecResult stopWlsDockerContainer(String containerName) {
+  public static ExecResult stopWlsImageContainer(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    // create a WebLogic docker container
-    String stopContainerCmd = new StringBuffer("docker stop ").append(containerName).toString();
-    logger.info("Command to stop a WLS docker container: {0}", stopContainerCmd);
+    // create a WebLogic container
+    String stopContainerCmd = new StringBuffer(WLSIMG_BUILDER + " stop ").append(containerName).toString();
+    logger.info("Command to stop a WLS container: {0}", stopContainerCmd);
 
     try {
       result = exec(stopContainerCmd, true);
     } catch (Exception ex) {
-      logger.info("Stop docker container: caught unexpected exception {0}", ex);
+      logger.info("Stop container: caught unexpected exception {0}", ex);
     }
 
     return result;
   }
 
   /**
-   * Delete a WebLogic docker container.
+   * Delete a WebLogic container.
    *
-   * @param containerName docker container name to delete
-   * @return ExecResult output of creating docker container
+   * @param containerName container name to delete
+   * @return ExecResult output of creating container
    */
-  public static ExecResult removeWlsDockerContainer(String containerName) {
+  public static ExecResult removeWlsImageContainer(String containerName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    // create a WebLogic docker container
-    String stopContainerCmd = new StringBuffer("docker rm ").append(containerName).toString();
-    logger.info("Command to stop a WLS docker container: {0}", stopContainerCmd);
+    // create a WebLogic container
+    String stopContainerCmd = new StringBuffer(WLSIMG_BUILDER + " rm ").append(containerName).toString();
+    logger.info("Command to stop a WLS container: {0}", stopContainerCmd);
 
     try {
       result = exec(stopContainerCmd, true);
     } catch (Exception ex) {
-      logger.info("Stop docker container: caught unexpected exception {0}", ex);
+      logger.info("Stop container: caught unexpected exception {0}", ex);
     }
 
     return result;
@@ -1557,6 +1559,24 @@ public class CommonTestUtils {
       propertyValue = defaultValue;
     }
     return propertyValue;
+  }
+
+  /**
+   * Get the named property from system environment or Java system property.
+   * If the property is defined in the Environment, that value will take precedence over
+   * Java properties.
+   *
+   * @param name the name of the environment variable, or Java property
+   * @param defaultValue if no environment variable is defined, nor system property, return this value
+   * @return the value defined in the env or system property
+   */
+  public static String getEnvironmentProperty(String name, String defaultValue) {
+    String envValue = System.getenv(name);
+    if (envValue == null || envValue.isEmpty()) {
+      return getNonEmptySystemProperty(name, defaultValue);
+    } else {
+      return envValue;
+    }
   }
 
   /**
