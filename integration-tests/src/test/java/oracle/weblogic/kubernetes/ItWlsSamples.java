@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -228,7 +229,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG_DEFAULT,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -303,7 +304,7 @@ class ItWlsSamples {
               "createDomainFilesDir: wlst", "createDomainFilesDir: "
                       +  script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
+              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG_DEFAULT,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
