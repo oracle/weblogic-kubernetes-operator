@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -327,12 +327,22 @@ public class FileUtils {
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
-    logger.info("Replacing {0}", src.toString());
+    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);  
     Charset charset = StandardCharsets.UTF_8;
-    String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(regex, replacement);
-    logger.info("with {0}", replacement);
-    Files.write(src, content.getBytes(charset));
+    // String content = new String(Files.readAllBytes(src), charset);
+    // content = content.replaceAll(regex, replacement);
+    // Files.write(src, content.getBytes(charset));
+
+    String content = 
+         new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
+    if (!content.contains(regex)) {
+      logger.info("search string {0} not found to replace with {1}", regex, replacement);
+    }
+    long oldModified = src.toFile().lastModified();
+    Files.write(src, content.replaceAll(regex, replacement).getBytes(StandardCharsets.UTF_8));
+    if (oldModified == src.toFile().lastModified()) {
+      logger.info("No modification was done to the file");
+    }
   }
 
   /**
