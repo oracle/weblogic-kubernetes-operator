@@ -82,6 +82,8 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX;
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
@@ -1177,7 +1179,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void adjustVolumeMountName(List<V1VolumeMount> convertedVolumeMounts, V1VolumeMount volumeMount) {
-      convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+      convertedVolumeMounts.add(volumeMount.name(volumeMount.getName().replaceAll("^" + COMPATIBILITY_MODE
+          + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX, AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX)));
     }
 
     private void adjustContainer(List<V1Container> convertedContainers, V1Container container, V1Pod currentPod) {
@@ -1212,7 +1215,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void adjustVolumeName(List<V1Volume> convertedVolumes, V1Volume volume) {
-      convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE, "")));
+      convertedVolumes.add(volume.name(volume.getName().replaceAll("^" + COMPATIBILITY_MODE
+          + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX, AUXILIARY_IMAGE_VOLUME_NAME_OLD_PREFIX)));
     }
 
     private void convertAuxImagesInitContainerVolumeAndMounts(V1Pod recipe, V1Pod currentPod) {

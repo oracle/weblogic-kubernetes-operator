@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 usage() {
@@ -11,7 +11,7 @@ Builds a container image for the Oracle WebLogic Kubernetes Operator.
 Parameters:
    -t: image name and tag in 'name:tag' format
 
-Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 EOF
@@ -65,7 +65,7 @@ echo "Building image '$IMAGE_NAME' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-docker build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
   echo "There was an error building the image."
   exit 1
 }
@@ -76,7 +76,7 @@ echo ""
 
 if [ $? -eq 0 ]; then
 cat << EOF
-  WebLogic Kubernetes Operator Docker Image is ready:
+  WebLogic Kubernetes Operator Image is ready:
 
     --> $IMAGE_NAME
 
@@ -84,5 +84,5 @@ cat << EOF
 
 EOF
 else
-  echo "WebLogic Kubernetes Operator container image was NOT successfully created. Check the output and correct any reported problems with the docker build operation."
+  echo "WebLogic Kubernetes Operator container image was NOT successfully created. Check the output and correct any reported problems with the ${WLSIMG_BUILDER:-docker} build operation."
 fi

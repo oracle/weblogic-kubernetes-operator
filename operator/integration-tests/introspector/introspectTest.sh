@@ -104,7 +104,7 @@ export MANAGED_SERVER_NAME_BASE=${MANAGED_SERVER_NAME_BASE:-"managed-server"}
 export DOMAIN_NAME=${DOMAIN_NAME:-"base_domain"}
 export ADMINISTRATION_PORT=${ADMINISTRATION_PORT:-7099}
 
-#publicip="`kubectl cluster-info | grep KubeDNS | sed 's;.*//\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\):.*;\1;'`"
+#publicip="`${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;.*//\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\):.*;\1;'`"
 #export TEST_HOST="`nslookup $publicip | grep 'name =' | sed 's/.*name = \(.*\)./\1/'`"
 export TEST_HOST="mycustompublicaddress"
 
@@ -136,6 +136,8 @@ else
   export MII_WDT_CONFIGMAP="true"
   export MII_WDT_ENCRYPT_SECRET="true"
 fi
+
+export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 
 #############################################################################
 #
@@ -186,19 +188,19 @@ cleanupMajor() {
 cleanupMinor() {
   trace "Info: RERUN_INTROSPECT_ONLY==true, skipping cleanup.sh and domain home setup, and only deleting wl pods + introspector job."
 
-  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME}                --grace-period=2 > /dev/null 2>&1
-  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}1 --grace-period=2 > /dev/null 2>&1
-  kubectl -n $NAMESPACE delete job ${DOMAIN_UID}-introspect-domain-job        --grace-period=2 > /dev/null 2>&1
-  kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}--introspect-domain-pod       --grace-period=2 > /dev/null 2>&1
+  ${KUBERNETES_CLI} -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME}                --grace-period=2 > /dev/null 2>&1
+  ${KUBERNETES_CLI} -n $NAMESPACE delete pod ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE}1 --grace-period=2 > /dev/null 2>&1
+  ${KUBERNETES_CLI} -n $NAMESPACE delete job ${DOMAIN_UID}-introspect-domain-job        --grace-period=2 > /dev/null 2>&1
+  ${KUBERNETES_CLI} -n $NAMESPACE delete pod ${DOMAIN_UID}--introspect-domain-pod       --grace-period=2 > /dev/null 2>&1
   rm -fr ${test_home}/jobfiles
   tracen "Info: Waiting for wl pods to completely go away before continuing."
   while [ 1 -eq 1 ]; do
     echo -n "."
     # echo
-    # echo "Waiting for: '`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`'"
-    # echo "Waiting for: '`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`'"
-    [ "`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`" = "" ] \
-     && [ "`kubectl -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`" = "" ] \
+    # echo "Waiting for: '`${KUBERNETES_CLI} -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`'"
+    # echo "Waiting for: '`${KUBERNETES_CLI} -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`'"
+    [ "`${KUBERNETES_CLI} -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*server\"`" = "" ] \
+     && [ "`${KUBERNETES_CLI} -n ${NAMESPACE} get pods | grep \"${DOMAIN_UID}.*introspect\"`" = "" ] \
      && break
     sleep 1
   done
@@ -218,9 +220,9 @@ deployYamlTemplate() {
   # Delete anything left over from a previous invocation of this function
 
   if [ -f "{test_home}/${yaml_file}" ]; then
-    kubectl -n $NAMESPACE delete -f ${test_home}/${yaml_file} \
+    ${KUBERNETES_CLI} -n $NAMESPACE delete -f ${test_home}/${yaml_file} \
       --ignore-not-found \
-      2>&1 | tracePipe "Info: kubectl output: "
+      2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
     rm -f ${test_home}/${yaml_file}
   fi
 
@@ -228,8 +230,8 @@ deployYamlTemplate() {
 
   ${SCRIPTPATH}/util_subst.sh -g ${yaml_file}t ${test_home}/${yaml_file} || exit 1
 
-  kubectl create -f ${test_home}/${yaml_file} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} create -f ${test_home}/${yaml_file} \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 }
 
 #############################################################################
@@ -242,15 +244,15 @@ createConfigMapFromDir() {
   local cm_name=${1?}
   local cm_dir=${2?}
 
-  kubectl -n $NAMESPACE create cm ${cm_name} \
+  ${KUBERNETES_CLI} -n $NAMESPACE create cm ${cm_name} \
     --from-file ${cm_dir} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
-  kubectl -n $NAMESPACE label cm ${cm_name} \
+  ${KUBERNETES_CLI} -n $NAMESPACE label cm ${cm_name} \
     weblogic.createdByOperator=true \
     weblogic.operatorName=look-ma-no-hands \
     weblogic.domainUID=$DOMAIN_UID \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 }
 
 
@@ -278,9 +280,9 @@ toDNS1123Legal() {
 deployDomainConfigMap() {
   trace "Info: Deploying 'weblogic-script-cm'."
 
-  kubectl -n $NAMESPACE delete cm weblogic-script-cm \
+  ${KUBERNETES_CLI} -n $NAMESPACE delete cm weblogic-script-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
   createConfigMapFromDir weblogic-script-cm ${SOURCEPATH}/operator/src/main/resources/scripts
 }
@@ -308,9 +310,9 @@ deployTestScriptConfigMap() {
   rm -f ${test_home}/test-scripts/wl-create-domain-pod.py
   ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.pyt ${test_home}/test-scripts/wl-create-domain-pod.py || exit 1
 
-  kubectl -n $NAMESPACE delete cm test-script-cm \
+  ${KUBERNETES_CLI} -n $NAMESPACE delete cm test-script-cm \
     --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
   createConfigMapFromDir test-script-cm ${test_home}/test-scripts
 
@@ -347,9 +349,9 @@ deployCustomOverridesConfigMap() {
     rm ${cmdir}/jdbc* ${cmdir}/diagnostics* ${cmdir}/config*
   fi
 
-  kubectl -n $NAMESPACE delete cm $cmname \
+  ${KUBERNETES_CLI} -n $NAMESPACE delete cm $cmname \
     --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
   createConfigMapFromDir $cmname $cmdir || exit 1
 }
@@ -369,7 +371,7 @@ createTestRootPVDir() {
   mkdir -p ${PV_ROOT} || exit 1
   chmod 777 ${PV_ROOT} || exit 1
 
-  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via 'kubectl run'."
+  trace "Info: Creating k8s cluster physical directory 'PV_ROOT/introspect/acceptance_test_pv/domain-${DOMAIN_UID}-storage' via '${KUBERNETES_CLI} run'."
   trace "Info: Test k8s resources use this physical directory via a PV/PVC '/shared' logical directory."
 
   ${SCRIPTPATH}/util_krun.sh -m ${PV_ROOT}:/pv-root \
@@ -402,10 +404,10 @@ deployWebLogic_PV_PVC_and_Secret() {
 deployMySQL() {
   trace "Info: Deploying MySQL secret, pv, pvc, & pod."
   # Create local custom mysql image that runs as 'oracle' user with uid/gid 1000/1000:
-  docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/docker_build.out 2>&1
+  ${WLSIMG_BUILDER:-docker} build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/sql_image_build.out 2>&1
   if [ $? -ne 0 ]; then
-    trace "Error: 'docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser .' failed, results in ${test_home}/docker_build.out:"
-    cat ${test_home}/docker_build.out
+    trace "Error: '${WLSIMG_BUILDER:-docker} build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser .' failed, results in ${test_home}/sql_image_build.out:"
+    cat ${test_home}/sql_image_build.out
     exit 1
   fi
   deployYamlTemplate mysql.yamlt mysql.yaml
@@ -434,8 +436,8 @@ deployCreateDomainJobPod() {
     ${SCRIPTPATH}/util_subst.sh -g wl-create-domain-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
-  kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
   # Wait for pod to come up successfully
 
@@ -443,7 +445,7 @@ deployCreateDomainJobPod() {
 }
 
 #
-# Create the model in image docker image
+# Create the model in image image
 #
 createMII_Image() {
   trace "Info: Create MII Image"
@@ -460,7 +462,7 @@ createMII_Image() {
   export MODEL_IMAGE_NAME=model-in-image || exit 1
   export MODEL_IMAGE_BUILD="when-missing"
 
-  docker rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
+  ${WLSIMG_BUILDER:-docker} rmi ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG} --force > /dev/null 2>&1
 
   tracen "Info: Downloading WDT and WIT"
   printdots_start
@@ -490,19 +492,19 @@ createMII_Image() {
   export WEBLOGIC_IMAGE_NAME=model-in-image || exit 1
   export WEBLOGIC_IMAGE_TAG=it || exit 1
 
-  kubectl -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
-  kubectl -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
-        --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: kubectl output: "
+  ${KUBERNETES_CLI} -n $NAMESPACE delete configmap ${DOMAIN_UID}-wdt-config-map --ignore-not-found || exit 1
+  ${KUBERNETES_CLI} -n $NAMESPACE create configmap  ${DOMAIN_UID}-wdt-config-map \
+        --from-file=${SCRIPTPATH}/mii/wdtconfigmap | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
-  kubectl -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} -n $NAMESPACE label  configmap ${DOMAIN_UID}-wdt-config-map  weblogic.domainUID=$DOMAIN_UID \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
-  kubectl -n $NAMESPACE delete secret ${DOMAIN_UID}-runtime-encryption-secret --ignore-not-found || exit 1
-  kubectl -n $NAMESPACE create secret generic  ${DOMAIN_UID}-runtime-encryption-secret \
-        --from-literal=password=welcome1 | tracePipe "Info: kubectl output: "
+  ${KUBERNETES_CLI} -n $NAMESPACE delete secret ${DOMAIN_UID}-runtime-encryption-secret --ignore-not-found || exit 1
+  ${KUBERNETES_CLI} -n $NAMESPACE create secret generic  ${DOMAIN_UID}-runtime-encryption-secret \
+        --from-literal=password=welcome1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
-  kubectl -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID \
-   2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} -n $NAMESPACE label secret ${DOMAIN_UID}-runtime-encryption-secret weblogic.domainUID=$DOMAIN_UID \
+   2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
 }
 
@@ -527,9 +529,9 @@ deployIntrospectJobPod() {
 
   rm -f ${target_yaml}
 
-  kubectl -n $NAMESPACE delete cm $introspect_output_cm_name \
+  ${KUBERNETES_CLI} -n $NAMESPACE delete cm $introspect_output_cm_name \
     --ignore-not-found  \
-    2>&1 | tracePipe "Info: kubectl output: "
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
 
   trace "Info: Deploying job pod '$pod_name' and waiting for it to be ready."
 
@@ -540,8 +542,8 @@ deployIntrospectJobPod() {
     ${SCRIPTPATH}/util_subst.sh -g wl-introspect-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
-  kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
   # Wait for pod to come up successfully
 
@@ -549,7 +551,7 @@ deployIntrospectJobPod() {
 
   # parse job pod's output files
 
-  kubectl -n $NAMESPACE logs $pod_name > ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out
+  ${KUBERNETES_CLI} -n $NAMESPACE logs $pod_name > ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out
 
   ${SCRIPTPATH}/util_fsplit.sh \
     ${test_home}/job-${DOMAIN_UID}-introspect-domain-pod-job.out \
@@ -595,15 +597,15 @@ waitForPod() {
   while [ "${status}" != "1/1" ] ; do
     if [ $((SECONDS - startsecs)) -gt $maxsecs ]; then
       echo
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl describe:"
-      kubectl -n $NAMESPACE describe pod $pod_name
-      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  kubectl log:"
-      kubectl -n $NAMESPACE logs $pod_name
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  ${KUBERNETES_CLI} describe:"
+      ${KUBERNETES_CLI} -n $NAMESPACE describe pod $pod_name
+      trace "Error: pod $pod_name failed to start within $maxsecs seconds.  ${KUBERNETES_CLI} log:"
+      ${KUBERNETES_CLI} -n $NAMESPACE logs $pod_name
       exit 1
     fi
     echo -n "."
     sleep 1
-    status=`kubectl -n $NAMESPACE get pods 2>&1 | egrep $pod_name | awk '{print $2}'`
+    status=`${KUBERNETES_CLI} -n $NAMESPACE get pods 2>&1 | grep -E $pod_name | awk '{print $2}'`
   done
   echo "  ($((SECONDS - startsecs)) seconds)"
 }
@@ -618,9 +620,9 @@ deployPod() {
   # delete anything left over from a previous invocation of this function
 
   if [ -f "${target_yaml}" ]; then
-    kubectl -n $NAMESPACE delete -f ${target_yaml} \
+    ${KUBERNETES_CLI} -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "Info: kubectl output: "
+      2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
     rm -f ${target_yaml}
   fi
 
@@ -645,8 +647,8 @@ deployPod() {
     ${SCRIPTPATH}/util_subst.sh -g wl-pod.yamlt ${target_yaml}  || exit 1
   ) || exit 1
 
-  kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 }
 
 deploySinglePodService() {
@@ -661,9 +663,9 @@ deploySinglePodService() {
 
   # delete anything left over from a previous invocation of this function
   if [ -f "${target_yaml}" ]; then
-    kubectl -n $NAMESPACE delete -f ${target_yaml} \
+    ${KUBERNETES_CLI} -n $NAMESPACE delete -f ${target_yaml} \
       --ignore-not-found \
-      2>&1 | tracePipe "Info: kubectl output: "
+      2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
     rm -f ${target_yaml}
   fi
 
@@ -676,8 +678,8 @@ deploySinglePodService() {
     ${SCRIPTPATH}/util_subst.sh -g wl-nodeport-svc.yamlt ${target_yaml}
   ) || exit 1
 
-  kubectl create -f ${target_yaml} \
-    2>&1 | tracePipe "Info: kubectl output: " || exit 1
+  ${KUBERNETES_CLI} create -f ${target_yaml} \
+    2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " || exit 1
 
   local svc=""
   local startsecs=$SECONDS
@@ -687,7 +689,7 @@ deploySinglePodService() {
       trace "Error: Service '$service_name' not found after waiting $maxsecs seconds."
       exit 1
     fi
-    local cmd="kubectl get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$service_name\")]}'"
+    local cmd="${KUBERNETES_CLI} get services -n $NAMESPACE -o jsonpath='{.items[?(@.metadata.name == \"$service_name\")]}'"
     svc="`eval $cmd`"
     [ -z "$svc" ] && sleep 1
   done
@@ -711,11 +713,11 @@ checkOverrides() {
   # Check for exactly 3 occurrences of Info.*.BEA.*situational lines -- one for each file we're overriding.
   #   the awk expression below gets the tail of the log, everything after the last occurrence of 'Starting WebLogic...'
 
-  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
+  linecount="`${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'BEA.*situational'`"
   logstatus=0
   local target_linecount=5
   if [ "$linecount" != "${target_linecount}" ]; then
-    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
+    trace "Error: The latest boot in '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' does not contain exactly 5 lines that match ' grep 'BEA.*situational' ', this probably means that it's reporting situational config problems."
     logstatus=1
   fi
 
@@ -736,12 +738,12 @@ checkOverrides() {
 
   ${SCRIPTPATH}/util_subst.sh -g ${src_input_file} ${test_home}/checkBeans.input || exit 1
 
-  kubectl -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
-  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
+  ${KUBERNETES_CLI} -n ${NAMESPACE} cp ${test_home}/checkBeans.input ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.input || exit 1
+  ${KUBERNETES_CLI} -n ${NAMESPACE} cp ${SCRIPTPATH}/checkBeans.py ${DOMAIN_UID}-${ADMIN_NAME}:/shared/checkBeans.py || exit 1
   tracen "Info: Waiting for WLST checkBeans.py to complete."
   printdots_start
   # TBD weblogic/welcome1 should be deduced via a base64 of the admin secret
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
+  ${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
     wlst.sh /shared/checkBeans.py \
       weblogic welcome1 t3s://${DOMAIN_UID}-${ADMIN_NAME}:${ADMINISTRATION_PORT} \
       /shared/checkBeans.input \
@@ -773,11 +775,11 @@ checkWLVersionChecks() {
   #   a version issue is reported as an 'error:' to the log
   #   the awk expression below gets the tail of the log, everything after the last occurance of 'Starting WebLogic...'
 
-  linecount="`kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'error:'`"
+  linecount="`${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME} | awk '/.*Starting WebLogic server with command/ { buf = "" } { buf = buf "\n" $0 } END { print buf }' | grep -ci 'error:'`"
   logstatus=0
 
   if [ ! "$linecount" == "0" ]; then
-    trace "Error: The latest boot in 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' contains lines with the keyword 'error'."
+    trace "Error: The latest boot in '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN_NAME}' contains lines with the keyword 'error'."
     logstatus=1
   fi
 
@@ -788,13 +790,13 @@ checkWLVersionChecks() {
 
   trace "Info: Running version checks on admin-server, output file '$outfile'."
 
-  kubectl -n ${NAMESPACE} \
+  ${KUBERNETES_CLI} -n ${NAMESPACE} \
     cp ${SCRIPTPATH}/${testscript} \
        ${DOMAIN_UID}-${ADMIN_NAME}:/shared/${testscript} \
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
+  ${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${ADMIN_NAME} -- \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -826,11 +828,11 @@ checkDataSource() {
 
   trace "Info: Checking datasource via '$script_cmd' on pod '$pod_name'."
 
-  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
+  ${KUBERNETES_CLI} -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
 
   tracen "Info: Waiting for script to complete"
   printdots_start
-  kubectl exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
+  ${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
@@ -855,13 +857,13 @@ checkFileStores() {
 
   trace "Info: Verifying .DAT file store checks for ${server_name}, output file '$outfile'."
 
-  kubectl -n ${NAMESPACE} \
+  ${KUBERNETES_CLI} -n ${NAMESPACE} \
     cp ${SCRIPTPATH}/${testscript} \
        ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1:/shared/${testscript} \
     || exit 1
 
   rm -f ${outfile}
-  kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  ${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
       /shared/${testscript} \
       > ${outfile} 2>&1
   status=$?
@@ -887,13 +889,13 @@ checkNodeManagerMemArg() {
 
   # Verify that default NODEMGR_MEM_ARGS environment value (-Xms64m -Xmx100m) was applied to the Node Manager
   # command line when NODEMGR_MEM_ARGS was not defined.
-  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  linecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "\-Xms64m -Xmx100m" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
   if [ "$linecount" != "1" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
     logstatus=1
   fi
 
@@ -903,13 +905,13 @@ checkNodeManagerMemArg() {
 
   # Verify that NODEMGR_MEM_ARGS environment value (-Xms32m -Xmx200m) was applied to the Node Manager
   # command line, of the Admin Server pod, when NODEMGR_MEM_ARGS was explicitly defined.
-  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  adminLinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "\-Xms32m -Xmx200m" /shared/logs/servers/${ADMIN_NAME?}/logs/${ADMIN_NAME?}_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
   if [ "$adminLinecount" != "1" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Xms32m -Xmx200m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Xms32m -Xmx200m' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
     logstatus=1
   fi
 
@@ -919,13 +921,13 @@ checkNodeManagerMemArg() {
 
   # Verify that NODEMGR_MEM_ARGS environment value contains "-Djava.security.egd=file:/dev/./urandom" in the Node Manager
   # command line of the Managed Server pod.
-  adminLinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  adminLinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "urandom" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_MEM_ARGS"  |  grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
   if [ "$adminLinecount" != "1" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Djava.security.egd=file:/dev/./urandom' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${ADMIN-NAME?}' does not contain exactly 1 line that match ' grep '-Djava.security.egd=file:/dev/./urandom' ', this probably means that it's reporting NODEMGR_MEM_ARGS not applied"
     logstatus=1
   fi
 
@@ -934,13 +936,13 @@ checkNodeManagerMemArg() {
   fi
 
   # Verify that USER_MEM_ARGS environment value did not get applied to the Node Manager command line
-  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  maxRamlinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "MaxRAMFraction=1" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
   if [ "$maxRamlinecount" != "0" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS was applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS was applied"
     logstatus=1
   fi
 
@@ -959,13 +961,13 @@ checkManagedServer1MemArg() {
   trace "Info: Verifying managed server memory arguments"
 
   # Verify that USER_MEM_ARGS environment value was applied to the Managed Server 1 command line
-  maxRamlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  maxRamlinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "MaxRAMFraction=1"  /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
   if [ "$maxRamlinecount" != "1" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS not applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep 'MaxRAMFraction=1' ', this probably means that it's reporting USER_MEM_ARGS not applied"
     logstatus=1
   fi
 
@@ -974,13 +976,13 @@ checkManagedServer1MemArg() {
   fi
 
   # Verify that NODEMGR_MEM_ARGS environment value did not get applied to the Managed Server 1 command line
-  linecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  linecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "\-Xms64m -Xmx100m" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_MEM_ARGS"  | wc -l`"
   logstatus=0
 
   if [ "$linecount" != "0" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS was applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep '-Xms64m -Xmx100m' ', this probably means that it's reporting NODEMGR_MEM_ARGS was applied"
     logstatus=1
   fi
 
@@ -1000,13 +1002,13 @@ checkNodeManagerJavaOptions() {
   trace "Info: Verifying node manager java options"
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value was applied to the Node Manager command line
-  nodeMgrlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  nodeMgrlinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "\-Dnodemgr.java.options" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1_nodemanager.out \
        | grep -v "NODEMGR_JAVA_OPTIONS"  | wc -l`"
   logstatus=0
 
   if [ "$nodeMgrlinecount" != "1" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS not applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 1 line that match ' grep '-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS not applied"
     logstatus=1
   fi
 
@@ -1015,13 +1017,13 @@ checkNodeManagerJavaOptions() {
   fi
 
   # Verify that NODEMGR_JAVA_OPTIONS environment value did not get applied to the Managed Server command line
-  nmJavaOptlinecount="`kubectl exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
+  nmJavaOptlinecount="`${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1 -- \
        grep "\-Dnodemgr.java.options" /shared/logs/servers/${MANAGED_SERVER_NAME_BASE?}1/logs/${MANAGED_SERVER_NAME_BASE?}1.out \
        | grep -v "NODEMGR_JAVA_OPTIONS" | wc -l`"
   logstatus=0
 
   if [ "$nmJavaOptlinecount" != "0" ]; then
-    trace "Error: The latest log from 'kubectl -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'M-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS was applied"
+    trace "Error: The latest log from '${KUBERNETES_CLI} -n ${NAMESPACE} logs ${DOMAIN_UID}-${MANAGED_SERVER_NAME_BASE?}1' does not contain exactly 0 lines that match ' grep 'M-Dnodemgr.java.options' ', this probably means that it's reporting NODEMGR_JAVA_OPTIONS was applied"
     logstatus=1
   fi
 
@@ -1057,11 +1059,11 @@ createStaticCluster() {
 
   trace "Info: Creating static cluster '$cluster_name' via '$script_cmd' on pod '$pod_name'."
 
-  kubectl -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
+  ${KUBERNETES_CLI} -n ${NAMESPACE} cp ${SCRIPTPATH}/${script_file} ${pod_name}:/shared/${script_file} || exit 1
 
   tracen "Info: Waiting for createStaticCluster script to complete"
   printdots_start
-  kubectl exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
+  ${KUBERNETES_CLI} exec -it -n ${NAMESPACE} ${pod_name} -- ${script_cmd} > ${out_file} 2>&1
   status=$?
   printdots_end
   if [ $status -ne 0 ]; then
@@ -1089,12 +1091,12 @@ deployDomainConfigMap
 deployTestScriptConfigMap
 deployCustomOverridesConfigMap
 
-kubectl -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
-kubectl -n $NAMESPACE create secret generic my-secret \
+${KUBERNETES_CLI} -n $NAMESPACE delete secret my-secret > /dev/null 2>&1
+${KUBERNETES_CLI} -n $NAMESPACE create secret generic my-secret \
         --from-literal=key1=supersecret  \
         --from-literal=encryptd=supersecret  \
-        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: kubectl output: "
-kubectl -n $NAMESPACE label secret my-secret weblogic.domainUID=$DOMAIN_UID 2>&1 | tracePipe "Info: kubectl output: " \
+        --from-literal=key2=topsecret 2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: "
+${KUBERNETES_CLI} -n $NAMESPACE label secret my-secret weblogic.domainUID=$DOMAIN_UID 2>&1 | tracePipe "Info: ${KUBERNETES_CLI} output: " \
   || exit 1
 
 if [ ! "$RERUN_INTROSPECT_ONLY" = "true" ]; then

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #  This script uses the WebLogic Image Tool to build an image with model in image
@@ -28,6 +28,8 @@
 #    MODEL_IMAGE_NAME  - defaults to 'model-in-image'
 #    MODEL_IMAGE_TAG   - defaults to 'v1'
 #    MODEL_IMAGE_BUILD - 'when-missing' or 'always' (default)
+#
+#    WLSIMG_BUILDER    - defaults to 'docker'
 #
 
 set -eu
@@ -60,7 +62,7 @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-v1}
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
 
 if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && \
-   [ "`docker images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
+   [ "`${WLSIMG_BUILDER:-docker} images $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG | awk '{ print $1 ":" $2 }' | grep -c $MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG`" = "1" ]; then
   echo @@
   echo "@@ Info: --------------------------------------------------------------------------------------------------"
   echo "@@ Info: NOTE!!!                                                                                           "

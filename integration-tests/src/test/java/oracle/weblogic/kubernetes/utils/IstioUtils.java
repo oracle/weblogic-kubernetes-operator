@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUT
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -117,16 +118,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getIngressPort = null;
-    getIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
+    getIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"http2\")].nodePort}'");
-    logger.info("getIngressPort: kubectl command {0}", new String(getIngressPort));
+    logger.info("getIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getIngressPort));
     try {
       result = exec(new String(getIngressPort), true);
     } catch (Exception ex) {
       logger.info("Exception in getIngressPort() {0}", ex);
       return 0;
     }
-    logger.info("getIngressPort: kubectl returned {0}", result.toString());
+    logger.info("getIngressPort: " + KUBERNETES_CLI + " returned {0}", result.toString());
     if (result.stdout() == null) {
       return 0;
     } else {
@@ -143,16 +144,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getSecureIngressPort = null;
-    getSecureIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
+    getSecureIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getSecureIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"https\")].nodePort}'");
-    logger.info("getSecureIngressPort: kubectl command {0}", new String(getSecureIngressPort));
+    logger.info("getSecureIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getSecureIngressPort));
     try {
       result = exec(new String(getSecureIngressPort), true);
     } catch (Exception ex) {
       logger.info("Exception in getSecureIngressPort() {0}", ex);
       return 0;
     }
-    logger.info("getSecureIngressPort: kubectl returned {0}", result.toString());
+    logger.info("getSecureIngressPort: " + KUBERNETES_CLI + " returned {0}", result.toString());
     if (result.stdout() == null) {
       return 0;
     } else {
@@ -169,16 +170,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer getTcpIngressPort = null;
-    getTcpIngressPort = new StringBuffer("kubectl -n istio-system get service istio-ingressgateway ");
+    getTcpIngressPort = new StringBuffer(KUBERNETES_CLI + " -n istio-system get service istio-ingressgateway ");
     getTcpIngressPort.append("-o jsonpath='{.spec.ports[?(@.name==\"tcp\")].nodePort}'");
-    logger.info("getTcpIngressPort: kubectl command {0}", new String(getTcpIngressPort));
+    logger.info("getTcpIngressPort: " + KUBERNETES_CLI + " command {0}", new String(getTcpIngressPort));
     try {
       result = exec(new String(getTcpIngressPort), true);
     } catch (Exception ex) {
       logger.info("Exception in getTcpIngressPort() {0}", ex);
       return 0;
     }
-    logger.info("getTcpIngressPort: kubectl returned {0}", result.toString());
+    logger.info("getTcpIngressPort: " + KUBERNETES_CLI + " returned {0}", result.toString());
     if (result.stdout() == null) {
       return 0;
     } else {
@@ -196,16 +197,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
-    deployIstioGateway = new StringBuffer("kubectl apply -f ");
+    deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
-    logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
+    logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
       logger.info("Exception in deployIstioGateway() {0}", ex);
       return false;
     }
-    logger.info("deployIstioHttpGateway: kubectl returned {0}", result.toString());
+    logger.info("deployIstioHttpGateway: " + KUBERNETES_CLI + " returned {0}", result.toString());
     return !(result.stdout().contains("Error"));
   }
 
@@ -220,16 +221,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
-    deployIstioGateway = new StringBuffer("kubectl apply -f ");
+    deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
-    logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
+    logger.info("deployIstioGateway: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
       logger.info("Exception in deployIstioGateway() {0}", ex);
       return false;
     }
-    logger.info("deployIstioTcpGateway: kubectl returned {0}", result.toString());
+    logger.info("deployIstioTcpGateway: " + KUBERNETES_CLI + " returned {0}", result.toString());
     return result.stdout().contains("istio-tcp-gateway created");
   }
 
@@ -244,16 +245,16 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer deployIstioGateway = null;
-    deployIstioGateway = new StringBuffer("kubectl apply -f ");
+    deployIstioGateway = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioGateway.append(configPath);
-    logger.info("deployIstioDestinationRule: kubectl command {0}", new String(deployIstioGateway));
+    logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " command {0}", new String(deployIstioGateway));
     try {
       result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
       logger.info("Exception in deployIstioDestinationRule() {0}", ex);
       return false;
     }
-    logger.info("deployIstioDestinationRule: kubectl returned {0}", result.toString());
+    logger.info("deployIstioDestinationRule: " + KUBERNETES_CLI + " returned {0}", result.toString());
     return result.stdout().contains("destination-rule created");
   }
 
@@ -287,16 +288,16 @@ public class IstioUtils {
         prometheusPort));
     ExecResult result = null;
     StringBuffer deployIstioPrometheus = null;
-    deployIstioPrometheus = new StringBuffer("kubectl apply -f ");
+    deployIstioPrometheus = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIstioPrometheus.append(targetPromFile.toString());
-    logger.info("deployIstioPrometheus: kubectl command {0}", new String(deployIstioPrometheus));
+    logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " command {0}", new String(deployIstioPrometheus));
     try {
       result = exec(new String(deployIstioPrometheus), true);
     } catch (Exception ex) {
       logger.info("Exception in deployIstioPrometheus() {0}", ex);
       return false;
     }
-    logger.info("deployIstioPrometheus: kubectl returned {0}", result.toString());
+    logger.info("deployIstioPrometheus: " + KUBERNETES_CLI + " returned {0}", result.toString());
     try {
       for (var item : listPods("istio-system", null).getItems()) {
         if (item.getMetadata() != null) {

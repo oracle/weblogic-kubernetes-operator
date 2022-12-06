@@ -39,13 +39,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ORACLELINUX_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxImageUsingWITAndReturnResult;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAuxiliaryImage;
@@ -55,7 +56,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -147,7 +148,7 @@ class ItMiiCreateAuxImageWithImageTool {
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
 
     // create auxiliary image using imagetool command if does not exists
-    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
+    if (imageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -159,9 +160,9 @@ class ItMiiCreateAuxImageWithImageTool {
 
 
     // push auxiliary image to repo for multi node cluster
-    logger.info("docker push image {0} to registry {2}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {2}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
+    imageRepoLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
@@ -231,7 +232,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(modelList)
         .wdtVersion(WDT_TEST_VERSION);
 
-    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
+    if (imageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     
@@ -245,9 +246,9 @@ class ItMiiCreateAuxImageWithImageTool {
 
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
+    imageRepoLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     String clusterName = "cluster-1";
 
@@ -312,7 +313,7 @@ class ItMiiCreateAuxImageWithImageTool {
             .modelArchiveFiles(archiveList)
             .modelFiles(modelList);
 
-    if (dockerImageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
+    if (imageExists(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag)) {
       deleteImage(miiAuxiliaryImage);
     }
     logger.info("creating auxiliary image {0} using imagetool.sh ", miiAuxiliaryImage);
@@ -323,9 +324,9 @@ class ItMiiCreateAuxImageWithImageTool {
         "createAuxImage to be successful");
 
     // push image1 to repo for multi node cluster
-    logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage,
+    logger.info(WLSIMG_BUILDER + " push image {0} to registry {1}", miiAuxiliaryImage,
         DOMAIN_IMAGES_REPO);
-    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage);
+    imageRepoLoginAndPushImageToRegistry(miiAuxiliaryImage);
 
     // create domain custom resource using auxiliary image
     String domain3Uid = "domain3";
@@ -377,7 +378,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // check there is no mydryrunimage created
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker images")
+        .command(WLSIMG_BUILDER + " images")
         .saveResults(true)
         .redirect(true);
 
@@ -410,11 +411,11 @@ class ItMiiCreateAuxImageWithImageTool {
   @Test
   @DisplayName("Test createAuxImage with --pull option")
   void testCreateAuxImagePullOption() {
-    // docker pull base image first
+    // pull base image first
     String imageAndTag = BUSYBOX_IMAGE + ":" + BUSYBOX_TAG;
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker pull " + imageAndTag)
+        .command(WLSIMG_BUILDER + " pull " + imageAndTag)
         .saveResults(true)
         .redirect(true);
 
@@ -427,7 +428,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .pull(true)
         .modelFiles(Collections.singletonList(MODEL_DIR + "/model.update.wm.yaml"));
 
-    if (dockerImageExists(auxImageName, MII_BASIC_IMAGE_TAG)) {
+    if (imageExists(auxImageName, MII_BASIC_IMAGE_TAG)) {
       deleteImage(auxImageName + ":" + MII_BASIC_IMAGE_TAG);
     }
     // create auxiliary image
@@ -437,7 +438,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // verify that base and aux image have the same RootFS
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
+            .command(WLSIMG_BUILDER + " inspect --format='{{index .RootFS.Layers 0}}' " + imageAndTag)
             .saveResults(true)
             .redirect(true);
 
@@ -446,7 +447,9 @@ class ItMiiCreateAuxImageWithImageTool {
 
     params = Command
             .defaultCommandParams()
-            .command("docker inspect --format='{{index .RootFS.Layers 0}}' " + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
+            .command(WLSIMG_BUILDER
+                + " inspect --format='{{index .RootFS.Layers 0}}' "
+                + auxImageName + ":" + MII_BASIC_IMAGE_TAG)
             .saveResults(true)
             .redirect(true);
 
@@ -464,7 +467,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // remove images containing <none>
     CommandParams params = Command
         .defaultCommandParams()
-        .command("docker rmi $(docker images |grep none | awk '{print $3}')")
+        .command(WLSIMG_BUILDER + " rmi $(" + WLSIMG_BUILDER + " images |grep none | awk '{print $3}')")
         .saveResults(true)
         .redirect(true);
 
@@ -483,7 +486,7 @@ class ItMiiCreateAuxImageWithImageTool {
     // verify there is intermediate images created and kept
     params = Command
         .defaultCommandParams()
-        .command("docker images")
+        .command(WLSIMG_BUILDER + " images")
         .saveResults(true)
         .redirect(true);
 

@@ -20,12 +20,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createAuxImageAndReturnResult;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -118,7 +118,7 @@ public class AuxiliaryImageUtils {
   public static void createAndPushAuxiliaryImage(String imageName, String imageTag, WitParams witParams) {
     // create auxiliary image using imagetool command if does not exists
     LoggingFacade logger = getLogger();
-    if (! dockerImageExists(imageName, imageTag)) {
+    if (! imageExists(imageName, imageTag)) {
       logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", imageName, imageTag);
       testUntil(
           withStandardRetryPolicy,
@@ -131,8 +131,8 @@ public class AuxiliaryImageUtils {
 
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(imageName + ":" + imageTag);
+      logger.info("push image {0} to registry {1}", imageName, DOMAIN_IMAGES_REPO);
+      imageRepoLoginAndPushImageToRegistry(imageName + ":" + imageTag);
     }
   }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest.resource;
@@ -101,7 +101,7 @@ public class BaseResource {
       b.segment(seg);
     }
 
-    // return relative paths since the Operator runs in a docker container
+    // return relative paths since the Operator runs in a container
     // and the host/port that a client sees outside the container doesn't
     // match the one used inside the container - i.e. we don't want to leak
     // the host/port inside the container to the client

@@ -32,7 +32,9 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
@@ -216,7 +218,7 @@ public class FileUtils {
                                                  String srcPath,
                                                  Path destPath) throws IOException, InterruptedException {
     LoggingFacade logger = getLogger();
-    StringBuffer copyFileCmd = new StringBuffer("kubectl exec ");
+    StringBuffer copyFileCmd = new StringBuffer(KUBERNETES_CLI + " exec ");
     copyFileCmd.append(" -n ");
     copyFileCmd.append(namespace);
     copyFileCmd.append(" pod/");
@@ -229,10 +231,10 @@ public class FileUtils {
     copyFileCmd.append(destPath);
 
     // copy a file from pod to local using kubectl exec
-    logger.info("kubectl copy command is {0}", copyFileCmd.toString());
+    logger.info(KUBERNETES_CLI + " copy command is {0}", copyFileCmd.toString());
     ExecResult result = assertDoesNotThrow(() -> exec(new String(copyFileCmd), true));
 
-    logger.info("kubectl copy returned {0}", result.toString());
+    logger.info(KUBERNETES_CLI + " copy returned {0}", result.toString());
   }
 
   /**
@@ -302,6 +304,35 @@ public class FileUtils {
   }
 
   /**
+   * Delete directories in a pod in the specified namespace.
+   * @param namespace The Kubernetes namespace that the pod is in
+   * @param pod The name of the Kubernetes pod where the command is expected to run
+   * @param container The container in the Pod where the command is to be run. If no
+   *                         container name is provided than the first container in the Pod is used.
+   * @param redirectToStdout copy process output to stdout
+   * @param directoryToDelete directories to be deleted
+   */
+  public static void deleteDirectories(String namespace,
+                                       String pod,
+                                       String container,
+                                       boolean redirectToStdout,
+                                       List<String> directoryToDelete) {
+    //Delete directories.
+    directoryToDelete.forEach(newDir -> {
+      String deleteCmd = "rm -rf " + newDir;
+      getLogger().info("dir to delete {0} ", deleteCmd);
+
+      try {
+        ExecResult execResult = execCommand(namespace,
+            pod, container, redirectToStdout,"/bin/sh", "-c", deleteCmd);
+        getLogger().info("Directory created " + execResult.stdout());
+      } catch (Exception ex) {
+        throw new RuntimeException(ex);
+      }
+    });
+  }
+
+  /**
    * Copy file from source directory to destination directory.
    *
    * @param source path of source file
@@ -322,12 +353,12 @@ public class FileUtils {
    * @param dest path of target file
    * @return ExecResult containing the content of the given file
    */
-  public static ExecResult copyFileToDockerContainer(String containerName, String source, String dest) {
+  public static ExecResult copyFileToImageContainer(String containerName, String source, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 
-    // create a WebLogic docker container
-    String cpToContainerCmd = new StringBuffer("docker cp ")
+    // create a WebLogic container
+    String cpToContainerCmd = new StringBuffer(WLSIMG_BUILDER + " cp ")
         .append(source)
         .append(" ")
         .append(containerName)
@@ -342,13 +373,13 @@ public class FileUtils {
       return null;
     }
 
-    readFileCopiedInDockerContainer(containerName, dest);
+    readFileCopiedInImageContainer(containerName, dest);
 
-    // check if file copied to docker container
-    logger.info("Wait for docker container {0} starting", containerName);
+    // check if file copied to container
+    logger.info("Wait for container {0} starting", containerName);
     testUntil(
         withStandardRetryPolicy,
-        isFileCopiedToDockerContainer(containerName, dest),
+        isFileCopiedToImageContainer(containerName, dest),
         logger,
         "{0} is copied to container {1}",
         dest,
@@ -360,28 +391,28 @@ public class FileUtils {
   /**
    * Check if the file copied to destination directory successfully.
    *
-   * @param containerName docker container name to check
+   * @param containerName container name to check
    * @param dest path of target file
    * @return true if file copied successfully, otherwise false
    */
-  public static Callable<Boolean> isFileCopiedToDockerContainer(String containerName, String dest) {
-    return () -> checkFileCopiedToDockerContainer(containerName, dest);
+  public static Callable<Boolean> isFileCopiedToImageContainer(String containerName, String dest) {
+    return () -> checkFileCopiedToImageContainer(containerName, dest);
   }
 
   /**
    * Check if the file copied to destination directory successfully.
    *
-   * @param containerName docker container name to check
+   * @param containerName container name to check
    * @param dest path of target file
    * @return true if file copied successfully, otherwise false
    */
-  public static boolean checkFileCopiedToDockerContainer(String containerName, String dest) {
+  public static boolean checkFileCopiedToImageContainer(String containerName, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 
     // check the file is copied over successfully
-    //String checkCmd = new StringBuffer("docker exec -it ")
-    String checkCmd = new StringBuffer("docker exec ")
+    //String checkCmd = new StringBuffer(WLSIMG_BUILDER + " exec -it ")
+    String checkCmd = new StringBuffer(WLSIMG_BUILDER + " exec ")
         .append(containerName)
         .append(" /bin/sh -c \"find ")
         .append(dest)
@@ -400,16 +431,16 @@ public class FileUtils {
   /**
    * Check if the file copied to destination directory successfully.
    *
-   * @param containerName docker container name to check
+   * @param containerName container name to check
    * @param dest path of target file
    */
-  public static void readFileCopiedInDockerContainer(String containerName, String dest) {
+  public static void readFileCopiedInImageContainer(String containerName, String dest) {
     LoggingFacade logger = getLogger();
     ExecResult result = null;
 
     // check the file is copied over successfully
-    //String readCmd = new StringBuffer("docker exec -it "
-    String readCmd = new StringBuffer("docker exec ")
+    //String readCmd = new StringBuffer(WLSIMG_BUILDER + " exec -it "
+    String readCmd = new StringBuffer(WLSIMG_BUILDER + " exec ")
         .append(containerName)
         .append(" /bin/sh -c \"cat ")
         .append(dest)
@@ -468,7 +499,7 @@ public class FileUtils {
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
-    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);    
+    logger.info("Replacing {0} in {1} with {2}", regex, src.toString(), replacement);
     String content = new String(Files.readAllBytes(src), StandardCharsets.UTF_8);
     if (!content.contains(regex)) {
       logger.info("search string {0} not found to replace with {1}", regex, replacement);

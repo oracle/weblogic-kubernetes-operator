@@ -29,13 +29,13 @@ while getopts ":h:n:" opt; do
   esac
 done
 
-dbpod=`kubectl get po -n ${namespace}  | grep oracle-db | cut -f1 -d " " `
-kubectl delete -f ${scriptDir}/common/oracle.db.${namespace}.yaml  --ignore-not-found
+dbpod=`${KUBERNETES_CLI:-kubectl} get po -n ${namespace}  | grep oracle-db | cut -f1 -d " " `
+${KUBERNETES_CLI:-kubectl} delete -f ${scriptDir}/common/oracle.db.${namespace}.yaml  --ignore-not-found
 rm ${scriptDir}/common/oracle.db.${namespace}.yaml  --force
 
 if [ -z "${dbpod}" ]; then
   echo "Couldn't find oracle-db pod in namespace [${namespace}]."
 else
   checkPodDelete ${dbpod} ${namespace}
-  kubectl delete svc/oracle-db -n ${namespace}  --ignore-not-found
+  ${KUBERNETES_CLI:-kubectl} delete svc/oracle-db -n ${namespace}  --ignore-not-found
 fi

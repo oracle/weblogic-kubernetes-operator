@@ -15,6 +15,11 @@ validate_script() {
   if [ -n "$result" ]; then
    printf "Please remove usages of 'function' keyword from %s:\n%s\n" "$1" "$result"
   fi
+
+  result=$(grep "egrep" "$1")
+  if [ -n "$result" ]; then
+   printf "Please replace usages of 'egrep' with 'grep -E' in %s:\n%s\n" "$1" "$result"
+  fi
 }
 
 

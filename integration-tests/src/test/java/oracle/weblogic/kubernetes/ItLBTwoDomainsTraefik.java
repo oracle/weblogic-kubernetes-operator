@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
@@ -215,7 +216,7 @@ class ItLBTwoDomainsTraefik {
           .replaceAll("@domain2uid@", domainUids.get(1))
           .getBytes(StandardCharsets.UTF_8));
     });
-    String command = "kubectl create -f " + dstFile;
+    String command = KUBERNETES_CLI + " create -f " + dstFile;
     logger.info("Running {0}", command);
     ExecResult result;
     try {

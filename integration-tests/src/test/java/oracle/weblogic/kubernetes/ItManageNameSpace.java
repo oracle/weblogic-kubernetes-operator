@@ -545,8 +545,8 @@ class ItManageNameSpace {
   }
 
   private static void createSecrets(String domainNamespace) {
-    // create docker registry secret to pull the image from registry
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    // create registry secret to pull the image from registry
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     if (!domainNamespace.equals("default")) {
       createTestRepoSecret(domainNamespace);
     }
@@ -561,7 +561,7 @@ class ItManageNameSpace {
   }
 
   private static void deleteSecrets(String domainNamespace) {
-    logger.info("Deleting docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Deleting registry secret in namespace {0}", domainNamespace);
     if (!domainNamespace.equals("default")) {
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
     }
@@ -577,7 +577,7 @@ class ItManageNameSpace {
 
   private void createVerifyDomain(String domainNamespace, String domainUid, String miiImage, DomainResource domain) {
     // create domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
     String adminServerPodName = domainUid + adminServerPrefix;

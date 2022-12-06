@@ -794,8 +794,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     configureDomain().withInitContainer(createInitContainer())
         .withRequestRequirement("memory", "768Mi")
         .withRequestRequirement("cpu", "250m")
-        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
-        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+        .withAdditionalVolumeMount("compat-ai-vol-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compat-ai-vol-auxiliaryimagevolume1")
             .emptyDir(new V1EmptyDirVolumeSource()));
 
     useProductionHash();
@@ -809,14 +809,14 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   private V1Container createInitContainer() {
-    return new V1Container().name("compatibility-mode-operator-aux-container1").image("model-in-image:WLS-AI-v1")
+    return new V1Container().name("compat-operator-aux-container1").image("model-in-image:WLS-AI-v1")
         .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
         .imagePullPolicy("IfNotPresent")
         .addEnvItem(envItem(AUXILIARY_IMAGE_PATH, DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH))
         .addEnvItem(envItem(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH))
         .addEnvItem(envItem(AUXILIARY_IMAGE_COMMAND, AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND))
         .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_IMAGE, "model-in-image:WLS-AI-v1"))
-        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_NAME, "compatibility-mode-operator-aux-container1"))
+        .addEnvItem(envItem(AUXILIARY_IMAGE_CONTAINER_NAME, "compat-operator-aux-container1"))
         .addVolumeMountsItem(new V1VolumeMount().mountPath(AUXILIARY_IMAGE_TARGET_PATH)
             .name("aux-image-volume-auxiliaryimagevolume1"))
         .addVolumeMountsItem(new V1VolumeMount().mountPath("/weblogic-operator/scripts")
@@ -828,8 +828,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     configureDomain().withInitContainer(createInitContainer())
         .withRequestRequirement("memory", "768Mi")
         .withRequestRequirement("cpu", "250m")
-        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
-        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+        .withAdditionalVolumeMount("compat-ai-vol-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compat-ai-vol-auxiliaryimagevolume1")
             .emptyDir(new V1EmptyDirVolumeSource()));
 
     useProductionHash();
@@ -847,8 +847,8 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     configureDomain().withInitContainer(createInitContainer())
         .withRequestRequirement("memory", "768Mi")
         .withRequestRequirement("cpu", "250m")
-        .withAdditionalVolumeMount("compatibility-mode-aux-image-volume-auxiliaryimagevolume1", "/auxiliary")
-        .withAdditionalVolume(new V1Volume().name("compatibility-mode-aux-image-volume-auxiliaryimagevolume1")
+        .withAdditionalVolumeMount("compat-ai-vol-auxiliaryimagevolume1", "/auxiliary")
+        .withAdditionalVolume(new V1Volume().name("compat-ai-vol-auxiliaryimagevolume1")
             .emptyDir(new V1EmptyDirVolumeSource()));
 
     useProductionHash();

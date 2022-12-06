@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -10,6 +10,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -83,7 +84,7 @@ public class Application {
   }
 
   /**
-   * Check if an application is accessible inside a WebLogic server pod using "kubectl exec" command.
+   * Check if an application is accessible inside a WebLogic server pod using "KUBERNTES_CLI exec" command.
    *
    * @param namespace Kubernetes namespace where the WebLogic server pod is running
    * @param podName name of the WebLogic server pod
@@ -92,7 +93,7 @@ public class Application {
    * @param expectedResponse expected response from the app
    * @return true if the command succeeds
    */
-  public static boolean appAccessibleInPodKubectl(
+  public static boolean appAccessibleInPodKubernetesCLI(
       String namespace,
       String podName,
       String port,
@@ -100,9 +101,9 @@ public class Application {
       String expectedResponse
   ) {
 
-    // calling "kubectl exec" command to access the app inside a pod
+    // calling "KUBERNETES_CLI exec" command to access the app inside a pod
     String cmd = String.format(
-        "kubectl -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
+        KUBERNETES_CLI + " -n %s exec -it %s -- /bin/bash -c 'curl http://%s:%s/%s'",
         namespace,
         podName,
         podName,

@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -330,7 +331,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         oldValue,
         domainNamespace), "Failed to replace String ");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + targetHPAFile);
+    params.command(KUBERNETES_CLI + " apply -f " + targetHPAFile);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to create hpa or autoscale, result " + result);
@@ -340,7 +341,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   // verify hpa is getting the metrics
   private boolean verifyHPA(String namespace, String expectedOutput) {
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl get hpa custommetrics-hpa -n " + namespace);
+    params.command(KUBERNETES_CLI + " get hpa custommetrics-hpa -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info(result.stdout());
@@ -350,7 +351,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
   // verify custom metrics is exposed via prometheus adapter
   private boolean verifyCustomMetricsExposed(String namespace, String customMetric) {
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl get --raw /apis/custom.metrics.k8s.io/v1beta1/namespaces/"
+    params.command(KUBERNETES_CLI + " get --raw /apis/custom.metrics.k8s.io/v1beta1/namespaces/"
         + namespace + "/pods/%2A/" + customMetric + "  | jq .");
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
@@ -401,7 +402,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
           .isTrue();
     }
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f " + targetHPAFile);
+    params.command(KUBERNETES_CLI + " delete -f " + targetHPAFile);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to delete hpa , result " + result);
