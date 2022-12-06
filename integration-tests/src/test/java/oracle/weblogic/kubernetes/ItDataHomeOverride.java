@@ -32,7 +32,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -290,7 +290,7 @@ class ItDataHomeOverride {
         WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, true, null, false);
 
     // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
   }

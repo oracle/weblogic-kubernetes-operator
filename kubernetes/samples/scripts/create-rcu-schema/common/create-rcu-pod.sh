@@ -64,7 +64,7 @@ if [ -z "${pullsecret}" ]; then
   pullsecretPrefix="#"
 fi
 
-rcupod=`kubectl get po -n ${namespace} | grep "^rcu " | cut -f1 -d " " `
+rcupod=`${KUBERNETES_CLI:-kubectl} get po -n ${namespace} | grep "^rcu " | cut -f1 -d " " `
 if [ "$rcupod" = "rcu" ]; then
   echo "[INFO] Pod already exists. Skipping creation."
 else
@@ -83,8 +83,8 @@ else
   sed -i -e "s:%ORACLE_RCU_SECRET_NAME%:${credSecret}:g" $rcuYaml
   sed -i -e "s?image:.*?image: ${fmwimage}?g" $rcuYaml
 
-  kubectl delete po rcu -n ${namespace} --ignore-not-found
-  kubectl apply -f $rcuYaml
+  ${KUBERNETES_CLI:-kubectl} delete po rcu -n ${namespace} --ignore-not-found
+  ${KUBERNETES_CLI:-kubectl} apply -f $rcuYaml
 fi
 
 checkPod rcu $namespace # exits non zero non error
@@ -95,10 +95,10 @@ sleep 5
 
 echo "[INFO] Copying 'dropRepository.sh' and 'createRepository.sh' into the '/u01/oracle' directory in pod 'rcu'."
 
-kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/dropRepository.sh' < ${scriptDir}/dropRepository.sh || exit -5
-kubectl exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/createRepository.sh || exit -6
+${KUBERNETES_CLI:-kubectl} exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/dropRepository.sh' < ${scriptDir}/dropRepository.sh || exit -5
+${KUBERNETES_CLI:-kubectl} exec -n $namespace -i rcu -- bash -c 'cat > /u01/oracle/createRepository.sh' < ${scriptDir}/createRepository.sh || exit -6
 
-kubectl get po/rcu -n $namespace 
+${KUBERNETES_CLI:-kubectl} get po/rcu -n $namespace 
 
 echo "[INFO] Pod 'rcu' is running in namespace '$namespace'"
 

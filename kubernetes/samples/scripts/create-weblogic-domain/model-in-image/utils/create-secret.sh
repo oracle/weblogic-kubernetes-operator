@@ -28,7 +28,7 @@ usage() {
                         '-l walletFile=./ewallet.p12'.
                         Can be specified more than once. 
 
-  -dry kubectl        : Show the kubectl commands (prefixed with 'dryrun:')
+  -dry ${KUBERNETES_CLI}        : Show the ${KUBERNETES_CLI} commands (prefixed with 'dryrun:')
                         but do not perform them. 
 
   -dry yaml           : Show the yaml (prefixed with 'dryrun:') but do not
@@ -44,6 +44,7 @@ EOF
 set -e
 set -o pipefail
 
+KUBERNETES_CLI="${KUBERNETES_CLI:-kubectl}"
 DOMAIN_UID="sample-domain1"
 NAMESPACE="sample-domain1-ns"
 SECRET_NAME=""
@@ -64,7 +65,7 @@ while [ ! "${1:-}" = "" ]; do
     -f)   FILENAMES="${FILENAMES} --from-file=${2}" ;;
     -dry) DRY_RUN="${2}"
           case "$DRY_RUN" in
-            kubectl|yaml) ;;
+            ${KUBERNETES_CLI}|yaml) ;;
             *) echo "Error: Syntax Error. Pass '-?' for usage."
                exit 1
                ;;
@@ -89,51 +90,51 @@ fi
 
 set -eu
 
-kubectlDryRunDelete() {
+kubernetesCLIDryRunDelete() {
 cat << EOF
-dryrun:kubectl -n $NAMESPACE delete secret \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE delete secret \\
 dryrun:  $SECRET_NAME \\
 dryrun:  --ignore-not-found
 EOF
 }
 
-kubectlDryRunCreate() {
+kubernetesCLIDryRunCreate() {
 local moredry=""
 if [ "$DRY_RUN" = "yaml" ]; then
   local moredry="--dry-run=client -o yaml"
 fi
 cat << EOF
-dryrun:kubectl -n $NAMESPACE create secret generic \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE create secret generic \\
 dryrun:  $SECRET_NAME \\
 dryrun:  $LITERALS $FILENAMES ${moredry}
 EOF
 }
 
-kubectlDryRunLabel() {
+kubernetesCLIDryRunLabel() {
 cat << EOF
-dryrun:kubectl -n $NAMESPACE label  secret \\
+dryrun:${KUBERNETES_CLI} -n $NAMESPACE label  secret \\
 dryrun:  $SECRET_NAME \\
 dryrun:  weblogic.domainUID=$DOMAIN_UID
 EOF
 }
 
-kubectlDryRun() {
+kubernetesCLIDryRun() {
 cat << EOF
 dryrun:
 dryrun:echo "@@ Info: Setting up secret '$SECRET_NAME'."
 dryrun:
 EOF
-kubectlDryRunDelete
-kubectlDryRunCreate
-kubectlDryRunLabel
+kubernetesCLIDryRunDelete
+kubernetesCLIDryRunCreate
+kubernetesCLIDryRunLabel
 cat << EOF
 dryrun:
 EOF
 }
 
-if [ "$DRY_RUN" = "kubectl" ]; then
+if [ "$DRY_RUN" = "${KUBERNETES_CLI}" ]; then
 
-  kubectlDryRun
+  kubernetesCLIDryRun
 
 elif [ "$DRY_RUN" = "yaml" ]; then
 
@@ -143,7 +144,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   # don't change indent of the sed '/a' commands - the spaces are significant
   # (we use an old form of sed append to stay compatible with old bash on mac)
 
-  source <( kubectlDryRunCreate |  sed 's/dryrun://') \
+  source <( kubernetesCLIDryRunCreate |  sed 's/dryrun://') \
   | sed -e '/ name:/a\
   labels:' \
   | sed -e '/labels:/a\
@@ -154,5 +155,5 @@ elif [ "$DRY_RUN" = "yaml" ]; then
 
 else
 
-  source <( kubectlDryRun | sed 's/dryrun://')
+  source <( kubernetesCLIDryRun | sed 's/dryrun://')
 fi

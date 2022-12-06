@@ -181,7 +181,9 @@ for phase in initial update1 update2 update3 update4; do
 
   # setup secret script for the domain resource
 
-  $SCRIPTDIR/create-secrets.sh -dry kubectl | grep dryrun | sed 's/dryrun://' > $WORKDIR/$domain_path.secrets.sh
+  $SCRIPTDIR/create-secrets.sh -dry ${KUBERNETES_CLI:-kubectl} \
+    | grep dryrun | sed 's/dryrun://' \
+    > $WORKDIR/$domain_path.secrets.sh
   chmod +x $WORKDIR/$domain_path.secrets.sh
    
   # setup script for the configmap
@@ -198,7 +200,7 @@ for phase in initial update1 update2 update3 update4; do
       ${file_param} \
       -d $DOMAIN_UID \
       -n $DOMAIN_NAMESPACE \
-      -dry kubectl | grep dryrun | sed 's/dryrun://' \
+      -dry ${KUBERNETES_CLI:-kubectl} | grep dryrun | sed 's/dryrun://' \
       > $WORKDIR/$domain_path.model-configmap.sh
     chmod +x $WORKDIR/$domain_path.model-configmap.sh
   fi

@@ -38,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
@@ -120,9 +121,9 @@ class ItOpenshiftIstioMiiDomain {
       FileUtils.replaceStringInFile(smrYaml.toString(), "OPERATOR_NAMESPACE", opNamespace);
       FileUtils.replaceStringInFile(smrYaml.toString(), "DOMAIN_NAMESPACE", domainNamespace);
     });
-    logger.info("Run kubectl to create the service member roll");
+    logger.info("Run " + KUBERNETES_CLI + " to create the service member roll");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + smrYaml.toString());
+    params.command(KUBERNETES_CLI + " apply -f " + smrYaml.toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create service member roll");
 
@@ -248,9 +249,9 @@ class ItOpenshiftIstioMiiDomain {
     
     // get gateway url
     // oc -n istio-system get route istio-ingressgateway -o jsonpath='{.spec.host}'
-    logger.info("Run kubectl to get ingress gateway route");
+    logger.info("Run " + KUBERNETES_CLI + " to get ingress gateway route");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl get route -n istio-system istio-ingressgateway -o jsonpath='{.spec.host}'");
+    params.command(KUBERNETES_CLI + " get route -n istio-system istio-ingressgateway -o jsonpath='{.spec.host}'");
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertEquals(0, result.exitValue());
     assertNotNull(result.stdout());

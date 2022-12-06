@@ -42,7 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Image.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -134,7 +134,7 @@ class ItFmwDynamicDomainInPV {
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
+        + "dbUrl %s, dbListenerPost %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     logger.info("DB image: {0}, FMW image {1} used in the test",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);

@@ -186,14 +186,14 @@ openssl \
 
 set +e
 # Check if namespace exist
-kubectl get namespace $NAMESPACE >/dev/null 2>/dev/null
+${KUBERNETES_CLI:-kubectl} get namespace $NAMESPACE >/dev/null 2>/dev/null
 if [ $? -eq 1 ]; then
   echo "Namespace $NAMESPACE does not exist"
   exit 1
 fi
-kubectl get secret $SECRET_NAME -n $NAMESPACE >/dev/null 2>/dev/null
+${KUBERNETES_CLI:-kubectl} get secret $SECRET_NAME -n $NAMESPACE >/dev/null 2>/dev/null
 if [ $? -eq 1 ]; then
-  kubectl create secret tls "$SECRET_NAME" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n $NAMESPACE >/dev/null
+  ${KUBERNETES_CLI:-kubectl} create secret tls "$SECRET_NAME" --cert=${OP_CERT_PEM} --key=${OP_KEY_PEM} -n $NAMESPACE >/dev/null
 fi
 echo "externalRestIdentitySecret: $SECRET_NAME"
 

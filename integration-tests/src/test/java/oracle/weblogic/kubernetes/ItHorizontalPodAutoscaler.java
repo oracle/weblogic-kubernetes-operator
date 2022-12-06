@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.METRICS_SERVER_YAML;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -185,7 +186,7 @@ public class ItHorizontalPodAutoscaler {
       getLogger().info("After All cleanUp() method called");
       // delete metrics server
       CommandParams params = new CommandParams().defaults();
-      params.command("kubectl delete -f " + METRICS_SERVER_YAML);
+      params.command(KUBERNETES_CLI + " delete -f " + METRICS_SERVER_YAML);
       ExecResult result = Command.withParams(params).executeAndReturnResult();
       if (result.exitValue() != 0) {
         getLogger().info(
@@ -202,14 +203,14 @@ public class ItHorizontalPodAutoscaler {
   private void installMetricsServer() {
     // install metrics server
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + METRICS_SERVER_YAML);
+    params.command(KUBERNETES_CLI + " apply -f " + METRICS_SERVER_YAML);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
         "Failed to install metrics server, result " + result);
 
     // patch metrics server for fix this error
     // x509: cannot validate certificate for 192.168.65.4 because it doesn't contain any IP SANs
-    String patchCmd = "kubectl patch deployment metrics-server -n kube-system --type 'json' "
+    String patchCmd = KUBERNETES_CLI + " patch deployment metrics-server -n kube-system --type 'json' "
         + "-p '[{\"op\": \"add\", \"path\": \"/spec/template/spec/containers/0/args/-\","
         + "\"value\": \"--kubelet-insecure-tls\"}]'";
     new CommandParams().defaults();
@@ -233,7 +234,7 @@ public class ItHorizontalPodAutoscaler {
    */
   private void createHPA() {
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl autoscale cluster " + clusterResName
+    params.command(KUBERNETES_CLI + " autoscale cluster " + clusterResName
         + " --cpu-percent=50 --min=2 --max=4 -n " + domainNamespace);
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     assertTrue(result.exitValue() == 0,
@@ -250,7 +251,7 @@ public class ItHorizontalPodAutoscaler {
   private void createLoadOnCpuAndVerifyAutoscaling() {
     // execute command to increase cpu usage
     int duration = (OKE_CLUSTER == true) ? 60 : 30;
-    String cmd = "kubectl exec -t " + managedServerPrefix + "1 -n "
+    String cmd = KUBERNETES_CLI + " exec -t " + managedServerPrefix + "1 -n "
         + domainNamespace + "  -- timeout --foreground -s 2 "
         + duration + " dd if=/dev/zero of=/dev/null";
     CommandParams params = new CommandParams().defaults();
@@ -301,7 +302,7 @@ public class ItHorizontalPodAutoscaler {
   private boolean verifyHPA(String namespace, String hpaName) {
     CommandParams params = new CommandParams().defaults();
     params.saveResults(true);
-    params.command("kubectl get hpa " + hpaName + " -n " + namespace);
+    params.command(KUBERNETES_CLI + " get hpa " + hpaName + " -n " + namespace);
 
     ExecResult result = Command.withParams(params).executeAndReturnResult();
     logger.info("Get HPA result " + result);

@@ -181,6 +181,21 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
           <version>${exec-maven-plugin-version}</version>
+          <executions>
+            <execution>
+              <id>validate-kubectl-cli</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>exec</goal>
+              </goals>
+              <configuration>
+                <executable>../validateCLI.sh</executable>
+                <arguments>
+                  <argument>..</argument>
+                </arguments>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
 
         <plugin>

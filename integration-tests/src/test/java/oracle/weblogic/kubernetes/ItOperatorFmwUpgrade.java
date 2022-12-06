@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -56,7 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Image.getImageEnvVar;
 import static oracle.weblogic.kubernetes.assertions.impl.Domain.doesCrdExist;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
@@ -171,7 +172,7 @@ class ItOperatorFmwUpgrade {
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
+        + "dbUrl %s, dbListenerPost %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     logger.info("DB image: {0}, FMW image {1} used in the test",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -570,12 +571,12 @@ class ItOperatorFmwUpgrade {
     if (doesCrdExist) {
       Command
               .withParams(new CommandParams()
-                      .command("kubectl patch crd/domains.weblogic.oracle"
+                      .command(KUBERNETES_CLI + " patch crd/domains.weblogic.oracle"
                               + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
               .execute();
       Command
               .withParams(new CommandParams()
-                      .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+                      .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
               .execute();
     }
   }

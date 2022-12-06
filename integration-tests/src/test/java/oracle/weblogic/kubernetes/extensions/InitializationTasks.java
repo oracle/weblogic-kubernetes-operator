@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -71,6 +72,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -86,13 +88,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
@@ -152,35 +154,35 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         //Install cert-manager for Database installation through DB operator
         String certManager = CERT_MANAGER;
         CommandParams params = new CommandParams().defaults();
-        params.command("kubectl apply -f " + certManager);
+        params.command(KUBERNETES_CLI + " apply -f " + certManager);
         boolean response = Command.withParams(params).execute();
         assertTrue(response, "Failed to install cert manager");
 
         // Only the first thread will enter this block.
-        logger.info("Building docker Images before any integration test classes are run");
+        logger.info("Building Images before any integration test classes are run");
         context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
 
         // build the operator image
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-        assertTrue(Operator.buildImage(operatorImage), "docker build failed for Operator");
+        assertTrue(Operator.buildImage(operatorImage), "image build failed for Operator");
 
-        // docker login to BASE_IMAGES_REPO 
-        logger.info("docker login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
+        // login to BASE_IMAGES_REPO 
+        logger.info(WLSIMG_BUILDER + " login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
         testUntil(withVeryLongRetryPolicy,
-                () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+                () -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
                 logger,
-                "docker login to BASE_IMAGES_REPO to be successful");
+                WLSIMG_BUILDER + " login to BASE_IMAGES_REPO to be successful");
         // The following code is for pulling WLS images if running tests in Kind cluster
         if (KIND_REPO != null) {
           // The kind clusters can't pull images from BASE_IMAGES_REPO using the image pull secret.
           // It may be a containerd bug. We are going to workaround this issue.
           // The workaround will be to:
-          //   1. docker login
-          //   2. docker pull
-          //   3. docker tag with the KIND_REPO value
-          //   4. docker push this new image name
+          //   1. WLSIMG_BUILDER login
+          //   2. WLSIMG_BUILDER pull
+          //   3. WLSIMG_BUILDER tag with the KIND_REPO value
+          //   4. WLSIMG_BUILDER push this new image name
           //   5. use this image name to create the domain resource
           Collection<String> images = new ArrayList<>();
 
@@ -204,7 +206,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
+        if (! imageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -218,7 +220,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
         // build WDT basic image if does not exits
-        if (! dockerImageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
+        if (! imageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
           logger.info("Building wdt-basic image {0}", wdtBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -230,10 +232,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           logger.info("!!!! domain image {0} exists !!!!", wdtBasicImage);
         }
 
-        /* Check image exists using docker images | grep image tag.
+        /* Check image exists using WLSIMG_BUILDER images | grep image tag.
          * Tag name is unique as it contains date and timestamp.
          * This is a workaround for the issue on Jenkins machine
-         * as docker images imagename:imagetag is not working and
+         * as WLSIMG_BUILDER images imagename:imagetag is not working and
          * the test fails even though the image exists.
          */
         assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
@@ -242,11 +244,11 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
 
-        logger.info("docker login");
+        logger.info(WLSIMG_BUILDER + " login");
         testUntil(withVeryLongRetryPolicy,
-              () -> dockerLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
+              () -> imageRepoLogin(BASE_IMAGES_REPO, BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),
               logger,
-              "docker login to BASE_IMAGES_REPO to be successful");
+              WLSIMG_BUILDER + " login to BASE_IMAGES_REPO to be successful");
 
         // push the images to test images repository
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -263,13 +265,13 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
             if (KIND_REPO != null) {
               logger.info("kind load docker-image {0} --name kind", image);
             } else {
-              logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+              logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             }
             testUntil(
                 withVeryLongRetryPolicy,
-                () -> dockerPush(image),
+                () -> imagePush(image),
                 logger,
-                "docker push to TEST_IMAGES_REPO/kind for image {0} to be successful",
+                WLSIMG_BUILDER + " push to TEST_IMAGES_REPO/kind for image {0} to be successful",
                 image);
           }
 
@@ -277,7 +279,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           if (KIND_REPO != null) {
             Command
                 .withParams(new CommandParams()
-                    .command("docker exec kind-worker crictl images")
+                    .command(WLSIMG_BUILDER + " exec kind-worker crictl images")
                     .verbose(true)
                     .saveResults(true))
                 .execute();
@@ -317,7 +319,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   }
 
   /**
-   * Called when images are pushed to Docker allowing conditional cleanup of images that are pushed
+   * Called when images are pushed, allowing conditional cleanup of images that are pushed
    * to a remote registry.
    *
    * @param imageName Image name
@@ -378,7 +380,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     //delete certificate manager
     String certManager = CERT_MANAGER;
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f " + certManager);
+    params.command(KUBERNETES_CLI + " delete -f " + certManager);
     if (!Command.withParams(params).execute()) {
       logger.warning("Failed to uninstall cert manager");
     }
@@ -577,7 +579,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
-      return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
+      return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
     });
   }
   

@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -232,13 +233,13 @@ class ItExternalNodePortService {
         "nodeport.tunneling.yaml", templateMap));
     logger.info("Generated NodePort Tunneling file {0}", targetTunnelingFile);
 
-    StringBuffer deployNodePort = new StringBuffer("kubectl apply -f ");
+    StringBuffer deployNodePort = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployNodePort.append(Paths.get(RESULTS_ROOT, "nodeport.tunneling.yaml"));
     // Deploy the NodePort Service
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployNodePort), true));
 
-    logger.info("kubectl apply returned {0}", result.toString());
+    logger.info(KUBERNETES_CLI + " apply returned {0}", result.toString());
     String serviceName = domainUid + "-cluster-" + clusterName + "-ext";
     String portName = "clustert3channel";
     checkServiceExists(serviceName, domainNamespace);
@@ -313,7 +314,7 @@ class ItExternalNodePortService {
              Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
-    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(domainNamespace);
     javacCmd.append(" -it ");
     javacCmd.append(adminServerPodName);
@@ -345,7 +346,7 @@ class ItExternalNodePortService {
   @AfterAll
   public void tearDownAll() {
     if (!SKIP_CLEANUP) {
-      StringBuffer removeNodePort = new StringBuffer("kubectl delete -f ");
+      StringBuffer removeNodePort = new StringBuffer(KUBERNETES_CLI + " delete -f ");
       removeNodePort.append(Paths.get(RESULTS_ROOT, "cluster.nodeport.svc.yaml"));
       assertDoesNotThrow(() -> exec(new String(removeNodePort), true));
     }

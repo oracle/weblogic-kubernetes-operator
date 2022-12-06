@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -44,9 +45,9 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -61,7 +62,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -136,7 +137,7 @@ class ItAuxV8DomainImplicitUpgrade {
     // Note: This class must not be run in parallel with other class
     new Command()
           .withParams(new CommandParams()
-              .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+              .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
           .execute();
   }
 
@@ -220,10 +221,10 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -277,7 +278,7 @@ class ItAuxV8DomainImplicitUpgrade {
     assertNotNull(containerList, "/spec/serverPod/InitContainers is null");
     containerList.forEach(container -> {
       logger.info("The Init Container name is: {0} ", container.getName());
-      if (container.getName().equalsIgnoreCase("compatibility-mode-operator-aux-container1")) {
+      if (container.getName().equalsIgnoreCase("compat-operator-aux-container1")) {
         logger.info("The Compatiblity Init Container found");
         foundCompatiblityContainer = true;
       }
@@ -330,10 +331,10 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -396,10 +397,10 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -466,10 +467,10 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -539,10 +540,10 @@ class ItAuxV8DomainImplicitUpgrade {
         "domain.yaml", templateMap));
     logger.info("Generated Domain Resource file {0}", targetDomainFile);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
+    params.command(KUBERNETES_CLI + " apply -f "
             + Paths.get(WORK_DIR + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -576,8 +577,8 @@ class ItAuxV8DomainImplicitUpgrade {
              + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
              : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
 
-    dockerTag(imageName, imageUpdate);
-    dockerLoginAndPushImageToRegistry(imageUpdate);
+    imageTag(imageName, imageUpdate);
+    imageRepoLoginAndPushImageToRegistry(imageUpdate);
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
