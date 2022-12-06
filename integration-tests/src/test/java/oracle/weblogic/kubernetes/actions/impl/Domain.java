@@ -462,7 +462,7 @@ public class Domain {
     String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
-    
+
     assertNotNull(decodedToken, "Couldn't get secret, token is null");
 
     // build the curl command to scale the cluster
