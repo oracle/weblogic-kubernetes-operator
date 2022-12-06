@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -61,7 +62,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -274,12 +275,12 @@ class ItStickySession {
     String miiImage =
         createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, SESSMIGR_MODEL_FILE, SESSMIGR_APP_NAME);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     return miiImage;
@@ -301,7 +302,7 @@ class ItStickySession {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage);
 
@@ -368,7 +369,7 @@ class ItStickySession {
     setPodAntiAffinity(domain);
 
     // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
   }
@@ -491,7 +492,7 @@ class ItStickySession {
           .append("/")
           .append(curlUrlPath)
           .append(headerOption)
-          .append(httpHeaderFile).toString();
+          .append(httpHeaderFile);
     }
 
     return curlCmd.toString();
@@ -532,7 +533,7 @@ class ItStickySession {
     });
 
     // create Traefik ingress resource
-    String createIngressCmd = "kubectl create -f " + dstFile;
+    String createIngressCmd = KUBERNETES_CLI + " create -f " + dstFile;
     logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
         String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));
@@ -540,7 +541,7 @@ class ItStickySession {
         String.format("Failed to create Traefik ingress routing rules. Error is %s ", result.stderr()));
 
     // get Traefik ingress service name
-    String  getServiceName = "kubectl get services -n " + traefikNamespace + " -o name";
+    String  getServiceName = KUBERNETES_CLI + " get services -n " + traefikNamespace + " -o name";
     logger.info("Command to get Traefik ingress service name " + getServiceName);
     result = assertDoesNotThrow(() -> ExecCommand.exec(getServiceName, true),
         String.format("Failed to get Traefik ingress service name %s", getServiceName));

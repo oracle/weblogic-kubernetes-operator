@@ -291,7 +291,7 @@ public class ServerStartPolicyUtils {
   /**
    * Verify the server MBEAN configuration through rest API.
    * @param managedServer name of the managed server
-   * @returns true if MBEAN is found otherwise false
+   * @return true if MBEAN is found otherwise false
    **/
   public static boolean checkManagedServerConfiguration(String ingressHost, String managedServer,
                                                         String domainNamespace, String adminServerPodName) {

@@ -507,7 +507,7 @@ public class JobHelper {
       }
     }
 
-    private class ReadPodLogResponseStep extends ResponseStep<String> {
+    private static class ReadPodLogResponseStep extends ResponseStep<String> {
       public static final String INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
       private StringBuilder logMessage = new StringBuilder();
       private final List<String> severeStatuses = new ArrayList<>();

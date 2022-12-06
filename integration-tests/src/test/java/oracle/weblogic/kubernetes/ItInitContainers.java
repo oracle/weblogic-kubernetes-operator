@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -54,7 +55,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
@@ -155,12 +156,12 @@ class ItInitContainers {
   private static void createSecrets(String domainNamespace) {
     //create secrets for domain
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -236,7 +237,7 @@ class ItInitContainers {
       logger.info("Caught unexpected exception while calling getPodLog for pod "
           + podName
           + ex.getMessage()
-          + ex.getStackTrace());
+          + Arrays.toString(ex.getStackTrace()));
       return false;
     }
     if (podLog != null) {
@@ -423,7 +424,7 @@ class ItInitContainers {
     }
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
     String adminServerPodName = domainUid + adminServerPrefix;

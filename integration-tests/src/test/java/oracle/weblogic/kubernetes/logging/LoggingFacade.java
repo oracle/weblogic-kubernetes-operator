@@ -621,7 +621,7 @@ public class LoggingFacade {
   }
 
   /** Holds caller details obtained by inference. */
-  class CallerDetails {
+  static class CallerDetails {
     String clazz;
     String method;
   }

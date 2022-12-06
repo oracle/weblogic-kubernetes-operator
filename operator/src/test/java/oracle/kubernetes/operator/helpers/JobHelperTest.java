@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -40,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
@@ -71,6 +74,7 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
+import static oracle.kubernetes.common.utils.CommonUtils.getMD5Hash;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -98,7 +102,6 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
-import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
@@ -140,9 +143,9 @@ class JobHelperTest extends DomainValidationTestBase {
    * time the job ran.
    */
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
-  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getMD5Hash(LONG_RESOURCE_NAME);
-  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getMD5Hash(SECOND_LONG_RESOURCE_NAME);
-  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getMD5Hash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getHash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getHash(SECOND_LONG_RESOURCE_NAME);
+  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getHash(LONG_RESOURCE_NAME);
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
   public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = LONG_RESOURCE_NAME
         .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
@@ -167,13 +170,29 @@ class JobHelperTest extends DomainValidationTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<LogRecord> logRecords = new ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private static final NoSuchAlgorithmException NO_SUCH_ALGORITHM_EXCEPTION = new NoSuchAlgorithmException();
+
+  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = JobHelperTest::getMD5HashWithException;
+
+  private static String getMD5HashWithException(String s) throws NoSuchAlgorithmException {
+    throw NO_SUCH_ALGORITHM_EXCEPTION;
+  }
+
+  private static String getHash(String data) {
+    try {
+      return getMD5Hash(data);
+    } catch (Exception ex) {
+      return null;
+    }
+  }
 
   @BeforeEach
   public void setup() throws Exception {
-    mementos.add(
-          TestUtils.silenceOperatorLogger()
-                .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
-                .withLogLevel(Level.FINE));
+    consoleHandlerMemento = TestUtils.silenceOperatorLogger()
+        .collectLogMessages(logRecords, FLUENTD_CONFIGMAP_CREATED, FLUENTD_CONFIGMAP_REPLACED)
+        .withLogLevel(Level.FINE);
+    mementos.add(consoleHandlerMemento);
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
@@ -692,6 +711,28 @@ class JobHelperTest extends DomainValidationTestBase {
           "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
           "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
+  }
+
+  @Test
+  void whenDomainHasMultipleConfigOverrideSecretsWithLongNamesAndNoSuchAlgorithmException_volumesNameNotChanged()
+      throws NoSuchFieldException {
+    mementos.add(StaticStubSupport.install(JobStepContext.class, "getMD5Hash", getMD5Hash));
+    consoleHandlerMemento.ignoringLoggedExceptions(NO_SUCH_ALGORITHM_EXCEPTION);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, V1Secret.class, NS);
+    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, V1Secret.class, NS);
+
+    configureDomain()
+        .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
+
+    runCreateJob();
+
+    assertThat(getJobVolumes(), hasSecretVolume(LONG_RESOURCE_NAME, LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumes(), hasSecretVolume(SECOND_LONG_RESOURCE_NAME,
+        SECOND_LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(LONG_RESOURCE_NAME,
+        "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(SECOND_LONG_RESOURCE_NAME,
+        "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
   }
 
   @Test

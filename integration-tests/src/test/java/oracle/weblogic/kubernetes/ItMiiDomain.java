@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_PASSWORD
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -78,12 +79,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -238,7 +239,7 @@ class ItMiiDomain {
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -368,7 +369,7 @@ class ItMiiDomain {
         clusterName, domainNamespace1, domain, replicaCount);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
 
@@ -405,13 +406,12 @@ class ItMiiDomain {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 
-    Thread accountingThread = null;
     List<Integer> appAvailability = new ArrayList<Integer>();
 
     logger.info("Start a thread to keep track of the application's availability");
     // start a new thread to collect the availability data of the application while the
     // main thread performs patching operation, and checking of the results.
-    accountingThread =
+    Thread accountingThread =
         new Thread(
             () -> {
               collectAppAvailability(
@@ -687,13 +687,13 @@ class ItMiiDomain {
 
   private void pushImageIfNeeded(String image) {
     // push the image to a registry to make the test work in multi node cluster
-    logger.info("docker login to registry {0}", TEST_IMAGES_REPO);
-    assertTrue(dockerLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
-                TEST_IMAGES_REPO_PASSWORD), "docker login failed");
+    logger.info(WLSIMG_BUILDER + " login to registry {0}", TEST_IMAGES_REPO);
+    assertTrue(imageRepoLogin(TEST_IMAGES_REPO, TEST_IMAGES_REPO_USERNAME, 
+                TEST_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
     // push image
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry", image);
-      assertTrue(dockerPush(image), String.format("docker push failed for image %s", image));
+      logger.info(WLSIMG_BUILDER + " push image {0} to registry", image);
+      assertTrue(imagePush(image), String.format(WLSIMG_BUILDER + " push failed for image %s", image));
     }
   }
 
@@ -804,7 +804,7 @@ class ItMiiDomain {
             namespace,
             new V1Patch(patch),
             V1Patch.PATCH_FORMAT_JSON_PATCH),
-        String.format("Failed to patch the domain resource {0} in namespace {1} with image {2}",
+        String.format("Failed to patch the domain resource %s in namespace %s with image %s",
             domainResourceName, namespace, image));
   }
 
@@ -848,10 +848,10 @@ class ItMiiDomain {
 
     assertTrue(result, String.format("Failed to create image %s using WebLogic Image Tool", image));
 
-    /* Check image exists using docker images | grep image tag.
+    /* Check image exists using 'WLSIMG_BUILDER images | grep image tag'.
      * Tag name is unique as it contains date and timestamp.
      * This is a workaround for the issue on Jenkins machine
-     * as docker images imagename:imagetag is not working and
+     * as 'WLSIMG_BUILDER images imagename:imagetag' is not working and
      * the test fails even though the image exists.
      */
     assertTrue(doesImageExist(imageTag),
@@ -1204,9 +1204,9 @@ class ItMiiDomain {
    */
   private void createMiiDomainNegative(String domainUid, String domainNamespace) {
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
@@ -1253,7 +1253,7 @@ class ItMiiDomain {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
   }

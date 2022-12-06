@@ -72,13 +72,16 @@ Container Services for use with Kubernetes* on Oracle Cloud Infrastructure Compu
 any other Oracle Cloud Infrastructure "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
+Operator v3.4.4 and v4.0.0 are certified for use on OKE with Kubernetes 1.24.1.
+
 #### Oracle Cloud Native Environment
 
 [Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
 WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment:
-- Operator v2.6.0 is certified on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified on Oracle Cloud Native Environment 1.3.
+- Operator v2.6.0 is certified for use on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified for use on Oracle Cloud Native Environment 1.3.
 - Operator v3.2.5 provides certified support of Oracle Cloud Native Environment 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
+- Operator v3.4.4 and v4.0.0 are certified for use on Oracle Cloud Native Environment 1.5 with Kubernetes 1.24.5.
 
 #### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
@@ -101,6 +104,8 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
+Operator v3.4.4 and v4.0.0 are certified for use on PCA X9 with Kubernetes 1.24.5 and Istio 1.14.
+
 #### Microsoft Azure
 
 There are three different approaches for deploying the operator to Microsoft Azure:
@@ -116,6 +121,7 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 
 AKS support and limitations:
 
+* Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
 * All three domain home source types are supported (Domain in Image, Model in Image, and Domain in PV).
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
@@ -145,7 +151,7 @@ For details, see [WebLogic Server on AKS Marketplace]({{<relref "/managing-domai
 #### VMware Tanzu Kubernetes Grid (TKG)
 
 Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters.
-The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
+The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported and certified for use on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
 
 TKG support and limitations:
 
@@ -160,7 +166,10 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 OpenShift can be a cloud platform or can be deployed on premises.
 
-Operator 3.4.0+ is certified for use on OpenShift Container Platform 4.10.4+, with Kubernetes 1.23+.
+- Operator 3.4.0+ is certified for use on OpenShift Container Platform 4.10.4+ with Kubernetes 1.23+.
+- Operator v3.4.4 is certified for use on:
+  - OpenShift Container Platform 4.9.50 with Kubernetes 1.22, RedHat OpenShift Mesh 2.3, and Istio 1.14.
+  - OpenShift Container Platform 4.11.0 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3, and Istio 1.14.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.

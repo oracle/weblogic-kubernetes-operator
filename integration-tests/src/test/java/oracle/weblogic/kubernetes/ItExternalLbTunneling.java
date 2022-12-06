@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -270,13 +271,13 @@ class ItExternalLbTunneling {
         "traefik.tunneling.yaml", templateMap));
     logger.info("Generated Traefik Http Tunneling file {0}", targetTraefikHttpFile);
 
-    StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
+    StringBuffer deployIngress = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployIngress.append(Paths.get(RESULTS_ROOT, "traefik.tunneling.yaml"));
     // Deploy the traefik ingress controller
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployIngress), true));
 
-    logger.info("kubectl apply returned {0}", result.toString());
+    logger.info(KUBERNETES_CLI + " apply returned {0}", result.toString());
 
     // Get the ingress service nodeport corresponding to non-tls service
     // Get the Traefik Service Name traefik-release-{ns}
@@ -330,11 +331,11 @@ class ItExternalLbTunneling {
 
     // Deploy traefik ingress controller with tls enabled service with SSL
     // terminating at Ingress.
-    StringBuffer deployTraefikIngress = new StringBuffer("kubectl apply -f ");
+    StringBuffer deployTraefikIngress = new StringBuffer(KUBERNETES_CLI + " apply -f ");
     deployTraefikIngress.append(Paths.get(RESULTS_ROOT, "traefik.tls.tunneling.yaml"));
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployTraefikIngress), true));
-    logger.info("kubectl apply returned {0}", result.toString());
+    logger.info(KUBERNETES_CLI + " apply returned {0}", result.toString());
 
     // Get the ingress service nodeport corresponding to tls service
     // Get the Traefik Service Name traefik-release-{ns}
@@ -449,7 +450,7 @@ class ItExternalLbTunneling {
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
     String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
-    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javapCmd.append(domainNamespace);
     javapCmd.append(" -it ");
     javapCmd.append(adminServerPodName);
@@ -531,7 +532,7 @@ class ItExternalLbTunneling {
              Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
-    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(domainNamespace);
     javacCmd.append(" -it ");
     javacCmd.append(adminServerPodName);
@@ -624,11 +625,11 @@ class ItExternalLbTunneling {
 
   // Create kubernetes secret from the ssl key and certificate
   private static void createSecretWithTLSCertKey(String tlsSecretName) {
-    String kcmd = "kubectl create secret tls " + tlsSecretName + " --key "
+    String kcmd = KUBERNETES_CLI + " create secret tls " + tlsSecretName + " --key "
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
     assertTrue(
           Command.withParams(new CommandParams()
-             .command(kcmd)).execute(), "kubectl create secret command fails");
+             .command(kcmd)).execute(), KUBERNETES_CLI + " create secret command fails");
   }
 
   private static void createDomainResource(

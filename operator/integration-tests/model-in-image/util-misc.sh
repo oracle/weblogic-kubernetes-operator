@@ -19,9 +19,9 @@ tracen() {
 # cause them to use an unsafe (fast) shutdown when they're deleted/rolled.
 
 diefast() {
-  kubectl -n ${DOMAIN_NAMESPACE:-sample-domain1-ns} get pods -l weblogic.serverName \
+  ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE:-sample-domain1-ns} get pods -l weblogic.serverName \
     -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-    | awk '{ system("set -x ; kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
+    | awk '{ system("set -x ; '${KUBERNETES_CLI:-kubectl}' -n " $1 " exec " $2 " touch /tmp/diefast") }'
 }
 
 get_service_name() {
@@ -35,7 +35,7 @@ get_service_yaml() {
 }
 
 get_kube_address() {
-  # kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
+  # ${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
   # This is the heuristic used by the integration test framework:
   echo ${K8S_NODEPORT_HOST:-$(hostname)}
 }
@@ -70,7 +70,7 @@ get_curl_command() {
 # Use 'testapp internal|traefik cluster-1|cluster-2 somestring' to invoke the test
 # WebLogic cluster's jsp app and check that the given string is reflected there-in.
 #
-# $1 "internal" invokes curl using kubectl exec on the admin server pod
+# $1 "internal" invokes curl using ${KUBERNETES_CLI:-kubectl} exec on the admin server pod
 #               with an URL that has the cluster service name
 #    "traefik"  invokes curl locally using the traefik node port
 # $2 cluster-1 or cluster-2
@@ -102,15 +102,15 @@ testapp() {
       local cluster_service_name=$(get_service_name $domain_uid-cluster-$2)
       local admin_service_name=$(get_service_name $domain_uid-admin-server)
       local ns=${DOMAIN_NAMESPACE:-sample-domain1-ns}
-      local command="kubectl exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
+      local command="${KUBERNETES_CLI:-kubectl} exec -n $ns $admin_service_name -- bash -c \"curl -s -S $(curl_timeout_parms) http://$cluster_service_name:8001/myapp_war/index.jsp\""
 
     elif [ "$1" = "traefik" ]; then
       if [ -z "$traefik_nodeport" ]; then
         echo "@@ Info: Obtaining traefik nodeport by calling:"
         cat<<EOF
-          kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
+          ${KUBERNETES_CLI:-kubectl} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}'
 EOF
-        traefik_nodeport=$(kubectl get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
+        traefik_nodeport=$(${KUBERNETES_CLI:-kubectl} get svc $TRAEFIK_NAME --namespace $TRAEFIK_NAMESPACE -o=jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
         if [ -z "$traefik_nodeport" ]; then
           echo "@@ Error: Could not obtain traefik nodeport."
           return 1
@@ -199,7 +199,7 @@ getPodInfo() {
   jpath+='{"\n"}'
   jpath+='{end}'
 
-  local cur_pods="$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+  local cur_pods="$( ${KUBERNETES_CLI:-kubectl} -n ${DOMAIN_NAMESPACE} get pods \
                   -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
                   -o=jsonpath="$jpath" )"
 

@@ -67,7 +67,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -155,10 +155,9 @@ class ItCrossDomainTransaction {
     //Start oracleDB
     logger.info("Start Oracle DB with namespace: {0}, dbListenerPort:{1}",
         domain2Namespace, dbListenerPort);
-    assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort);
-      String.format("Failed to start Oracle DB");
-    });
+    assertDoesNotThrow(
+        () -> startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort),
+        "Failed to start Oracle DB");
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
 
@@ -208,16 +207,12 @@ class ItCrossDomainTransaction {
       Files.copy(source2, target.resolve(source2.getFileName()), StandardCopyOption.REPLACE_EXISTING);
     });
 
-    assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
-      String.format("Failed to update %s with namespace %s",
-          WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
-    });
-    assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
-      String.format("Failed to update %s with namespace %s",
-          WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
-    });
+    assertDoesNotThrow(
+        () -> addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace),
+        String.format("Failed to update %s with namespace %s", WDT_MODEL_DOMAIN1_PROPS, domain1Namespace));
+    assertDoesNotThrow(
+        () -> addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace),
+        String.format("Failed to update %s with namespace %s", WDT_MODEL_DOMAIN2_PROPS, domain2Namespace));
 
   }
 
@@ -330,8 +325,8 @@ class ItCrossDomainTransaction {
         WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
     logger.info("Created {0} image", domain1Image);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain1Image);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domain1Image);
 
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
@@ -346,8 +341,8 @@ class ItCrossDomainTransaction {
         WDT_IMAGE_NAME2, modelListDomain2, appSrcDirList2, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
     logger.info("Created {0} image", domain2Image);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain2Image);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domain2Image);
 
     //create domain1
     createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);

@@ -145,7 +145,7 @@ public class JsonSchemaMojo extends AbstractMojo {
     return className.replaceAll(DOT, File.separator);
   }
 
-  private class UncheckedMalformedUrlException extends RuntimeException {
+  private static class UncheckedMalformedUrlException extends RuntimeException {
     UncheckedMalformedUrlException(Throwable cause) {
       super(cause);
     }

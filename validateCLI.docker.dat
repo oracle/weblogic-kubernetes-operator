@@ -1,0 +1,47 @@
+# Copyright (c) 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+
+# Description:
+#
+#  This file lists reg-ex exceptions, one per line, for
+#  cases where direct use of the term docker, Docker, or DOCKER
+#  are allowed instead of using the 'WLSIMG_BUILDER' constant.
+#
+#  The validateCLI.sh script uses this file.
+#
+
+.WLSIMG_BUILDER:-docker.
+DEFAULT = .docker.
+directly using .docker.
+docker-store
+hub.docker.com
+kind load docker-image
+DOCKER_USERNAME
+DOCKER_PASSWORD
+DOCKER_FILE
+DockerFile
+Dockerfile
+dockerFile
+dockerconfigjson
+/docker/
+/docker-images/
+"../buildDockerImage.sh"
+Usage: buildDockerImage.sh
+docker-container\|ockerContainer\|DockerCluster
+contains."BEGIN DOCKERFILE".
+--docker-email
+--docker-password
+--docker-server
+--docker-username
+--secret-docker
+--from-file=.=.HOME/.docker/config.json
+docker-registry
+docker-istio-secret
+DB_IMAGE_PULL_SECRET:-docker-secret
+SOURCEDIR:-ai-docker-file
+create-domain-on-aks.sh:.*
+wlsDockerContainer
+wls-docker-container-imag
+dii-docker-container
+DockerCluster

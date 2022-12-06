@@ -39,12 +39,14 @@
 #    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
 #      Defaults to 'model-in-image' and 'WDT_DOMAIN_TYPE-v1'.
 #
+#    WLSIMG_BUILDER
+#      Defaults to 'docker'.
+#
 #    Others (see README)
 #      WORKDIR
 #      MODEL_IMAGE_BUILD
 #      WDT_DOMAIN_TYPE
 #      BASE_IMAGE_NAME, BASE_IMAGE_TAG
-#
 
 #set -x
 set -eu
@@ -113,7 +115,7 @@ dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d .
 dryrun:rm ./weblogic-deploy/bin/*.cmd
 dryrun:
 dryrun:# see file $WORKDIR/ai-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:docker build -f $WORKDIR/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
+dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
 dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
 dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
@@ -173,11 +175,11 @@ else
 
   # we're not dry running
 
-  if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && [ ! -z "$(docker images -q $MODEL_IMAGE)" ]; then
+  if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && [ ! -z "$(${WLSIMG_BUILDER:-docker} images -q $MODEL_IMAGE)" ]; then
     echo "@@"
     echo "@@ Info: ----------------------------------------------------------------------------"
     echo "@@ Info: NOTE!!!                                                                     "
-    echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in docker images. "
+    echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in ${WLSIMG_BUILDER:-docker} images. "
     echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.       "
     echo "@@ Info: ----------------------------------------------------------------------------"
     echo "@@"

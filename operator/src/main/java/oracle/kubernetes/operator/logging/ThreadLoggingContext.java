@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.logging;
 
 import java.util.Optional;
 
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 
 public class ThreadLoggingContext extends LoggingContext implements AutoCloseable {
@@ -25,6 +26,10 @@ public class ThreadLoggingContext extends LoggingContext implements AutoCloseabl
 
   public ThreadLoggingContext presenceInfo(DomainPresenceInfo info) {
     return namespace(info.getNamespace()).domainUid(info.getDomainUid());
+  }
+
+  public ThreadLoggingContext presenceInfo(ClusterPresenceInfo info) {
+    return namespace(info.getNamespace());
   }
 
   /**

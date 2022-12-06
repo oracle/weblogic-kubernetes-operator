@@ -20,11 +20,10 @@ import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -39,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
@@ -49,13 +49,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.archiveApp;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildCoherenceArchive;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createImageBuilderConfigJson;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePush;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
@@ -68,10 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImageUtils {
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @return image name with tag
    */
@@ -83,10 +83,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @param additionalBuildCommands - Path to a file with additional build commands
    * @param additionalBuildFilesVarargs - Additional files that are required by your additionalBuildCommands
@@ -108,10 +108,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain.
+   * Create an image for a model in image domain.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile the WDT model file used to build the Docker image
+   * @param wdtModelFile the WDT model file used to build the image
    * @param appName the sample application name used to build sample app ear file in WDT model file
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
@@ -135,10 +135,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   * Create an image for a model in image domain using multiple WDT model files and application ear files.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param wdtModelList list of WDT model files used to build the image
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @return image name with tag
    */
@@ -151,10 +151,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain using multiple WDT model files and application ear files.
+   * Create an image for a model in image domain using multiple WDT model files and application ear files.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList list of WDT model files used to build the Docker image
+   * @param wdtModelList list of WDT model files used to build the image
    * @param appSrcDirList list of the sample application source directories used to build sample app ear files
    * @param baseImageName the WebLogic base image name to be used while creating mii image
    * @param baseImageTag the WebLogic base image tag to be used while creating mii image
@@ -176,12 +176,12 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a domain-in-image domain.
+   * Create an image for a domain-in-image domain.
    *
    * @param domainUid domain uid
    * @param domainNamespace domain namespace
    * @param imageNameBase the base image name used in local or to construct the image name in repository
-   * @param modelFile the model file used to build the Docker image
+   * @param modelFile the model file used to build the image
    * @param modelPropFile property file to be used with the model file above
    * @param appName - application source directories used to build app ear files
    * @return image name with tag
@@ -195,10 +195,10 @@ public class ImageUtils {
     // create image with model files
     String domImage = createImageAndVerify(imageNameBase, modelFile, appName, modelPropFile, domainUid);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domImage);
+    // repo login and push image to repo registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domImage);
 
-    // create docker registry secret to pull the image from registry
+    // create repo registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 
@@ -255,10 +255,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * Create an image for a model in image domain or domain home in image using multiple WDT model
    * files and application ear files.
    * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param wdtModelList - list of WDT model files used to build the image
    * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
    * @param modelPropList - the WebLogic base image name to be used while creating mii image
    * @param baseImageName - the WebLogic base image name to be used while creating mii image
@@ -285,10 +285,10 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker image for a model in image domain or domain home in image using multiple WDT model
+   * Create an image for a model in image domain or domain home in image using multiple WDT model
    * files and application ear files.
    * @param imageNameBase - the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelList - list of WDT model files used to build the Docker image
+   * @param wdtModelList - list of WDT model files used to build the image
    * @param appSrcDirList - list of the sample application source directories used to build sample app ear files
    * @param modelPropList - the WebLogic base image name to be used while creating mii image
    * @param baseImageName - the WebLogic base image name to be used while creating mii image
@@ -469,7 +469,7 @@ public class ImageUtils {
 
     assertTrue(result, String.format("Failed to create the image %s using WebLogic Image Tool", image));
 
-    // Check image exists using docker images | grep image tag.
+    // Check image exists using 'WLSIMG_BUILDER images | grep image tag'.
     assertTrue(doesImageExist(imageTag),
         String.format("Image %s does not exist", image));
 
@@ -478,7 +478,7 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace.
+   * Create a registry secret in the specified namespace.
    * for BASE_IMAGES_REPO to download base images.
    *
    * @param namespace the namespace in which the secret will be created
@@ -486,25 +486,25 @@ public class ImageUtils {
   public static void createBaseRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating base image pull secret {0} in namespace {1}", BASE_IMAGES_REPO_SECRET_NAME, namespace);
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+    createImageRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             TestConstants.BASE_IMAGES_REPO, BASE_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace.
+   * Create a registry secret in the specified namespace.
    * for TEST_IMAGES_REPO to upload/download test images.
    * @param namespace the namespace in which the secret will be created
    */
   public static void createTestRepoSecret(String namespace) {
     LoggingFacade logger = getLogger();
     logger.info("Creating test image pull secret {0} in namespace {1}", TEST_IMAGES_REPO_SECRET_NAME, namespace);
-    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME,
+    createImageRegistrySecret(TEST_IMAGES_REPO_USERNAME,
             TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
             TEST_IMAGES_REPO, TEST_IMAGES_REPO_SECRET_NAME, namespace);
   }
 
   /**
-   * Create docker registry secret with given parameters.
+   * Create repo registry secret with given parameters.
    * @param userName repository user name
    * @param password repository password
    * @param email repository email
@@ -512,13 +512,13 @@ public class ImageUtils {
    * @param secretName name of the secret to create
    * @param namespace namespace in which to create the secret
    */
-  public static void createDockerRegistrySecret(String userName, String password,
+  public static void createImageRegistrySecret(String userName, String password,
                                                 String email, String registry, String secretName, String namespace) {
     LoggingFacade logger = getLogger();
     // Create registry secret in the namespace to pull the image from repository
-    JsonObject dockerConfigJsonObject = createDockerConfigJson(
+    JsonObject configJsonObject = createImageBuilderConfigJson(
         userName, password, email, registry);
-    String dockerConfigJson = dockerConfigJsonObject.toString();
+    String configJsonString = configJsonObject.toString();
 
     // skip if the secret already exists
     V1SecretList listSecrets = listSecrets(namespace);
@@ -537,7 +537,7 @@ public class ImageUtils {
             .name(secretName)
             .namespace(namespace))
         .type("kubernetes.io/dockerconfigjson")
-        .putDataItem(".dockerconfigjson", dockerConfigJson.getBytes());
+        .putDataItem(".dockerconfigjson", configJsonString.getBytes());
 
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(repoSecret),
         String.format("createSecret failed for %s", secretName));
@@ -546,51 +546,40 @@ public class ImageUtils {
   }
 
   /**
-   * Create a Docker registry secret in the specified namespace to pull base images.
+   * Repo login and push the image to registry.
    *
-   * @param namespace the namespace in which the secret will be created
+   * @param image the image to push to registry
    */
-  public static void createSecretForBaseImages(String namespace) {
-    if (BASE_IMAGES_REPO.equals(TestConstants.BASE_IMAGES_REPO)) {
-      createBaseRepoSecret(namespace);
-    }
-  }
-
-  /**
-   * Docker login and push the image to Docker registry.
-   *
-   * @param dockerImage the Docker image to push to registry
-   */
-  public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
+  public static void imageRepoLoginAndPushImageToRegistry(String image) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
-      // docker login, if necessary
-      logger.info("docker login");
-      assertTrue(dockerLogin(TestConstants.BASE_IMAGES_REPO,
-           BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), "docker login failed");
-      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
-      testUntil(() -> dockerPush(dockerImage),
+    if (!DOMAIN_IMAGES_REPO.isEmpty() && image.contains(DOMAIN_IMAGES_REPO)) {
+      // repo login, if necessary
+      logger.info(WLSIMG_BUILDER + " login");
+      assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
+           BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD),  WLSIMG_BUILDER + " login failed");
+      logger.info(WLSIMG_BUILDER + " push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+      testUntil(() -> imagePush(image),
           logger,
-          "docker push succeeds for image {0} to repo {1}",
-          dockerImage,
+          WLSIMG_BUILDER + " push succeeds for image {0} to repo {1}",
+          image,
           DOMAIN_IMAGES_REPO);
     }
   }
 
   /**
-   * Build image with unique name, create corresponding docker secret and push to registry.
+   * Build image with unique name, create corresponding repo secret and push to registry.
    *
    * @param dockerFileDir directory where dockerfile is located
    * @param baseImageName base image name
    * @param namespace image namespace
-   * @param secretName docker secretname for image
-   * @param extraDockerArgs user specified extra docker args
+   * @param secretName repo secretname for image
+   * @param extraImageBuilderArgs user specified extra args
    * @return image name
    */
   public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
                                                 String namespace, String secretName,
-                                                String extraDockerArgs) throws ApiException {
+                                                String extraImageBuilderArgs) throws ApiException {
     // create unique image name with date
     final String imageTag = getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
@@ -599,17 +588,19 @@ public class ImageUtils {
     final String image = imageName + ":" + imageTag;
     LoggingFacade logger = getLogger();
     //build image
-    assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
+    assertTrue(
+        Image.createImage(dockerFileDir, image, extraImageBuilderArgs),
+        "Failed to create image " + baseImageName);
     logger.info("image is created with name {0}", image);
     if (!Namespace.exists(namespace)) {
       createNamespace(namespace);
     }
 
-    //create registry docker secret
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+    //create registry secret
+    createImageRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             TestConstants.BASE_IMAGES_REPO, secretName, namespace);
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
+    // login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(image);
 
     return image;
   }

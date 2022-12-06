@@ -27,7 +27,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -46,9 +45,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolderToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.deleteDirectories;
+import static oracle.weblogic.kubernetes.utils.FileUtils.makeDirectories;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -192,15 +194,23 @@ class ItCoherenceTests {
     for (int i = 1; i < replicaCount; i++) {
       String serverName = managedServerPrefix + i;
       assertDoesNotThrow(
-          () -> FileUtils.makeDirectories(domainNamespace, serverName,
+          () -> deleteDirectories(domainNamespace, serverName,
               null, true, dirsToMake),
-          String.format("Failed to create dir %s in pod %s in namespace %s ",
+          String.format("Failed to delete dir %s in pod %s in namespace %s ",
               dirsToMake.toString(), serverName, domainNamespace));
-      logger.info("Failed to create dir {0} in Pod {1} in namespace {2} ",
+      logger.info("Deleted dir {0} in Pod {1} in namespace {2} ",
           dirsToMake.toString(), serverName, domainNamespace);
 
       assertDoesNotThrow(
-          () -> FileUtils.copyFolderToPod(domainNamespace, serverName,
+          () -> makeDirectories(domainNamespace, serverName,
+              null, true, dirsToMake),
+          String.format("Failed to create dir %s in pod %s in namespace %s ",
+              dirsToMake.toString(), serverName, domainNamespace));
+      logger.info("Created dir {0} in Pod {1} in namespace {2} ",
+          dirsToMake.toString(), serverName, domainNamespace);
+
+      assertDoesNotThrow(
+          () -> copyFolderToPod(domainNamespace, serverName,
               containerName, Paths.get(APP_LOC_ON_HOST), Paths.get(APP_LOC_IN_POD)),
           String.format("Failed to copy file %s to pod %s in namespace %s and located at %s ",
               APP_LOC_ON_HOST, serverName, domainNamespace, APP_LOC_IN_POD));
@@ -254,12 +264,12 @@ class ItCoherenceTests {
         COHERENCE_IMAGE_NAME, COHERENCE_MODEL_FILE,
             PROXY_SERVER_APP_NAME, COHERENCE_MODEL_PROP, domainUid);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     return domImage;
@@ -281,7 +291,7 @@ class ItCoherenceTests {
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, domImage);
     createDomainCrAndVerify(adminSecretName, domImage);
 
