@@ -117,7 +117,7 @@ initialize() {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
-  dcrInput="${scriptDir}/../../common/update-domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
@@ -169,7 +169,7 @@ createDomainConfigmap() {
  
   # Now that we have the model file in the domainoutputdir/tmp,
   # we can add the kubernetes section to the model file.
-  updateModelFile
+  updateModelFile wdt_k8s_model_template_updated.yaml
 
   # create the configmap and label it properly
   local cmName=${domainUID}-update-weblogic-sample-domain-job-cm

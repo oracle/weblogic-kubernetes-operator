@@ -657,11 +657,13 @@ createFiles() {
 
 #
 # Function to markup the wdt model file
+# $1 - Name of wdt model file. Optional. Defaults to wdt_k8s_model_template.yaml
 #
 updateModelFile() {
   # Update the wdt model file with kubernetes section
   modelFile="${domainOutputDir}/tmp/wdt_model.yaml"
-  cat ${scriptDir}/wdt_k8s_model_template.yaml >> ${modelFile}
+  model_template_file=${1:-wdt_k8s_model_template.yaml}
+  cat ${scriptDir}/${model_template_file} >> ${modelFile}
 
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${modelFile}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${modelFile}
@@ -691,6 +693,7 @@ updateModelFile() {
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${modelFile}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
+  sed -i -e "s:%CLUSTER_NAME2%:${clusterName2}:g" ${modelFile}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
   # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
