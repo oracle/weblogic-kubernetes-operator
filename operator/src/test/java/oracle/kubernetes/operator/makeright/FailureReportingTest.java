@@ -18,7 +18,6 @@ import com.google.gson.Gson;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
-import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -473,8 +472,7 @@ class FailureReportingTest {
     }
 
     @Override
-    public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info,
-                                              DomainProcessorDelegate delegate) {
+    public Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info) {
       return null;
     }
   }

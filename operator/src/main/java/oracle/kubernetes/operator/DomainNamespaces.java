@@ -265,7 +265,9 @@ public class DomainNamespaces {
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
       watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
-      getWatcher(namespace).withResourceVersion(resourceVersion).resume();
+      LOGGER.info("DEBUG: resuming watch for " + getWatcher(namespace) + ", with resource version "
+          + resourceVersion);
+      getWatcher(namespace).resume();
     }
 
     W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {

@@ -21,6 +21,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -35,7 +37,7 @@ import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSele
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
 class NamespacedResources {
-
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();
@@ -232,22 +234,13 @@ class NamespacedResources {
 
     @Override
     public NextAction apply(Packet packet) {
+      if (watcher != null) {
+        LOGGER.info("DEBUG: pausing watch for " + watcher + ", resource version is "
+            + watcher.getResourceVersion());
+      } else {
+        LOGGER.info("DEBUG: Skip pausing watcher as watcher is null");
+      }
       Optional.ofNullable(watcher).ifPresent(Watcher::pause);
-      return doNext(packet);
-    }
-  }
-
-  class ResumeWatchersStep extends Step {
-    private final DomainProcessorDelegate delegate;
-
-    ResumeWatchersStep(DomainProcessorDelegate delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      Optional.ofNullable(delegate).map(p -> p.getDomainNamespaces()).ifPresent(ns -> ns.resumeWatchers(namespace));
-      //delegate.getDomainNamespaces().pauseWatchers(namespace);
       return doNext(packet);
     }
   }

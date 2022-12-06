@@ -30,9 +30,8 @@ public interface MakeRightExecutor {
    * @param processors the processing to be done
    * @param info the presence info which encapsulates the domain
    */
-  default Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info,
-                                             DomainProcessorDelegate delegate) {
-    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid(), delegate);
+  default Step createNamespacedResourceSteps(Processors processors, DomainPresenceInfo info) {
+    NamespacedResources resources = new NamespacedResources(info.getNamespace(), info.getDomainUid(), null);
     resources.addProcessing(processors);
     return resources.createListSteps();
   }
