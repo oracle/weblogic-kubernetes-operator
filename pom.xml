@@ -190,10 +190,10 @@
               </goals>
               <configuration>
 	      <executable>bash</executable>
-	      <arguments>
+	        <arguments>
 		  <argument>../validateCLI.sh</argument>
 		  <argument>..</argument>
-	      </arguments>
+	        </arguments>
               </configuration>
             </execution>
           </executions>
