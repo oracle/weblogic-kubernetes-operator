@@ -41,12 +41,12 @@ class NamespacedResources {
   private final String namespace;
   private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();
-  private final DomainProcessorDelegate delegate;
+  private final DomainNamespaces domainNamespaces;
 
-  NamespacedResources(String namespace, String domainUid, DomainProcessorDelegate delegate) {
+  NamespacedResources(String namespace, String domainUid, DomainNamespaces domainNamespaces) {
     this.namespace = namespace;
     this.domainUid = domainUid;
-    this.delegate = delegate;
+    this.domainNamespaces = domainNamespaces;
   }
 
   void addProcessing(Processors processor) {
@@ -82,7 +82,7 @@ class NamespacedResources {
   }
 
   private ConfigMapWatcher getConfigMapWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getConfigMapWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getConfigMapWatcher(namespace)).orElse(null);
   }
 
   private Step getPodEventListSteps() {
@@ -96,7 +96,7 @@ class NamespacedResources {
   }
 
   private EventWatcher getEventWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getEventWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getEventWatcher(namespace)).orElse(null);
   }
 
   private Step getOperatorEventListSteps() {
@@ -111,7 +111,7 @@ class NamespacedResources {
   }
 
   private OperatorEventWatcher getOperatorEventWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getDomainEventWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getDomainEventWatcher(namespace)).orElse(null);
   }
 
   private Step getPodDisruptionBudgetListSteps() {
@@ -126,7 +126,7 @@ class NamespacedResources {
   }
 
   private PodDisruptionBudgetWatcher getPodDisruptionBudgetWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getPodDisruptionBudgetWatcher(namespace))
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getPodDisruptionBudgetWatcher(namespace))
         .orElse(null);
   }
 
@@ -140,7 +140,7 @@ class NamespacedResources {
   }
 
   private JobWatcher getJobWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getJobWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getJobWatcher(namespace)).orElse(null);
   }
 
   private Step getPodListSteps() {
@@ -153,7 +153,7 @@ class NamespacedResources {
   }
 
   private PodWatcher getPodWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getPodWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getPodWatcher(namespace)).orElse(null);
   }
 
   private CallBuilder createSubResourceCallBuilder() {
@@ -174,7 +174,7 @@ class NamespacedResources {
   }
 
   private ServiceWatcher getServiceWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getServiceWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getServiceWatcher(namespace)).orElse(null);
   }
 
   private Step getClusterListSteps() {
@@ -187,7 +187,7 @@ class NamespacedResources {
   }
 
   private ClusterWatcher getClusterWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getClusterWatcher(namespace)).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getClusterWatcher(namespace)).orElse(null);
   }
 
   private Step getDomainListSteps() {
@@ -200,11 +200,7 @@ class NamespacedResources {
   }
 
   private DomainWatcher getDomainWatcher() {
-    return Optional.ofNullable(getDomainNamespaces()).map(n -> n.getDomainWatcher(namespace)).orElse(null);
-  }
-
-  private DomainNamespaces getDomainNamespaces() {
-    return Optional.ofNullable(delegate).map(d -> d.getDomainNamespaces()).orElse(null);
+    return Optional.ofNullable(domainNamespaces).map(n -> n.getDomainWatcher(namespace)).orElse(null);
   }
 
   private <L extends KubernetesListObject>

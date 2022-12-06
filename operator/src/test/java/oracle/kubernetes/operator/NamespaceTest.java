@@ -15,6 +15,7 @@ import java.util.logging.LogRecord;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.VersionInfo;
@@ -68,9 +69,7 @@ public class NamespaceTest {
     return new DomainNamespaces(null);
   }
 
-  private final DomainProcessorDelegateStub processorDelegate =
-      DomainProcessorDelegateStub.createDelegate(testSupport, domainNamespaces);
-  private final DomainProcessorImpl dp = new DomainProcessorImpl(processorDelegate);
+  private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);

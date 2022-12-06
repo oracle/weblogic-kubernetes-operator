@@ -54,8 +54,4 @@ public interface DomainProcessorDelegate extends CoreDelegate {
   default MakeRightClusterOperation createMakeRightOperation(MakeRightExecutor executor, ClusterPresenceInfo info) {
     return new MakeRightClusterOperationImpl(executor, this, info);
   }
-
-  default DomainNamespaces getDomainNamespaces() {
-    return null;
-  }
 }

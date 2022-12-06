@@ -129,42 +129,6 @@ public class DomainNamespaces {
     DomainProcessorImpl.cleanupNamespace(ns);
   }
 
-  void pauseWatchers(String ns) {
-    LOGGER.info("DEBUG: pausing all watchers");
-    pauseWatcher(clusterWatchers.getWatcher(ns));
-    pauseWatcher(domainWatchers.getWatcher(ns));
-    /*
-    pauseWatcher(eventWatchers.getWatcher(ns));
-    pauseWatcher(operatorEventWatchers.getWatcher(ns));
-    pauseWatcher(podWatchers.getWatcher(ns));
-    pauseWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
-    pauseWatcher(configMapWatchers.getWatcher(ns));
-    pauseWatcher(jobWatchers.getWatcher(ns));
-    */
-  }
-
-  private void pauseWatcher(Watcher watcher) {
-    Optional.ofNullable(watcher).ifPresent(w -> w.pause());
-  }
-
-  void resumeWatchers(String ns) {
-    LOGGER.info("DEBUG: resuming all watchers");
-    resumeWatcher(clusterWatchers.getWatcher(ns));
-    resumeWatcher(domainWatchers.getWatcher(ns));
-    /*
-    resumeWatcher(eventWatchers.getWatcher(ns));
-    resumeWatcher(operatorEventWatchers.getWatcher(ns));
-    resumeWatcher(podWatchers.getWatcher(ns));
-    resumeWatcher(podDisruptionBudgetWatchers.getWatcher(ns));
-    resumeWatcher(configMapWatchers.getWatcher(ns));
-    resumeWatcher(jobWatchers.getWatcher(ns));
-    */
-  }
-
-  private void resumeWatcher(Watcher watcher) {
-    Optional.ofNullable(watcher).ifPresent(w -> w.resume());
-  }
-
   ConfigMapWatcher getConfigMapWatcher(String namespace) {
     return configMapWatchers.getWatcher(namespace);
   }
@@ -226,11 +190,10 @@ public class DomainNamespaces {
    * @param processor processing to be done to bring up any found domains
    */
   Step readExistingResources(String ns, DomainProcessor processor) {
-    NamespacedResources resources = new NamespacedResources(ns, null, processor.getDelegate());
+    NamespacedResources resources = new NamespacedResources(ns, null, this);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
-    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion),
-        resources.createListSteps());
+    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion), resources.createListSteps());
   }
 
   public boolean shouldStartNamespace(String ns) {
@@ -267,7 +230,7 @@ public class DomainNamespaces {
       watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
       LOGGER.info("DEBUG: resuming watch for " + getWatcher(namespace) + ", with resource version "
           + resourceVersion);
-      getWatcher(namespace).resume();
+      getWatcher(namespace).withResourceVersion(resourceVersion).resume();
     }
 
     W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {

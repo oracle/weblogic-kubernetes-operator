@@ -479,11 +479,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
   }
 
-  @Override
-  public DomainProcessorDelegate getDelegate() {
-    return delegate;
-  }
-
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
