@@ -117,7 +117,7 @@ initialize() {
     validationError "The template file ${deleteJobInput} for deleting a WebLogic domain_home folder was not found"
   fi
 
-  dcrInput="${scriptDir}/../../common/domain-template.yaml"
+  dcrInput="${scriptDir}/../../common/update-domain-template.yaml"
   if [ ! -f ${dcrInput} ]; then
     validationError "The template file ${dcrInput} for creating the domain resource was not found"
   fi
