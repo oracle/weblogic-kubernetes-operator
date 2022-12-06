@@ -658,7 +658,8 @@ public class SchemaConversionUtils {
 
   private void addVolumeMountIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
                                        String mountPath) {
-    List<Object> existingVolumeMounts = (List<Object>) serverPod.get(VOLUME_MOUNTS);
+    List<Object> existingVolumeMounts = Optional.ofNullable((List<Object>) serverPod.get(VOLUME_MOUNTS))
+        .orElse(new ArrayList<>());
     if (Optional.ofNullable(existingVolumeMounts).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
           volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
       existingVolumeMounts.add(getVolumeMount(auxiliaryImage, mountPath));
