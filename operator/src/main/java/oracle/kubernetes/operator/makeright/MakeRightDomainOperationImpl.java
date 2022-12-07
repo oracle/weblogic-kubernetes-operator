@@ -51,6 +51,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -139,6 +140,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   }
 
   @Override
+  public boolean wasStartedFromDomainAddedEvent() {
+    return eventData != null && eventData.getItem().getReason().equals(DOMAIN_CREATED_EVENT);
+  }
+
+  @Override
   public boolean isDeleting() {
     return deleting;
   }
@@ -194,7 +200,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-    if (!wasStartedFromEvent()) {
+    if (!wasStartedFromDomainAddedEvent()) {
       packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     }
     return packet;
