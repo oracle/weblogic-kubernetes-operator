@@ -606,8 +606,8 @@ public class ImageUtils {
     }
 
     //create registry docker secret
-    createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
-            TestConstants.BASE_IMAGES_REPO, secretName, namespace);
+    createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
+            TestConstants.TEST_IMAGES_REPO, secretName, namespace);
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(image);
 

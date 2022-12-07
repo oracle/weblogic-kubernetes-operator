@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ImageUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -74,7 +75,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -491,8 +491,8 @@ class ItMonitoringExporterSamples {
     logger.info("Creating and Installing {0} in namespace {1}", baseImageName, namespace);
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
 
-    logger.info("Create docker registry secret in namespace {0}", namespace);
-    createTestRepoSecret(namespace);
+    //logger.info("Create docker registry secret in namespace {0}", namespace);
+    //ImageUtils.createTestRepoSecret(namespace);
 
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
