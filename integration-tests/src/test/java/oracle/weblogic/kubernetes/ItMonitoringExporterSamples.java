@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -487,8 +488,12 @@ class ItMonitoringExporterSamples {
                                                            String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = IMAGE_PULL_POLICY;
+    logger.info("Creating and Installing {0} in namespace {1}", baseImageName, namespace);
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
-    logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
+
+    logger.info("Create docker registry secret in namespace {0}", namespace);
+    createTestRepoSecret(namespace);
+
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
       createWebHook(webhookImage, imagePullPolicy, namespace, TEST_IMAGES_REPO_SECRET_NAME);
