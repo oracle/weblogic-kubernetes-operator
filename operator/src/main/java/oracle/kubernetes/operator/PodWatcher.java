@@ -123,9 +123,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    * @param item item
    */
   public void receivedResponse(Watch.Response<V1Pod> item) {
-    V1Pod pod = item.object;
     listener.receivedResponse(item);
 
+    V1Pod pod = item.object;
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":

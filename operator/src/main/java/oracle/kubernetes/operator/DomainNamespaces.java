@@ -28,8 +28,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
@@ -47,7 +45,6 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getResourceVers
  */
 @SuppressWarnings("SameParameterValue")
 public class DomainNamespaces {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final WatchListener<V1Job> NULL_LISTENER = w -> { };
 
   private final Map<String, NamespaceStatus> namespaceStatuses = new ConcurrentHashMap<>();

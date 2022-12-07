@@ -21,8 +21,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -37,7 +35,6 @@ import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSele
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
 class NamespacedResources {
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final String domainUid;
   private final List<Processors> processors = new ArrayList<>();

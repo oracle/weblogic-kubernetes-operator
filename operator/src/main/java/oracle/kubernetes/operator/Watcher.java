@@ -163,7 +163,6 @@ abstract class Watcher<T> {
   private void watchForEvents() {
     long now = System.currentTimeMillis();
     long delay = (getWatchMinimumDelay() * 1000L) - (now - lastInitialize);
-
     if (lastInitialize != 0 && delay > 0) {
       try {
         Thread.sleep(delay);
@@ -251,7 +250,7 @@ abstract class Watcher<T> {
   }
 
   private void handleRegularUpdate(Watch.Response<T> item) {
-    LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
+    LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
     trackResourceVersion(item.type, item.object);
     if (listener != null) {
       listener.receivedResponse(item);
