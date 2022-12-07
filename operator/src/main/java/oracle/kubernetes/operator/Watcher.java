@@ -182,11 +182,7 @@ abstract class Watcher<T> {
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
 
-        if (isStopping()) {
-          setIsDraining(true);
-        } else {
-          setIsDraining(false);
-        }
+        setIsDraining(isStopping());
         if (isDraining()) {
           continue;
         }

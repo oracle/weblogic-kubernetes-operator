@@ -65,7 +65,7 @@ class NamespacedResources {
     );
   }
 
-  private Step getPauseWatchersStep(Watcher watcher) {
+  private Step getPauseWatchersStep(Watcher<?> watcher) {
     return new PauseWatchersStep<>(watcher);
   }
 

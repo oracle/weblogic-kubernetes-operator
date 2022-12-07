@@ -106,7 +106,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
-  private final DomainNamespaces domainNamespaces;
 
   // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -125,19 +124,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate, SemanticVersion productVersion) {
-    this(delegate, productVersion, null);
-  }
-
-  /** Construct a new DomainProcessorImpl.
-   * @param delegate Domain processor delegate.
-   * @param productVersion product version.
-   * @param domainNamespaces domain namespaces.
-   */
-  public DomainProcessorImpl(DomainProcessorDelegate delegate, SemanticVersion productVersion,
-                             DomainNamespaces domainNamespaces) {
     this.delegate = delegate;
     this.productVersion = productVersion;
-    this.domainNamespaces = domainNamespaces;
   }
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
