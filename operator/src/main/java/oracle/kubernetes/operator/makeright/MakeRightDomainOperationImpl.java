@@ -444,7 +444,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
       };
 
-      return executor.createNamespacedResourceSteps(processor, info);
+      return executor.createNamespacedResourceSteps(processor, info, delegate.getDomainNamespaces());
     }
 
   }

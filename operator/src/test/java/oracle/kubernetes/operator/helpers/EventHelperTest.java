@@ -138,7 +138,9 @@ class EventHelperTest {
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
+  private final DomainProcessorDelegateStub processorDelegate =
+      DomainProcessorDelegateStub.createDelegate(testSupport, domainNamespaces);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
@@ -154,7 +156,6 @@ class EventHelperTest {
   private static final String WILL_NOT_RETRY =
       "The reported problem should be corrected, and the domain will not be retried "
           + "until the domain resource is updated.";
-  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
 
   @BeforeEach
   void setUp() throws Exception {
