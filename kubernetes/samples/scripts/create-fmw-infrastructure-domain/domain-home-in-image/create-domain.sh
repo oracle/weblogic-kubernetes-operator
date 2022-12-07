@@ -113,7 +113,7 @@ initOutputDir() {
 
 # try to execute image builder to see whether it is available
 validateImageBuilderAvailable() {
-  if ! [ -x "$(command -v ${WLSIMG_BUILDER})" ]; then
+  if ! [ -x "$(command -v ${WLSIMG_BUILDER:-docker})" ]; then
     validationError "${WLSIMG_BUILDER} is not installed"
   fi
 }
