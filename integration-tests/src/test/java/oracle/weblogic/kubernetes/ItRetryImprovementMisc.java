@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -49,12 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Miscellaneous use cases for WKO retry improvements")
 @IntegrationTest
-@Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("okd-wls-mrg")
 class ItRetryImprovementMisc {
-  private static String opNamespace = null;
+
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
 
@@ -62,16 +59,13 @@ class ItRetryImprovementMisc {
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 1;
   private static LoggingFacade logger = null;
-  private static String opServiceAccount = null;
   private static String clusterName = "cluster-1";
 
   private ConditionFactory shortRetryPolicy = createRetryPolicy(0, 1, 30);
 
   /**
    * Perform initialization for all the tests in this class.
-   * Set up the necessary namespaces, install the operator in the first namespace, and
-   * create a domain in the second namespace using the pre-created basic MII image,
-   * Max cluster size set in the model file is 5.
+   * Set up the necessary namespaces, install the operator in the first namespace.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *           JUnit engine parameter resolution mechanism
@@ -82,28 +76,29 @@ class ItRetryImprovementMisc {
 
     // get a namespace for operator
     assertNotNull(namespaces.get(0), "Namespace namespaces.get(0) is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     // get a namespace for domain1
     assertNotNull(namespaces.get(1), "Namespace namespaces.get(1) is null");
     domainNamespace = namespaces.get(1);
 
-    opServiceAccount = opNamespace + "-sa";
+    String opServiceAccount = opNamespace + "-sa";
+
     // install and verify operator with REST API
-    logger.info("Install an operator in namespace {0}, managing namespace {1}",
-        opNamespace, domainNamespace);
+    logger.info("Install an operator in namespace {0}, managing namespace {1}", opNamespace, domainNamespace);
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
   }
 
   /**
-   * Start a domain with a single cluster, where cluster has 1 server (replicas = 1).
-   * Expect Cluster and Domain status to report Unavailable and Incomplete almost immediately.
-   * Wait for Cluster and Domain status to both report Available=True and Complete=True,
-   * and expect this to happen at the same time all pods reports ready (not sooner).
+   * Test domain and cluster status conditions while starting a single cluster domain.
+   * Start a domain with a single cluster, where cluster has 1 server.
+   * Verify Cluster and Domain status conditions are Unavailable and Incomplete after the domain is created and
+   * waiting for all the servers to be ready.
+   * Verify Cluster and Domain status conditions become Available and Complete once all pods are ready.
    */
   @Order(1)
   @Test
-  @DisplayName("Start a domain with a single cluster which has 1 server")
+  @DisplayName("Test domain and cluster status conditions while starting a single cluster domain.")
   void testStartSingleClusterDomainWithOneServer() {
     // create a mii domain resource with one cluster
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
@@ -113,7 +108,7 @@ class ItRetryImprovementMisc {
         domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         replicaCount,
-        Arrays.asList(clusterName),
+        Collections.singletonList(clusterName),
         false,
         null);
 
@@ -129,30 +124,29 @@ class ItRetryImprovementMisc {
     checkDomainStatusClusterConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
-    // wait for all the pods are up
-    // check admin server pod is ready
+    // wait for admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check the domain status is Unavailable and Incomplete
+    // check the domain status is Unavailable and Incomplete while waiting for the managed servers are ready
     assertTrue(assertDoesNotThrow(
         () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False").call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False").call()),
         "domain status condition Completed type does not have expected False value");
     assertTrue(assertDoesNotThrow(
         () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False").call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False").call()),
         "domain status condition Available type does not have expected False value");
 
-    // check the cluster condition is Unavailable and Incomplete
+    // check the cluster condition is Unavailable and Incomplete while waiting for the managed servers are ready
     assertTrue(assertDoesNotThrow(
         () -> domainStatusClustersConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
-            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION).call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION).call()),
         "domain status cluster condition Completed type does not have expected False value");
     assertTrue(assertDoesNotThrow(
         () -> domainStatusClustersConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
-            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION).call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION).call()),
         "domain status cluster condition Available type does not have expected False value");
 
     // check managed server pods are ready
@@ -162,13 +156,13 @@ class ItRetryImprovementMisc {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    // check the domain status is Available and Complete
+    // check the domain status is Available and Complete after all servers are ready
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
 
-    // check the cluster condition is Available and Complete
+    // check the cluster condition is Available and Complete after all servers are ready
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
@@ -176,13 +170,13 @@ class ItRetryImprovementMisc {
   }
 
   /**
-   * Set cluster to NEVER. Expect domain status to stay available and complete.
-   * And expect cluster status to go to unavailable, and expect cluster complete to stay complete.
+   * Test domain and cluster status conditions after setting cluster serverStartPolicy to Never.
+   * Set cluster serverStartPolicy to NEVER. Verify domain status conditions stay available and complete.
+   * And verify cluster status conditions become unavailable and complete.
    */
   @Order(2)
   @Test
-  @DisplayName("Set cluster to Never, expect  domain status to stay available and complete. "
-      + "And expect cluster status to go to unavailable, and expect cluster complete to stay complete.")
+  @DisplayName("Test domain and cluster status conditions after setting cluster serverStartPolicy to Never.")
   void testSetClusterToNeverAndVerifyStatus() {
     logger.info("patch the cluster resource with serverStartPolicy to Never");
     String patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"Never\"}]";
@@ -192,21 +186,21 @@ class ItRetryImprovementMisc {
     assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
-    // check domain status to stay available and complete
+    // check domain status conditions stay available and complete after the cluster serverStartPolicy is set to Never
     assertTrue(assertDoesNotThrow(
         () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True").call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True").call()),
         "domain status condition Completed type does not have expected True value");
     assertTrue(assertDoesNotThrow(
         () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True").call().booleanValue()),
+            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True").call()),
         "domain status condition Available type does not have expected True value");
 
-    // wait for the cluster status to go to unavailable
+    // wait for the cluster status conditions go to unavailable after the cluster serverStartPolicy is set to Never
     checkDomainStatusClusterConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
-    // check the cluster status is complete
+    // wait for the cluster status condition go to complete after the cluster serverStartPolicy is set to Never
     checkDomainStatusClusterConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
 
@@ -216,17 +210,38 @@ class ItRetryImprovementMisc {
           managedServerPrefix + i, domainNamespace);
       checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
     }
+
+    // check domain status condition stay available and complete after the cluster server pods are deleted
+    assertTrue(assertDoesNotThrow(
+        () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True").call()),
+        "domain status condition Completed type does not have expected True value");
+    assertTrue(assertDoesNotThrow(
+        () -> domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True").call()),
+        "domain status condition Available type does not have expected True value");
+
+    // check cluster conditions are unavailable and complete after the cluster server pods are deleted
+    assertTrue(assertDoesNotThrow(
+        () -> domainStatusClustersConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
+            DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION).call()),
+        "domain status cluster condition Completed type does not have expected True value");
+    assertTrue(assertDoesNotThrow(
+        () -> domainStatusClustersConditionTypeHasExpectedStatus(domainUid, domainNamespace, clusterName,
+            DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION).call()),
+        "domain status cluster condition Available type does not have expected False value");
   }
 
   /**
-   * Set cluster back to IF_NEEDED, expect recovery, where cluster becomes Available once its one pod is ready
-   * and then, perhaps only a very small time later, Complete too.
-   * Domain status should flip to incomplete and unavailable during this period,
-   * and come back to complete/available at the same time Cluster recovers.
+   * Test domain and cluster status conditions after set cluster serverStartPolicy from Never to IfNeeded.
+   * Set cluster serverStartPolicy back to IF_NEEDED.
+   * Verify Cluster status conditions become Available and Complete once the managed server pods are ready.
+   * Verify Domain status conditions become incomplete and unavailable during the patching operation,
+   * and come back to complete and available at the same time Cluster recovers.
    */
   @Order(3)
   @Test
-  @DisplayName("Set cluster back to IF_NEEDED, expect recovery")
+  @DisplayName("Test domain and cluster status conditions after set cluster serverStartPolicy from Never to IfNeeded.")
   void testSetClusterToIfNeeded() {
     logger.info("patch the cluster resource with serverStartPolicy to IfNeeded");
     String patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}]";
@@ -236,26 +251,26 @@ class ItRetryImprovementMisc {
     assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
-    // check domain status to become unavailable and incomplete
+    // check domain status conditions become unavailable and incomplete during the patching operation
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
 
-    // check managed server pods are ready
+    // wait for the managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    // check the cluster status is Available and Complete
+    // check the cluster status conditions are Available and Complete after the cluster servers pods are ready
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
 
-    // wait for the domain status to go to available and complete
+    // wait for the domain status conditions go to available and complete after the cluster servers pods are ready
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
@@ -263,19 +278,21 @@ class ItRetryImprovementMisc {
   }
 
   /**
-   * Delete a server pod in the cluster. For both domain & cluster: Available should go false, Complete should also go
-   * false, and both should eventually return to true when the pod auto-restarts and declares itself ready.
+   * Test domain and cluster status conditions after deleting a server pod of the cluster.
+   * Delete a server pod in the cluster.
+   * Verify domain and cluster status conditions Available and Complete should go false,
+   * and both should eventually return to true when the pod auto-restarts and is ready.
    */
   @Order(4)
   @Test
-  @DisplayName("Delete a server pod, verify the domain and cluster status")
+  @DisplayName("Test domain and cluster status conditions after deleting a server pod of the cluster.")
   void testDeleteServerPodAndVerifyDomainClusterStatus() {
     // delete a cluster server pod
     String podName = managedServerPrefix + 1;
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", podName, domainNamespace));
 
-    // verify both domain and cluster: Available should go false, Complete should also go false
+    // verify domain and cluster status conditions Available and Complete become false
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
@@ -288,7 +305,7 @@ class ItRetryImprovementMisc {
     // wait the pod is restarted and back to ready
     checkPodReady(podName, domainUid, domainNamespace);
 
-    // verify both domain and cluster: Available should go true, Complete should also go true
+    // verify domain and cluster status conditions Available and Complete become true
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
@@ -300,13 +317,16 @@ class ItRetryImprovementMisc {
   }
 
   /**
-   * Set cluster replicas=0. Cluster Available should go to false and stay false. Domain available should stay true
-   * throughout. Domain and Cluster Complete should go false while the cluster is shutting down,
-   * and go True once the shutdown completes
+   * Test domain and cluster status conditions when set cluster replicas to zero.
+   * Set cluster replicas to 0.
+   * Verify Cluster status condition Available becomes false and stay false.
+   * Verify Domain status condition available should stay true.
+   * Verify Domain and Cluster status condition Complete becomes false while the cluster is shutting down and become
+   * True once the shutdown completes
    */
   @Order(5)
   @Test
-  @DisplayName("Set cluster replicas to 0 and verify the cluster and domain status")
+  @DisplayName("Test domain and cluster status conditions when set cluster replicas to zero.")
   void testClusterReplicasToZero() {
     logger.info("patch the cluster resource with replicas to 0");
     String patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 0}]";
@@ -316,51 +336,54 @@ class ItRetryImprovementMisc {
     assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
-    // check the domain Complete goes to false
+    // check the domain status condition Complete becomes false
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
-    // Enable this check when OWLS-104622 is fixed
-    // check the cluster Complete should go false
+    // Enable this check when the bug is fixed
+    // check the cluster status condition Complete becomes false
     //checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
     //    clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
-    // verify Cluster Available should go to false and stay false
+    // verify Cluster status condition Available becomes false and stay false when the server pod is deleting
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
 
-    // verify Domain available should stay true throughout
+    // verify Domain status condition available stays true when the server pod is deleting
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
 
     // check the cluster server pod is deleted
     checkPodDoesNotExist(managedServerPrefix + 1, domainUid, domainNamespace);
 
-    // check the cluster Complete should go true
+    // check the cluster status condition Complete becomes true
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
-    // verify Cluster Available should stay false
+    // verify Cluster status condition Available becomes false
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
 
-    // verify Domain available should stay true throughout
+    // verify Domain status condition available stays true while the cluster server pods are deleted
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
-    // check the domain Complete back to True when the cluster shutdown completes
+    // check domain status condition Complete becomes True when the cluster shutdown completes
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
   }
 
   /**
-   * Try set cluster replicas=2. The cluster Complete should immediately go false, and cluster Available should go true
-   * the moment one of the cluster's members becomes ready, and cluster Complete should become true once both servers
-   * are ready. Domain available and complete should both flip to false, domain available should become true when
-   * cluster available becomes true, and domain complete should only come back to true when the cluster is fully up
-   * and ready.
+   * Test domain and cluster status condition when set cluster replicas to 2.
+   * Set cluster replicas to 2.
+   * Verify the cluster status condition Complete and Available become false.
+   * Verify the domain status condition Complete and Available become false.
+   * Verify the cluster status condition Available becomes true when one of the cluster's members becomes ready.
+   * Verify Domain status condition available become true when cluster status condition available becomes true.
+   * Verify the cluster status condition Complete becomes true once both servers are ready.
+   * Verify domain status condition complete becomes true when the cluster is fully up and ready.
    */
   @Order(6)
   @Test
-  @DisplayName("Set cluster replicas to 2, verify the domain and cluster status Complete and Available condition")
+  @DisplayName("Test domain and cluster status condition when set cluster replicas to 2.")
   void testClusterReplicasTo2() {
     logger.info("patch the cluster resource with replicas to 2");
     String patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}]";
@@ -370,55 +393,61 @@ class ItRetryImprovementMisc {
     assertTrue(patchClusterCustomResource(clusterName, domainNamespace,
         patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
-    // check the Cluster Available and Complete go to false
+    // check the Cluster status condition Available and Complete become false
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
-    // check the Domain Available and Complete flip to false
+    // check the Domain status condition Available and Complete become false
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
+    // wait for the first managed server pod is ready
     checkPodReady(managedServerPrefix + 1, domainUid, domainNamespace);
-    // check the cluster Available should go true after the first cluster member becomes ready
+
+    // check the cluster status condition Available becomes true after the first cluster member becomes ready
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
-    // check the Domain Available should become true when cluster available becomes true
+    // check the Domain status condition Available become true when cluster status condition available becomes true
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
 
+    // wait for the second managed server is ready
     checkPodReady(managedServerPrefix + 2, domainUid, domainNamespace);
-    // check cluster Complete becomes true once both servers are ready
+
+    // check cluster status condition Complete becomes true once both servers are ready
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
-    // check domain complete should only come back to true when the cluster is fully up
+    // check domain status condition complete becomes true when the cluster is fully up
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
   }
 
   /**
-   * Delete one of the cluster's pods. Cluster Available should stay true throughout, because the cluster remains
-   * 'ready enough', but cluster Complete should go false.  Then, once pod auto-restarts and becomes ready,
-   * cluster Complete should become true.  Domain Available and Complete should act the same as the Cluster conditions
+   * Test domain and cluster status conditions when deleting one of the cluster server pods.
+   * Delete one of the cluster server pods.
+   * Verify Domain and cluster status condition Complete become false.
+   * Verify Domain and Cluster status condition Available stay true.
+   * Verify Domain and cluster status condition Complete becomes true when the pod auto-restarts and becomes ready.
    */
   @Order(7)
   @Test
-  @DisplayName("delete one cluster pod and verify the domain and cluster condition")
+  @DisplayName("Test domain and cluster status conditions when deleting one of the cluster server pods.")
   void testDeleteOneClusterPodWithReplicasTo2() {
     // delete one server pod
     String podName = managedServerPrefix + 1;
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", podName, domainNamespace));
 
-    // check the cluster and domain Complete should go false
+    // check the cluster and domain Complete become false while the pod is deleted
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
-    // check the domain and cluster Available should stay true
+    // check the domain and cluster Available stay true while the pod is deleted
     checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
@@ -435,19 +464,21 @@ class ItRetryImprovementMisc {
   }
 
   /**
-   * Delete the Admin server pod. Expect domain status to flip to Complete false and Available false,
-   * but Cluster status to remain unchanged throughout, staying at Complete and Available.
-   * Once Admin server pod restarts, the Domain status should become true.
+   * Test domain and cluster status condition when deleting the admin server pod.
+   * Delete the Admin server pod.
+   * Verify domain status condition Complete and Available become false.
+   * Verify Cluster status condition Complete and Available stay true.
+   * Verify Domain status condition Complete and Available become true after Admin server pod restarts.
    */
   @Order(8)
   @Test
-  @DisplayName("Delete the admin server pod. Verify the domain and cluster status")
+  @DisplayName("Test domain and cluster status condition when deleting the admin server pod.")
   void testDeleteAdminServer() {
     // delete admin server pod
     assertDoesNotThrow(() -> deletePod(adminServerPodName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", adminServerPodName, domainNamespace));
 
-    // check the domain Complete and Available should go false
+    // check the domain status condition Complete and Available become false
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
@@ -462,7 +493,7 @@ class ItRetryImprovementMisc {
     // wait for admin server restart
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
-    // check the domain status becomes true
+    // check the domain status condition Available and Complete become true
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", DOMAIN_VERSION);
     checkDomainStatusConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
