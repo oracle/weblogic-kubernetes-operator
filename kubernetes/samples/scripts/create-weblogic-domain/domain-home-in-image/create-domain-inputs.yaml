@@ -27,7 +27,7 @@ domainUID: domain1
 domainHome: /u01/oracle/user_projects/domains/domain1
 
 # Determines which WebLogic Servers the operator will start up
-# Legal values are "Never", "Always", "IfNeeded", and "AdminOnly"
+# Legal values are "Never", "IfNeeded", or "AdminOnly"
 serverStartPolicy: IfNeeded
 
 # Cluster name

@@ -19,7 +19,7 @@ domainUID: domain1
 domainHome: /shared/domains/domain1
 
 # Determines which OracleFMWInfrastructure Servers the operator will start up
-# Legal values are "Never", "Always", "IfNeeded", and "AdminOnly"
+# Legal values are "Never", "IfNeeded", or "AdminOnly"
 serverStartPolicy: IfNeeded
 
 # Cluster name
