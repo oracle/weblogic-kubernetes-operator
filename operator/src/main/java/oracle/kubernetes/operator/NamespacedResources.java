@@ -230,12 +230,6 @@ class NamespacedResources {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (watcher != null) {
-        LOGGER.info("DEBUG: pausing watch for " + watcher + ", resource version is "
-            + watcher.getResourceVersion());
-      } else {
-        LOGGER.info("DEBUG: Skip pausing watcher as watcher is null");
-      }
       Optional.ofNullable(watcher).ifPresent(Watcher::pause);
       return doNext(packet);
     }

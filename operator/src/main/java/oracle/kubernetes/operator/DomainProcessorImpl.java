@@ -515,7 +515,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         info.setServerPodBeingDeleted(serverName, Boolean.FALSE);
         // fall through
       case MODIFIED:
-        LOGGER.info("DEBUG: Received pod modified event for " + PodHelper.getPodName(pod));
         boolean podPreviouslyEvicted = info.setServerPodFromEvent(serverName, pod, PodHelper::isEvicted);
         if (PodHelper.isEvicted(pod) && !podPreviouslyEvicted) {
           if (PodHelper.shouldRestartEvictedPod(pod)) {
@@ -527,7 +526,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
         break;
       case DELETED:
-        LOGGER.info("DEBUG: Received pod deleted event for " + PodHelper.getPodName(pod));
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);

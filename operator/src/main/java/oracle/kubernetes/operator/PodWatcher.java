@@ -124,17 +124,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    */
   public void receivedResponse(Watch.Response<V1Pod> item) {
     V1Pod pod = item.object;
-    LOGGER.info("DEBUG: Received response for item " + PodHelper.getPodName(pod) + ", listener is " + listener);
     listener.receivedResponse(item);
 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        LOGGER.info("DEBUG: Received pod modified event for " + PodHelper.getPodName(pod));
         copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
-        LOGGER.info("DEBUG: Received pod deleted event for " + PodHelper.getPodName(pod));
         getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
         break;
       case "ERROR":

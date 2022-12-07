@@ -148,21 +148,16 @@ abstract class Watcher<T> {
   }
 
   protected boolean isStopping() {
-    System.out.println("DEBUG: isStopping returns " + this.stopping.get());
     return this.stopping.get();
   }
 
   // Set the stopping state to true to pause watches.
   protected void pause() {
-    //LOGGER.info("DEBUG: pausing " + this);
-    //System.out.println("DEBUG: pausing " + this);
     this.stopping.set(true);
   }
 
   // Set the stopping state to false to resume watches.
   protected void resume() {
-    //LOGGER.info("DEBUG: resuming " + this);
-    //System.out.println("DEBUG: resuming " + this);
     this.stopping.set(false);
   }
 
@@ -181,8 +176,6 @@ abstract class Watcher<T> {
     } else {
       lastInitialize = now;
     }
-    LOGGER.info("DEBUG: In doWatch.. isDraining is " + isDraining() + ", isStopping() is" + isStopping());
-    LOGGER.info("DEBUG: Initiating watch with resourceVersion " + resourceVersion + ", listner is " + listener);
     try (Watchable<T> watch =
         initiateWatch(
             new WatchBuilder()
@@ -191,16 +184,12 @@ abstract class Watcher<T> {
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
 
-        LOGGER.info("DEBUG: In while loop.. isDraining is " + isDraining() + ", isStopping() is" + isStopping());
-        LOGGER.info("DEBUG: resourceVersion is " + resourceVersion + ", listner is " + listener);
         if (isStopping()) {
           setIsDraining(true);
         } else {
           setIsDraining(false);
         }
         if (isDraining()) {
-          LOGGER.info("DEBUG: SKIPPING watch with type " + item.type + ", and object"
-              + Yaml.dump(item.object) + "resourceVersion is " + resourceVersion + ", listener is " + listener);
           continue;
         }
 
@@ -264,11 +253,8 @@ abstract class Watcher<T> {
 
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.fine(MessageKeys.WATCH_EVENT, item.type, item.object);
-    LOGGER.info("DEBUG: received watch with type " + item.type + ", and object"
-        + Yaml.dump(item.object) + ", listener is " + listener);
     trackResourceVersion(item.type, item.object);
     if (listener != null) {
-      LOGGER.info("DEBUG: After tracking version.. version is " + resourceVersion);
       listener.receivedResponse(item);
     }
   }
