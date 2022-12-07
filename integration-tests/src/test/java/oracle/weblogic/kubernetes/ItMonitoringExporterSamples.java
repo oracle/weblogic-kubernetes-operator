@@ -492,7 +492,7 @@ class ItMonitoringExporterSamples {
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, BASE_IMAGES_REPO_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, TEST_IMAGES_REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");
