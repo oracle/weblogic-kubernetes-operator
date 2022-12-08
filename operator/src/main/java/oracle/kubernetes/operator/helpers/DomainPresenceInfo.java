@@ -804,7 +804,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return true if the domain does not have any cluster or the cluster statuses have been initially populated.
    */
   public boolean clusterStatusInitialized() {
-    return getDomain().getSpec().getClusters().size() == 0 || !getDomain().getStatus().getClusters().isEmpty();
+    return getDomain().getSpec().getClusters().isEmpty() || !getDomain().getStatus().getClusters().isEmpty();
   }
 
   @Override
