@@ -188,11 +188,12 @@
               <goals>
                 <goal>exec</goal>
               </goals>
-              <configuration>
-                <executable>../validateCLI.sh</executable>
-                <arguments>
-                  <argument>..</argument>
-                </arguments>
+	      <configuration>
+	        <executable>bash</executable>
+	          <arguments>
+		    <argument>../validateCLI.sh</argument>
+		    <argument>..</argument>
+	          </arguments>
               </configuration>
             </execution>
           </executions>
