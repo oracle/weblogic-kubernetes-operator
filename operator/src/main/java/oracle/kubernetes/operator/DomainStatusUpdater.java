@@ -581,7 +581,8 @@ public class DomainStatusUpdater {
               (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return (domainRecheckOrScheduledStatusUpdate)
-              && info.getServerStartupInfo() == null;
+          && info.getServerStartupInfo() == null
+          && info.clusterStatusInitialized();
     }
 
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
