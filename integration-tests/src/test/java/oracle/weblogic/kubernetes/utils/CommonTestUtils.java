@@ -130,7 +130,7 @@ public class CommonTestUtils {
   private static final String TMP_FILE_NAME = "temp-download-file.out";
 
   /**
-   * Create a custom condition factory with custom values for pollDelay, pollInterval and atMost time.
+   * Create a condition factory with custom values for pollDelay, pollInterval and atMost time.
    *
    * @param polldelay starting delay before checking for the condition in seconds
    * @param pollInterval interval time between checking for the condition in seconds
