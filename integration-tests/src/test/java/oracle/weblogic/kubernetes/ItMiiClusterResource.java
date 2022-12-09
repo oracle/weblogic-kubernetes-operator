@@ -544,7 +544,18 @@ class ItMiiClusterResource {
         domainUid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
-    
+
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
     // create and deploy domain resource with cluster reference
     DomainResource domain2 = createDomainResource(domain2Uid,
                domainNamespace, adminSecretName,
@@ -557,17 +568,6 @@ class ItMiiClusterResource {
         domain2Uid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain2, domainNamespace);
-
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
-
-    // verify managed server services and pods are created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-                 managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
 
     testUntil(withLongRetryPolicy,
         checkDomainFailedEventWithReason(opNamespace, domainNamespace, 
