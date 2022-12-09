@@ -286,8 +286,9 @@ class ItRetryImprovementMisc {
    */
   @Order(4)
   @Test
-  @DisplayName("Test domain and cluster status conditions after deleting a server pod of the cluster.")
-  void testDeleteServerPodWithReplicasTo1() {
+  @DisplayName("Test domain and cluster status conditions after deleting a server pod of the cluster with "
+      + "cluster replicas set to 1.")
+  void testDeleteServerPodWithReplicasSetTo1() {
     // delete a cluster server pod
     String podName = managedServerPrefix + 1;
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
@@ -432,11 +433,15 @@ class ItRetryImprovementMisc {
    * Verify Domain and cluster status condition Complete become false.
    * Verify Domain and Cluster status condition Available stay true.
    * Verify Domain and cluster status condition Complete becomes true when the pod auto-restarts and becomes ready.
+   * This test is different than Test 4 since the cluster replicas is 2 and when one of the cluster server pods
+   * is deleted, another server pod is still running. The cluster status condition Available should be True even
+   * one of the pods get deleted.
    */
   @Order(7)
   @Test
-  @DisplayName("Test domain and cluster status conditions when deleting one of the cluster server pods.")
-  void testDeleteOneClusterPodWithReplicasTo2() {
+  @DisplayName("Test domain and cluster status conditions when deleting one of the cluster server pods with cluster "
+      + "replicas set to 2.")
+  void testDeleteOneClusterPodWithReplicasSetTo2() {
     // delete one server pod
     String podName = managedServerPrefix + 1;
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
