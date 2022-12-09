@@ -34,7 +34,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep<?>.Callback callback,
                                            DomainPresenceInfo info, Step next) {
-    return new CallBuilder().readDomainAsync(info.getDomainUid(),
+    return new CallBuilder().readDomainAsync(info.getDomainName(),
             info.getNamespace(), new MakeRightDomainStep<>(callback, null));
   }
 
