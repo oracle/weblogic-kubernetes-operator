@@ -257,7 +257,7 @@ class ItMiiClusterResource {
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
     ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
-    checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);    
+    checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
     // check managed server pods from cluster-1 are shutdown
@@ -366,7 +366,8 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
+    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
+    checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
     // check managed server pods from cluster-1 are shutdown
