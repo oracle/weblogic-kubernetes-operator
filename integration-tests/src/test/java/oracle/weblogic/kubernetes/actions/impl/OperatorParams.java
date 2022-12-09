@@ -37,7 +37,6 @@ public class OperatorParams {
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
   private static final String WEBHOOK_ONLY = "webhookOnly";
-  remoteDebugNodePortEnabled
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -54,7 +53,6 @@ public class OperatorParams {
   private String elasticSearchHost;
   private int elasticSearchPort;
   private String javaLoggingLevel;
-  private boolean remoteDebugNodePortEnabled = false;
   private String logStashImage;
   private String domainNamespaceSelectionStrategy;
   private String domainNamespaceLabelSelector;
@@ -134,11 +132,6 @@ public class OperatorParams {
 
   public OperatorParams javaLoggingLevel(String javaLoggingLevel) {
     this.javaLoggingLevel = javaLoggingLevel;
-    return this;
-  }
-
-  public OperatorParams remoteDebugNodePortEnabled(boolean remoteDebugNodePortEnabled) {
-    this.remoteDebugNodePortEnabled = remoteDebugNodePortEnabled;
     return this;
   }
 
@@ -263,11 +256,7 @@ public class OperatorParams {
     }
     if (webhookOnly) {
       values.put(WEBHOOK_ONLY, webhookOnly);
-    }
-
-    if (remoteDebugNodePortEnabled) {
-      values.put()
-    }
+    }    
 
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
 
