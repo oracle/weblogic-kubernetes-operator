@@ -417,6 +417,7 @@ public class OperatorUtils {
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .javaLoggingLevel(loggingLevel)
+        .remoteDebugNodePortEnabled(true)
         .serviceAccount(opServiceAccount);
     
     if (webhookOnly) {

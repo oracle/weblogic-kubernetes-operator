@@ -218,8 +218,10 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
       result.add(createStatusInitializationStep());
     }
     if (deleting || domainHasDeletionTimestamp()) {
+      System.out.println("DEBUG: create domain down plan for domain " + liveInfo.getDomainUid());
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
+      System.out.println("DEBUG: create domain up plan for domain " + liveInfo.getDomainUid());
       result.add(createListClusterResourcesStep(getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
