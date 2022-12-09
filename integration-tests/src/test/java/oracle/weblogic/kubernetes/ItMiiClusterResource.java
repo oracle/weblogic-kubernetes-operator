@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -67,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.startCluster;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.stopCluster;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createCustomConditionFactory;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
@@ -254,7 +256,8 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
+    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
+    checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
     // check managed server pods from cluster-1 are shutdown
@@ -363,7 +366,8 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase2, domainUid, domainNamespace);
+    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
+    checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
     // check managed server pods from cluster-1 are shutdown
@@ -544,7 +548,18 @@ class ItMiiClusterResource {
         domainUid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace);
-    
+
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
+
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
     // create and deploy domain resource with cluster reference
     DomainResource domain2 = createDomainResource(domain2Uid,
                domainNamespace, adminSecretName,
@@ -557,17 +572,6 @@ class ItMiiClusterResource {
         domain2Uid, domainNamespace, 
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain2, domainNamespace);
-
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName,domainUid,domainNamespace);
-
-    // verify managed server services and pods are created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-                 managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
 
     testUntil(withLongRetryPolicy,
         checkDomainFailedEventWithReason(opNamespace, domainNamespace, 

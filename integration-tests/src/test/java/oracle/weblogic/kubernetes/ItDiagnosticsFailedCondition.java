@@ -237,7 +237,13 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      
+
+      testUntil(
+          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
+          getLogger(),
+          "waiting for domain status condition reason ReplicasTooHigh exists"
+      );
+
       // remove after debug
       String patchStr
           = "["
@@ -260,11 +266,6 @@ class ItDiagnosticsFailedCondition {
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
-      );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
       );
 
       patchStr
