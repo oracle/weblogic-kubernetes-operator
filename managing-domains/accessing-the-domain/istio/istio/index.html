@@ -12,20 +12,20 @@
     <title>Istio support :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1670279560" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1670279560" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1670631037" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1670631037" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1670279560"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1670631037"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1670279560"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1670279560"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1670631037"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1670631037"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1670279560"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1670631037"></script>
 
     
   </div>
@@ -3795,7 +3795,7 @@ the cluster.</p>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">istio</span>: <span style="color:#ae81ff">ingressgateway</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">servers</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">hosts</span>:
-</span></span><span style="display:flex;"><span>        - <span style="color:#e6db74">&#39;*&#39;</span>
+</span></span><span style="display:flex;"><span>        - <span style="color:#e6db74">&#39;yourdomain.dns.com&#39;</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">port</span>:
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">http</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">number</span>: <span style="color:#ae81ff">80</span>
@@ -3810,7 +3810,7 @@ the cluster.</p>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">gateways</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#ae81ff">domain1-gateway</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">hosts</span>:
-</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#39;*&#39;</span>
+</span></span><span style="display:flex;"><span>    - <span style="color:#e6db74">&#39;yourdomain.dns.com&#39;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">http</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">match</span>:
 </span></span><span style="display:flex;"><span>        - <span style="color:#f92672">uri</span>:
@@ -3982,12 +3982,12 @@ spec:
 </span></span></code></pre></div><p>See Istio <a href="https://istio.io/latest/docs/reference/config/networking/destination-rule/">Destination Rule</a>.</p>
 <h4 id="ingress-gateway">Ingress gateway</h4>
 <p>Ingress gateway provides similar functions to <code>Kubernetes Ingress</code> but with more advanced functionality.</p>
-<p>For example, to configure an Ingress gateway for SSL termination at the gateway:</p>
+<p>I. For example, to configure an Ingress gateway for SSL termination at the gateway:</p>
 <ol>
 <li>Create a TLS certificate and secret.</li>
 </ol>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>$ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj &#34;/CN=secure-domain.org&#34;
-</span></span><span style="display:flex;"><span>$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+</span></span><span style="display:flex;"><span>$ kubectl -n istio-system create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 </span></span></code></pre></div><ol start="2">
 <li>Create the Ingress gateway.</li>
 </ol>
@@ -4015,7 +4015,22 @@ spec:
 </span></span><span style="display:flex;"><span>        protocol: HTTP
 </span></span><span style="display:flex;"><span>      hosts:
 </span></span><span style="display:flex;"><span>      - &#39;regular-domain.org&#39;
-</span></span></code></pre></div><p>For example, to configure an Ingress gateway for SSL passthrough:</p>
+</span></span></code></pre></div><p>If you are accessing the WebLogic Console through a secure gateway with SSL termination at the gateway level, enable
+<code>WeblogicPluginEnabled</code> in the WebLogic domain and add the appropriate request headers.  For example,</p>
+<p>If you are using WDT, add the <code>resources</code> section in the model YAML file.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>      resources:
+</span></span><span style="display:flex;"><span>         WebAppContainer:
+</span></span><span style="display:flex;"><span>            WeblogicPluginEnabled: true
+</span></span></code></pre></div><p>If you are using WLST, set the <code>WeblogicPluginEnabled</code> for each server and cluster</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>   set(&#39;WeblogicPluginEnabled&#39;,true)
+</span></span></code></pre></div><p>Set the request headers in the virtual service:  (Use <code>kubectl explain virtualservice.spec.http.route.headers</code> for help)</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>   headers:
+</span></span><span style="display:flex;"><span>     request:
+</span></span><span style="display:flex;"><span>       remove: [&#39;WL-Proxy-Client-IP&#39;,  &#39;WL-Proxy-SSL&#39;]
+</span></span><span style="display:flex;"><span>       set:
+</span></span><span style="display:flex;"><span>         X-Forwarded-Proto: https
+</span></span><span style="display:flex;"><span>         WL-Proxy-SSL: &#39;true&#39;
+</span></span></code></pre></div><p>II. For example, to configure an Ingress gateway for SSL passthrough:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>apiVersion: networking.istio.io/v1alpha3
 </span></span><span style="display:flex;"><span>kind: Gateway
 </span></span><span style="display:flex;"><span>metadata:
@@ -4039,6 +4054,27 @@ spec:
 </span></span><span style="display:flex;"><span>        protocol: HTTP
 </span></span><span style="display:flex;"><span>      hosts:
 </span></span><span style="display:flex;"><span>      - &#39;regular-domain.org&#39;
+</span></span></code></pre></div><p>The virtual service will then configure to match the <code>tls</code> rule.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>apiVersion: networking.istio.io/v1alpha3
+</span></span><span style="display:flex;"><span>kind: VirtualService
+</span></span><span style="display:flex;"><span>metadata:
+</span></span><span style="display:flex;"><span>  name: sample-domain1-virtualservice
+</span></span><span style="display:flex;"><span>  namespace: sample-domain1-ns
+</span></span><span style="display:flex;"><span>spec:
+</span></span><span style="display:flex;"><span>  gateways:
+</span></span><span style="display:flex;"><span>    - sample-domain1-gateway
+</span></span><span style="display:flex;"><span>  hosts:
+</span></span><span style="display:flex;"><span>    - secure-domain.org
+</span></span><span style="display:flex;"><span>  tls:
+</span></span><span style="display:flex;"><span>  - match:
+</span></span><span style="display:flex;"><span>    - port: 443
+</span></span><span style="display:flex;"><span>      sniHosts:
+</span></span><span style="display:flex;"><span>      - secure-domain.org
+</span></span><span style="display:flex;"><span>    route:
+</span></span><span style="display:flex;"><span>    - destination:
+</span></span><span style="display:flex;"><span>        host: sample-domain1-admin-server
+</span></span><span style="display:flex;"><span>        port:
+</span></span><span style="display:flex;"><span>          number: 9002    
 </span></span></code></pre></div><p>See Istio <a href="https://istio.io/latest/docs/tasks/traffic-management/ingress">Ingress</a>.</p>
 
 
@@ -6441,19 +6477,19 @@ spec:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1670279560"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1670631037"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1670279560"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1670279560"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1670631037"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1670631037"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1670279560"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1670631037"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
