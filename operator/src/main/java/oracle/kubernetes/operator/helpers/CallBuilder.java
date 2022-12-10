@@ -800,7 +800,7 @@ public class CallBuilder {
   /**
    * Patch cluster.
    *
-   * @param name the domain uid (unique within the k8s cluster)
+   * @param name the domain name
    * @param namespace the namespace containing the domain
    * @param patchBody the patch to apply
    * @return Updated cluster
@@ -921,41 +921,41 @@ public class CallBuilder {
   /**
    * Read domain synchronously.
    *
-   * @param uid the domain uid (unique within the k8s cluster)
+   * @param name the domain name
    * @param namespace Namespace
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public DomainResource readDomain(String uid, String namespace) throws ApiException {
-    RequestParams requestParams = new RequestParams("readDomain", namespace, uid, null, (String)null);
+  public DomainResource readDomain(String name, String namespace) throws ApiException {
+    RequestParams requestParams = new RequestParams("readDomain", namespace, name, null, (String)null);
     return executeSynchronousCall(requestParams, readDomainCall);
   }
 
   /**
    * Replace domain.
    *
-   * @param uid the domain uid (unique within the k8s cluster)
+   * @param name the domain name
    * @param namespace Namespace
    * @param body Body
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public DomainResource replaceDomain(String uid, String namespace, DomainResource body) throws ApiException {
-    RequestParams requestParams = new RequestParams("replaceDomain", namespace, uid, body, uid);
+  public DomainResource replaceDomain(String name, String namespace, DomainResource body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceDomain", namespace, name, body, name);
     return executeSynchronousCall(requestParams, replaceDomainCall);
   }
 
   /**
    * Replace domain status.
    *
-   * @param uid the domain uid (unique within the k8s cluster)
+   * @param name the domain name
    * @param namespace Namespace
    * @param body Body
    * @return Replaced domain
    * @throws ApiException APIException
    */
-  public DomainResource replaceDomainStatus(String uid, String namespace, DomainResource body) throws ApiException {
-    RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, uid, body, uid);
+  public DomainResource replaceDomainStatus(String name, String namespace, DomainResource body) throws ApiException {
+    RequestParams requestParams = new RequestParams("replaceDomainStatus", namespace, name, body, name);
     return executeSynchronousCall(requestParams, replaceDomainStatusCall);
   }
 
@@ -984,15 +984,15 @@ public class CallBuilder {
   /**
    * Patch domain.
    *
-   * @param uid the domain uid (unique within the k8s cluster)
+   * @param name the domain name
    * @param namespace the namespace containing the domain
    * @param patchBody the patch to apply
    * @return Updated domain
    * @throws ApiException APIException
    */
-  public DomainResource patchDomain(String uid, String namespace, V1Patch patchBody) throws ApiException {
+  public DomainResource patchDomain(String name, String namespace, V1Patch patchBody) throws ApiException {
     RequestParams requestParams =
-        new RequestParams("patchDomain", namespace, uid, patchBody, uid);
+        new RequestParams("patchDomain", namespace, name, patchBody, name);
     return executeSynchronousCall(requestParams, patchDomainCall);
   }
 
