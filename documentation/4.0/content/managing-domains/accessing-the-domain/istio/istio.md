@@ -175,7 +175,7 @@ spec:
     istio: ingressgateway
   servers:
     - hosts:
-        - '*'
+        - 'yourdomain.dns.com'
       port:
         name: http
         number: 80
@@ -190,7 +190,7 @@ spec:
   gateways:
     - domain1-gateway
   hosts:
-    - '*'
+    - 'yourdomain.dns.com'
   http:
     - match:
         - uri:
@@ -416,13 +416,13 @@ See Istio [Destination Rule](https://istio.io/latest/docs/reference/config/netwo
 
 Ingress gateway provides similar functions to `Kubernetes Ingress` but with more advanced functionality.
 
-For example, to configure an Ingress gateway for SSL termination at the gateway:
+I. For example, to configure an Ingress gateway for SSL termination at the gateway:
 
 1. Create a TLS certificate and secret.
 
 ```text
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=secure-domain.org"
-$ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
+$ kubectl -n istio-system create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
 ```
 
 2. Create the Ingress gateway.
@@ -453,8 +453,36 @@ spec:
       hosts:
       - 'regular-domain.org'
 ```
+ 
+If you are accessing the WebLogic Console through a secure gateway with SSL termination at the gateway level, enable 
+ `WeblogicPluginEnabled` in the WebLogic domain and add the appropriate request headers.  For example,
+ 
+If you are using WDT, add the `resources` section in the model YAML file.
+ 
+```text
+      resources:
+         WebAppContainer:
+            WeblogicPluginEnabled: true
+``` 
 
-For example, to configure an Ingress gateway for SSL passthrough:
+If you are using WLST, set the `WeblogicPluginEnabled` for each server and cluster
+
+```text
+   set('WeblogicPluginEnabled',true)
+```
+
+Set the request headers in the virtual service:  (Use `kubectl explain virtualservice.spec.http.route.headers` for help)
+
+```text
+   headers:
+     request:
+       remove: ['WL-Proxy-Client-IP',  'WL-Proxy-SSL']
+       set:
+         X-Forwarded-Proto: https
+         WL-Proxy-SSL: 'true'
+```  
+
+II. For example, to configure an Ingress gateway for SSL passthrough:
 
 
 ```text
@@ -481,6 +509,31 @@ spec:
         protocol: HTTP
       hosts:
       - 'regular-domain.org'
+```
+
+The virtual service will then configure to match the `tls` rule.
+
+```text
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: sample-domain1-virtualservice
+  namespace: sample-domain1-ns
+spec:
+  gateways:
+    - sample-domain1-gateway
+  hosts:
+    - secure-domain.org
+  tls:
+  - match:
+    - port: 443
+      sniHosts:
+      - secure-domain.org
+    route:
+    - destination:
+        host: sample-domain1-admin-server
+        port:
+          number: 9002    
 ```
 
 See Istio [Ingress](https://istio.io/latest/docs/tasks/traffic-management/ingress).

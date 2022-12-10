@@ -221,6 +221,7 @@ run_wdt() {
      -domain_home $domain_home_dir
      -model_file $model_final
      -variable_file $inputs_final
+     -target wko4
   "
   echo @@ "Info: About to run the following WDT command:"
   echo "${cmd}"
