@@ -611,7 +611,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * @return domain home
    */
   public String getDomainHome() {
-    return emptyToNull(spec.getDomainHome());
+    return emptyToNull(Optional.ofNullable(spec.getDomainHome())
+            .orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid())));
   }
 
   /**

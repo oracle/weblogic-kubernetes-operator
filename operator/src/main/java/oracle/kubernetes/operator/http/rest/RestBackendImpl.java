@@ -457,7 +457,7 @@ public class RestBackendImpl implements RestBackend {
     try {
       callBuilder
           .patchDomain(
-              domain.getDomainUid(), domain.getMetadata().getNamespace(),
+              domain.getMetadata().getName(), domain.getMetadata().getNamespace(),
               new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException e) {
       throw handleApiException(e);
