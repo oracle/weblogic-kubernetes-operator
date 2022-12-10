@@ -82,7 +82,6 @@ dockerPullPushImage() {
 }
 
 dockerPullPushImages() {
- file="images.properties"
  grep -E -v '^#' ${PROP_FILE} | grep -v "^$" |
    while IFS=";" read -r f1 f2 
    do
