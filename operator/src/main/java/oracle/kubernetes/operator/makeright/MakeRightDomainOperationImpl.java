@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -431,7 +430,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
               .map(p -> PodHelper.getPodServerName(p)).collect(Collectors.toList());
 
           info.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
-              .forEach(sName -> info.deleteServerPodFromEvent(sName, null));
+              .forEach(name -> info.deleteServerPodFromEvent(name, null));
           list.getItems().forEach(this::addPod);
         }
 
