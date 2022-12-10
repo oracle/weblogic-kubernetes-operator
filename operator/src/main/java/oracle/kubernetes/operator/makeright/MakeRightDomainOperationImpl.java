@@ -4,10 +4,12 @@
 package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -21,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -420,7 +423,16 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
       final Processors processor = new Processors() {
         @Override
         public Consumer<V1PodList> getPodListProcessing() {
-          return list -> list.getItems().forEach(this::addPod);
+          return list -> processList(list);
+        }
+
+        private void processList(V1PodList list) {
+          Collection<String> serverNamesFromPodList = list.getItems().stream()
+              .map(p -> PodHelper.getPodServerName(p)).collect(Collectors.toList());
+
+          info.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+              .forEach(sName -> info.deleteServerPodFromEvent(sName, null));
+          list.getItems().forEach(this::addPod);
         }
 
         private void addPod(V1Pod pod) {
