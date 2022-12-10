@@ -1212,14 +1212,25 @@ public class DomainUtils {
    * @return true if regex found, false otherwise.
    */
   @Nonnull
-  public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
+  public static boolean findStringInDomainStatusMessage(String domainNamespace,
+                                                        String domainUid,
+                                                        String regex,
+                                                        String... multupleMessage) {
     // get the domain status message
     StringBuffer getDomainInfoCmd = new StringBuffer(KUBERNETES_CLI + " get domain/");
     getDomainInfoCmd
         .append(domainUid)
         .append(" -n ")
-        .append(domainNamespace)
-        .append(" -o jsonpath='{.status.message}' --ignore-not-found");
+        .append(domainNamespace);
+
+    if (multupleMessage.length == 0) {
+      // get single field of domain message
+      getDomainInfoCmd.append(" -o jsonpath='{.status.message}' --ignore-not-found");
+    } else {
+      // use [,] to get side by side multiple fields of the domain status message
+      getDomainInfoCmd.append(" -o jsonpath=\"{.status.conditions[*]['status', 'message']}\" --ignore-not-found");
+    }
+
     getLogger().info("Command to get domain status message: " + getDomainInfoCmd);
 
     CommandParams params = new CommandParams().defaults();
