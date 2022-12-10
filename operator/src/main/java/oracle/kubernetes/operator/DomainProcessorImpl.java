@@ -272,6 +272,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
 
+    LOGGER.info("DEBUG: Updating last known status of " + serverName + " to " + status);
     Optional.ofNullable(domains.get(event.getMetadata().getNamespace()))
           .map(m -> m.get(domainUid))
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
@@ -530,6 +531,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
         break;
       case DELETED:
+        LOGGER.info("DEBUG: Received DELETED event for " + serverName);
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);

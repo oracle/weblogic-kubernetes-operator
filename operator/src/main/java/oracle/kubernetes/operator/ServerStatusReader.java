@@ -121,6 +121,7 @@ public class ServerStatusReader {
     }
 
     private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
+      LOGGER.info("DEBUG: creating status reader step for " + PodHelper.getPodServerName(pod));
       return new StepAndPacket(
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
           packet.copy());
@@ -220,7 +221,10 @@ public class ServerStatusReader {
             try (ThreadLoggingContext stack =
                      setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
+              LOGGER.info("DEBUG: readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
+              LOGGER.info("DEBUG: state for " + pod.getMetadata().getName()
+                  + " after chooseStateOrLastKnownServerStatus " + state);
               serverStateMap.put(serverName, state);
             }
             fiber.resume(packet);
