@@ -375,7 +375,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         if (callResponse.getResult() == null || callback.didResumeFiber()) {
-          Optional.ofNullable(info).ifPresent(i -> i.deleteServerPodFromEvent(getResourceName(), null));
+          Optional.ofNullable(info).ifPresent(i -> i.deleteServerPodFromEvent(packet.getValue(SERVER_NAME), null));
           callback.proceedFromWait(callResponse.getResult());
           return doEnd(packet);
         } else {
