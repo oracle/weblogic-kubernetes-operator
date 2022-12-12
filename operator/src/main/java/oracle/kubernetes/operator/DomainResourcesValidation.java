@@ -109,7 +109,7 @@ class DomainResourcesValidation {
 
   private void removeDeletedPodsFromDPI(V1PodList list, DomainPresenceInfo dpi) {
     Collection<String> serverNamesFromPodList = list.getItems().stream()
-        .map(p -> PodHelper.getPodServerName(p)).collect(Collectors.toList());
+        .map(PodHelper::getPodServerName).collect(Collectors.toList());
 
     dpi.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));

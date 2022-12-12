@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -1275,7 +1276,7 @@ public class DomainStatusUpdater {
           return SHUTTING_DOWN_STATE;
         } else {
           return Optional.ofNullable(getInfo().getLastKnownServerStatus(serverName))
-              .map(s -> s.getStatus()).orElse(getStateFromPacket(serverName));
+              .map(LastKnownStatus::getStatus).orElse(getStateFromPacket(serverName));
         }
       }
 
