@@ -1274,7 +1274,7 @@ public class DomainStatusUpdater {
         } else if (isDeleting(serverName)) {
           return SHUTTING_DOWN_STATE;
         } else {
-          return Optional.ofNullable(getInfo()).map(i -> i.getLastKnownServerStatus(serverName))
+          return Optional.ofNullable(getInfo().getLastKnownServerStatus(serverName))
               .map(s -> s.getStatus()).orElse(getStateFromPacket(serverName));
         }
       }

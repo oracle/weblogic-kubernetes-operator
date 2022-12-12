@@ -103,7 +103,7 @@ public class PodUtils {
    * @param domainNamespace the domain namespace in which the domain exists
    */
   public static void checkPodExists(ConditionFactory conditionFactory, String podName,
-                                    String domainUid, String domainNamespace) {
+      String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
     testUntil(conditionFactory,
         assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
@@ -114,7 +114,7 @@ public class PodUtils {
         podName,
         domainNamespace);
   }
-
+  
   /**
    * Check pod is ready.
    *

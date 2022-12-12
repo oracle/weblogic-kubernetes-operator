@@ -408,7 +408,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param event the pod associated with the event
    */
   public void setServerPodFromEvent(String serverName, V1Pod event) {
-
     updateStatus(serverName, event);
     getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
   }
