@@ -116,6 +116,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
+  /**
+   * Create retry policy with parameters.
+   * @param pollDelaySeconds poll delay in seconds
+   * @param pollInterval poll interval in seconds
+   * @param seconds max wait seconds
+   * @return conditionFactory object of retry policy
+   */
+  public static ConditionFactory createRetryPolicy(int pollDelaySeconds,
+                                                   int pollInterval,
+                                                   long seconds) {
+    return with().pollDelay(pollDelaySeconds, SECONDS)
+        .and().with().pollInterval(pollInterval, SECONDS)
+        .atMost(seconds, SECONDS).await();
+  }
+
   private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
     return with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -129,6 +144,19 @@ public class CommonTestUtils {
 
   private static final String TMP_FILE_NAME = "temp-download-file.out";
 
+  /**
+   * Create a condition factory with custom values for pollDelay, pollInterval and atMost time.
+   *
+   * @param polldelay starting delay before checking for the condition in seconds
+   * @param pollInterval interval time between checking for the condition in seconds
+   * @param atMostMinutes how long should it wait for the condition becomes true in minutes
+   * @return ConditionFactory custom condition factory
+   */
+  public static ConditionFactory createCustomConditionFactory(int polldelay, int pollInterval, int atMostMinutes) {
+    return with().pollDelay(polldelay, SECONDS)
+        .and().with().pollInterval(pollInterval, SECONDS)
+        .atMost(atMostMinutes, MINUTES).await();
+  }
 
   /**
    * Test assertion using standard retry policy over time until it passes or the timeout expires.

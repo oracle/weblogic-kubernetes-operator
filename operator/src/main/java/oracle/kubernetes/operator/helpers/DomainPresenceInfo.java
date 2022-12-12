@@ -741,6 +741,15 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return domainUid;
   }
 
+  /**
+   * Gets the Domain name.
+   *
+   * @return Domain name
+   */
+  public String getDomainName() {
+    return getDomain().getMetadata().getName();
+  }
+
   @Override
   public String getResourceName() {
     return getDomainUid();
