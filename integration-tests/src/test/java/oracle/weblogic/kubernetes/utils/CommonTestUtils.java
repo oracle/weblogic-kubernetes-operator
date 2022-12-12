@@ -116,6 +116,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
+  /**
+   * Create retry policy with parameters.
+   * @param pollDelaySeconds poll delay in seconds
+   * @param pollInterval poll interval in seconds
+   * @param seconds max wait seconds
+   * @return conditionFactory object of retry policy
+   */
+  public static ConditionFactory createRetryPolicy(int pollDelaySeconds,
+                                                   int pollInterval,
+                                                   long seconds) {
+    return with().pollDelay(pollDelaySeconds, SECONDS)
+        .and().with().pollInterval(pollInterval, SECONDS)
+        .atMost(seconds, SECONDS).await();
+  }
+
   private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
     return with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
