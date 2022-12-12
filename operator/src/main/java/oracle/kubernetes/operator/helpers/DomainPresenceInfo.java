@@ -410,7 +410,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   public void setServerPodFromEvent(String serverName, V1Pod event) {
 
     updateStatus(serverName, event);
-    System.out.println("DEBUG: In setServerPodFromEvent.., updated status of " + serverName);
     getSko(serverName).getPod().accumulateAndGet(event, this::getNewerPod);
   }
 
@@ -445,8 +444,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
                   updatedStatus = null;
                 }
               }
-              System.out.println("DEBUG: In DomainPresenceInfo updateStat. updaing last known status of "
-                  + serverName + " to " + updatedStatus);
               return updatedStatus;
             });
   }
@@ -482,7 +479,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     ServerKubernetesObjects sko = getSko(serverName);
     V1Pod deletedPod = sko.getPod().getAndAccumulate(event, this::getNewerCurrentOrNull);
     if (deletedPod != null) {
-      System.out.println("In DPI, updating last known status of " + serverName + " to shutdown.");
       sko.getLastKnownStatus().set(new LastKnownStatus(WebLogicConstants.SHUTDOWN_STATE));
     }
     return deletedPod != null;
@@ -532,7 +528,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
                         ? new LastKnownStatus(status, lastKnownStatus.getUnchangedCount() + 1)
                         : new LastKnownStatus(status);
               }
-              System.out.println("IN DPI, updating last known status of " + serverName + " to " + updatedStatus);
               return updatedStatus;
             });
   }

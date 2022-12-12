@@ -172,7 +172,8 @@ public class PodHelper {
    * @return V1PodCondition, if exists, otherwise null.
    */
   public static V1PodCondition getReadyCondition(V1Pod pod) {
-    return Optional.ofNullable(pod).map(V1Pod::getStatus)
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
         .filter(PodHelper::isRunning)
         .map(V1PodStatus::getConditions)
         .orElse(Collections.emptyList())
