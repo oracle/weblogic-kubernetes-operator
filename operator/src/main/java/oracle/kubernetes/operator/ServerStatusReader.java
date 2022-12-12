@@ -152,18 +152,25 @@ public class ServerStatusReader {
           = TuningParameters.getInstance().getUnchangedCountToDelayStatusRecheck();
       final int eventualLongDelay = TuningParameters.getInstance().getEventualLongDelay();
       final LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
+      final V1Pod currentPod = Optional.ofNullable(info.getServerPod(serverName)).orElse(pod);
+      LOGGER.info("DEBUG: Before first check in StatusReader : " + lastKnownStatus
+          + " for " + currentPod.getMetadata().getName());
 
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
           && lastKnownStatus.getUnchangedCount() >= unchangedCountToDelayStatusRecheck
           && SystemClock.now().isBefore(lastKnownStatus.getTime().plusSeconds(eventualLongDelay))) {
+        LOGGER.info("DEBUG: First check in StatusReader : " + lastKnownStatus
+            + " for " + currentPod.getMetadata().getName());
         String state = lastKnownStatus.getStatus();
         serverStateMap.put(serverName, state);
         return doNext(packet);
       }
 
-      if (PodHelper.hasReadyStatus(pod)) {
+      if (PodHelper.hasReadyStatus(currentPod)) {
         // set default to UNKNOWN; will be corrected in ReadHealthStep
+        LOGGER.info("DEBUG: Second check in StatusReader : " + lastKnownStatus + " for "
+            + currentPod.getMetadata().getName() + ", pod ready status is " + PodHelper.hasReadyStatus(currentPod));
         serverStateMap.put(serverName, WebLogicConstants.UNKNOWN_STATE);
         return doNext(packet);
       }
@@ -180,9 +187,11 @@ public class ServerStatusReader {
 
             try {
               try (ThreadLoggingContext stack =
-                       setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                       setThreadContext().namespace(getNamespace(currentPod)).domainUid(getDomainUid(currentPod))) {
 
-                KubernetesExec kubernetesExec = execFactory.create(client, pod, WLS_CONTAINER_NAME);
+                LOGGER.info("DEBUG: Third check in StatusReader : " + lastKnownStatus
+                    + " for " + currentPod.getMetadata().getName());
+                KubernetesExec kubernetesExec = execFactory.create(client, currentPod, WLS_CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
                 kubernetesExec.setTty(tty);
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
@@ -193,10 +202,12 @@ public class ServerStatusReader {
 
                 if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
                   int exitValue = proc.exitValue();
-                  LOGGER.fine("readState exit: " + exitValue + ", readState for " + pod.getMetadata().getName());
+                  LOGGER.fine("readState exit: " + exitValue + ", readState for " + currentPod.getMetadata().getName());
+                  LOGGER.info("DEBUG: Third check in StatusReader : " + " readState exit: " + exitValue
+                      + ", readState for " + currentPod.getMetadata().getName());
                   if (exitValue == 1 || exitValue == 2) {
                     state =
-                        isPodBeingDeleted()
+                        isPodBeingDeleted(currentPod)
                             ? WebLogicConstants.SHUTDOWN_STATE
                             : WebLogicConstants.STARTING_STATE;
                   } else if (exitValue != 0) {
@@ -208,7 +219,7 @@ public class ServerStatusReader {
               Thread.currentThread().interrupt();
             } catch (IOException | ApiException e) {
               try (ThreadLoggingContext stack =
-                       setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                       setThreadContext().namespace(getNamespace(currentPod)).domainUid(getDomainUid(currentPod))) {
                 LOGGER.warning(MessageKeys.EXCEPTION, e);
               }
             } finally {
@@ -219,11 +230,11 @@ public class ServerStatusReader {
             }
 
             try (ThreadLoggingContext stack =
-                     setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
-              LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
-              LOGGER.info("DEBUG: readState: " + state + " for " + pod.getMetadata().getName());
-              state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
-              LOGGER.info("DEBUG: state for " + pod.getMetadata().getName()
+                     setThreadContext().namespace(getNamespace(currentPod)).domainUid(getDomainUid(currentPod))) {
+              LOGGER.fine("readState: " + state + " for " + currentPod.getMetadata().getName());
+              LOGGER.info("DEBUG: readState: " + state + " for " + currentPod.getMetadata().getName());
+              state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state, currentPod);
+              LOGGER.info("DEBUG: state for " + currentPod.getMetadata().getName()
                   + " after chooseStateOrLastKnownServerStatus " + state);
               serverStateMap.put(serverName, state);
             }
@@ -231,7 +242,7 @@ public class ServerStatusReader {
           });
     }
 
-    private boolean isPodBeingDeleted() {
+    private boolean isPodBeingDeleted(V1Pod pod) {
       return PodHelper.isDeleting(pod) || info.isServerPodBeingDeleted(PodHelper.getPodServerName(pod));
     }
 
@@ -245,7 +256,7 @@ public class ServerStatusReader {
     }
 
     private String chooseStateOrLastKnownServerStatus(
-        LastKnownStatus lastKnownStatus, String state) {
+        LastKnownStatus lastKnownStatus, String state, V1Pod pod) {
       if (state != null) {
         state = state.trim();
         if (!state.isEmpty()) {
