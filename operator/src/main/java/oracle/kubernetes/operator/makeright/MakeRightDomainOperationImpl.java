@@ -435,7 +435,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void addPod(V1Pod pod) {
-          Optional.ofNullable(PodHelper.getPodServerName(pod)).ifPresent(name -> info.setServerPod(name, pod));
+          Optional.ofNullable(PodHelper.getPodServerName(pod))
+              .ifPresent(name -> info.setServerPodFromEvent(name, pod));
         }
 
         @Override

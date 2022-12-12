@@ -127,7 +127,7 @@ class DomainResourcesValidation {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
     if (domainUid != null && serverName != null) {
-      getDomainPresenceInfo(domainUid).setServerPod(serverName, pod);
+      getDomainPresenceInfo(domainUid).setServerPodFromEvent(serverName, pod);
     }
   }
 
