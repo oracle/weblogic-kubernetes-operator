@@ -281,11 +281,6 @@ class ItDiagnosticsFailedCondition {
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
       );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
-      );
       testPassed = true;
     } finally {
       if (!testPassed) {

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -102,7 +103,16 @@ class DomainResourcesValidation {
   }
 
   private void addPodList(V1PodList list) {
+    domainPresenceInfoMap.values().stream().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
     list.getItems().forEach(this::addPod);
+  }
+
+  private void removeDeletedPodsFromDPI(V1PodList list, DomainPresenceInfo dpi) {
+    Collection<String> serverNamesFromPodList = list.getItems().stream()
+        .map(p -> PodHelper.getPodServerName(p)).collect(Collectors.toList());
+
+    dpi.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+        .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
   private void addEvent(CoreV1Event event) {
@@ -117,7 +127,7 @@ class DomainResourcesValidation {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
     if (domainUid != null && serverName != null) {
-      getDomainPresenceInfo(domainUid).setServerPod(serverName, pod);
+      getDomainPresenceInfo(domainUid).setServerPodFromEvent(serverName, pod);
     }
   }
 

@@ -87,7 +87,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static final String ERROR = "ERROR";
 
   @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
-  private static String debugPrefix = null;  // Debugging: set this to a non-null value to dump the make-right steps
+  private static String debugPrefix = "DEBUG";  // Debugging: set this to a non-null value to dump the make-right steps
 
   /** A map that holds at most one FiberGate per namespace to run make-right steps. */
   @SuppressWarnings("FieldMayBeFinal")
@@ -272,6 +272,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return;
     }
 
+    LOGGER.info("DEBUG: Updating last known status of " + serverName + " to " + status);
     Optional.ofNullable(domains.get(event.getMetadata().getNamespace()))
           .map(m -> m.get(domainUid))
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
@@ -410,6 +411,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void registerDomainPresenceInfo(DomainPresenceInfo info) {
+    LOGGER.info("DEBUG: registerDomainPresenceInfo for domain " + info.getDomainUid() + ", in namespace "
+        + info.getNamespace());
     domains
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
           .put(info.getDomainUid(), info);
@@ -422,10 +425,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void unregisterEventK8SObject(String ns, String domainUid) {
+    LOGGER.info("DEBUG: unregisterEventK8SObject for domain " + domainUid + ", in namespace " + ns);
     Optional.ofNullable(domainEventK8SObjects.get(ns)).ifPresent(m -> m.remove(domainUid));
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
+    LOGGER.info("DEBUG: unregisterPresenceInfo for domain " + domainUid + ", in namespace " + ns);
     Optional.ofNullable(domains.get(ns)).ifPresent(m -> m.remove(domainUid));
   }
 
@@ -526,6 +531,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
         break;
       case DELETED:
+        LOGGER.info("DEBUG: Received DELETED event for " + serverName);
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);

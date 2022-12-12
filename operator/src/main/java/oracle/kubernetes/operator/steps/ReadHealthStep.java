@@ -349,6 +349,7 @@ public class ReadHealthStep extends Step {
       }
 
       private void recordServerState(String state) {
+        LOGGER.info("DEBUG: In recordServerState.. update last known state of " + serverName + " to " + state);
         getDomainPresenceInfo().updateLastKnownServerStatus(serverName, state);
         getServerStateMap().put(serverName, state);
       }

@@ -1417,6 +1417,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
       logPodCreated();
       if (callResponse.getResult() != null) {
+        LOGGER.info("DEBUG: Updating last known status of " + getServerName()
+            + " to " + WebLogicConstants.STARTING_STATE);
         info.updateLastKnownServerStatus(getServerName(), WebLogicConstants.STARTING_STATE);
         setRecordedPod(callResponse.getResult());
       }

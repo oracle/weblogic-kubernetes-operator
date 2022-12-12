@@ -4,10 +4,12 @@
 package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -218,8 +220,10 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
       result.add(createStatusInitializationStep());
     }
     if (deleting || domainHasDeletionTimestamp()) {
+      System.out.println("DEBUG: create domain down plan for domain " + liveInfo.getDomainUid());
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
+      System.out.println("DEBUG: create domain up plan for domain " + liveInfo.getDomainUid());
       result.add(createListClusterResourcesStep(getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
@@ -418,11 +422,21 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
       final Processors processor = new Processors() {
         @Override
         public Consumer<V1PodList> getPodListProcessing() {
-          return list -> list.getItems().forEach(this::addPod);
+          return list -> processList(list);
+        }
+
+        private void processList(V1PodList list) {
+          Collection<String> serverNamesFromPodList = list.getItems().stream()
+              .map(p -> PodHelper.getPodServerName(p)).collect(Collectors.toList());
+
+          info.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+              .forEach(name -> info.deleteServerPodFromEvent(name, null));
+          list.getItems().forEach(this::addPod);
         }
 
         private void addPod(V1Pod pod) {
-          Optional.ofNullable(PodHelper.getPodServerName(pod)).ifPresent(name -> info.setServerPod(name, pod));
+          Optional.ofNullable(PodHelper.getPodServerName(pod))
+              .ifPresent(name -> info.setServerPodFromEvent(name, pod));
         }
 
         @Override

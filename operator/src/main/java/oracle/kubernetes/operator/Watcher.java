@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
+import io.kubernetes.client.util.Yaml;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
@@ -184,6 +185,8 @@ abstract class Watcher<T> {
 
         setIsDraining(isStopping());
         if (isDraining()) {
+          LOGGER.info("DEBUG: SKIPPING watch with type " + item.type + ", and object"
+              + Yaml.dump(item.object) + "resourceVersion is " + resourceVersion + ", listener is " + listener);
           continue;
         }
 
