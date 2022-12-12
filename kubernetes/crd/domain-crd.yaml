@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3a81ece5d88c85957a5d5e4a1b6c068cdca4355afd80a5a6598cbfade313871f
+    weblogic.sha256: 6678e1db6d553bec9ecc5e5a6f9d9ac15db9d5e837f3b26eb91ffb114da1e7eb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -373,6 +373,12 @@ spec:
                           type: string
                         type: object
                     type: object
+                  containerArgs:
+                    description: 'The fluentd container spec''s arg. Default is: [
+                      -c, /etc/fluentd.conf ] if not specified'
+                    items:
+                      type: string
+                    type: array
                   watchIntrospectorLogs:
                     description: Fluentd will watch introspector logs
                     type: boolean
@@ -442,6 +448,12 @@ spec:
                               - fieldPath
                       required:
                       - name
+                    type: array
+                  containerCommand:
+                    description: The fluentd container spec's arg. Default is not
+                      set if not specified
+                    items:
+                      type: string
                     type: array
                   volumeMounts:
                     description: Volume mounts for fluentd container

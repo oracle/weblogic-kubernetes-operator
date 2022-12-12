@@ -403,13 +403,15 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   DomainSpec withFluentdConfiguration(boolean watchIntrospectorLog, String credentialName,
-                                String fluentdConfig) {
+                                      String fluentdConfig, List<String> args, List<String> command) {
     if (fluentdSpecification == null) {
       fluentdSpecification = new FluentdSpecification();
     }
     fluentdSpecification.setWatchIntrospectorLogs(watchIntrospectorLog);
     fluentdSpecification.setElasticSearchCredentials(credentialName);
     fluentdSpecification.setFluentdConfiguration(fluentdConfig);
+    fluentdSpecification.setContainerArgs(args);
+    fluentdSpecification.setContainerCommand(command);
     return this;
   }
 
