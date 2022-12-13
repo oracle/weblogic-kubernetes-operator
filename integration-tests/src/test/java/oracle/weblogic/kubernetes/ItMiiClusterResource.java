@@ -233,7 +233,8 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
+    checkPodExists(customConditionFactory, introspectPodNameBase, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
     
     // verify managed server services and pods are created
@@ -256,7 +257,6 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase2 = getIntrospectJobName(domainUid);
-    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
     checkPodExists(customConditionFactory, introspectPodNameBase2, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase2, domainUid, domainNamespace);
 
@@ -982,7 +982,8 @@ class ItMiiClusterResource {
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
+    ConditionFactory customConditionFactory = createCustomConditionFactory(0, 1, 5);
+    checkPodExists(customConditionFactory, introspectPodNameBase, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
     verifyPodsNotRolled(domainNamespace,c1Time);
