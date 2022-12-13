@@ -404,10 +404,14 @@ class ItRetryImprovements {
     testUntil(() -> checkPodLogContainsRegex(createDomainFailedMsgRegex, operatorPodName, opNamespace),
         logger, "{0} is found in Operator log", createDomainFailedMsgRegex);
 
-    // verify that SEVERE and createDomainFailedMsgRegex message found in Operator log
+    // verify that SEVERE and createDomainFailedMsgRegex message found in introspector log
     testUntil(() -> checkInUncompletedIntroPodLogContainsRegex(createDomainFailedMsgRegex,
         domainUid, domainNamespace),
         logger, "{0} is found in introspector log", createDomainFailedMsgRegex);
+
+    // verify that SEVERE and createDomainFailedMsgRegex message found in domain status
+    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, createDomainFailedMsgRegex, "true"),
+        logger, "{0} is found in domain status message", createDomainFailedMsgRegex);
 
     Callable<Boolean> configMapExist = assertDoesNotThrow(() -> configMapExist(domainNamespace, badModelFileCm));
 

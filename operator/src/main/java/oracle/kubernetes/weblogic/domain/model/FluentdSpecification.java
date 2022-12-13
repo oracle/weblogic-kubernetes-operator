@@ -43,14 +43,13 @@ public class FluentdSpecification {
   private String imagePullPolicy;
 
   @Description(
-      "The fluentd container spec's arg. "
+      "(Optional) The Fluentd sidecar container spec's args. "
           + "Default is: [ -c, /etc/fluentd.conf ] if not specified")
   private List<String> containerArgs;
 
   @Description(
-      "The fluentd container spec's arg. Default is not set if not specified")
+      "(Optional) The Fluentd sidecar container spec's command. Default is not set if not specified")
   private List<String> containerCommand;
-
 
   @Valid
   @Description("A list of environment variables to set in the fluentd container. "
@@ -135,7 +134,6 @@ public class FluentdSpecification {
   public void setContainerCommand(@Nullable  List<String> containerCommand) {
     this.containerCommand = containerCommand;
   }
-
 
   public Boolean getWatchIntrospectorLogs() {
     return watchIntrospectorLogs;
