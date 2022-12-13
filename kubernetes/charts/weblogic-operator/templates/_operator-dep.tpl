@@ -246,8 +246,11 @@ spec:
           annotations:
             prometheus.io/port: '8083'
             prometheus.io/scrape: 'true'
+            sidecar.istio.io/inject: 'false'
           {{- range $key, $value := .annotations }}
-            {{ $key }}: {{ $value | quote }}
+            {{- if ne $key "sidecar.istio.io/inject" }}
+              {{ $key }}: {{ $value | quote }}
+            {{- end }}          
           {{- end }}
           labels:
             weblogic.webhookName: {{ .Release.Namespace | quote }}
