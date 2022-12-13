@@ -146,7 +146,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   private Watch.Response<Object> createHttpGoneErrorResponse(BigInteger nextResourceVersion) {
-    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
+    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion.toString()).toWatchResponse();
   }
 
   private Watch.Response<Object> createHttpGoneErrorWithoutResourceVersionResponse() {
@@ -239,18 +239,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
-  }
-
-  @Test
-  void afterDelete_nextRequestSendsIncrementedResourceVersion() {
-    scheduleDeleteResponse(createObjectWithMetaData());
-    scheduleAddResponse(createObjectWithMetaData());
-
-    createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
-
-    assertThat(
-        StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.add(BigInteger.ONE).toString()));
   }
 
   @Test

@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.math.BigInteger;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -83,7 +82,7 @@ public class KubernetesUtils {
       // We must encode each '/' and '~' in a JSON patch token using '~1' and '~0', otherwise
       // the JSON patch will incorrectly treat '/' and '~' as special delimiters. (RFC 6901).
       // The resulting patched JSON will have '/' and '~' within the token (not ~0 or ~1).
-      String encodedPath = basePath + name.replace("~","~0").replace("/","~1");
+      String encodedPath = basePath + name.replace("~", "~0").replace("/", "~1");
       if (!current.containsKey(name)) {
         patchBuilder.add(encodedPath, entry.getValue());
       } else {
@@ -118,10 +117,10 @@ public class KubernetesUtils {
 
   /**
    * Returns true if the first metadata indicates a newer resource than does the second. 'Newer'
-   * indicates that the creation time is later. If two items have the same creation time, a higher
-   * resource version indicates the newer resource.
+   * indicates that the creation time is later. If two items have the same creation time, a lexographic
+   * sort of the names indicates the newer resource.
    *
-   * @param m1  the first item to compare
+   * @param m1 the first item to compare
    * @param m2 the second item to compare
    * @return true if the first object is newer than the second object
    */
@@ -129,52 +128,22 @@ public class KubernetesUtils {
     OffsetDateTime time1 = Optional.ofNullable(m1).map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MIN);
     OffsetDateTime time2 = Optional.ofNullable(m2).map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.MAX);
 
-    if (time1.equals(time2)) {
-      return getResourceVersion(m1).compareTo(getResourceVersion(m2)) > 0;
-    } else {
-      return time1.isAfter(time2);
-    }
+    return time1.isAfter(time2);
   }
 
   /**
-   * Parse the resource version from the metadata. According to the Kubernetes design documentation,
-   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/
-   *  api-conventions.md#concurrency-control-and-consistency, the resource version is technically opaque; however,
-   * the Kubernetes design also requires that clients be able to list changes to resources "after" the last
-   * change to the same or different resource. Therefore, all Kubernetes implementations use a increasing positive
-   * integer value for the resource version. This can be useful to detect out-of-order watch events. This method
-   * parses the metadata's resource version into a big integer or to 0, if the value is not parsable.
+   * Returns the resource version associated with the specified object metadata.
+   *
    * @param metadata Meta data containing resource version
-   * @return The integer value of the resource version or 0, if the value is not parsable
+   * @return Resource version
    */
-  public static BigInteger getResourceVersion(V1ObjectMeta metadata) {
-    return getResourceVersion(Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse(null));
-  }
-
-  /**
-   * Parse the resource version. According to the Kubernetes design documentation,
-   * https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/
-   *  api-conventions.md#concurrency-control-and-consistency, the resource version is technically opaque; however,
-   * the Kubernetes design also requires that clients be able to list changes to resources "after" the last
-   * change to the same or different resource. Therefore, all Kubernetes implementations use a increasing positive
-   * integer value for the resource version. This can be useful to detect out-of-order watch events. This method
-   * parses the metadata's resource version into a big integer or to 0, if the value is not parsable.
-   * @param resVersion resource version
-   * @return The integer value of the resource version or 0, if the value is not parsable
-   */
-  public static BigInteger getResourceVersion(String resVersion) {
-    if (!isNullOrEmpty(resVersion)) {
-      try {
-        return new BigInteger(resVersion);
-      } catch (NumberFormatException nfe) {
-        // no-op, fall through and return 0
-      }
-    }
-    return BigInteger.ZERO;
+  public static String getResourceVersion(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse("");
   }
 
   /**
    * Returns the resource version associated with the specified list.
+   *
    * @param list the result of a Kubernetes list operation.
    * @return Resource version
    */
@@ -215,6 +184,7 @@ public class KubernetesUtils {
 
   /**
    * Reads operator product version that created a resource, if available.
+   *
    * @param metadata Metadata from a resource
    * @return Operator product version that created the resource
    */
