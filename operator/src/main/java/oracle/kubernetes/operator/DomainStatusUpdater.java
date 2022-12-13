@@ -936,9 +936,15 @@ public class DomainStatusUpdater {
         }
 
         private boolean allIntendedClusterServersReady() {
-          return isClusterIntentionallyShutDown() || (allStartedClusterServersAreComplete()
+          return isClusterIntentionallyShutDown()
+              ? allNonStartedClusterServersAreShutdown()
+              : isClusterStartupCompleted();
+        }
+
+        private boolean isClusterStartupCompleted() {
+          return allStartedClusterServersAreComplete()
               && allNonStartedClusterServersAreShutdown()
-              && clusteredServersMarkedForRoll().isEmpty());
+              && clusteredServersMarkedForRoll().isEmpty();
         }
 
         private boolean allStartedClusterServersAreComplete() {
