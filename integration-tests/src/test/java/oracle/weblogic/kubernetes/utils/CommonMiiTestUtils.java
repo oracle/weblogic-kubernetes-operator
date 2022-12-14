@@ -192,10 +192,61 @@ public class CommonMiiTestUtils {
       String dataHome) {
 
     LoggingFacade logger = getLogger();
+    DomainResource domain =
+        createMiiDomain(domainNamespace, domainUid, imageName, replicaCount, clusterNames, setDataHome, dataHome);
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    return domain;
+  }
+
+  /**
+   * Create a basic Kubernetes domain resource and verify the domain is created.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames names of clusters
+   * @param setDataHome whether to set dataHome in the domain spec
+   * @param dataHome dataHome override in the domain spec
+   * @return DomainResource
+   */
+  public static DomainResource createMiiDomain(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      int replicaCount,
+      List<String> clusterNames,
+      boolean setDataHome,
+      String dataHome) {
+
+    LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createTestRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -239,32 +290,9 @@ public class CommonMiiTestUtils {
 
     createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
     return domain;
   }
-  
+
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    *
@@ -395,7 +423,8 @@ public class CommonMiiTestUtils {
           getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
         } else {
           getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
-          ClusterSpec spec = new ClusterSpec().withClusterName(clusterName).replicas(replicaCount);
+          ClusterSpec spec =
+              new ClusterSpec().withClusterName(clusterName).replicas(replicaCount).serverStartPolicy("IfNeeded");
           createClusterAndVerify(createClusterResource(clusterResName, domNamespace, spec));
         }
         // set cluster references

@@ -136,6 +136,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
+  @Override
+  public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
+    return domains;
+  }
+
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
     List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
     Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()

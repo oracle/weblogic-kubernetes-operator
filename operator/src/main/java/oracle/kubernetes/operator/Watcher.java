@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.lang.reflect.Method;
-import java.math.BigInteger;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,14 +17,12 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.ThreadLoggingContext;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
-import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of
@@ -98,6 +95,11 @@ abstract class Watcher<T> {
     return resourceVersion;
   }
 
+  Watcher<T> withResourceVersion(String resourceVersion) {
+    this.resourceVersion = resourceVersion;
+    return this;
+  }
+
   /**
    * Sets the listener for watch events.
    *
@@ -125,6 +127,7 @@ abstract class Watcher<T> {
       if (isStopping()) {
         setIsDraining(true);
       } else {
+        setIsDraining(false);
         watchForEvents();
       }
     }
@@ -132,7 +135,7 @@ abstract class Watcher<T> {
 
   // Are we draining?
   private boolean isDraining() {
-    return isDraining.get();
+    return this.isDraining.get();
   }
 
   // Set the draining state.
@@ -141,7 +144,17 @@ abstract class Watcher<T> {
   }
 
   protected boolean isStopping() {
-    return stopping.get();
+    return this.stopping.get();
+  }
+
+  // Set the stopping state to true to pause watches.
+  protected void pause() {
+    this.stopping.set(true);
+  }
+
+  // Set the stopping state to false to resume watches.
+  protected void resume() {
+    this.stopping.set(false);
   }
 
   private void watchForEvents() {
@@ -166,9 +179,7 @@ abstract class Watcher<T> {
       while (hasNext(watch)) {
         Watch.Response<T> item = watch.next();
 
-        if (isStopping()) {
-          setIsDraining(true);
-        }
+        setIsDraining(isStopping());
         if (isDraining()) {
           continue;
         }
@@ -233,7 +244,7 @@ abstract class Watcher<T> {
 
   private void handleRegularUpdate(Watch.Response<T> item) {
     LOGGER.finer(MessageKeys.WATCH_EVENT, item.type, item.object);
-    trackResourceVersion(item.type, item.object);
+    trackResourceVersion(item.object);
     if (listener != null) {
       listener.receivedResponse(item);
     }
@@ -253,26 +264,14 @@ abstract class Watcher<T> {
   }
 
   /**
-   * Track resourceVersion and keep highest one for next watch iteration. The resourceVersion is
+   * Track resourceVersion and keep the latest one for next watch iteration. The resourceVersion is
    * extracted from the metadata in the class by a getter written to return that information. If the
    * getter is not defined then the user will get all watches repeatedly.
    *
-   * @param type the type of operation
    * @param object the object that is returned
    */
-  private void trackResourceVersion(String type, Object object) {
-    updateResourceVersion(getNewResourceVersion(type, object));
-  }
-
-  private String getNewResourceVersion(String type, Object object) {
-    String newResourceVersion = getResourceVersionFromMetadata(object);
-    if (type.equalsIgnoreCase("DELETED")) {
-      BigInteger biResourceVersion = KubernetesUtils.getResourceVersion(newResourceVersion);
-      if (biResourceVersion.compareTo(BigInteger.ZERO) > 0) {
-        return biResourceVersion.add(BigInteger.ONE).toString();
-      }
-    }
-    return newResourceVersion;
+  private void trackResourceVersion(Object object) {
+    resourceVersion = getResourceVersionFromMetadata(object);
   }
 
   private String getResourceVersionFromMetadata(Object object) {
@@ -283,18 +282,6 @@ abstract class Watcher<T> {
     } catch (Exception e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       return IGNORED;
-    }
-  }
-
-  private void updateResourceVersion(String newResourceVersion) {
-    if (isNullOrEmpty(resourceVersion) || resourceVersion.equals(IGNORED)) {
-      resourceVersion = newResourceVersion;
-    } else {
-      BigInteger biNewResourceVersion = KubernetesUtils.getResourceVersion(newResourceVersion);
-      BigInteger biResourceVersion = KubernetesUtils.getResourceVersion(resourceVersion);
-      if (biNewResourceVersion.compareTo(biResourceVersion) > 0) {
-        resourceVersion = newResourceVersion;
-      }
     }
   }
 }

@@ -113,7 +113,6 @@ public class DomainNamespaces {
   void stopNamespace(String ns) {
     namespaceStoppingMap.remove(ns).set(true);
     namespaceStatuses.remove(ns);
-
     clusterWatchers.removeWatcher(ns);
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
@@ -188,7 +187,7 @@ public class DomainNamespaces {
    * @param processor processing to be done to bring up any found domains
    */
   Step readExistingResources(String ns, DomainProcessor processor) {
-    NamespacedResources resources = new NamespacedResources(ns, null);
+    NamespacedResources resources = new NamespacedResources(ns, null, this);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
     return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion), resources.createListSteps());
@@ -226,6 +225,7 @@ public class DomainNamespaces {
 
     void startWatcher(String namespace, String resourceVersion, DomainProcessor domainProcessor) {
       watchers.computeIfAbsent(namespace, n -> createWatcher(n, resourceVersion, selector.apply(domainProcessor)));
+      getWatcher(namespace).withResourceVersion(resourceVersion).resume();
     }
 
     W createWatcher(String ns, String resourceVersion, WatchListener<T> listener) {
@@ -297,6 +297,72 @@ public class DomainNamespaces {
     @Override
     public Consumer<ClusterList> getClusterListProcessing() {
       return l -> clusterWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+  }
+
+  Processors createWatcherResumeProcessing(String ns) {
+    return new WatcherResumeProcessing(ns);
+  }
+
+  class WatcherResumeProcessing implements Processors {
+    private final String ns;
+
+    WatcherResumeProcessing(String ns) {
+      this.ns = ns;
+    }
+
+    @Override
+    public Consumer<V1ConfigMapList> getConfigMapListProcessing() {
+      return l -> Optional.ofNullable(configMapWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<CoreV1EventList> getEventListProcessing() {
+      return l -> Optional.ofNullable(eventWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      return l -> Optional.ofNullable(operatorEventWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<V1JobList> getJobListProcessing() {
+      return l -> Optional.ofNullable(jobWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<V1PodList> getPodListProcessing() {
+      return l -> Optional.ofNullable(podWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<V1ServiceList> getServiceListProcessing() {
+      return l -> Optional.ofNullable(serviceWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<V1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      return l -> Optional.ofNullable(podDisruptionBudgetWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<DomainList> getDomainListProcessing() {
+      return l -> Optional.ofNullable(domainWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
+    }
+
+    @Override
+    public Consumer<ClusterList> getClusterListProcessing() {
+      return l -> Optional.ofNullable(clusterWatchers.getWatcher(ns))
+          .ifPresent(w -> w.withResourceVersion(getResourceVersion(l)).resume());
     }
   }
 }
