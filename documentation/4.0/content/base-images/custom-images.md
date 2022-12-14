@@ -506,10 +506,103 @@ to create the domain home in Domain in Image.
 
 #### Create a custom image with your model inside the image
 
-In the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}})
-documentation, you will see a reference to a "base" or `--fromImage` image. You should use an image with
-the recommended security patches installed as this base image, where this image could be an OCR image or a custom image.
+{{% notice tip %}}
+This section describes an option for layering Model in Image model files on an WebLogic image.
+The preferred approach for supplying Model in Image files
+is to instead use [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+{{% /notice %}}
 
-See [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
-or
-[Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
+{{% notice warning %}}
+The example in this section references base image
+`container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+This is an OCR General Availability (GA) image
+which **does not include** the latest security patches for WebLogic Server.
+GA images are intended for single desktop demonstration and development purposes _only_.
+For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
+such as OCR Critical Patch Updates (CPU) images or custom generated images.
+See [Ensure you are using recently patched images]({{< relref "/base-images/ocr-images#ensure-you-are-using-recently-patched-images" >}}).
+{{% /notice %}}
+
+Example steps for creating a custom WebLogic image with a Model in Image file layer
+(using files from the Model in Image sample):
+
+1. Read the [Model in Image User Guide]({{< relref "/managing-domains/model-in-image/_index.md" >}})
+   and the [Model in Image Sample]({{< relref "/managing-domains/samples/domains/model-in-image/_index.md" >}})
+   to gain an overall understanding of Model in Image domains.
+   Note that the sample uses the most recommended approach,
+   auxiliary images, instead of the alternative approach used in this example.
+
+1. Follow the prerequisite steps in
+   [Model in Image Sample]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}})
+   that describe how to:
+
+   - Download the operator source and its Model in Image sample
+     (including copying the sample to suggested location `/tmp/mii-sample`).
+   - Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT)
+     and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files
+     to your `/tmp/mii-sample/model-images` directory.
+     Both WDT and WIT are required to create your Model in Image container images.
+   - Install (unzip) the WebLogic Image Tool and configure its cache to reference your WebLogic Deploy Tool download.
+
+1. Locate or create a base WebLogic image.
+
+   See [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+   or [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
+
+   In the following step, we use the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` GA image.
+
+1. Build the final image using WIT while specifying the base image, target image tag, WDT install location,
+   and WDT model file locations. For example:
+
+   First create a model ZIP file application archive and place it in the same directory
+   where the sample model YAML file and model properties files are already staged in place:
+
+   ```shell
+   $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+   $ cd /tmp/mii-sample/archives/archive-v1
+   $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+   ```
+
+   (The `rm -f` command is included in case there's an
+   old version of the archive ZIP file from a
+   previous run of this sample.)
+
+   Second, run the following WIT command:
+
+   ```shell
+   $ cd /tmp/mii-sample/model-images
+   ```
+   ```shell
+   $ ./imagetool/bin/imagetool.sh update \
+     --tag model-in-image:WLS-v1 \
+     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
+     --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
+     --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
+     --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
+     --wdtModelOnly \
+     --wdtDomainType WLS \
+     --chown oracle:root
+   ```
+
+   __Note__: If using a Fusion Middleware Infrastructure base image,
+   then specify a `--wdtDomainType` of `JRF` or `RestrictedJRF`,
+   `JRF-v1` instead of `WLS-v1` for the image tag,
+   and substitute each occurrence of `model-in-image__WLS-v1` with `model-in-image__JRF-v1`.
+
+1. For an example Domain YAML file that sets up Model in Image to reference the image,
+   see `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`
+   (or `./JRF/mii-initial-d1-JRF-v1.yaml` if using Fusion Middleware Infrastructure `JRF` mode).
+
+   __Notes__: 
+
+   - The default values for `domain.spec.configuration.model.wdtInstallHome` and `.modelHome`
+     reference the location of the WDT install and model files that WIT copied into the image.
+
+   - The domain type specified in `domain.spec.configuration.model.domainType`
+     must correspond with the `--wdtDomainType` specified on the WIT command line when creating the image.
+
+   - To compare this example with an equivalent auxiliary image domain:
+     ```
+     $ diff /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml \
+            /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+     ```

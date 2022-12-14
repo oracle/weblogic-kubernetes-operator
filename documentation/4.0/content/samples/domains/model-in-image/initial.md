@@ -22,26 +22,34 @@ weight: 2
 
 In this use case, you set up an initial WebLogic domain. This involves:
 
-  - A WDT archive ZIP file that contains your applications.
-  - A WDT model that describes your WebLogic configuration.
-  - A container image that contains your WDT model files and archive.
+  - Creating an auxiliary image with:
+    - A WDT archive ZIP file that contains your applications.
+    - A WDT model that describes your WebLogic configuration.
+    - A WDT install that contains the binaries for running WDT.
   - Creating secrets for the domain.
-  - Creating a Domain YAML file for the domain that references your Secrets and image.
+  - Creating a Domain YAML file for the domain that references your Secrets, auxiliary image, and a WebLogic image.
 
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
 Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
-If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
+If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-AI-v1 model YAML file differs from the WLS-AI-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
 #### Image creation - Introduction
 
-The goal of the initial use case 'image creation' is to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+The goal of the initial use case 'image creation' step is to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its `/u01/wdt/weblogic-deploy` directory. In addition, if you have WDT model archive files, then the image must also contain these files in its `/u01/wdt/models` directory. Finally, an image optionally may also contain your WDT model YAML file and properties files in the same `/u01/wdt/models` directory. If you do not specify a WDT model YAML file in your `/u01/wdt/models` directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your Domain `spec.model.configMap` field. We provide an example of using a model ConfigMap later in this sample.
+A Model in Image domain usually supplies one or more auxiliary images with:
+- A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
+- WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
-Here are the steps for creating the image `model-in-image:WLS-v1`:
+If you do not specify a WDT model YAML file in an auxiliary image,
+then the model YAML file can alternately be supplied dynamically using a Kubernetes ConfigMap
+that is referenced by your Domain `spec.model.configMap` field.
+We provide an example of using a model ConfigMap later in this sample.
+
+Here are the steps for creating the image `model-in-image:WLS-AI-v1`:
 
 - [Understanding your first archive](#understanding-your-first-archive)
 - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
@@ -157,7 +165,7 @@ The application displays important details about the WebLogic Server instance th
 
 #### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -165,7 +173,7 @@ Run the following commands to create your application archive ZIP file and put i
 # Delete existing archive.zip in case we have an old leftover version
 ```
 ```shell
-$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip
 ```
 ```
 # Move to the directory which contains the source files for our archive
@@ -177,12 +185,12 @@ $ cd /tmp/mii-sample/archives/archive-v1
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
 ```
 ```shell
-$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip wlsdeploy
 ```
 
 #### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
+In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
 ```
 CLUSTER_SIZE=5
@@ -320,42 +328,37 @@ A Model in Image image can contain multiple properties files, archive ZIP files,
 
 #### Creating the image with WIT
 
-**Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
+**Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
-At this point, you have staged all of the files needed for image `model-in-image:WLS-v1`; they include:
+At this point, you have staged all of the files needed for image `model-in-image:WLS-AI-v1`; they include:
 
   - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.yaml`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.properties`
+  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip`
 
 If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
-Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
+Now, you use the Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1`. You've already set up this tool during the prerequisite steps.
 
-Run the following commands to create the model image and verify that it worked:
-
+Run the following commands to create the image and verify that it worked:
 
   ```shell
-  $ cd /tmp/mii-sample/model-images
+  $ cd /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1
   ```
   ```shell
-  $ ./imagetool/bin/imagetool.sh update \
-    --tag model-in-image:WLS-v1 \
-    --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-    --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
-    --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
-    --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
-    --wdtModelOnly \
-    --wdtDomainType WLS \
-    --chown oracle:root
+  $ /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh createAuxImage \
+    --tag model-in-image:WLS-AI-v1 \
+    --wdtModel ./model.10.yaml \
+    --wdtVariables ./model.10.properties \
+    --wdtArchive ./archive.zip
   ```
 
 If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final container image as a layer on a small `busybox` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
     - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
     - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -363,11 +366,38 @@ This command runs the WebLogic Image Tool in its Model in Image mode, and does t
 
 When the command succeeds, it should end with output like the following:
 
-  ```
-  [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
-  ```
+```
+[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-AI-v1
+```
 
-Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
+Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-AI-v1`.
+
+After the image is created, it should have the WDT executables in
+`/auxiliary/weblogic-deploy`, and WDT model, property, and archive
+files in `/auxiliary/models`. You can run `ls` in the Docker
+image to verify this:
+
+```shell
+$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary
+  total 8
+  drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
+  drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
+
+$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/models
+  total 16
+  -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
+  -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
+  -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
+
+$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/weblogic-deploy
+  total 28
+  -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
+  -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
+  drwxr-x---    1 oracle   root          4096 May 26 22:29 bin
+  drwxr-x---    1 oracle   root          4096 May 25 11:40 etc
+  drwxr-x---    1 oracle   root          4096 May 25 11:40 lib
+  drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
+```
 
 **NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
@@ -486,11 +516,11 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
-Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
+Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
 
 {{%expand "Click here to view the WLS Domain YAML file." %}}
 ```yaml
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -512,7 +542,14 @@ spec:
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
-  image: "model-in-image:WLS-v1"
+  # **NOTE**:
+  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
+  # documentation for details.
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: IfNotPresent
@@ -520,10 +557,11 @@ spec:
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: regsecret
-
+  #- name: regsecret2
+  
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
-  webLogicCredentialsSecret:
+  webLogicCredentialsSecret: 
     name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
@@ -531,11 +569,11 @@ spec:
 
   # Whether to enable overriding your log file location, see also 'logHome'
   #logHomeEnabled: false
-
+  
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
-
+  
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
@@ -545,7 +583,7 @@ spec:
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
@@ -575,15 +613,13 @@ spec:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
-
+   
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - clusterName: cluster-1
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: sample-domain1-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -601,6 +637,21 @@ spec:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: WLS
 
+      # Optional auxiliary image(s) containing WDT model, archives, and install.
+      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # to "None" if you want skip such copies.
+      #   `image`                - Image location
+      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
+      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
+      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
+      auxiliaryImages:
+      - image: "model-in-image:WLS-AI-v1"
+        #imagePullPolicy: IfNotPresent
+        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
+        #sourceModelHome: /auxiliary/models
+
       # Optional configmap for additional models and variable files
       #configMap: sample-domain1-wdt-config-map
 
@@ -611,6 +662,23 @@ spec:
     # (the model yaml in the optional configMap or in the image)
     #secrets:
     #- sample-domain1-datasource-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain1-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain1
+spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
+  # The number of managed servers to start for this cluster
+  replicas: 2
 ```
 {{% /expand %}}
 
@@ -638,7 +706,14 @@ spec:
   domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
-  image: "model-in-image:JRF-v1"
+  # **NOTE**:
+  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
+  # development purposes only where the environments are not available from the public Internet;
+  # they are not acceptable for production use. In production, you should always use CPU (patched)
+  # images from OCR or create your images using the WebLogic Image Tool.
+  # Please refer to the `OCR` and `Manage FMW infrastructure domains` pages in the WebLogic
+  # Kubernetes Operator documentation for details.
+  image: "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: IfNotPresent
@@ -646,10 +721,11 @@ spec:
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: regsecret
-
+  #- name: regsecret2
+  
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
-  webLogicCredentialsSecret:
+  webLogicCredentialsSecret: 
     name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
@@ -657,11 +733,11 @@ spec:
 
   # Whether to enable overriding your log file location, see also 'logHome'
   #logHomeEnabled: false
-
+  
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
-
+  
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
@@ -671,7 +747,7 @@ spec:
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
@@ -706,15 +782,13 @@ spec:
       env:
       - name: USER_MEM_ARGS
         value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
-
+   
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
-  # The desired behavior for starting a specific cluster's member servers
+  # The name of each Cluster resource
   clusters:
-  - clusterName: cluster-1
-    # The number of managed servers to start for this cluster
-    replicas: 2
+  - name: sample-domain1-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -731,6 +805,21 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: JRF
+
+      # Optional auxiliary image(s) containing WDT model, archives, and install.
+      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # to "None" if you want skip such copies.
+      #   `image`                - Image location
+      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
+      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
+      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
+      auxiliaryImages:
+      - image: "model-in-image:JRF-AI-v1"
+        #imagePullPolicy: IfNotPresent
+        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
+        #sourceModelHome: /auxiliary/models
 
       # Optional configmap for additional models and variable files
       #configMap: sample-domain1-wdt-config-map
@@ -754,6 +843,23 @@ spec:
 
       # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
       #walletFileSecret: sample-domain1-opss-walletfile-secret
+
+---
+
+apiVersion: "weblogic.oracle/v1"
+kind: Cluster
+metadata:
+  name: sample-domain1-cluster-1
+  # Update this with the namespace your domain will run in:
+  namespace: sample-domain1-ns
+  labels:
+    # Update this with the `domainUID` of your domain:
+    weblogic.domainUID: sample-domain1
+spec:
+  # This must match a cluster name that is  specified in the WebLogic configuration
+  clusterName: cluster-1
+  # The number of managed servers to start for this cluster
+  replicas: 2
 ```
 {{% /expand %}}
 
@@ -762,7 +868,7 @@ spec:
   Run the following command to create the domain custom resource:
 
   ```shell
-  $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+  $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml
   ```
 
   **NOTE**: If you are choosing _not_ to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the previous command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
