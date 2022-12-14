@@ -366,6 +366,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new ConcurrentHashMap<>();
     private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
+    Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
@@ -384,6 +385,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
     private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
       return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
+    }
+
+    @Override
+    public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
+      return domains;
     }
 
     boolean isEstablishingDomain(String uid) {

@@ -143,7 +143,7 @@ Status:
 
 #### `ConfigChangesPendingRestart`
 - This condition tracks the progress of [runtime updates]({{< relref "managing-domains/model-in-image/runtime-updates">}})
-  to the WebLogic Deploy Tool model of a Model in Image domain home source type.
+  to the WebLogic Deploy Tooling model of a Model in Image domain home source type.
 - The `status` attribute is `True` if all of the following are true:
   * The Domain resource attribute
     `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.

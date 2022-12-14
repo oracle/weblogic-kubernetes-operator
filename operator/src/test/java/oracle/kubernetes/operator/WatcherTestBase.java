@@ -31,6 +31,7 @@ import static oracle.kubernetes.operator.builders.StubWatchFactory.AllWatchesClo
 import static oracle.kubernetes.operator.tuning.TuningParameters.WATCH_BACKSTOP_RECHECK_COUNT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 
@@ -145,7 +146,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   private Watch.Response<Object> createHttpGoneErrorResponse(BigInteger nextResourceVersion) {
-    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion).toWatchResponse();
+    return WatchEvent.createErrorEvent(HTTP_GONE, nextResourceVersion.toString()).toWatchResponse();
   }
 
   private Watch.Response<Object> createHttpGoneErrorWithoutResourceVersionResponse() {
@@ -165,6 +166,31 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
+  }
+
+  @Test
+  void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
+    Object object1 = createObjectWithMetaData();
+    Object object2 = createObjectWithMetaData();
+    StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
+
+    Watcher watcher = createWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
+    pauseWatcher(watcher);
+    assertThat(callBacks, empty());
+
+    resumeWatcher(watcher);
+    assertThat(callBacks, contains(List.of(addEvent(object1), modifyEvent(object2))));
+  }
+
+  private void resumeWatcher(Watcher watcher1) {
+    watcher1.start(this);
+    watcher1.resume();
+    watcher1.waitForExit();
+  }
+
+  private void pauseWatcher(Watcher watcher1) {
+    watcher1.pause();
+    watcher1.waitForExit();
   }
 
   @SuppressWarnings({"rawtypes"})
@@ -213,18 +239,6 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getRequestParameters().get(1), hasEntry("resourceVersion", "0"));
-  }
-
-  @Test
-  void afterDelete_nextRequestSendsIncrementedResourceVersion() {
-    scheduleDeleteResponse(createObjectWithMetaData());
-    scheduleAddResponse(createObjectWithMetaData());
-
-    createAndRunWatcher(NAMESPACE, stopping, INITIAL_RESOURCE_VERSION);
-
-    assertThat(
-        StubWatchFactory.getRequestParameters().get(1),
-        hasEntry("resourceVersion", INITIAL_RESOURCE_VERSION.add(BigInteger.ONE).toString()));
   }
 
   @Test
