@@ -40,7 +40,7 @@ and its integration with Model in Image,
 see [Usage]({{< relref "/managing-domains/model-in-image/usage.md" >}})
 and [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 The WDT model format is fully described in the open source,
-[WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
+[WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
 ### Runtime behavior
 
