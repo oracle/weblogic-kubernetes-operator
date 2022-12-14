@@ -29,13 +29,13 @@ public class Model {
 
   @Description("Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no "
           + "`spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise. "
-          + "WARNING: if `modelHome` is set to a non-default value, "
+          + "NOTE: if `modelHome` is set to a non-default value, "
           + "then model files in all specified `spec.configuration.model.AuxiliaryImages` are ignored.")
   private String modelHome;
 
   @Description("Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no "
           + "`spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise. "
-          + "WARNING: if `wdtInstallHome` is set to a non-default value, "
+          + "NOTE: if `wdtInstallHome` is set to a non-default value, "
           + "then the WDT install in any specified `spec.configuration.model.AuxiliaryImages` is ignored.")
   private String wdtInstallHome;
 

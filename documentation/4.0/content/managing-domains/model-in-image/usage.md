@@ -43,7 +43,7 @@ its (optional) WDT model artifacts and (required) WDT binaries:
 | `domain.spec.configuration.model.modelHome` | Zero or more model `.yaml`, `.properties`, and/or archive `.zip` files. | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
 | `domain.spec.configuration.model.wdtInstallHome` | Unzipped WDT installation binaries (required).  | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
 
-{{% notice warning %}}
+{{% notice note %}}
 If you set `modelHome` and `wdtInstallHome` to a non-default value,
 then the operator will ignore WDT model and installation files
 that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}).
@@ -68,15 +68,15 @@ to:
 
 There are multiple methods for supplying Model in Image WDT artifacts:
 
-  - __Use auxiliary images__:
+  - Use auxiliary images:
     Use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
     to create one or more small images that contain the desired files.
 
-    This is the top recommended approach. It automatically copies files
+    This is the recommended best approach. It automatically copies files
     from each of the small images into the `/aux/models` and `/aux/weblogic-deploy` directories
     in each pod's file system so that the introspection job can find them.
 
-  - __Include in main image__:
+  - Include in main image:
     You can include the artifacts in your domain resource `domain.spec.image`
     in its `domain.spec.configuration.model.modelHome`
     and `domain.spec.configuration.model.wdtInstallHome` directories as
@@ -91,13 +91,13 @@ There are multiple methods for supplying Model in Image WDT artifacts:
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       See [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}}).
 
-  - __Use a Persistent Volume Claim (PVC)__:
+  - Use a Persistent Volume Claim (PVC):
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
     in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
     and modify `configuration.model.modelHome` and `configuration.model.wdtInstallHome` to
     the corresponding directory within the PVC's mount location.
 
-  - __Use a WDT model ConfigMap__:
+  - Use a WDT model ConfigMap:
     Use the [Optional WDT model ConfigMap](#optional-wdt-model-configmap) for
     WDT model YAML and `.properties` files. This can be combined with
     any of the previously mentioned methods and is most often used to facilitate runtime
@@ -175,7 +175,7 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
 | `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
 
-{{% notice warning %}}
+{{% notice note %}}
 If you set `modelHome` and `wdtInstallHome` to a non-default value,
 then the operator will ignore WDT model and installation files
 that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}).

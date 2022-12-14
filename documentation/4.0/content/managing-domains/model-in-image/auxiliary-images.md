@@ -10,7 +10,7 @@ description = "Auxiliary images are an alternative approach for supplying a doma
 
 ### Introduction
 
-Auxiliary images are the top recommended approach for including Model in Image model files,
+Auxiliary images are the recommended best approach for including Model in Image model files,
 application archive files, and WebLogic Deploy Tooling installation files, in your pods.
 This feature eliminates the need to provide these files in the image specified
 in `domain.spec.image`.
@@ -61,7 +61,7 @@ and installation files in the auxiliary image using the `sourceModelHome` and `s
 - For details about each field, see the
 [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#auxiliary-image).
 
-- For a basic configuration example, see [Configuration example 1](#configuration-example-1-basic-configuration).
+- For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
 #### Source locations
 
@@ -84,7 +84,7 @@ then the domain deployment will fail.
 The files in `sourceModelHome` and `sourceWDTInstallHome` directories will be made available in `/aux/models`
 and `/aux/weblogic-deploy` directories of the WebLogic Server container in all pods, respectively.
 
-For example source locations, see [Configuration example 2](#configuration-example-2-source-locations).
+For example source locations, see [Configuration example 2](#example-2-source-locations).
 
 #### Multiple auxiliary images
 
@@ -96,15 +96,15 @@ Files from later images in the merge overwrite same-named files from earlier ima
 When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT installation location using
 `configuration.model.auxiliaryImages[].sourceWDTInstallHome`.
 {{% notice warning %}}
-If you provide more than one WDT install home among multiple auxiliary images,
+If you provide more than one WDT installation home among multiple auxiliary images,
 then the domain deployment will fail.
 Set `sourceWDTInstallHome` to `None`, or make sure there are no files in `/auxiliary/weblogic-deploy`,
 for all but one of your specified auxililary images.
 {{% /notice %}}
 
-For an example of configuring multiple auxiliary images, see [Configuration example 3](#configuration-example-3-multiple-images).
+For an example of configuring multiple auxiliary images, see [Configuration example 3](#example-3-multiple-images).
 
-#### Model and WDT install homes
+#### Model and WDT installation homes
 
 If you are using auxiliary images, typically, it should not be necessary to set `domain.spec.configuration.models.modelHome` and
 `domain.spec.configuration.models.wdtInstallHome`. The model and WDT install files you supply in the auxiliary image
@@ -121,7 +121,7 @@ then the domain will ignore the WDT model and installation files in its auxiliar
 
 The following configuration examples illustrate each of the previously described sections.
 
-#### Configuration example 1: Basic configuration
+#### Example 1: Basic configuration
 
 This example specifies the required image parameter for the auxiliary image(s); all other fields are at default values.
 
@@ -133,7 +133,7 @@ spec:
       - image: model-in-image:v1
 ```
 
-#### Configuration example 2: Source locations
+#### Example 2: Source locations
 
 This example is same as Example 1 except that it specifies the source locations for the WebLogic Deploy Tooling model and installation files.
 ```
@@ -146,7 +146,7 @@ spec:
         sourceWDTInstallHome: /bar/weblogic-deploy
 ```
 
-#### Configuration example 3: Multiple images
+#### Example 3: Multiple images
 
 This example is the same as Example 1, except it configures multiple auxiliary images and sets the `sourceWDTInstallHome`
 for the second image to `None`.
@@ -174,11 +174,11 @@ container image.
 
 The [Model in Image Sample initial use case]({{< relref "/samples/domains/model-in-image/initial.md" >}})
 describes using the WebLogic Image Tool as a convenient way to create the auxiliary image,
-which is the top recommended approach. You can alternatively "manually" build the image.
+which is the recommended best approach. Alternatively, you can "manually" build the image.
 For example, the following steps modify the Model in Image sample's initial use case
 to use Docker to build its auxiliary image:
 
-1. Download the Model in Image sample source and WebLogic Deploy Tool by following
+1. Download the Model in Image sample source and WebLogic Deploy Tooling by following
    the corresponding steps in the
    [Model in Image Sample prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 

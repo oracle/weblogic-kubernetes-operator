@@ -29,7 +29,7 @@ Here are the steps for this use case:
 
 2. Create an updated auxiliary image.
 
-   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-AI-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a WebLogic Deploy Tooling installation in its `/auxiliary/weblogic-deploy` directory.
+   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-AI-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a WebLogic Deploy Tooling installation in its `/auxiliary/weblogic-deploy` directory.
 
    In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain.
 
@@ -45,7 +45,7 @@ Here are the steps for this use case:
 
      **NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following paths.
 
-     When you create your updated image, you will use the files in staging directory `/tmp/mii-sample/model-in-image__WLS-AI-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
+     When you create your updated image, you will use the files in the staging directory `/tmp/mii-sample/model-in-image__WLS-AI-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 

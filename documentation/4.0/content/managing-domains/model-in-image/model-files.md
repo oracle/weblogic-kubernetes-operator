@@ -10,7 +10,7 @@ description = "Model file requirements, macros, and loading order."
 
 ### Introduction
 
-This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
+This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
 {{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
 {{% /notice %}}
@@ -120,7 +120,7 @@ Then the combined model files list is passed to WebLogic Deploy Tooling as:
 y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml
 ```
 
-Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.
+Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tooling.
 
 ### Model file macros
 
