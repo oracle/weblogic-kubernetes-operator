@@ -530,7 +530,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    read the [Model in Image User Guide]({{< relref "/managing-domains/model-in-image/_index.md" >}})
    and the [Model in Image Sample]({{< relref "/managing-domains/samples/domains/model-in-image/_index.md" >}}).
    Note that the sample uses the recommended best approach,
-   auxiliary images, instead of the alternative approach which is used in this example.
+   auxiliary images, instead of the alternative approach, which is used in this example.
 
 1. Follow the prerequisite steps in the
    [Model in Image Sample]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}})
