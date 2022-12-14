@@ -104,7 +104,7 @@ plus, an offline update, if there are any accompanying model changes.
 Model updates can include additions, changes, and deletions. For help generating model changes:
 
  - For a description of model file syntax, see the
-   [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation
+   [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation
    and Model in Image [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
  - For a description of helper tooling that you can use to generate model change YAML,
