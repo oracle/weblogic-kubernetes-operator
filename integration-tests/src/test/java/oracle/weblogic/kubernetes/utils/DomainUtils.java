@@ -55,6 +55,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static java.io.File.createTempFile;
 import static java.nio.file.Files.copy;
@@ -257,6 +258,31 @@ public class DomainUtils {
                                                                      String domainVersion) {
     testUntil(
         withLongRetryPolicy,
+        domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus, domainVersion),
+        getLogger(),
+        "domain status condition type {0} has expected status {1}",
+        conditionType,
+        expectedStatus);
+  }
+
+  /**
+   * Check the domain status condition has expected status value.
+   * @param retryPolicy retry policy
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   * @param domainVersion version of domain
+   */
+  public static void checkDomainStatusConditionTypeHasExpectedStatus(ConditionFactory retryPolicy,
+                                                                     String domainUid,
+                                                                     String namespace,
+                                                                     String conditionType,
+                                                                     String expectedStatus,
+                                                                     String domainVersion) {
+    testUntil(
+        retryPolicy,
         domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus, domainVersion),
         getLogger(),
         "domain status condition type {0} has expected status {1}",
@@ -1212,14 +1238,25 @@ public class DomainUtils {
    * @return true if regex found, false otherwise.
    */
   @Nonnull
-  public static boolean findStringInDomainStatusMessage(String domainNamespace, String domainUid, String regex) {
+  public static boolean findStringInDomainStatusMessage(String domainNamespace,
+                                                        String domainUid,
+                                                        String regex,
+                                                        String... multupleMessage) {
     // get the domain status message
     StringBuffer getDomainInfoCmd = new StringBuffer(KUBERNETES_CLI + " get domain/");
     getDomainInfoCmd
         .append(domainUid)
         .append(" -n ")
-        .append(domainNamespace)
-        .append(" -o jsonpath='{.status.message}' --ignore-not-found");
+        .append(domainNamespace);
+
+    if (multupleMessage.length == 0) {
+      // get single field of domain message
+      getDomainInfoCmd.append(" -o jsonpath='{.status.message}' --ignore-not-found");
+    } else {
+      // use [,] to get side by side multiple fields of the domain status message
+      getDomainInfoCmd.append(" -o jsonpath=\"{.status.conditions[*]['status', 'message']}\" --ignore-not-found");
+    }
+
     getLogger().info("Command to get domain status message: " + getDomainInfoCmd);
 
     CommandParams params = new CommandParams().defaults();

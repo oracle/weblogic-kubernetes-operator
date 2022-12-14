@@ -518,7 +518,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return domain home
    */
   String getDomainHome() {
-    return Optional.ofNullable(domainHome).orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid()));
+    return domainHome;
   }
 
   public String getLivenessProbeCustomScript() {

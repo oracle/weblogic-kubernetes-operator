@@ -350,7 +350,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(), info.getNamespace(),
+      return doNext(new CallBuilder().readDomainAsync(info.getDomainName(), info.getNamespace(),
           new ReadDomainResponseStep(getNext())), packet);
     }
   }
