@@ -14,7 +14,7 @@ This sample demonstrates deploying a Model in Image
  with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
 Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create
 your WebLogic domain home prior to deploying your Domain YAML file.
-Instead, Model in Image uses
+Instead, Model in Image uses a
 WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
