@@ -1666,7 +1666,7 @@ public class Kubernetes {
    * @return response msg of patching cluster resource
    */
   public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
-                                                                 V1Patch patch, String patchFormat) {
+                                                                V1Patch patch, String patchFormat) {
     String responseMsg;
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<ClusterResource> response = clusterCrdClient.patch(
@@ -1676,7 +1676,9 @@ public class Kubernetes {
         patch // patch data
     );
 
-    String logmsg = "response code: " + response.getHttpStatusCode() + ". response message: "
+    String logmsg = "response code: " + response.getHttpStatusCode()
+        + ". response status: " +  response.getStatus() + "."
+        + "response message: "
         + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
         + " when patching " + clusterName + " in namespace "
         + namespace + " with " + patch + " using patch format: " + patchFormat;
