@@ -12,20 +12,20 @@
     <title>Update 1 :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057915" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058289" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058289"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057915"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058289"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058289"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058289"></script>
 
     
   </div>
@@ -3712,7 +3712,7 @@
 <p>Option 1: Update a copy of your Domain YAML file from the Initial use case.</p>
 <ul>
 <li>
-<p>In the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a> use case, we suggested creating a Domain YAML file named <code>/tmp/mii-sample/mii-initial.yaml</code> or using the <code>/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml</code> file that is supplied with the sample.</p>
+<p>In the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a> use case, we suggested creating a Domain YAML file named <code>/tmp/mii-sample/mii-initial.yaml</code> or using the <code>/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml</code> file that is supplied with the sample.</p>
 <ul>
 <li>
 <p>We suggest copying the original Domain YAML file and naming the copy <code>/tmp/mii-sample/mii-update1.yaml</code> before making any changes.</p>
@@ -3752,7 +3752,7 @@
 <li>
 <p>Option 2: Use the updated Domain YAML file that is supplied with the sample:</p>
 <p><strong>NOTE</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml
 </span></span></code></pre></div></li>
 </ul>
 </li>
@@ -6271,19 +6271,19 @@ For example:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058289"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058289"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057915"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058289"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

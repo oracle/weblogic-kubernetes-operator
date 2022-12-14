@@ -12,20 +12,20 @@
     <title>Model files :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057915" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058288" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058288"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057915"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058288"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058288"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058288"></script>
 
     
   </div>
@@ -3643,7 +3643,7 @@
   </ul>
 </nav></div>
 <h3 id="introduction">Introduction</h3>
-<p>This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tool</a> documentation.</p>
+<p>This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tooling</a> documentation.</p>
 
 <div class="notices tip" ><p>The WDT <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/">Discover Domain Tool</a> is particularly useful for generating model files from an existing domain home.</p>
 </div>
@@ -3718,7 +3718,7 @@
 </ul>
 <h3 id="model-file-naming-and-loading-order">Model file naming and loading order</h3>
 <p>Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that&rsquo;s loaded has the highest precedence.</p>
-<p>During domain home creation, model and property files are first loaded from the <code>configuration.models.modelHome</code> directory within the image, which defaults to <code>/u01/wdt/models</code>. After the <code>modelHome</code> files are all loaded, the domain home creation then loads files from the optional WDT ConfigMap, described in <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/usage/#optional-wdt-model-configmap">Optional WDT model ConfigMap</a>. If a <code>modelHome</code> file and ConfigMap file both have the same name, then both files are loaded.</p>
+<p>During domain home creation, model and property files are first loaded from the <code>configuration.models.modelHome</code> directory within a pod. After the <code>modelHome</code> files are all loaded, the domain home creation then loads files from the optional WDT ConfigMap, described in <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/usage/#optional-wdt-model-configmap">Optional WDT model ConfigMap</a>. If a <code>modelHome</code> file and ConfigMap file both have the same name, then both files are loaded.</p>
 <p>The loading order within each of these locations is first determined using the convention <code>filename.##.yaml</code> and <code>filename.##.properties</code>, where <code>##</code> are digits that specify the desired order when sorted numerically. Additional details:</p>
 <ul>
 <li>Embedding a <code>.##.</code> in a file name is optional.
@@ -3736,7 +3736,7 @@
 then the files in this directory are populated according to their
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/#multiple-auxiliary-images">Auxiliary image merge order</a>
 before the loading order is determined.</p>
-<p>For example, if you have these files in the model home directory <code>/u01/wdt/models</code>:</p>
+<p>For example, if you have these files in the model home directory:</p>
 <pre tabindex="0"><code>jdbc.20.yaml
 main-model.10.yaml
 my-model.10.yaml
@@ -3746,7 +3746,7 @@ y.yaml
 z.yaml
 </code></pre><p>Then the combined model files list is passed to WebLogic Deploy Tooling as:</p>
 <pre tabindex="0"><code>y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml
-</code></pre><p>Property files (ending in <code>.properties</code>) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.</p>
+</code></pre><p>Property files (ending in <code>.properties</code>) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tooling.</p>
 <h3 id="model-file-macros">Model file macros</h3>
 <p>WDT models can have macros that reference secrets or environment variables.</p>
 <h4 id="using-secrets-in-model-files">Using secrets in model files</h4>
@@ -6186,19 +6186,19 @@ z.yaml
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058288"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058288"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057915"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058288"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

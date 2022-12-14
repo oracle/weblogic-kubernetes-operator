@@ -12,20 +12,20 @@
     <title>Model in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057916" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057916" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058289" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057916"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058289"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057916"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057916"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058289"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058289"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057916"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058289"></script>
 
     
   </div>
@@ -3640,8 +3640,16 @@
   </ul>
 </nav></div>
 <h3 id="introduction">Introduction</h3>
-<p>This sample demonstrates deploying a Model in Image <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>. Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.</p>
+<p>This sample demonstrates deploying a Model in Image
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>
+with <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a>.
+Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create
+your WebLogic domain home prior to deploying your Domain YAML file.
+Instead, Model in Image uses a
+WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.</p>
 <p>WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tooling</a> GitHub project, and the required directory structure for a WDT archive is specifically discussed <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/">here</a>.</p>
+<p>Furthermore, the Model in Image auxiliary image option allows you to supply your WDT artifacts
+in a small separate image separate from your WebLogic image.</p>
 <p>For more information on Model in Image, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">Model in Image user guide</a>. For a comparison of Model in Image to other domain home source types, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
 <h4 id="model-in-image-domain-types-wls-jrf-and-restricted-jrf">Model in Image domain types (WLS, JRF, and Restricted JRF)</h4>
 <p>There are three types of domains supported by Model in Image: a standard <code>WLS</code> domain, an Oracle Fusion Middleware Infrastructure Java Required Files (<code>JRF</code>) domain, and a <code>RestrictedJRF</code> domain. This sample demonstrates the <code>WLS</code> and <code>JRF</code> types.</p>
@@ -3652,9 +3660,8 @@
 <li>
 <p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a>: An initial WebLogic domain with the following characteristics:</p>
 <ul>
-<li>Image <code>model-in-image:WLS-v1</code> with:
+<li>Auxiliary image <code>model-in-image:WLS-AI-v1</code> with:
 <ul>
-<li>A WebLogic installation</li>
 <li>A WebLogic Deploy Tooling (WDT) installation</li>
 <li>A WDT archive with version <code>v1</code> of an exploded Java EE web application</li>
 <li>A WDT model with:
@@ -3666,6 +3673,7 @@
 </li>
 </ul>
 </li>
+<li>A WebLogic image with a WebLogic and Java installation.</li>
 <li>Kubernetes Secrets:
 <ul>
 <li>WebLogic credentials</li>
@@ -3676,20 +3684,15 @@
 <ul>
 <li><code>metadata.name</code> and <code>weblogic.domainUID</code> label set to <code>sample-domain1</code></li>
 <li><code>spec.domainHomeSourceType: FromModel</code></li>
-<li><code>spec.image: model-in-image:WLS-v1</code></li>
+<li><code>spec.image</code> set to a WebLogic image with a WebLogic and Java installation.</li>
 <li>References to the secrets</li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a>: Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change.</p>
+<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a>: Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change. Updates:</p>
 <ul>
-<li>Image <code>model-in-image:WLS-v1</code>:
-<ul>
-<li>Same image as Initial use case</li>
-</ul>
-</li>
 <li>Kubernetes Secrets:
 <ul>
 <li>Same as Initial use case, plus secrets for data source credentials and URL</li>
@@ -3700,7 +3703,7 @@
 <li>A WDT model for a data source targeted to the cluster</li>
 </ul>
 </li>
-<li>A Domain, same as Initial use case, plus:
+<li>Domain, same as Initial use case, plus:
 <ul>
 <li><code>spec.model.configMap</code> referencing the ConfigMap</li>
 <li>References to data source secrets</li>
@@ -3709,13 +3712,8 @@
 </ul>
 </li>
 <li>
-<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update2/">Update 2</a>: Demonstrates deploying a second domain (similar to the Update 1 use case domain).</p>
+<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update2/">Update 2</a>: Demonstrates deploying a second domain (similar to the Update 1 use case domain). Updates:</p>
 <ul>
-<li>Image <code>model-in-image:WLS-v1</code>:
-<ul>
-<li>Same image as the Initial and Update 1 use cases</li>
-</ul>
-</li>
 <li>Kubernetes Secrets and ConfigMap:
 <ul>
 <li>Similar to the Update 1 use case, except names and labels are decorated with a new domain UID</li>
@@ -3731,34 +3729,24 @@
 </ul>
 </li>
 <li>
-<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/">Update 3</a>: Demonstrates deploying an updated image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change.</p>
+<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/">Update 3</a>: Demonstrates deploying an updated auxiliary image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change. Updates:</p>
 <ul>
-<li>Image <code>model-in-image:WLS-v2</code>, similar to <code>model-in-image:WLS-v1</code> image with:
+<li>Auxiliary image <code>model-in-image:WLS-AI-v2</code>, similar to <code>model-in-image:WLS-AI-v1</code> image with:
 <ul>
 <li>An updated web application <code>v2</code> at the <code>myapp-v2</code> directory path instead of <code>myapp-v1</code></li>
 <li>An updated model that points to the new web application path</li>
 </ul>
 </li>
-<li>Kubernetes Secrets and ConfigMap:
+<li>Domain:
 <ul>
-<li>Same as the Update 1 use case</li>
-</ul>
-</li>
-<li>A Domain:
-<ul>
-<li>Same as the Update 1 use case, except <code>spec.image</code> is <code>model-in-image:WLS-v2</code></li>
+<li>Same as the Update 1 use case, except <code>spec.image</code> is <code>model-in-image:WLS-AI-v2</code></li>
 </ul>
 </li>
 </ul>
 </li>
 <li>
-<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update4/">Update 4</a>: Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).</p>
+<p><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update4/">Update 4</a>: Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll). Updates:</p>
 <ul>
-<li>Image <code>model-in-image:WLS-v1</code> or <code>model-in-image:WLS-v2</code>:
-<ul>
-<li>Same image as Update 1 or Update 3 use cases</li>
-</ul>
-</li>
 <li>Kubernetes ConfigMap with:
 <ul>
 <li>A WDT model for Work Manager minimum and maximum threads constraints, plus the same data source as the Update 1 use case</li>
@@ -6264,19 +6252,19 @@ to reach their expected <code>restartVersion</code>, <code>introspectVersion</co
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057916"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058289"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057916"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057916"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058289"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057916"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058289"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -12,20 +12,20 @@
     <title>Usage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057915" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058288" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058288"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057915"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058288"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058288"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058288"></script>
 
     
   </div>
@@ -3683,23 +3683,29 @@ its (optional) WDT model artifacts and (required) WDT binaries:</p>
 <thead>
 <tr>
 <th>Domain resource attribute</th>
-<th>Default directory</th>
 <th>Contents</th>
+<th>Default directory</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>domain.spec.configuration.model.modelHome</code></td>
-<td><code>/u01/wdt/models</code></td>
 <td>Zero or more model <code>.yaml</code>, <code>.properties</code>, and/or archive <code>.zip</code> files.</td>
+<td>Optional. Location of the WDT model home, which can include model YAML files, <code>.properties</code> files, and application <code>.zip</code> archives. Defaults to <code>/u01/wdt/models</code> if no <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Images</a> are configured, and to <code>/aux/models</code> otherwise.</td>
 </tr>
 <tr>
 <td><code>domain.spec.configuration.model.wdtInstallHome</code></td>
-<td><code>/u01/wdt/weblogic-deploy</code></td>
 <td>Unzipped WDT installation binaries (required).</td>
+<td>Optional. Location of the WDT installation. Defaults to <code>/u01/wdt/weblogic-deploy</code> if no <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Images</a> are configured, and to <code>/aux/weblogic-deploy</code> otherwise.</td>
 </tr>
 </tbody>
 </table>
+
+<div class="notices note" ><p>If you set <code>modelHome</code> and <code>wdtInstallHome</code> to a non-default value,
+then the operator will ignore WDT model and installation files
+that are copied from <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Images</a>.</p>
+</div>
+
 <h3 id="supplying-initial-model-files-and-wdt">Supplying initial model files and WDT</h3>
 <p>Model in Image minimally requires an image with a WebLogic installation
 (see <a href="#weblogic-server-image">WebLogic Server image</a>), plus access
@@ -3720,7 +3726,15 @@ are not supported in the <a href="#optional-wdt-model-configmap">optional WDT mo
 <p>There are multiple methods for supplying Model in Image WDT artifacts:</p>
 <ul>
 <li>
-<p><strong>Include in main image</strong>:
+<p>Use auxiliary images:
+Use <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>
+to create one or more small images that contain the desired files.</p>
+<p>This is the recommended best approach. It automatically copies files
+from each of the small images into the <code>/aux/models</code> and <code>/aux/weblogic-deploy</code> directories
+in each pod&rsquo;s file system so that the introspection job can find them.</p>
+</li>
+<li>
+<p>Include in main image:
 You can include the artifacts in your domain resource <code>domain.spec.image</code>
 in its <code>domain.spec.configuration.model.modelHome</code>
 and <code>domain.spec.configuration.model.wdtInstallHome</code> directories as
@@ -3732,25 +3746,18 @@ a layer on top of your base image
 on top of your base image into a new image.</li>
 <li>The <em>WebLogic Image Tool</em> (WIT) has built-in options for layering WDT model files,
 WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
-The <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a> sample uses the WIT approach.</li>
+See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/#create-a-custom-image-with-your-model-inside-the-image">Create a custom image with your model inside the image</a>.</li>
 </ul>
 </li>
 <li>
-<p><strong>Use auxiliary images</strong>:
-Use <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>
-to create one or more small images that contain the desired files. This automatically copies files
-from each of the small images into the <code>/aux/models</code> and <code>/aux/weblogic-deploy</code> directories
-in each pod&rsquo;s file system so that the introspection job can find them.</p>
-</li>
-<li>
-<p><strong>Use a Persistent Volume Claim (PVC)</strong>:
+<p>Use a Persistent Volume Claim (PVC):
 This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
 in a <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/volumes/">Persistent Volume Claim</a>
 and modify <code>configuration.model.modelHome</code> and <code>configuration.model.wdtInstallHome</code> to
 the corresponding directory within the PVC&rsquo;s mount location.</p>
 </li>
 <li>
-<p><strong>Use a WDT model ConfigMap</strong>:
+<p>Use a WDT model ConfigMap:
 Use the <a href="#optional-wdt-model-configmap">Optional WDT model ConfigMap</a> for
 WDT model YAML and <code>.properties</code> files. This can be combined with
 any of the previously mentioned methods and is most often used to facilitate runtime
@@ -3834,6 +3841,12 @@ see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-doma
 </tr>
 </tbody>
 </table>
+
+<div class="notices note" ><p>If you set <code>modelHome</code> and <code>wdtInstallHome</code> to a non-default value,
+then the operator will ignore WDT model and installation files
+that are copied from <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary Images</a>.</p>
+</div>
+
 <p><strong>Notes</strong>:</p>
 <ul>
 <li>
@@ -6354,19 +6367,19 @@ the password in place of <code>MY_WALLET_PASSWORD</code> below:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058288"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058288"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057915"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058288"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

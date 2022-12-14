@@ -12,20 +12,20 @@
     <title>Update 3 :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057915" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058289" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058289"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057915"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058289"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058289"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058289"></script>
 
     
   </div>
@@ -3629,7 +3629,7 @@
 <p>The Update 3 use case demonstrates deploying an updated WebLogic application to the running <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a> use case domain using an updated image.</p>
 <p>In the use case, you will:</p>
 <ul>
-<li>Create an image <code>model-in-image:WLS-v2</code> that is similar to the currently active <code>model-in-image:WLS-v1</code> image, but with the following updates:
+<li>Create an image <code>model-in-image:WLS-AI-v2</code> that is similar to the currently active <code>model-in-image:WLS-AI-v1</code> image, but with the following updates:
 <ul>
 <li>An updated web application <code>v2</code> at the <code>myapp-v2</code> directory path within the WDT application archive instead of <code>myapp-v1</code>.</li>
 <li>An updated model YAML file within the image that points to the new web application path.</li>
@@ -3651,8 +3651,8 @@
 <p>Make sure you have deployed the domain from the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a> use case.</p>
 </li>
 <li>
-<p>Create an updated image.</p>
-<p>Recall that a goal of the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a> use case was to demonstrate using the WebLogic Image Tool to create an image named <code>model-in-image:WLS-v1</code> from files that were staged in <code>/tmp/mii-sample/model-images/model-in-image:WLS-v1/</code>. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called <code>admin-server</code> and a WebLogic cluster called <code>cluster-1</code>. The final image was called <code>model-in-image:WLS-v1</code> and, in addition to having a copy of the staged files in its <code>/u01/wdt/models</code> directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.</p>
+<p>Create an updated auxiliary image.</p>
+<p>Recall that a goal of the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a> use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named <code>model-in-image:WLS-AI-v1</code> from files that were staged in <code>/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/</code>. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called <code>admin-server</code> and a WebLogic cluster called <code>cluster-1</code>. The final image was called <code>model-in-image:WLS-AI-v1</code> and, in addition to having a copy of the staged files in its <code>/auxiliary/models</code> directory, also contained a WebLogic Deploy Tooling installation in its <code>/auxiliary/weblogic-deploy</code> directory.</p>
 <p>In this use case, you will follow similar steps to the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/">Initial</a> use case to create a new image with an updated application and model, plus deploy the updated model and application to the running <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a> use case domain.</p>
 <ul>
 <li>
@@ -3667,18 +3667,18 @@
 <li>
 <p>Stage a ZIP file of the WDT archive.</p>
 <p><strong>NOTE</strong>: If you are using JRF in this sample, substitute <code>JRF</code> for each occurrence of <code>WLS</code> in the following paths.</p>
-<p>When you create your updated image, you will use the files in staging directory <code>/tmp/mii-sample/model-in-image__WLS-v2</code>. In preparation, you need it to contain a ZIP file of the new WDT application archive.</p>
+<p>When you create your updated image, you will use the files in the staging directory <code>/tmp/mii-sample/model-in-image__WLS-AI-v2</code>. In preparation, you need it to contain a ZIP file of the new WDT application archive.</p>
 <p>Run the following commands to create your application archive ZIP file and put it in the expected directory:</p>
 <pre tabindex="0"><code># Delete existing archive.zip in case we have an old leftover version
-</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-AI-v2/archive.zip
 </span></span></code></pre></div><pre tabindex="0"><code># Move to the directory which contains the source files for our new archive
 </code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/archives/archive-v2
 </span></span></code></pre></div><pre tabindex="0"><code># Zip the archive to the location will later use when we run the WebLogic Image Tool
-</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
+</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-AI-v2/archive.zip wlsdeploy
 </span></span></code></pre></div></li>
 <li>
 <p>Understanding your staged model files.</p>
-<p>The WDT model YAML file and properties for this use case have already been staged for you to directory <code>/tmp/mii-sample/model-in-image__WLS-v2</code>.</p>
+<p>The WDT model YAML file and properties for this use case have already been staged for you to directory <code>/tmp/mii-sample/model-in-image__WLS-AI-v2</code>.</p>
 <p>The <code>model.10.yaml</code> file in this directory has an updated path <code>wlsdeploy/applications/myapp-v2</code> that references the updated web application in your archive, but is otherwise identical to the model staged for the original image. The final related YAML file stanza looks like this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">appDeployments</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">Application</span>:
@@ -3689,43 +3689,39 @@
 </span></span></code></pre></div><p>If you would like to review the entire original model before this change, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/#staging-model-files">Staging model files</a>  in the Initial use case.</p>
 </li>
 <li>
-<p>Create a new image from your staged model files using WIT.</p>
+<p>Create a new auxiliary image from your staged model files using WIT.</p>
 <p><strong>Note</strong>: If you are using JRF in this sample, substitute <code>JRF</code> for each occurrence of <code>WLS</code> in the following <code>imagetool</code> command line, plus substitute <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4</code> for the <code>--fromImage</code> value.</p>
-<p>At this point, you have staged all of the files needed for image <code>model-in-image:WLS-v2</code>; they include:</p>
+<p>At this point, you have staged all of the files needed for image <code>model-in-image:WLS-AI-v2</code>; they include:</p>
 <ul>
 <li><code>/tmp/mii-sample/model-images/weblogic-deploy.zip</code></li>
-<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.yaml</code></li>
-<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.properties</code></li>
-<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-AI-v2/model.10.yaml</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-AI-v2/model.10.properties</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-AI-v2/archive.zip</code></li>
 </ul>
 <p>If you don&rsquo;t see the <code>weblogic-deploy.zip</code> file, then you missed a step in the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
-<p>Now, you use the Image Tool to create an image named <code>model-in-image:WLS-v2</code> that&rsquo;s layered on a base WebLogic image. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
-<p>Run the following commands to create the model image and verify that it worked:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/model-images
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-v2 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModel      ./model-in-image__WLS-v2/model.10.yaml <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtVariables  ./model-in-image__WLS-v2/model.10.properties <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtArchive    ./model-in-image__WLS-v2/archive.zip <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --chown oracle:root
+<p>Now, you use the Image Tool to create an auxiliary image named <code>model-in-image:WLS-AI-v2</code>. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
+<p>Run the following commands to create the auxiliary image and verify that it worked:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/model-images/model-in-image__WLS-AI-v2
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh createAuxImage <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-AI-v2 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModel ./model.10.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtVariables ./model.10.properties <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtArchive ./archive.zip
 </span></span></code></pre></div><p>If you don&rsquo;t see the <code>imagetool</code> directory, then you missed a step in the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
 <p>This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:</p>
 <ul>
-<li>Builds the final container image as a layer on the <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code> base image.</li>
+<li>Builds the final auxiliary image as a layer on a small <code>busybox</code> base image.</li>
 <li>Copies the WDT ZIP file that&rsquo;s referenced in the WIT cache into the image.
 <ul>
 <li>Note that you cached WDT in WIT using the keyword <code>latest</code> when you set up the cache during the sample prerequisites steps.</li>
 <li>This lets WIT implicitly assume it&rsquo;s the desired WDT version and removes the need to pass a <code>-wdtVersion</code> flag.</li>
 </ul>
 </li>
-<li>Copies the specified WDT model, properties, and application archives to image location <code>/u01/wdt/models</code>.</li>
+<li>Copies the specified WDT model, properties, and application archives to image location <code>/auxiliary/models</code>.</li>
 </ul>
 <p>When the command succeeds, it will end with output like the following:</p>
-<pre tabindex="0"><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
-</code></pre><p>Also, if you run the <code>docker images</code> command, then you will see an image named <code>model-in-image:WLS-v2</code>.</p>
+<pre tabindex="0"><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-AI-v2
+</code></pre><p>Also, if you run the <code>docker images</code> command, then you will see an image named <code>model-in-image:WLS-AI-v2</code>.</p>
 <p><strong>Note</strong>: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
 </li>
 </ul>
@@ -3741,7 +3737,7 @@
 <p>Option 1: Update a copy of your Domain YAML file from the Update 1 use case.</p>
 <ul>
 <li>
-<p>In the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a> use case, we suggested creating a file named <code>/tmp/mii-sample/mii-update1.yaml</code> or using the <code>/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml</code> file that is supplied with the sample.</p>
+<p>In the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/">Update 1</a> use case, we suggested creating a file named <code>/tmp/mii-sample/mii-update1.yaml</code> or using the <code>/tmp/mii-sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml</code> file that is supplied with the sample.</p>
 <ul>
 <li>
 <p>We suggest copying this Domain YAML file and naming the copy <code>/tmp/mii-sample/mii-update3.yaml</code> before making any changes.</p>
@@ -3752,12 +3748,12 @@
 </ul>
 </li>
 <li>
-<p>Change the <code>/tmp/mii-sample/mii-update3.yaml</code> Domain YAML file&rsquo;s <code>image</code> field to reference <code>model-in-image:WLS-v2</code> instead of <code>model-in-image:WLS-v1</code>.</p>
+<p>Change the <code>/tmp/mii-sample/mii-update3.yaml</code> Domain YAML file&rsquo;s <code>image</code> field to reference <code>model-in-image:WLS-AI-v2</code> instead of <code>model-in-image:WLS-AI-v1</code>.</p>
 <p>The final result will look something like this:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span>...
 </span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
 </span></span><span style="display:flex;"><span>  <span style="color:#ae81ff">...</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-v2&#34;</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-AI-v2&#34;</span>
 </span></span></code></pre></div></li>
 <li>
 <p>Apply your changed Domain YAML file:</p>
@@ -3769,7 +3765,7 @@
 <li>
 <p>Option 2: Use the updated Domain YAML file that is supplied with the sample:</p>
 <p><strong>NOTE</strong>: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-update3-d1-WLS-AI-v2-ds.yaml
 </span></span></code></pre></div></li>
 </ul>
 </li>
@@ -6244,19 +6240,19 @@ For example:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058289"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058289"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057915"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058289"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

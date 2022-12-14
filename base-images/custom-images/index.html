@@ -12,20 +12,20 @@
     <title>Create custom images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057914" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057914" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058288" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058288" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057914"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058288"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057914"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057914"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058288"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058288"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057914"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058288"></script>
 
     
   </div>
@@ -4146,12 +4146,102 @@ These files can all change substantially in new versions of the operator
 and must all be copied, preserved, and customized to suite your particular use case.</li>
 </ul>
 <h4 id="create-a-custom-image-with-your-model-inside-the-image">Create a custom image with your model inside the image</h4>
-<p>In the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">Model in Image</a>
-documentation, you will see a reference to a &ldquo;base&rdquo; or <code>--fromImage</code> image. You should use an image with
-the recommended security patches installed as this base image, where this image could be an OCR image or a custom image.</p>
+
+<div class="notices tip" ><p>This section describes an option for layering Model in Image model files on a WebLogic image.
+The preferred approach for supplying Model in Image files
+is to use <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a> instead.</p>
+</div>
+
+
+<div class="notices warning" ><p>The example in this section references a base image,
+<code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>.
+This is an OCR General Availability (GA) image
+which <strong>does not include</strong> the latest security patches for WebLogic Server.
+GA images are intended for single desktop demonstration and development purposes <em>only</em>.
+For all other purposes, Oracle strongly recommends using only images with the latest set of recommended patches applied,
+such as OCR Critical Patch Updates (CPU) images or custom generated images.
+See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#ensure-you-are-using-recently-patched-images">Ensure you are using recently patched images</a>.</p>
+</div>
+
+<p>Example steps for creating a custom WebLogic image with a Model in Image file layer
+(using files from the Model in Image sample):</p>
+<ol>
+<li>
+<p>To gain an overall understanding of Model in Image domains,
+read the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/">Model in Image User Guide</a>
+and the <a href="">Model in Image Sample</a>.
+Note that the sample uses the recommended best approach,
+auxiliary images, instead of the alternative approach, which is used in this example.</p>
+</li>
+<li>
+<p>Follow the prerequisite steps in the
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">Model in Image Sample</a>
+that describe how to:</p>
+<ul>
+<li>Download the operator source and its Model in Image sample
+(including copying the sample to the suggested location, <code>/tmp/mii-sample</code>).</li>
+<li>Download the latest <a href="https://github.com/oracle/weblogic-deploy-tooling/releases">WebLogic Deploy Tooling</a> (WDT)
+and <a href="https://github.com/oracle/weblogic-image-tool/releases">WebLogic Image Tool</a> (WIT) installer ZIP files
+to your <code>/tmp/mii-sample/model-images</code> directory.
+Both WDT and WIT are required to create your Model in Image container images.</li>
+<li>Install (unzip) the WebLogic Image Tool and configure its cache to reference your WebLogic Deploy Tooling download.</li>
+</ul>
+</li>
+<li>
+<p>Locate or create a base WebLogic image.</p>
 <p>See <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a>
-or
-<a href="#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>.</p>
+or <a href="#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>.</p>
+<p>In the following step, you will use the <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code> GA image.</p>
+</li>
+<li>
+<p>Build the final image using WIT while specifying the base image, target image tag, WDT installation location,
+and WDT model file locations. For example:</p>
+<p>First, create a model ZIP file application archive and place it in the same directory
+where the sample model YAML file and model properties files are already staged:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+</span></span><span style="display:flex;"><span>$ cd /tmp/mii-sample/archives/archive-v1
+</span></span><span style="display:flex;"><span>$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+</span></span></code></pre></div><p>(The <code>rm -f</code> command is included in case there&rsquo;s an
+old version of the archive ZIP file from a
+previous run of this sample.)</p>
+<p>Second, run the following WIT command:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd /tmp/mii-sample/model-images
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-v1 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModel      ./model-in-image__WLS-v1/model.10.yaml <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtVariables  ./model-in-image__WLS-v1/model.10.properties <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtArchive    ./model-in-image__WLS-v1/archive.zip <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --chown oracle:root
+</span></span></code></pre></div><p><strong>Note</strong>: If using a Fusion Middleware Infrastructure base image,
+then specify a <code>--wdtDomainType</code> of <code>JRF</code> or <code>RestrictedJRF</code>,
+<code>JRF-v1</code> instead of <code>WLS-v1</code> for the image tag,
+and substitute each occurrence of <code>model-in-image__WLS-v1</code> with <code>model-in-image__JRF-v1</code>.</p>
+</li>
+<li>
+<p>For an example Domain YAML file that sets up Model in Image to reference the image,
+see <code>/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml</code>
+(or <code>./JRF/mii-initial-d1-JRF-v1.yaml</code> if using Fusion Middleware Infrastructure <code>JRF</code> mode).</p>
+<p><strong>Notes</strong>:</p>
+<ul>
+<li>
+<p>The default values for <code>domain.spec.configuration.model.wdtInstallHome</code> and <code>.modelHome</code>
+reference the location of the WDT installation and model files that WIT copied into the image.</p>
+</li>
+<li>
+<p>The domain type specified in <code>domain.spec.configuration.model.domainType</code>
+must correspond with the <code>--wdtDomainType</code> specified on the WIT command line when creating the image.</p>
+</li>
+<li>
+<p>To compare this example with an equivalent auxiliary image domain:</p>
+<pre tabindex="0"><code>$ diff /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml \
+       /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+</code></pre></li>
+</ul>
+</li>
+</ol>
 
 
 <footer class="footline">
@@ -6549,19 +6639,19 @@ or
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057914"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058288"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057914"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057914"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058288"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058288"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057914"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058288"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

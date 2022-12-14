@@ -12,20 +12,20 @@
     <title>Choose a domain home source type :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671057915" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671057915" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671058289" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671058289" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671058289"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671057915"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671058289"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671058289"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671057915"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671058289"></script>
 
     
   </div>
@@ -3624,41 +3624,49 @@
 <p>When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:</p>
 <ul>
 <li>
-<p><strong><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/">Domain in PV</a></strong>:</p>
+<p><strong><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a></strong>:</p>
 <ul>
-<li>Set the domain resource <code>domain.spec.domainHomeSourceType</code> attribute to <code>PersistentVolume</code>.</li>
-<li>Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home in a persistent volume.</li>
-<li>Supply WebLogic applications in the persistent volume.</li>
-<li>Mutate WebLogic configuration using WLST, the WebLogic Server Administration Console, or <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/">configuration overrides</a> supplied in a Kubernetes ConfigMap.</li>
+<li>Set the domain resource <code>domain.spec.domainHomeSourceType</code> attribute to <code>FromModel</code>.</li>
+<li>Supply a WebLogic installation in an image and supply a WebLogic configuration in one of three ways:
+<ul>
+<li>As WDT model YAML file supplied in separate
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>.</li>
+<li>As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.</li>
+<li>As WDT model YAML file in a Kubernetes ConfigMap.</li>
+</ul>
+</li>
+<li>Supply WebLogic applications in one of two ways:
+<ul>
+<li>In auxiliary images.</li>
+<li>Layered on the installation image.</li>
+</ul>
+</li>
+<li>Mutate the WebLogic configuration by supplying a new image and rolling,
+or <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/runtime-updates/">model updates</a>
+supplied in a Kubernetes ConfigMap.</li>
 </ul>
 </li>
 <li>
 <p><strong><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-in-image/">Domain in Image</a></strong>:</p>
 <ul>
 <li>Set the domain resource <code>domain.spec.domainHomeSourceType</code> attribute to <code>Image</code>.</li>
-<li>Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home layered on this image.</li>
+<li>Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home layered on this image.</li>
 <li>Supply WebLogic applications layered on the installation image.</li>
-<li>Mutate WebLogic configuration by supplying a new image and rolling, or by configuration overrides supplied in a Kubernetes ConfigMap.</li>
+<li>Mutate the WebLogic configuration by supplying a new image and rolling,
+or by <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/">configuration overrides</a>
+supplied in a Kubernetes ConfigMap.</li>
 </ul>
 </li>
 <li>
-<p><strong><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a></strong>:</p>
+<p><strong><a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/">Domain in PV</a></strong>:</p>
 <ul>
-<li>Set the domain resource <code>domain.spec.domainHomeSourceType</code> attribute to <code>FromModel</code>.</li>
-<li>Supply a WebLogic installation in an image and supply WebLogic configuration in one of three ways:
-<ul>
-<li>As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.</li>
-<li>As WDT model YAML file supplied in separate <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>.</li>
-<li>As WDT model YAML file in a Kubernetes ConfigMap.</li>
-</ul>
-</li>
-<li>Supply WebLogic applications in one of two ways:
-<ul>
-<li>Layered on the installation image.</li>
-<li>In auxiliary images.</li>
-</ul>
-</li>
-<li>Mutate WebLogic configuration by supplying a new image and rolling, or <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/runtime-updates/">model updates</a> supplied in a Kubernetes ConfigMap.</li>
+<li>Set the domain resource <code>domain.spec.domainHomeSourceType</code> attribute to <code>PersistentVolume</code>.</li>
+<li>Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home in a persistent volume.</li>
+<li>Supply WebLogic applications in the persistent volume.</li>
+<li>Mutate the WebLogic configuration using WLST,
+the WebLogic Server Administration Console,
+or <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/configoverrides/">configuration overrides</a>
+supplied in a Kubernetes ConfigMap.</li>
 </ul>
 </li>
 </ul>
@@ -6162,19 +6170,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671058289"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671057915"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671057915"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671058289"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671058289"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671057915"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671058289"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
