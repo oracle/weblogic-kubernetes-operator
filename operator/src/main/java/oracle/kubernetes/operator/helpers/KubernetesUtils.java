@@ -117,8 +117,7 @@ public class KubernetesUtils {
 
   /**
    * Returns true if the first metadata indicates a newer resource than does the second. 'Newer'
-   * indicates that the creation time is later. If two items have the same creation time, a lexographic
-   * sort of the names indicates the newer resource.
+   * indicates that the creation time is later.
    *
    * @param m1 the first item to compare
    * @param m2 the second item to compare
