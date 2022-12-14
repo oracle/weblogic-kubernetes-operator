@@ -33,13 +33,23 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   private final FiberTestSupport testSupport;
   private boolean namespaceRunning = true;
   private boolean waitedForIntrospection;
+  private final DomainNamespaces domainNamespaces;
 
   public DomainProcessorDelegateStub(FiberTestSupport testSupport) {
+    this(testSupport, null);
+  }
+
+  public DomainProcessorDelegateStub(FiberTestSupport testSupport, DomainNamespaces domainNamespaces) {
     this.testSupport = testSupport;
+    this.domainNamespaces = domainNamespaces;
   }
 
   public static DomainProcessorDelegateStub createDelegate(KubernetesTestSupport testSupport) {
     return createStrictStub(DomainProcessorDelegateStub.class, testSupport);
+  }
+
+  public static DomainProcessorDelegateStub createDelegate(KubernetesTestSupport testSupport, DomainNamespaces ns) {
+    return createStrictStub(DomainProcessorDelegateStub.class, testSupport, ns);
   }
 
   public boolean waitedForIntrospection() {
@@ -53,6 +63,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public boolean isNamespaceRunning(String namespace) {
     return namespaceRunning;
+  }
+
+  @Override
+  public DomainNamespaces getDomainNamespaces() {
+    return domainNamespaces;
   }
 
   @Override

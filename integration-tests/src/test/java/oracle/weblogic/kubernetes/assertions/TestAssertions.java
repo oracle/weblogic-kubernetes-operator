@@ -734,6 +734,55 @@ public class TestAssertions {
   }
 
   /**
+   * Check the domain status condition type has expected status.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusClustersConditionTypeHasExpectedStatus(String domainUid,
+                                                                                     String domainNamespace,
+                                                                                     String clusterName,
+                                                                                     String conditionType,
+                                                                                     String expectedStatus,
+                                                                                     String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+    return () -> {
+      DomainResource domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+        logger.info(Yaml.dump(clusterStatusList));
+        for (ClusterStatus clusterStatus : clusterStatusList) {
+          if (clusterStatus.getClusterName() != null && clusterStatus.getClusterName().equals(clusterName)) {
+            List<ClusterCondition> clusterConditions = clusterStatus.getConditions();
+            for (ClusterCondition clusterCondition : clusterConditions) {
+              if (clusterCondition.getType() != null && clusterCondition.getType().equalsIgnoreCase(conditionType)
+                  && clusterCondition.getStatus() != null
+                  && clusterCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
+                return true;
+              }
+            }
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
    * Check the staus of the given server in domain status.
    *
    * @param domainUid uid of the domain
@@ -1197,5 +1246,86 @@ public class TestAssertions {
    */
   public static Callable<Boolean> clusterDoesNotExist(String clusterResName, String clusterVersion, String namespace) {
     return () -> !Cluster.doesClusterExist(clusterResName, clusterVersion, namespace);
+  }
+
+  /**
+   * Get the value of the domain status condition type.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return value of the status condition type, True or False
+   */
+  public static String getDomainStatusConditionTypeValue(String domainUid,
+                                                         String domainNamespace,
+                                                         String conditionType,
+                                                         String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+    DomainResource domain =
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+      logger.info(Yaml.dump(domainConditionList));
+      for (DomainCondition domainCondition : domainConditionList) {
+        if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+          return domainCondition.getStatus();
+        }
+      }
+    } else {
+      if (domain == null) {
+        logger.info("domain is null");
+      } else {
+        logger.info("domain status is null");
+      }
+    }
+    return "";
+  }
+
+  /**
+   * Get the value of the domain status cluster condition type.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static String getDomainStatusClustersConditionTypeValue(String domainUid,
+                                                                 String domainNamespace,
+                                                                 String clusterName,
+                                                                 String conditionType,
+                                                                 String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+
+    DomainResource domain =
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+      logger.info(Yaml.dump(clusterStatusList));
+      for (ClusterStatus clusterStatus : clusterStatusList) {
+        if (clusterStatus.getClusterName() != null && clusterStatus.getClusterName().equals(clusterName)) {
+          List<ClusterCondition> clusterConditions = clusterStatus.getConditions();
+          for (ClusterCondition clusterCondition : clusterConditions) {
+            if (clusterCondition.getType() != null && clusterCondition.getType().equalsIgnoreCase(conditionType)
+                && clusterCondition.getStatus() != null) {
+              return clusterCondition.getStatus();
+            }
+          }
+        }
+      }
+    } else {
+      if (domain == null) {
+        logger.info("domain is null");
+      } else {
+        logger.info("domain status is null");
+      }
+    }
+    return "";
   }
 }
