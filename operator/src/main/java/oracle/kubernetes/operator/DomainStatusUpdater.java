@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -1280,8 +1281,13 @@ public class DomainStatusUpdater {
         } else if (isDeleting(serverName)) {
           return SHUTTING_DOWN_STATE;
         } else {
-          return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+          return Optional.ofNullable(getInfo().getLastKnownServerStatus(serverName))
+              .map(LastKnownStatus::getStatus).orElse(getStateFromPacket(serverName));
         }
+      }
+
+      private String getStateFromPacket(String serverName) {
+        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
       }
 
       private boolean isDeleting(String serverName) {
