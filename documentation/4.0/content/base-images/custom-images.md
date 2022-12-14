@@ -507,7 +507,7 @@ to create the domain home in Domain in Image.
 #### Create a custom image with your model inside the image
 
 {{% notice tip %}}
-This section describes an option for layering Model in Image model files on an WebLogic image.
+This section describes an option for layering Model in Image model files on a WebLogic image.
 The preferred approach for supplying Model in Image files
 is to use [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) instead.
 {{% /notice %}}
