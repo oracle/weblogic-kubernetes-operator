@@ -1137,6 +1137,42 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenClusterIsIntentionallyShutdown_serverShuttingDown_establishClusterCompletedConditionFalse() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 1)
+        .notStarting("ms1")
+        .withServersReachingState(SHUTTING_DOWN_STATE, "ms1")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition completedCondition = clusterStatus.getConditions().get(1);
+    assertThat(completedCondition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(completedCondition.getStatus(), equalTo(FALSE));
+  }
+
+  @Test
+  void whenClusterIsIntentionallyShutdown_serverShutDown_establishClusterCompletedConditionTrue() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(0).withMaxUnavailable(1);
+    defineScenario().withDynamicCluster("cluster1", 0, 1)
+        .notStarting("ms1")
+        .withServersReachingState(SHUTDOWN_STATE, "ms1")
+        .build();
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    updateDomainStatus();
+
+    ClusterStatus clusterStatus = getClusterStatus();
+    assertThat(clusterStatus.getConditions().size(), equalTo(2));
+    ClusterCondition completedCondition = clusterStatus.getConditions().get(1);
+    assertThat(completedCondition.getType(), equalTo(ClusterConditionType.COMPLETED));
+    assertThat(completedCondition.getStatus(), equalTo(TRUE));
+  }
+
+  @Test
   void whenClusterHasTooManyReplicas_establishClusterCompletedConditionFalse() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(20).withMaxUnavailable(1);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();

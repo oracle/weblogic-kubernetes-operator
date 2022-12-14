@@ -135,7 +135,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
+    return new StatusUpdateStep(next);
   }
 
 
@@ -360,7 +360,7 @@ public class DomainStatusUpdater {
       if (callResponse.getResult() != null) {
         packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       }
-      return doNext(packet);
+      return doNext(createClusterResourceStatusUpdaterStep(getNext()), packet);
     }
 
     @Override
@@ -936,9 +936,15 @@ public class DomainStatusUpdater {
         }
 
         private boolean allIntendedClusterServersReady() {
-          return isClusterIntentionallyShutDown() || (allStartedClusterServersAreComplete()
+          return isClusterIntentionallyShutDown()
+              ? allNonStartedClusterServersAreShutdown()
+              : isClusterStartupCompleted();
+        }
+
+        private boolean isClusterStartupCompleted() {
+          return allStartedClusterServersAreComplete()
               && allNonStartedClusterServersAreShutdown()
-              && clusteredServersMarkedForRoll().isEmpty());
+              && clusteredServersMarkedForRoll().isEmpty();
         }
 
         private boolean allStartedClusterServersAreComplete() {

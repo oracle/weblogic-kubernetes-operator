@@ -342,10 +342,9 @@ class ItRetryImprovementMisc {
     checkDomainStatusConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
-    // Enable this check when the bug is fixed
     // check the cluster status condition Complete becomes false
-    //checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
-    //    clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
+    checkDomainStatusClusterConditionTypeHasExpectedStatus(shortRetryPolicy, domainUid, domainNamespace,
+        clusterName, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False", DOMAIN_VERSION);
 
     // verify Cluster status condition Available becomes false and stay false when the server pod is deleting
     checkDomainStatusClusterConditionTypeHasExpectedStatus(withQuickRetryPolicy, domainUid, domainNamespace,
