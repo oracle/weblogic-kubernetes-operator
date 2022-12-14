@@ -132,16 +132,6 @@ public class KubernetesUtils {
   }
 
   /**
-   * Returns the resource version associated with the specified object metadata.
-   *
-   * @param metadata Meta data containing resource version
-   * @return Resource version
-   */
-  public static String getResourceVersion(V1ObjectMeta metadata) {
-    return Optional.ofNullable(metadata).map(V1ObjectMeta::getResourceVersion).orElse("");
-  }
-
-  /**
    * Returns the resource version associated with the specified list.
    *
    * @param list the result of a Kubernetes list operation.

@@ -28,7 +28,7 @@ class KubernetesUtilsTest {
   }
 
   @Test
-  void whenCreationTimes_neitherIsNewer() {
+  void whenCreationTimesMatch_neitherIsNewer() {
     V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time1).name("a");
     V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).name("b");
 
