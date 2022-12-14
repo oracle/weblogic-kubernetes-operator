@@ -25,7 +25,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
   - Creating an auxiliary image with:
     - A WDT archive ZIP file that contains your applications.
     - A WDT model that describes your WebLogic configuration.
-    - A WDT install that contains the binaries for running WDT.
+    - A WDT installation that contains the binaries for running WDT.
   - Creating secrets for the domain.
   - Creating a Domain YAML file for the domain that references your Secrets, auxiliary image, and a WebLogic image.
 
@@ -38,14 +38,14 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 #### Image creation - Introduction
 
-The goal of the initial use case 'image creation' step is to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+The goal of the initial use case 'image creation' step is to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that you will stage to `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-A Model in Image domain usually supplies one or more auxiliary images with:
+A Model in Image domain typically supplies one or more auxiliary images with:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
 If you do not specify a WDT model YAML file in an auxiliary image,
-then the model YAML file can alternately be supplied dynamically using a Kubernetes ConfigMap
+then the model YAML file alternately can be supplied dynamically using a Kubernetes ConfigMap
 that is referenced by your Domain `spec.model.configMap` field.
 We provide an example of using a model ConfigMap later in this sample.
 

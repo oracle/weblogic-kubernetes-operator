@@ -19,7 +19,7 @@ WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
-The Model in Image auxiliary image option furthermore allows you to supply your WDT artifacts
+Furthermore, the Model in Image auxiliary image option allows you to supply your WDT artifacts
 in a small separate image separate from your WebLogic image.
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
@@ -43,14 +43,14 @@ This sample demonstrates five Model in Image use cases:
        - A WebLogic Administration Server
        - A WebLogic cluster
        - A reference to the web application
-   - A WebLogic image with a WebLogic and java installation.
+   - A WebLogic image with a WebLogic and Java installation.
    - Kubernetes Secrets:
      - WebLogic credentials
      - Required WDT runtime password
    - A Domain with:
      - `metadata.name` and `weblogic.domainUID` label set to `sample-domain1`
      - `spec.domainHomeSourceType: FromModel`
-     - `spec.image` set to a WebLogic image with a WebLogic and java installation.
+     - `spec.image` set to a WebLogic image with a WebLogic and Java installation.
      - References to the secrets
 
 - [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change. Updates:
