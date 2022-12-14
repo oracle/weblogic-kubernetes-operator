@@ -169,7 +169,7 @@ createDomainConfigmap() {
  
   # Now that we have the model file in the domainoutputdir/tmp,
   # we can add the kubernetes section to the model file.
-  updateModelFile
+  updateModelFile wdt_k8s_model_template_updated.yaml
 
   # create the configmap and label it properly
   local cmName=${domainUID}-update-weblogic-sample-domain-job-cm

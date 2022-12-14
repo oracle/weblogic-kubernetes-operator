@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 382a990ad97e781f72144dce441904f51117f2bfdaa220a50c108afdf7604164
+    weblogic.sha256: f490830e21b8b9ab7821100eba7d983f6aa7696f620cac0d4d1909602ad8553f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1030,8 +1030,6 @@ spec:
                                                 type: string
                                               fieldsType:
                                                 type: string
-                                        clusterName:
-                                          type: string
                                         creationTimestamp:
                                           format: date-time
                                           type: string
@@ -4020,8 +4018,6 @@ spec:
                                             type: string
                                           fieldsType:
                                             type: string
-                                    clusterName:
-                                      type: string
                                     creationTimestamp:
                                       format: date-time
                                       type: string
@@ -6848,8 +6844,6 @@ spec:
                                                   type: string
                                                 fieldsType:
                                                   type: string
-                                          clusterName:
-                                            type: string
                                           creationTimestamp:
                                             format: date-time
                                             type: string
