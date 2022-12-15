@@ -456,6 +456,8 @@ if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
 
+  waitForDomain Completed
+
   dumpInfo
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
@@ -463,7 +465,7 @@ if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
@@ -629,6 +631,8 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=true"
 
+  waitForDomain Completed
+  
   dumpInfo
   podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
 
