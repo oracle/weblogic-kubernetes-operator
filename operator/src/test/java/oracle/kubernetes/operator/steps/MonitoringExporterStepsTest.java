@@ -187,8 +187,13 @@ class MonitoringExporterStepsTest {
   }
 
   @Nonnull
+  private String getExporterHost(String serverName) {
+    return DOMAIN_NAME + "-" + serverName + "." + NS;
+  }
+
+  @Nonnull
   private String getExporterUrl(String serverName) {
-    return "http://" + SERVER_NODES.get(serverName) + ":" + EXPORTER_PORT;
+    return "http://" + getExporterHost(serverName) + ":" + EXPORTER_PORT;
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -255,7 +260,8 @@ class MonitoringExporterStepsTest {
 
     testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
-    assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE3));
+    assertThat(getServersUpdated(), containsInAnyOrder(
+            getExporterHost(MANAGED_SERVER1), getExporterHost(MANAGED_SERVER3)));
   }
 
   @Nonnull
@@ -279,7 +285,8 @@ class MonitoringExporterStepsTest {
 
     testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
-    assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2, POD_NODE3));
+    assertThat(getServersUpdated(), containsInAnyOrder(
+            getExporterHost(MANAGED_SERVER2), getExporterHost(MANAGED_SERVER3)));
   }
 
   private void expectQueryAndReturnOldConfiguration(String serverName) {
@@ -304,7 +311,7 @@ class MonitoringExporterStepsTest {
 
     testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
-    assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2));
+    assertThat(getServersUpdated(), containsInAnyOrder(getExporterHost(MANAGED_SERVER2)));
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -328,7 +335,8 @@ class MonitoringExporterStepsTest {
     testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
     testSupport.setTime(3, TimeUnit.SECONDS);
 
-    assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE2, POD_NODE3));
+    assertThat(getServersUpdated(), containsInAnyOrder(
+            getExporterHost(MANAGED_SERVER1), getExporterHost(MANAGED_SERVER2), getExporterHost(MANAGED_SERVER3)));
   }
 
   @SuppressWarnings("SameParameterValue")
