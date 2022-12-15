@@ -81,8 +81,8 @@ dockerPullPushImage() {
  printf '\n'  >> ${OUT}
 }
 
-dockerPullPushImages() {
- grep -E -v '^#' ${PROP_FILE} | grep -v "^$" |
+dockerPullPushImages()  {
+ grep -E -v '^#' ${1} | grep -v "^$" |
    while IFS=";" read -r f1 f2 
    do
      #printf 'Source Location : [%s], Target: [%s] \n' "$f1" "$f2"
@@ -128,5 +128,5 @@ if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
 fi
 
 dockerLogin 
-dockerPullPushImages
+dockerPullPushImages ${PROP_FILE}
 cat ${OUT}
