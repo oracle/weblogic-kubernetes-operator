@@ -749,7 +749,7 @@ public class ConfigMapHelper {
     public NextAction apply(Packet packet) {
       Step step = new CallBuilder()
             .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
-            .listConfigMapsAsync(namespace, new SelectConfigMapsToDeleteStep(domainUid, namespace));
+            .listConfigMapsAsync(namespace, new SelectConfigMapsToDeleteStep(domainUid, namespace, getNext()));
 
       return doNext(step, packet);
     }
@@ -759,7 +759,8 @@ public class ConfigMapHelper {
     private final String domainUid;
     private final String namespace;
 
-    public SelectConfigMapsToDeleteStep(String domainUid, String namespace) {
+    public SelectConfigMapsToDeleteStep(String domainUid, String namespace, Step next) {
+      super(next);
       this.domainUid = domainUid;
       this.namespace = namespace;
     }

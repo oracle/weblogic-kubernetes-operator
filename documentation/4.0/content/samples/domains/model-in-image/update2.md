@@ -163,7 +163,7 @@ Here are the steps for this use case:
 
     - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
+      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
         - We suggest copying this Domain YAML file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
@@ -341,7 +341,7 @@ Here are the steps for this use case:
         **NOTE**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
+        $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-update2-d2-WLS-AI-v1-ds.yaml
         ```
 
 1. Wait for `sample-domain2` to start.

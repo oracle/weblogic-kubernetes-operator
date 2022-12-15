@@ -9,9 +9,18 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 ### Introduction
 
-This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
+This sample demonstrates deploying a Model in Image
+[domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
+ with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create
+your WebLogic domain home prior to deploying your Domain YAML file.
+Instead, Model in Image uses a
+WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
+
+Furthermore, the Model in Image auxiliary image option allows you to supply your WDT artifacts
+in a small separate image separate from your WebLogic image.
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
@@ -27,39 +36,35 @@ This sample demonstrates five Model in Image use cases:
 
 - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
 
-   - Image `model-in-image:WLS-v1` with:
-     - A WebLogic installation
+   - Auxiliary image `model-in-image:WLS-AI-v1` with:
      - A WebLogic Deploy Tooling (WDT) installation
      - A WDT archive with version `v1` of an exploded Java EE web application
      - A WDT model with:
        - A WebLogic Administration Server
        - A WebLogic cluster
        - A reference to the web application
+   - A WebLogic image with a WebLogic and Java installation.
    - Kubernetes Secrets:
      - WebLogic credentials
      - Required WDT runtime password
    - A Domain with:
      - `metadata.name` and `weblogic.domainUID` label set to `sample-domain1`
      - `spec.domainHomeSourceType: FromModel`
-     - `spec.image: model-in-image:WLS-v1`
+     - `spec.image` set to a WebLogic image with a WebLogic and Java installation.
      - References to the secrets
 
-- [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change.
+- [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change. Updates:
 
-   - Image `model-in-image:WLS-v1`:
-     - Same image as Initial use case
    - Kubernetes Secrets:
      - Same as Initial use case, plus secrets for data source credentials and URL
    - Kubernetes ConfigMap with:
      - A WDT model for a data source targeted to the cluster
-   - A Domain, same as Initial use case, plus:
+   - Domain, same as Initial use case, plus:
      - `spec.model.configMap` referencing the ConfigMap
      - References to data source secrets
 
-- [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Demonstrates deploying a second domain (similar to the Update 1 use case domain).
+- [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Demonstrates deploying a second domain (similar to the Update 1 use case domain). Updates:
 
-  - Image `model-in-image:WLS-v1`:
-    - Same image as the Initial and Update 1 use cases
   - Kubernetes Secrets and ConfigMap:
     - Similar to the Update 1 use case, except names and labels are decorated with a new domain UID
   - A Domain, similar to Update 1 use case, except:
@@ -67,20 +72,16 @@ This sample demonstrates five Model in Image use cases:
     - Its secret/ConfigMap references are decorated with `sample-domain2` instead of `sample-domain1`
     - Has a changed `env` variable that sets a new domain name
 
-- [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change.
+- [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated auxiliary image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change. Updates:
 
-  - Image `model-in-image:WLS-v2`, similar to `model-in-image:WLS-v1` image with:
+  - Auxiliary image `model-in-image:WLS-AI-v2`, similar to `model-in-image:WLS-AI-v1` image with:
     - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
     - An updated model that points to the new web application path
-  - Kubernetes Secrets and ConfigMap:
-    - Same as the Update 1 use case
-  - A Domain:
-    - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
+  - Domain:
+    - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-AI-v2`
 
-- [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).
+- [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll). Updates:
 
-   - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
-     - Same image as Update 1 or Update 3 use cases
    - Kubernetes ConfigMap with:
      - A WDT model for Work Manager minimum and maximum threads constraints, plus the same data source as the Update 1 use case
    - Kubernetes Secrets:
