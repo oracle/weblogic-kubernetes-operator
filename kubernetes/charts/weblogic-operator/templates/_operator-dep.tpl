@@ -249,7 +249,7 @@ spec:
             sidecar.istio.io/inject: 'false'
           {{- range $key, $value := .annotations }}
             {{- if ne $key "sidecar.istio.io/inject" }}
-              {{ $key }}: {{ $value | quote }}
+            {{ $key }}: {{ $value | quote }}
             {{- end }}          
           {{- end }}
           labels:
