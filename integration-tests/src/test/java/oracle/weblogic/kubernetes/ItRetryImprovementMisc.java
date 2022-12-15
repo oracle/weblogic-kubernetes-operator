@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
@@ -33,7 +35,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusC
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.checkDomainStatusClusterConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -41,6 +42,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -61,7 +63,9 @@ class ItRetryImprovementMisc {
   private static LoggingFacade logger = null;
   private static String clusterName = "cluster-1";
 
-  private ConditionFactory shortRetryPolicy = createRetryPolicy(0, 1, 30);
+  private ConditionFactory shortRetryPolicy = with().pollDelay(0, SECONDS)
+      .and().with().pollInterval(100, MILLISECONDS)
+      .atMost(30, SECONDS).await();
 
   /**
    * Perform initialization for all the tests in this class.
