@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.builders;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigInteger;
 
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -61,13 +60,13 @@ public class WatchEvent<T> {
     return new WatchEvent<>(new V1Status().code(statusCode).message("Oops"));
   }
 
-  public static <S> WatchEvent<S> createErrorEvent(int statusCode, BigInteger resourceVersion) {
+  public static <S> WatchEvent<S> createErrorEvent(int statusCode, String resourceVersion) {
     return new WatchEvent<>(
         new V1Status().code(statusCode).message(createMessageWithResourceVersion(resourceVersion)));
   }
 
-  private static String createMessageWithResourceVersion(BigInteger resourceVersion) {
-    return String.format("Something wrong: continue from (%d)", resourceVersion);
+  private static String createMessageWithResourceVersion(String resourceVersion) {
+    return String.format("Something wrong: continue from (%s)", resourceVersion);
   }
 
   /**

@@ -74,7 +74,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
@@ -490,9 +490,6 @@ class ItMonitoringExporterSamples {
     logger.info("Creating and Installing {0} in namespace {1}", baseImageName, namespace);
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
 
-    //logger.info("Create docker registry secret in namespace {0}", namespace);
-    //ImageUtils.createTestRepoSecret(namespace);
-
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
       createWebHook(webhookImage, imagePullPolicy, namespace, TEST_IMAGES_REPO_SECRET_NAME);
@@ -777,8 +774,8 @@ class ItMonitoringExporterSamples {
             false,
             domain2Uid, true);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(wdtImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(wdtImage);
 
     return wdtImage;
   }

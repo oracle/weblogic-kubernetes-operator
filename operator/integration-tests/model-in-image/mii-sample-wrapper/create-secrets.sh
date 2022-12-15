@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -9,14 +9,14 @@
 #
 # Optional parameters:
 #
-#   -dry kubectl              - Dry run. Show but don't do. Dry run
+#   -dry $KUBERNETES_CLI      - Dry run. Show but don't do. Dry run
 #   -dry yaml                   output is prefixed with 'dryrun:'.
 #
 # Optional environment variables (see README for details):
 #
 #   WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE, WDT_DOMAIN_TYPE,
-#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP, CORRECTED_DATASOURCE_SECRET
-#
+#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP, CORRECTED_DATASOURCE_SECRET,
+#   KUBERNETES_CLI
 
 set -eu
 set -o pipefail

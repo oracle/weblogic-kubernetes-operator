@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -404,6 +405,11 @@ public class EventHelper {
       public String getPattern() {
         return CLUSTER_CREATED_EVENT_PATTERN;
       }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
     },
     CLUSTER_DELETED {
       @Override
@@ -415,6 +421,11 @@ public class EventHelper {
       public String getPattern() {
         return CLUSTER_DELETED_EVENT_PATTERN;
       }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
+      }
     },
     CLUSTER_CHANGED {
       @Override
@@ -425,6 +436,11 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return CLUSTER_CHANGED_EVENT_PATTERN;
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createInvolvedObjectForClusterResource(eventData);
       }
     },
     CLUSTER_INCOMPLETE {
@@ -1259,6 +1275,40 @@ public class EventHelper {
         DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
         return doNext(packet);
       }
+    }
+  }
+
+  public static class ClusterResourceEventData extends EventData {
+
+    private final ClusterResource resource;
+
+    public ClusterResourceEventData(EventItem eventItem, ClusterResource resource) {
+      super(eventItem);
+      this.resource = resource;
+    }
+
+    @Override
+    public String getNamespace() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getNamespace)
+          .orElse("");
+    }
+
+    @Override
+    public String getResourceName() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse("");
+    }
+
+    @Override
+    public String getUID() {
+      return Optional.of(resource)
+          .map(ClusterResource::getMetadata)
+          .map(V1ObjectMeta::getUid)
+          .orElse("");
     }
   }
 }

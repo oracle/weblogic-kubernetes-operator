@@ -13,28 +13,36 @@ This document describes the domain home source types for deploying a domain, and
 
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
 
- - **[Domain in PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}})**:
-   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `PersistentVolume`.
-   - Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home in a persistent volume.
-   - Supply WebLogic applications in the persistent volume.
-   - Mutate WebLogic configuration using WLST, the WebLogic Server Administration Console, or [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}) supplied in a Kubernetes ConfigMap.
+ - **[Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}})**:
+   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `FromModel`.
+   - Supply a WebLogic installation in an image and supply a WebLogic configuration in one of three ways:
+     - As WDT model YAML file supplied in separate
+       [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+     - As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.
+     - As WDT model YAML file in a Kubernetes ConfigMap.
+   - Supply WebLogic applications in one of two ways:
+     - In auxiliary images.
+     - Layered on the installation image.
+   - Mutate the WebLogic configuration by supplying a new image and rolling,
+     or [model updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}})
+     supplied in a Kubernetes ConfigMap.
 
  - **[Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})**:
    - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `Image`.
-   - Supply a WebLogic installation in an image and supply WebLogic configuration as a domain home layered on this image.
+   - Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home layered on this image.
    - Supply WebLogic applications layered on the installation image.
-   - Mutate WebLogic configuration by supplying a new image and rolling, or by configuration overrides supplied in a Kubernetes ConfigMap.
+   - Mutate the WebLogic configuration by supplying a new image and rolling,
+     or by [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}})
+     supplied in a Kubernetes ConfigMap.
 
- - **[Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}})**:
-   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `FromModel`.
-   - Supply a WebLogic installation in an image and supply WebLogic configuration in one of three ways:
-     - As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.
-     - As WDT model YAML file supplied in separate [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-     - As WDT model YAML file in a Kubernetes ConfigMap.
-   - Supply WebLogic applications in one of two ways:
-     - Layered on the installation image.
-     - In auxiliary images.
-   - Mutate WebLogic configuration by supplying a new image and rolling, or [model updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) supplied in a Kubernetes ConfigMap.
+ - **[Domain in PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}})**:
+   - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `PersistentVolume`.
+   - Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home in a persistent volume.
+   - Supply WebLogic applications in the persistent volume.
+   - Mutate the WebLogic configuration using WLST,
+     the WebLogic Server Administration Console,
+     or [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}})
+     supplied in a Kubernetes ConfigMap.
 
 Note that you can use different domain home types for different domains; there's no restriction on having domains with different domain home types in the same Kubernetes cluster or namespace.
 

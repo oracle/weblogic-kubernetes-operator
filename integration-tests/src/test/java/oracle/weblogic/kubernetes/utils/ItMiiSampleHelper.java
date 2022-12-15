@@ -41,7 +41,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -148,16 +148,16 @@ public class ItMiiSampleHelper {
     // install traefik using the mii sample script
     execTestScriptAndAssertSuccess(DomainType.WLS, "-traefik", "Traefik deployment failure");
 
-    logger.info("Setting up docker secrets");
+    logger.info("Setting up image registry secrets");
     // Create the repo secret to pull the domain image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
-    logger.info("Docker registry secret {0} created for domain image successfully in namespace {1}",
+    logger.info("Registry secret {0} created for domain image successfully in namespace {1}",
         TEST_IMAGES_REPO_SECRET_NAME, domainNamespace);
     // Create the repo secret to pull the base image
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace);
-    logger.info("Docker registry secret {0} for base image created successfully in namespace {1}",
+    logger.info("Registry secret {0} for base image created successfully in namespace {1}",
         BASE_IMAGES_REPO_SECRET_NAME, domainNamespace);
 
 
@@ -169,10 +169,10 @@ public class ItMiiSampleHelper {
 
       envMap.put("dbNamespace", dbNamespace);
 
-      // create ocr/ocir docker registry secret to pull the db images
+      // create ocr/ocir image registry secret to pull the db images
       // this secret is used only for non-kind cluster
       createBaseRepoSecret(dbNamespace);
-      logger.info("Docker registry secret {0} created successfully in namespace {1}",
+      logger.info("Registry secret {0} created successfully in namespace {1}",
               TestConstants.BASE_IMAGES_REPO_SECRET_NAME, dbNamespace);
     }
 
@@ -180,7 +180,7 @@ public class ItMiiSampleHelper {
   }
 
   /**
-   * Verify that the image exists and push it to docker registry if necessary.
+   * Verify that the image exists and push it to image registry if necessary.
    */
   public void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
@@ -202,11 +202,11 @@ public class ItMiiSampleHelper {
 
     String image = imageName + ":" + imageVer;
 
-    // Check image exists using docker images | grep image image.
+    // Check image exists using 'WLSIMG_BUILDER images | grep image image'.
     assertTrue(doesImageExist(imageName), String.format("Image %s does not exist", image));
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(image);
   }
 
   /**

@@ -5,7 +5,9 @@ package oracle.kubernetes.operator;
 
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.makeright.MakeRightClusterOperationImpl;
 import oracle.kubernetes.operator.makeright.MakeRightDomainOperationImpl;
 import oracle.kubernetes.operator.work.FiberGate;
 
@@ -47,4 +49,11 @@ public interface DomainProcessorDelegate extends CoreDelegate {
   default MakeRightDomainOperation createMakeRightOperation(MakeRightExecutor executor, DomainPresenceInfo info) {
     return new MakeRightDomainOperationImpl(executor, this, info);
   }
+
+  @Nonnull
+  default MakeRightClusterOperation createMakeRightOperation(MakeRightExecutor executor, ClusterPresenceInfo info) {
+    return new MakeRightClusterOperationImpl(executor, this, info);
+  }
+
+  DomainNamespaces getDomainNamespaces();
 }

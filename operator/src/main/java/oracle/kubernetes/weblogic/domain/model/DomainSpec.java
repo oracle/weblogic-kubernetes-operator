@@ -356,7 +356,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Specifies the image for the monitoring exporter sidecar.
-   * @param resourceRequirements the name of the docker image
+   * @param resourceRequirements the name of the image
    */
   public void setMonitoringExporterResources(V1ResourceRequirements resourceRequirements) {
     assert monitoringExporter != null : "May not set resources without configuration";
@@ -366,7 +366,7 @@ public class DomainSpec extends BaseConfiguration {
 
   /**
    * Specifies the image for the monitoring exporter sidecar.
-   * @param imageName the name of the docker image
+   * @param imageName the name of the image
    */
   public void setMonitoringExporterImage(String imageName) {
     assert monitoringExporter != null : "May not set image without configuration";
@@ -518,7 +518,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return domain home
    */
   String getDomainHome() {
-    return Optional.ofNullable(domainHome).orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid()));
+    return domainHome;
   }
 
   public String getLivenessProbeCustomScript() {

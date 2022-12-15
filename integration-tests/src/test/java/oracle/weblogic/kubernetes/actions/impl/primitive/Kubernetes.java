@@ -99,6 +99,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -818,7 +819,7 @@ public class Kubernetes {
 
     // kubectl exec -n <some-namespace> <some-pod> -- tar cf - /tmp/foo | tar xf - -C /tmp/bar
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl exec ");
+    sb.append(KUBERNETES_CLI + " exec ");
     if (!isNullOrEmpty(namespace)) {
       sb.append("-n ");
       sb.append(namespace);
@@ -850,7 +851,7 @@ public class Kubernetes {
       String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ");
+    sb.append(KUBERNETES_CLI + " cp ");
     sb.append(srcPath.toString());
     sb.append(" ");
     if (!isNullOrEmpty(namespace)) {
@@ -883,7 +884,7 @@ public class Kubernetes {
       throws IOException, ApiException {
     // kubectl cp <some-namespace>/<some-pod>:/tmp/foo /tmp/bar -c <container>
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ");
+    sb.append(KUBERNETES_CLI + " cp ");
     if (!isNullOrEmpty(namespace)) {
       sb.append(namespace);
       sb.append("/");
@@ -1085,7 +1086,7 @@ public class Kubernetes {
 
   /**
    * Gets namespace.
-   * @name name of namespace.
+   * @param name name of namespace.
    * @return V1Namespace  Namespace object from the Kubernetes cluster
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -1665,7 +1666,7 @@ public class Kubernetes {
    * @return response msg of patching cluster resource
    */
   public static String patchClusterCustomResourceReturnResponse(String clusterName, String namespace,
-                                                                 V1Patch patch, String patchFormat) {
+                                                                V1Patch patch, String patchFormat) {
     String responseMsg;
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<ClusterResource> response = clusterCrdClient.patch(
@@ -1675,7 +1676,9 @@ public class Kubernetes {
         patch // patch data
     );
 
-    String logmsg = "response code: " + response.getHttpStatusCode() + ". response message: "
+    String logmsg = "response code: " + response.getHttpStatusCode()
+        + ". response status: " +  response.getStatus() + "."
+        + "response message: "
         + Optional.ofNullable(response.getStatus()).map(V1Status::getMessage).orElse("none")
         + " when patching " + clusterName + " in namespace "
         + namespace + " with " + patch + " using patch format: " + patchFormat;
@@ -2536,7 +2539,6 @@ public class Kubernetes {
    * @param namespace name of the namespace
    * @param name name of the job
    * @return true if delete was successful
-   * @throws ApiException when deletion of job fails
    */
   public static boolean deleteJob(String namespace, String name) {
 

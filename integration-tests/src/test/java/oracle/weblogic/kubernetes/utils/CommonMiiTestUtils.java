@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -93,7 +94,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -191,10 +192,61 @@ public class CommonMiiTestUtils {
       String dataHome) {
 
     LoggingFacade logger = getLogger();
+    DomainResource domain =
+        createMiiDomain(domainNamespace, domainUid, imageName, replicaCount, clusterNames, setDataHome, dataHome);
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    return domain;
+  }
+
+  /**
+   * Create a basic Kubernetes domain resource and verify the domain is created.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames names of clusters
+   * @param setDataHome whether to set dataHome in the domain spec
+   * @param dataHome dataHome override in the domain spec
+   * @return DomainResource
+   */
+  public static DomainResource createMiiDomain(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      int replicaCount,
+      List<String> clusterNames,
+      boolean setDataHome,
+      String dataHome) {
+
+    LoggingFacade logger = getLogger();
     // this secret is used only for non-kind cluster
     logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
     assertDoesNotThrow(() -> createTestRepoSecret(domainNamespace),
-            String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
+        String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -238,32 +290,9 @@ public class CommonMiiTestUtils {
 
     createDomainAndVerify(domain, domainNamespace);
 
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
     return domain;
   }
-  
+
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image image.
    *
@@ -394,7 +423,8 @@ public class CommonMiiTestUtils {
           getLogger().info("!!!Cluster {0} in namespace {1} already exists, skipping...", clusterResName, domNamespace);
         } else {
           getLogger().info("Creating cluster {0} in namespace {1}", clusterResName, domNamespace);
-          ClusterSpec spec = new ClusterSpec().withClusterName(clusterName).replicas(replicaCount);
+          ClusterSpec spec =
+              new ClusterSpec().withClusterName(clusterName).replicas(replicaCount).serverStartPolicy("IfNeeded");
           createClusterAndVerify(createClusterResource(clusterResName, domNamespace, spec));
         }
         // set cluster references
@@ -1140,7 +1170,7 @@ public class CommonMiiTestUtils {
         commandToExecuteInsidePod, podName, domainNamespace);
     V1Pod serverPod = assertDoesNotThrow(() ->
             Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
+        String.format("Could not get the server Pod %s in namespace %s",
             podName, domainNamespace));
 
     ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
@@ -1460,7 +1490,7 @@ public class CommonMiiTestUtils {
                                           String serverPodName,
                                           String fileName) {
     LoggingFacade logger = getLogger();
-    StringBuffer readFileCmd = new StringBuffer("kubectl exec -n ")
+    StringBuffer readFileCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ")
         .append(domainNamespace)
         .append(" ")
         .append(serverPodName)
@@ -1478,9 +1508,9 @@ public class CommonMiiTestUtils {
    * Create mii image and push it to the registry.
    *
    * @param miiImageNameBase the base mii image name used in local or to construct the image name in repository
-   * @param wdtModelFile  wdt model file used to build the docker image
+   * @param wdtModelFile  wdt model file used to build the image
    * @param appName application source directory used to build sample app ear files
-   * @param wdtModelPropFile wdt model properties file used to build the docker image
+   * @param wdtModelPropFile wdt model properties file used to build the image
    * @return mii image created
    */
   public static String createAndPushMiiImage(String miiImageNameBase,
@@ -1498,8 +1528,8 @@ public class CommonMiiTestUtils {
         createImageAndVerify(miiImageNameBase, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
             WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, true, null, false);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
   }
@@ -1509,7 +1539,7 @@ public class CommonMiiTestUtils {
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
-   * @param miiImage model in image domain docker image
+   * @param miiImage model in image domain image
    * @param numOfClusters number of clusters in the domain
    * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain objects
@@ -1528,7 +1558,7 @@ public class CommonMiiTestUtils {
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
-   * @param miiImage model in image domain docker image
+   * @param miiImage model in image domain image
    * @param numOfClusters number of clusters in the domain
    * @param replicaCount replica count of the cluster
    * @param serverPodLabels the labels for the server pod
@@ -1545,9 +1575,9 @@ public class CommonMiiTestUtils {
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, domainNamespace)) {
       createTestRepoSecret(domainNamespace);
     }
@@ -1633,7 +1663,7 @@ public class CommonMiiTestUtils {
     setPodAntiAffinity(domain);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -1810,7 +1840,7 @@ public class CommonMiiTestUtils {
                miiImageName, configMapName);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImageName);
     createDomainAndVerify(domain, domainNamespace);
 

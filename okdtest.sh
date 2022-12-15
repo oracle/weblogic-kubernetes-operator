@@ -32,24 +32,26 @@ usage() {
   exit $1
 }
 
-dockerLogin() {
-  echo "Info: about to do docker login"
+repoLogin() {
+  echo "Info: about to do ${WLSIMG_BUILDER:-docker} login"
   if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
-    out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
+    out=$(echo $DOCKER_PASSWORD | ${WLSIMG_BUILDER:-docker} login -u $DOCKER_USERNAME --password-stdin)
     res=$?
     if [ $res -ne 0 ]; then
-      echo 'docker login failed'
+      echo "${WLSIMG_BUILDER:-docker} login failed"
       exit 1
     fi
   else
-    echo "Info: Docker credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
+    echo "Info: Image repo credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
   fi
 }
 
 k8s_version="1.21"
 
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
+
 echo "checking nodes"
-kubectl get nodes -o wide
+${KUBERNETES_CLI} get nodes -o wide
 
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/home/opc/okdtest"
@@ -112,48 +114,46 @@ fi
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
 echo "cleaning up k8s artifacts"
-kubectl get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs kubectl delete ns || true
-kubectl get ns --no-headers | awk '/weblogic/{print $1}' | xargs kubectl delete ns || true
-kubectl get ns --no-headers | awk '/test-/{print $1}' | xargs kubectl delete ns || true
-kubectl delete pv domain1-weblogic-sample-pv --wait=false || true
-kubectl delete pv domain2-weblogic-sample-pv --wait=false || true
-kubectl delete pv pv-testalertmanager --wait=false || true
-kubectl delete pv pv-testgrafana --wait=false || true
-kubectl delete pv pv-testprometheus --wait=false || true
+${KUBERNETES_CLI} get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+${KUBERNETES_CLI} get ns --no-headers | awk '/weblogic/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+${KUBERNETES_CLI} get ns --no-headers | awk '/test-/{print $1}' | xargs ${KUBERNETES_CLI} delete ns || true
+${KUBERNETES_CLI} delete pv domain1-weblogic-sample-pv --wait=false || true
+${KUBERNETES_CLI} delete pv domain2-weblogic-sample-pv --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testalertmanager --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testgrafana --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testprometheus --wait=false || true
 
-kubectl delete pv pv-testalertmanagertest1 --wait=false || true
-kubectl delete pv pv-testgrafanatest1 --wait=false || true
-kubectl delete pv pv-testprometheustest1 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testalertmanagertest1 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testgrafanatest1 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testprometheustest1 --wait=false || true
 
-kubectl delete pv pv-testalertmanagertest2 --wait=false || true
-kubectl delete pv pv-testgrafanatest2 --wait=false || true
-kubectl delete pv pv-testprometheustest2 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testalertmanagertest2 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testgrafanatest2 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testprometheustest2 --wait=false || true
 
-kubectl delete pv pv-testalertmanagertest3 --wait=false || true
-kubectl delete pv pv-testgrafanatest3 --wait=false || true
-kubectl delete pv pv-testprometheustest3 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testalertmanagertest3 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testgrafanatest3 --wait=false || true
+${KUBERNETES_CLI} delete pv pv-testprometheustest3 --wait=false || true
 
-kubectl delete crd $(kubectl get crd | grep weblogic) || true
+${KUBERNETES_CLI} get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs ${KUBERNETES_CLI} delete ingressroute || true
+${KUBERNETES_CLI} get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+${KUBERNETES_CLI} get clusterroles --no-headers | awk '/appscode/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+${KUBERNETES_CLI} get clusterroles --no-headers | awk '/nginx-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
+${KUBERNETES_CLI} get clusterroles --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
 
-kubectl get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs kubectl delete ingressroute || true
-kubectl get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs kubectl delete clusterroles || true
-kubectl get clusterroles --no-headers | awk '/appscode/{print $1}' | xargs kubectl delete clusterroles || true
-kubectl get clusterroles --no-headers | awk '/nginx-/{print $1}' | xargs kubectl delete clusterroles || true
-kubectl get clusterroles --no-headers | awk '/traefik-/{print $1}' | xargs kubectl delete clusterroles || true
-
-kubectl get clusterrolebindings --no-headers | awk '/ns-/{print $1}' | xargs kubectl delete clusterrolebindings || true
-kubectl get clusterrolebindings --no-headers | awk '/appscode/{print $1}' | xargs kubectl delete clusterrolebindings || true
-kubectl get clusterrolebindings --no-headers | awk '/nginx-/{print $1}' | xargs kubectl delete clusterrolebindings || true
-kubectl get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs kubectl delete clusterrolebindings || true
+${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/appscode/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/nginx-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
+${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
 
 sudo rm -rf ${PV_ROOT}/*
 
-dockerLogin
+repoLogin
 export OKD=true
 
-echo 'docker info'
-docker info
-docker ps
+echo "${WLSIMG_BUILDER:-docker} info"
+${WLSIMG_BUILDER:-docker} info
+${WLSIMG_BUILDER:-docker} ps
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"

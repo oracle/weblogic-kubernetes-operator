@@ -81,9 +81,9 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodP
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
@@ -237,7 +237,13 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      
+
+      testUntil(
+          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
+          getLogger(),
+          "waiting for domain status condition reason ReplicasTooHigh exists"
+      );
+
       // remove after debug
       String patchStr
           = "["
@@ -261,11 +267,6 @@ class ItDiagnosticsFailedCondition {
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
       );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
-      );
 
       patchStr
           = "["
@@ -279,11 +280,6 @@ class ItDiagnosticsFailedCondition {
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
-      );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
       );
       testPassed = true;
     } finally {
@@ -333,6 +329,7 @@ class ItDiagnosticsFailedCondition {
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
       assertFalse(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch cluster should fail");
+      testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
@@ -430,8 +427,8 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    logger.info("Creating a docker secret with invalid credentials");
-    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
+    logger.info("Creating a registry secret with invalid credentials");
+    createImageRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
@@ -694,7 +691,7 @@ class ItDiagnosticsFailedCondition {
       assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
           rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
           String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-              + "dbUrl %s, dbListenerPost $s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
+              + "dbUrl %s, dbListenerPost %s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
@@ -725,7 +722,7 @@ class ItDiagnosticsFailedCondition {
           false);
 
       // push the image to a registry to make it accessible in multi-node cluster
-      dockerLoginAndPushImageToRegistry(fmwMiiImage);
+      imageRepoLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
       DomainResource domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,

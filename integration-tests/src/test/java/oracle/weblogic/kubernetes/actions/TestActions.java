@@ -69,9 +69,9 @@ import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.Voyager;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.WebLogicRemoteConsole;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WebLogicImageTool;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -139,7 +139,7 @@ public class TestActions {
   }
 
   /**
-   * Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+   * Builds an Image for the Oracle WebLogic Kubernetes Operator.
    *
    * @param image image name and tag in 'name:tag' format
    * @return true on success
@@ -493,8 +493,6 @@ public class TestActions {
    * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithWLDF(String clusterName,
                                              String domainUid,
@@ -825,7 +823,7 @@ public class TestActions {
     return Namespace.delete(namespace);
   }
 
-  // ------------------------ Docker image  -------------------------
+  // ------------------------ image  -------------------------
 
   /**
    * Create a WITParams that contains the parameters for executing a WIT command.
@@ -840,7 +838,7 @@ public class TestActions {
   /**
    * Create an image using WDT models using WebLogic Image Tool.
    *
-   * @param params - the parameters for creating a model-in-image Docker image
+   * @param params - the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static boolean createImage(WitParams params) {
@@ -869,7 +867,7 @@ public class TestActions {
   /**
    * Create an auxiliary image using WebLogic Image Tool.
    *
-   * @param params - the parameters for creating a model-in-image Docker image
+   * @param params - the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static boolean createAuxImage(WitParams params) {
@@ -881,7 +879,7 @@ public class TestActions {
   /**
    * Create an auxiliary image using WebLogic Image Tool and return result output.
    *
-   * @param params - the parameters for creating a model-in-image Docker image
+   * @param params - the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static ExecResult createAuxImageAndReturnResult(WitParams params) {
@@ -1256,7 +1254,7 @@ public class TestActions {
    * Create an application archive that can be used by WebLogic Image Tool
    * to create an image with the application for a model-in-image use case.
    *
-   * @param params the parameters for creating a model-in-image Docker image
+   * @param params the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static boolean buildAppArchive(AppParams params) {
@@ -1270,7 +1268,7 @@ public class TestActions {
    * Create an application archive that can be used by WebLogic Image Tool
    * to create an image with coh-proxy-server.gar for testing Coherence use case
    *
-   * @param params the parameters for creating a model-in-image Docker image
+   * @param params the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static boolean buildCoherenceArchive(AppParams params) {
@@ -1284,7 +1282,7 @@ public class TestActions {
    * Archive an application from provided ear or war file that can be used by WebLogic Image Tool
    * to create an image with the application for a model-in-image use case.
    *
-   * @param params the parameters for creating a model-in-image Docker image
+   * @param params the parameters for creating a model-in-image image
    * @return true if the operation succeeds
    */
   public static boolean archiveApp(AppParams params) {
@@ -1293,28 +1291,28 @@ public class TestActions {
         .archiveApp();
   }
 
-  // ------------------------ Docker --------------------------------------
+  // ------------------------ Image Handling --------------------------------------
 
   /**
-   * Log in to a Docker registry.
+   * Log in to an image registry.
    *
-   * @param registryName name of Docker registry
-   * @param username username for the Docker registry
-   * @param password password for the Docker registry
+   * @param registryName name of registry
+   * @param username username for the registry
+   * @param password password for the registry
    * @return true if successful, false otherwise
    */
-  public static boolean dockerLogin(String registryName, String username, String password) {
-    return Docker.login(registryName, username, password);
+  public static boolean imageRepoLogin(String registryName, String username, String password) {
+    return Image.login(registryName, username, password);
   }
 
   /**
    * Push an image to a registry.
    *
-   * @param image fully qualified docker image, image name:image tag
+   * @param image fully qualified image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerPush(String image) {
-    boolean result = Docker.push(image);
+  public static boolean imagePush(String image) {
+    boolean result = Image.push(image);
     if (result) {
       InitializationTasks.registerPushedImage(image);
     }
@@ -1324,57 +1322,62 @@ public class TestActions {
   /**
    * Tag an image.
    *
-   * @param originalImage fully qualified original docker image, image name:image tag
-   * @param taggedImage fully qualified tagged docker image, image name:image tag
+   * @param originalImage fully qualified original image, image name:image tag
+   * @param taggedImage fully qualified tagged image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerTag(String originalImage, String taggedImage) {
-    return Docker.tag(originalImage, taggedImage);
+  public static boolean imageTag(String originalImage, String taggedImage) {
+    return Image.tag(originalImage, taggedImage);
   }
 
   /**
    * Pull an image from a registry.
    *
-   * @param image fully qualified docker image, image name:image tag
+   * @param image fully qualified image, image name:image tag
    * @return true if successful
    */
-  public static boolean dockerPull(String image) {
-    return Docker.pull(image);
+  public static boolean imagePull(String image) {
+    return Image.pull(image);
   }
 
   /**
    * Tag a originalImage to taggedImage and push it to repo.
    * @param originalImage original image
    * @param taggedImage tagged image
-   * @return true if docker tag and push succeeds, false otherwise
+   * @return true if tag and push succeeds, false otherwise
    */
   public static Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
     return (() -> {
-      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+      return imageTag(originalImage, taggedImage) && imagePush(taggedImage);
     });
   }
 
   /**
-   * Delete docker image.
+   * Delete image.
    *
    * @param image image name:image tag
    * @return true if delete image is successful
    */
   public static boolean deleteImage(String image) {
-    return Docker.deleteImage(image);
+    return Image.deleteImage(image);
   }
 
   /**
-   * Create Docker registry configuration in json object.
+   * Create registry configuration in json object.
    *
-   * @param username username for the docker registry
-   * @param password password for the docker registry
-   * @param email email for the docker registry
-   * @param registry docker registry name
-   * @return json object for the Docker registry configuration
+   * @param username username for the image registry
+   * @param password password for the image registry
+   * @param email email for the image registry
+   * @param registry registry name
+   * @return json object for the registry configuration
    */
-  public static JsonObject createDockerConfigJson(String username, String password, String email, String registry) {
-    return Docker.createDockerConfigJson(username, password, email, registry);
+  public static JsonObject createImageBuilderConfigJson(
+      String username,
+      String password,
+      String email,
+      String registry
+  ) {
+    return Image.createImageBuilderConfigJson(username, password, email, registry);
   }
 
   // ----------------------- Execute a Command   ---------------------------

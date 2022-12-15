@@ -22,7 +22,7 @@ SRCDIR="$( cd "$TESTDIR/../../.." > /dev/null 2>&1 ; pwd -P )"
 
 cd ${SRCDIR}
 
-echo "docker build Operator"
+echo "build Operator image"
 
 OPER_IMAGE_TAG=${OPER_IMAGE_TAG:-test}
 OPER_IMAGE_NAME=${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}
@@ -36,11 +36,12 @@ latest_cksum() {
   # force a rebuild even if only image name/tag/ver changes...
   echo "$OPER_IMAGE_NAME $OPER_IMAGE_TAG $OPER_JAR_VERSION"
 
-  # force a rebuild if the docker image isn't cached anymore
-  docker images $OPER_IMAGE_NAME:$OPER_IMAGE_TAG -q
+  # force a rebuild if the image isn't cached anymore
+  ${WLSIMG_BUILDER:-docker} images $OPER_IMAGE_NAME:$OPER_IMAGE_TAG -q
 
   # force a rebuild if any .java, .sh, or .py file changed
   find "$SRCDIR/operator/src/main" -name "*.[jsp]*" | xargs cat | cksum
+  find "$SRCDIR/operator/src/test" -name "*.[jsp]*" | xargs cat | cksum
 }
 
 save_cksum() {
@@ -58,7 +59,7 @@ fi
 
 #mvn clean install -DskipTests -Dcheckstyle.skip
 mvn clean install
-docker build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"  --build-arg VERSION=$OPER_JAR_VERSION --no-cache=true .
+${WLSIMG_BUILDER:-docker} build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"  --build-arg VERSION=$OPER_JAR_VERSION --no-cache=true .
 
 save_cksum
 
@@ -67,5 +68,5 @@ save_cksum
 #   echo "Provide container registry login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository."
 #   exit 1
 # fi
-# docker login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD	
-# docker push ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}
+# ${WLSIMG_BUILDER:-docker} login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD	
+# ${WLSIMG_BUILDER:-docker} push ${IMAGE_NAME_OPERATOR}:${IMAGE_TAG_OPERATOR}

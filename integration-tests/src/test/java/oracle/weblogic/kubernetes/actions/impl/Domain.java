@@ -462,6 +462,7 @@ public class Domain {
     String decodedToken = OKD ? secretToken : new String(Base64.getDecoder().decode(secretToken));
     logger.info("Got decoded token for secret {0} associated with service account {1} in namespace {2}: {3}",
         secretName, opServiceAccount, opNamespace, decodedToken);
+
     assertNotNull(decodedToken, "Couldn't get secret, token is null");
 
     // build the curl command to scale the cluster
@@ -588,8 +589,6 @@ public class Domain {
    * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
-   * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithWLDF(String clusterName,
                                              String domainUid,

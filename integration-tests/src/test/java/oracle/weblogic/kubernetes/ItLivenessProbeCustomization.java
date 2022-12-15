@@ -60,7 +60,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkCopyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
@@ -171,7 +171,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -204,7 +204,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -233,7 +233,7 @@ class ItLivenessProbeCustomization {
         final int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
             managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -251,7 +251,7 @@ class ItLivenessProbeCustomization {
         // It should not increase since the Pod should not be started
         int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             managedServerPodName, domainNamespace));
         logger.info("[2] restart count is: {0}", afterRestartCount);
         assertEquals(0, afterRestartCount - beforeRestartCount,
@@ -367,7 +367,7 @@ class ItLivenessProbeCustomization {
         int beforeRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                     managedServerPodName, domainNamespace));
         logger.info("For server {0} restart count before liveness probe is: {1}",
             managedServerPodName, beforeRestartCount);
@@ -393,7 +393,7 @@ class ItLivenessProbeCustomization {
         int afterDelayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
-                String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
+                String.format("Failed to get the restart count of the container from pod %s in namespace %s after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
         assertEquals(beforeRestartCount, afterDelayRestartCount, "The pod was restarted after 45s, "
@@ -407,7 +407,7 @@ class ItLivenessProbeCustomization {
         // get the restart count of the container in pod after liveness probe restarts
         int afterRestartCount = assertDoesNotThrow(() ->
                 getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 managedServerPodName, domainNamespace));
         logger.info("Restart count after liveness probe {0}", afterRestartCount);
         assertEquals(1, afterRestartCount - beforeRestartCount,
@@ -452,7 +452,7 @@ class ItLivenessProbeCustomization {
     domain.getSpec().serverPod().livenessProbe().successThreshold(2);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid2, domainNamespace, imageName);
 
     // check the operator log contains expected error msg
@@ -507,7 +507,7 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod before liveness probe restarts
     final int beforeRestartCount =
         assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, server1Name, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
                 server1Name, domainNamespace));
     logger.info("Restart count before liveness probe {0}", beforeRestartCount);
 
@@ -545,7 +545,7 @@ class ItLivenessProbeCustomization {
     // get the restart count of the container in pod after liveness probe restarts
     int afterRestartCount = assertDoesNotThrow(() ->
             getContainerRestartCount(domainNamespace, null, server1Name, null),
-        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+        String.format("Failed to get the restart count of the container from pod %s in namespace %s",
             server1Name, domainNamespace));
     assertTrue(afterRestartCount - beforeRestartCount == 1,
         String.format("Liveness probe did not start the container in pod %s in namespace %s",
@@ -768,29 +768,28 @@ class ItLivenessProbeCustomization {
    */
   private static void createAndVerifyMiiDomain(String miiImage) {
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Creating registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = WEBLOGIC_CREDENTIALS;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(WEBLOGIC_CREDENTIALS, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    String encryptionSecretName = ENCRYPTION_SECRET;
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(ENCRYPTION_SECRET, domainNamespace, "weblogicenc", "weblogicenc");
 
 
     DomainResource domain = createDomainResource(domainUid);
 
     // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
@@ -885,7 +884,7 @@ class ItLivenessProbeCustomization {
         .append("bash-scripts")
         .append("/")
         .append(APPCHECK_SCRIPT);
-    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff.toString());
+    logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff);
 
     final String wdtModelFileForMiiDomain = "model-multiclusterdomain-singlesampleapp-wls.yaml";
     logger.info("Create image with model file and verify");
@@ -893,12 +892,12 @@ class ItLivenessProbeCustomization {
         createMiiImageAndVerify(MII_IMAGE_NAME, wdtModelFileForMiiDomain, MII_BASIC_APP_NAME,
             additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(miiImage);
 
-    // create docker registry secret to pull the image from registry
+    // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    logger.info("Create registry secret in namespace {0}", domainNamespace);
     createTestRepoSecret(domainNamespace);
     return miiImage;
   }

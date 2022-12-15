@@ -95,6 +95,27 @@ public class PodUtils {
   }
 
   /**
+   * Check pod exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodExists(ConditionFactory conditionFactory, String podName,
+      String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+        assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
+            String.format("podExists failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace)),
+        logger,
+        "pod {0} to be created in namespace {1}",
+        podName,
+        domainNamespace);
+  }
+  
+  /**
    * Check pod is ready.
    *
    * @param podName pod name to check
@@ -493,8 +514,7 @@ public class PodUtils {
 
     // get the introspector log message
     String introspectorLog = assertDoesNotThrow(()
-        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector",
-              new Boolean(false), new Integer(300), new Boolean(true)));
+        -> getPodLog(introspectorPodName, namespace, domainUid + "-introspector", false, 300, true));
 
     // match regex in domain info
     Pattern pattern = Pattern.compile(regex);

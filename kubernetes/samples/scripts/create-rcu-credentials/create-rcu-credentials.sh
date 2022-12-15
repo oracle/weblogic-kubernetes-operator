@@ -31,10 +31,10 @@ fail() {
   exit 1
 }
 
-# Try to execute kubectl to see whether kubectl is available
-validateKubectlAvailable() {
-  if ! [ -x "$(command -v kubectl)" ]; then
-    fail "kubectl is not installed"
+# Try to execute ${KUBERNETES_CLI:-kubectl} to see whether ${KUBERNETES_CLI:-kubectl} is available
+validateKubernetesCLIAvailable() {
+  if ! [ -x "$(command -v ${KUBERNETES_CLI:-kubectl})" ]; then
+    fail "${KUBERNETES_CLI:-kubectl} is not installed"
   fi
 }
 
@@ -129,13 +129,13 @@ if [ "${missingRequiredOption}" == "true" ]; then
 fi
 
 # check and see if the secret already exists
-result=$(kubectl get secret "${secretName}" -n "${namespace}" --ignore-not-found=true | grep "${secretName}" | wc | awk ' { print $1; }')
+result=$(${KUBERNETES_CLI:-kubectl} get secret "${secretName}" -n "${namespace}" --ignore-not-found=true | grep "${secretName}" | wc | awk ' { print $1; }')
 if [ "${result:=Error}" != "0" ]; then
   fail "The secret ${secretName} already exists in namespace ${namespace}."
 fi
 
 # create the secret
-kubectl -n "$namespace" create secret generic "$secretName" \
+${KUBERNETES_CLI:-kubectl} -n "$namespace" create secret generic "$secretName" \
   --from-literal=username="$username" \
   --from-literal=password="$password" \
   --from-literal=sys_username="$sys_username" \
@@ -143,11 +143,11 @@ kubectl -n "$namespace" create secret generic "$secretName" \
 
 # label the secret with domainUID if needed
 if [ -n "$domainUID" ]; then
-  kubectl label secret "${secretName}" -n "$namespace" weblogic.domainUID="$domainUID" weblogic.domainName="$domainUID"
+  ${KUBERNETES_CLI:-kubectl} label secret "${secretName}" -n "$namespace" weblogic.domainUID="$domainUID" weblogic.domainName="$domainUID"
 fi
 
 # Verify the secret exists
-SECRET=$(kubectl get secret "${secretName}" -n "${namespace}" | grep "${secretName}" | wc | awk ' { print $1; }')
+SECRET=$(${KUBERNETES_CLI:-kubectl} get secret "${secretName}" -n "${namespace}" | grep "${secretName}" | wc | awk ' { print $1; }')
 if [ "${SECRET}" != "1" ]; then
   fail "The secret ${secretName} was not found in namespace ${namespace}"
 fi

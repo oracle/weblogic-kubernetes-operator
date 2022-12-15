@@ -129,7 +129,7 @@
       "properties": {
         "sessionAffinity": {
           "default": "None",
-          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "description": "Advanced setting to enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#cluster-spec-elements",
           "type": "string"
         },
         "annotations": {
@@ -705,11 +705,11 @@
           "type": "string"
         },
         "modelHome": {
-          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise.",
+          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise. NOTE: if `modelHome` is set to a non-default value, then model files in all specified `spec.configuration.model.AuxiliaryImages` are ignored.",
           "type": "string"
         },
         "wdtInstallHome": {
-          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise.",
+          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise. NOTE: if `wdtInstallHome` is set to a non-default value, then the WDT install in any specified `spec.configuration.model.AuxiliaryImages` is ignored.",
           "type": "string"
         },
         "auxiliaryImageVolumeMedium": {

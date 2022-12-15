@@ -209,7 +209,7 @@ createDomainPV() {
   checkPvExists ${persistentVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
     echo Creating the persistent volume ${persistentVolumeName}
-    kubectl create -f ${pvOutput}
+    ${KUBERNETES_CLI:-kubectl} create -f ${pvOutput}
     checkPvState ${persistentVolumeName} Available
   fi
 }
@@ -224,7 +224,7 @@ createDomainPVC() {
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
     echo Creating the persistent volume claim ${persistentVolumeClaimName}
-    kubectl create -f ${pvcOutput}
+    ${KUBERNETES_CLI:-kubectl} create -f ${pvcOutput}
     checkPvState ${persistentVolumeName} Bound
   fi
 }

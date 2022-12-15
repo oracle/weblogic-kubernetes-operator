@@ -4,10 +4,12 @@
 package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -58,15 +60,10 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_R
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
  */
-public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
-
-  private final MakeRightExecutor executor;
-  private final DomainProcessorDelegate delegate;
-  @Nonnull
-  private DomainPresenceInfo liveInfo;
+public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainPresenceInfo>
+    implements MakeRightDomainOperation {
   private boolean explicitRecheck;
   private boolean deleting;
-  private boolean willInterrupt;
   private boolean inspectionRun;
   private EventHelper.EventData eventData;
 
@@ -79,8 +76,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
    */
   public MakeRightDomainOperationImpl(
       MakeRightExecutor executor, DomainProcessorDelegate delegate, @Nonnull DomainPresenceInfo liveInfo) {
-    this.executor = executor;
-    this.delegate = delegate;
+    super(executor, delegate);
     this.liveInfo = liveInfo;
   }
 
@@ -150,11 +146,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   }
 
   @Override
-  public boolean isWillInterrupt() {
-    return willInterrupt;
-  }
-
-  @Override
   public boolean isExplicitRecheck() {
     return explicitRecheck;
   }
@@ -170,12 +161,6 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
   }
 
   @Override
-  public @Nonnull
-  DomainPresenceInfo getPresenceInfo() {
-    return liveInfo;
-  }
-
-  @Override
   public void setLiveInfo(@Nonnull DomainPresenceInfo info) {
     this.liveInfo = info;
   }
@@ -187,6 +172,11 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     this.deleting = false;
     this.willInterrupt = false;
     this.inspectionRun = false;
+  }
+
+  @Override
+  public void addToPacket(Packet packet) {
+    MakeRightDomainOperation.super.addToPacket(packet);
   }
 
 
@@ -236,7 +226,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
     }
-
+    
     return Step.chain(result);
   }
 
@@ -249,6 +239,10 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     return new CallBuilder().listClusterAsync(domainNamespace, new ListClusterResourcesResponseStep());
   }
 
+  @Override
+  public DomainPresenceInfo getPresenceInfo() {
+    return liveInfo;
+  }
 
   static class ListClusterResourcesResponseStep extends DefaultResponseStep<ClusterList> {
 
@@ -356,7 +350,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(), info.getNamespace(),
+      return doNext(new CallBuilder().readDomainAsync(info.getDomainName(), info.getNamespace(),
           new ReadDomainResponseStep(getNext())), packet);
     }
   }
@@ -426,11 +420,21 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
       final Processors processor = new Processors() {
         @Override
         public Consumer<V1PodList> getPodListProcessing() {
-          return list -> list.getItems().forEach(this::addPod);
+          return this::processList;
+        }
+
+        private void processList(V1PodList list) {
+          Collection<String> serverNamesFromPodList = list.getItems().stream()
+              .map(PodHelper::getPodServerName).collect(Collectors.toList());
+
+          info.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+              .forEach(name -> info.deleteServerPodFromEvent(name, null));
+          list.getItems().forEach(this::addPod);
         }
 
         private void addPod(V1Pod pod) {
-          Optional.ofNullable(PodHelper.getPodServerName(pod)).ifPresent(name -> info.setServerPod(name, pod));
+          Optional.ofNullable(PodHelper.getPodServerName(pod))
+              .ifPresent(name -> info.setServerPodFromEvent(name, pod));
         }
 
         @Override
@@ -452,7 +456,7 @@ public class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
         }
       };
 
-      return executor.createNamespacedResourceSteps(processor, info);
+      return executor.createNamespacedResourceSteps(processor, info, delegate.getDomainNamespaces());
     }
 
   }

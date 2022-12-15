@@ -142,10 +142,10 @@ deleteK8sObj() {
   fi
 
   echo Checking if object type $1 with name $2 exists
-  K8SOBJ=`kubectl get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
+  K8SOBJ=`${KUBERNETES_CLI:-kubectl} get $1 -n ${namespace} | grep $2 | wc | awk ' { print $1; }'`
   if [ "${K8SOBJ}" = "1" ]; then
     echo Deleting $2 using $3
-    kubectl delete -f $3
+    ${KUBERNETES_CLI:-kubectl} delete -f $3
   fi
 }
 
@@ -173,12 +173,12 @@ toDNS1123Legal() {
 checkPvState() {
 
   echo "Checking if the persistent volume ${1:?} is ${2:?}"
-  local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+  local pv_state=`${KUBERNETES_CLI:-kubectl} get pv $1 -o jsonpath='{.status.phase}'`
   attempts=0
   while [ ! "$pv_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
     attempts=$((attempts + 1))
     sleep 1
-    pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
+    pv_state=`${KUBERNETES_CLI:-kubectl} get pv $1 -o jsonpath='{.status.phase}'`
   done
   if [ "$pv_state" != "$2" ]; then
     fail "The persistent volume state should be $2 but is $pv_state"
@@ -193,10 +193,10 @@ checkPvcState() {
 
   echo "Checking if the persistent volume claim ${1:?} is ${2:?}"
   local end_secs=$((SECONDS + 30))
-  local pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
+  local pvc_state=`${KUBERNETES_CLI:-kubectl} get pvc $1 -o jsonpath='{.status.phase}'`
   while [ ! "$pvc_state" = "$2" ] && [ $SECONDS -le $end_secs ]; do
     sleep 1
-    pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
+    pvc_state=`${KUBERNETES_CLI:-kubectl} get pvc $1 -o jsonpath='{.status.phase}'`
   done
   if [ "$pvc_state" != "$2" ]; then
     fail "The persistent volume state should be $2 but is $pvc_state"
@@ -209,7 +209,7 @@ checkPvcState() {
 checkPvExists() {
 
   echo "Checking if the persistent volume ${1} exists"
-  PV_EXISTS=`kubectl get pv | grep ${1} | wc | awk ' { print $1; } '`
+  PV_EXISTS=`${KUBERNETES_CLI:-kubectl} get pv | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PV_EXISTS}" = "1" ]; then
     echo "The persistent volume ${1} already exists"
     PV_EXISTS="true"
@@ -225,7 +225,7 @@ checkPvExists() {
 # $2 - NameSpace
 checkPvcExists() {
   echo "Checking if the persistent volume claim ${1} in NameSpace ${2} exists"
-  PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
+  PVC_EXISTS=`${KUBERNETES_CLI:-kubectl} get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
     echo "The persistent volume claim ${1} already exists in NameSpace ${2}"
     PVC_EXISTS="true"
@@ -264,14 +264,14 @@ copyInputsFileToOutputDirectory() {
 getKubernetesClusterIP() {
 
   # Get name of the current context
-  local CUR_CTX=`kubectl config current-context | awk ' { print $1; } '`
+  local CUR_CTX=`${KUBERNETES_CLI:-kubectl} config current-context | awk ' { print $1; } '`
 
   # Get the name of the current cluster
-  local CUR_CLUSTER_CMD="kubectl config view -o jsonpath='{.contexts[?(@.name == \"${CUR_CTX}\")].context.cluster}' | awk ' { print $1; } '"
+  local CUR_CLUSTER_CMD="${KUBERNETES_CLI:-kubectl} config view -o jsonpath='{.contexts[?(@.name == \"${CUR_CTX}\")].context.cluster}' | awk ' { print $1; } '"
   local CUR_CLUSTER=`eval ${CUR_CLUSTER_CMD}`
 
   # Get the server address for the current cluster
-  local SVR_ADDR_CMD="kubectl config view -o jsonpath='{.clusters[?(@.name == \"${CUR_CLUSTER}\")].cluster.server}' | awk ' { print $1; } '"
+  local SVR_ADDR_CMD="${KUBERNETES_CLI:-kubectl} config view -o jsonpath='{.clusters[?(@.name == \"${CUR_CLUSTER}\")].cluster.server}' | awk ' { print $1; } '"
   local SVR_ADDR=`eval ${SVR_ADDR_CMD}`
 
   # Server address is expected to be of the form http://address:port.  Delimit
@@ -289,24 +289,27 @@ getKubernetesClusterIP() {
 #
 buildServerPodResources() {
 
+  level1_indent="          "
+  level2_indent="${level1_indent}  "
+
   if [ -n "${serverPodMemoryRequest}" ]; then
-    local memoryRequest="         memory\: \"${serverPodMemoryRequest}\"\n"
+    local memoryRequest="${level2_indent}memory\: \"${serverPodMemoryRequest}\"\n"
   fi
   if [ -n "${serverPodCpuRequest}" ]; then
-    local cpuRequest="        cpu\: \"${serverPodCpuRequest}\"\n"
+    local cpuRequest="${level2_indent}cpu\: \"${serverPodCpuRequest}\"\n"
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
-    local requests="       requests\: \n$memoryRequest $cpuRequest"
+    local requests="${level1_indent}requests\: \n${memoryRequest}${cpuRequest}"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
-    local memoryLimit="         memory\: \"${serverPodMemoryLimit}\"\n"
+    local memoryLimit="${level2_indent}memory\: \"${serverPodMemoryLimit}\"\n"
   fi
   if [ -n "${serverPodCpuLimit}" ]; then
-    local cpuLimit="        cpu\: \"${serverPodCpuLimit}\"\n"
+    local cpuLimit="${level2_indent}cpu\: \"${serverPodCpuLimit}\"\n"
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
-    local limits="       limits\: \n$memoryLimit $cpuLimit"
+    local limits="${level1_indent}limits\: \n${memoryLimit}${cpuLimit}"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
@@ -654,11 +657,13 @@ createFiles() {
 
 #
 # Function to markup the wdt model file
+# $1 - Name of wdt model file. Optional. Defaults to wdt_k8s_model_template.yaml
 #
 updateModelFile() {
   # Update the wdt model file with kubernetes section
   modelFile="${domainOutputDir}/tmp/wdt_model.yaml"
-  cat ${scriptDir}/wdt_k8s_model_template.yaml >> ${modelFile}
+  model_template_file=${1:-wdt_k8s_model_template.yaml}
+  cat ${scriptDir}/${model_template_file} >> ${modelFile}
 
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${modelFile}
   sed -i -e "s:%NAMESPACE%:$namespace:g" ${modelFile}
@@ -688,6 +693,7 @@ updateModelFile() {
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${modelFile}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
+  sed -i -e "s:%CLUSTER_NAME2%:${clusterName2}:g" ${modelFile}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
   # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
@@ -715,13 +721,13 @@ updateModelFile() {
 # Function to create the domain recource
 #
 createDomainResource() {
-  kubectl apply -f ${dcrOutput}
+  ${KUBERNETES_CLI:-kubectl} apply -f ${dcrOutput}
 
   attempts=0
   while [ "$DCR_AVAIL" != "1" ] && [ ! $attempts -eq 10 ]; do
     attempts=$((attempts + 1))
     sleep 1
-    DCR_AVAIL=`kubectl get domain ${domainUID} -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
+    DCR_AVAIL=`${KUBERNETES_CLI:-kubectl} get domain ${domainUID} -n ${namespace} | grep ${domainUID} | wc | awk ' { print $1; } '`
   done
   if [ "${DCR_AVAIL}" != "1" ]; then
     fail "The domain resource ${domainUID} was not found"
@@ -826,7 +832,7 @@ checkPodDelete() {
  count=1
  while [ $count -le $max ] ; do
   sleep 5 
-  pod=`kubectl get po/$1 -n ${ns} | grep -v NAME | awk '{print $1}'`
+  pod=`${KUBERNETES_CLI:-kubectl} get po/$1 -n ${ns} | grep -v NAME | awk '{print $1}'`
   if [ -z ${pod} ]; then 
     status="Terminated"
     echo "Pod [$1] removed from nameSpace [${ns}]"
@@ -857,18 +863,18 @@ checkPodState() {
  state=${3:-1/1}
 
  echo "Checking Pod READY column for State [$state]"
- pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ pname=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
  if [ -z ${pname} ]; then 
   echo "No such pod [$pod] exists in NameSpace [$ns] "
   exit -1
  fi 
 
- rcode=`kubectl get po ${pname} -n ${ns} | grep -w ${pod} | awk '{print $2}'`
+ rcode=`${KUBERNETES_CLI:-kubectl} get po ${pname} -n ${ns} | grep -w ${pod} | awk '{print $2}'`
  [[ ${rcode} -eq "${state}"  ]] && status="Ready"
 
  while [ ${status} != "Ready" -a $count -le $max ] ; do
   sleep 5 
-  rcode=`kubectl get po/$pod -n ${ns} | grep -v NAME | awk '{print $2}'`
+  rcode=`${KUBERNETES_CLI:-kubectl} get po/$pod -n ${ns} | grep -v NAME | awk '{print $2}'`
   [[ ${rcode} -eq "1/1"  ]] && status="Ready"
   echo "Pod [$1] Status is ${status} Iter [$count/$max]"
   count=`expr $count + 1`
@@ -878,8 +884,8 @@ checkPodState() {
    exit 1
  fi 
 
- pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
- kubectl -n ${ns} get po ${pname}
+ pname=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ ${KUBERNETES_CLI:-kubectl} -n ${ns} get po ${pname}
 }
 
 # Checks if a pod is available in a given namespace 
@@ -891,13 +897,13 @@ checkPod() {
  pod=$1
  ns=$2
 
- pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ pname=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
  if [ -z ${pname} ]; then 
   echo "No such pod [$pod] exists in NameSpace [$ns]"
   sleep 10
  fi 
 
- rcode=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ rcode=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
  if [ ! -z ${rcode} ]; then 
   echo "[$pod] already initialized .. "
   return 0
@@ -908,7 +914,7 @@ checkPod() {
   [[ $count -gt $max ]] && break
   echo "Pod[$pod] is being initialized ..."
   sleep 5
-  rcode=`kubectl get po -n ${ns} | grep $pod | awk '{print $1}'`
+  rcode=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep $pod | awk '{print $1}'`
   count=`expr $count + 1`
  done
 
@@ -924,7 +930,7 @@ checkService() {
  ns=$2
  startSecs=$SECONDS
  maxWaitSecs=20
- while [ -z "`kubectl get service -n ${ns} | grep -w ${svc}`" ]; do
+ while [ -z "`${KUBERNETES_CLI:-kubectl} get service -n ${ns} | grep -w ${svc}`" ]; do
    if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
      echo "Service [$svc] not found after $((SECONDS - startSecs)) seconds, retrying ..."
      sleep 5
@@ -946,7 +952,7 @@ getPodName() {
 
  local pname=""
  while [ $SECONDS -le $max ] ; do
-   pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+   pname=`${KUBERNETES_CLI:-kubectl} get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
    [ -z "${pname}" ] || break
    sleep 1
  done
@@ -964,7 +970,7 @@ detectPod() {
  ns=$1
  startSecs=$SECONDS
  maxWaitSecs=10
- while [ -z "`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
+ while [ -z "`${KUBERNETES_CLI:-kubectl} get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
    if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
      echo "Pod not found after $((SECONDS - startSecs)) seconds, retrying ..."
      sleep 2
@@ -973,6 +979,6 @@ detectPod() {
      exit 1
    fi
  done
- retVal=`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`
+ retVal=`${KUBERNETES_CLI:-kubectl} get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`
  echo "$retVal"
 }

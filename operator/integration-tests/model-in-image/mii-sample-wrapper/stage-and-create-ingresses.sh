@@ -5,7 +5,7 @@
 #
 # This script stages Traefik ingresses for this sample's admin
 # server and cluster ingresses to yaml files in WORKDIR/ingresses.
-# It than calls 'kubectl apply -f' on the yaml by default.
+# It than calls '${KUBERNETES_CLI:-kubectl} apply -f' on the yaml by default.
 #
 # Note: For admin server ingresses, it skips generating yaml or
 # calling apply -f unless the DOMAIN_UID is 'sample-domain1' because
@@ -21,7 +21,7 @@
 #   - A second WL cluster (if any) is named 'cluster-2' and listens on port 9001.
 #
 # Optional param:
-#   '-dry' Stage the ingress yaml files, but don't call 'kubectl'.
+#   '-dry' Stage the ingress yaml files, but don't call '${KUBERNETES_CLI:-kubectl}'.
 #
 # Optional environment variables (see ./README for details):
 #    WORKDIR
@@ -49,7 +49,7 @@ get_service_yaml() {
 }
 
 get_kube_address() {
-  echo "\$(kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;')"
+  echo "\$(${KUBERNETES_CLI:-kubectl} cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;')"
 }
 
 get_sample_host() {
@@ -86,9 +86,9 @@ get_help() {
   echo "${1:-}   $(get_curl_command $2) \\"
   echo "${1:-}     http://$(get_kube_address):30305/myapp_war/index.jsp"
   echo "${1:-}"
-  echo "${1:-} If Traefik is unavailable and your admin server pod is running, try 'kubectl exec':"
+  echo "${1:-} If Traefik is unavailable and your admin server pod is running, try '${KUBERNETES_CLI:-kubectl} exec':"
   echo "${1:-}"
-  echo "${1:-}   kubectl exec -n sample-domain1-ns $DOMAIN_UID-admin-server -- bash -c \\"
+  echo "${1:-}   ${KUBERNETES_CLI:-kubectl} exec -n sample-domain1-ns $DOMAIN_UID-admin-server -- bash -c \\"
   echo "${1:-}     \"curl -s -S -m 10 http://$service_name:8001/myapp_war/index.jsp\""
   echo "${1:-}"
 }
@@ -107,7 +107,7 @@ do
     # assume we're _not_ an admin server
 
   cat << EOF > "$target_yaml"
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 $(get_help "# " "$service_name")
@@ -146,7 +146,7 @@ EOF
     if [ "$DOMAIN_UID" = "sample-domain1" ]; then
     
   cat << EOF > "$target_yaml"
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: traefik.containo.us/v1alpha1
@@ -173,8 +173,8 @@ EOF
   if [ ! "$DRY_RUN" = "true" ] && [ -e "$target_yaml" ]; then
     echo "@@ Info: Creating traefik ingresses."
 
-    kubectl delete -f "$target_yaml" --ignore-not-found
-    kubectl apply  -f "$target_yaml"
+    ${KUBERNETES_CLI:-kubectl} delete -f "$target_yaml" --ignore-not-found
+    ${KUBERNETES_CLI:-kubectl} apply  -f "$target_yaml"
 
     if [ "${service_name/admin//}" = "$service_name" ]; then
       # assume we're _not_ an admin server

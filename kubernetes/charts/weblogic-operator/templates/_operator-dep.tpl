@@ -106,6 +106,15 @@ spec:
             {{- if .memoryLimits}}
             memory: {{ .memoryLimits }}
             {{- end }}
+        {{- if (eq ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
@@ -237,8 +246,11 @@ spec:
           annotations:
             prometheus.io/port: '8083'
             prometheus.io/scrape: 'true'
+            sidecar.istio.io/inject: 'false'
           {{- range $key, $value := .annotations }}
+            {{- if ne $key "sidecar.istio.io/inject" }}
             {{ $key }}: {{ $value | quote }}
+            {{- end }}          
           {{- end }}
           labels:
             weblogic.webhookName: {{ .Release.Namespace | quote }}
@@ -306,6 +318,15 @@ spec:
                 {{- if .memoryLimits}}
                 memory: {{ .memoryLimits }}
                 {{- end }}
+            {{- if (eq ( .kubernetesPlatform | default "Generic") "OpenShift") }}
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                 drop: ["ALL"]
+              runAsNonRoot: true
+              seccompProfile:
+                type: RuntimeDefault
+            {{- end }}
             volumeMounts:
             - name: "weblogic-webhook-cm-volume"
               mountPath: "/deployment/config"

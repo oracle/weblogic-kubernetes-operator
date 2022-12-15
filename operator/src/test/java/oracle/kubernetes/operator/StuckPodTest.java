@@ -5,9 +5,11 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Stream;
@@ -227,6 +229,7 @@ class StuckPodTest {
 
     abstract static class DomainProcessorStub implements DomainProcessor {
       private final MainDelegateStub delegateStub;
+      Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
 
       DomainProcessorStub(MainDelegateStub delegateStub) {
         this.delegateStub = delegateStub;
@@ -241,6 +244,11 @@ class StuckPodTest {
       @Override
       public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
         return Stream.empty();
+      }
+
+      @Override
+      public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
+        return domains;
       }
     }
 

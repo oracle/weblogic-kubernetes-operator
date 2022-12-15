@@ -47,10 +47,10 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
@@ -177,7 +177,7 @@ class ItMonitoringExporterSideCar {
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
     exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
-        domain1Namespace, TEST_IMAGES_REPO_SECRET_NAME, getDockerExtraArgs()),
+        domain1Namespace, TEST_IMAGES_REPO_SECRET_NAME, getImageBuilderExtraArgs()),
         "Failed to create image for exporter");
     if (!OKD) {
       // install and verify NGINX
@@ -484,8 +484,8 @@ class ItMonitoringExporterSideCar {
     String myImage =
         createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(myImage);
 
     return myImage;
   }

@@ -25,6 +25,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -180,7 +181,7 @@ public class BuildApplication {
     } catch (ApiException | IOException  ioex) {
       logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
-    logger.info("kubectl copied " + BUILD_SCRIPT + " into the pod");
+    logger.info(KUBERNETES_CLI + " copied " + BUILD_SCRIPT + " into the pod");
 
     // One of the test is failing in running the BUILD_SCRIPT (build_application.sh) - reason: the script does not exist
     // Adding the following to check if the script is copied and it has execute permissions
@@ -230,7 +231,6 @@ public class BuildApplication {
    *
    * @param namespace name of the namespace in which to create the temporary pod
    * @return V1Pod created pod object
-   * @throws ApiException when create pod fails
    */
   public static V1Pod setupWebLogicPod(String namespace, V1Container container) {
     final LoggingFacade logger = getLogger();
