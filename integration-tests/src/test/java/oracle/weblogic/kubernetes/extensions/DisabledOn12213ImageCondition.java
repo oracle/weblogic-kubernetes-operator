@@ -13,6 +13,8 @@ public class DisabledOn12213ImageCondition implements ExecutionCondition {
 
   @Override
   public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
+    // disable the test because of application deployment through REST interface issue
+    // and is included in WebLogic 12.2.1.3.0 CPU's"
     if (WEBLOGIC_12213) {
       return ConditionEvaluationResult.disabled("Test disabled on WebLogic 12.2.1.3 image");
     } else {

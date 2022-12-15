@@ -335,7 +335,8 @@ public interface TestConstants {
       "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust";
 
   public static final boolean WEBLOGIC_SLIM = WEBLOGIC_IMAGE_TAG.contains("slim");
-  public static final boolean WEBLOGIC_12213 = WEBLOGIC_IMAGE_TAG.contains("12.2.1.3");
+  public static final boolean WEBLOGIC_12213 = WEBLOGIC_IMAGE_TAG.contains("12.2.1.3") &&
+          !WEBLOGIC_IMAGE_TAG.toLowerCase().contains("cpu");
 
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTP_PROXY =
