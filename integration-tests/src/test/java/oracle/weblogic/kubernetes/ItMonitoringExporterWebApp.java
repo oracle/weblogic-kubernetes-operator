@@ -3,15 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -38,6 +29,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -183,7 +183,7 @@ class ItMonitoringExporterWebApp {
         domain1Namespace, domain2Namespace);
 
     logger.info("install monitoring exporter");
-    installMonitoringExporter(monitoringExporterDir);
+    installMonitoringExporter(monitoringExporterDir, true);
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -264,6 +264,8 @@ class ItMonitoringExporterWebApp {
       appendConfiguration();
       logger.info("Testing replace One Attribute Value AsArray configuration");
       replaceOneAttributeValueAsArrayConfiguration();
+      logger.info("Testing filtering configuration option");
+      replaceConfigurationWithFilter();
       logger.info("Testing append One Attribute Value AsArray configuration");
       appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
       logger.info("Testing append with empty configuration");
@@ -606,6 +608,34 @@ class ItMonitoringExporterWebApp {
 
   }
 
+  private void replaceConfigurationWithFilter() throws Exception {
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_filter_webapp.yaml");
+    assertNotNull(page, "Failed to replace configuration");
+
+    assertTrue(page.asNormalizedText().contains("excludedKeyValues"),
+        "Page does not contain expected excludedKeyValues configuration");
+    if (!OKD) {
+      //needs 20 secs to fetch the metrics to prometheus
+      Thread.sleep(20 * 1000);
+      // "wls_servlet_invocation_total_count{app="wls-exporter"}[15s]" search for results for last 15secs
+      checkMetricsViaPrometheus("\"wls_servlet_invocation_total_count%7Bapp%3D%22wls-exporter%22%7D%5B15s%5D\"",
+          "wls-exporter", hostPortPrometheus);
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+              "wls-exporter",
+              domain1Uid,
+              domain1Namespace,
+              false, cluster1Name),
+          "monitoring exporter metrics can't fetch wls-exporter application metrics");
+      assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
+              "myear",
+              domain1Uid,
+              domain1Namespace,
+              false, cluster1Name),
+          "monitoring exporter metrics can't fetch wls-exporter application metrics");
+    }
+
+  }
+
   /**
    * Add additional monitoring exporter configuration and verify it was applied.
    *
@@ -623,7 +653,7 @@ class ItMonitoringExporterWebApp {
     if (!OKD) {
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "myear", hostPortPrometheus);
     }
   }
 
@@ -764,7 +794,7 @@ class ItMonitoringExporterWebApp {
     assertFalse(page.asNormalizedText().contains("metricsNameSnakeCase"));
     if (!OKD) {
       String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
+      checkMetricsViaPrometheus(searchKey, "myear", hostPortPrometheus);
     }
   }
 

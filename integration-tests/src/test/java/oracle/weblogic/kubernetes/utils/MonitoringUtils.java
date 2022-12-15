@@ -3,19 +3,6 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -49,6 +36,19 @@ import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.assertions.impl.RoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.apache.commons.io.FileUtils;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -669,11 +669,24 @@ public class MonitoringUtils {
   }
 
   /**
-   * Download src from monitoring exporter github project and build webapp.
+   * Download src from monitoring exporter github project and build or download webapp.
    *
    * @param monitoringExporterDir full path to monitoring exporter install location
    */
   public static void installMonitoringExporter(String monitoringExporterDir) {
+
+    //adding ability to build monitoring exporter if branch is not main
+    boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
+    installMonitoringExporter(monitoringExporterDir, toBuildMonitoringExporter);
+  }
+
+  /**
+   * Download src from monitoring exporter github project and build or install webapp.
+   *
+   * @param monitoringExporterDir full path to monitoring exporter install location
+   * @param toBuildMonitoringExporter if true build monitoring exporter webapp or download if false.
+   */
+  public static void installMonitoringExporter(String monitoringExporterDir, boolean toBuildMonitoringExporter) {
 
     String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     String monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
@@ -689,8 +702,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppAdministrationRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppAdministrationRestPort));
 
-    //adding ability to build monitoring exporter if branch is not main
-    boolean toBuildMonitoringExporter = (!MONITORING_EXPORTER_BRANCH.equalsIgnoreCase(("main")));
+
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
     String monitoringExporterAppAdministrationRestPortDir = monitoringAppAdministrationRestPort.toString();
