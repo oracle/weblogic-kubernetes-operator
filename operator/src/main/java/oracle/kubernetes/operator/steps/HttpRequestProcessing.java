@@ -11,9 +11,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.helpers.AuthorizationSource;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
@@ -76,7 +74,7 @@ abstract class HttpRequestProcessing {
   }
 
   private String getServiceUrl(PortDetails portDetails) {
-    return Optional.ofNullable(getPortalIP())
+    return Optional.ofNullable(getHost())
           .map(portDetails::toHttpUrl)
           .orElse(null);
   }
@@ -86,29 +84,12 @@ abstract class HttpRequestProcessing {
    */
   abstract PortDetails getPortDetails();
 
-  private String getPortalIP() {
-    return hasClusterIP() ? getClusterIP() : getServerIP();
-  }
-
-  private boolean hasClusterIP() {
-    return Optional.ofNullable(service.getSpec())
-          .map(V1ServiceSpec::getClusterIP)
-          .map(ip -> !ip.equalsIgnoreCase("None"))
-          .orElse(false);
-  }
-
-  private String getClusterIP() {
-    return Objects.requireNonNull(service.getSpec()).getClusterIP();
-  }
-
-  private String getServerIP() {
-    return Optional.ofNullable(pod)
-          .map(V1Pod::getStatus)
-          .map(V1PodStatus::getPodIP)
-          .orElse(toServiceHost(getServiceMeta()));
+  private String getHost() {
+    return toServiceHost(getServiceMeta());
   }
 
   private String toServiceHost(@Nonnull V1ObjectMeta meta) {
-    return meta.getName() + "." + meta.getNamespace();
+    String ns = Optional.ofNullable(meta.getNamespace()).orElse("default");
+    return meta.getName() + "." + ns;
   }
 }
