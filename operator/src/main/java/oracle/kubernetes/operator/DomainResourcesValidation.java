@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +41,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CR
 class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
-  private final Map<String, DomainPresenceInfo> domainPresenceInfoMap = new ConcurrentHashMap<>();
   private ClusterList activeClusterResources;
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
@@ -102,7 +102,16 @@ class DomainResourcesValidation {
   }
 
   private void addPodList(V1PodList list) {
+    getDomainPresenceInfoMap().values().stream().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
     list.getItems().forEach(this::addPod);
+  }
+
+  private void removeDeletedPodsFromDPI(V1PodList list, DomainPresenceInfo dpi) {
+    Collection<String> serverNamesFromPodList = list.getItems().stream()
+        .map(PodHelper::getPodServerName).collect(Collectors.toList());
+
+    dpi.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+        .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
   private void addEvent(CoreV1Event event) {
@@ -117,12 +126,16 @@ class DomainResourcesValidation {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
     if (domainUid != null && serverName != null) {
-      getDomainPresenceInfo(domainUid).setServerPod(serverName, pod);
+      getDomainPresenceInfo(domainUid).setServerPodFromEvent(serverName, pod);
     }
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
-    return domainPresenceInfoMap.computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
+    return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
+  }
+
+  private Map<String,DomainPresenceInfo> getDomainPresenceInfoMap() {
+    return processor.getDomainPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
   }
 
   private void addServiceList(V1ServiceList list) {
@@ -148,7 +161,17 @@ class DomainResourcesValidation {
   }
 
   private void addDomainList(DomainList list) {
+    getDomainPresenceInfoMap().values().stream().forEach(dpi -> updateDeletedDomainsinDPI(list));
     list.getItems().forEach(this::addDomain);
+  }
+
+  private void updateDeletedDomainsinDPI(DomainList list) {
+    Collection<String> domainNamesFromList = list.getItems().stream()
+        .map(DomainResource::getDomainUid).collect(Collectors.toList());
+
+    getDomainPresenceInfoMap().values().stream()
+        .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid())).collect(Collectors.toList())
+        .forEach(i -> getDomainPresenceInfo(i.getDomainUid()).setDomain(null));
   }
 
   private void addDomain(DomainResource domain) {
@@ -161,8 +184,8 @@ class DomainResourcesValidation {
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
     return Stream.concat(
-        domainPresenceInfoMap.values().stream().filter(this::isStranded),
-        dp.findStrandedDomainPresenceInfos(namespace, domainPresenceInfoMap.keySet()));
+        getDomainPresenceInfoMap().values().stream().filter(this::isStranded),
+        dp.findStrandedDomainPresenceInfos(namespace, getDomainPresenceInfoMap().keySet()));
   }
 
   private boolean isStranded(DomainPresenceInfo dpi) {
@@ -176,7 +199,7 @@ class DomainResourcesValidation {
   }
 
   private Stream<DomainPresenceInfo> getActiveDomainPresenceInfos() {
-    return domainPresenceInfoMap.values().stream().filter(this::isActive);
+    return getDomainPresenceInfoMap().values().stream().filter(this::isActive);
   }
 
   private boolean isActive(DomainPresenceInfo dpi) {
