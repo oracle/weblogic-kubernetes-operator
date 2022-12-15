@@ -67,7 +67,7 @@ draft: false
 * The Helm chart now excludes the operator's webhook from running in an Istio mesh.
 * Communication from the operator to WebLogic Server instances or to the WebLogic Monitoring Exporter sidecar use the service name and namespace rather than IP addresses to be more compatible with Istio strict mutual TLS mode.
 * Resolved an issue where the `Completed` status condition would be set to true too early during the scale down of a cluster to 0 replicas.
-* The Model in Image sample now uses "v9" style auxiliary images.
+* The [Model in Image sample](https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/) now uses "v9" style auxiliary images.
 * The coordination between the periodic listing of Domain and Cluster resources and the processing of watch notifications has been improved to increase operator efficiency.
 
 #### Operator 4.0.2
