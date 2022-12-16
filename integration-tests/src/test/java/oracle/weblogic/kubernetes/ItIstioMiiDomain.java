@@ -22,6 +22,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.annotations.DisabledOn12213Image;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -151,6 +152,7 @@ class ItIstioMiiDomain {
   @DisplayName("Create WebLogic Domain with mii model with istio")
   @Tag("gate")
   @Tag("crio")
+  @DisabledOn12213Image
   void testIstioModelInImageDomain() {
 
     // Create the repo secret to pull the image
