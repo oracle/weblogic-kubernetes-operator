@@ -66,7 +66,7 @@ pipeline {
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       #defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
+                       //defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
                        defaultValue: 'ocid1.image.oc1.phx.aaaaaaaae2nokqg3r5bpvxzcbglc6izj4rs2wj7gctjyptjovqoft4rgqy2q'
                 )
         string(name: 'KUBECTL_VERSION',
