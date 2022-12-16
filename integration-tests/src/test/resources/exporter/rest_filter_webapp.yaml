@@ -10,12 +10,12 @@ queries:
   - applicationRuntimes:
       key: name
       keyName: app
+      includedKeyValues: "wls-exporter.*"
+      excludedKeyValues: "bea.*"
       componentRuntimes:
         type: WebAppComponentRuntime
         prefix: webapp_config_
         key: name
-        includedKeyValues: "wls-exporter.*"
-        excludedKeyValues: "myear.*"
         values: [deploymentState, contextRoot, sourceInfo, openSessionsHighCount, openSessionsCurrentCount, sessionsOpenedTotalCount, sessionCookieMaxAgeSecs, sessionInvalidationIntervalSecs, sessionTimeoutSecs, singleThreadedServletPoolSize, sessionIDLength, servletReloadCheckSecs, jSPPageCheckSecs]
         servlets:
           prefix: wls_servlet_
