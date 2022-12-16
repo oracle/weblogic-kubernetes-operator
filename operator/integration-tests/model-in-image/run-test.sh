@@ -607,10 +607,10 @@ if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=true"
 
+  doPodWait 3
+
   dumpInfo
   podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
-
-  doPodWait 6
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -618,7 +618,7 @@ if [ "$DO_UPDATE4" = "true" ]; then
 
   doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 6
+  doPodWait 3
 
   if [ ! "$DRY_RUN" = "true" ]; then
     testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
