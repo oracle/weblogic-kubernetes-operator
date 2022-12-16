@@ -15,10 +15,12 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -38,6 +40,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_VERSION;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getWebhookPodUID;
 import static oracle.kubernetes.operator.http.rest.RestConfigImpl.CONVERSION_WEBHOOK_HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 
@@ -153,7 +157,11 @@ public class WebhookHelper {
     }
 
     private V1ObjectMeta createMetadata(Map<String, String> labels) {
-      return new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME).labels(labels);
+      return new V1ObjectMeta()
+        .name(VALIDATING_WEBHOOK_NAME).labels(labels)
+        .addOwnerReferencesItem(
+          new V1OwnerReference()
+            .apiVersion("v1").kind(KubernetesConstants.POD).name(getWebhookPodName())).uid(getWebhookPodUID());
     }
 
     @Nullable
