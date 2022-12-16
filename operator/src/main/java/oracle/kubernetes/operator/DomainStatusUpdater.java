@@ -146,7 +146,7 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createLastStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(next).endOfProcessing();
+    return new StatusUpdateStep(next).markEndOfProcessing();
   }
 
   /**
@@ -605,7 +605,7 @@ public class DomainStatusUpdater {
       super(next);
     }
 
-    StatusUpdateStep endOfProcessing() {
+    StatusUpdateStep markEndOfProcessing() {
       this.endOfProcessing = true;
       return this;
     }
