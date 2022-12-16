@@ -610,13 +610,15 @@ if [ "$DO_UPDATE4" = "true" ]; then
   dumpInfo
   podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
 
+  doPodWait 6
+
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doPodWait 3
+  doPodWait 6
 
   if [ ! "$DRY_RUN" = "true" ]; then
     testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
