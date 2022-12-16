@@ -161,7 +161,7 @@ public class WebhookHelper {
         .name(VALIDATING_WEBHOOK_NAME).labels(labels)
         .addOwnerReferencesItem(
           new V1OwnerReference()
-            .apiVersion("v1").kind(KubernetesConstants.POD).name(getWebhookPodName())).uid(getWebhookPodUID());
+            .apiVersion("v1").kind(KubernetesConstants.POD).name(getWebhookPodName()).uid(getWebhookPodUID()));
     }
 
     @Nullable
