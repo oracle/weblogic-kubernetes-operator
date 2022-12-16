@@ -3,6 +3,15 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -29,15 +38,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
-
-import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -613,7 +613,7 @@ class ItMonitoringExporterWebApp {
     assertNotNull(page, "Failed to replace configuration");
 
     assertTrue(page.asNormalizedText().contains("excludedKeyValues"),
-        "Page does not contain expected excludedKeyValues configuration");
+        "Page does not contain expected excludedKeyValues configuration" + page.asNormalizedText());
     if (!OKD) {
       //needs 20 secs to fetch the metrics to prometheus
       Thread.sleep(20 * 1000);
