@@ -198,7 +198,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
-                        NODE_SHAPE="VM.Standard.E4.Flex"
+                        NODE_SHAPE="VM.Standard.E3.Flex"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
