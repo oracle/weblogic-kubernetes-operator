@@ -62,12 +62,12 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.24.1'
+               defaultValue: '1.23.4'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       //defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaxmrdfmxqn2vdm5fawepynsgklnthansysonqkvr2odhzxx5w4awa'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
+                       //defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaxmrdfmxqn2vdm5fawepynsgklnthansysonqkvr2odhzxx5w4awa'
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
@@ -198,7 +198,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
-                        NODE_SHAPE="VM.Standard.E3.Flex"
+                        NODE_SHAPE="VM.Standard2.4"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
