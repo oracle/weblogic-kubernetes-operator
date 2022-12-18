@@ -189,6 +189,7 @@ public abstract class BaseMain {
 
   void waitForDeath() {
     Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
+    scheduleCheckForShutdownMarker();
 
     try {
       shutdownSignal.acquire();
@@ -197,6 +198,16 @@ public abstract class BaseMain {
     }
 
     stopAllWatchers();
+  }
+
+  void scheduleCheckForShutdownMarker() {
+    wrappedExecutorService.scheduleWithFixedDelay(
+        () -> {
+          File marker = new File(delegate.getDeploymentHome(), "marker.shutdown");
+          if (marker.exists()) {
+            shutdownSignal.release();
+          }
+        }, 5, 2, TimeUnit.SECONDS);
   }
 
   static Packet createPacketWithLoggingContext(String ns) {

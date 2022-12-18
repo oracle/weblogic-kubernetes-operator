@@ -54,8 +54,11 @@ spec:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
-        command: ["bash"]
-        args: ["/deployment/operator.sh"]
+        command: ["/deployment/operator.sh"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/deployment/stop.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -276,8 +279,11 @@ spec:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
-            command: ["bash"]
-            args: ["/deployment/webhook.sh"]
+            command: ["/deployment/webhook.sh"]
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/deployment/stop.sh"]
             env:
             - name: "WEBHOOK_NAMESPACE"
               valueFrom:

@@ -13,7 +13,10 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
+import io.kubernetes.client.openapi.models.V1Lifecycle;
+import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1Probe;
@@ -218,8 +221,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .image(getInputs().getWeblogicOperatorImage())
                                         .imagePullPolicy(
                                             getInputs().getWeblogicOperatorImagePullPolicy())
-                                        .addCommandItem("bash")
-                                        .addArgsItem("/deployment/operator.sh")
+                                        .addCommandItem("/deployment/operator.sh")
+                                        .lifecycle(
+                                            new V1Lifecycle().preStop(new V1LifecycleHandler().exec(
+                                                new V1ExecAction().addCommandItem("/deployment/stop.sh"))))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("OPERATOR_NAMESPACE")
