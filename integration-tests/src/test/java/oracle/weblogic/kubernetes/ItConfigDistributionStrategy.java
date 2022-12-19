@@ -686,14 +686,20 @@ class ItConfigDistributionStrategy {
         + "attributeTest=true"
         + "&serverType=adminserver"
         + "&serverName=" + adminServerName;
-    HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+    
+    testUntil(() -> {
+      HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + configUri, true));
+      if (response.statusCode() != 200) {
+        logger.info("Response code is not 200 retrying...");
+        return false;
+      }
+      if (configUpdated) {
+        return response.body().contains("MaxMessageSize=100000000");
+      } else {
+        return response.body().contains("MaxMessageSize=10000000");
+      }
+    }, logger, "clusterview app in admin server is accessible after restart");
 
-    assertEquals(200, response.statusCode(), "Status code not equals to 200");
-    if (configUpdated) {
-      assertTrue(response.body().contains("MaxMessageSize=100000000"), "Didn't get MaxMessageSize=100000000");
-    } else {
-      assertTrue(response.body().contains("MaxMessageSize=10000000"), "Didn't get MaxMessageSize=10000000");
-    }
 
   }
 
@@ -757,13 +763,25 @@ class ItConfigDistributionStrategy {
     */
 
     //test connection pool in all managed servers of dynamic cluster
-    HttpResponse<String> response = null;
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;
-      response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl, true));
-      assertEquals(200, response.statusCode(), "Status code not equals to 200");
-      assertTrue(response.body().contains("Connection successful"), "Didn't get Connection successful");
+      testUntil(
+          () -> {
+            HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsConnectionPoolTestUrl,
+                true));
+            if (response.statusCode() != 200) {
+              logger.info("Response code is not 200 retrying...");
+              return false;
+            }
+            if (!(response.body().contains("Connection successful"))) {
+              logger.info("Didn't get Connection successful retrying...");
+              return false;
+            }
+
+            return true;
+        },
+          logger, "All managed servers get JDBC connection");
     }
   }
 
@@ -967,7 +985,7 @@ class ItConfigDistributionStrategy {
     // create cluster object
     ClusterResource cluster = createClusterResource(clusterResName,
         clusterName, domainNamespace, replicaCount);
-    logger.info("Creating cluster resource {0} in namespace {1}",clusterResName, domainNamespace);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domainNamespace);
     createClusterAndVerify(cluster);
     // set cluster references
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
