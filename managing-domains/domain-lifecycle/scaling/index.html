@@ -12,20 +12,20 @@
     <title>Scaling :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671119680" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671119680" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1671476231" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1671476231" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671119680"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1671476231"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671119680"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671119680"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1671476231"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1671476231"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671119680"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1671476231"></script>
 
     
   </div>
@@ -3613,7 +3613,7 @@
     </li>
     <li><a href="#supported-autoscaling-controllers">Supported autoscaling controllers</a>
       <ul>
-        <li><a href="#kubernetes-horizontal-pod-autoscalar-hpa">Kubernetes Horizontal Pod Autoscalar (HPA)</a></li>
+        <li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
         <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>
           <ul>
             <li><a href="#configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</a></li>
@@ -3679,7 +3679,7 @@
     </li>
     <li><a href="#supported-autoscaling-controllers">Supported autoscaling controllers</a>
       <ul>
-        <li><a href="#kubernetes-horizontal-pod-autoscalar-hpa">Kubernetes Horizontal Pod Autoscalar (HPA)</a></li>
+        <li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
         <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a>
           <ul>
             <li><a href="#configure-automatic-scaling-of-weblogic-clusters-in-kubernetes-with-wldf">Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF</a></li>
@@ -3706,7 +3706,7 @@
 <li><a href="#on-demand-updating-the-cluster-or-domain-directly">On-demand, updating the Cluster or Domain directly</a> (using <code>kubectl</code>)</li>
 <li><a href="#using-domain-lifecycle-sample-scripts">Using Domain lifecycle sample scripts</a></li>
 <li><a href="#calling-the-operators-rest-scale-api">Calling the operator&rsquo;s REST scale API, for example, from <code>curl</code></a></li>
-<li><a href="#kubernetes-horizontal-pod-autoscalar-hpa">Kubernetes Horizontal Pod Autoscalar (HPA)</a></li>
+<li><a href="#kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</a></li>
 <li><a href="#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</a></li>
 <li><a href="#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api">Using a Prometheus alert action to call the operator&rsquo;s REST scale API</a></li>
 </ul>
@@ -3821,8 +3821,8 @@ Detailed instructions for configuring the external REST endpoint are available <
 <p>In response to a change in the <code>replicas</code> field in the Cluster resource, the operator will increase or decrease the number of Managed Server instance Pods to match the desired replica count.</p>
 <h3 id="supported-autoscaling-controllers">Supported autoscaling controllers</h3>
 <p>While continuing to support automatic scaling of WebLogic clusters with the WebLogic Diagnostic Framework (WLDF) and Prometheus, Operator 4.0 now supports the <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Kubernetes Horizontal Pod Autoscaler (HPA)</a>.</p>
-<h4 id="kubernetes-horizontal-pod-autoscalar-hpa">Kubernetes Horizontal Pod Autoscalar (HPA)</h4>
-<p>Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the Kubernetes <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource/">/scale subresource</a>. Autoscaling based on resource metrics requires the installation of the <a href="https://kubernetes-sigs.github.io/metrics-server/">Kubernetes Metrics Server</a> or another implementation of the resource metrics API. If using Prometheus for monitoring WebLogic Server metrics, then you can use the <a href="https://github.com/kubernetes-sigs/prometheus-adapter">Prometheus Adapter</a> in place of the <a href="https://kubernetes-sigs.github.io/metrics-server/">Kubernetes Metrics Server</a>.</p>
+<h4 id="kubernetes-horizontal-pod-autoscaler-hpa">Kubernetes Horizontal Pod Autoscaler (HPA)</h4>
+<p>Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscaler, is now supported since the Cluster custom resource has enabled the Kubernetes <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource/">/scale subresource</a>. Autoscaling based on resource metrics requires the installation of the <a href="https://kubernetes-sigs.github.io/metrics-server/">Kubernetes Metrics Server</a> or another implementation of the resource metrics API. If using Prometheus for monitoring WebLogic Server metrics, then you can use the <a href="https://github.com/kubernetes-sigs/prometheus-adapter">Prometheus Adapter</a> in place of the <a href="https://kubernetes-sigs.github.io/metrics-server/">Kubernetes Metrics Server</a>.</p>
 <p>The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, <code>cluster-1</code>, based on the <code>cpu utilization</code> resource metric.</p>
 <ol>
 <li>To illustrate scaling of a WebLogic cluster based on CPU utilization, deploy the Kubernetes Metrics Server to the Kubernetes cluster.</li>
@@ -3857,9 +3857,9 @@ Detailed instructions for configuring the external REST endpoint are available <
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl exec --stdin --tty sample-domain1-managed-server1 -- /bin/bash
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">[</span>oracle@sample-domain1-managed-server1 oracle<span style="color:#f92672">]</span>$ dd <span style="color:#66d9ef">if</span><span style="color:#f92672">=</span>/dev/zero of<span style="color:#f92672">=</span>/dev/null
 </span></span></code></pre></div><ol start="6">
-<li>By listing the Managed Server pods, you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscalar will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.</li>
+<li>By listing the Managed Server pods, you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscaler will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.</li>
 </ol>
-<p>For more in-depth information on the Kubernetes Horizontal Pod Autoscalar, see <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Horizontal Pod Autoscaling</a>.</p>
+<p>For more in-depth information on the Kubernetes Horizontal Pod Autoscaler, see <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Horizontal Pod Autoscaling</a>.</p>
 <h4 id="using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api">Using a WLDF policy rule and script action to call the operator&rsquo;s REST scale API</h4>
 <p>The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
@@ -6481,19 +6481,19 @@ This example assumes the operator and Domain YAML file are configured with the f
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671119680"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1671476231"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671119680"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671119680"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1671476231"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1671476231"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671119680"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1671476231"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
