@@ -134,15 +134,13 @@ spec:
         {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
-            command:
-            - "/probes/livenessProbe.sh"
+            command: ["/probes/livenessProbe.sh"]
           initialDelaySeconds: 40
           periodSeconds: 10
           failureThreshold: 5
         readinessProbe:
           exec:
-            command:
-            - "/probes/readinessProbe.sh"
+            command: ["/probes/readinessProbe.sh"]
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -345,14 +343,12 @@ spec:
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
-                command:
-                - "/probes/livenessProbe.sh"
+                command: ["/probes/livenessProbe.sh"]
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
-                command:
-                - "/probes/readinessProbe.sh"
+                command: ["/probes/readinessProbe.sh"]
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}
