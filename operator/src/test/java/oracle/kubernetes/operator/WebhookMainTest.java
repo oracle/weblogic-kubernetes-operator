@@ -4,8 +4,15 @@
 package oracle.kubernetes.operator;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.nio.file.NoSuchFileException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,15 +47,18 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -110,6 +120,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class WebhookMainTest extends ThreadFactoryTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
@@ -611,6 +622,40 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     inMemoryFileSystem.defineFile("/deployment/marker.shutdown", "shutdown");
     main.waitForDeath();
     assertThat(main.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
+  @Test
+  void whenWebhookStopped_restServerShutdown() {
+    WebhookMain m = WebhookMain.createMain(buildProperties);
+    BaseServerStub restServer = new BaseServerStub();
+    m.getRestServer().set(restServer);
+    m.completeStop();
+    assertTrue(restServer.isStopCalled);
+    assertThat(m.getRestServer().get(), nullValue());
+  }
+
+  private static class BaseServerStub extends BaseServer {
+    private boolean isStopCalled = false;
+
+    @Override
+    public void start(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
+        NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+      // no-op
+    }
+
+    @Override
+    public void stop() {
+      isStopCalled = true;
+    }
+
+    public boolean isStopCalled() {
+      return isStopCalled;
+    }
+
+    @Override
+    protected ResourceConfig createResourceConfig() {
+      throw new IllegalStateException();
+    }
   }
 
   private V1ObjectMeta createNameOnlyMetadata() {

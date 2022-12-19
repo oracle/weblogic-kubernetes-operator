@@ -185,6 +185,11 @@ public abstract class BaseMain {
 
   abstract BaseRestServer createRestServer();
 
+  // For test
+  AtomicReference<BaseServer> getRestServer() {
+    return restServer;
+  }
+
   void stopRestServer() {
     Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
   }
