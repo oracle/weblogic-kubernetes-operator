@@ -153,10 +153,10 @@ public abstract class BaseMain {
 
     @Override
     public void run() {
-      releaseShutdownSignal();
       if (inner != null) {
         inner.run();
       }
+      releaseShutdownSignal();
     }
   }
 

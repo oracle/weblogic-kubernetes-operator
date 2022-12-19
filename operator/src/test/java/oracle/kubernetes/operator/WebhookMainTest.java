@@ -104,6 +104,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -594,6 +595,15 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
 
     assertThat(generatedConfiguration, nullValue());
+  }
+
+  @Test
+  void whenWebhookShutdown_completionCallbackOccursBeforeFollowingLogic() {
+    final List<String> callOrder = Collections.synchronizedList(new ArrayList<>());
+    main.stopDeployment(() -> callOrder.add("completionCallback"));
+    callOrder.add("afterStoppedDeployment");
+
+    assertThat(callOrder, hasItems("completionCallback", "afterStoppedDeployment"));
   }
 
   private V1ObjectMeta createNameOnlyMetadata() {
