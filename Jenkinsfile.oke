@@ -199,7 +199,7 @@ pipeline {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         //NODE_SHAPE="VM.Standard2.4"
-                        NODE_SHAPE="VM.Standard.E4.Flex"
+                        NODE_SHAPE="VM.Standard2.24"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
