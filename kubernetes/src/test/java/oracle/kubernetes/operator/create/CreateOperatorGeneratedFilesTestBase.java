@@ -310,7 +310,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .initialDelaySeconds(initialDelaySeconds)
         .periodSeconds(periodSeconds)
         .failureThreshold(failureThreshold)
-        .exec(newExecAction().addCommandItem("bash").addCommandItem(shellScript));
+        .exec(newExecAction().addCommandItem(shellScript));
   }
 
   @Test
@@ -763,7 +763,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 "get",
                 "create",
                 "update",
-                "patch"));
+                "patch",
+                "delete"));
   }
 
   @Test

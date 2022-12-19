@@ -135,7 +135,6 @@ spec:
         livenessProbe:
           exec:
             command:
-            - "bash"
             - "/probes/livenessProbe.sh"
           initialDelaySeconds: 40
           periodSeconds: 10
@@ -143,7 +142,6 @@ spec:
         readinessProbe:
           exec:
             command:
-            - "bash"
             - "/probes/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
@@ -348,14 +346,12 @@ spec:
             livenessProbe:
               exec:
                 command:
-                - "bash"
                 - "/probes/livenessProbe.sh"
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
                 command:
-                - "bash"
                 - "/probes/readinessProbe.sh"
               initialDelaySeconds: 2
               periodSeconds: 10

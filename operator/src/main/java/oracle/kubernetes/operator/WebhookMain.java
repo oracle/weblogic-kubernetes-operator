@@ -84,8 +84,7 @@ public class WebhookMain extends BaseMain {
       // now we just wait until the pod is terminated
       main.waitForDeath();
 
-      main.stopRestServer();
-      main.stopMetricsServer();
+      main.stopDeployment(main::completeStop);
     } finally {
       LOGGER.info(MessageKeys.WEBHOOK_SHUTTING_DOWN);
     }
@@ -115,6 +114,11 @@ public class WebhookMain extends BaseMain {
             WebhookHelper.createValidatingWebhookConfigurationStep(certs)));
   }
 
+  @Override
+  protected Step createShutdownSteps() {
+    return WebhookHelper.deleteValidatingWebhookConfigurationStep();
+  }
+
   private static Step createInitializeWebhookIdentityStep(WebhookMainDelegate delegate, Step next) {
     return new InitializeWebhookIdentityStep(delegate, next);
   }
@@ -137,6 +141,11 @@ public class WebhookMain extends BaseMain {
       createConversionWebhookEvent(eventData);
 
     }
+  }
+
+  void completeStop() {
+    stopRestServer();
+    stopMetricsServer();
   }
 
   Runnable recheckCrd() {

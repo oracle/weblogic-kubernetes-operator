@@ -70,3 +70,7 @@ HEAP="-XshowSettings:vm"
 java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
+
+SHUTDOWN_COMPLETE_MARKER_FILE="${DEPLOYMENT_DIR}/marker.shutdown-complete"
+
+touch ${SHUTDOWN_COMPLETE_MARKER_FILE}

@@ -130,6 +130,36 @@ public abstract class BaseMain {
     }
   }
 
+  void stopDeployment(Runnable completionAction) {
+    Step shutdownSteps = createShutdownSteps();
+    if (shutdownSteps != null) {
+      try {
+        delegate.runSteps(new Packet(), shutdownSteps, new ReleaseShutdownSignalRunnable(completionAction));
+        acquireShutdownSignal();
+      } catch (Throwable e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+      }
+    } else if (completionAction != null) {
+      completionAction.run();
+    }
+  }
+
+  private class ReleaseShutdownSignalRunnable implements Runnable {
+    final Runnable inner;
+
+    ReleaseShutdownSignalRunnable(Runnable inner) {
+      this.inner = inner;
+    }
+
+    @Override
+    public void run() {
+      releaseShutdownSignal();
+      if (inner != null) {
+        inner.run();
+      }
+    }
+  }
+
   void markReadyAndStartLivenessThread() {
     try {
       new DeploymentReady(delegate).create();
@@ -181,21 +211,33 @@ public abstract class BaseMain {
 
   abstract Step createStartupSteps();
 
+  Step createShutdownSteps() {
+    return null;
+  }
+
   abstract void logStartingLivenessMessage();
 
   void stopAllWatchers() {
     // no-op
   }
 
-  void waitForDeath() {
-    Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
-    scheduleCheckForShutdownMarker();
-
+  private void acquireShutdownSignal() {
     try {
       shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  private void releaseShutdownSignal() {
+    shutdownSignal.release();
+  }
+
+  void waitForDeath() {
+    Runtime.getRuntime().addShutdownHook(new Thread(this::releaseShutdownSignal));
+    scheduleCheckForShutdownMarker();
+
+    acquireShutdownSignal();
 
     stopAllWatchers();
   }
@@ -205,7 +247,7 @@ public abstract class BaseMain {
         () -> {
           File marker = new File(delegate.getDeploymentHome(), "marker.shutdown");
           if (marker.exists()) {
-            shutdownSignal.release();
+            releaseShutdownSignal();
           }
         }, 5, 2, TimeUnit.SECONDS);
   }
