@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -233,6 +235,11 @@ public abstract class BaseMain {
     shutdownSignal.release();
   }
 
+  // For test
+  int getShutdownSignalAvailablePermits() {
+    return shutdownSignal.availablePermits();
+  }
+
   void waitForDeath() {
     Runtime.getRuntime().addShutdownHook(new Thread(this::releaseShutdownSignal));
     scheduleCheckForShutdownMarker();
@@ -246,10 +253,14 @@ public abstract class BaseMain {
     wrappedExecutorService.scheduleWithFixedDelay(
         () -> {
           File marker = new File(delegate.getDeploymentHome(), "marker.shutdown");
-          if (marker.exists()) {
+          if (isFileExists(marker)) {
             releaseShutdownSignal();
           }
         }, 5, 2, TimeUnit.SECONDS);
+  }
+
+  private static boolean isFileExists(File file) {
+    return Files.isRegularFile(PathSupport.getPath(file));
   }
 
   static Packet createPacketWithLoggingContext(String ns) {

@@ -606,6 +606,13 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(callOrder, hasItems("completionCallback", "afterStoppedDeployment"));
   }
 
+  @Test
+  void whenShutdownMarkerIsCreate_stopWebhook() {
+    inMemoryFileSystem.defineFile("/deployment/marker.shutdown", "shutdown");
+    main.waitForDeath();
+    assertThat(main.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
   private V1ObjectMeta createNameOnlyMetadata() {
     return new V1ObjectMeta().name(VALIDATING_WEBHOOK_NAME);
   }
