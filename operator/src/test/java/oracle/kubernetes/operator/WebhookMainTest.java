@@ -107,6 +107,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class WebhookMainTest extends ThreadFactoryTestBase {
@@ -579,6 +580,20 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     assertThat(logRecords,
         not(containsInfo(REPLACE_VALIDATING_WEBHOOK_CONFIGURATION_FAILED).withParams(VALIDATING_WEBHOOK_NAME)));
     testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
+  }
+
+  @Test
+  void whenWebhookShutdown_deleteValidatingWebhookConfiguration() {
+    setServiceCaBundle(testCaBundle);
+    setServiceNamespace(testNamespace);
+    testSupport.defineResources(testValidatingWebhookConfig);
+
+    testSupport.runSteps(main.createShutdownSteps());
+
+    logRecords.clear();
+    V1ValidatingWebhookConfiguration generatedConfiguration = getCreatedValidatingWebhookConfiguration();
+
+    assertThat(generatedConfiguration, nullValue());
   }
 
   private V1ObjectMeta createNameOnlyMetadata() {
