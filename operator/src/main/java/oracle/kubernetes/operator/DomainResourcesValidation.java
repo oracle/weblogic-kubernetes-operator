@@ -234,7 +234,6 @@ class DomainResourcesValidation {
   }
 
   private void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
-    getClusterPresenceInfoMap().remove(info.getResourceName());
     dp.createMakeRightOperationForClusterEvent(EventHelper.EventItem.CLUSTER_DELETED, info.getResource()).execute();
   }
 

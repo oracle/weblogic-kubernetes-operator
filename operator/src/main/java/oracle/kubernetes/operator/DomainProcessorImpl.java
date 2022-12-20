@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
@@ -1011,8 +1012,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     @Override
     protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
-      clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
-          .computeIfAbsent(presenceInfo.getResourceName(), k -> (ClusterPresenceInfo) presenceInfo);
+      if (operation.getEventData().getItem() == EventHelper.EventItem.CLUSTER_DELETED) {
+        Optional.ofNullable(clusters.get(presenceInfo.getNamespace()))
+            .ifPresent(m -> m.remove(presenceInfo.getResourceName()));
+      } else {
+        clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
+            .computeIfAbsent(presenceInfo.getResourceName(), k -> (ClusterPresenceInfo) presenceInfo);
+      }
     }
 
     @Override

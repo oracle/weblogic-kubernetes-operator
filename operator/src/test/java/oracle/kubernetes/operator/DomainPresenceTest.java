@@ -214,10 +214,9 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
         testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_1), nullValue());
-    MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_2), notNullValue());
-    MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_3), nullValue());
-    MatcherAssert.assertThat(clusterPresenceInfoMap.size(), equalTo(2));
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_2), nullValue());
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_3), notNullValue());
   }
 
   @Test
@@ -269,8 +268,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     return dp.getDomainPresenceInfos().get(uid);
   }
 
-  private ClusterResource getDeletedClusterEvents(DomainProcessorStub dp, String clusterName) {
-    return dp.getDeletedClusterEvents().get(clusterName);
+  private ClusterPresenceInfo getClusterPresenceInfo(DomainProcessorStub dp, String clusterName) {
+    return dp.getClusterPresenceInfos().get(clusterName);
   }
 
 
@@ -398,7 +397,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new ConcurrentHashMap<>();
-    private final Map<String, ClusterResource> deletedClusterEvents = new ConcurrentHashMap<>();
     private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
     private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
@@ -408,8 +406,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       return dpis;
     }
 
-    Map<String, ClusterResource> getDeletedClusterEvents() {
-      return deletedClusterEvents;
+    Map<String, ClusterPresenceInfo> getClusterPresenceInfos() {
+      return clusters.get(NS);
     }
 
     boolean isDeletingStrandedResources(String uid) {
@@ -456,7 +454,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
                                                                             ClusterResource cluster) {
       ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster);
       final MakeRightClusterOperationStub stub =
-          createStrictStub(MakeRightClusterOperationStub.class, info, deletedClusterEvents);
+          createStrictStub(MakeRightClusterOperationStub.class, info, item, clusters.get(NS));
       clusterOperationStubs.add(stub);
       return stub;
     }
@@ -509,16 +507,23 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   abstract static class MakeRightClusterOperationStub implements MakeRightClusterOperation {
     private final ClusterPresenceInfo info;
-    private final Map<String, ClusterResource> deletedCusters;
+    private final EventHelper.EventItem eventItem;
+    private final Map<String, ClusterPresenceInfo> clusterResourceInfos;
 
-    MakeRightClusterOperationStub(ClusterPresenceInfo info, Map<String, ClusterResource> deletedCusters) {
+    MakeRightClusterOperationStub(ClusterPresenceInfo info, EventHelper.EventItem eventItem,
+                                  Map<String, ClusterPresenceInfo> clusterResourceInfos) {
       this.info = info;
-      this.deletedCusters = deletedCusters;
+      this.eventItem = eventItem;
+      this.clusterResourceInfos = clusterResourceInfos;
     }
 
     @Override
     public void execute() {
-      deletedCusters.put(info.getResourceName(), info.getResource());
+      if (eventItem == EventHelper.EventItem.CLUSTER_DELETED) {
+        clusterResourceInfos.remove(info.getResourceName());
+      } else {
+        clusterResourceInfos.computeIfAbsent(info.getResourceName(), k -> (ClusterPresenceInfo) info);
+      }
     }
   }
 }
