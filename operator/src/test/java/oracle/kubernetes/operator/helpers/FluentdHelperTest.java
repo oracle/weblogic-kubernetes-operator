@@ -59,7 +59,7 @@ class FluentdHelperTest {
     String data = "<match>me</match>";
     domainConfigurator
         .withFluentdConfiguration(true, "fluentd-cred",
-            data);
+            data, null, null);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(info);
 
@@ -70,7 +70,7 @@ class FluentdHelperTest {
   void whenUserNotSpecifyOwnFluentdConfig() {
     domainConfigurator
         .withFluentdConfiguration(true, "fluentd-cred",
-            null);
+            null, null, null);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     V1ConfigMap configMap = FluentdHelper.getFluentdConfigMap(info);
 
