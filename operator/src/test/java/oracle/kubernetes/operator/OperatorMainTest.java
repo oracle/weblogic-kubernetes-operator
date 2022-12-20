@@ -108,6 +108,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasValue;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -322,6 +323,15 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     testSupport.defineResources(event1, event2);
     operatorMain.startDeployment(null);
     assertThat(getNSEventMapSize(), equalTo(2));
+  }
+
+  @Test
+  void whenOperatorShutdown_completionCallbackOccursBeforeFollowingLogic() {
+    final List<String> callOrder = Collections.synchronizedList(new ArrayList<>());
+    operatorMain.stopDeployment(() -> callOrder.add("completionCallback"));
+    callOrder.add("afterStoppedDeployment");
+
+    assertThat(callOrder, hasItems("completionCallback", "afterStoppedDeployment"));
   }
 
   private int getNSEventMapSize() {

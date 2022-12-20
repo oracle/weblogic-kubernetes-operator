@@ -54,8 +54,11 @@ spec:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
-        command: ["bash"]
-        args: ["/deployment/operator.sh"]
+        command: ["/deployment/operator.sh"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/deployment/stop.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -131,17 +134,13 @@ spec:
         {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
-            command:
-            - "bash"
-            - "/probes/livenessProbe.sh"
+            command: ["/probes/livenessProbe.sh"]
           initialDelaySeconds: 40
           periodSeconds: 10
           failureThreshold: 5
         readinessProbe:
           exec:
-            command:
-            - "bash"
-            - "/probes/readinessProbe.sh"
+            command: ["/probes/readinessProbe.sh"]
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -276,8 +275,11 @@ spec:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
-            command: ["bash"]
-            args: ["/deployment/webhook.sh"]
+            command: ["/deployment/webhook.sh"]
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/deployment/stop.sh"]
             env:
             - name: "WEBHOOK_NAMESPACE"
               valueFrom:
@@ -341,16 +343,12 @@ spec:
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
-                command:
-                - "bash"
-                - "/probes/livenessProbe.sh"
+                command: ["/probes/livenessProbe.sh"]
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
-                command:
-                - "bash"
-                - "/probes/readinessProbe.sh"
+                command: ["/probes/readinessProbe.sh"]
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}
