@@ -200,9 +200,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-    if (!wasStartedFromDomainAddedEvent()) {
-      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
-    }
     return packet;
   }
 

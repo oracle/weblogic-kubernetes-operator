@@ -87,7 +87,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -164,6 +163,7 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(ROLLING));
+      status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
     }
 
     @Override
@@ -413,11 +413,13 @@ public class DomainStatusUpdater {
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
+    final boolean endOfProcessing;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
+      endOfProcessing = (Boolean) packet.getOrDefault(ProcessingConstants.END_OF_PROCESSING, Boolean.FALSE);
     }
 
     DomainStatus getNewStatus() {
@@ -481,7 +483,6 @@ public class DomainStatusUpdater {
         LOGGER.finer("status change: " + createPatchString());
       }
       DomainResource oldDomain = getDomain();
-
       DomainStatus status = getNewStatus();
       if (isMakeRight) {
         // Only set observedGeneration during a make-right, but not during a background status update
@@ -530,6 +531,10 @@ public class DomainStatusUpdater {
       final List<Step> result = new ArrayList<>();
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
+      } else {
+        if (endOfProcessing && isMakeRight) {
+          Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
+        }
       }
       createDomainEvents().stream().map(EventHelper::createEventStep).forEach(result::add);
       Optional.ofNullable(next).ifPresent(result::add);
@@ -621,17 +626,17 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.put(ProcessingConstants.UPDATE_OBSERVED_GENERATION_ONLY,
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE,
           Boolean.valueOf(shouldSkipDomainStatusUpdate(packet)));
+      if (endOfProcessing) {
+        packet.put(ProcessingConstants.END_OF_PROCESSING, Boolean.TRUE);
+      }
       return super.apply(packet);
     }
 
     private boolean shouldSkipDomainStatusUpdate(Packet packet) {
-      boolean domainRecheckOrScheduledStatusUpdate =
-          (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return (domainRecheckOrScheduledStatusUpdate)
-          && info.getServerStartupInfo() == null
+      return info.getServerStartupInfo() == null
           && info.clusterStatusInitialized()
           && !endOfProcessing;
     }
@@ -655,22 +660,13 @@ public class DomainStatusUpdater {
       @Override
       Step createUpdateSteps(Step next) {
         return shouldSkipUpdate(packet)
-            ? createUpdateGenerationOnlySteps(next)
+            ? next
             : super.createUpdateSteps(createClusterResourceStatusUpdaterStep(next));
       }
 
       boolean shouldSkipUpdate(Packet packet) {
-        Boolean skip = (Boolean) packet.remove(ProcessingConstants.UPDATE_OBSERVED_GENERATION_ONLY);
+        Boolean skip = (Boolean) packet.remove(ProcessingConstants.SKIP_STATUS_UPDATE);
         return skip != null && skip;
-      }
-
-      private Step createUpdateGenerationOnlySteps(Step next) {
-        final List<Step> result = new ArrayList<>();
-        if (isMakeRight) {
-          Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
-        }
-        Optional.ofNullable(next).ifPresent(result::add);
-        return result.isEmpty() ? null : Step.chain(result);
       }
 
       @Override

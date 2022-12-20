@@ -82,7 +82,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -206,6 +205,10 @@ abstract class DomainStatusUpdateTestBase {
 
   private void updateDomainStatus() {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+  }
+
+  private void updateDomainStatusAtLast() {
+    testSupport.runSteps(DomainStatusUpdater.createLastStatusUpdateStep(endStep));
   }
 
   // Examines the domain status and returns the server status for the specified server, if it is defined
@@ -1699,7 +1702,6 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(COMPLETED).withStatus(FALSE));
 
     scenarioBuilder.withServersReachingState(RUNNING_STATE, "server1", "server2").build();
-    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     info.setServerStartupInfo(null);
 
     updateDomainStatus();
@@ -1712,7 +1714,6 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().build();
 
-    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(TRUE));
@@ -1723,14 +1724,13 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().withDefaultServerStartPolicy(ServerStartPolicy.ADMIN_ONLY);
     defineScenario().withServersReachingState(STARTING_STATE, "admin").build();
 
-    testSupport.addToPacket(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
   }
 
   @Test
-  void whenServerStartupInfoIsNull_availableIsFalse() {
+  void whenServerStartupInfoIsNull_andDontSkipStatusUpdate_availableIsFalse() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(2);
     info.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -1739,10 +1739,35 @@ abstract class DomainStatusUpdateTestBase {
         .build();
     info.setServerStartupInfo(null);
 
+    updateDomainStatusAtLast();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+  }
+
+  @Test
+  void whenServerStartupInfoIsNull_andClusterStatusInitialized_statusUnchanged() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .build();
+    makeSureClusterStatusIsInitialized();
+    info.setServerStartupInfo(null);
+
     updateDomainStatus();
 
     assertThat(getClusterConditions(),
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+  }
+
+  private void makeSureClusterStatusIsInitialized() {
+    ClusterStatus status = new ClusterStatus().addCondition(
+        new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE));
+    info.getDomain().getStatus().addCluster(status);
+    ClusterResource clusterResource = testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1");
+    clusterResource.setStatus(status);
   }
 
   @Test
@@ -1788,11 +1813,29 @@ abstract class DomainStatusUpdateTestBase {
         .build();
     info.setServerStartupInfo(null);
 
-    updateDomainStatus();
+    updateDomainStatusAtLast();
 
     assertThat(getClusterConditions(),
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
     assertThat(getRecordedDomain(), hasCondition(AVAILABLE).withStatus(FALSE));
+  }
+
+  @Test
+  void whenClusterIntentionallyShutdownAndSSINotSet_clusterStatusInitialized_clusterAndDomainAvailableIsFalse() {
+    configureDomain()
+        .configureCluster(info, "cluster1").withReplicas(0);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .notStarting("server1", "server2")
+        .build();
+    makeSureClusterStatusIsInitialized();
+    info.setServerStartupInfo(null);
+
+    updateDomainStatus();
+
+    assertThat(getClusterConditions(),
+        hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
   }
 
   @SuppressWarnings("SameParameterValue")
