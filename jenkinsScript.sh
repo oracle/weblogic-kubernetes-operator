@@ -107,7 +107,6 @@ echo "Info: Set up ${KCLI}..."
 curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBECTL_VERSION}"
 chmod +x ${WORKSPACE}/bin/${KCLI}
 ${KCLI} version --client=true
-
 echo 'Info: Set up kind...'
 curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
 chmod +x "${WORKSPACE}/bin/kind"
