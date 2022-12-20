@@ -1752,15 +1752,31 @@ abstract class DomainStatusUpdateTestBase {
 
   @Test
   void whenUpdateDomainStatus_observedGenerationUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+    updateDomainStatus();
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+
+  @Test
+  void whenUpdateDomainStatusWhenObservedGenerationUpToDateStatusUnchanged_observedGenerationUnchanged() {
     configureDomain().configureCluster(info, "cluster1").withReplicas(2);
     info.getReferencedClusters().forEach(testSupport::defineResources);
     info.getDomain().getMetadata().setGeneration(2L);
-    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+    info.getDomain().getStatus().setObservedGeneration(2L);
 
     defineScenario()
         .withCluster("cluster1", "server1", "server2")
         .build();
+    info.setServerStartupInfo(null);
 
+    updateDomainStatus();
+
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
     updateDomainStatusInEndOfProcessing();
 
     assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
@@ -1853,23 +1869,6 @@ abstract class DomainStatusUpdateTestBase {
         return null;
       }
     };
-  }
-
-  @Test
-  void whenUpdateDomainStatusWhenObservedGenerationUpToDate_observedGenerationUnchanged() {
-    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
-    info.getReferencedClusters().forEach(testSupport::defineResources);
-    info.getDomain().getStatus().setObservedGeneration(2L);
-    info.getDomain().getMetadata().setGeneration(2L);
-
-    defineScenario()
-        .withCluster("cluster1", "server1", "server2")
-        .build();
-    info.setServerStartupInfo(null);
-
-    updateDomainStatusInEndOfProcessing();
-
-    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
