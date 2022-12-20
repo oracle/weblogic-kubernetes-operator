@@ -104,6 +104,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
+
+  // List of clusters in a domain.
+  private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
@@ -139,6 +143,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
     return domains;
+  }
+
+  @Override
+  public Map<String, Map<String,ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
+    return clusters;
   }
 
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
@@ -910,6 +919,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
+    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
+    }
+
+    @Override
     public CompletionCallback createCompletionCallback() {
       return new DomainPlanCompletionCallback();
     }
@@ -996,6 +1009,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
+    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
+      clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
+          .computeIfAbsent(presenceInfo.getResourceName(), k -> (ClusterPresenceInfo) presenceInfo);
+    }
+
+    @Override
     public CompletionCallback createCompletionCallback() {
       return new ClusterPlanCompletionCallback();
     }
@@ -1033,7 +1052,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       this.firstStep = operation.createSteps();
       this.packet = operation.createPacket();
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
+      cacheResourcePresenceInfo(presenceInfo);
     }
+
+    protected abstract void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo);
 
     private FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
       return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());

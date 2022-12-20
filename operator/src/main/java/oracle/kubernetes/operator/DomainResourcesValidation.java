@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -14,13 +15,16 @@ import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -86,9 +90,19 @@ class DomainResourcesValidation {
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
+        executeMakeRightForDeletedClusters(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
+  }
+
+  private void executeMakeRightForDeletedClusters(DomainProcessor dp) {
+    List<String> clusterNamesFromList = Optional.ofNullable(activeClusterResources).map(c -> c.getItems())
+        .orElse(new ArrayList<>()).stream().map(ClusterResource::getMetadata).map(V1ObjectMeta::getName)
+        .collect(Collectors.toList());
+    getClusterPresenceInfoMap().values().stream()
+        .filter(i -> !clusterNamesFromList.contains(i.getResourceName())).collect(Collectors.toList())
+        .forEach(info -> deActivateCluster(dp, info));
   }
 
   private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
@@ -134,8 +148,12 @@ class DomainResourcesValidation {
     return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
   }
 
-  private Map<String,DomainPresenceInfo> getDomainPresenceInfoMap() {
+  private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
     return processor.getDomainPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
+  }
+
+  private Map<String, ClusterPresenceInfo> getClusterPresenceInfoMap() {
+    return processor.getClusterPresenceInfoMap().computeIfAbsent(namespace, k -> new ConcurrentHashMap<>());
   }
 
   private void addServiceList(V1ServiceList list) {
@@ -213,6 +231,10 @@ class DomainResourcesValidation {
       makeRight = makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
     }
     makeRight.execute();
+  }
+
+  private static void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
+    dp.createMakeRightOperationForClusterEvent(EventHelper.EventItem.CLUSTER_DELETED, info.getResource()).execute();
   }
 
 }
