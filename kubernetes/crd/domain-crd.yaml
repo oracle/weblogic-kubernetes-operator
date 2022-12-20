@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 50af6b0cfbe5da871bbeae4bb4fd91c6da38931a01817fa475801e63dbbbdcd5
+    weblogic.sha256: 6f7939492c78279f5f6f00e0a4669953fc7509e587842cd609f8600a409ba9f0
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -281,14 +281,20 @@ spec:
                           locations.
                         type: string
                       modelHome:
-                        description: Location of the WebLogic Deploy Tooling model
+                        description: 'Location of the WebLogic Deploy Tooling model
                           home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages`
-                          are specified, and to `/aux/models` otherwise.
+                          are specified, and to `/aux/models` otherwise. NOTE: if
+                          `modelHome` is set to a non-default value, then model files
+                          in all specified `spec.configuration.model.AuxiliaryImages`
+                          are ignored.'
                         type: string
                       wdtInstallHome:
-                        description: Location of the WebLogic Deploy Tooling installation.
+                        description: 'Location of the WebLogic Deploy Tooling installation.
                           Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages`
                           are specified, and to `/aux/weblogic-deploy` otherwise.
+                          NOTE: if `wdtInstallHome` is set to a non-default value,
+                          then the WDT install in any specified `spec.configuration.model.AuxiliaryImages`
+                          is ignored.'
                         type: string
                       auxiliaryImageVolumeMedium:
                         description: The emptyDir volume medium. This is an advanced
