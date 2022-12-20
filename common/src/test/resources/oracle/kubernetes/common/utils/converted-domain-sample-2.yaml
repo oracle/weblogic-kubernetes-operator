@@ -75,6 +75,7 @@ spec:
       modelHome: /auxiliary/models
       wdtInstallHome: /auxiliary/weblogic-deploy
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+  logHomeLayout: Flat
   clusters:
     - name: sample-domain1-cluster-1
 
