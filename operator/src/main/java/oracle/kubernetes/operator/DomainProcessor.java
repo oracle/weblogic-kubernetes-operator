@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -99,5 +101,13 @@ public interface DomainProcessor {
    */
   default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
     return Stream.empty();
+  }
+
+  /**
+   * Get the map of domain presence infos.
+   * @return Map of cached domain presence infos.
+   */
+  default Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
+    return new ConcurrentHashMap<>();
   }
 }
