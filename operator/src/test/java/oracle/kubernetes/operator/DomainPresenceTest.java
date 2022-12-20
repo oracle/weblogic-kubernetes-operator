@@ -217,6 +217,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_1), nullValue());
     MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_2), notNullValue());
     MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_3), nullValue());
+    MatcherAssert.assertThat(clusterPresenceInfoMap.size(), equalTo(2));
   }
 
   @Test
