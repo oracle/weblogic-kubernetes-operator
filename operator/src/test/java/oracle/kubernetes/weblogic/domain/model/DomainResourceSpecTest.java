@@ -83,7 +83,7 @@ class DomainResourceSpecTest {
   @Test
   void verifySettingFluentdSpecification() {
     DomainSpec spec1 = new DomainSpec().withFluentdConfiguration(true,
-        "mycred", "<matcher/>");
+        "mycred", "<matcher/>", null, null);
     spec1.getFluentdSpecification().setImage("myimage:v1");
     spec1.getFluentdSpecification().setImagePullPolicy("Always");
 
