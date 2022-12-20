@@ -63,3 +63,8 @@ HEAP="-XshowSettings:vm"
 java -cp /operator/weblogic-kubernetes-operator.jar $HEAP $MOCKING_WLS $DEBUG $LOGGING oracle.kubernetes.operator.WebhookMain &
 PID=$!
 wait $PID
+
+DEPLOYMENT_DIR="/deployment"
+SHUTDOWN_COMPLETE_MARKER_FILE="${DEPLOYMENT_DIR}/marker.shutdown-complete"
+
+touch ${SHUTDOWN_COMPLETE_MARKER_FILE}

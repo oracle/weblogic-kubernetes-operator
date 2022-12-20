@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1ServiceReference;
 import io.kubernetes.client.openapi.models.AdmissionregistrationV1WebhookClientConfig;
+import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1RuleWithOperations;
 import io.kubernetes.client.openapi.models.V1ValidatingWebhook;
@@ -23,6 +24,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -337,6 +339,24 @@ public class WebhookHelper {
         return isNotAuthorizedOrForbidden(callResponse)
             ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
+    }
+  }
+
+  public static Step deleteValidatingWebhookConfigurationStep() {
+    return new DeleteValidatingWebhookConfigurationStep();
+  }
+
+  private static class DeleteValidatingWebhookConfigurationStep extends Step {
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(createActionStep(), packet);
+    }
+
+    private Step createActionStep() {
+      V1DeleteOptions deleteOptions = new V1DeleteOptions();
+      return new CallBuilder()
+          .deleteValidatingWebhookConfigurationAsync(VALIDATING_WEBHOOK_NAME, deleteOptions,
+              new DefaultResponseStep<>(getNext()));
     }
   }
 }
