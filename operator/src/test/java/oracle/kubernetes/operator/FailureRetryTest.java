@@ -347,11 +347,6 @@ class FailureRetryTest {
     }
 
     @Override
-    public boolean wasStartedFromDomainAddedEvent() {
-      return false;
-    }
-
-    @Override
     public boolean wasStartedFromEvent() {
       return false;
     }

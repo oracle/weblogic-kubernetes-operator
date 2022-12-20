@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -39,6 +40,7 @@ import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
@@ -57,6 +59,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,6 +82,7 @@ import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -207,7 +212,7 @@ abstract class DomainStatusUpdateTestBase {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
   }
 
-  private void updateDomainStatusAtLast() {
+  private void updateDomainStatusInEndOfProcessing() {
     testSupport.runSteps(DomainStatusUpdater.createLastStatusUpdateStep(endStep));
   }
 
@@ -1739,10 +1744,132 @@ abstract class DomainStatusUpdateTestBase {
         .build();
     info.setServerStartupInfo(null);
 
-    updateDomainStatusAtLast();
+    updateDomainStatusInEndOfProcessing();
 
     assertThat(getClusterConditions(),
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
+  }
+
+  @Test
+  void whenUpdateDomainStatus_observedGenerationUpdated() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .build();
+
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+  @Nullable
+  private MakeRightOperation<DomainPresenceInfo> createDummyMakeRightOperation() {
+    return new MakeRightDomainOperation() {
+      @Override
+      public MakeRightDomainOperation forDeletion() {
+        return null;
+      }
+
+      @Override
+      public MakeRightDomainOperation createRetry(@NotNull DomainPresenceInfo info) {
+        return null;
+      }
+
+      @Override
+      public MakeRightDomainOperation withExplicitRecheck() {
+        return null;
+      }
+
+      @Override
+      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+        return null;
+      }
+
+      @Override
+      public MakeRightDomainOperation interrupt() {
+        return null;
+      }
+
+      @Override
+      public boolean wasStartedFromEvent() {
+        return false;
+      }
+
+      @Override
+      public boolean isDeleting() {
+        return false;
+      }
+
+      @Override
+      public boolean isExplicitRecheck() {
+        return false;
+      }
+
+      @Override
+      public void setInspectionRun() {
+
+      }
+
+      @Override
+      public void setLiveInfo(@NotNull DomainPresenceInfo info) {
+
+      }
+
+      @Override
+      public void clear() {
+      }
+
+      @Override
+      public boolean wasInspectionRun() {
+        return false;
+      }
+
+      @Override
+      public void execute() {
+      }
+
+      @NotNull
+      @Override
+      public Packet createPacket() {
+        return null;
+      }
+
+      @Override
+      public Step createSteps() {
+        return null;
+      }
+
+      @Override
+      public boolean isWillInterrupt() {
+        return false;
+      }
+
+      @Override
+      public DomainPresenceInfo getPresenceInfo() {
+        return null;
+      }
+    };
+  }
+
+  @Test
+  void whenUpdateDomainStatusWhenObservedGenerationUpToDate_observedGenerationUnchanged() {
+    configureDomain().configureCluster(info, "cluster1").withReplicas(2);
+    info.getReferencedClusters().forEach(testSupport::defineResources);
+    info.getDomain().getStatus().setObservedGeneration(2L);
+    info.getDomain().getMetadata().setGeneration(2L);
+
+    defineScenario()
+        .withCluster("cluster1", "server1", "server2")
+        .build();
+    info.setServerStartupInfo(null);
+
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
   }
 
   @Test
@@ -1753,7 +1880,7 @@ abstract class DomainStatusUpdateTestBase {
     defineScenario()
         .withCluster("cluster1", "server1", "server2")
         .build();
-    makeSureClusterStatusIsInitialized();
+    initializeClusterStatus();
     info.setServerStartupInfo(null);
 
     updateDomainStatus();
@@ -1762,7 +1889,7 @@ abstract class DomainStatusUpdateTestBase {
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
   }
 
-  private void makeSureClusterStatusIsInitialized() {
+  private void initializeClusterStatus() {
     ClusterStatus status = new ClusterStatus().addCondition(
         new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE));
     info.getDomain().getStatus().addCluster(status);
@@ -1813,7 +1940,7 @@ abstract class DomainStatusUpdateTestBase {
         .build();
     info.setServerStartupInfo(null);
 
-    updateDomainStatusAtLast();
+    updateDomainStatusInEndOfProcessing();
 
     assertThat(getClusterConditions(),
         hasItems(new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE)));
@@ -1829,7 +1956,7 @@ abstract class DomainStatusUpdateTestBase {
         .withCluster("cluster1", "server1", "server2")
         .notStarting("server1", "server2")
         .build();
-    makeSureClusterStatusIsInitialized();
+    initializeClusterStatus();
     info.setServerStartupInfo(null);
 
     updateDomainStatus();

@@ -57,11 +57,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    */
   boolean wasStartedFromEvent();
 
-  /**
-   * * Returns true if this operation was started by a domain-added event.
-   */
-  boolean wasStartedFromDomainAddedEvent();
-
   boolean isDeleting();
 
   boolean isExplicitRecheck();
