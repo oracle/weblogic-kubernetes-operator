@@ -66,7 +66,7 @@ pipeline {
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaagjkuevgaicqfn2wund3fr2qbhpykhbzj7kkv4ykcdt32gulify3a'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaan7lpv4nxnx4r772csco2nzre3owzqdebf75ty6mlbp562vn6c45q'
                        //defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaxmrdfmxqn2vdm5fawepynsgklnthansysonqkvr2odhzxx5w4awa'
                 )
         string(name: 'KUBECTL_VERSION',
@@ -330,8 +330,8 @@ EOF
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-                            #curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
+                            #curl -Lo "${WORKSPACE}/bin/kubectl" "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
+                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
