@@ -869,7 +869,8 @@ class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainConfiguredWithFluentdWithoutCredentials_reportError() {
     configureDomain(domain)
-        .withFluentdConfiguration(false, null, null);
+        .withFluentdConfiguration(false, null, null, null,
+            null);
     domain.getValidationFailures(resourceLookup);
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("When fluentdSpecification is specified in the domain "

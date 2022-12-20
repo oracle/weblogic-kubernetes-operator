@@ -212,9 +212,10 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
-                                                     String credentialName, String fluendConfig) {
+                                                     String credentialName, String fluendConfig, List<String> args,
+                                                     List<String> command) {
     getDomainSpec().withFluentdConfiguration(watchIntrospectorLog, credentialName,
-            fluendConfig);
+            fluendConfig, args, command);
     return this;
   }
 
