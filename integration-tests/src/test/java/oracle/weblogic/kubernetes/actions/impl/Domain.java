@@ -643,8 +643,8 @@ public class Domain {
         logger,
         "Adding execute mode for scalingAction.sh");
 
-    // copy wldf.py and callpyscript.sh to Admin Server pod
-    logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
+    // copy wldf.py and callpyscript1.sh to Admin Server pod
+    logger.info("Copying wldf.py and callpyscript1.sh to admin server pod");
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
@@ -654,17 +654,17 @@ public class Domain {
 
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
-          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/callpyscript.sh")),
+          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript1.sh"),
+          Paths.get("/u01/callpyscript1.sh")),
         logger,
-        "Copying callpyscript.sh to admin server pod");
+        "Copying callpyscript1.sh to admin server pod");
 
-    logger.info("Adding execute mode for callpyscript.sh");
+    logger.info("Adding execute mode for callpyscript1.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh"),
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript1.sh"),
         logger,
-        "Adding execute mode for callpyscript.sh");
+        "Adding execute mode for callpyscript1.sh");
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -672,7 +672,7 @@ public class Domain {
     }
 
     logger.info("Creating WLDF policy rule and action");
-    String command = new StringBuffer("/u01/callpyscript.sh /u01/wldf.py ")
+    String command = new StringBuffer("/u01/callpyscript1.sh /u01/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)
