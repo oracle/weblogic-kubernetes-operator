@@ -172,8 +172,7 @@ public class OperatorMain extends BaseMain {
       // now we just wait until the pod is terminated
       operatorMain.waitForDeath();
 
-      operatorMain.stopRestServer();
-      operatorMain.stopMetricsServer();
+      operatorMain.stopDeployment(operatorMain::completeStop);
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -284,6 +283,11 @@ public class OperatorMain extends BaseMain {
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
+  }
+
+  private void completeStop() {
+    stopRestServer();
+    stopMetricsServer();
   }
 
   NamespaceWatcher getNamespaceWatcher() {
