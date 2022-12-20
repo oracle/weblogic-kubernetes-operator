@@ -102,10 +102,9 @@ cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
 KCLI="kubectl" # this string has a deliberate exclusion in the 'validateCLI.sh' validation check for direct use of the k8s cli
-curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/${KCLI}"
 
 echo "Info: Set up ${KCLI}..."
-#curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBECTL_VERSION}"
+curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBECTL_VERSION}"
 chmod +x ${WORKSPACE}/bin/${KCLI}
 ${KCLI} version --client=true
 
