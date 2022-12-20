@@ -105,7 +105,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
 
-  // List of clusters in a domain.
+  // List of clusters in a namespace.
   private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
   private final DomainProcessorDelegate delegate;
@@ -920,6 +920,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
     @Override
     protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
+      //No-op.
     }
 
     @Override

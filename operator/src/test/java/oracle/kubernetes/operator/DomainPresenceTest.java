@@ -196,7 +196,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenClusterResourceDeletedAndNotReferencedByDomain_triggerClusterMakeRightToGenerateClusterDeletedEvent() {
+  void whenUnreferencedClusterResourceDeleted_triggerClusterMakeRightToGenerateClusterDeletedEvent() {
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     Map<String,ClusterPresenceInfo> clusterPresenceInfoMap = new ConcurrentHashMap<>();
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
@@ -209,9 +209,9 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
     testSupport.deleteResources(
-        testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
-    testSupport.deleteResources(
         testSupport.<DomainResource>getResourceWithName(DOMAIN, domain.getDomainUid()));
+    testSupport.deleteResources(
+        testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     MatcherAssert.assertThat(getDeletedClusterEvents(dp, CLUSTER_1), nullValue());

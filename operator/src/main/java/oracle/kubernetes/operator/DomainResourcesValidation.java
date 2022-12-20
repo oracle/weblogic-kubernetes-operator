@@ -97,11 +97,11 @@ class DomainResourcesValidation {
   }
 
   private void executeMakeRightForDeletedClusters(DomainProcessor dp) {
-    List<String> clusterNamesFromList = Optional.ofNullable(activeClusterResources).map(c -> c.getItems())
+    List<String> clusterNamesFromList = Optional.ofNullable(activeClusterResources).map(ClusterList::getItems)
         .orElse(new ArrayList<>()).stream().map(ClusterResource::getMetadata).map(V1ObjectMeta::getName)
         .collect(Collectors.toList());
     getClusterPresenceInfoMap().values().stream()
-        .filter(i -> !clusterNamesFromList.contains(i.getResourceName())).collect(Collectors.toList())
+        .filter(cpi -> !clusterNamesFromList.contains(cpi.getResourceName())).collect(Collectors.toList())
         .forEach(info -> deActivateCluster(dp, info));
   }
 
