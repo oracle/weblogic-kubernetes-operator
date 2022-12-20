@@ -662,7 +662,7 @@ Create a Kubernetes Secret containing the Administration Server boot credentials
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.0.3:
+      <description>For the current production release 4.0.4:
 Kubernetes 1.21.10+, 1.22.7+, 1.23.4+, 1.24.0+, and 1.25.0+ (check with kubectl version). Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
@@ -1059,7 +1059,7 @@ The WDT Discover Domain Tool is particularly useful for generating model files f
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Contents Releases Change log Operator 4.0.3 Operator 4.0.2 Operator 4.0.1 Operator 4.0.0 Major Themes Upgrade Notes Changes to domain schema Changes to operator Helm chart configuration values Minor features and fixes Operator 3.4.4 Operator 3.4.3 Operator 3.4.2 Operator 3.4.1 Operator 3.4.0 Operator 3.3.8 Operator 3.3.7 Operator 3.3.6 Operator 3.3.5 Operator 3.3.4 Operator 3.3.3 Operator 3.3.2 Operator 3.3.1 Operator 3.3.0 Operator 3.2.5 Operator 3.2.4 Operator 3.2.3 Operator 3.2.2 Operator 3.2.1 Operator 3.</description>
+      <description>Contents Releases Change log Operator 4.0.4 Operator 4.0.3 Operator 4.0.2 Operator 4.0.1 Operator 4.0.0 Major Themes Upgrade Notes Changes to domain schema Changes to operator Helm chart configuration values Minor features and fixes Operator 3.4.4 Operator 3.4.3 Operator 3.4.2 Operator 3.4.1 Operator 3.4.0 Operator 3.3.8 Operator 3.3.7 Operator 3.3.6 Operator 3.3.5 Operator 3.3.4 Operator 3.3.3 Operator 3.3.2 Operator 3.3.1 Operator 3.3.0 Operator 3.2.5 Operator 3.2.4 Operator 3.2.3 Operator 3.2.2 Operator 3.</description>
     </item>
     
   </channel>
