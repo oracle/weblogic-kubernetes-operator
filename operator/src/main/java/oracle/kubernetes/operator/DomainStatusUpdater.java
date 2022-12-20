@@ -662,7 +662,7 @@ public class DomainStatusUpdater {
       Step createUpdateSteps(Step next) {
         return shouldSkipUpdate(packet)
             ? next
-            : super.createUpdateSteps(createClusterResourceStatusUpdaterStep(next));
+            : super.createUpdateSteps(next);
       }
 
       boolean shouldSkipUpdate(Packet packet) {
