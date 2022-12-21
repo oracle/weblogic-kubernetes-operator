@@ -387,7 +387,10 @@ class ItDiagnosticsCompleteAvailableCondition {
       patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1, patch,
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-    
+
+      // wait for the managed server2 get deleted
+      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
+
       int newReplicaCount = maxClusterSize + 1;
       logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
       patchStr = "["

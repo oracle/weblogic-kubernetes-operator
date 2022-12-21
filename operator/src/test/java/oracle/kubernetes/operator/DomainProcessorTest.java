@@ -1363,7 +1363,7 @@ class DomainProcessorTest {
   void whenFluentdSpecified_verifyConfigMap() {
     domainConfigurator
             .withFluentdConfiguration(true, "fluentd-cred",
-                    null)
+                    null, null, null)
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -1381,7 +1381,7 @@ class DomainProcessorTest {
   void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
     domainConfigurator
             .withFluentdConfiguration(true, "fluentd-cred",
-                    "<match>me</match>")
+                    "<match>me</match>", null, null)
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 

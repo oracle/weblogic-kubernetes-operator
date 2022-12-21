@@ -22,7 +22,7 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 * [On-demand, updating the Cluster or Domain directly](#on-demand-updating-the-cluster-or-domain-directly) (using `kubectl`)
 * [Using Domain lifecycle sample scripts](#using-domain-lifecycle-sample-scripts)
 * [Calling the operator's REST scale API, for example, from `curl`](#calling-the-operators-rest-scale-api)
-* [Kubernetes Horizontal Pod Autoscalar (HPA)](#kubernetes-horizontal-pod-autoscalar-hpa)
+* [Kubernetes Horizontal Pod Autoscaler (HPA)](#kubernetes-horizontal-pod-autoscaler-hpa)
 * [Using a WLDF policy rule and script action to call the operator's REST scale API](#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api)
 * [Using a Prometheus alert action to call the operator's REST scale API](#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api)
 
@@ -179,8 +179,8 @@ In response to a change in the `replicas` field in the Cluster resource, the ope
 
 ### Supported autoscaling controllers
 While continuing to support automatic scaling of WebLogic clusters with the WebLogic Diagnostic Framework (WLDF) and Prometheus, Operator 4.0 now supports the [Kubernetes Horizontal Pod Autoscaler (HPA)](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
-#### Kubernetes Horizontal Pod Autoscalar (HPA)
-Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscalar, is now supported since the Cluster custom resource has enabled the Kubernetes [/scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource/). Autoscaling based on resource metrics requires the installation of the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/) or another implementation of the resource metrics API. If using Prometheus for monitoring WebLogic Server metrics, then you can use the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter) in place of the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/).
+#### Kubernetes Horizontal Pod Autoscaler (HPA)
+Automatic scaling of an individual WebLogic cluster, by the Kubernetes Horizontal Pod Autoscaler, is now supported since the Cluster custom resource has enabled the Kubernetes [/scale subresource](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/#scale-subresource/). Autoscaling based on resource metrics requires the installation of the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/) or another implementation of the resource metrics API. If using Prometheus for monitoring WebLogic Server metrics, then you can use the [Prometheus Adapter](https://github.com/kubernetes-sigs/prometheus-adapter) in place of the [Kubernetes Metrics Server](https://kubernetes-sigs.github.io/metrics-server/).
 
 The following step-by-step example illustrates how to configure and run an HPA to scale a WebLogic cluster, `cluster-1`, based on the `cpu utilization` resource metric.
 
@@ -217,9 +217,9 @@ $ kubectl get hpa
 $ kubectl exec --stdin --tty sample-domain1-managed-server1 -- /bin/bash
   [oracle@sample-domain1-managed-server1 oracle]$ dd if=/dev/zero of=/dev/null
 ```
-6. By listing the Managed Server pods, you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscalar will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.
+6. By listing the Managed Server pods, you will see the autoscaler increase the replicas on the Cluster resource and the operator respond by starting additional cluster member servers.  Conversely, after stopping the load and when the CPU utilization average is consistently under 50%, the autoscaler will scale down the WebLogic cluster by decreasing the replicas value on the Cluster resource.
 
-For more in-depth information on the Kubernetes Horizontal Pod Autoscalar, see [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
+For more in-depth information on the Kubernetes Horizontal Pod Autoscaler, see [Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/).
 
 #### Using a WLDF policy rule and script action to call the operator's REST scale API
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.

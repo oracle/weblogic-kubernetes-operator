@@ -467,13 +467,59 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV8DomainWithLogHomeLayout_changeToCamelCase() {
-    getMapAtPath(v8Domain, "spec").put("logHomeLayout", "BY_SERVERS");
-
+  void testV8Domain_addLogHomeLayout() {
     converter.convert(v8Domain);
 
     assertThat(converter.getDomain(),
-            hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+            hasJsonPath("$.spec.logHomeLayout", equalTo("Flat")));
+  }
+
+  @Test
+  void testV8DomainWithPreservedLogHomeLayout_restoreLogHomeLayout() {
+    Map<String, Object> annotations = new HashMap<>();
+    getMapAtPath(v8Domain, "metadata").put("annotations", annotations);
+    annotations.put("weblogic.v9.preserved", "{\"$.spec\":{\"logHomeLayout\":\"ByServers\"}}");
+    converter.convert(v8Domain);
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.spec.logHomeLayout", equalTo("ByServers")));
+  }
+
+  @Test
+  void testV9DomainWithLogHomeLayoutFlat_dropIt() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "spec")
+        .put("logHomeLayout", "Flat");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.metadata.annotations.['weblogic.v9.preserved']"));
+  }
+
+  @Test
+  void testV9DomainWithLogHomeLayoutByServers_preserveIt() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "spec")
+        .put("logHomeLayout", "ByServers");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.spec.logHomeLayout"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v9.preserved']",
+        equalTo("{\"$.spec\":{\"logHomeLayout\":\"ByServers\"}}")));
+  }
+
+  @Test
+  void testV9DomainWithNoLogHomeLayout_preserveItAsByServers() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    getMapAtPath(v9Domain, "spec")
+        .remove("logHomeLayout");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.spec.logHomeLayout"));
+    assertThat(converterv8.getDomain(), hasJsonPath("$.metadata.annotations.['weblogic.v9.preserved']",
+        equalTo("{\"$.spec\":{\"logHomeLayout\":\"ByServers\"}}")));
   }
 
   @Test
