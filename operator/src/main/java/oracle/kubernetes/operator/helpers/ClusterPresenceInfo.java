@@ -33,6 +33,10 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
     return Optional.of(cluster).map(ClusterResource::getMetadata).map(V1ObjectMeta::getName).orElse(null);
   }
 
+  public ClusterResource getResource() {
+    return cluster;
+  }
+
   @Override
   public void addToPacket(Packet packet) {
     packet.getComponents().put(COMPONENT_KEY, Component.createFor(this));
