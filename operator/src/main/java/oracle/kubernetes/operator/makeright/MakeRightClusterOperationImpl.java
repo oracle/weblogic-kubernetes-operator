@@ -86,4 +86,9 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   public ClusterPresenceInfo getPresenceInfo() {
     return liveInfo;
   }
+
+  @Override
+  public EventHelper.EventData getEventData() {
+    return eventData;
+  }
 }
