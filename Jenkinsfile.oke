@@ -406,7 +406,8 @@ EOF
                                         echo "Creating Storage Class to mount OFSS"
 					export MOUNT_TARGET_ID=${mount_target_id}
 					sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
-					kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					cat ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					//kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 
                                         '''
                                     }
