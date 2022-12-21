@@ -1,11 +1,8 @@
 #!/bin/sh
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 ARG="$*"
-#ENVSCRIPT=`find /u01 . -name setDomainEnv.sh -print`
-#echo Sourcing $ENVSCRIPT
-#. $ENVSCRIPT || exit 1
 . $DOMAIN_HOME/bin/setDomainEnv.sh
 echo "$@"
 echo Calling java weblogic.WLST $ARG
