@@ -8,10 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -612,7 +614,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobCreatedWithFluentd_mustHaveFluentdContainerAndMountPathIsCorrect() {
     DomainConfiguratorFactory.forDomain(domain)
-            .withFluentdConfiguration(true, "elastic-cred", null);
+            .withFluentdConfiguration(true, "elastic-cred", null,
+                null, null);
 
     List<V1Job> jobs = runStepsAndGetJobs();
 
@@ -635,7 +638,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   @Test
   void whenJobCreatedWithFluentdTerminatedDuringIntrospection_checkExpectedMessage() {
     String jobName = UID + "-introspector";
-    DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true, "elastic-cred", null);
+    DomainConfiguratorFactory.forDomain(domain).withFluentdConfiguration(true,
+        "elastic-cred", null, null, null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
     FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, true);
     testSupport.defineResources(jobPod);
@@ -654,7 +658,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   void whenJobCreatedWithFluentdAndSuccessIntrospection_JobIsTerminatedAndJobTerminatedMarkerInserted() {
     String jobName = UID + "-introspector";
     DomainConfiguratorFactory.forDomain(domain)
-        .withFluentdConfiguration(true, "elastic-cred", null);
+        .withFluentdConfiguration(true, "elastic-cred", null, null,
+            null);
     V1Pod jobPod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).namespace(NS));
     FluentdUtils.defineFluentdJobContainersCompleteStatus(jobPod, jobName, true, false);
     testSupport.defineResources(jobPod);
@@ -666,6 +671,66 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(packet.get(JOB_POD_INTROSPECT_CONTAINER_TERMINATED),
             equalTo(JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER));
     assertThat(terminalStep.wasRun(), is(true));
+
+  }
+
+  @Test
+  void whenJobCreatedWithFluentdAndSuccessIntrospection_containerShouldNotHaveTheseEnvEntriesIfElsCredisNull() {
+    DomainConfiguratorFactory.forDomain(domain)
+        .withFluentdConfiguration(true, null, null, null, null);
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+
+    V1Container fluentdContainer = Optional.ofNullable(getCreatedPodSpecContainers(jobs))
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .filter(c -> c.getName().equals(FLUENTD_CONTAINER_NAME))
+        .findFirst()
+        .orElse(null);
+
+    assertThat(fluentdContainer, notNullValue());
+
+    Set<String> elsDefaultEnvNames = new HashSet<>(Arrays.asList("ELASTICSEARCH_HOST", "ELASTICSEARCH_PORT",
+        "ELASTICSEARCH_USER", "ELASTICSEARCH_PASSWORD"));
+
+    long counter = Optional.of(fluentdContainer)
+        .map(V1Container::getEnv)
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .filter(c -> elsDefaultEnvNames.contains(c.getName())).count();
+
+    assertThat(counter, org.hamcrest.Matchers.equalTo(0L));
+
+  }
+
+  @Test
+  void whenJobCreatedWithFluentdAndSuccessIntrospection_containerShouldMatchUserSpecifiedArgsCommand() {
+    List<String> args = new ArrayList<>(List.of("line1", "line2"));
+    List<String> command = new ArrayList<>(List.of("line1", "line2"));
+    DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain)
+        .withFluentdConfiguration(true, null, null, args, command);
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+
+    V1Container fluentdContainer = Optional.ofNullable(getCreatedPodSpecContainers(jobs))
+        .orElseGet(Collections::emptyList)
+        .stream()
+        .filter(c -> c.getName().equals(FLUENTD_CONTAINER_NAME))
+        .findFirst()
+        .orElse(null);
+
+    assertThat(fluentdContainer, notNullValue());
+
+    List<String> containerArgs = Optional.of(fluentdContainer)
+        .map(V1Container::getArgs)
+        .orElseGet(Collections::emptyList);
+
+    List<String> containerCommand = Optional.of(fluentdContainer)
+        .map(V1Container::getCommand)
+        .orElseGet(Collections::emptyList);
+
+    assertThat(Objects.equals(containerArgs, args), equalTo(true));
+    assertThat(Objects.equals(containerCommand, command), equalTo(true));
 
   }
 

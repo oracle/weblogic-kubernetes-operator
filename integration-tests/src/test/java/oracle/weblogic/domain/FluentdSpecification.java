@@ -35,6 +35,15 @@ public class FluentdSpecification {
                   + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   private String imagePullPolicy;
 
+  @ApiModelProperty(
+      "(Optional) The Fluentd sidecar container spec's args. "
+          + "Default is: [ -c, /etc/fluentd.conf ] if not specified")
+  private List<String> containerArgs;
+
+  @ApiModelProperty(
+      "(Optional) The Fluentd sidecar container spec's command. Default is not set if not specified")
+  private List<String> containerCommand;
+
   @ApiModelProperty("A list of environment variables to set in the fluentd container. "
           + "See `kubectl explain pods.spec.containers.env`.")
   private List<V1EnvVar> env = new ArrayList<>();
@@ -96,6 +105,24 @@ public class FluentdSpecification {
     this.imagePullPolicy = imagePullPolicy;
   }
 
+  @Nullable
+  public List<String> getContainerArgs() {
+    return containerArgs;
+  }
+
+  public void setContainerArgs(@Nullable List<String> containerArgs) {
+    this.containerArgs = containerArgs;
+  }
+
+  @Nullable
+  public List<String> getContainerCommand() {
+    return containerCommand;
+  }
+
+  public void setContainerCommand(@Nullable  List<String> containerCommand) {
+    this.containerCommand = containerCommand;
+  }
+
   public Boolean getWatchIntrospectorLogs() {
     return watchIntrospectorLogs;
   }
@@ -104,11 +131,12 @@ public class FluentdSpecification {
     this.watchIntrospectorLogs = watchIntrospectorLogs;
   }
 
+  @Nullable
   public String getElasticSearchCredentials() {
     return elasticSearchCredentials;
   }
 
-  public void setElasticSearchCredentials(String elasticSearchCredentials) {
+  public void setElasticSearchCredentials(@Nullable  String elasticSearchCredentials) {
     this.elasticSearchCredentials = elasticSearchCredentials;
   }
 
@@ -123,6 +151,8 @@ public class FluentdSpecification {
               .append("volumeMounts", volumeMounts)
               .append("watchIntrospectorLogs", watchIntrospectorLogs)
               .append("elasticSearchCredentials", elasticSearchCredentials)
+              .append("containerArgs", containerArgs)
+              .append("containerCommand", containerCommand)
               .toString();
   }
 
@@ -139,9 +169,11 @@ public class FluentdSpecification {
               .append(imagePullPolicy, that.imagePullPolicy)
               .append(env, that.env)
               .append(resources, that.resources)
-              .append(volumeMounts, this.volumeMounts)
-              .append(watchIntrospectorLogs, this.watchIntrospectorLogs)
-              .append(elasticSearchCredentials, this.elasticSearchCredentials)
+              .append(volumeMounts, that.volumeMounts)
+              .append(watchIntrospectorLogs, that.watchIntrospectorLogs)
+              .append(elasticSearchCredentials, that.elasticSearchCredentials)
+              .append(containerArgs, that.containerArgs)
+              .append(containerCommand, that.containerCommand)
               .isEquals();
   }
 
@@ -156,6 +188,8 @@ public class FluentdSpecification {
               .append(volumeMounts)
               .append(watchIntrospectorLogs)
               .append(elasticSearchCredentials)
+              .append(containerArgs)
+              .append(containerCommand)
               .toHashCode();
   }
 }
