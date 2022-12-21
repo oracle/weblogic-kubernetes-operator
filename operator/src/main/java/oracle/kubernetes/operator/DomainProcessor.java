@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -108,6 +109,14 @@ public interface DomainProcessor {
    * @return Map of cached domain presence infos.
    */
   default Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
+    return new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Get the map of cluster presence infos.
+   * @return Map of cached cluster presence infos.
+   */
+  default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return new ConcurrentHashMap<>();
   }
 }
