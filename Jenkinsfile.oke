@@ -40,7 +40,6 @@ pipeline {
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
-        kubeconfig_file = "${result_root}/kubeconfig"
         oci_config_file = credentials("${wkobuild_oci_config}")
         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
 
@@ -48,6 +47,7 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
         CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}"
+        kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
         PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false}"
@@ -393,7 +393,7 @@ EOF
                                     }
                                     steps {
                                         sh '''
-                                        cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
+                                        #cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
@@ -407,7 +407,8 @@ EOF
 					export MOUNT_TARGET_ID=${mount_target_id}
 					sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 					cat ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
-					//kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					#kubectl config set-context --current --user=${clusterName}-sa
+					kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 
                                         '''
                                     }
