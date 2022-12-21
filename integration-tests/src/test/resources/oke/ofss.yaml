@@ -1,0 +1,8 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: oci-fss
+provisioner: oracle.com/oci-fss
+parameters:
+  # Insert mount target from the FSS here
+  mntTargetId: %MOUNT_TARGET_ID%

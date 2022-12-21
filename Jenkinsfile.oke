@@ -404,17 +404,9 @@ EOF
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
 
                                         echo "Creating Storage Class to mount OFSS"
-                                        cat << EOF | kubectl apply -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: oci-fss
-provisioner: oracle.com/oci-fss
-parameters:
-  # Insert mount target from the FSS here
-  mntTargetId: ${mount_target_id}
-EOF
-
+					export MOUNT_TARGET_ID=${mount_target_id}
+					sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 
                                         '''
                                     }
