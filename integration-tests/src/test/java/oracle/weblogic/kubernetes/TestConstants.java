@@ -338,7 +338,7 @@ public interface TestConstants {
   public static final boolean WEBLOGIC_12213 = WEBLOGIC_IMAGE_TAG.contains("12.2.1.3") 
           && !WEBLOGIC_IMAGE_TAG.toLowerCase().contains("cpu");
 
-  public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
+  public static final String WEBLOGIC_VERSION = WEBLOGIC_IMAGE_TAG.substring(0,7) + ".0.0";
   public static final String HTTP_PROXY =
       Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
   public static final String HTTPS_PROXY =
