@@ -351,6 +351,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
+                        CLUSTER_NAME="${CLUSTER_NAME}"
                         KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
@@ -377,6 +378,15 @@ EOF
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+			    export SERVICE_ACCOUNT_NAME=${CLUSTER_NAME}-sa
+    			    ${KUBERNETES_CLI:-kubectl} -n kube-system create serviceaccount ${SERVICE_ACCOUNT_NAME}
+                            ${KUBERNETES_CLI:-kubectl} create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:${SERVICE_ACCOUNT_NAME}
+			    sed -i 's@%SERVICE_ACCOUNT_NAME%@'"${SERVICE_ACCOUNT_NAME}"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/secret.yaml
+			    ${KUBERNETES_CLI:-kubectl} apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/secret.yaml
+
+    			    TOKEN=`${KUBERNETES_CLI:-kubectl} -n kube-system get secret secret-${SERVICE_ACCOUNT_NAME} -o jsonpath='{.data.token}'| base64 --decode`
+                            ${KUBERNETES_CLI:-kubectl} config set-credentials ${SERVICE_ACCOUNT_NAME} --token=$TOKEN
+                            ${KUBERNETES_CLI:-kubectl} config set-context --current --user=${SERVICE_ACCOUNT_NAME}
                         '''
                     }
                 }
@@ -406,11 +416,7 @@ EOF
                                         echo "Creating Storage Class to mount OFSS"
 					export MOUNT_TARGET_ID=${mount_target_id}
 					sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
-					cat ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
-					#kubectl config set-context --current --user=${clusterName}-sa
-				        echo "Checking KUBECONFIG ${KUBECONFIG}"
-					ls -al ${KUBECONFIG}
-					kubectl --kubeconfig=${KUBECONFIG} apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 
                                         '''
                                     }
