@@ -464,6 +464,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       private final Map<String, DomainPresenceInfo> dpis;
       private boolean explicitRecheck;
       private boolean deleting;
+      private EventHelper.EventData eventData;
 
       MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
         this.info = info;
@@ -491,6 +492,12 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       @Override
       public MakeRightDomainOperation forDeletion() {
         deleting = true;
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+        this.eventData = eventData;
         return this;
       }
 
