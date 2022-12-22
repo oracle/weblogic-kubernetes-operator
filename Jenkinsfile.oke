@@ -68,7 +68,7 @@ pipeline {
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6med26u7lkdeyz6mjwaepakor5bp2y24lwr4x6adn6izidipbbsa'
                        //8.0defaultValue: 'ocid1.image.oc1.phx.aaaaaaaan7lpv4nxnx4r772csco2nzre3owzqdebf75ty6mlbp562vn6c45q'
-                       //defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaxmrdfmxqn2vdm5fawepynsgklnthansysonqkvr2odhzxx5w4awa'
+            
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
@@ -403,7 +403,6 @@ EOF
                                     }
                                     steps {
                                         sh '''
-                                        #cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
