@@ -321,7 +321,7 @@ public interface TestConstants {
 
   public static final boolean WEBLOGIC_SLIM = WEBLOGIC_IMAGE_TAG.contains("slim");
 
-  public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
+  public static final String WEBLOGIC_VERSION = WEBLOGIC_IMAGE_TAG.substring(0,8) + ".0";
   public static final String HTTP_PROXY =
       Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
   public static final String HTTPS_PROXY =
