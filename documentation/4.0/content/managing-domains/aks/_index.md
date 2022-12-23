@@ -260,7 +260,7 @@ Use the Database blade to configure Oracle WebLogic Server to connect to an exis
 
 | Field | Description |
 |-------|-------------|
-| Choose database type | From the drop-down menu, select an existing database to which you want Oracle WebLogic Server to connect. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • MySQL (with support for passwordless connection) {{< line_break >}} • Other |
+| Choose database type | From the drop-down menu, select an existing database to which you want Oracle WebLogic Server to connect. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL (with support for passwordless connection) {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • MySQL (with support for passwordless connection) {{< line_break >}} • Other |
 | Use passwordless datasource connection | If you select a database type that supports passwordless connection, then this check box will appear. If selected, configure passwordless connections to the data source. For more information, see [Passwordless connections for Azure services](https://learn.microsoft.com/azure/developer/intro/passwordless-overview). |
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
 | DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
