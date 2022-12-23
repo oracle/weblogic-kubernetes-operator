@@ -24,7 +24,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
@@ -48,6 +50,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -193,6 +196,30 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenUnreferencedClusterResourceDeleted_triggerClusterMakeRightToGenerateClusterDeletedEvent() {
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    Map<String,ClusterPresenceInfo> clusterPresenceInfoMap = new ConcurrentHashMap<>();
+    for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
+      testSupport.defineResources(createClusterResource(NS, clusterName));
+      domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
+      clusterPresenceInfoMap.put(clusterName, new ClusterPresenceInfo(NS, createClusterResource(NS, clusterName)));
+    }
+    dp.clusters.put(NS, clusterPresenceInfoMap);
+    testSupport.defineResources(domain);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+    testSupport.deleteResources(
+        testSupport.<DomainResource>getResourceWithName(DOMAIN, domain.getDomainUid()));
+    testSupport.deleteResources(
+        testSupport.<ClusterResource>getResourceWithName(CLUSTER, CLUSTER_2));
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_1), notNullValue());
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_2), nullValue());
+    MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_3), notNullValue());
+  }
+
+  @Test
   void whenMultipleClustersMatchTwoDomains_addToDomainPresenceInfo() {
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
       testSupport.defineResources(createClusterResource(NS, clusterName));
@@ -240,6 +267,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {
     return dp.getDomainPresenceInfos().get(uid);
   }
+
+  private ClusterPresenceInfo getClusterPresenceInfo(DomainProcessorStub dp, String clusterName) {
+    return dp.getClusterPresenceInfos().get(clusterName);
+  }
+
 
   private V1Service createServerService(String uid, String namespace, String serverName) {
     V1ObjectMeta metadata =
@@ -366,10 +398,16 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   public abstract static class DomainProcessorStub implements DomainProcessor {
     private final Map<String, DomainPresenceInfo> dpis = new ConcurrentHashMap<>();
     private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
+    private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
+    Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
+    }
+
+    Map<String, ClusterPresenceInfo> getClusterPresenceInfos() {
+      return clusters.get(NS);
     }
 
     boolean isDeletingStrandedResources(String uid) {
@@ -392,6 +430,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       return domains;
     }
 
+    @Override
+    public Map<String, Map<String,ClusterPresenceInfo>> getClusterPresenceInfoMap() {
+      return clusters;
+    }
+
     boolean isEstablishingDomain(String uid) {
       return Optional.ofNullable(getMakeRightOperations(uid))
             .map(MakeRightDomainOperationStub::isEstablishingDomain)
@@ -406,11 +449,22 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       return stub;
     }
 
+    @Override
+    public MakeRightClusterOperation createMakeRightOperationForClusterEvent(EventHelper.EventItem item,
+                                                                            ClusterResource cluster) {
+      ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster);
+      final MakeRightClusterOperationStub stub =
+          createStrictStub(MakeRightClusterOperationStub.class, info, item, clusters.get(NS));
+      clusterOperationStubs.add(stub);
+      return stub;
+    }
+
     abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {
       private final DomainPresenceInfo info;
       private final Map<String, DomainPresenceInfo> dpis;
       private boolean explicitRecheck;
       private boolean deleting;
+      private EventHelper.EventData eventData;
 
       MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
         this.info = info;
@@ -442,12 +496,40 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
+      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+        this.eventData = eventData;
+        return this;
+      }
+
+      @Override
       public void execute() {
         if (deleting) {
           dpis.remove(info.getDomainUid());
         } else {
           dpis.put(info.getDomainUid(), info);
         }
+      }
+    }
+  }
+
+  abstract static class MakeRightClusterOperationStub implements MakeRightClusterOperation {
+    private final ClusterPresenceInfo info;
+    private final EventHelper.EventItem eventItem;
+    private final Map<String, ClusterPresenceInfo> clusterResourceInfos;
+
+    MakeRightClusterOperationStub(ClusterPresenceInfo info, EventHelper.EventItem eventItem,
+                                  Map<String, ClusterPresenceInfo> clusterResourceInfos) {
+      this.info = info;
+      this.eventItem = eventItem;
+      this.clusterResourceInfos = clusterResourceInfos;
+    }
+
+    @Override
+    public void execute() {
+      if (eventItem == EventHelper.EventItem.CLUSTER_DELETED) {
+        clusterResourceInfos.remove(info.getResourceName());
+      } else {
+        clusterResourceInfos.computeIfAbsent(info.getResourceName(), k -> (ClusterPresenceInfo) info);
       }
     }
   }
