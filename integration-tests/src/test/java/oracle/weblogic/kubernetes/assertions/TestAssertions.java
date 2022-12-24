@@ -26,10 +26,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
-import oracle.weblogic.kubernetes.assertions.impl.Docker;
 import oracle.weblogic.kubernetes.assertions.impl.Domain;
 import oracle.weblogic.kubernetes.assertions.impl.Grafana;
 import oracle.weblogic.kubernetes.assertions.impl.Helm;
+import oracle.weblogic.kubernetes.assertions.impl.Image;
 import oracle.weblogic.kubernetes.assertions.impl.Job;
 import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Nginx;
@@ -734,6 +734,55 @@ public class TestAssertions {
   }
 
   /**
+   * Check the domain status condition type has expected status.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusClustersConditionTypeHasExpectedStatus(String domainUid,
+                                                                                     String domainNamespace,
+                                                                                     String clusterName,
+                                                                                     String conditionType,
+                                                                                     String expectedStatus,
+                                                                                     String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+    return () -> {
+      DomainResource domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+        logger.info(Yaml.dump(clusterStatusList));
+        for (ClusterStatus clusterStatus : clusterStatusList) {
+          if (clusterStatus.getClusterName() != null && clusterStatus.getClusterName().equals(clusterName)) {
+            List<ClusterCondition> clusterConditions = clusterStatus.getConditions();
+            for (ClusterCondition clusterCondition : clusterConditions) {
+              if (clusterCondition.getType() != null && clusterCondition.getType().equalsIgnoreCase(conditionType)
+                  && clusterCondition.getStatus() != null
+                  && clusterCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
+                return true;
+              }
+            }
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
    * Check the staus of the given server in domain status.
    *
    * @param domainUid uid of the domain
@@ -829,13 +878,13 @@ public class TestAssertions {
   }
 
   /**
-   * Check if a Docker image exists.
+   * Check if an image exists.
    *
    * @param imageName the name of the image to be checked
    * @param imageTag  the tag of the image to be checked
    * @return true if the image does exist, false otherwise
    */
-  public static boolean dockerImageExists(String imageName, String imageTag) {
+  public static boolean imageExists(String imageName, String imageTag) {
     return WitAssertion.doesImageExist(imageName, imageTag);
   }
 
@@ -898,7 +947,7 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
@@ -918,16 +967,16 @@ public class TestAssertions {
       String appPath,
       String expectedResponse
   ) {
-    return !Application.appAccessibleInPodKubectl(namespace, podName, port, appPath, expectedResponse);
+    return !Application.appAccessibleInPodKubernetesCLI(namespace, podName, port, appPath, expectedResponse);
   }
 
   /**
-   * Check if the Docker image containing the search string exists.
+   * Check if the image containing the search string exists.
    * @param searchString search string
    * @return true on success
    */
   public static boolean doesImageExist(String searchString) {
-    return Docker.doesImageExist(searchString);
+    return Image.doesImageExist(searchString);
   }
 
   /**
@@ -1197,5 +1246,86 @@ public class TestAssertions {
    */
   public static Callable<Boolean> clusterDoesNotExist(String clusterResName, String clusterVersion, String namespace) {
     return () -> !Cluster.doesClusterExist(clusterResName, clusterVersion, namespace);
+  }
+
+  /**
+   * Get the value of the domain status condition type.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return value of the status condition type, True or False
+   */
+  public static String getDomainStatusConditionTypeValue(String domainUid,
+                                                         String domainNamespace,
+                                                         String conditionType,
+                                                         String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+    DomainResource domain =
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+      logger.info(Yaml.dump(domainConditionList));
+      for (DomainCondition domainCondition : domainConditionList) {
+        if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+          return domainCondition.getStatus();
+        }
+      }
+    } else {
+      if (domain == null) {
+        logger.info("domain is null");
+      } else {
+        logger.info("domain status is null");
+      }
+    }
+    return "";
+  }
+
+  /**
+   * Get the value of the domain status cluster condition type.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static String getDomainStatusClustersConditionTypeValue(String domainUid,
+                                                                 String domainNamespace,
+                                                                 String clusterName,
+                                                                 String conditionType,
+                                                                 String domainVersion) {
+    LoggingFacade logger = getLogger();
+
+
+    DomainResource domain =
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<ClusterStatus> clusterStatusList = domain.getStatus().getClusters();
+      logger.info(Yaml.dump(clusterStatusList));
+      for (ClusterStatus clusterStatus : clusterStatusList) {
+        if (clusterStatus.getClusterName() != null && clusterStatus.getClusterName().equals(clusterName)) {
+          List<ClusterCondition> clusterConditions = clusterStatus.getConditions();
+          for (ClusterCondition clusterCondition : clusterConditions) {
+            if (clusterCondition.getType() != null && clusterCondition.getType().equalsIgnoreCase(conditionType)
+                && clusterCondition.getStatus() != null) {
+              return clusterCondition.getStatus();
+            }
+          }
+        }
+      }
+    } else {
+      if (domain == null) {
+        logger.info("domain is null");
+      } else {
+        logger.info("domain status is null");
+      }
+    }
+    return "";
   }
 }

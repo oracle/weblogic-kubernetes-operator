@@ -51,10 +51,10 @@ cat << EOF
        minutes.
 
     To show who currently owns a lease, call 'lease.sh -s' or call
-    'kubectl get cm acceptance-test-lease -o yaml -n default'.
+    '${KUBERNETES_CLI:-kubectl} get cm acceptance-test-lease -o yaml -n default'.
 
     To force delete a lease no matter who owns the lease, call
-    'lease.sh -f' or 'kubectl delete cm acceptance-test-lease -n default'.
+    'lease.sh -f' or '${KUBERNETES_CLI:-kubectl} delete cm acceptance-test-lease -n default'.
     This should only be done if you're sure there's
     no current processe that owns the lease.
 
@@ -312,7 +312,7 @@ makeLocalLeaseAndReplaceRemote() {
     return 1
   fi
 
-  kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -n default
+  ${KUBERNETES_CLI:-kubectl} create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/${LOCAL_FILE} -n default
   if [ $? -ne 0 ]; then
     traceError "failed - could not replace"
     return 1
@@ -334,9 +334,9 @@ getRemoteLease() {
   #  second, try show the lease in stdout
   #  return non-zero if this fails
   #
-  kubectl get configmaps -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' -n default > /tmp/getRemoteLease.tmp.$$
+  ${KUBERNETES_CLI:-kubectl} get configmaps -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' -n default > /tmp/getRemoteLease.tmp.$$
   if [ $? -ne 0 ]; then
-    traceError "kubectl command unexpectedly failed"
+    traceError "${KUBERNETES_CLI:-kubectl} command unexpectedly failed"
     rm -f /tmp/getRemoteLease.tmp.$$
     return 1
   fi
@@ -349,14 +349,14 @@ getRemoteLease() {
       traceError "failed"
       return 1
     fi
-    kubectl create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/expired/${LOCAL_FILE} -n default
+    ${KUBERNETES_CLI:-kubectl} create configmap ${CONFIGMAP_NAME} --from-file ${LOCAL_ROOT}/expired/${LOCAL_FILE} -n default
     if [ $? -ne 0 ]; then
       traceError "remote lease missing, and we failed while trying to create a new one"
       return 1
     fi
   fi
   # echo the remote lease to stdout:
-  local command="kubectl get configmap ${CONFIGMAP_NAME} -o=jsonpath=\"{.data['${LOCAL_FILE}']}\" -n default"
+  local command="${KUBERNETES_CLI:-kubectl} get configmap ${CONFIGMAP_NAME} -o=jsonpath=\"{.data['${LOCAL_FILE}']}\" -n default"
   eval "$command"
   if [ $? -ne 0 ]; then
     traceError "failed while trying to get values in remote lease, command=$command"
@@ -491,10 +491,10 @@ deleteRemoteLeaseSafe() {
   #
   checkLease
   if [ $? -ne 0 ]; then
-    traceError "failed - could not delete lease, we are not the owner or kubectl is not working"
+    traceError "failed - could not delete lease, we are not the owner or ${KUBERNETES_CLI:-kubectl} is not working"
     return 1
   fi
-  kubectl delete cm ${CONFIGMAP_NAME} -n default
+  ${KUBERNETES_CLI:-kubectl} delete cm ${CONFIGMAP_NAME} -n default
   return $?
 }
 
@@ -502,7 +502,7 @@ deleteRemoteLeaseUnsafe() {
   #
   # delete the remote lease regardless of whether we're the owner
   #
-  kubectl delete cm ${CONFIGMAP_NAME} -n default --ignore-not-found
+  ${KUBERNETES_CLI:-kubectl} delete cm ${CONFIGMAP_NAME} -n default --ignore-not-found
 }
 
 main "$@"

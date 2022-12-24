@@ -49,7 +49,9 @@ public class SchemaConversionUtils {
   private static final String CLUSTERS = "clusters";
   private static final String CLUSTER_NAME = "clusterName";
   private static final String ACPFE = "adminChannelPortForwardingEnabled";
-  private static final String PRESERVED = "weblogic.v8.preserved";
+  private static final String LHL = "logHomeLayout";
+  private static final String PRESERVED_V9 = "weblogic.v9.preserved";
+  private static final String PRESERVED_V8 = "weblogic.v8.preserved";
   private static final String PRESERVED_AUX = "weblogic.v8.preserved.aux";
   private static final String ADDED_ACPFE = "weblogic.v8.adminChannelPortForwardingEnabled";
   private static final String FAILED_REASON = "weblogic.v8.failed.reason";
@@ -134,10 +136,21 @@ public class SchemaConversionUtils {
       convertDomainStatusTargetV8(domain);
       constantsToCamelCase(spec);
 
-      restore(PRESERVED, domain);
+      try {
+        Map<String, Object> toBePreserved = new TreeMap<>();
+        removeAndPreserveLogHomeLayout(spec, toBePreserved);
+
+        preserveV9(PRESERVED_V9, domain, toBePreserved, apiVersion);
+      } catch (IOException io) {
+        throw new RuntimeException(io); // need to use unchecked exception because of stream processing
+      }
+
+      restore(PRESERVED_V8, domain);
       restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxilaryImages);
       removeAddedAdminChannelPortForwardingEnabled(domain);
     } else {
+      restore(PRESERVED_V9, domain);
+
       adjustAdminPortForwardingDefault(domain, spec, apiVersion);
       convertDomainStatusTargetV9(domain);
       convertDomainHomeInImageToDomainHomeSourceType(domain);
@@ -145,13 +158,14 @@ public class SchemaConversionUtils {
       moveConfigOverrideSecrets(domain);
       constantsToCamelCase(spec);
       adjustReplicasDefault(spec, apiVersion);
+      adjustLogHomeLayoutDefault(spec, apiVersion);
       removeWebLogicCredentialsSecretNamespace(spec, apiVersion);
 
       try {
         Map<String, Object> toBePreserved = new TreeMap<>();
         removeAndPreserveLegacyAuxiliaryImages(spec, toBePreserved);
 
-        preserve(PRESERVED_AUX, domain, toBePreserved, apiVersion);
+        preserveV8(PRESERVED_AUX, domain, toBePreserved, apiVersion);
       } catch (IOException io) {
         throw new RuntimeException(io); // need to use unchecked exception because of stream processing
       }
@@ -163,7 +177,7 @@ public class SchemaConversionUtils {
         removeAndPreserveServerStartState(spec, toBePreserved);
         removeAndPreserveIstio(spec, toBePreserved);
 
-        preserve(PRESERVED, domain, toBePreserved, apiVersion);
+        preserveV8(PRESERVED_V8, domain, toBePreserved, apiVersion);
       } catch (IOException io) {
         throw new RuntimeException(io); // need to use unchecked exception because of stream processing
       }
@@ -456,8 +470,6 @@ public class SchemaConversionUtils {
             convertServerStartPolicy((Map<String, Object>) managedServer)));
 
     Optional.ofNullable(getConfiguration(spec)).ifPresent(this::convertOverrideDistributionStrategy);
-
-    convertLogHomeLayout(spec);
   }
 
   private void convertServerStartPolicy(Map<String, Object> spec) {
@@ -507,19 +519,6 @@ public class SchemaConversionUtils {
 
   private Object overrideDistributionStrategyCamelCase(String key, Object value) {
     return convertWithMap(select(overrideDistributionStrategyMap, invertOverrideDistributionStrategyMap), value);
-  }
-
-  private void convertLogHomeLayout(Map<String, Object> configuration) {
-    configuration.computeIfPresent("logHomeLayout", this::logHomeLayoutCamelCase);
-  }
-
-  private static final Map<String, String> logHomeLayoutMap = Map.of(
-          "FLAT", "Flat", "BY_SERVERS", "ByServers");
-
-  private static final Map<String, String> invertLogHomeLayoutMap = invertMapUsingMapper(logHomeLayoutMap);
-
-  private Object logHomeLayoutCamelCase(String key, Object value) {
-    return convertWithMap(select(logHomeLayoutMap, invertLogHomeLayoutMap), value);
   }
 
   private Map<String, Object> getConfiguration(Map<String, Object> spec) {
@@ -658,11 +657,12 @@ public class SchemaConversionUtils {
 
   private void addVolumeMountIfMissing(Map<String, Object> serverPod, Map<String, Object> auxiliaryImage,
                                        String mountPath) {
-    if (Optional.ofNullable(serverPod.get(VOLUME_MOUNTS)).map(volumeMounts -> ((List)volumeMounts).stream().noneMatch(
-          volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
-      List<Object> volumeMounts = new ArrayList<>();
-      volumeMounts.add(getVolumeMount(auxiliaryImage, mountPath));
-      serverPod.put(VOLUME_MOUNTS, volumeMounts);
+    List<Object> existingVolumeMounts = Optional.ofNullable((List<Object>) serverPod.get(VOLUME_MOUNTS))
+        .orElse(new ArrayList<>());
+    if (existingVolumeMounts.stream()
+        .noneMatch(volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))) {
+      existingVolumeMounts.add(getVolumeMount(auxiliaryImage, mountPath));
+      serverPod.put(VOLUME_MOUNTS, existingVolumeMounts);
     }
   }
 
@@ -767,6 +767,19 @@ public class SchemaConversionUtils {
     }
   }
 
+  private void adjustLogHomeLayoutDefault(Map<String, Object> spec, String apiVersion) {
+    if (CommonConstants.API_VERSION_V8.equals(apiVersion)) {
+      spec.putIfAbsent(LHL, "Flat");
+    }
+  }
+
+  private void removeAndPreserveLogHomeLayout(Map<String, Object> spec, Map<String, Object> toBePreserved) {
+    Object existing = Optional.ofNullable(spec.remove(LHL)).orElse("ByServers");
+    if (!"Flat".equals(existing)) {
+      preserve(toBePreserved, "$.spec", Map.of(LHL, existing));
+    }
+  }
+
   private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     Optional.ofNullable(getConfiguration(spec)).ifPresent(configuration -> {
       Object existing = configuration.remove("istio");
@@ -853,14 +866,25 @@ public class SchemaConversionUtils {
   }
 
   private void preserve(String annoName, Map<String, Object> domain,
-                        Map<String, Object> toBePreserved, String apiVersion)
+                        Map<String, Object> toBePreserved, String apiVersion, boolean targetV8)
       throws IOException {
-    if (!toBePreserved.isEmpty() && API_VERSION_V8.equals(apiVersion)) {
+    if (!toBePreserved.isEmpty() && (API_VERSION_V8.equals(apiVersion) == targetV8)) {
       Map<String, Object> meta = getMetadata(domain);
       Map<String, Object> annotations = (Map<String, Object>) meta.computeIfAbsent(
           ANNOTATIONS, k -> new LinkedHashMap<>());
       annotations.put(annoName, new ObjectMapper().writeValueAsString(toBePreserved));
     }
+  }
+
+  private void preserveV8(String annoName, Map<String, Object> domain,
+                          Map<String, Object> toBePreserved, String apiVersion) throws IOException {
+    preserve(annoName, domain, toBePreserved, apiVersion, true);
+  }
+
+  private void preserveV9(String annoName, Map<String, Object> domain,
+                          Map<String, Object> toBePreserved, String apiVersion)
+      throws IOException {
+    preserve(annoName, domain, toBePreserved, apiVersion, false);
   }
 
   private void removeAddedAdminChannelPortForwardingEnabled(Map<String, Object> domain) {

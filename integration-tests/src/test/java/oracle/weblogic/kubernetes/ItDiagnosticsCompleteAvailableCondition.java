@@ -29,9 +29,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_F
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
@@ -42,7 +42,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusCond
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -387,7 +387,10 @@ class ItDiagnosticsCompleteAvailableCondition {
       patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1, patch,
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-    
+
+      // wait for the managed server2 get deleted
+      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
+
       int newReplicaCount = maxClusterSize + 1;
       logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
       patchStr = "["
@@ -653,8 +656,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
     String newImage = MII_BASIC_IMAGE_NAME + ":" + imageTag;
-    dockerTag(imageName, newImage);
-    dockerLoginAndPushImageToRegistry(newImage);
+    imageTag(imageName, newImage);
+    imageRepoLoginAndPushImageToRegistry(newImage);
     logger.info("new image: {0}", newImage);
 
     logger.info("patch the domain resource with new image");

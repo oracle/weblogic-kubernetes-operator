@@ -54,8 +54,11 @@ spec:
       - name: "weblogic-operator"
         image: {{ .image | quote }}
         imagePullPolicy: {{ .imagePullPolicy | quote }}
-        command: ["bash"]
-        args: ["/deployment/operator.sh"]
+        command: ["/deployment/operator.sh"]
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/deployment/stop.sh"]
         env:
         - name: "OPERATOR_NAMESPACE"
           valueFrom:
@@ -114,7 +117,7 @@ spec:
           runAsNonRoot: true
           seccompProfile:
             type: RuntimeDefault
-        {{- end }}            
+        {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
@@ -131,17 +134,13 @@ spec:
         {{- if not .remoteDebugNodePortEnabled }}
         livenessProbe:
           exec:
-            command:
-            - "bash"
-            - "/probes/livenessProbe.sh"
+            command: ["/probes/livenessProbe.sh"]
           initialDelaySeconds: 40
           periodSeconds: 10
           failureThreshold: 5
         readinessProbe:
           exec:
-            command:
-            - "bash"
-            - "/probes/readinessProbe.sh"
+            command: ["/probes/readinessProbe.sh"]
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}
@@ -246,8 +245,11 @@ spec:
           annotations:
             prometheus.io/port: '8083'
             prometheus.io/scrape: 'true'
+            sidecar.istio.io/inject: 'false'
           {{- range $key, $value := .annotations }}
+            {{- if ne $key "sidecar.istio.io/inject" }}
             {{ $key }}: {{ $value | quote }}
+            {{- end }}          
           {{- end }}
           labels:
             weblogic.webhookName: {{ .Release.Namespace | quote }}
@@ -273,8 +275,11 @@ spec:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
             imagePullPolicy: {{ .imagePullPolicy | quote }}
-            command: ["bash"]
-            args: ["/deployment/webhook.sh"]
+            command: ["/deployment/webhook.sh"]
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["/deployment/stop.sh"]
             env:
             - name: "WEBHOOK_NAMESPACE"
               valueFrom:
@@ -338,16 +343,12 @@ spec:
             {{- if not .remoteDebugNodePortEnabled }}
             livenessProbe:
               exec:
-                command:
-                - "bash"
-                - "/probes/livenessProbe.sh"
+                command: ["/probes/livenessProbe.sh"]
               initialDelaySeconds: 40
               periodSeconds: 5
             readinessProbe:
               exec:
-                command:
-                - "bash"
-                - "/probes/readinessProbe.sh"
+                command: ["/probes/readinessProbe.sh"]
               initialDelaySeconds: 2
               periodSeconds: 10
             {{- end }}

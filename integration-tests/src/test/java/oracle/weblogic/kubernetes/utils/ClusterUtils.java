@@ -14,17 +14,22 @@ import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.actions.TestActions.createClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusClustersConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -296,40 +301,40 @@ public class ClusterUtils {
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace with kubectl.
+   * Scale the cluster of the domain in the specified namespace with the KUBERNETES_CLI.
    *
    * @param clusterRes name of the cluster resource to be scaled.
    * @param namespace  namespace where the cluster is deployed.
    * @param replica   the replica count.
    */
-  public static void kubectlScaleCluster(String clusterRes, String namespace, int replica) {
-    getLogger().info("Scaling cluster resource {0} in namespace {1} using kubectl scale command", 
-          clusterRes, namespace);
+  public static void kubernetesCLIScaleCluster(String clusterRes, String namespace, int replica) {
+    getLogger().info("Scaling cluster resource {0} in namespace {1} using " + KUBERNETES_CLI + " scale command", 
+        clusterRes, namespace);
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl scale  clusters/" + clusterRes 
+    params.command(KUBERNETES_CLI + " scale  clusters/" + clusterRes 
         + " --replicas=" + replica + " -n " + namespace);
     boolean result = Command.withParams(params).execute();
-    assertTrue(result, "kubectl scale command failed");
+    assertTrue(result, KUBERNETES_CLI + " scale command failed");
   }
 
   /**
-   * Scale the cluster of the domain in the specified namespace with kubectl.
+   * Scale the cluster of the domain in the specified namespace with the KUBERNETES_CLI.
    *
-   * @param cmd    custom kubectl including cluster resource to be executed.
+   * @param cmd    custom command line including cluster resource to be executed.
    * @param namespace  namespace where the cluster is deployed.
-   * @param expectSuccess  expected result of the kubectl command.
+   * @param expectSuccess  expected result of the KUBERNETES_CLI command.
    */
-  public static void kubectlScaleCluster(String cmd, String namespace, boolean expectSuccess) {
-    getLogger().info("Scaling cluster resource in namespace {1} using kubectl scale command", namespace);
-
-    String excommand = "kubectl scale cluster " + cmd + "-n " + namespace;
+  public static void kubernetesCLIScaleCluster(String cmd, String namespace, boolean expectSuccess) {
+    getLogger().info("Scaling cluster resource in namespace {1} using " + KUBERNETES_CLI + " scale command",
+        namespace);
+    String excommand = KUBERNETES_CLI + " scale cluster " + cmd + "-n " + namespace;
     CommandParams params = new CommandParams().defaults();
     params.command(excommand);
     boolean result = Command.withParams(params).execute();
     if (expectSuccess) {
-      assertTrue(result, "kubectl scale command should not fail");
+      assertTrue(result, KUBERNETES_CLI + " scale command should not fail");
     } else {
-      assertFalse(result, "kubectl scale command should fail");
+      assertFalse(result, KUBERNETES_CLI + " scale command should fail");
     }
   }
 
@@ -391,4 +396,80 @@ public class ClusterUtils {
         V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to start cluster resource");
   }
 
+  /**
+   * Check the domain status cluster condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   */
+  public static void checkDomainStatusClusterConditionTypeHasExpectedStatus(String domainUid,
+                                                                            String namespace,
+                                                                            String clusterName,
+                                                                            String conditionType,
+                                                                            String expectedStatus) {
+    checkDomainStatusClusterConditionTypeHasExpectedStatus(domainUid, namespace, clusterName,
+        conditionType, expectedStatus, DOMAIN_VERSION);
+  }
+
+
+  /**
+   * Check the domain status cluster condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   * @param domainVersion version of domain
+   */
+  public static void checkDomainStatusClusterConditionTypeHasExpectedStatus(String domainUid,
+                                                                            String namespace,
+                                                                            String clusterName,
+                                                                            String conditionType,
+                                                                            String expectedStatus,
+                                                                            String domainVersion) {
+    testUntil(
+        withLongRetryPolicy,
+        domainStatusClustersConditionTypeHasExpectedStatus(domainUid, namespace, clusterName, conditionType,
+            expectedStatus, domainVersion),
+        getLogger(),
+        "domain [{0}] status cluster [{1}] condition type [{2}] has expected status [{3}]",
+        domainUid,
+        clusterName,
+        conditionType,
+        expectedStatus);
+  }
+
+  /**
+   * Check the domain status cluster condition has expected status value.
+   * @param retryPolicy retry policy
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param clusterName cluster name of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   * @param domainVersion version of domain
+   */
+  public static void checkDomainStatusClusterConditionTypeHasExpectedStatus(ConditionFactory retryPolicy,
+                                                                            String domainUid,
+                                                                            String namespace,
+                                                                            String clusterName,
+                                                                            String conditionType,
+                                                                            String expectedStatus,
+                                                                            String domainVersion) {
+    testUntil(
+        retryPolicy,
+        domainStatusClustersConditionTypeHasExpectedStatus(domainUid, namespace, clusterName, conditionType,
+            expectedStatus, domainVersion),
+        getLogger(),
+        "domain [{0}] status cluster [{1}] condition type [{2}] has expected status [{3}]",
+        domainUid,
+        clusterName,
+        conditionType,
+        expectedStatus);
+  }
 }

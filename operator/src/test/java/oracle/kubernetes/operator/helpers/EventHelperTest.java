@@ -42,6 +42,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.ABORTED_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_DELETED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_AVAILABLE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_CHANGED_EVENT_PATTERN;
@@ -71,11 +72,14 @@ import static oracle.kubernetes.common.logging.MessageKeys.TOPOLOGY_MISMATCH_EVE
 import static oracle.kubernetes.common.logging.MessageKeys.WILL_RETRY_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.common.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.CLUSTER_1_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster1;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
@@ -134,7 +138,9 @@ class EventHelperTest {
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
+  private final DomainProcessorDelegateStub processorDelegate =
+      DomainProcessorDelegateStub.createDelegate(testSupport, domainNamespaces);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
@@ -150,7 +156,6 @@ class EventHelperTest {
   private static final String WILL_NOT_RETRY =
       "The reported problem should be corrected, and the domain will not be retried "
           + "until the domain resource is updated.";
-  private final DomainNamespaces domainNamespaces = createDomainNamespaces();
 
   @BeforeEach
   void setUp() throws Exception {
@@ -380,7 +385,7 @@ class EventHelperTest {
   }
 
   @Test
-  void whenMakeRightCalled_withCompletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
+  void whenMakeRightCalled_withCompletedEventData_domainCompletedEventCreatedWithExpectedMessage() {
     createMakeRightWithEvent(DOMAIN_COMPLETE).execute();
 
     assertThat("Found DOMAIN_COMPLETED event with expected message",
@@ -877,6 +882,33 @@ class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_ROLL_COMPLETED_EVENT,
             getFormattedMessage(DOMAIN_ROLL_COMPLETED_EVENT_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreated() {
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
+
+    assertThat("Found CLUSTER_DELETED event",
+        containsEvent(getEvents(testSupport), CLUSTER_DELETED_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedMessage() {
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
+
+    assertThat("Found CLUSTER_DELETED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            CLUSTER_DELETED_EVENT,
+            getFormattedMessage(CLUSTER_DELETED_EVENT_PATTERN, CLUSTER_1_NAME)), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedNamespace() {
+    processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
+
+    assertThat("Found CLUSTER_DELETED event with expected namespace",
+        containsEventWithNamespace(getEvents(testSupport),
+            CLUSTER_DELETED_EVENT, NS), is(true));
   }
 
   @Test

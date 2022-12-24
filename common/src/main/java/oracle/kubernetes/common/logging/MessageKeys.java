@@ -167,6 +167,7 @@ public class MessageKeys {
   public static final String WATCH_CLUSTER_DELETED = "WLSKO-0229";
   public static final String CLUSTER_STATUS = "WLSKO-0230";
   public static final String DOMAIN_INTROSPECTION_INCOMPLETE = "WLSKO-0231";
+  public static final String WATCH_CLUSTER_WITHOUT_DOMAIN = "WLSKO-0232";
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";

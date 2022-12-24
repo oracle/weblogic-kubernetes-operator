@@ -46,11 +46,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -64,6 +66,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustom
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
@@ -72,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
@@ -81,9 +86,9 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkServerStatusPodP
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
@@ -108,15 +113,12 @@ class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
   int replicaCount = 2;
-  String wlClusterName = "cluster-1";
+  private String wlClusterName = "cluster-1";
 
 
   private static String adminSecretName;
   private static String encryptionSecretName;
   private static final String domainUid = "diagnosticsdomain";
-
-  private static String opServiceAccount = null;
-  private static String opNamespace = null;
 
   private static LoggingFacade logger = null;
   private static List<String> ns;
@@ -134,14 +136,14 @@ class ItDiagnosticsFailedCondition {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
     // set the service account name for the operator
-    opServiceAccount = opNamespace + "-sa";
+    String opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
@@ -206,9 +208,15 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteConfigMap(badModelFileCm, domainNamespace);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> configMapExist(domainNamespace, badModelFileCm).call())) {
+        deleteConfigMap(badModelFileCm, domainNamespace);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -237,18 +245,26 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus(domainName, "False", "False", "True");
-      
-      // remove after debug
+
+      testUntil(
+          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
+          getLogger(),
+          "waiting for domain status condition reason ReplicasTooHigh exists"
+      );
+
+      // Need to patch the cluster first, otherwise the domain can not be patched
+      // You will get this error:
+      // the replica count of cluster 'cluster-1' would exceed the cluster size '5' when patching the domain
       String patchStr
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2}"
           + "]";
       V1Patch patch = new V1Patch(patchStr);
       logger.info("Patching cluster resource using patch string {0} ", patchStr);
+
       assertTrue(patchClusterCustomResource(clusterResName, domainNamespace,
           patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-      //end of debug
-      
+
       patchStr = "[{\"op\": \"replace\", "
           + "\"path\": \"/spec/webLogicCredentialsSecret/name\", \"value\": \"weblogic-credentials-foo\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
@@ -260,11 +276,6 @@ class ItDiagnosticsFailedCondition {
           domainStatusReasonMatches(domainName, domainNamespace, "DomainInvalid"),
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
-      );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
       );
 
       patchStr
@@ -280,18 +291,17 @@ class ItDiagnosticsFailedCondition {
           getLogger(),
           "waiting for domain status condition reason DomainInvalid exists"
       );
-      testUntil(
-          domainStatusReasonMatches(domainName, domainNamespace, "ReplicasTooHigh"),
-          getLogger(),
-          "waiting for domain status condition reason ReplicasTooHigh exists"
-      );
       testPassed = true;
     } finally {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -338,8 +348,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -375,8 +389,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -412,8 +430,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -431,8 +453,8 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String clusterResName = getClusterResName(domainName);
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    logger.info("Creating a docker secret with invalid credentials");
-    createDockerRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
+    logger.info("Creating a registry secret with invalid credentials");
+    createImageRegistrySecret("foo", "bar", "foo@bar.com", BASE_IMAGES_REPO,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
@@ -452,8 +474,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -535,8 +561,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterResName, domainNamespace);
-      deleteDomainResource(domainNamespace, domainName);
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
     }
   }
 
@@ -571,8 +601,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -615,8 +649,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -654,8 +692,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainName);
-      deleteClusterCustomResource(clusterResName, domainNamespace);
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
     }
   }
 
@@ -675,15 +717,13 @@ class ItDiagnosticsFailedCondition {
     String domainName = getDomainName();
     String clusterResName = getClusterResName(domainName);
     try {
-      String fmwMiiImage = null;
       String rcuSchemaPrefix = "FMWDOMAINMII";
       String oracleDbUrlPrefix = "oracledb.";
-      String oracleDbSuffix = null;
       String rcuSchemaPassword = "Oradoc_db1";
       String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
       final int dbListenerPort = getNextFreePort();
-      oracleDbSuffix = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
+      String oracleDbSuffix = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
       String dbUrl = oracleDbUrlPrefix + domainNamespace + oracleDbSuffix;
 
       String rcuaccessSecretName = domainName + "-rcu-access";
@@ -716,7 +756,7 @@ class ItDiagnosticsFailedCondition {
 
       logger.info("Create an image with jrf model file");
       final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
-      fmwMiiImage = createMiiImageAndVerify(
+      String fmwMiiImage = createMiiImageAndVerify(
           "jrf-mii-image-status",
           modelList,
           Collections.singletonList(MII_BASIC_APP_NAME),
@@ -726,7 +766,7 @@ class ItDiagnosticsFailedCondition {
           false);
 
       // push the image to a registry to make it accessible in multi-node cluster
-      dockerLoginAndPushImageToRegistry(fmwMiiImage);
+      imageRepoLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
       DomainResource domain = FmwUtils.createDomainResourceWithMaxServerPodReadyWaitTime(domainName,
@@ -804,8 +844,12 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteClusterCustomResource(clusterResName, domainNamespace);
-      deleteDomainResource(domainNamespace, domainName);
+      if (assertDoesNotThrow(() -> clusterExists(clusterResName, CLUSTER_VERSION, domainNamespace).call())) {
+        deleteClusterCustomResource(clusterResName, domainNamespace);
+      }
+      if (assertDoesNotThrow(() -> domainExists(domainName, DOMAIN_VERSION, domainNamespace).call())) {
+        deleteDomainResource(domainNamespace, domainName);
+      }
     }
   }
 

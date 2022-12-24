@@ -186,7 +186,7 @@ public class DomainSpec {
 
   /**
    * Specifies the image for the monitoring exporter sidecar.
-   * @param imageName the name of the docker image
+   * @param imageName the name of the image
    */
   public void setFluentdImage(String imageName) {
     assert fluentdSpecification != null : "May not set image without configuration";

@@ -611,7 +611,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * @return domain home
    */
   public String getDomainHome() {
-    return emptyToNull(spec.getDomainHome());
+    return emptyToNull(Optional.ofNullable(spec.getDomainHome())
+            .orElse(getDomainHomeSourceType().getDefaultDomainHome(getDomainUid())));
   }
 
   /**
@@ -1274,7 +1275,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         }
       }
 
-      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
+      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null
+            && getFluentdSpecification().getContainerCommand() == null
+            && getFluentdSpecification().getContainerArgs() == null) {
         failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }

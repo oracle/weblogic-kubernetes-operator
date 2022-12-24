@@ -44,7 +44,6 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
-import oracle.kubernetes.operator.work.PacketComponent;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
@@ -64,10 +63,9 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * Operator's mapping between custom resource Domain and runtime details about that domain,
  * including the scan and the Pods and Services for servers.
  */
-public class DomainPresenceInfo implements PacketComponent {
+public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   private static final String COMPONENT_KEY = "dpi";
-  private final String namespace;
   private final String domainUid;
   private final AtomicReference<DomainResource> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
@@ -93,8 +91,8 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param domain Domain
    */
   public DomainPresenceInfo(DomainResource domain) {
+    super(domain.getMetadata().getNamespace());
     this.domain = new AtomicReference<>(domain);
-    this.namespace = domain.getMetadata().getNamespace();
     this.domainUid = domain.getDomainUid();
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
@@ -107,8 +105,8 @@ public class DomainPresenceInfo implements PacketComponent {
    * @param domainUid The unique identifier assigned to the WebLogic domain when it was registered
    */
   public DomainPresenceInfo(String namespace, String domainUid) {
+    super(namespace);
     this.domain = new AtomicReference<>(null);
-    this.namespace = namespace;
     this.domainUid = domainUid;
     this.serverStartupInfo = new AtomicReference<>(null);
     this.serverShutdownInfo = new AtomicReference<>(null);
@@ -744,12 +742,17 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Gets the namespace.
+   * Gets the Domain name.
    *
-   * @return Namespace
+   * @return Domain name
    */
-  public String getNamespace() {
-    return namespace;
+  public String getDomainName() {
+    return getDomain().getMetadata().getName();
+  }
+
+  @Override
+  public String getResourceName() {
+    return getDomainUid();
   }
 
   // Returns a map of the active servers (those with a known running pod).
@@ -801,6 +804,21 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public void setServerShutdownInfo(Collection<ServerShutdownInfo> serverShutdownInfo) {
     this.serverShutdownInfo.set(serverShutdownInfo);
+  }
+
+
+  /**
+   * Check if the cluster status has been initially populated.
+   *
+   * @return true if the domain does not have any cluster or the cluster statuses have been initially populated.
+   */
+  public boolean clusterStatusInitialized() {
+    return getDomain().getSpec().getClusters().isEmpty() || !isClusterStatusNotInitialized();
+  }
+
+  private boolean isClusterStatusNotInitialized() {
+    return Optional.ofNullable(getDomain().getStatus()).map(DomainStatus::getClusters)
+        .orElse(Collections.emptyList()).isEmpty();
   }
 
   @Override

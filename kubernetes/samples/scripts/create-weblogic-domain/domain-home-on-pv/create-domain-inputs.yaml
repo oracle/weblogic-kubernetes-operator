@@ -18,9 +18,11 @@ domainUID: domain1
 # If not specified, the value is derived from the domainUID as /shared/domains/<domainUID>
 domainHome: /shared/domains/domain1
 
+domainHomeSourceType:
+
 # Determines which WebLogic Servers the operator will start up
-# Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
-serverStartPolicy: IF_NEEDED
+# Legal values are "Never", "IfNeeded", or "AdminOnly"
+serverStartPolicy: IfNeeded
 
 # Cluster name
 clusterName: cluster-1

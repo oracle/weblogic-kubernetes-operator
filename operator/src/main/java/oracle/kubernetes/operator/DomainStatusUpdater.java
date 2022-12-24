@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.LastKnownStatus;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -87,7 +88,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
@@ -135,9 +135,19 @@ public class DomainStatusUpdater {
    * @return the new step
    */
   public static Step createStatusUpdateStep(Step next) {
-    return new StatusUpdateStep(createClusterResourceStatusUpdaterStep(next));
+    return new StatusUpdateStep(next);
   }
 
+  /**
+   * Creates an asynchronous step to update domain status at the end of domain processing from the topology in
+   * the current packet.
+   *
+   * @param next the next step
+   * @return the new step
+   */
+  public static Step createLastStatusUpdateStep(Step next) {
+    return new StatusUpdateStep(next).markEndOfProcessing();
+  }
 
   /**
    * Creates an asynchronous step to update the domain status to indicate that a roll is starting.
@@ -154,6 +164,7 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(ROLLING));
+      status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
     }
 
     @Override
@@ -360,7 +371,7 @@ public class DomainStatusUpdater {
       if (callResponse.getResult() != null) {
         packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       }
-      return doNext(packet);
+      return doNext(createClusterResourceStatusUpdaterStep(getNext()), packet);
     }
 
     @Override
@@ -399,15 +410,17 @@ public class DomainStatusUpdater {
   static class DomainStatusUpdaterContext {
     @Nonnull
     private final DomainPresenceInfo info;
-    private final boolean isMakeRight;
+    final boolean isMakeRight;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
     private DomainStatus newStatus;
     private final List<EventData> newEvents = new ArrayList<>();
+    final boolean endOfProcessing;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       isMakeRight = MakeRightDomainOperation.isMakeRight(packet);
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
+      endOfProcessing = (Boolean) packet.getOrDefault(ProcessingConstants.END_OF_PROCESSING, Boolean.FALSE);
     }
 
     DomainStatus getNewStatus() {
@@ -471,13 +484,30 @@ public class DomainStatusUpdater {
         LOGGER.finer("status change: " + createPatchString());
       }
       DomainResource oldDomain = getDomain();
-
       DomainStatus status = getNewStatus();
       if (isMakeRight) {
         // Only set observedGeneration during a make-right, but not during a background status update
         status.setObservedGeneration(oldDomain.getMetadata().getGeneration());
       }
 
+      return getCallStep(oldDomain, status);
+    }
+
+    Step createDomainStatusObservedGenerationReplaceStep() {
+      DomainResource oldDomain = getDomain();
+      DomainStatus status = oldDomain.getStatus();
+
+      if (isGenerationChanged(oldDomain, status)) {
+        // Only set observedGeneration during a make-right, but not during a background status update
+        status.setObservedGeneration(getDomainGeneration(oldDomain));
+
+        return getCallStep(oldDomain, status);
+      }
+
+      return null;
+    }
+
+    private Step getCallStep(DomainResource oldDomain, DomainStatus status) {
       DomainResource newDomain = new DomainResource()
           .withKind(KubernetesConstants.DOMAIN)
           .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
@@ -498,14 +528,32 @@ public class DomainStatusUpdater {
       return builder.build().toString();
     }
 
-    private Step createUpdateSteps(Step next) {
+    Step createUpdateSteps(Step next) {
       final List<Step> result = new ArrayList<>();
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
+      } else {
+        if (endOfProcessing && isMakeRight) {
+          Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
+        }
       }
       createDomainEvents().stream().map(EventHelper::createEventStep).forEach(result::add);
       Optional.ofNullable(next).ifPresent(result::add);
       return result.isEmpty() ? null : Step.chain(result);
+    }
+
+
+    private boolean isGenerationChanged(DomainResource domain, DomainStatus status) {
+      return !getDomainGeneration(domain).equals(getObservedGeneration(status));
+    }
+
+    private Long getObservedGeneration(DomainStatus status) {
+      return status.getObservedGeneration();
+    }
+
+    @Nonnull
+    private Long getDomainGeneration(@Nonnull DomainResource domain) {
+      return Optional.ofNullable(domain.getMetadata()).map(V1ObjectMeta::getGeneration).orElse(0L);
     }
 
     @Nonnull
@@ -557,8 +605,15 @@ public class DomainStatusUpdater {
    * A step which updates the domain status from the domain topology in the current packet.
    */
   private static class StatusUpdateStep extends DomainStatusUpdaterStep {
+    boolean endOfProcessing = false;
+
     StatusUpdateStep(Step next) {
       super(next);
+    }
+
+    StatusUpdateStep markEndOfProcessing() {
+      this.endOfProcessing = true;
+      return this;
     }
 
     @Override
@@ -572,16 +627,19 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
-      return shouldSkipDomainStatusUpdate(packet)
-              ? doNext(getNext().getNext(), packet) : super.apply(packet);
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE,
+          Boolean.valueOf(shouldSkipDomainStatusUpdate(packet)));
+      if (endOfProcessing) {
+        packet.put(ProcessingConstants.END_OF_PROCESSING, Boolean.TRUE);
+      }
+      return super.apply(packet);
     }
 
     private boolean shouldSkipDomainStatusUpdate(Packet packet) {
-      boolean domainRecheckOrScheduledStatusUpdate =
-              (Boolean) packet.getOrDefault(SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.FALSE);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return (domainRecheckOrScheduledStatusUpdate)
-              && info.getServerStartupInfo() == null;
+      return info.getServerStartupInfo() == null
+          && info.clusterStatusInitialized()
+          && !endOfProcessing;
     }
 
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
@@ -598,6 +656,18 @@ public class DomainStatusUpdater {
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = getInfo().getExpectedRunningServers();
+      }
+
+      @Override
+      Step createUpdateSteps(Step next) {
+        return shouldSkipUpdate(packet)
+            ? next
+            : super.createUpdateSteps(next);
+      }
+
+      boolean shouldSkipUpdate(Packet packet) {
+        Boolean skip = (Boolean) packet.remove(ProcessingConstants.SKIP_STATUS_UPDATE);
+        return skip != null && skip;
       }
 
       @Override
@@ -936,9 +1006,15 @@ public class DomainStatusUpdater {
         }
 
         private boolean allIntendedClusterServersReady() {
-          return isClusterIntentionallyShutDown() || (allStartedClusterServersAreComplete()
+          return isClusterIntentionallyShutDown()
+              ? allNonStartedClusterServersAreShutdown()
+              : isClusterStartupCompleted();
+        }
+
+        private boolean isClusterStartupCompleted() {
+          return allStartedClusterServersAreComplete()
               && allNonStartedClusterServersAreShutdown()
-              && clusteredServersMarkedForRoll().isEmpty());
+              && clusteredServersMarkedForRoll().isEmpty();
         }
 
         private boolean allStartedClusterServersAreComplete() {
@@ -1274,8 +1350,13 @@ public class DomainStatusUpdater {
         } else if (isDeleting(serverName)) {
           return SHUTTING_DOWN_STATE;
         } else {
-          return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+          return Optional.ofNullable(getInfo().getLastKnownServerStatus(serverName))
+              .map(LastKnownStatus::getStatus).orElse(getStateFromPacket(serverName));
         }
+      }
+
+      private String getStateFromPacket(String serverName) {
+        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
       }
 
       private boolean isDeleting(String serverName) {
@@ -1506,6 +1587,11 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+      }
+
+      @Override
+      boolean shouldSkipUpdate(Packet packet) {
+        return false;
       }
     }
   }

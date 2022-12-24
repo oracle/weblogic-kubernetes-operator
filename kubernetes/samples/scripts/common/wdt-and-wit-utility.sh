@@ -67,6 +67,8 @@
 #   WIT_INSTALL_ZIP_URL   URL for downloading WIT install zip
 #                  default:  https://github.com/oracle/weblogic-image-tool/releases/latest/download/$WIT_INSTALL_ZIP_FILE
 #
+#   WLSIMG_BUILDER Image builder binary.
+#                  default:  'docker'
 
 
 # Initialize globals
@@ -219,6 +221,7 @@ run_wdt() {
      -domain_home $domain_home_dir
      -model_file $model_final
      -variable_file $inputs_final
+     -target wko4
   "
   echo @@ "Info: About to run the following WDT command:"
   echo "${cmd}"
@@ -437,7 +440,7 @@ encrypt_model() {
   cat ${domainOutputDirFullPath}/cmd.sh
 
   chmod 766 ${domainOutputDirFullPath}/${domain_properties_file}
-  docker run -it --rm -v ${domainOutputDirFullPath}:/shared -v ${WDT_DIR}/weblogic-deploy:/wdt ${domainHomeImageBase} /bin/bash -c /shared/cmd.sh || return 1
+  ${WLSIMG_BUILDER:-docker} run -it --rm -v ${domainOutputDirFullPath}:/shared -v ${WDT_DIR}/weblogic-deploy:/wdt ${domainHomeImageBase} /bin/bash -c /shared/cmd.sh || return 1
 
   # clean up the generated files
   rm ${domainOutputDirFullPath}/cmd.sh

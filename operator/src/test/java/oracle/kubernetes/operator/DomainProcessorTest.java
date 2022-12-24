@@ -112,6 +112,9 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_CHANGED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_CREATED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.CLUSTER_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
@@ -132,6 +135,9 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -1147,6 +1153,42 @@ class DomainProcessorTest {
     assertThat(newInfo.getClusterService(CLUSTER), notNullValue());
   }
 
+  @Test
+  void whenClusterAdded_reportClusterCreatedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster).execute();
+    logRecords.clear();
+
+    assertThat(testSupport, hasEvent(CLUSTER_CREATED_EVENT));
+  }
+
+  @Test
+  void whenClusterDeleted_reportClusterDeletedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_DELETED, cluster).execute();
+    logRecords.clear();
+
+    assertThat(testSupport, hasEvent(CLUSTER_DELETED_EVENT));
+  }
+
+  @Test
+  void whenClusterModified_reportClusterChangedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+    logRecords.clear();
+
+    assertThat(testSupport, hasEvent(CLUSTER_CHANGED_EVENT));
+  }
+
+  private ClusterResource createClusterAlone(String clusterName, String ns) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(clusterName).namespace(ns))
+        .spec(new ClusterSpec().withClusterName(clusterName));
+  }
+
   private V1Service createNonOperatorService() {
     return new V1Service()
         .metadata(
@@ -1321,7 +1363,7 @@ class DomainProcessorTest {
   void whenFluentdSpecified_verifyConfigMap() {
     domainConfigurator
             .withFluentdConfiguration(true, "fluentd-cred",
-                    null)
+                    null, null, null)
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -1339,7 +1381,7 @@ class DomainProcessorTest {
   void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
     domainConfigurator
             .withFluentdConfiguration(true, "fluentd-cred",
-                    "<match>me</match>")
+                    "<match>me</match>", null, null)
             .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 

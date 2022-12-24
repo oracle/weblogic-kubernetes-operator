@@ -59,11 +59,11 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.installApache;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
@@ -326,10 +326,10 @@ public class LoadBalancerUtils {
 
     LoggingFacade logger = getLogger();
 
-    // Create Docker registry secret in the apache namespace to pull the Apache webtier image from repository
+    // Create registry secret in the apache namespace to pull the Apache webtier image from repository
     // this secret is used only for non-kind cluster
     if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, apacheNamespace)) {
-      logger.info("Creating Docker registry secret in namespace {0}", apacheNamespace);
+      logger.info("Creating registry secret in namespace {0}", apacheNamespace);
       createTestRepoSecret(apacheNamespace);
     }
 
@@ -851,7 +851,7 @@ public class LoadBalancerUtils {
       LoggingFacade logger = getLogger();
       logger.info("pulling image {0} from BASE_IMAGES_REPO, tag it as image {1} ",
           localImage, nginxImage);
-      return dockerPull(localImage) && dockerTag(localImage, nginxImage);
+      return imagePull(localImage) && imageTag(localImage, nginxImage);
     });
   }
 

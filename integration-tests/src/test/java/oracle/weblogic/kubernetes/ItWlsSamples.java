@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -53,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -83,7 +85,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplat
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -227,7 +229,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG_DEFAULT,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -249,7 +251,7 @@ class ItWlsSamples {
             + ADMIN_PASSWORD_DEFAULT;
     String[] additonalStr = {additonalOptions, imageName};
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETS_CLI to create the domain and verify
     createDomainAndVerify(domainName, sampleBase, additonalStr);
 
     //delete the domain resource
@@ -302,11 +304,11 @@ class ItWlsSamples {
               "createDomainFilesDir: wlst", "createDomainFilesDir: "
                       +  script);
       replaceStringInFile(get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG,
+              "image: container-registry.oracle.com/middleware/weblogic:" + WEBLOGIC_IMAGE_TAG_DEFAULT,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
-    // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    // run create-domain.sh to create domain.yaml file, run KUBERNETS_CLI to create the domain and verify
     createDomainAndVerify(domainUid, sampleBase);
 
     // update the domain to add a new cluster
@@ -597,7 +599,7 @@ class ItWlsSamples {
 
     //create pv and pvc
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainName + "-weblogic-sample-pv.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
@@ -610,7 +612,7 @@ class ItWlsSamples {
         pvName);
 
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + get(pvpvcBase.toString(),
+    params.command(KUBERNETES_CLI + " create -f " + get(pvpvcBase.toString(),
         "pv-pvcs/" + domainName + "-weblogic-sample-pvc.yaml").toString());
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
@@ -692,13 +694,13 @@ class ItWlsSamples {
     assertTrue(success, "Failed to create domain.yaml");
 
     if (sampleBase.toString().contains("domain-home-in-image")) {
-      // docker login and push image to docker registry if necessary
-      logger.info("Push the image {0} to Docker repo", imageName);
-      dockerLoginAndPushImageToRegistry(imageName);
+      // repo login and push image to registry if necessary
+      logger.info("Push the image {0} to image repo", imageName);
+      imageRepoLoginAndPushImageToRegistry(imageName);
 
-      // create docker registry secret to pull the image from registry
+      // create registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
-      logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+      logger.info("Create registry secret in namespace {0}", domainNamespace);
       createTestRepoSecret(domainNamespace);
     }
 
@@ -711,10 +713,10 @@ class ItWlsSamples {
         "domain yaml file {0} exists",
         domainYamlFileString);
 
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
+    // run KUBERNETES_CLI to create the domain
+    logger.info("Run " + KUBERNETES_CLI + " to create the domain");
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + domainYamlFileString);
+    params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
 
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -782,10 +784,10 @@ class ItWlsSamples {
     // before initiating introspection of the domain to start the second cluster that was just added
     // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
     if (script.equals("wlst")) {
-      // run kubectl to update the domain
-      logger.info("Run kubectl to create the domain");
+      // run KUBERNETES_CLI to update the domain
+      logger.info("Run " + KUBERNETES_CLI + " to create the domain");
       params = new CommandParams().defaults();
-      params.command("kubectl apply -f " + domainYamlFileString);
+      params.command(KUBERNETES_CLI + " apply -f " + domainYamlFileString);
       result = Command.withParams(params).execute();
       assertTrue(result, "Failed to create domain custom resource");
     }
@@ -818,7 +820,7 @@ class ItWlsSamples {
   private void deleteDomainResourceAndVerify(String domainName, Path sampleBase) {
     //delete the domain resource
     CommandParams params = new CommandParams().defaults();
-    params.command("kubectl delete -f "
+    params.command(KUBERNETES_CLI + " delete -f "
             + get(sampleBase.toString(), "weblogic-domains/"
             + domainName + "/domain.yaml").toString());
     boolean result = Command.withParams(params).execute();

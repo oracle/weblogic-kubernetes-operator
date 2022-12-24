@@ -20,7 +20,7 @@
 # around this limitation by running a Docker registry in a Docker container and connecting the networks so
 # that the Kubernetes nodes have visibility to the registry. When you run tests, you will see that Docker
 # images are pushed to this local registry and then are pulled to the Kubernetes nodes as needed.
-# You can see the images on a node by running: "docker exec -it kind-worker crictl images" where kind-worker
+# You can see the images on a node by running: "${WLSIMG_BUILDER:-docker} exec -it kind-worker crictl images" where kind-worker
 # is the name of the Docker container.
 #
 # As of May 6, 2020, the tests are clean on Kubernetes 1.16 with the following JDK workarounds:
@@ -35,6 +35,7 @@ set -o pipefail
 
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
 
 usage() {
   echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
@@ -194,15 +195,15 @@ reg_name='kind-registry'
 reg_port='5000'
 
 echo 'Create registry container unless it already exists'
-running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
+running="$(${WLSIMG_BUILDER:-docker} inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" = 'false' ]; then
-  docker rm --force "${reg_name}"
+  ${WLSIMG_BUILDER:-docker} rm --force "${reg_name}"
 fi
 if [ "${running}" = 'true' ]; then
-  docker stop "${reg_name}"
-  docker rm --force "${reg_name}"
+  ${WLSIMG_BUILDER:-docker} stop "${reg_name}"
+  ${WLSIMG_BUILDER:-docker} rm --force "${reg_name}"
 fi
-docker run \
+${WLSIMG_BUILDER:-docker} run \
   -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
   phx.ocir.io/weblogick8s/test-images/docker/registry:2
 
@@ -232,23 +233,23 @@ EOF
 
 echo "Access your cluster in other terminals with:"
 echo "  export KUBECONFIG=\"${RESULT_ROOT}/kubeconfig\""
-echo "  kubectl cluster-info --context \"kind-${kind_name}\""
+echo "  ${KUBERNETES_CLI} cluster-info --context \"kind-${kind_name}\""
 export KUBECONFIG="${RESULT_ROOT}/kubeconfig"
-kubectl cluster-info --context "kind-${kind_name}"
+${KUBERNETES_CLI} cluster-info --context "kind-${kind_name}"
 
 if [ "${cni_implementation}" = "calico" ]; then
   echo "Install Calico"
-  kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
-  kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+  ${KUBERNETES_CLI} create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+  ${KUBERNETES_CLI} create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
 fi
 
-kubectl get node -o wide
+${KUBERNETES_CLI} get node -o wide
 
 for node in $(kind get nodes --name "${kind_name}"); do
-  kubectl annotate node "${node}" tilt.dev/registry=localhost:${reg_port};
+  ${KUBERNETES_CLI} annotate node "${node}" tilt.dev/registry=localhost:${reg_port};
 done
 
-containers=$(docker network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
+containers=$(${WLSIMG_BUILDER:-docker} network inspect ${kind_network} -f "{{range .Containers}}{{.Name}} {{end}}")
 needs_connect="true"
 for c in ${containers}; do
   if [ "$c" = "${reg_name}" ]; then
@@ -256,12 +257,12 @@ for c in ${containers}; do
   fi
 done
 if [ "${needs_connect}" = "true" ]; then
-  docker network connect "${kind_network}" "${reg_name}" || true
+  ${WLSIMG_BUILDER:-docker} network connect "${kind_network}" "${reg_name}" || true
 fi
 
 # Document the local registry
 # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
-cat <<EOF | kubectl apply -f -
+cat <<EOF | ${KUBERNETES_CLI} apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -275,7 +276,7 @@ EOF
 
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
-export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
+export K8S_NODEPORT_HOST=`${KUBERNETES_CLI} get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export no_proxy="${no_proxy},${K8S_NODEPORT_HOST}"
 echo 'no_proxy ${no_proxy}'
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -289,9 +290,9 @@ if [ "$skip_tests" = true ] ; then
   exit 0
 fi
 
-echo 'docker info'
-docker info
-docker ps
+echo "${WLSIMG_BUILDER:-docker} info"
+${WLSIMG_BUILDER:-docker} info
+${WLSIMG_BUILDER:-docker} ps
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
@@ -326,10 +327,11 @@ else
 fi
 
 echo "Collect journalctl logs"
-docker exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
-docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
+${WLSIMG_BUILDER:-docker} exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
+${WLSIMG_BUILDER:-docker} exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
 
 echo "Destroy cluster and registry"
 kind delete cluster --name "${kind_name}"
-docker stop "${reg_name}"
-docker rm --force "${reg_name}"
+${WLSIMG_BUILDER:-docker} stop "${reg_name}"
+${WLSIMG_BUILDER:-docker} rm --force "${reg_name}"
+

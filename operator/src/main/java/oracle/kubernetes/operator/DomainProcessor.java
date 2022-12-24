@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -13,22 +15,35 @@ import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watch.Response;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 /**
- * An abstraction for processing a domain.
+ * An abstraction for processing a domain and a cluster.
  */
 public interface DomainProcessor {
 
   /**
    * Ensures that the domain is up-to-date. This may involve validation and introspection of the domain itself,
    * changes to Kubernetes resources such as pods and services.
-   * @param liveInfo an info object that tracks what is know about the domain
+   * @param liveInfo an info object that tracks what is known about the domain
    * @return Make-right operation
    */
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
+
+  /**
+   * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
+   * or not.
+   *
+   * @param clusterEvent the event that needs to be generated
+   * @param cluster the cluster resource that the event is associated with
+   * @return Make-right operation
+   */
+  MakeRightClusterOperation createMakeRightOperationForClusterEvent(
+      EventItem clusterEvent, ClusterResource cluster);
 
   /**
    * Handles a watch event for clusters in the managed namespaces.
@@ -87,5 +102,21 @@ public interface DomainProcessor {
    */
   default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
     return Stream.empty();
+  }
+
+  /**
+   * Get the map of domain presence infos.
+   * @return Map of cached domain presence infos.
+   */
+  default Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
+    return new ConcurrentHashMap<>();
+  }
+
+  /**
+   * Get the map of cluster presence infos.
+   * @return Map of cached cluster presence infos.
+   */
+  default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
+    return new ConcurrentHashMap<>();
   }
 }

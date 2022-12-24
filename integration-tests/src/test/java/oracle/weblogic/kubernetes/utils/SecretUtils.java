@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -38,7 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createDockerRegistrySecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -216,7 +216,7 @@ public class SecretUtils {
     List<String> secrets = new ArrayList<>();
     //create repo registry secret
     if (!secretExists(TEST_IMAGES_REPO_SECRET_NAME, namespace)) {
-      createDockerRegistrySecret(TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
+      createImageRegistrySecret(TEST_IMAGES_REPO_USERNAME, TEST_IMAGES_REPO_PASSWORD, TEST_IMAGES_REPO_EMAIL,
             DOMAIN_IMAGES_REPO, TEST_IMAGES_REPO_SECRET_NAME, namespace);
     }
     secrets.add(TEST_IMAGES_REPO_SECRET_NAME);
@@ -224,7 +224,7 @@ public class SecretUtils {
     if (!BASE_IMAGES_REPO.equals(DOMAIN_IMAGES_REPO)) {
       //create base images repo secret
       if (!secretExists(BASE_IMAGES_REPO_SECRET_NAME, namespace)) {
-        createDockerRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
+        createImageRegistrySecret(BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD, BASE_IMAGES_REPO_EMAIL,
             BASE_IMAGES_REPO, BASE_IMAGES_REPO_SECRET_NAME, namespace);
       }
       secrets.add(BASE_IMAGES_REPO_SECRET_NAME);
