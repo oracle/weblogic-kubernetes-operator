@@ -116,6 +116,23 @@ public class DomainSpec {
   @ApiModelProperty("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
+  @ApiModelProperty("The maximum number of cluster members that can be temporarily unavailable."
+      + " You can override this default on a per cluster basis by setting the"
+      + " cluster's `maxUnavailable` field. Defaults to 1.")
+  private Integer maxClusterUnavailable;
+
+  @ApiModelProperty("The maximum number of cluster member Managed Server instances that the"
+      + " operator will start in parallel for a given cluster, if `maxConcurrentStartup` "
+      + " is not specified for a specific cluster under the `clusters` field. "
+      + " A value of 0 means there is no configured limit. Defaults to 0.")
+  private Integer maxClusterConcurrentStartup;
+
+  @ApiModelProperty("The default maximum number of WebLogic Server instances that a cluster will"
+      + " shut down in parallel when it is being partially shut down by lowering its replica count."
+      + " You can override this default on a per cluster basis by setting the cluster's `maxConcurrentShutdown` field."
+      + " A value of 0 means there is no limit. Defaults to 1.")
+  private Integer maxClusterConcurrentShutdown;
+
   /**
    * The Fluentd configuration.
    *
@@ -186,9 +203,6 @@ public class DomainSpec {
 
     fluentdSpecification.setImagePullPolicy(pullPolicy);
   }
-
-
-
 
   @ApiModelProperty("Configuration for the Administration Server.")
   private AdminServer adminServer;
@@ -492,6 +506,57 @@ public class DomainSpec {
     this.replicas = replicas;
   }
 
+  public DomainSpec maxClusterUnavailable(Integer maxClusterUnavailable) {
+    this.maxClusterUnavailable = maxClusterUnavailable;
+    return this;
+  }
+
+  public Integer maxClusterUnavailable() {
+    return this.maxClusterUnavailable;
+  }
+
+  public Integer getMaxClusterUnavailable() {
+    return maxClusterUnavailable;
+  }
+
+  public void setMaxClusterUnavailable(Integer maxClusterUnavailable) {
+    this.maxClusterUnavailable = maxClusterUnavailable;
+  }
+
+  public DomainSpec maxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
+    this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
+    return this;
+  }
+
+  public Integer maxClusterConcurrentStartup() {
+    return this.maxClusterConcurrentStartup;
+  }
+
+  public Integer getMaxClusterConcurrentStartup() {
+    return maxClusterConcurrentStartup;
+  }
+
+  public void setMaxClusterConcurrentStartup(Integer maxClusterConcurrentStartup) {
+    this.maxClusterConcurrentStartup = maxClusterConcurrentStartup;
+  }
+
+  public DomainSpec maxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
+    this.maxClusterConcurrentShutdown = maxClusterConcurrentShutdown;
+    return this;
+  }
+
+  public Integer maxClusterConcurrentShutdown() {
+    return this.maxClusterConcurrentShutdown;
+  }
+
+  public Integer getMaxClusterConcurrentShutdown() {
+    return maxClusterConcurrentShutdown;
+  }
+
+  public void setMaxClusterConcurrentShutdown(Integer maxClusterConcurrentShutdown) {
+    this.maxClusterConcurrentShutdown = maxClusterConcurrentShutdown;
+  }
+
   public DomainSpec domainHomeSourceType(String domainHomeSourceType) {
     this.domainHomeSourceType = domainHomeSourceType;
     return this;
@@ -743,7 +808,10 @@ public class DomainSpec {
             .append("serverService", serverService)
             .append("restartVersion", restartVersion)
             .append("monitoringExporter", monitoringExporter)
-            .append("fluentdSpecification", fluentdSpecification);
+            .append("fluentdSpecification", fluentdSpecification)
+            .append("maxClusterUnavailable", maxClusterUnavailable)
+            .append("maxClusterConcurrentStartup", maxClusterConcurrentStartup)
+            .append("maxClusterConcurrentShutdown", maxClusterConcurrentShutdown);
 
     return builder.toString();
   }
@@ -778,7 +846,10 @@ public class DomainSpec {
             .append(serverService)
             .append(restartVersion)
             .append(monitoringExporter)
-            .append(fluentdSpecification);
+            .append(fluentdSpecification)
+            .append(maxClusterUnavailable)
+            .append(maxClusterConcurrentStartup)
+            .append(maxClusterConcurrentShutdown);
 
     return builder.toHashCode();
   }
@@ -821,7 +892,10 @@ public class DomainSpec {
             .append(serverService, rhs.serverService)
             .append(restartVersion, rhs.restartVersion)
             .append(monitoringExporter, rhs.monitoringExporter)
-            .append(fluentdSpecification, rhs.fluentdSpecification);
+            .append(fluentdSpecification, rhs.fluentdSpecification)
+            .append(maxClusterUnavailable, rhs.maxClusterUnavailable)
+            .append(maxClusterConcurrentStartup, rhs.maxClusterConcurrentStartup)
+            .append(maxClusterConcurrentShutdown, rhs.maxClusterConcurrentShutdown);
     return builder.isEquals();
   }
 }
