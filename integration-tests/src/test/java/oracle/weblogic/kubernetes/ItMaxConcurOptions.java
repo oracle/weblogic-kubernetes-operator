@@ -321,9 +321,9 @@ class ItMaxConcurOptions {
    *
    *  1) Config domain.spec.replicas = 1 to startup 1 managed servers in two clusters
    *  2) Config domain.spec.maxClusterConcurrentStartup = 2
-   *  3) Config cluster.spec.maxConcurrentStartup= 3 in cluster-1
-   *  4) Config cluster.spec.replicas = 4 in cluster-1 resource to scale up cluster-1,
-   *     verify that the Operator starts up 3 managed servers concurrently
+   *  3) Config cluster.spec.maxConcurrentStartup= 2 in cluster-1
+   *  4) Config cluster.spec.replicas = 3 in cluster-1 resource to scale up cluster-1,
+   *     verify that the Operator starts up 2 managed servers concurrently
    *  5) Config cluster.spec.maxConcurrentStartup= 1 in cluster-2
    *  6) Config cluster.spec.replicas = 3 in cluster-2 resource to scale up cluster-2,
    *     verify that the Operator starts up 2 managed servers one by one, not concurrently.
@@ -344,13 +344,13 @@ class ItMaxConcurOptions {
     createClusterResourceAndAddToDomainResource(cluster1Res, cluster1Name,
         0, domainUid, domainNamespace, replicaCount);
 
-    // Config maxConcurrentStartup = 3 in cluster-1 resource and scale up the cluster by 4
-    int configValue = 3;
-    int newReplicaCount = 4;
+    // Config maxConcurrentStartup = 2 in cluster-1 resource and scale up the cluster by 3
+    int configValue = 2;
+    int newReplicaCount = 3;
     configAndScaleCluster(cluster1Name, cluster1Res, managedServerC1PodNamePrefix,
         "maxConcurrentStartup", configValue, newReplicaCount);
 
-    // verify that the Operator starts up 3 managed servers in cluster-1 concurrently
+    // verify that the Operator starts up 2 managed servers in cluster-1 concurrently
     verifyServersStartedConcurrently(managedServerC1PodNamePrefix, 2, newReplicaCount);
 
     // create cluster-2 and reference it in domain resource
@@ -549,7 +549,7 @@ class ItMaxConcurOptions {
   private OffsetDateTime verifyServersStartedConcurrently(String managedServerPodNamePrefix,
                                                           int startPodNum,
                                                           int endPodNum) {
-    final int deltaValue = 30; // seconds
+    final int deltaValue = 60; // seconds
     OffsetDateTime msPodCreationTime = null;
 
     // get managed server pod creation time
