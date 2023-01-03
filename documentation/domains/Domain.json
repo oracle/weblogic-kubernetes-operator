@@ -530,6 +530,13 @@
           "description": "Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "containerArgs": {
+          "description": "(Optional) The Fluentd sidecar container spec\u0027s args. Default is: [ -c, /etc/fluentd.conf ] if not specified",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "watchIntrospectorLogs": {
           "description": "Fluentd will watch introspector logs",
           "type": "boolean"
@@ -539,6 +546,13 @@
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "containerCommand": {
+          "description": "(Optional) The Fluentd sidecar container spec\u0027s command. Default is not set if not specified",
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         },
         "volumeMounts": {
