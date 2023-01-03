@@ -93,6 +93,8 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `containerArgs` | Array of string | (Optional) The Fluentd sidecar container spec's args. Default is: [ -c, /etc/fluentd.conf ] if not specified |
+| `containerCommand` | Array of string | (Optional) The Fluentd sidecar container spec's command. Default is not set if not specified |
 | `elasticSearchCredentials` | string | Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
 | `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentdConfiguration` | string | The fluentd configuration text, specify your own custom fluentd configuration. |
