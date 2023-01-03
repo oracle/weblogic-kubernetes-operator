@@ -91,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-sequential")
 @Tag("kind-parallel")
+@Tag("v8o")
 public class ItHorizontalPodAutoscalerCustomMetrics {
   private static String domainNamespace = null;
   static int replicaCount = 2;

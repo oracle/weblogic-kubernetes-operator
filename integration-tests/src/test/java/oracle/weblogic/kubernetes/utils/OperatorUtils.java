@@ -22,6 +22,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.V8O;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -388,6 +390,21 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
+    if (V8O) {
+      logger.info("Running tests in V8O installation, skipping operator installation from test.");
+      if (domainNamespaceSelectionStrategy == null) {
+        Map<String, String> labelMap = new HashMap<>();
+        labelMap.put("wko.operator.v8o", "true");
+        for (String namespace : domainNamespace) {
+          logger.info("Labeling namespace {0} with ", "wko.operator.v8o:true");
+          assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
+        }
+      } else {
+        logger.info("The domain namespace selection strategy is not List, "
+            + "only tests with List strategy is run in this exercise");
+      }
+      return null;
+    }
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");

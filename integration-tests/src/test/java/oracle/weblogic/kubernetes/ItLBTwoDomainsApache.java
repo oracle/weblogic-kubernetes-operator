@@ -69,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @IntegrationTest
 @Tag("olcne")
+@Tag("v8o")
 class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;

@@ -79,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("v8o")
 class ItInitContainers {
 
   private static String opNamespace = null;

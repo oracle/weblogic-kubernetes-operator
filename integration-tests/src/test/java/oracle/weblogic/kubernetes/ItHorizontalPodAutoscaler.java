@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create MII domain and test autoscaling using HPA")
 @IntegrationTest
 @Tag("kind-parallel")
+@Tag("v8o")
 public class ItHorizontalPodAutoscaler {
   private static String domainNamespace = null;
   static int replicaCount = 2;

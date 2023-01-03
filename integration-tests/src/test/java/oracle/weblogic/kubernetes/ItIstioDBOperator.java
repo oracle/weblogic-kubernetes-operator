@@ -127,6 +127,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-sequential")
 @Tag("kind-parallel")
+@Tag("v8o")
 class ItIstioDBOperator {
 
   private static String dbNamespace = null;

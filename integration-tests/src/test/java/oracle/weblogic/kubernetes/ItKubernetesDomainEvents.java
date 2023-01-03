@@ -140,6 +140,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-srg")
 @IntegrationTest
 @Tag("olcne")
+@Tag("v8o")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;

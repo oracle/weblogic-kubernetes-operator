@@ -86,6 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("v8o")
 class ItIstioCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";

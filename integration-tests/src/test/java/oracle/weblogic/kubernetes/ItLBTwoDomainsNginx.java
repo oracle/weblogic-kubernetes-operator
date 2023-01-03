@@ -58,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("v8o")
 class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;

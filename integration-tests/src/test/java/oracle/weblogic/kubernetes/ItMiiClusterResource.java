@@ -104,6 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
+@Tag("v8o")
 class ItMiiClusterResource {
 
   private static String opNamespace = null;

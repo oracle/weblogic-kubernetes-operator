@@ -81,6 +81,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("v8o")
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;

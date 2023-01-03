@@ -113,6 +113,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
+@Tag("v8o")
 class ItMiiAuxiliaryImage {
 
   private static String domainNamespace = null;

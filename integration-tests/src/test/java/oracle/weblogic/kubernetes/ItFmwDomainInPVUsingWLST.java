@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Tag("olcne")
 @Tag("oke-parallel")
+@Tag("v8o")
 class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;

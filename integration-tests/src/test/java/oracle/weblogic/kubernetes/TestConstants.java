@@ -398,4 +398,7 @@ public interface TestConstants {
   // metrics server constants
   public static final String METRICS_SERVER_YAML =
       "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+  
+  //V8O related constants
+  public static final boolean V8O = Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.v8o", "false"));
 }

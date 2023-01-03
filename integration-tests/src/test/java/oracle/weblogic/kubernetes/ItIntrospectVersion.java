@@ -144,6 +144,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("v8o")
 class ItIntrospectVersion {
 
   private static String opNamespace = null;

@@ -99,6 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne")
+@Tag("v8o")
 class ItExternalNodePortService {
 
   private static String opNamespace = null;

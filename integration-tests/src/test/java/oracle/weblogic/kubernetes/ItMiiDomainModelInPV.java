@@ -99,6 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
+@Tag("v8o")
 public class ItMiiDomainModelInPV {
 
   private static String domainNamespace = null;

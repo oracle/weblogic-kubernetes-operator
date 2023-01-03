@@ -127,8 +127,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-sequential")
-@IntegrationTest
 @Tag("olcne")
+@Tag("v8o")
+@IntegrationTest
 class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;

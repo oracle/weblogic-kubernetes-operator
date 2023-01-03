@@ -64,6 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-fmw-cert")
+@Tag("v8o")
 class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;
