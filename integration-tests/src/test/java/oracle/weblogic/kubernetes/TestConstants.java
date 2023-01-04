@@ -401,4 +401,6 @@ public interface TestConstants {
   
   //V8O related constants
   public static final boolean V8O = Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.v8o", "false"));
+  public static final boolean SKIP_WEBHOOK_INSTALL = Boolean.parseBoolean(
+      getNonEmptySystemProperty("wko.it.webhook", "false"));
 }
