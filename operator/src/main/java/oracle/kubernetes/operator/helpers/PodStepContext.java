@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1317,6 +1317,30 @@ public abstract class PodStepContext extends BasePodStepContext {
       recipe.getSpec().affinity(currentPod.getSpec().getAffinity());
     }
 
+    private void restoreLogHomeLayoutEnvVar(V1Pod recipe, V1Pod currentPod) {
+      // currentPod = NoEnvVar -> recipe = FLAT
+      // currentPod = ByServers -> recipe = NoEnvVar
+
+      getContainer(recipe).map(V1Container::getEnv).ifPresent(envVars ->
+          Optional.ofNullable(findEnvVar(envVars, ServerEnvVars.LOG_HOME_LAYOUT)).ifPresent(ev -> {
+            if (LogHomeLayoutType.FLAT.toString().equals(ev.getValue())) {
+              List<V1EnvVar> curPodEVs = getContainer(currentPod).map(V1Container::getEnv).orElse(new ArrayList<>());
+              if (findEnvVar(curPodEVs, ServerEnvVars.LOG_HOME_LAYOUT) == null) {
+                removeEnvVar(envVars, ServerEnvVars.LOG_HOME_LAYOUT);
+              }
+            }
+          }));
+      getContainer(currentPod).map(V1Container::getEnv).ifPresent(envVars ->
+          Optional.ofNullable(findEnvVar(envVars, ServerEnvVars.LOG_HOME_LAYOUT)).ifPresent(ev -> {
+            if (!LogHomeLayoutType.FLAT.toString().equals(ev.getValue())) {
+              List<V1EnvVar> recipeEVs = getContainer(recipe).map(V1Container::getEnv).orElse(new ArrayList<>());
+              if (findEnvVar(recipeEVs, ServerEnvVars.LOG_HOME_LAYOUT) == null) {
+                addEnvVar(recipeEVs, ServerEnvVars.LOG_HOME_LAYOUT, ev.getValue());
+              }
+            }
+          }));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
@@ -1326,7 +1350,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           this::restoreMetricsExporterSidecarPortTcpMetrics,
           this::convertAuxImagesInitContainerVolumeAndMounts,
           this::restoreLegacyIstioPortsConfig,
-          this::restoreAffinityContent);
+          this::restoreAffinityContent,
+          this::restoreLogHomeLayoutEnvVar);
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
