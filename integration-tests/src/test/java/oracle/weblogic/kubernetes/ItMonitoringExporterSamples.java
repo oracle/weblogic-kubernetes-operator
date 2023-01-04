@@ -46,7 +46,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -54,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -412,7 +412,7 @@ class ItMonitoringExporterSamples {
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        labelMap, BASE_IMAGES_REPO_SECRET_NAME), "Failed to start webhook");
+        labelMap, TEST_IMAGES_REPO_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -487,11 +487,12 @@ class ItMonitoringExporterSamples {
                                                            String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = IMAGE_PULL_POLICY;
+    logger.info("Creating and Installing {0} in namespace {1}", baseImageName, namespace);
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
-    logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
+
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
-      createWebHook(webhookImage, imagePullPolicy, namespace, BASE_IMAGES_REPO_SECRET_NAME);
+      createWebHook(webhookImage, imagePullPolicy, namespace, TEST_IMAGES_REPO_SECRET_NAME);
     } else if (baseImageName.contains("coordinator")) {
       coordinatorImage = image;
       createCoordinator(coordinatorImage, imagePullPolicy, namespace, "coordsecret");

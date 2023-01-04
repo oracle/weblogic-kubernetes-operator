@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
@@ -104,6 +105,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   // map namespace to map of uid to processing.
   @SuppressWarnings("FieldMayBeFinal")
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
+
+  // List of clusters in a namespace.
+  private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
 
@@ -139,6 +144,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
     return domains;
+  }
+
+  @Override
+  public Map<String, Map<String,ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
+    return clusters;
   }
 
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
@@ -910,6 +920,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
+    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
+      //No-op.
+    }
+
+    @Override
     public CompletionCallback createCompletionCallback() {
       return new DomainPlanCompletionCallback();
     }
@@ -996,6 +1011,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
+    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
+      if (operation.getEventData().getItem() == EventHelper.EventItem.CLUSTER_DELETED) {
+        Optional.ofNullable(clusters.get(presenceInfo.getNamespace()))
+            .ifPresent(m -> m.remove(presenceInfo.getResourceName()));
+      } else {
+        clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
+            .computeIfAbsent(presenceInfo.getResourceName(), k -> (ClusterPresenceInfo) presenceInfo);
+      }
+    }
+
+    @Override
     public CompletionCallback createCompletionCallback() {
       return new ClusterPlanCompletionCallback();
     }
@@ -1033,7 +1059,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       this.firstStep = operation.createSteps();
       this.packet = operation.createPacket();
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
+      cacheResourcePresenceInfo(presenceInfo);
     }
+
+    protected abstract void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo);
 
     private FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
       return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
@@ -1104,7 +1133,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion()));
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
-      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
       return packet;
     }
 

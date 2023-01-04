@@ -51,8 +51,8 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createLastStatusUpdateStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -196,9 +196,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
-    if (!wasStartedFromEvent()) {
-      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE_IF_SSI_NOT_RECORDED, Boolean.TRUE);
-    }
     return packet;
   }
 
@@ -286,7 +283,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     Step managedServerStrategy = Step.chain(
         new ManagedServersUpStep(null),
         MonitoringExporterSteps.updateExporterSidecars(),
-        createStatusUpdateStep(new TailStep()));
+        createLastStatusUpdateStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(

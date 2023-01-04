@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
+import oracle.kubernetes.operator.utils.PathSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -130,6 +132,36 @@ public abstract class BaseMain {
     }
   }
 
+  void stopDeployment(Runnable completionAction) {
+    Step shutdownSteps = createShutdownSteps();
+    if (shutdownSteps != null) {
+      try {
+        delegate.runSteps(new Packet(), shutdownSteps, new ReleaseShutdownSignalRunnable(completionAction));
+        acquireShutdownSignal();
+      } catch (Throwable e) {
+        LOGGER.warning(MessageKeys.EXCEPTION, e);
+      }
+    } else if (completionAction != null) {
+      completionAction.run();
+    }
+  }
+
+  private class ReleaseShutdownSignalRunnable implements Runnable {
+    final Runnable inner;
+
+    ReleaseShutdownSignalRunnable(Runnable inner) {
+      this.inner = inner;
+    }
+
+    @Override
+    public void run() {
+      if (inner != null) {
+        inner.run();
+      }
+      releaseShutdownSignal();
+    }
+  }
+
   void markReadyAndStartLivenessThread() {
     try {
       new DeploymentReady(delegate).create();
@@ -152,6 +184,11 @@ public abstract class BaseMain {
   }
 
   abstract BaseRestServer createRestServer();
+
+  // For test
+  AtomicReference<BaseServer> getRestServer() {
+    return restServer;
+  }
 
   void stopRestServer() {
     Optional.ofNullable(restServer.getAndSet(null)).ifPresent(BaseServer::stop);
@@ -181,22 +218,54 @@ public abstract class BaseMain {
 
   abstract Step createStartupSteps();
 
+  Step createShutdownSteps() {
+    return null;
+  }
+
   abstract void logStartingLivenessMessage();
 
   void stopAllWatchers() {
     // no-op
   }
 
-  void waitForDeath() {
-    Runtime.getRuntime().addShutdownHook(new Thread(shutdownSignal::release));
-
+  private void acquireShutdownSignal() {
     try {
       shutdownSignal.acquire();
     } catch (InterruptedException ignore) {
       Thread.currentThread().interrupt();
     }
+  }
+
+  private void releaseShutdownSignal() {
+    shutdownSignal.release();
+  }
+
+  // For test
+  int getShutdownSignalAvailablePermits() {
+    return shutdownSignal.availablePermits();
+  }
+
+  void waitForDeath() {
+    Runtime.getRuntime().addShutdownHook(new Thread(this::releaseShutdownSignal));
+    scheduleCheckForShutdownMarker();
+
+    acquireShutdownSignal();
 
     stopAllWatchers();
+  }
+
+  void scheduleCheckForShutdownMarker() {
+    wrappedExecutorService.scheduleWithFixedDelay(
+        () -> {
+          File marker = new File(delegate.getDeploymentHome(), "marker.shutdown");
+          if (isFileExists(marker)) {
+            releaseShutdownSignal();
+          }
+        }, 5, 2, TimeUnit.SECONDS);
+  }
+
+  private static boolean isFileExists(File file) {
+    return Files.isRegularFile(PathSupport.getPath(file));
   }
 
   static Packet createPacketWithLoggingContext(String ns) {
