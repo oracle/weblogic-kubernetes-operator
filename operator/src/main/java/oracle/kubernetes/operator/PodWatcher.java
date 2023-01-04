@@ -385,4 +385,67 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       }
     }
   }
+
+  public Step waitForUnready(V1Pod serverPod, Step next) {
+    return new WaitForServerUnreadyStep(next, serverPod);
+  }
+
+  private class WaitForServerUnreadyStep extends WaitForPodStatusStep {
+    WaitForServerUnreadyStep(Step next, @Nonnull V1Pod serverPod) {
+      super(serverPod, next);
+    }
+
+    @Override
+    protected boolean isReady(V1Pod resource) {
+      return !PodHelper.hasReadyStatus(resource) && !PodHelper.hasContainersReadyStatus(resource);
+    }
+
+    @Override
+    boolean onReadNotFoundForCachedResource(V1Pod cachedResource, boolean isNotFoundOnRead) {
+      return false;
+    }
+
+    @Override
+    void addCallback(String name, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        modifiedCallbackRegistrations.computeIfAbsent(name, k -> new ArrayList<>()).add(callback);
+      }
+    }
+
+    @Override
+    void removeCallback(String name, Consumer<V1Pod> callback) {
+      synchronized (modifiedCallbackRegistrations) {
+        Optional.ofNullable(modifiedCallbackRegistrations.get(name)).ifPresent(c -> c.remove(callback));
+      }
+    }
+
+    @Override
+    protected ResponseStep resumeIfReady(WaitForReadyStep.Callback callback) {
+      return new WaitForServerUnreadyStep.WaitForUnreadyResponseStep(callback);
+    }
+
+    private class WaitForUnreadyResponseStep extends DefaultResponseStep<V1Pod> {
+
+      private final WaitForReadyStep<V1Pod>.Callback callback;
+
+      WaitForUnreadyResponseStep(WaitForReadyStep.Callback callback) {
+        super(WaitForServerUnreadyStep.this.getNext());
+        this.callback = callback;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+        if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+          Optional.ofNullable(info).ifPresent(i -> i.setServerPodFromEvent(packet.getValue(SERVER_NAME),
+              callResponse.getResult()));
+          callback.proceedFromWait(callResponse.getResult());
+          return doEnd(packet);
+        } else {
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+              getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      }
+    }
+  }
 }

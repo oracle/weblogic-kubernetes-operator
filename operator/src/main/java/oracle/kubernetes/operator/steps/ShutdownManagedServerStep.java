@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -21,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -33,7 +33,6 @@ import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
-import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -45,7 +44,6 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.SHUTDOWN_WITH_HTTP_SUCCEEDED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
@@ -316,43 +314,6 @@ public class ShutdownManagedServerStep extends Step {
 
   }
 
-  static Step createWaitForServerShutdownWithHttpStep(Step next, String serverName) {
-    return new WaitForServerShutdownWithHttpStep(next, serverName);
-  }
-
-  static final class WaitForServerShutdownWithHttpStep extends Step {
-    @Nonnull
-    private final String serverName;
-
-    WaitForServerShutdownWithHttpStep(Step next, @Nonnull String serverName) {
-      super(next);
-      this.serverName = serverName;
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      String serverState = PodHelper.getServerState(getDomainPresenceInfo(packet).getDomain(), serverName);
-      if (shutdownAttemptSucceeded(packet) && serverNotShutdown(serverState)) {
-        return doDelay(this, packet, getPollingInterval(), TimeUnit.SECONDS);
-      }
-      return doNext(packet);
-    }
-
-    @Nonnull
-    private Boolean shutdownAttemptSucceeded(Packet packet) {
-      return Optional.ofNullable((Boolean)packet.get(SHUTDOWN_WITH_HTTP_SUCCEEDED)).orElse(false);
-    }
-
-    @Nonnull
-    private Boolean serverNotShutdown(String serverState) {
-      return Optional.ofNullable(serverState).map(s -> !s.equals(SHUTDOWN_STATE)).orElse(false);
-    }
-
-    private int getPollingInterval() {
-      return TuningParameters.getInstance().getShutdownWithHttpPollingInterval();
-    }
-  }
-
   private static DomainPresenceInfo getDomainPresenceInfo(Packet packet) {
     return packet.getSpi(DomainPresenceInfo.class);
   }
@@ -371,8 +332,8 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
-      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.TRUE);
-      return doNext(packet);
+      PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
+      return doNext(pw.waitForUnready(getDomainPresenceInfo(packet).getServerPod(serverName), getNext()), packet);
     }
 
     @Override
@@ -393,7 +354,6 @@ public class ShutdownManagedServerStep extends Step {
       }
 
       removeShutdownRequestRetryCount(packet);
-      packet.put(SHUTDOWN_WITH_HTTP_SUCCEEDED, Boolean.FALSE);
       return doNext(packet);
     }
 

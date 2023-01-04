@@ -131,6 +131,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     public Step waitForDelete(V1Pod pod, Step next) {
       return next;
     }
+
+    @Override
+    public Step waitForUnready(V1Pod pod, Step next) {
+      return next;
+    }
   }
 
   private class TestJobAwaiterStepFactory implements JobAwaiterStepFactory {

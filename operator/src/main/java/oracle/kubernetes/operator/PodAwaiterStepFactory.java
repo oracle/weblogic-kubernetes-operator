@@ -33,4 +33,13 @@ public interface PodAwaiterStepFactory {
    * @return Asynchronous step
    */
   Step waitForDelete(V1Pod pod, Step next);
+
+  /**
+   * Waits until the Pod is unready.
+   *
+   * @param pod Pod to watch
+   * @param next Next processing step once Pod is unready
+   * @return Asynchronous step
+   */
+  Step waitForUnready(V1Pod pod, Step next);
 }

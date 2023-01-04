@@ -167,6 +167,21 @@ public class PodHelper {
   }
 
   /**
+   * get if pod is in ready state.
+   * @param pod pod
+   * @return true, if pod is ready
+   */
+  public static boolean hasContainersReadyStatus(V1Pod pod) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getStatus)
+        .filter(PodHelper::isRunning)
+        .map(V1PodStatus::getConditions)
+        .orElse(Collections.emptyList())
+        .stream()
+        .anyMatch(PodHelper::isContainersReadyCondition);
+  }
+
+  /**
    * Get pod's Ready condition if the pod is in Running phase.
    * @param pod pod
    * @return V1PodCondition, if exists, otherwise null.
@@ -209,6 +224,10 @@ public class PodHelper {
 
   private static boolean isReadyCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+  }
+
+  private static boolean isContainersReadyCondition(V1PodCondition condition) {
+    return "ContainersReady".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
