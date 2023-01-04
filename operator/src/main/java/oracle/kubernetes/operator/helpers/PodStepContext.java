@@ -1318,9 +1318,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private void restoreLogHomeLayoutEnvVar(V1Pod recipe, V1Pod currentPod) {
-      // currentPod = NoEnvVar -> recipe = FLAT
-      // currentPod = ByServers -> recipe = NoEnvVar
-
       getContainer(recipe).map(V1Container::getEnv).ifPresent(envVars ->
           Optional.ofNullable(findEnvVar(envVars, ServerEnvVars.LOG_HOME_LAYOUT)).ifPresent(ev -> {
             if (LogHomeLayoutType.FLAT.toString().equals(ev.getValue())) {
