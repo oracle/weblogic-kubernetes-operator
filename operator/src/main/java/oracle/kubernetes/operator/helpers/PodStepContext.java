@@ -1327,15 +1327,6 @@ public abstract class PodStepContext extends BasePodStepContext {
               }
             }
           }));
-      getContainer(currentPod).map(V1Container::getEnv).ifPresent(envVars ->
-          Optional.ofNullable(findEnvVar(envVars, ServerEnvVars.LOG_HOME_LAYOUT)).ifPresent(ev -> {
-            if (!LogHomeLayoutType.FLAT.toString().equals(ev.getValue())) {
-              List<V1EnvVar> recipeEVs = getContainer(recipe).map(V1Container::getEnv).orElse(new ArrayList<>());
-              if (findEnvVar(recipeEVs, ServerEnvVars.LOG_HOME_LAYOUT) == null) {
-                addEnvVar(recipeEVs, ServerEnvVars.LOG_HOME_LAYOUT, ev.getValue());
-              }
-            }
-          }));
     }
 
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
