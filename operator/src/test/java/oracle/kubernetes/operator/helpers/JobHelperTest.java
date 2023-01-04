@@ -413,7 +413,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void whenFluentdWatchIntrospectLogsEnable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(true, "dummy-cred",
-          null);
+          null, null, null);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -429,7 +429,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void whenFluentdWatchIntrospectLogsDisable_jobPodShouldHaveFluentdSidecar() {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-          null);
+          null, null, null);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -445,7 +445,7 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void whenNoFluentdConfigmap_createIt() {
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-          null);
+          null, null, null);
 
     testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
@@ -466,7 +466,7 @@ class JobHelperTest extends DomainValidationTestBase {
     testSupport.defineResources(configMap);
 
     configureDomain().withFluentdConfiguration(false, "dummy-cred",
-          null);
+          null, null, null);
 
     testSupport.runSteps(ConfigMapHelper.createOrReplaceFluentdConfigMapStep());
     assertThat(logRecords, containsInfo(FLUENTD_CONFIGMAP_REPLACED));

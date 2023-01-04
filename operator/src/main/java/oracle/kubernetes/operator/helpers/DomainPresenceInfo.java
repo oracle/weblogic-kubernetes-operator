@@ -806,6 +806,21 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     this.serverShutdownInfo.set(serverShutdownInfo);
   }
 
+
+  /**
+   * Check if the cluster status has been initially populated.
+   *
+   * @return true if the domain does not have any cluster or the cluster statuses have been initially populated.
+   */
+  public boolean clusterStatusInitialized() {
+    return getDomain().getSpec().getClusters().isEmpty() || !isClusterStatusNotInitialized();
+  }
+
+  private boolean isClusterStatusNotInitialized() {
+    return Optional.ofNullable(getDomain().getStatus()).map(DomainStatus::getClusters)
+        .orElse(Collections.emptyList()).isEmpty();
+  }
+
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("DomainPresenceInfo{");
