@@ -42,14 +42,25 @@ public class FluentdHelper {
                                          DomainResource domain, boolean isJobPod) {
 
     V1Container fluentdContainer = new V1Container();
+
     fluentdContainer
-        .name(FLUENTD_CONTAINER_NAME)
-        .addArgsItem("-c")
-        .addArgsItem("/etc/fluent.conf");
+        .name(FLUENTD_CONTAINER_NAME);
+
+    if (fluentdSpecification.getContainerArgs() != null) {
+      fluentdContainer.setArgs(fluentdSpecification.getContainerArgs());
+    } else {
+      fluentdContainer
+          .addArgsItem("-c")
+          .addArgsItem("/etc/fluent.conf");
+    }
 
     fluentdContainer.setImage(fluentdSpecification.getImage());
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
+
+    if (fluentdSpecification.getContainerCommand() != null) {
+      fluentdContainer.setCommand(fluentdSpecification.getContainerCommand());
+    }
 
     addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain, isJobPod);
 
@@ -200,14 +211,16 @@ public class FluentdHelper {
       FluentdSpecification fluentdSpecification, V1Container fluentdContainer,
       DomainResource domain, boolean isJobPod) {
 
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
-        "elasticsearchhost");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_PORT",
-        "elasticsearchport");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_USER",
-        "elasticsearchuser");
-    addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer,
-        "ELASTICSEARCH_PASSWORD", "elasticsearchpassword");
+    if (fluentdSpecification.getElasticSearchCredentials() != null) {
+      addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_HOST",
+          "elasticsearchhost");
+      addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_PORT",
+          "elasticsearchport");
+      addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_USER",
+          "elasticsearchuser");
+      addFluentdContainerELSCredEnv(fluentdSpecification, fluentdContainer, "ELASTICSEARCH_PASSWORD",
+          "elasticsearchpassword");
+    }
 
     addFluentdContainerEnvItem(fluentdSpecification, fluentdContainer, "FLUENT_ELASTICSEARCH_SED_DISABLE",
         "true",

@@ -158,5 +158,4 @@ createCluster
 #check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 checkClusterRunning
-createRoleBindings
 echo "$okeclustername is up and running"

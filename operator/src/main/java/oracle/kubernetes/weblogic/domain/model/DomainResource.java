@@ -1275,7 +1275,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         }
       }
 
-      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null) {
+      if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null
+            && getFluentdSpecification().getContainerCommand() == null
+            && getFluentdSpecification().getContainerArgs() == null) {
         failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
