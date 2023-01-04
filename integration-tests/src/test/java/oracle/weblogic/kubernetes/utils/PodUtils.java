@@ -333,7 +333,7 @@ public class PodUtils {
    */
   public static void checkPodDeleted(String podName, String domainUid, String domNamespace) {
     final LoggingFacade logger = getLogger();
-    testUntil(
+    testUntil(withLongRetryPolicy,
         assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
           String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
             podName, domNamespace)),

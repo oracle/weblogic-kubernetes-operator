@@ -500,7 +500,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   protected void defineFluentdConfiguration(boolean watchIntrospectorLog) {
     configureDomain()
             .withFluentdConfiguration(watchIntrospectorLog, "fluentd-cred",
-                    null);
+                    null, null, null);
   }
 
   @Test

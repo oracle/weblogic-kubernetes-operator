@@ -375,7 +375,8 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withMonitoringExporterPort(Integer port);
 
   public abstract DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
-                                                              String credentialName, String fluentdConfig);
+                                                              String credentialName, String fluentdConfig,
+                                                              List<String> args, List<String> command);
 
   /**
    * Adds a default server configuration to the domain, if not already present.
