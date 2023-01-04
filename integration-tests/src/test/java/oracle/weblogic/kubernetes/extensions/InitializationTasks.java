@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.TestConstants.V8O;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -287,7 +288,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        installWebHookOnlyOperator();
+        if (!V8O) {
+          installWebHookOnlyOperator();
+        }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
