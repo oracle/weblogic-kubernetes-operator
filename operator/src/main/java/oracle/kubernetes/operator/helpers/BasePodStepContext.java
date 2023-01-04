@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -288,6 +289,16 @@ public abstract class BasePodStepContext extends StepContextBase {
       }
     }
     return null;
+  }
+
+  protected void removeEnvVar(List<V1EnvVar> vars, String name) {
+    Iterator<V1EnvVar> it = vars.iterator();
+    while (it.hasNext()) {
+      if (name.equals(it.next().getName())) {
+        it.remove();
+        break;
+      }
+    }
   }
 
   protected void addOrReplaceEnvVar(List<V1EnvVar> vars, String name, String value) {
