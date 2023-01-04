@@ -88,10 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
-@Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("okd-wls-srg")
 class ItMaxConcurOptions {
 
   private static String opNamespace = null;
