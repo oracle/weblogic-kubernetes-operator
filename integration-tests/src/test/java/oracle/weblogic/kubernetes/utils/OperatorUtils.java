@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OperatorUtils {
+  private static final AtomicBoolean installed = new AtomicBoolean(false);
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -390,7 +392,7 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
-    if (V8O) {
+    if (V8O && !installed.getAndSet(false)) {
       logger.info("Running tests in V8O installation, skipping operator installation from test.");
       if (domainNamespaceSelectionStrategy == null) {
         Map<String, String> labelMap = new HashMap<>();

@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,7 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_WEBHOOK_INSTALL;
+import static oracle.weblogic.kubernetes.TestConstants.V8O;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -85,6 +86,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_JAVA_HOME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -96,6 +98,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.imageExists;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
@@ -126,6 +129,8 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(30, MINUTES).await();
+  
+  String opNamespace = "ns-v8o-wko";
 
   PortInuseEventWatcher portInuseEventWatcher;
 
@@ -288,8 +293,14 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        if (!SKIP_WEBHOOK_INSTALL) {
+        if (!V8O) {
           installWebHookOnlyOperator();
+        } else {          
+          assertDoesNotThrow(() -> createNamespace(opNamespace));
+          String domainNamespaceLabelSelector = "wko.operator.v8o";
+          String domainNamespaceSelectionStrategy = "LabelSelector";
+          installAndVerifyOperator(OPERATOR_RELEASE_NAME, opNamespace,
+              domainNamespaceSelectionStrategy, domainNamespaceLabelSelector, true);
         }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
@@ -338,6 +349,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     if (SKIP_CLEANUP) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
+      cleanup(Arrays.asList(opNamespace));
       if (!OKD) {
         logger.info("Uninstall istio after all test suites are run");
         uninstallIstio();
