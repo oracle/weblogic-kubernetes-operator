@@ -36,11 +36,11 @@ public interface PodAwaiterStepFactory {
   Step waitForDelete(V1Pod pod, Step next);
 
   /**
-   * Waits until the Pod is unready.
+   * Waits until the Pod server is shut down.
    *
-   * @param serverName Server to watch
-   * @param domain Domain name
-   * @param next Next processing step once Pod is unready
+   * @param serverName Pod Server name to watch
+   * @param domain Domain resource
+   * @param next Next processing step once Pod is shut down
    * @return Asynchronous step
    */
   Step waitForServerShutdown(String serverName, DomainResource domain, Step next);

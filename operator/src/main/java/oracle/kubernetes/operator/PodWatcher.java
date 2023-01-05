@@ -409,10 +409,12 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     @Override
     void addCallback(String name, Consumer<DomainResource> callback) {
+      // Ignore
     }
 
     @Override
     void removeCallback(String name, Consumer<DomainResource> callback) {
+      // Ignore
     }
 
     @Override
@@ -431,7 +433,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       private final WaitForReadyStep<DomainResource>.Callback callback;
       private final String serverName;
 
-      WaitForServerShutdownResponseStep(WaitForReadyStep.Callback callback, String serverName) {
+      WaitForServerShutdownResponseStep(WaitForReadyStep<DomainResource>.Callback callback, String serverName) {
         super(WaitForServerShutdownStep.this.getNext());
         this.callback = callback;
         this.serverName = serverName;
