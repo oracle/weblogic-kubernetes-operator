@@ -392,13 +392,13 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
-    if (V8O && !installed.getAndSet(false)) {
+    if (V8O && installed.getAndSet(true)) {
       logger.info("Running tests in V8O installation, skipping operator installation from test.");
       if (domainNamespaceSelectionStrategy == null) {
         Map<String, String> labelMap = new HashMap<>();
         labelMap.put("wko.operator.v8o", "true");
         for (String namespace : domainNamespace) {
-          logger.info("Labeling namespace {0} with ", "wko.operator.v8o:true");
+          logger.info("Labeling namespace with {0}", "wko.operator.v8o:true");
           assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
         }
       } else {
