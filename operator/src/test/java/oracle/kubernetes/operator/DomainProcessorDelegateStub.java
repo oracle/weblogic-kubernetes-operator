@@ -17,6 +17,7 @@ import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
@@ -133,7 +134,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
 
     @Override
-    public Step waitForUnready(V1Pod pod, Step next) {
+    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
       return next;
     }
   }

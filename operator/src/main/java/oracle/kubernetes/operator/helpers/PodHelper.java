@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +43,7 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -167,21 +170,6 @@ public class PodHelper {
   }
 
   /**
-   * get if pod is in ready state.
-   * @param pod pod
-   * @return true, if pod is ready
-   */
-  public static boolean hasContainersReadyStatus(V1Pod pod) {
-    return Optional.ofNullable(pod)
-        .map(V1Pod::getStatus)
-        .filter(PodHelper::isRunning)
-        .map(V1PodStatus::getConditions)
-        .orElse(Collections.emptyList())
-        .stream()
-        .anyMatch(PodHelper::isContainersReadyCondition);
-  }
-
-  /**
    * Get pod's Ready condition if the pod is in Running phase.
    * @param pod pod
    * @return V1PodCondition, if exists, otherwise null.
@@ -197,8 +185,8 @@ public class PodHelper {
   }
 
   /**
-   * Get the server state From the domain resource.
-   * @param domain domain resource.
+   * Get the server state From DPI or the domain resource.
+   * @param domain domain resource
    * @param serverName Name of the server.
    * @return server state, if exists, otherwise null.
    */
@@ -224,10 +212,6 @@ public class PodHelper {
 
   private static boolean isReadyCondition(V1PodCondition condition) {
     return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
-  }
-
-  private static boolean isContainersReadyCondition(V1PodCondition condition) {
-    return "ContainersReady".equals(condition.getType()) && "True".equals(condition.getStatus());
   }
 
   private static boolean isReadyNotTrueCondition(V1PodCondition condition) {
@@ -757,8 +741,12 @@ public class PodHelper {
         final String clusterName = getClusterName(oldPod);
         final String name = oldPod.getMetadata().getName();
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
-        if (isServerShutdown(getServerState(info.getDomain(), serverName))) {
+        if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
+        } else {
+          OffsetDateTime start = (OffsetDateTime) Optional.ofNullable(packet.getValue("HTTP_SHUTDOWN_START_TIME"))
+              .orElse(SystemClock.now());
+          gracePeriodSeconds = gracePeriodSeconds - Duration.between(start, SystemClock.now()).getSeconds();
         }
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
@@ -780,6 +768,11 @@ public class PodHelper {
       return Optional.ofNullable(info.getServer(serverName, clusterName))
           .map(this::getConfiguredGracePeriodSeconds)
           .orElse(Shutdown.DEFAULT_TIMEOUT);
+    }
+
+    private String getServerStateFromInfo(DomainPresenceInfo info, String serverName) {
+      return Optional.ofNullable(info.getLastKnownServerStatus(serverName))
+          .map(LastKnownStatus::getStatus).orElse(getServerState(info.getDomain(), serverName));
     }
 
     // We add a 10 second fudge factor here to account for the fact that WLST takes

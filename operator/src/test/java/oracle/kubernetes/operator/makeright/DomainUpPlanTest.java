@@ -137,7 +137,7 @@ class DomainUpPlanTest {
     }
 
     @Override
-    public Step waitForUnready(V1Pod pod, Step next) {
+    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
       return null;
     }
   }

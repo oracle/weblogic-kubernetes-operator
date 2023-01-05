@@ -40,6 +40,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -309,6 +310,7 @@ public class ShutdownManagedServerStep extends Step {
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
+      packet.put("HTTP_SHUTDOWN_START_TIME", SystemClock.now());
       return doNext(requestStep, packet);
     }
 
@@ -333,7 +335,7 @@ public class ShutdownManagedServerStep extends Step {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForUnready(getDomainPresenceInfo(packet).getServerPod(serverName), getNext()), packet);
+      return doNext(pw.waitForUnready(serverName, getDomainPresenceInfo(packet).getDomain(), getNext()), packet);
     }
 
     @Override

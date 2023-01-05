@@ -2844,7 +2844,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     }
 
     @Override
-    public Step waitForUnready(V1Pod pod, Step next) {
+    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
       return next;
     }
   }
@@ -2872,7 +2872,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     }
 
     @Override
-    public Step waitForUnready(V1Pod pod, Step next) {
+    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
       return next;
     }
   }

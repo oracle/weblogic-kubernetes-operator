@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 public interface PodAwaiterStepFactory {
   /**
@@ -37,9 +38,10 @@ public interface PodAwaiterStepFactory {
   /**
    * Waits until the Pod is unready.
    *
-   * @param pod Pod to watch
+   * @param serverName Server to watch
+   * @param domain Domain name
    * @param next Next processing step once Pod is unready
    * @return Asynchronous step
    */
-  Step waitForUnready(V1Pod pod, Step next);
+  Step waitForUnready(String serverName, DomainResource domain, Step next);
 }
