@@ -100,10 +100,12 @@ class ItMonitoringExporterWebApp {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
+  private static String domain4Namespace = null;
 
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
+  private static String domain4Uid = "monexp-domain-4";
   private static NginxParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
@@ -146,7 +148,7 @@ class ItMonitoringExporterWebApp {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -178,9 +180,13 @@ class ItMonitoringExporterWebApp {
     assertNotNull(namespaces.get(5), "Namespace list is null");
     domain2Namespace = namespaces.get(5);
 
+    logger.info("Get a unique namespace for domain4");
+    assertNotNull(namespaces.get(6), "Namespace list is null");
+    domain4Namespace = namespaces.get(6);
+
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain3Namespace,
-        domain1Namespace, domain2Namespace);
+    installAndVerifyOperator(opNamespace,
+        domain1Namespace, domain2Namespace, domain3Namespace, domain4Namespace);
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir, true);
@@ -232,40 +238,13 @@ class ItMonitoringExporterWebApp {
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   void testBasicFunctionality() throws Exception {
     try {
-      // create and verify one cluster mii domain
-      logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1, true, null, null);
-
-      // create ingress for the domain
-      logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-      String adminServerPodName = domain1Uid + "-admin-server";
-      String clusterService = domain1Uid + "-cluster-cluster-1";
-      if (!OKD) {
-        String ingressClassName = nginxHelmParams.getIngressClassName();
-        ingressHost1List
-            = createIngressForDomainAndVerify(domain1Uid, domain1Namespace, 0, clusterNameMsPortMap,
-                false, ingressClassName, false, 0);
-        verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
-        // Need to expose the admin server external service to access the console in OKD cluster only
-      } else {
-        String hostName = createRouteForOKD(clusterService, domain1Namespace);
-        logger.info("hostName = {0} ", hostName);
-        verifyMonExpAppAccess(1,hostName);
-        exporterUrl = String.format("http://%s/wls-exporter/",hostName);
-      }
-      if (!OKD) {
-        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-            domain1Namespace,
-            domain1Uid);
-      }
+      setupDomainAndMonitoringTools(domain1Namespace,domain1Uid);
       logger.info("Testing replace configuration");
       replaceConfiguration();
       logger.info("Testing append configuration");
       appendConfiguration();
       logger.info("Testing replace One Attribute Value AsArray configuration");
       replaceOneAttributeValueAsArrayConfiguration();
-      logger.info("Testing filtering configuration option");
-      replaceConfigurationWithFilter();
       logger.info("Testing append One Attribute Value AsArray configuration");
       appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
       logger.info("Testing append with empty configuration");
@@ -300,6 +279,56 @@ class ItMonitoringExporterWebApp {
       replaceMetricsNoRestPortConfiguration();
     } finally {
       shutdownDomain(domain1Uid, domain1Namespace);
+    }
+  }
+
+  /**
+   * Test covers end to end sample, provided in the Monitoring Exporter github project .
+   * Create Prometheus, Grafana.
+   * Create Model in Image with monitoring exporter.
+   * Verify access to monitoring exporter WebLogic metrics via nginx.
+   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
+   * Check basic functionality of monitoring exporter.
+   */
+  @Test
+  @DisplayName("Test Basic Functionality of Monitoring Exporter.")
+  void testBasicFilterFunctionality() throws Exception {
+    try {
+      setupDomainAndMonitoringTools(domain4Namespace, domain4Uid);
+      logger.info("Testing filtering configuration option");
+      replaceConfigurationWithFilter(RESOURCE_DIR + "/exporter/rest_filter_webapp.yaml");
+    } finally {
+      shutdownDomain(domain4Uid, domain4Namespace);
+    }
+  }
+
+  private void setupDomainAndMonitoringTools(String domainNamespace, String domainUid)
+      throws IOException, ApiException {
+    // create and verify one cluster mii domain
+    logger.info("Create domain and verify that it's running");
+    createAndVerifyDomain(miiImage, domainUid, domainNamespace, "FromModel", 1, true, null, null);
+
+    // create ingress for the domain
+    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+    String adminServerPodName = domainUid + "-admin-server";
+    String clusterService = domainUid + "-cluster-cluster-1";
+    if (!OKD) {
+      String ingressClassName = nginxHelmParams.getIngressClassName();
+      ingressHost1List
+          = createIngressForDomainAndVerify(domainUid, domainNamespace, 0, clusterNameMsPortMap,
+              false, ingressClassName, false, 0);
+      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
+      // Need to expose the admin server external service to access the console in OKD cluster only
+    } else {
+      String hostName = createRouteForOKD(clusterService, domainNamespace);
+      logger.info("hostName = {0} ", hostName);
+      verifyMonExpAppAccess(1,hostName);
+      exporterUrl = String.format("http://%s/wls-exporter/",hostName);
+    }
+    if (!OKD) {
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domainNamespace,
+          domainUid);
     }
   }
 
@@ -608,12 +637,12 @@ class ItMonitoringExporterWebApp {
 
   }
 
-  private void replaceConfigurationWithFilter() throws Exception {
-    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_filter_webapp.yaml");
+  private void replaceConfigurationWithFilter(String configurationFile) throws Exception {
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configurationFile);
     assertNotNull(page, "Failed to replace configuration");
 
-    assertTrue(page.asNormalizedText().contains("excludedKeyValues"),
-        "Page does not contain expected excludedKeyValues configuration" + page.asNormalizedText());
+    assertTrue(page.asNormalizedText().contains("KeyValues"),
+        "Page does not contain expected filtering KeyValues configuration" + page.asNormalizedText());
     if (!OKD) {
       //needs 20 secs to fetch the metrics to prometheus
       Thread.sleep(20 * 1000);
@@ -622,14 +651,14 @@ class ItMonitoringExporterWebApp {
           "wls-exporter", hostPortPrometheus);
       assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
               "wls-exporter",
-              domain1Uid,
-              domain1Namespace,
+              domain4Uid,
+              domain4Namespace,
               false, cluster1Name),
           "monitoring exporter metrics can't fetch wls-exporter application metrics");
       assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
               "myear",
-              domain1Uid,
-              domain1Namespace,
+              domain4Uid,
+              domain4Namespace,
               false, cluster1Name),
           "monitoring exporter metrics can't fetch wls-exporter application metrics");
     }
