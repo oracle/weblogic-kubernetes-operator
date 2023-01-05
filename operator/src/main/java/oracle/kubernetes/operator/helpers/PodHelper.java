@@ -51,7 +51,6 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
-import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -741,10 +740,6 @@ public class PodHelper {
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
         if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
-        } else if (isServerStateUnknown(getServerStateFromInfo(info, serverName))) {
-          // Server status is unknown, add a 10 second fudge factor here to account for the fact that WLST takes
-          // ~6 seconds to start.
-          gracePeriodSeconds = DEFAULT_ADDITIONAL_DELETE_TIME;
         }
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
@@ -755,10 +750,6 @@ public class PodHelper {
     @Nonnull
     private Boolean isServerShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
-    }
-
-    private Boolean isServerStateUnknown(String serverState) {
-      return Optional.ofNullable(serverState).map(UNKNOWN_STATE::equals).orElse(false);
     }
 
     @Nullable

@@ -55,6 +55,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
@@ -275,6 +276,18 @@ class ShutdownManagedServerStepTest {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
     defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
+
+    testSupport.runSteps(shutdownStandaloneManagedServer);
+
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
+  }
+
+  @Test
+  void whenInvokeShutdown_standaloneServer_AndDomainNotFound_verifyFailure() {
+    selectServer(MANAGED_SERVER1, standaloneServerService);
+
+    defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
+    testSupport.failOnResource(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 

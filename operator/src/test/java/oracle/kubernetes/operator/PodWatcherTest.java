@@ -24,6 +24,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,8 @@ import static oracle.kubernetes.common.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
@@ -431,4 +435,60 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     assertThat(domain, not(hasCondition(FAILED).withReason(KUBERNETES)));
   }
 
+  @Test
+  void whenServerShutdownOnFirstRead_runNextStep() {
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+    domain.setStatus(new DomainStatus().addServer(new ServerStatus().withServerName(NAME).withState(SHUTDOWN_STATE)));
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+
+    try {
+      testSupport.runSteps(watcher.waitForServerShutdown(NAME, domain, terminalStep));
+
+      assertThat(terminalStep.getExecutionCount(), is(1));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  @Test
+  void whenServerShutdownLater_runNextStepOnlyOnce() {
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+
+    testSupport.defineResources(domain);
+    try {
+      testSupport.runSteps(watcher.waitForServerShutdown(NAME, domainWithSuspendingState(domain), terminalStep));
+      domain.setStatus(new DomainStatus().addServer(new ServerStatus().withServerName(NAME).withState(SHUTDOWN_STATE)));
+      testSupport.setTime(10, TimeUnit.SECONDS);
+
+      assertThat(terminalStep.getExecutionCount(), is(1));
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  private DomainResource domainWithSuspendingState(DomainResource domainResource) {
+    return domainResource.withStatus(
+        new DomainStatus().addServer(new ServerStatus().withServerName(NAME).withState(SUSPENDING_STATE)));
+  }
+
+  @Test
+  void whenDomainNotFound_waitForServerShutdownDoesNotRecordKubernetesFailure() {
+    final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
+    final AtomicBoolean stopping = new AtomicBoolean(false);
+    final PodWatcher watcher = createWatcher(stopping);
+    testSupport.addDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    try {
+      testSupport.failOnResource(KubernetesTestSupport.DOMAIN, NAME, NS, HTTP_NOT_FOUND);
+      testSupport.runSteps(watcher.waitForServerShutdown(NAME, domain, terminalStep));
+    } finally {
+      stopping.set(true);
+    }
+
+    assertThat(terminalStep.wasRun(), is(true));
+    assertThat(domain, not(hasCondition(FAILED).withReason(KUBERNETES)));
+  }
 }

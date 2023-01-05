@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -12,9 +13,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -23,6 +26,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
 import static oracle.kubernetes.operator.JobWatcher.isFailed;
 import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_NAME;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
 /**
  * A test stub for processing domains in unit tests.
@@ -73,7 +77,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-    return new PassthroughPodAwaiterStepFactory();
+    return new PassThroughWithServerShutdownAwaiterStepFactory();
   }
 
   @Override
@@ -134,8 +138,35 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
 
     @Override
-    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
       return next;
+    }
+  }
+
+  private class PassThroughWithServerShutdownAwaiterStepFactory extends PassthroughPodAwaiterStepFactory {
+    @Override
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+      if (Optional.ofNullable(PodHelper.getServerState(domain, serverName))
+          .map(s -> s.equals(SHUTDOWN_STATE)).orElse(false)) {
+        return next;
+      } else {
+        return new DelayStep(next, 1);
+      }
+    }
+  }
+
+  private static class DelayStep extends Step {
+    private final int delay;
+    private final Step next;
+
+    DelayStep(Step next, int delay) {
+      this.delay = delay;
+      this.next = next;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doDelay(next, packet, delay, TimeUnit.SECONDS);
     }
   }
 

@@ -83,7 +83,9 @@ abstract class WaitForReadyStep<T> extends Step {
    *
    * @return true if cached resource not found on read
    */
-  abstract boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead);
+  boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead) {
+    return false;
+  }
 
   /**
    * Returns true if the callback for this resource should be processed. This is typically used to exclude

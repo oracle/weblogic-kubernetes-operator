@@ -39,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
@@ -331,11 +332,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new WaitForDeleteResponseStep(callback);
     }
 
-    @Override
-    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
-      return false;
-    }
-
     // A pod is considered deleted when reading its value from Kubernetes returns null.
     @Override
     protected boolean isReady(V1Pod result) {
@@ -388,27 +384,22 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
   }
 
-  public Step waitForUnready(String serverName, DomainResource domain, Step next) {
-    return new WaitForServerUnreadyStep(next, serverName, domain);
+  public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+    return new WaitForServerShutdownStep(next, serverName, domain);
   }
 
-  private class WaitForServerUnreadyStep extends WaitForReadyStep<DomainResource> {
+  private class WaitForServerShutdownStep extends WaitForReadyStep<DomainResource> {
     private final String serverName;
 
-    WaitForServerUnreadyStep(Step next, String serverName, DomainResource domain) {
+    WaitForServerShutdownStep(Step next, String serverName, DomainResource domain) {
       super(domain, next);
       this.serverName = serverName;
     }
 
     @Override
     protected boolean isReady(DomainResource resource) {
-      String serverState = PodHelper.getServerState(resource, serverName);
-      return Optional.ofNullable(serverState).map(s -> s.equals(SHUTDOWN_STATE)).orElse(false);
-    }
-
-    @Override
-    boolean onReadNotFoundForCachedResource(DomainResource cachedResource, boolean isNotFoundOnRead) {
-      return false;
+      return Optional.ofNullable(PodHelper.getServerState(resource, serverName)).map(s -> s.equals(SHUTDOWN_STATE))
+          .orElse(false);
     }
 
     @Override
@@ -432,16 +423,16 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     @Override
     protected ResponseStep resumeIfReady(WaitForReadyStep.Callback callback) {
-      return new WaitForServerUnreadyStep.WaitForUnreadyResponseStep(callback, serverName);
+      return new WaitForServerShutdownResponseStep(callback, serverName);
     }
 
-    private class WaitForUnreadyResponseStep extends DefaultResponseStep<DomainResource> {
+    private class WaitForServerShutdownResponseStep extends ResponseStep<DomainResource> {
 
       private final WaitForReadyStep<DomainResource>.Callback callback;
       private final String serverName;
 
-      WaitForUnreadyResponseStep(WaitForReadyStep.Callback callback, String serverName) {
-        super(WaitForServerUnreadyStep.this.getNext());
+      WaitForServerShutdownResponseStep(WaitForReadyStep.Callback callback, String serverName) {
+        super(WaitForServerShutdownStep.this.getNext());
         this.callback = callback;
         this.serverName = serverName;
       }
@@ -457,6 +448,13 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           return doDelay(createReadAndIfReadyCheckStep(callback), packet,
               getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
         }
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+            ? doNext(packet)
+            : super.onFailure(packet, callResponse);
       }
     }
   }

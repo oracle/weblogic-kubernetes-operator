@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -131,6 +133,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTIO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SUSPENDING_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
@@ -586,13 +589,53 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     domainConfigurator.withDefaultServerStartPolicy(ServerStartPolicy.NEVER);
+    DomainStatus status = newInfo.getDomain().getStatus();
+    defineServerShutdownWithHttpOkResponse();
+    setAdminServerStatus(status, SUSPENDING_STATE);
+    setManagedServerState(status, SUSPENDING_STATE);
 
     processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
-    makePodsUnready();
+    assertThat(getRunningPods().size(), equalTo(4));
+    setAdminServerStatus(status, SHUTDOWN_STATE);
+    setManagedServerState(status, SHUTDOWN_STATE);
+    testSupport.setTime(100, TimeUnit.SECONDS);
     assertThat(getRunningPods().size(), equalTo(1));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  private void defineServerShutdownWithHttpOkResponse() {
+    httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
+    IntStream.range(1, 3).forEach(idx -> httpSupport.defineResponse(
+        createShutdownRequest("cluster-managed-server" + idx, 8001),
+        createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE)));
+  }
+
+  private HttpRequest createShutdownRequest(String serverName, int portNumber) {
+    String url = "http://test-domain-" + serverName + ".namespace:" + portNumber;
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
+  }
+
+  private void setManagedServerState(DomainStatus status, String suspendingState) {
+    IntStream.range(1, 3).forEach(idx -> getManagedServerStatus(status, idx).setState(suspendingState));
+  }
+
+  private void setAdminServerStatus(DomainStatus status, String state) {
+    status.getServers().stream().filter(s -> matchingServerName(s, ADMIN_NAME)).forEach(s -> s.setState(state));
+  }
+
+  private ServerStatus getManagedServerStatus(DomainStatus status, int idx) {
+    return status.getServers().stream()
+        .filter(s -> matchingServerName(s, getManagedServerName(idx))).findAny().orElse(null);
+  }
+
+  private boolean matchingServerName(ServerStatus serverStatus, String serverName) {
+    return serverStatus.getServerName().equals(serverName);
   }
 
   @Test
@@ -653,18 +696,6 @@ class DomainProcessorTest {
   private V1PodStatus createReadyStatus() {
     return new V1PodStatus().phase("Running")
           .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
-  }
-
-  private void makePodsUnready() {
-    testSupport.<V1Pod>getResources(POD).stream()
-        .filter(this::isWlsServer)
-        .forEach(pod -> pod.setStatus(createReadyStatus()));
-  }
-
-  private V1PodStatus createUnreadyStatus() {
-    return new V1PodStatus().phase("Running")
-        .addConditionsItem(new V1PodCondition().type("Ready").status("False"))
-        .addConditionsItem(new V1PodCondition().type("ContainersReady").status("False"));
   }
 
   private V1Secret createCredentialsSecret() {

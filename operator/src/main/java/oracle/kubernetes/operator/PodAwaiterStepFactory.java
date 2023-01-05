@@ -43,5 +43,5 @@ public interface PodAwaiterStepFactory {
    * @param next Next processing step once Pod is unready
    * @return Asynchronous step
    */
-  Step waitForUnready(String serverName, DomainResource domain, Step next);
+  Step waitForServerShutdown(String serverName, DomainResource domain, Step next);
 }

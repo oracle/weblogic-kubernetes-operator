@@ -137,7 +137,7 @@ class DomainUpPlanTest {
     }
 
     @Override
-    public Step waitForUnready(String serverName, DomainResource domain, Step next) {
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
       return null;
     }
   }

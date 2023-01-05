@@ -338,7 +338,7 @@ public class ShutdownManagedServerStep extends Step {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      return doNext(pw.waitForUnready(serverName, getDomainPresenceInfo(packet).getDomain(), getNext()), packet);
+      return doNext(pw.waitForServerShutdown(serverName, getDomainPresenceInfo(packet).getDomain(), getNext()), packet);
     }
 
     @Override

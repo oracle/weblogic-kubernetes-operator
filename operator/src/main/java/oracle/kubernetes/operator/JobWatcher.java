@@ -253,11 +253,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return isComplete(job) || isFailed(job);
     }
 
-    @Override
-    boolean onReadNotFoundForCachedResource(V1Job cachedJob, boolean isNotFoundOnRead) {
-      return false;
-    }
-
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those
     // where the job is not yet ready.
     @Override
