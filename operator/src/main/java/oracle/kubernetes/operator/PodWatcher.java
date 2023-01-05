@@ -427,7 +427,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     @Override
     Step createReadAsyncStep(String name, String namespace, String domainUid,
                              ResponseStep<DomainResource> responseStep) {
-      return new CallBuilder().readDomainAsync(domainUid, namespace, responseStep);
+      return new CallBuilder().readDomainAsync(name, namespace, responseStep);
     }
 
     @Override
