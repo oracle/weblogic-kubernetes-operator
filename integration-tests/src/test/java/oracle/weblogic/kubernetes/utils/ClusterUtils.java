@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -171,6 +172,44 @@ public class ClusterUtils {
   }
 
   /**
+   * Create cluster and reference it to domain resource.
+   *
+   * @param clusterResName name of the cluster resource
+   * @param clusterName name of the cluster as in WebLogic config
+   * @param clusterIndex cluster index
+   * @param domainUid domainUid of the domain to reference the cluster resource in
+   * @param domainNamespace namespace
+   * @param replicas scale to replicas
+   */
+  public static void createClusterResourceAndAddToDomainResource(String clusterResName,
+                                                                 String clusterName,
+                                                                 int clusterIndex,
+                                                                 String domainUid,
+                                                                 String domainNamespace,
+                                                                 int replicas) {
+    ClusterList clusters = listClusterCustomResources(domainNamespace);
+    if (clusters != null
+        && clusters.getItems().stream().anyMatch(cluster -> cluster.getClusterResourceName().equals(clusterResName))) {
+      getLogger().info("!!!Cluster Resource {0} in namespace {1} already exists, skipping...",
+          clusterResName, domainNamespace);
+    } else {
+      getLogger().info("Creating cluster resource {0} in namespace {1}", clusterResName, domainNamespace);
+      createClusterAndVerify(createClusterResource(clusterResName, clusterName, domainNamespace, replicas));
+    }
+    // reference cluster in domain resource
+    getLogger().info("Patch the domain resource with new cluster resource");
+    StringBuffer patchStr = new StringBuffer("[")
+        .append("{\"op\": \"add\",\"path\": \"/spec/clusters/")
+        .append(clusterIndex)
+        .append("\", \"value\": {\"name\" : \"")
+        .append(clusterResName)
+        .append("\"}}]");
+
+    getLogger().info("Updating domain configuration using patch string: {0}", patchStr);
+    assertTrue(patchDomainResource(domainUid, domainNamespace, patchStr),"Failed to patch domain");
+  }
+
+  /**
    * Remove the replicas setting from a cluster resource.
    * @param domainUid uid of the domain
    * @param clusterName name of the cluster resource
@@ -297,6 +336,20 @@ public class ClusterUtils {
     } else {
       assertFalse(result, KUBERNETES_CLI + " scale command should fail");
     }
+  }
+
+  /**
+   * Create cluster and reference it to domain resource.
+   *
+   * @param domainNamespace namespace
+   * @param clusterResName name of the cluster resource
+   * @param patchStr the string for patching
+   */
+  public static void patchClusterResourceAndVerify(String domainNamespace, String clusterResName, String patchStr) {
+    getLogger().info("Patch cluster {0} using patch string: {1}", clusterResName, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchClusterCustomResource(clusterResName, domainNamespace, patch,
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
   }
 
   /**
