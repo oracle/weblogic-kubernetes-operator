@@ -23,8 +23,11 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
@@ -40,9 +43,10 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -310,7 +314,6 @@ public class ShutdownManagedServerStep extends Step {
       ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
           new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext());
       HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
-      packet.put("HTTP_SHUTDOWN_START_TIME", SystemClock.now());
       return doNext(requestStep, packet);
     }
 
@@ -356,7 +359,12 @@ public class ShutdownManagedServerStep extends Step {
       }
 
       removeShutdownRequestRetryCount(packet);
-      return doNext(packet);
+      return doNext(Step.chain(createDomainRefreshStep(getDomainPresenceInfo(packet).getDomainName(),
+          getDomainPresenceInfo(packet).getNamespace()), getNext()), packet);
+    }
+
+    private Step createDomainRefreshStep(String domainName, String namespace) {
+      return new CallBuilder().readDomainAsync(domainName, namespace, new DomainUpdateStep());
     }
 
     private boolean shouldRetry(Packet packet) {
@@ -387,6 +395,21 @@ public class ShutdownManagedServerStep extends Step {
 
     void setHttpAsyncRequestStep(HttpAsyncRequestStep requestStep) {
       this.requestStep = requestStep;
+    }
+  }
+
+  static class DomainUpdateStep extends ResponseStep<DomainResource> {
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
+      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      return doNext(packet);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
+      return callResponse.getStatusCode() == HTTP_NOT_FOUND
+          ? doNext(packet)
+          : super.onFailure(packet, callResponse);
     }
   }
 }

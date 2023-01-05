@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.time.Duration;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,7 +41,6 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -54,6 +51,7 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -743,10 +741,10 @@ public class PodHelper {
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
         if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
-        } else {
-          OffsetDateTime start = (OffsetDateTime) Optional.ofNullable(packet.getValue("HTTP_SHUTDOWN_START_TIME"))
-              .orElse(SystemClock.now());
-          gracePeriodSeconds = gracePeriodSeconds - Duration.between(start, SystemClock.now()).getSeconds();
+        } else if (isServerStateUnknown(getServerStateFromInfo(info, serverName))) {
+          // Server status is unknown, add a 10 second fudge factor here to account for the fact that WLST takes
+          // ~6 seconds to start.
+          gracePeriodSeconds = DEFAULT_ADDITIONAL_DELETE_TIME;
         }
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
@@ -757,6 +755,10 @@ public class PodHelper {
     @Nonnull
     private Boolean isServerShutdown(String serverState) {
       return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
+    }
+
+    private Boolean isServerStateUnknown(String serverState) {
+      return Optional.ofNullable(serverState).map(UNKNOWN_STATE::equals).orElse(false);
     }
 
     @Nullable
