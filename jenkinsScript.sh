@@ -127,6 +127,13 @@ ulimit -aH
 
 repoLogin
 
+mkdir $WORKSPACE/jdk
+cd $WORKSPACE/jdk
+wget https://download.oracle.com/java/17/archive/jdk-17.0.5_linux-x64_bin.tar.gz
+tar -xvf jdk-17.0.5_linux-x64_bin.tar.gz
+
+export JAVA_HOME=$WORKSPACE/jdk/jdk-17.0.5
+
 echo 'Info: Run build...'
 mvn clean install
 
