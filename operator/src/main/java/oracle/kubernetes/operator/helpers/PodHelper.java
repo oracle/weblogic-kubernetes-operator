@@ -183,8 +183,8 @@ public class PodHelper {
   }
 
   /**
-   * Get the server state From DPI or the domain resource.
-   * @param domain domain resource
+   * Get the server state From the domain resource.
+   * @param domain domain resource.
    * @param serverName Name of the server.
    * @return server state, if exists, otherwise null.
    */
