@@ -51,6 +51,7 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -741,6 +742,7 @@ public class PodHelper {
         if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
         }
+
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
@@ -749,7 +751,8 @@ public class PodHelper {
 
     @Nonnull
     private Boolean isServerShutdown(String serverState) {
-      return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
+      return Optional.ofNullable(serverState).map(s -> SHUTDOWN_STATE.equals(s) || UNKNOWN_STATE.equals(s))
+          .orElse(false);
     }
 
     @Nullable
