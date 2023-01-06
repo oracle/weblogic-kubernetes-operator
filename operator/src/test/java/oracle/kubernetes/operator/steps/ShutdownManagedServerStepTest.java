@@ -48,6 +48,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -283,7 +284,7 @@ class ShutdownManagedServerStepTest {
   }
 
   @Test
-  void whenInvokeShutdown_standaloneServer_AndDomainNotFound_verifyFailure() {
+  void whenInvokeShutdown_standaloneServer_DomainNotFound_verifyFailureAndRunNextStep() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
     defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
@@ -291,6 +292,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
+    MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
     assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
