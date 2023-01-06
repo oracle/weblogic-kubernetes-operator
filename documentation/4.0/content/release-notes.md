@@ -449,6 +449,6 @@ Updated several dependencies, including the Oracle Linux base for the container 
 
 ### Known issues
 
-| Issue | Description |
-| --- | --- |
-| None currently |  |
+| Issue                                                                                    | Description |
+|------------------------------------------------------------------------------------------| --- |
+| Deadlock on WebLogic Managed Coherence Server startup with Oracle Coherence 12.2.1.3.20. | Intermittently, a deadlock may occur during deployment of the `CoherenceModule` which prevents a WebLogic Managed Coherence Server from reaching `RUNNING` state.  This issue has been resolved in Oracle Coherence versions 12.2.1.4.0 and above. |
