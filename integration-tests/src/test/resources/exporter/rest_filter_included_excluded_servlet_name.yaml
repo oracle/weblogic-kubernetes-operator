@@ -9,8 +9,6 @@ queries:
   - applicationRuntimes:
       key: name
       keyName: app
-      includedKeyValues: "myear1.*"
-      excludedKeyValues: "myear123.*"
       componentRuntimes:
         type: WebAppComponentRuntime
         prefix: webapp_config_
@@ -21,4 +19,6 @@ queries:
         servlets:
           prefix: wls_servlet_
           key: servletName
+          includedKeyValues: "com.oracle.wls.exporter.webapp.*"
+          excludedKeyValues: "com.oracle.wls.exporter.webapp.ExporterServlet.*"
           values: [invocationTotalCount, reloadTotal, executionTimeAverage, poolMaxCapacity, executionTimeTotal, reloadTotalCount, executionTimeHigh, executionTimeLow]

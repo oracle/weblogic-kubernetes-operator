@@ -323,11 +323,28 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIncludedExcludedKeysComboTopLevel() throws Exception {
     logger.info("Testing filtering included and excluded specific app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("app=\"myear123\"");
+    checkIncluded.add("app=\"myear1\"");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("app=\"myear1\"");
+    checkExcluded.add("app=\"myear123\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_included_excluded_webapp_names.yaml",checkIncluded, checkExcluded);
+  }
+
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * combo of includedKeyValues and excludedKeyValues on  sub level.
+   */
+  @Test
+  @DisplayName("Test Filtering of the Metrics with includedKeyValues and excludedKeyValues of Monitoring Exporter on "
+      + " sub level.")
+  void testFilterIncludedExcludedKeysComboSubLevel() throws Exception {
+    logger.info("Testing filtering included and excluded specific app names in the metrics ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp\"");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_included_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
   }
 
   private void setupDomainAndMonitoringTools(String domainNamespace, String domainUid)
