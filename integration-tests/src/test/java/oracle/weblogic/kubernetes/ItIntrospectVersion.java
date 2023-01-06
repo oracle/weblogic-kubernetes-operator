@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
@@ -109,7 +108,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -174,11 +172,8 @@ class ItIntrospectVersion {
   private static String wlsPassword = ADMIN_PASSWORD_DEFAULT;
 
   private static String adminSvcExtHost = null;
-  private static String clusterRouteHost = null;
-  private static final String clusterServiceName = domainUid + "-cluster-" + cluster1Name;
 
   private Map<String, OffsetDateTime> cl2podsWithTimeStamps = null;
-  private Map<String, OffsetDateTime> cl1podsWithTimeStamps = null;
 
   private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
@@ -329,21 +324,10 @@ class ItIntrospectVersion {
     podStateNotChanged(adminServerPodName, domainUid, introDomainNamespace, adminPodCreationTime);
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       podStateNotChanged(cluster1ManagedServerPodNamePrefix + i,
-          domainUid, introDomainNamespace, pods.get(i));
+          domainUid, introDomainNamespace, pods.get(cluster1ManagedServerPodNamePrefix + i));
     }
 
-    //create ingress controller - OKD uses services exposed as routes
-    if (!OKD) {
-      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-      clusterNameMsPortMap.put(cluster1Name, managedServerPort);
-      logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
-      createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
-    } else {
-      clusterRouteHost = createRouteForOKD(clusterServiceName, introDomainNamespace);
-    }
-
-    List<String> managedServerNames = new ArrayList<String>();
-    managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount + 1; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
@@ -465,7 +449,7 @@ class ItIntrospectVersion {
         "Getting admin server port failed"),
         "Updated admin server port is not equal to expected value");
 
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
@@ -586,7 +570,6 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster1ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    DomainResource cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
     if (cluster2Created) {
       // verify new cluster managed server pods are ready
       for (int i = 1; i <= cluster2ReplicaCount; i++) {
@@ -601,11 +584,11 @@ class ItIntrospectVersion {
     final boolean VALID = true;
     logger.info("Check that after patching current credentials are not valid and new credentials are");
     verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
-         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, !VALID);
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, false);
     verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
@@ -688,7 +671,7 @@ class ItIntrospectVersion {
       checkPodReadyAndServiceExists(cluster2ManagedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster2ReplicaCount; i++) {
       managedServerNames.add(cluster2ManagedServerNameBase + i);
     }
@@ -725,7 +708,7 @@ class ItIntrospectVersion {
       cluster1ManagedServerNames.add(cluster1ManagedServerNameBase + i);
     }
     // get the map with server pods and their original creation timestamps
-    cl1podsWithTimeStamps = getPodsWithTimeStamps(introDomainNamespace, adminServerPodName,
+    Map<String, OffsetDateTime> cl1podsWithTimeStamps = getPodsWithTimeStamps(introDomainNamespace, adminServerPodName,
         cluster1ManagedServerPodNamePrefix, cluster1ReplicaCount);
 
     List<String> cluster2ManagedServerNames = new ArrayList<>();
@@ -753,8 +736,7 @@ class ItIntrospectVersion {
     imageTag(imageName, imageUpdate);
     imageRepoLoginAndPushImageToRegistry(imageUpdate);
 
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
+    StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/image\",")
         .append("\"value\": \"")
@@ -1159,7 +1141,7 @@ class ItIntrospectVersion {
         },
         logger,
         "Deploying the application using Rest");
-    List<String> managedServerNames = new ArrayList<String>();
+    List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
     }
@@ -1282,7 +1264,6 @@ class ItIntrospectVersion {
       verifyIntrospectVersionLabelValue(cluster1ManagedServerPodNamePrefix + i, introspectVersion);
     }
 
-    DomainResource cr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace));
     if (cluster2Created) {
       // verify new cluster managed server pods are ready
       for (int i = 1; i <= cluster2ReplicaCount; i++) {
@@ -1299,16 +1280,23 @@ class ItIntrospectVersion {
         getPod(introDomainNamespace, "", podName),
         "Get pod " + podName);
 
-    Map<String, String> myLabels = myPod.getMetadata().getLabels();
+    Map<String, String> myLabels = new HashMap<>();
+    if (myPod != null && myPod.getMetadata() != null) {
+      myLabels = myPod.getMetadata().getLabels();
+    }
 
-    for (Map.Entry<String, String> entry : myLabels.entrySet()) {
-      if (entry.getKey().equals(wlsIntroVersion)) {
-        logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
-        logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
+    if (myLabels != null) {
+      for (Map.Entry<String, String> entry : myLabels.entrySet()) {
+        if (entry.getKey().equals(wlsIntroVersion)) {
+          logger.info("Get Spec Key:value = {0}:{1}", entry.getKey(), entry.getValue());
+          logger.info("Verifying weblogic.introspectVersion is set to {0}", introspectVersion);
 
-        assertEquals(introspectVersion, entry.getValue(),
-            "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
+          assertEquals(introspectVersion, entry.getValue(),
+              "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
+        }
       }
+    } else {
+      logger.info("myLabels for pod {0} in namespace {1} is null", podName, introDomainNamespace);
     }
   }
 
