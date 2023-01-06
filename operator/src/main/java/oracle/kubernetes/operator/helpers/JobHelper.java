@@ -67,6 +67,7 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTOR_JOB_FAILURE_THROWABLE;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
@@ -96,6 +97,10 @@ public class JobHelper {
 
   public static Step readDomainIntrospectorPodLog(Step next) {
     return UnitTestAdaptor.create(IntrospectorJobStepContext::readNamedPodLog, next);
+  }
+
+  public static Step readIntrospectorResults(Step next) {
+    return UnitTestAdaptor.create(IntrospectorJobStepContext::readIntrospectorResults, next);
   }
 
   static class UnitTestAdaptor extends Step {
@@ -660,6 +665,10 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
+        Throwable t = (Throwable) packet.remove(INTROSPECTOR_JOB_FAILURE_THROWABLE);
+        if (t != null) {
+          return doTerminate(t, packet);
+        }
         return doNext(listPodsInNamespace(getNamespace(), getNext()), packet);
       }
 

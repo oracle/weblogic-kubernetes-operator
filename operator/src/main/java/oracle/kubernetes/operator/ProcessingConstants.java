@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -43,6 +43,8 @@ public interface ProcessingConstants {
 
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobFailureLogged";
+  String INTROSPECTOR_JOB_FAILURE_THROWABLE = "introspectorJobFailureThrowable";
+
   String WAIT_FOR_POD_READY = "waitForPodReady";
 
   /** Key to an object of type MakeRightDomainOperation. */
