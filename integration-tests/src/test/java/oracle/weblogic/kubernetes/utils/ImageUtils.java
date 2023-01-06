@@ -343,9 +343,11 @@ public class ImageUtils {
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
             .srcDirList(archiveAppsList)));
+        String appPath = archiveAppsList.get(0);
+
         //archive provided ear or war file
-        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-            appSrcDirList.get(0).lastIndexOf("."));
+        String appName = appPath.substring(appPath.lastIndexOf("/") + 1,
+            appPath.lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);

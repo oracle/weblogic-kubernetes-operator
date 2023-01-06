@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -96,7 +96,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
-  private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
+  private static final String MONEXP_MODEL_FILE = "model.monexp.filter.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
   private static final String STICKYSESS_APP_NAME = "stickysess-app";
@@ -127,11 +127,11 @@ class ItMonitoringExporterMetricsFiltering {
    */
   @BeforeAll
 
-  public void initAll(@Namespaces(7) List<String> namespaces) {
+  public void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
     monitoringExporterDir = Paths.get(RESULTS_ROOT,
-        "ItMonitoringExporterWebApp", "monitoringexp").toString();
+        "ItMonitoringExporterMetricsFiltering", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
     monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
@@ -149,8 +149,8 @@ class ItMonitoringExporterMetricsFiltering {
     
 
     logger.info("Get a unique namespace for domain1");
-    assertNotNull(namespaces.get(6), "Namespace list is null");
-    domain1Namespace = namespaces.get(6);
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    domain1Namespace = namespaces.get(3);
 
     logger.info("install and verify operator");
     installAndVerifyOperator(opNamespace,
