@@ -883,7 +883,7 @@ The general design goal of the operator installation is to automatically provide
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
 If you have not already done so, clone the repository.
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator Create a new branch.
-$ git checkout -b your-branch Make your documentation updates by editing the source files in documentation/staging/content. Make sure you check in the changes from the documentation/staging/content area only; do not build the site and check in the static files.</description>
+$ git checkout -b your-branch Make your documentation updates by editing the source files in documentation/&amp;lt;release-version&amp;gt;/content, for example documentation/4.0/content. Make sure you check in the changes from the documentation/&amp;lt;release-version&amp;gt;/content area only; do not build the site and check in the static files.</description>
     </item>
     
     <item>
