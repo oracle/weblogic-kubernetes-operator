@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -48,6 +48,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
@@ -278,6 +280,19 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
+    assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
+  }
+
+  @Test
+  void whenInvokeShutdown_standaloneServer_DomainNotFound_verifyFailureAndRunNextStep() {
+    selectServer(MANAGED_SERVER1, standaloneServerService);
+
+    defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
+    testSupport.failOnResource(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_NOT_FOUND);
+
+    testSupport.runSteps(shutdownStandaloneManagedServer);
+
+    MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
     assertThat(logRecords, containsInfo(SERVER_SHUTDOWN_REST_FAILURE));
   }
 

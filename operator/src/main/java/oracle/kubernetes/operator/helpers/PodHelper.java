@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -51,6 +51,7 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
@@ -738,9 +739,10 @@ public class PodHelper {
         final String clusterName = getClusterName(oldPod);
         final String name = oldPod.getMetadata().getName();
         long gracePeriodSeconds = getGracePeriodSeconds(info, clusterName);
-        if (isServerShutdown(getServerState(info.getDomain(), serverName))) {
+        if (isServerShutdown(getServerStateFromInfo(info, serverName))) {
           gracePeriodSeconds = 0;
         }
+
         return doNext(
             deletePod(name, info.getNamespace(), getPodDomainUid(oldPod), gracePeriodSeconds, getNext()),
             packet);
@@ -749,7 +751,8 @@ public class PodHelper {
 
     @Nonnull
     private Boolean isServerShutdown(String serverState) {
-      return Optional.ofNullable(serverState).map(SHUTDOWN_STATE::equals).orElse(false);
+      return Optional.ofNullable(serverState).map(s -> SHUTDOWN_STATE.equals(s) || UNKNOWN_STATE.equals(s))
+          .orElse(false);
     }
 
     @Nullable
@@ -761,6 +764,11 @@ public class PodHelper {
       return Optional.ofNullable(info.getServer(serverName, clusterName))
           .map(this::getConfiguredGracePeriodSeconds)
           .orElse(Shutdown.DEFAULT_TIMEOUT);
+    }
+
+    private String getServerStateFromInfo(DomainPresenceInfo info, String serverName) {
+      return Optional.ofNullable(info.getLastKnownServerStatus(serverName))
+          .map(LastKnownStatus::getStatus).orElse(getServerState(info.getDomain(), serverName));
     }
 
     // We add a 10 second fudge factor here to account for the fact that WLST takes
