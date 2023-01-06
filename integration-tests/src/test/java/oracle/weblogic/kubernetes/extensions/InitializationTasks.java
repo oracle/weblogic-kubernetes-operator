@@ -75,6 +75,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIE
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
+import static oracle.weblogic.kubernetes.TestConstants.v8oDomainNamespaceLabelSelector;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -297,10 +298,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           installWebHookOnlyOperator();
         } else {          
           assertDoesNotThrow(() -> createNamespace(opNamespace));
-          String domainNamespaceLabelSelector = "wko.operator.v8o";
           String domainNamespaceSelectionStrategy = "LabelSelector";
           installAndVerifyOperator(OPERATOR_RELEASE_NAME, opNamespace,
-              domainNamespaceSelectionStrategy, domainNamespaceLabelSelector, true);
+              domainNamespaceSelectionStrategy, v8oDomainNamespaceLabelSelector, true);
         }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio

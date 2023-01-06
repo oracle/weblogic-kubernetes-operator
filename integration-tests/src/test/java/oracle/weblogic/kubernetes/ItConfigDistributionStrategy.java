@@ -191,12 +191,6 @@ class ItConfigDistributionStrategy {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-    
-    try {
-      Thread.sleep(1000 * 60 * 5);
-    } catch (Exception ex) {
-      logger.info("Operator installed");
-    }
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

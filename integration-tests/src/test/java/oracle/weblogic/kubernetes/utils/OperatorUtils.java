@@ -24,6 +24,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.V8O;
+import static oracle.weblogic.kubernetes.TestConstants.v8oDomainNamespaceLabelSelector;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -396,9 +397,9 @@ public class OperatorUtils {
       logger.info("Running tests in V8O installation, skipping operator installation from test.");
       if (domainNamespaceSelectionStrategy == null) {
         Map<String, String> labelMap = new HashMap<>();
-        labelMap.put("wko.operator.v8o", "true");
+        labelMap.put(v8oDomainNamespaceLabelSelector, "true");
         for (String namespace : domainNamespace) {
-          logger.info("Labeling namespace with {0}", "wko.operator.v8o:true");
+          logger.info("Labeling namespace with {0}:true", v8oDomainNamespaceLabelSelector);
           assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
         }
       } else {
