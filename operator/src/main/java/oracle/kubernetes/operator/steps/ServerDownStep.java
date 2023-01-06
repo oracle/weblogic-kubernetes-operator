@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -13,8 +13,6 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-
-import static oracle.kubernetes.operator.steps.ShutdownManagedServerStep.createWaitForServerShutdownWithHttpStep;
 
 public class ServerDownStep extends Step {
   private final String serverName;
@@ -53,7 +51,6 @@ public class ServerDownStep extends Step {
   @Nonnull
   private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
     return ShutdownManagedServerStep
-        .createShutdownManagedServerStep(createWaitForServerShutdownWithHttpStep(
-            (PodHelper.deletePodStep(serverName, next)), serverName), serverName, oldPod);
+        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName, oldPod);
   }
 }
