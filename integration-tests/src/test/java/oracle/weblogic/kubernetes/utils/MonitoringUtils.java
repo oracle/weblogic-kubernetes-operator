@@ -770,15 +770,19 @@ public class MonitoringUtils {
    * Create mii image with monitoring exporter webapp and one more app.
    * @param modelFilePath - path to model file
    * @param monexpAppDir - location for monitoring exporter webapp
-   * @param appList  -extra app names
+   * @param appName1  -extra app names
    * @param imageName - desired imagename
    */
-  public static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath, List<String> appList,
+  public static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath,
+                                               String appName1, String appName2,
                                                String imageName) {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
+    List<String> appList = new ArrayList<>();
     appList.add(appPath);
+    appList.add(appName1);
+    appList.add(appName2);
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(modelFilePath);

@@ -359,12 +359,15 @@ public class ImageUtils {
         // build an application archive using what is in resources/apps/APP_NAME
         String zipFile = "";
         if (oneArchiveContainsMultiApps) {
-          assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
-              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
-          // build the archive list
-          archiveList.add(zipFile);
+          for (String buildAppDirs : buildAppDirList) {
+            assertTrue(buildAppArchive(defaultAppParams()
+                    .srcDirList(Collections.singletonList(buildAppDirs))
+                    .appName(buildAppDirs)),
+                String.format("Failed to create app archive for %s", buildAppDirs));
+            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirs);
+            // build the archive list
+            archiveList.add(zipFile);
+          }
         } else if (buildCoherence) {
           // build the Coherence GAR file
           assertTrue(buildCoherenceArchive(defaultAppParams()

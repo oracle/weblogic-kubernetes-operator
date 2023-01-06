@@ -160,11 +160,9 @@ class ItMonitoringExporterMetricsFiltering {
     installMonitoringExporter(monitoringExporterDir, true);
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
-    List<String> appList = new ArrayList<>();
-    appList.add(STICKYSESS_APP_NAME);
-    appList.add(SESSMIGR_APP_NAME);
+
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
-        appList, MONEXP_IMAGE_NAME);
+        STICKYSESS_APP_NAME, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     if (!OKD) {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
