@@ -669,7 +669,7 @@ public class MonitoringUtils {
   }
 
   /**
-   * Download src from monitoring exporter github project and build or download webapp.
+   * Download src from monitoring exporter github project and build webapp.
    *
    * @param monitoringExporterDir full path to monitoring exporter install location
    */
