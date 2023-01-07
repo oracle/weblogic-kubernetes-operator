@@ -347,6 +347,74 @@ class ItMonitoringExporterMetricsFiltering {
         + "/exporter/rest_filter_included_excluded_servlet_name.yaml",checkIncluded, checkExcluded);
   }
 
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * not existed includedKeyValues .
+   */
+  @Test
+  @DisplayName("Test Filtering of the Metrics with includedKeyValues for not existed key of Monitoring Exporter on "
+      + " top level.")
+  void testFilterIncludedNotExistedKeysTopLevel() throws Exception {
+    logger.info("Testing filtering included not existed app names in the metrics ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("appName=\"");
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_included_not_existedkey.yaml",checkIncluded, checkExcluded);
+  }
+
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * not existed includedKeyValues .
+   */
+  @Test
+  @DisplayName("Test Filtering of the Metrics with excludedKeyValues for not existed key of Monitoring Exporter on "
+      + " top level.")
+  void testFilterExcludedNotExistedKeysTopLevel() throws Exception {
+    logger.info("Testing filtering excluded not existing app names in the metrics ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("appName=\"");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("");
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_excluded_not_existedkey.yaml",checkIncluded, checkExcluded);
+  }
+
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * not existed includedKeyValues on sublevel.
+   */
+  @Test
+  @DisplayName("Test Filtering of the Metrics with includedKeyValues for not existed key of Monitoring Exporter on "
+      + " sub level.")
+  void testFilterIncludedNotExistedKeysSubLevel() throws Exception {
+    logger.info("Testing filtering included not existed servlet names in the metrics ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("servletName=\"");
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_included_not_existedkey_sublevel.yaml",checkIncluded, checkExcluded);
+  }
+
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * not existed includedKeyValues on sublevel.
+   */
+  @Test
+  @DisplayName("Test Filtering of the Metrics with excludedKeyValues for not existed key of Monitoring Exporter on "
+      + " sub level.")
+  void testFilterExcludedNotExistedKeysSubLevel() throws Exception {
+    logger.info("Testing filtering excluded not existing servlet in the metrics ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("servletName=\"");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("");
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_excluded_not_existedkey_sublevel.yaml",checkIncluded, checkExcluded);
+  }
+
   private void setupDomainAndMonitoringTools(String domainNamespace, String domainUid)
       throws IOException, ApiException {
     // create and verify one cluster mii domain
