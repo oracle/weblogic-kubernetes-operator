@@ -17,6 +17,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.INSTALL_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -50,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OperatorUtils {
-  private static final AtomicBoolean installed = new AtomicBoolean(false);
+  private static final AtomicBoolean installed = new AtomicBoolean(!INSTALL_OPERATOR);
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -393,20 +394,23 @@ public class OperatorUtils {
                                                         String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
-    if (V8O && installed.getAndSet(true)) {
-      logger.info("Running tests in V8O installation, skipping operator installation from test.");
-      if (domainNamespaceSelectionStrategy == null) {
-        Map<String, String> labelMap = new HashMap<>();
-        labelMap.put(v8oDomainNamespaceLabelSelector, "true");
-        for (String namespace : domainNamespace) {
-          logger.info("Labeling namespace with {0}:true", v8oDomainNamespaceLabelSelector);
-          assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
+    if (V8O) {
+      if (installed.getAndSet(true)) {
+        logger.info("Running tests in V8O installation, skipping operator installation from test.");
+        if (domainNamespaceSelectionStrategy == null) {
+          Map<String, String> labelMap = new HashMap<>();
+          labelMap.put(v8oDomainNamespaceLabelSelector, "true");
+          for (String namespace : domainNamespace) {
+            logger.info("Labeling namespace with {0}:true", v8oDomainNamespaceLabelSelector);
+            assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
+          }
+        } else {
+          logger.info("The domain namespace selection strategy is not List, "
+              + "only tests with List strategy is run in this exercise");
         }
-      } else {
-        logger.info("The domain namespace selection strategy is not List, "
-            + "only tests with List strategy is run in this exercise");
+        return null;
       }
-      return null;
+      logger.info("Installing operator once, for the entire test run...");
     }
 
     // Create a service account for the unique opNamespace

@@ -401,6 +401,8 @@ public interface TestConstants {
   
   //V8O related constants
   public static final boolean V8O = Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.v8o", "false"));
+  public static final boolean INSTALL_OPERATOR = Boolean.parseBoolean(
+      getNonEmptySystemProperty("wko.it.v8o", "true"));
   public static final String v8oDomainNamespaceLabelSelector
       = getNonEmptySystemProperty("wko.it.v8o.label", "wko.it.v8o.operator");
 }
