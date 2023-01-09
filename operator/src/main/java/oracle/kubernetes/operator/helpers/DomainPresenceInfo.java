@@ -48,6 +48,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -55,6 +56,7 @@ import oracle.kubernetes.weblogic.domain.model.PrivateDomainApi;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
@@ -813,12 +815,17 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @return true if the domain does not have any cluster or the cluster statuses have been initially populated.
    */
   public boolean clusterStatusInitialized() {
-    return getDomain().getSpec().getClusters().isEmpty() || !isClusterStatusNotInitialized();
+    return getDomain().getSpec().getClusters().isEmpty() || !notAllClusterStatusInitialized();
   }
 
-  private boolean isClusterStatusNotInitialized() {
+  private boolean notAllClusterStatusInitialized() {
+    return getClusterStatuses().size() < getDomain().getSpec().getClusters().size();
+  }
+
+  @NotNull
+  private List<ClusterStatus> getClusterStatuses() {
     return Optional.ofNullable(getDomain().getStatus()).map(DomainStatus::getClusters)
-        .orElse(Collections.emptyList()).isEmpty();
+        .orElse(Collections.emptyList());
   }
 
   @Override
