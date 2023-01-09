@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.INSTALL_OPERATOR;
@@ -300,8 +301,24 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           if (INSTALL_OPERATOR) {
             assertDoesNotThrow(() -> createNamespace(opNamespace));
             String domainNamespaceSelectionStrategy = "LabelSelector";
-            installAndVerifyOperator(OPERATOR_RELEASE_NAME, opNamespace,
-                domainNamespaceSelectionStrategy, v8oDomainNamespaceLabelSelector, true);
+            HelmParams opHelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+                .namespace(opNamespace)
+                .chartDir(OPERATOR_CHART_DIR);
+            installAndVerifyOperator(opNamespace,
+                OPERATOR_RELEASE_NAME + "-sa",
+                true,
+                0,
+                opHelmParams,
+                ELASTICSEARCH_HOST,
+                false,
+                true,
+                domainNamespaceSelectionStrategy,
+                v8oDomainNamespaceLabelSelector,
+                true,
+                "INFO",
+                false,
+                true,
+                null);
           }
         } else {
           //install webhook to prevent every operator installation trying to update crd
@@ -630,6 +647,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         true, // enableClusterRolebinding
         "INFO", // webhook pod log level
         true, // webhookOnly
+        false, //skip operator install
         "null" // domainNamespace
     );
   }

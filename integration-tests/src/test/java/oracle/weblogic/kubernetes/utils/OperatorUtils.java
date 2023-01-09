@@ -269,6 +269,7 @@ public class OperatorUtils {
         false,
         "INFO",
         false,
+        false,
         domainNamespace);
   }
 
@@ -352,6 +353,7 @@ public class OperatorUtils {
         enableClusterRoleBinding,
         loggingLevel,
         false,
+        false,
         domainNamespace);
   }
 
@@ -372,6 +374,7 @@ public class OperatorUtils {
    * @param enableClusterRoleBinding operator cluster role binding
    * @param loggingLevel logging level of operator
    * @param webhookOnly boolean indicating install webHookOnly operator 
+   * @param skipInstallOperator Skip operator installation
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -388,11 +391,14 @@ public class OperatorUtils {
                                                         boolean enableClusterRoleBinding,
                                                         String loggingLevel,
                                                         boolean webhookOnly,
+                                                        boolean skipInstallOperator,
                                                         String... domainNamespace) {
     String operatorImage;
     LoggingFacade logger = getLogger();
+    
     if (V8O) {
-      if (domainNamespaceSelectionStrategy == null) {
+      if (domainNamespaceSelectionStrategy == null
+          || domainNamespaceSelectionStrategy.equals("List")) {
         Map<String, String> labelMap = new HashMap<>();
         labelMap.put(v8oDomainNamespaceLabelSelector, "true");
         for (String namespace : domainNamespace) {
@@ -403,9 +409,11 @@ public class OperatorUtils {
         logger.warning("The domain namespace selection strategy is not List, "
             + "only tests with List strategy is run in this exercise");
       }
-      logger.info("Running tests in V8O installation, skipping operator installation from test.");
-      return null;
-    }
+      if (!skipInstallOperator) {
+        logger.info("Running tests in V8O installation, skipping operator installation from test.");
+        return null;
+      }
+    } 
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
