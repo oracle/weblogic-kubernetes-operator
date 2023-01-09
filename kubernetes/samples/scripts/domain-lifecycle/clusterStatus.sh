@@ -67,6 +67,15 @@ Sample output:
   sample-domain1-ns  sample-domain1  cluster-1  Failed       True       0    5    2     2        2
   sample-domain1-ns  sample-domain1  cluster-2  Unavailable  False      0    5    5     5        2
 
+Operator version note:
+  This script relies on domains that are managed by a 4.0 or later operator
+  because it relies on 'v9' domain schema elements.
+
+  If you see a message similar to
+  'error: the server doesn't have a resource type "domains"',
+  then this indicates no operator is installed, or that 
+  a domain is managed by an older schema version.
+
 EOF
 
 exit $1
@@ -171,7 +180,7 @@ clusterStatus() {
     local _val
 
     _domains="$(
-      $__kubernetes_cli $__ns_filter get domains \
+      $__kubernetes_cli $__ns_filter get domains.v9.weblogic.oracle \
         -o=jsonpath='{range .items[*]}{.metadata.namespace}{","}{.metadata.name}{","}{.spec.domainUID}{"\n"}{end}'
     )"
 
@@ -216,7 +225,7 @@ clusterStatus() {
       # get the values, replace empty values with sentinals or '0' as appropriate,
       # and remove all '~?' prefixes
 
-      $__kubernetes_cli -n "$__ns_cur" get domain "$__name_cur" -o=jsonpath="$__jp" \
+      $__kubernetes_cli -n "$__ns_cur" get domains.v9.weblogic.oracle "$__name_cur" -o=jsonpath="$__jp" \
         | sed 's/~G /~GunknownGen /g' \
         | sed 's/~O /~OunknownOGen /g' \
         | sed 's/~F /~FNotSet /g' \
