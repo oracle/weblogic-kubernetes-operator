@@ -294,8 +294,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
           }
         }
         
-        //install webhook to prevent every operator installation trying to update crd
+        //If running tests with single operator installation, install it here.
         if (V8O) {
+          // if running in verrazanno skip operator installation
           if (INSTALL_OPERATOR) {
             assertDoesNotThrow(() -> createNamespace(opNamespace));
             String domainNamespaceSelectionStrategy = "LabelSelector";
@@ -303,6 +304,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 domainNamespaceSelectionStrategy, v8oDomainNamespaceLabelSelector, true);
           }
         } else {
+          //install webhook to prevent every operator installation trying to update crd
           installWebHookOnlyOperator();
         }
 
