@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.INSTALL_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
@@ -294,13 +295,15 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        if (!V8O) {
+        if (V8O) {
+          if (INSTALL_OPERATOR) {
+            assertDoesNotThrow(() -> createNamespace(opNamespace));
+            String domainNamespaceSelectionStrategy = "LabelSelector";
+            installAndVerifyOperator(OPERATOR_RELEASE_NAME, opNamespace,
+                domainNamespaceSelectionStrategy, v8oDomainNamespaceLabelSelector, true);
+          }
+        } else {
           installWebHookOnlyOperator();
-        } else {          
-          assertDoesNotThrow(() -> createNamespace(opNamespace));
-          String domainNamespaceSelectionStrategy = "LabelSelector";
-          installAndVerifyOperator(OPERATOR_RELEASE_NAME, opNamespace,
-              domainNamespaceSelectionStrategy, v8oDomainNamespaceLabelSelector, true);
         }
 
         // set initialization success to true, not counting the istio installation as not all tests use istio

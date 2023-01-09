@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
@@ -17,7 +16,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
-import static oracle.weblogic.kubernetes.TestConstants.INSTALL_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -50,8 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class OperatorUtils {
-  private static final AtomicBoolean installed = new AtomicBoolean(!INSTALL_OPERATOR);
+public class OperatorUtils {  
 
   /**
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
@@ -403,16 +400,11 @@ public class OperatorUtils {
           assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
         }
       } else {
-        logger.info("The domain namespace selection strategy is not List, "
+        logger.warning("The domain namespace selection strategy is not List, "
             + "only tests with List strategy is run in this exercise");
-        return null;
       }
-      if (installed.getAndSet(true)) {
-        logger.info("Running tests in V8O installation, skipping operator installation from test.");
-        return null;
-      } else {
-        logger.info("Installing operator once, for the entire test run...");
-      }
+      logger.info("Running tests in V8O installation, skipping operator installation from test.");
+      return null;
     }
 
     // Create a service account for the unique opNamespace
