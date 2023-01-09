@@ -395,22 +395,24 @@ public class OperatorUtils {
     String operatorImage;
     LoggingFacade logger = getLogger();
     if (V8O) {
-      if (installed.getAndSet(true)) {
-        logger.info("Running tests in V8O installation, skipping operator installation from test.");
-        if (domainNamespaceSelectionStrategy == null) {
-          Map<String, String> labelMap = new HashMap<>();
-          labelMap.put(v8oDomainNamespaceLabelSelector, "true");
-          for (String namespace : domainNamespace) {
-            logger.info("Labeling namespace with {0}:true", v8oDomainNamespaceLabelSelector);
-            assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
-          }
-        } else {
-          logger.info("The domain namespace selection strategy is not List, "
-              + "only tests with List strategy is run in this exercise");
+      if (domainNamespaceSelectionStrategy == null) {
+        Map<String, String> labelMap = new HashMap<>();
+        labelMap.put(v8oDomainNamespaceLabelSelector, "true");
+        for (String namespace : domainNamespace) {
+          logger.info("Labeling namespace with {0}:true", v8oDomainNamespaceLabelSelector);
+          assertDoesNotThrow(() -> addLabelsToNamespace(namespace, labelMap));
         }
+      } else {
+        logger.info("The domain namespace selection strategy is not List, "
+            + "only tests with List strategy is run in this exercise");
         return null;
       }
-      logger.info("Installing operator once, for the entire test run...");
+      if (installed.getAndSet(true)) {
+        logger.info("Running tests in V8O installation, skipping operator installation from test.");
+        return null;
+      } else {
+        logger.info("Installing operator once, for the entire test run...");
+      }
     }
 
     // Create a service account for the unique opNamespace
