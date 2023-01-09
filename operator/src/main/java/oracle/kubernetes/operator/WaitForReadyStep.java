@@ -286,7 +286,7 @@ abstract class WaitForReadyStep<T> extends Step {
       }
     }
 
-    private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
+    private void handleResourceReady(Packet packet, T resource) {
       updatePacket(packet, resource);
       if (shouldTerminateFiber(resource)) {
         packet.put(INTROSPECTOR_JOB_FAILURE_THROWABLE, createTerminationException(resource));
@@ -297,7 +297,7 @@ abstract class WaitForReadyStep<T> extends Step {
     void proceedFromWait(T resource) {
       removeCallback(getResourceName(), this);
       if (mayResumeFiber()) {
-        handleResourceReady(fiber, packet, resource);
+        handleResourceReady(packet, resource);
         fiber.resume(packet);
       }
     }
