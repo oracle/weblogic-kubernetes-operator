@@ -2869,6 +2869,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     public Step waitForDelete(V1Pod pod, Step next) {
       return next;
     }
+
+    @Override
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+      return next;
+    }
   }
 
   public static class DelayedPodAwaiterStepFactory implements PodAwaiterStepFactory {
@@ -2891,6 +2896,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     @Override
     public Step waitForDelete(V1Pod pod, Step next) {
       return new DelayStep(next, delaySeconds);
+    }
+
+    @Override
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+      return next;
     }
   }
 
