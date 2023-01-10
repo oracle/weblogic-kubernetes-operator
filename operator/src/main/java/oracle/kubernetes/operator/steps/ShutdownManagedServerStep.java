@@ -136,7 +136,7 @@ public class ShutdownManagedServerStep extends Step {
       String clusterName = getClusterNameFromServiceLabel();
       List<V1EnvVar> envVarList = getV1EnvVars();
 
-      Shutdown shutdown = Optional.ofNullable(getDomainPresenceInfo(packet).getServer(serverName, clusterName))
+      Shutdown shutdown = Optional.ofNullable(getDomainPresenceInfo(getPacket()).getServer(serverName, clusterName))
           .map(EffectiveServerSpec::getShutdown).orElse(null);
 
       isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
@@ -146,7 +146,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private List<V1EnvVar> getV1EnvVars() {
-      return Optional.ofNullable(pod.getSpec())
+      return Optional.ofNullable(getPod().getSpec())
               .map(this::getEnvVars).orElse(Collections.emptyList());
     }
 
@@ -227,7 +227,7 @@ public class ShutdownManagedServerStep extends Step {
       if (listenPort == null) {
         // This can only happen if the running server pod does not exist in the WLS Domain.
         // This is a rare case where the server was deleted from the WLS Domain config.
-        listenPort = getListenPortFromPod(this.pod);
+        listenPort = getListenPortFromPod(this.getPod());
       }
 
       return listenPort;
@@ -273,7 +273,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private String getServerName() {
-      return this.pod.getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
+      return this.getPod().getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
     }
 
     private WlsDomainConfig getWlsDomainConfig() {
