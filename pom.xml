@@ -662,7 +662,7 @@
     <client-java-version>17.0.0</client-java-version>
     <kotlin-stdlib-version>1.8.0</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
-    <junit.jupiter.version>5.9.1</junit.jupiter.version>
+    <junit.jupiter.version>5.9.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
