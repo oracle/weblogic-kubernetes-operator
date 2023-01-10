@@ -19,5 +19,5 @@ queries:
         servlets:
           prefix: wls_servlet_
           key: servletName
-          includedKeyValues: "com.oracle.wls.exporter.webapp.ExporterServlet.*"
+          includedKeyValues: "com.oracle.wls.exporter.webapp.ExporterServlet"
           values: [invocationTotalCount, reloadTotal, executionTimeAverage, poolMaxCapacity, executionTimeTotal, reloadTotalCount, executionTimeHigh, executionTimeLow]

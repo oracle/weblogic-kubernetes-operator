@@ -635,7 +635,7 @@ class ItMonitoringExporterMetricsFiltering {
                                               List<String> checkIncluded, List<String> checkExcluded) throws Exception {
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", configurationFile);
     assertNotNull(page, "Failed to replace configuration");
-
+    logger.info("Current Configuration " + page);
     assertTrue(page.asNormalizedText().contains("KeyValues"),
         "Page does not contain expected filtering KeyValues configuration" + page.asNormalizedText());
     if (!OKD) {
