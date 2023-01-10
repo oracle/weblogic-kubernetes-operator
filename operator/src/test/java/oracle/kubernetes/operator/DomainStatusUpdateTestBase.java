@@ -1925,9 +1925,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void initializeClusterStatus() {
-    ClusterStatus status = new ClusterStatus().addCondition(
+    List<ClusterStatus> statusList = info.getDomain().getStatus().getClusters();
+    ClusterStatus status = statusList.isEmpty() ? new ClusterStatus().withClusterName("cluster1") : statusList.get(0);
+    status.addCondition(
         new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE));
-    info.getDomain().getStatus().addCluster(status);
     ClusterResource clusterResource = testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1");
     clusterResource.setStatus(status);
   }
