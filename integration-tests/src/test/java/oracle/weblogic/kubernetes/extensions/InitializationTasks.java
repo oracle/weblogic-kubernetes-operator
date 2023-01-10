@@ -319,7 +319,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
                 false,
                 true,
                 null,
-                "default");
+                "foo");
           }
         } else {
           //install webhook to prevent every operator installation trying to update crd
