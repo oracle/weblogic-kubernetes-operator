@@ -768,12 +768,12 @@ public class MonitoringUtils {
 
   /**
    * Create mii image with monitoring exporter webapp and one more app.
-   * @param modelFilePath - path to model file
+   * @param modelList - list of the paths to model files
    * @param monexpAppDir - location for monitoring exporter webapp
    * @param appName1  -extra app names
    * @param imageName - desired imagename
    */
-  public static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath,
+  public static String createAndVerifyMiiImage(String monexpAppDir, List<String> modelList,
                                                String appName1, String appName2,
                                                String imageName) {
     // create image with model files
@@ -785,7 +785,7 @@ public class MonitoringUtils {
     appList.add(appName2);
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(modelFilePath);
+    //final List<String> modelList = Collections.singletonList(modelFilePath);
     String myImage =
         createMiiImageAndVerify(imageName, modelList, appList);
 

@@ -97,6 +97,7 @@ class ItMonitoringExporterMetricsFiltering {
   private static String monitoringExporterAppDir = null;
   // constants for creating domain image using model in image
   private static final String MONEXP_MODEL_FILE = "model.monexp.filter.yaml";
+  private static final String JDBC_MODEL_FILE = "multi-model-one-ds.20.yaml";
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
   private static final String STICKYSESS_APP_NAME = "stickysess-app";
@@ -160,8 +161,10 @@ class ItMonitoringExporterMetricsFiltering {
     installMonitoringExporter(monitoringExporterDir, true);
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
-
-    miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MONEXP_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/" + JDBC_MODEL_FILE);
+    miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, modelList,
         STICKYSESS_APP_NAME, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     if (!OKD) {
       // install and verify NGINX
@@ -244,7 +247,7 @@ class ItMonitoringExporterMetricsFiltering {
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
     checkExcluded.add("app=\"myear1\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_and_servlet_name.yaml",checkIncluded, checkExcluded);
+        + "/exporter/rest_filter_included_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
   }
 
   /**
@@ -294,7 +297,7 @@ class ItMonitoringExporterMetricsFiltering {
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
     checkExcluded.add("app=\"myear1\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_excluded_webapp_and_servlet_name.yaml",checkIncluded, checkExcluded);
+        + "/exporter/rest_filter_excluded_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
   }
 
   /**
@@ -376,7 +379,7 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("appName=");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("");
+    checkExcluded.add("appName=notexisted");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_not_existedkey.yaml",checkIncluded, checkExcluded);
   }
@@ -410,7 +413,7 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("servletName=");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("");
+    checkExcluded.add("servletName=notexisted");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_not_existedkey_sublevel.yaml",checkIncluded, checkExcluded);
   }
