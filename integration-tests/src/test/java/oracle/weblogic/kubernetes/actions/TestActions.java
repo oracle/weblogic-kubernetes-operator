@@ -78,6 +78,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ClusterUtils;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
@@ -303,7 +304,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewIntrospectVersion(
       String domainUid, String namespace) {
-    return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+    return DomainUtils.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
   /**
