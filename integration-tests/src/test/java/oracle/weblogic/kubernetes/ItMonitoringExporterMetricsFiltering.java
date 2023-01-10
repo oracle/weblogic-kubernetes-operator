@@ -244,7 +244,7 @@ class ItMonitoringExporterMetricsFiltering {
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
     checkExcluded.add("app=\"myear1\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_and servlet_name.yaml",checkIncluded, checkExcluded);
+        + "/exporter/rest_filter_included_webapp_and_servlet_name.yaml",checkIncluded, checkExcluded);
   }
 
   /**
@@ -294,7 +294,7 @@ class ItMonitoringExporterMetricsFiltering {
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
     checkExcluded.add("app=\"myear1\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
-        + "/exporter/rest_filter_included_webapp_and servlet_name.yaml",checkIncluded, checkExcluded);
+        + "/exporter/rest_filter_excluded_webapp_and_servlet_name.yaml",checkIncluded, checkExcluded);
   }
 
   /**
@@ -340,7 +340,7 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterIncludedExcludedKeysComboSubLevel() throws Exception {
     logger.info("Testing filtering included and excluded specific app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp\"");
+    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp");
     List<String> checkExcluded = new ArrayList<>();
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
@@ -359,7 +359,7 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("appName=\"");
+    checkExcluded.add("appName=");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_included_not_existedkey.yaml",checkIncluded, checkExcluded);
   }
@@ -374,7 +374,7 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedNotExistedKeysTopLevel() throws Exception {
     logger.info("Testing filtering excluded not existing app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("appName=\"");
+    checkIncluded.add("appName=");
     List<String> checkExcluded = new ArrayList<>();
     checkExcluded.add("");
     replaceConfigurationWithFilter(RESOURCE_DIR
@@ -393,7 +393,7 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("servletName=\"");
+    checkExcluded.add("servletName=");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_included_not_existedkey_sublevel.yaml",checkIncluded, checkExcluded);
   }
@@ -408,7 +408,7 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedNotExistedKeysSubLevel() throws Exception {
     logger.info("Testing filtering excluded not existing servlet in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("servletName=\"");
+    checkIncluded.add("servletName=");
     List<String> checkExcluded = new ArrayList<>();
     checkExcluded.add("");
     replaceConfigurationWithFilter(RESOURCE_DIR
