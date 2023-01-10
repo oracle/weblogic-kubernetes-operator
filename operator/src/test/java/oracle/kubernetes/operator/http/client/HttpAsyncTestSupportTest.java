@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
@@ -14,6 +14,7 @@ import static com.meterware.simplestub.Stub.createStub;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -89,6 +90,18 @@ class HttpAsyncTestSupportTest {
       support.defineResponse(createPostRequest("http://that", "abcd"),
           createStub(HttpResponseStub.class, 200, "Wrong"));
     });
+  }
+
+  @Test
+  void whenResponseIncludesSetCookieHeader_addToStoredCookies() {
+    support.defineResponse(createPostRequest("http://this", "abc"),
+          createStub(HttpResponseStub.class, 200, "Got it")).creatingSession("JSESSION", "xyz");
+
+    assertThat(
+          getResponse(createPostRequest("http://this", "abc"))
+                .headers()
+                .firstValue("Set-Cookie").orElse(""),
+          startsWith("JSESSION=xyz;"));
   }
 
   @SuppressWarnings("SameParameterValue")
