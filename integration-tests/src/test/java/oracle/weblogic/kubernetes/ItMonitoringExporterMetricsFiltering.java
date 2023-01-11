@@ -295,7 +295,7 @@ class ItMonitoringExporterMetricsFiltering {
     checkIncluded.add("app=\"myear1\"");
     List<String> checkExcluded = new ArrayList<>();
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
-    checkExcluded.add("app=\"wls-exporter\"");
+    checkExcluded.add("app=\"myear123\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
   }

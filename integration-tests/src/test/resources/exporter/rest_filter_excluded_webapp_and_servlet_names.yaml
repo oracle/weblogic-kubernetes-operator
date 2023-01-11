@@ -10,7 +10,7 @@ queries:
   - applicationRuntimes:
       key: name
       keyName: app
-      excludedKeyValues: "wls-exporter.*"
+      excludedKeyValues: "myear123"
       componentRuntimes:
         type: WebAppComponentRuntime
         prefix: webapp_config_
