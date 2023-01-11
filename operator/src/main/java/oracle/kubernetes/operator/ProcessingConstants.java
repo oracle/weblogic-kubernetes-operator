@@ -9,7 +9,6 @@ public interface ProcessingConstants {
   String MAIN_COMPONENT_NAME = "main";
   String DELEGATE_COMPONENT_NAME = "delegate";
   String DOMAIN_COMPONENT_NAME = "domain";
-  String FIBER_COMPONENT_NAME = "fiber";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
   String JOBWATCHER_COMPONENT_NAME = "jobWatcher";
 
@@ -68,4 +67,5 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECTION_COMPLETE = "Domain introspection complete";
   String SKIP_STATUS_UPDATE = "skipStatusUpdate";
   String END_OF_PROCESSING = "lastStatusUpdate";
+  String AUTHORIZATION_SOURCE = "AuthorizationSource";
 }
