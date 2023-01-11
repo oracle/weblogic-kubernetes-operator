@@ -292,10 +292,10 @@ class ItMonitoringExporterMetricsFiltering {
     logger.info("Testing filtering only excluded specific app name in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
-    checkIncluded.add("app=\"wls-exporter\"");
+    checkIncluded.add("app=\"myear1\"");
     List<String> checkExcluded = new ArrayList<>();
     checkExcluded.add("servletName=\"com.oracle.wls.exporter.webapp.MainServlet\"");
-    checkExcluded.add("app=\"myear1\"");
+    checkExcluded.add("app=\"wls-exporter\"");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_webapp_and_servlet_names.yaml",checkIncluded, checkExcluded);
   }
