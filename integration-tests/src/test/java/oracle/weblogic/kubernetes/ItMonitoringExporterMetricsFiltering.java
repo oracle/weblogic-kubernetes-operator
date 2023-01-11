@@ -433,6 +433,27 @@ class ItMonitoringExporterMetricsFiltering {
         "Running, Suspended, Shutdown, Overloaded, Unknown", "TestDataSource");
   }
 
+  /**
+   * Check filtering functionality of monitoring exporter for appending configuration with filter.
+   */
+  @Test
+  @DisplayName("Test appending configuration with filter.")
+  void testAppendConfigWithFilter() throws Exception {
+    logger.info("Testing appending configuration containing filters ");
+    List<String> checkIncluded = new ArrayList<>();
+    checkIncluded.add("app=\"myear1\"");
+    List<String> checkExcluded = new ArrayList<>();
+    checkExcluded.add("app=\"wls-exporter\"");
+
+    replaceConfigurationWithFilter(RESOURCE_DIR
+        + "/exporter/rest_filter_excluded_webapp_name.yaml",checkIncluded, checkExcluded);
+    appendConfiguration(RESOURCE_DIR
+        + "/exporter/rest_filter_excluded_servlet_name.yaml");
+    logger.info("Verify metrics configuration has not change");
+    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    verifyMetrics(checkIncluded, checkExcluded);
+  }
+
   private void setupDomainAndMonitoringTools(String domainNamespace, String domainUid)
       throws IOException, ApiException {
     // create and verify one cluster mii domain
@@ -656,24 +677,28 @@ class ItMonitoringExporterMetricsFiltering {
     assertTrue(page.asNormalizedText().contains("KeyValues"),
         "Page does not contain expected filtering KeyValues configuration" + page.asNormalizedText());
     if (!OKD) {
-      for (String includedString : checkIncluded) {
-        assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-                includedString,
-                domain1Uid,
-                domain1Namespace,
-                false, cluster1Name),
-            "monitoring exporter metrics can't filter to included " + includedString);
-      }
-      for (String excludedString : checkExcluded) {
-        assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
-                excludedString,
-                domain1Uid,
-                domain1Namespace,
-                false, cluster1Name),
-            "monitoring exporter metrics can't filter to excluded " + excludedString);
-      }
+      verifyMetrics(checkIncluded, checkExcluded);
     }
 
+  }
+
+  private static void verifyMetrics(List<String> checkIncluded, List<String> checkExcluded) {
+    for (String includedString : checkIncluded) {
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+              includedString,
+              domain1Uid,
+              domain1Namespace,
+              false, cluster1Name),
+          "monitoring exporter metrics can't filter to included " + includedString);
+    }
+    for (String excludedString : checkExcluded) {
+      assertFalse(verifyMonExpAppAccess("wls-exporter/metrics",
+              excludedString,
+              domain1Uid,
+              domain1Namespace,
+              false, cluster1Name),
+          "monitoring exporter metrics can't filter to excluded " + excludedString);
+    }
   }
 
   /**
@@ -681,20 +706,12 @@ class ItMonitoringExporterMetricsFiltering {
    *
    * @throws Exception if test fails
    */
-  private void appendConfiguration() throws Exception {
+  private void appendConfiguration(String configFile) throws Exception {
 
     // run append
-    HtmlPage page = submitConfigureForm(exporterUrl, "append", RESOURCE_DIR + "/exporter/rest_webapp.yaml");
-    assertTrue(page.asNormalizedText().contains("WebAppComponentRuntime"),
-        "Page does not contain expected WebAppComponentRuntime configuration");
-    // check previous config is there
-    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
-        "Page does not contain expected JVMRuntime configuration");
-    if (!OKD) {
-      String sessionAppPrometheusSearchKey =
-          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "myear", hostPortPrometheus);
-    }
+    HtmlPage page = submitConfigureForm(exporterUrl, "append", configFile);
+    assertTrue(page.asNormalizedText().contains("Unable to Update Configuration"),
+        "Page does not contain expected Unable to Update Configuration");
   }
 }
 
