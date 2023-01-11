@@ -362,7 +362,7 @@ class ItMonitoringExporterMetricsFiltering {
     List<String> checkIncluded = new ArrayList<>();
     checkIncluded.add("");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("appName=");
+    checkExcluded.add("app=");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_included_not_existedkey.yaml",checkIncluded, checkExcluded);
   }
@@ -377,9 +377,9 @@ class ItMonitoringExporterMetricsFiltering {
   void testFilterExcludedNotExistedKeysTopLevel() throws Exception {
     logger.info("Testing filtering excluded not existing app names in the metrics ");
     List<String> checkIncluded = new ArrayList<>();
-    checkIncluded.add("appName=");
+    checkIncluded.add("app=");
     List<String> checkExcluded = new ArrayList<>();
-    checkExcluded.add("appName=notexisted");
+    checkExcluded.add("app=notexisted");
     replaceConfigurationWithFilter(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_not_existedkey.yaml",checkIncluded, checkExcluded);
   }
