@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -1925,9 +1925,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private void initializeClusterStatus() {
-    ClusterStatus status = new ClusterStatus().addCondition(
+    List<ClusterStatus> statusList = info.getDomain().getStatus().getClusters();
+    ClusterStatus status = statusList.isEmpty() ? new ClusterStatus().withClusterName("cluster1") : statusList.get(0);
+    status.addCondition(
         new ClusterCondition(ClusterConditionType.AVAILABLE).withStatus(FALSE));
-    info.getDomain().getStatus().addCluster(status);
     ClusterResource clusterResource = testSupport.getResourceWithName(KubernetesTestSupport.CLUSTER, "cluster1");
     clusterResource.setStatus(status);
   }
