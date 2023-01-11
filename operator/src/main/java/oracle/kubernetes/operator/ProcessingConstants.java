@@ -42,6 +42,8 @@ public interface ProcessingConstants {
 
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobFailureLogged";
+  String INTROSPECTOR_JOB_FAILURE_THROWABLE = "introspectorJobFailureThrowable";
+
   String WAIT_FOR_POD_READY = "waitForPodReady";
 
   /** Key to an object of type MakeRightDomainOperation. */
