@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -390,6 +390,8 @@ class ItKubernetesDomainEvents {
   void testK8SEventsMultiClusterEvents() {
     OffsetDateTime timestamp = now();
     createNewCluster();
+    OffsetDateTime timestamp2 = now();
+    logger.info("Scale the newly-added cluster");
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
             externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the Domain_Available event is generated");
@@ -403,13 +405,13 @@ class ItKubernetesDomainEvents {
             domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
     logger.info("verify the ClusterCompleted event is generated");
     checkEvent(opNamespace, domainNamespace3,
-        domainUid, CLUSTER_COMPLETED, "Normal", timestamp);
+        domainUid, CLUSTER_COMPLETED, "Normal", timestamp2);
     logger.info("verify the only 1 Completed event for domain is generated");
     assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
             DOMAIN_COMPLETED, timestamp));
     logger.info("verify the only 1 ClusterCompleted event for domain is generated");
     assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
-        CLUSTER_COMPLETED, timestamp));
+        CLUSTER_COMPLETED, timestamp2));
   }
 
   /**
