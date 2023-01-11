@@ -418,6 +418,21 @@ class ItMonitoringExporterMetricsFiltering {
         + "/exporter/rest_filter_excluded_not_existedkey_sublevel.yaml",checkIncluded, checkExcluded);
   }
 
+  /**
+   * Check filtering functionality of monitoring exporter for
+   * of the properties field with no admin privileges.
+   */
+  @Test
+  @DisplayName("Test Filtering of the properties field with no admin privileges")
+  void testFilterPrivilegedFields() throws Exception {
+    logger.info("Testing filtering of properties field with no admin privileges");
+
+    replaceConfiguration(RESOURCE_DIR
+        + "/exporter/rest_filter_jdbc_privileged.yaml",
+        "wls_datasource_state%7Bname%3D%22TestDataSource%22%7D%5B15s%5D",
+        "Running, Suspended, Shutdown, Overloaded, Unknown", "TestDataSource");
+  }
+
   private void setupDomainAndMonitoringTools(String domainNamespace, String domainUid)
       throws IOException, ApiException {
     // create and verify one cluster mii domain
@@ -616,21 +631,20 @@ class ItMonitoringExporterMetricsFiltering {
    *
    * @throws Exception if test fails
    */
-  private void replaceConfiguration() throws Exception {
-    HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
+  private void replaceConfiguration(String configFile, String checkMetricsPrometheusString,
+                                    String checkConfig, String expectedValue) throws Exception {
+    HtmlPage page = submitConfigureForm(exporterUrl, "replace", configFile);
     assertNotNull(page, "Failed to replace configuration");
 
-    assertTrue(page.asNormalizedText().contains("JVMRuntime"),
-        "Page does not contain expected JVMRuntime configuration");
-    assertFalse(page.asNormalizedText().contains("WebAppComponentRuntime"),
-        "Page contains unexpected WebAppComponentRuntime configuration");
+    assertTrue(page.asNormalizedText().contains(checkConfig),
+        "Page does not contain expected configuration" + checkConfig);
+
     if (!OKD) {
       //needs 20 secs to fetch the metrics to prometheus
       Thread.sleep(20 * 1000);
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22"
-              + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-          cluster1Name + "-managed-server1", hostPortPrometheus);
+      checkMetricsViaPrometheus(checkMetricsPrometheusString,
+          expectedValue, hostPortPrometheus);
     }
   }
 
