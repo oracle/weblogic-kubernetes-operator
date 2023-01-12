@@ -450,7 +450,7 @@ class ItMonitoringExporterMetricsFiltering {
     appendConfiguration(RESOURCE_DIR
         + "/exporter/rest_filter_excluded_servlet_name.yaml");
     logger.info("Verify metrics configuration has not change");
-    checkIncluded.add("servletName=\"com.oracle.wls.exporter.webapp.ExporterServlet\"");
+    checkIncluded.add("servletName=\"JspServlet\"");
     verifyMetrics(checkIncluded, checkExcluded);
   }
 
