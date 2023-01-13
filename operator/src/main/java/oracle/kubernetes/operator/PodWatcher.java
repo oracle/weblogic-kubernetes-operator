@@ -41,6 +41,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DO
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 /**
  * Watches for changes to pods.
@@ -453,7 +454,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
       private boolean isServerShutdown(DomainPresenceInfo info) {
         return Optional.ofNullable(info).map(i -> i.getLastKnownServerStatus(serverName))
-            .map(s -> s.getStatus().equals(SHUTDOWN_STATE)).orElse(false);
+            .map(s -> SHUTDOWN_STATE.equals(s.getStatus()) || UNKNOWN_STATE.equals(s.getStatus())).orElse(false);
       }
     }
   }
