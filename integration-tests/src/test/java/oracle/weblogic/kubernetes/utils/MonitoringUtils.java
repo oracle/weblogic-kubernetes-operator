@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -203,7 +203,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
 
-    String monitoringExporterBranch = MONITORING_EXPORTER_BRANCH;
+    String monitoringExporterBranch = "russ_always_filter_on_name";
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
             + monitoringExporterBranch
