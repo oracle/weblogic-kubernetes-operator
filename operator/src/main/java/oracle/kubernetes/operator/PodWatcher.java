@@ -39,7 +39,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 
@@ -428,7 +427,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new WaitForServerShutdownResponseStep(callback, serverName);
     }
 
-    private class WaitForServerShutdownResponseStep extends ResponseStep<DomainResource> {
+    private class WaitForServerShutdownResponseStep extends DefaultResponseStep<DomainResource> {
 
       private final WaitForReadyStep<DomainResource>.Callback callback;
       private final String serverName;
@@ -442,7 +441,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+        if (isServerShutdown(info) || isReady(callResponse.getResult()) || callback.didResumeFiber()) {
           Optional.ofNullable(info).ifPresent(i -> i.updateLastKnownServerStatus(serverName, SHUTDOWN_STATE));
           callback.proceedFromWait(callResponse.getResult());
           return doEnd(packet);
@@ -452,11 +451,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         }
       }
 
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
-        return callResponse.getStatusCode() == HTTP_NOT_FOUND
-            ? doNext(packet)
-            : super.onFailure(packet, callResponse);
+      private boolean isServerShutdown(DomainPresenceInfo info) {
+        return Optional.ofNullable(info).map(i -> i.getLastKnownServerStatus(serverName))
+            .map(s -> s.getStatus().equals(SHUTDOWN_STATE)).orElse(false);
       }
     }
   }
