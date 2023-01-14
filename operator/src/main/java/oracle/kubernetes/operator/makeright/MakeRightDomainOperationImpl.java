@@ -264,10 +264,10 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     if (Optional.ofNullable(eventData).map(e -> e.getItem() != DOMAIN_DELETED).orElse(true)) {
       eventStep = EventHelper.createEventStep(new EventHelper.EventData(DOMAIN_DELETED));
     }
-    return Step.chain(eventStep, new DeleteDomainStep(), new DownHeadStep(), new UnregisterStep());
+    return Step.chain(eventStep, new DeleteDomainStep(), new UnregisterStatusUpdaterStep(), new UnregisterDPIStep());
   }
 
-  private class DownHeadStep extends Step {
+  private class UnregisterStatusUpdaterStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
@@ -384,7 +384,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     }
   }
 
-  private class UnregisterStep extends Step {
+  private class UnregisterDPIStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
