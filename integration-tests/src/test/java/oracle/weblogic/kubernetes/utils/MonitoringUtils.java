@@ -203,7 +203,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> deleteDirectory(monitoringTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
 
-    String monitoringExporterBranch = "russ_always_filter_on_name";
+    String monitoringExporterBranch = MONITORING_EXPORTER_BRANCH;
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
             + monitoringExporterBranch
