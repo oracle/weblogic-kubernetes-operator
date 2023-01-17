@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -35,10 +35,13 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.common.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.common.logging.MessageKeys.LOG_WAITING_COUNT;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 
 /**
  * Watches for changes to pods.
@@ -329,11 +332,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return new WaitForDeleteResponseStep(callback);
     }
 
-    @Override
-    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
-      return false;
-    }
-
     // A pod is considered deleted when reading its value from Kubernetes returns null.
     @Override
     protected boolean isReady(V1Pod result) {
@@ -382,6 +380,81 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           return doDelay(createReadAndIfReadyCheckStep(callback), packet,
               getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
         }
+      }
+    }
+  }
+
+  public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+    return new WaitForServerShutdownStep(next, serverName, domain);
+  }
+
+  private class WaitForServerShutdownStep extends WaitForReadyStep<DomainResource> {
+    private final String serverName;
+
+    WaitForServerShutdownStep(Step next, String serverName, DomainResource domain) {
+      super(domain, next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    protected boolean isReady(DomainResource resource) {
+      return Optional.ofNullable(PodHelper.getServerState(resource, serverName)).map(s -> s.equals(SHUTDOWN_STATE))
+          .orElse(false);
+    }
+
+    @Override
+    V1ObjectMeta getMetadata(DomainResource resource) {
+      return resource.getMetadata();
+    }
+
+    @Override
+    void addCallback(String name, Consumer<DomainResource> callback) {
+      // Ignore
+    }
+
+    @Override
+    void removeCallback(String name, Consumer<DomainResource> callback) {
+      // Ignore
+    }
+
+    @Override
+    Step createReadAsyncStep(String name, String namespace, String domainUid,
+                             ResponseStep<DomainResource> responseStep) {
+      return new CallBuilder().readDomainAsync(name, namespace, responseStep);
+    }
+
+    @Override
+    protected ResponseStep resumeIfReady(WaitForReadyStep.Callback callback) {
+      return new WaitForServerShutdownResponseStep(callback, serverName);
+    }
+
+    private class WaitForServerShutdownResponseStep extends DefaultResponseStep<DomainResource> {
+
+      private final WaitForReadyStep<DomainResource>.Callback callback;
+      private final String serverName;
+
+      WaitForServerShutdownResponseStep(WaitForReadyStep<DomainResource>.Callback callback, String serverName) {
+        super(WaitForServerShutdownStep.this.getNext());
+        this.callback = callback;
+        this.serverName = serverName;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+        if (isServerShutdown(info) || isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+          Optional.ofNullable(info).ifPresent(i -> i.updateLastKnownServerStatus(serverName, SHUTDOWN_STATE));
+          callback.proceedFromWait(callResponse.getResult());
+          return doEnd(packet);
+        } else {
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+              getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      }
+
+      private boolean isServerShutdown(DomainPresenceInfo info) {
+        return Optional.ofNullable(info).map(i -> i.getLastKnownServerStatus(serverName))
+            .map(s -> SHUTDOWN_STATE.equals(s.getStatus()) || UNKNOWN_STATE.equals(s.getStatus())).orElse(false);
       }
     }
   }

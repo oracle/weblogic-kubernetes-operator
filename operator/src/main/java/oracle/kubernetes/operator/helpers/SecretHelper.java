@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,6 +8,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.common.logging.LoggingFilter;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -30,7 +31,6 @@ public class SecretHelper {
   // has 2 fields (username and password)
   public static final String USERNAME_KEY = "username";
   public static final String PASSWORD_KEY = "password";
-  private static final String AUTHORIZATION_SOURCE = "AuthorizationSource";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
@@ -48,7 +48,7 @@ public class SecretHelper {
    * @param packet the packet to read.
    */
   public static AuthorizationSource getAuthorizationSource(Packet packet) {
-    return (AuthorizationSource) packet.get(AUTHORIZATION_SOURCE);
+    return (AuthorizationSource) packet.get(ProcessingConstants.AUTHORIZATION_SOURCE);
   }
 
   private static class AuthorizationSourceStep extends Step {
@@ -78,7 +78,7 @@ public class SecretHelper {
     }
 
     private void insertAuthorizationSource(Packet packet, V1Secret secret) {
-      packet.put(AUTHORIZATION_SOURCE,
+      packet.put(ProcessingConstants.AUTHORIZATION_SOURCE,
           new SecretContext(packet.getSpi(DomainPresenceInfo.class),
               secret, packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY))
               .createAuthorizationSource());

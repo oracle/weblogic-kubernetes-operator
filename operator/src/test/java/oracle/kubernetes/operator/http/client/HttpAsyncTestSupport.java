@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
@@ -39,7 +39,7 @@ public class HttpAsyncTestSupport {
           + "    \"state\": \"RUNNING\",\n"
           + "    \"activationTime\": 1556759105378\n"
           + "}";
-  private static final HttpResponse<String> NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
+  private static final HttpResponseStub NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -72,9 +72,15 @@ public class HttpAsyncTestSupport {
    * @param request the expected request
    * @param response the desired result
    */
-  public void defineResponse(HttpRequest request, HttpResponse<String> response) {
+  public RequestHandler defineResponse(HttpRequest request, HttpResponseStub response) {
     cannedResponses.putIfAbsent(request.uri(), new ArrayList<>());
-    cannedResponses.get(request.uri()).add(new RequestHandler(request, response));
+    final RequestHandler handler = new RequestHandler(request, response);
+    cannedResponses.get(request.uri()).add(handler);
+    return handler;
+  }
+
+  public void clearResponses(String url) {
+    cannedResponses.remove(URI.create(url));
   }
 
   /**
@@ -126,13 +132,13 @@ public class HttpAsyncTestSupport {
   static class RequestHandler {
     private final HttpRequest request;
     private final CompletableFuture<HttpResponse<String>> future;
-    private final HttpResponse<String> response;
+    private final HttpResponseStub response;
 
-    RequestHandler(HttpRequest request, HttpResponse<String> response) {
+    RequestHandler(HttpRequest request, HttpResponseStub response) {
       this.request = request;
       this.future = new CompletableFuture<>();
       this.future.complete(response);
-      this.response = response;
+      this.response = response.withRequest(request);
     }
 
     HttpResponse<String> getResponse() {
@@ -149,6 +155,12 @@ public class HttpAsyncTestSupport {
 
     public void ifMatched(Consumer<HttpRequest> processRequest) {
       Optional.ofNullable(request).ifPresent(processRequest);
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    public RequestHandler creatingSession(String sessionCookieName, String value) {
+      response.withHeader("Set-Cookie", sessionCookieName + "=" + value + "; HttpOnly");
+      return this;
     }
   }
 
