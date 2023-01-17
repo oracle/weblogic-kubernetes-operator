@@ -1,10 +1,11 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.client;
 
 import java.net.http.HttpResponse;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import oracle.kubernetes.operator.helpers.AuthorizationSource;
 import oracle.kubernetes.operator.helpers.SecretHelper;
@@ -20,8 +21,14 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 public abstract class HttpResponseStep extends Step {
   private static final String RESPONSE = "httpResponse";
 
+  private Consumer<HttpResponse<?>> callback;
+
   protected HttpResponseStep(Step next) {
     super(next);
+  }
+
+  public void setCallback(Consumer<HttpResponse<?>> callback) {
+    this.callback = callback;
   }
 
   @Override
@@ -42,6 +49,7 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction doApply(Packet packet, HttpResponse<String> response) {
+    Optional.ofNullable(callback).ifPresent(c -> c.accept(response));
     return isSuccess(response) ? onSuccess(packet, response) : wrapOnFailure(packet, response);
   }
 

@@ -22,9 +22,9 @@ update to the documentation, follow this process:
     ```
 
 3. Make your documentation updates by editing the source files in
-`documentation/staging/content`.
+`documentation/<release-version>/content`, for example `documentation/4.0/content`.
 {{% notice note %}}
-Make sure you check in the changes from the `documentation/staging/content` area _only_;
+Make sure you check in the changes from the `documentation/<release-version>/content` area _only_;
 do not build the site and check in the static files.
 {{% /notice %}}
 
@@ -32,7 +32,7 @@ do not build the site and check in the static files.
 these commands. The site will be available on the URL shown here:
 
     ```shell
-    $ cd documentation/staging
+    $ cd documentation/<release-version>
     $ hugo server -b http://localhost:1313/weblogic-kubernetes-operator
     ```
 
