@@ -479,7 +479,8 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     final AtomicBoolean stopping = new AtomicBoolean(false);
     final PodWatcher watcher = createWatcher(stopping);
-    testSupport.addDomainPresenceInfo(new DomainPresenceInfo(domain));
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    testSupport.addDomainPresenceInfo(info);
 
     try {
       testSupport.failOnResource(KubernetesTestSupport.DOMAIN, NAME, NS, HTTP_NOT_FOUND);
@@ -487,6 +488,8 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     } finally {
       stopping.set(true);
     }
+    info.updateLastKnownServerStatus(NAME, SHUTDOWN_STATE);
+    testSupport.setTime(10, TimeUnit.SECONDS);
 
     assertThat(terminalStep.wasRun(), is(true));
     assertThat(domain, not(hasCondition(FAILED).withReason(KUBERNETES)));
