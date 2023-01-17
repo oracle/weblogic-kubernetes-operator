@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -202,53 +202,6 @@ public class Domain {
   public static String patchDomainCustomResourceReturnResponse(String domainUid, String namespace, V1Patch patch,
                                                   String patchFormat) {
     return Kubernetes.patchDomainCustomResourceReturnResponse(domainUid, namespace, patch, patchFormat);
-  }
-
-  /**
-   * Patch a running domain with introspectVersion.
-   * If the introspectVersion doesn't exist it will add the value as 2,
-   * otherwise the value is updated by 1.
-   *
-   * @param domainUid UID of the domain to patch with introspectVersion
-   * @param namespace namespace in which the domain resource exists
-   * @return introspectVersion new introspectVersion of the domain resource
-   */
-  public static String patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) {
-    LoggingFacade logger = getLogger();
-    StringBuffer patchStr;
-    DomainResource res = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainUid, namespace),
-        String.format("Failed to get the introspectVersion of %s in namespace %s", domainUid, namespace));
-    int introspectVersion = 2;
-    // construct the patch string
-    if (res.getSpec().getIntrospectVersion() == null) {
-      patchStr = new StringBuffer("[{")
-          .append("\"op\": \"add\", ")
-          .append("\"path\": \"/spec/introspectVersion\", ")
-          .append("\"value\": \"")
-          .append(introspectVersion)
-          .append("\"}]");
-    } else {
-      introspectVersion = Integer.parseInt(res.getSpec().getIntrospectVersion()) + 1;
-      patchStr = new StringBuffer("[{")
-          .append("\"op\": \"replace\", ")
-          .append("\"path\": \"/spec/introspectVersion\", ")
-          .append("\"value\": \"")
-          .append(introspectVersion)
-          .append("\"}]");
-    }
-
-    logger.info("Patch String \n{0}", patchStr);
-    logger.info("Adding/updating introspectVersion in domain {0} in namespace {1} using patch string: {2}",
-        domainUid, namespace, patchStr.toString());
-
-    // patch the domain
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean ivPatched = patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
-    assertTrue(ivPatched, "patchDomainCustomResource(introspectVersion) failed");
-
-    return String.valueOf(introspectVersion);
   }
 
   /**

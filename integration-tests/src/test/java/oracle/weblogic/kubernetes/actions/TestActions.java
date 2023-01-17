@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -78,6 +78,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.InitializationTasks;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ClusterUtils;
+import oracle.weblogic.kubernetes.utils.DomainUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
@@ -303,7 +304,7 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewIntrospectVersion(
       String domainUid, String namespace) {
-    return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
+    return DomainUtils.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
   /**

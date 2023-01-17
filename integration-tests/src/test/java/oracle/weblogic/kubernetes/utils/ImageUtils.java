@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -343,9 +343,11 @@ public class ImageUtils {
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
         assertTrue(archiveApp(defaultAppParams()
             .srcDirList(archiveAppsList)));
+        String appPath = archiveAppsList.get(0);
+
         //archive provided ear or war file
-        String appName = archiveAppsList.get(0).substring(archiveAppsList.get(0).lastIndexOf("/") + 1,
-            appSrcDirList.get(0).lastIndexOf("."));
+        String appName = appPath.substring(appPath.lastIndexOf("/") + 1,
+            appPath.lastIndexOf("."));
 
         // build the archive list
         String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
@@ -357,12 +359,15 @@ public class ImageUtils {
         // build an application archive using what is in resources/apps/APP_NAME
         String zipFile = "";
         if (oneArchiveContainsMultiApps) {
-          assertTrue(buildAppArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
-              String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
-          // build the archive list
-          archiveList.add(zipFile);
+          for (String buildAppDirs : buildAppDirList) {
+            assertTrue(buildAppArchive(defaultAppParams()
+                    .srcDirList(Collections.singletonList(buildAppDirs))
+                    .appName(buildAppDirs)),
+                String.format("Failed to create app archive for %s", buildAppDirs));
+            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirs);
+            // build the archive list
+            archiveList.add(zipFile);
+          }
         } else if (buildCoherence) {
           // build the Coherence GAR file
           assertTrue(buildCoherenceArchive(defaultAppParams()

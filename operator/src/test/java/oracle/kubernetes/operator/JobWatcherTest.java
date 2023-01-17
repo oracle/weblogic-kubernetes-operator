@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -17,15 +17,21 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -42,15 +48,20 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private OffsetDateTime clock = SystemClock.now();
   private final V1Job cachedJob = createJob();
+  private static final String LATEST_IMAGE = "image:latest";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
+  private final DomainResource domain = createDomain();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
 
   @Override
   @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
+    testSupport.addDomainPresenceInfo(domainPresenceInfo);
+
   }
 
   @Override
@@ -59,6 +70,29 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     super.tearDown();
 
     testSupport.throwOnCompletionFailure();
+  }
+
+  private DomainPresenceInfo createDomainPresenceInfo(
+      DomainResource domain) {
+    DomainPresenceInfo dpi = new DomainPresenceInfo(domain);
+    return dpi;
+  }
+
+  private DomainResource createDomain() {
+    return new DomainResource()
+        .withMetadata(new V1ObjectMeta().name(UID).namespace(NS))
+        .withSpec(createDomainSpec());
+  }
+
+  private DomainSpec createDomainSpec() {
+    DomainSpec spec =
+        new DomainSpec()
+            .withDomainUid(UID)
+            .withImage(LATEST_IMAGE)
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    spec.setServerStartPolicy(ServerStartPolicy.IF_NEEDED);
+
+    return spec;
   }
 
   private V1Job createJob() {
@@ -288,7 +322,6 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
   private void startWaitForReady(Function<V1Job,V1Job> jobFunction) {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher = createWatcher(stopping);
-
     V1Job cachedJob = jobFunction.apply(createJob());
 
     try {
@@ -321,9 +354,8 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenJobTimedOutOnFirstRead_terminateWithException() {
-    startWaitForReadyThenReadJob(this::markJobTimedOut);
+    startWaitForReadyThenReadJob(this::markJobTimedOut, JobHelper.readIntrospectorResults(terminalStep));
 
-    assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
@@ -336,6 +368,10 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   // Starts the waitForReady step with an incomplete job cached, but a modified one in kubernetes
   private void startWaitForReadyThenReadJob(Function<V1Job,V1Job> jobFunction) {
+    startWaitForReadyThenReadJob(jobFunction, terminalStep);
+  }
+
+  private void startWaitForReadyThenReadJob(Function<V1Job,V1Job> jobFunction, Step nextStep) {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher = createWatcher(stopping);
 
@@ -343,7 +379,7 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     testSupport.defineResources(persistedJob);
 
     try {
-      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+      testSupport.runSteps(watcher.waitForReady(cachedJob, nextStep));
     } finally {
       stopping.set(true);
     }
@@ -369,9 +405,8 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   @Test
   void whenReceivedDeadlineExceededResponse_terminateWithException() {
-    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOut);
+    sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOut, JobHelper.readIntrospectorResults(terminalStep));
 
-    assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
   }
 
@@ -411,12 +446,16 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   // Starts the waitForReady step with an incomplete job and sends a watch indicating that the job has changed
   private void sendJobModifiedWatchAfterWaitForReady(Function<V1Job,V1Job> modifier) {
+    sendJobModifiedWatchAfterWaitForReady(modifier, terminalStep);
+  }
+
+  private void sendJobModifiedWatchAfterWaitForReady(Function<V1Job,V1Job> modifier, Step nextStep) {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher = createWatcher(stopping);
     testSupport.defineResources(cachedJob);
 
     try {
-      testSupport.runSteps(watcher.waitForReady(cachedJob, terminalStep));
+      testSupport.runSteps(watcher.waitForReady(cachedJob, nextStep));
       watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createJob())));
     } finally {
       stopping.set(true);
