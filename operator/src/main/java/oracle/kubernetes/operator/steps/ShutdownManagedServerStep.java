@@ -27,7 +27,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
-import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
@@ -46,7 +45,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
-import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -398,18 +396,11 @@ public class ShutdownManagedServerStep extends Step {
     }
   }
 
-  static class DomainUpdateStep extends ResponseStep<DomainResource> {
+  static class DomainUpdateStep extends DefaultResponseStep<DomainResource> {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
       packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
       return doNext(packet);
-    }
-
-    @Override
-    public NextAction onFailure(Packet packet, CallResponse<DomainResource> callResponse) {
-      return callResponse.getStatusCode() == HTTP_NOT_FOUND
-          ? doNext(packet)
-          : super.onFailure(packet, callResponse);
     }
   }
 }
