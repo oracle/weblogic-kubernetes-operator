@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -781,6 +782,11 @@ class ItMiiAuxiliaryImage {
 
     // delete domain3
     deleteDomainResource(domainNamespace, domainUid);
+
+    testUntil(
+        assertDoesNotThrow(() -> configMapDoesNotExist(domainNamespace, configMapName)),
+        logger,
+        "Checking for configMap {0} does not exists", configMapName);
     String configMapName1 = "modelfiles1-cm";
 
     //add model files to configmap and verify domain is running
