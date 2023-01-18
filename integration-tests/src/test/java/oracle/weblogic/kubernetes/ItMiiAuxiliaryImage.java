@@ -155,6 +155,9 @@ class ItMiiAuxiliaryImage {
   private static final String miiAuxiliaryImage15Tag = "image15" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage15 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage15Tag;
 
+  private static final String miiAuxiliaryImage16Tag = "image16" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage16 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage16Tag;
+
   private static final String errorPathAuxiliaryImage1Tag = "errorimage1" + MII_BASIC_IMAGE_TAG;
   private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage1Tag;
   private static final String errorPathAuxiliaryImage2Tag = "errorimage2" + MII_BASIC_IMAGE_TAG;
@@ -780,11 +783,11 @@ class ItMiiAuxiliaryImage {
     WitParams witParams =
         new WitParams()
             .modelImageName(MII_AUXILIARY_IMAGE_NAME)
-            .modelImageTag(miiAuxiliaryImage12Tag)
+            .modelImageTag(miiAuxiliaryImage16Tag)
             .wdtHome(auxiliaryImagePathCustom)
             .modelArchiveFiles(archiveList)
             .wdtModelHome(auxiliaryImagePathCustom + "/models");
-    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage12Tag, witParams);
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage16Tag, witParams);
 
     String configMapName = "modelfiles-cm";
     logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
@@ -801,11 +804,11 @@ class ItMiiAuxiliaryImage {
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, miiAuxiliaryImage12);
+        domainUid, miiAuxiliaryImage16);
     final DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
         encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
-        miiAuxiliaryImage12);
+        miiAuxiliaryImage16);
     assertNotNull(domainCR, "failed to create domain resource");
     domainCR.spec().configuration().model().configMap(configMapName);
     // create domain and verify it is failed
@@ -815,7 +818,8 @@ class ItMiiAuxiliaryImage {
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "createDomain invoked with missing required argument: -model_file";
+    String expectedErrorMsg = "createDomain argument processing failed: createDomain failed to find a model file "
+        + "in archive /aux/models/sample-app.zip, and -model_file argument not specified";
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
@@ -1384,6 +1388,7 @@ class ItMiiAuxiliaryImage {
     deleteImage(miiAuxiliaryImage13);
     deleteImage(miiAuxiliaryImage14);
     deleteImage(miiAuxiliaryImage15);
+    deleteImage(miiAuxiliaryImage16);
     deleteImage(errorPathAuxiliaryImage1);
     deleteImage(errorPathAuxiliaryImage2);
     deleteImage(errorPathAuxiliaryImage3);
