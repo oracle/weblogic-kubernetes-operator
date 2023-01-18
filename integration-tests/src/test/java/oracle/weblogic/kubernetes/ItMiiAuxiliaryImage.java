@@ -51,12 +51,14 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
@@ -72,8 +74,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -780,13 +782,16 @@ class ItMiiAuxiliaryImage {
       checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
 
-    // delete domain3
+    // delete domain8
     deleteDomainResource(domainNamespace, domainUid);
-
+    deleteConfigMap(configMapName, domainNamespace);
     testUntil(
-        assertDoesNotThrow(() -> configMapDoesNotExist(domainNamespace, configMapName)),
+        withLongRetryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
+            -> (cm.getMetadata().getName().equals(configMapName))),
         logger,
-        "Checking for configMap {0} does not exists", configMapName);
+        "configmap {0} to be deleted.");
+
     String configMapName1 = "modelfiles1-cm";
 
     //add model files to configmap and verify domain is running
