@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -603,6 +603,33 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   void afterUpgradeIstioMonitoringExporterPodWithResourceRequirements_replacePod() {
     useProductionHash();
     defineExporterConfigurationWithResourceRequirements();
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  void afterUpgradeLogHomeLayoutStillFlat_dontReplacePod() {
+    useProductionHash();
+    defineExporterConfiguration();
+
+    configurator.withLogHomeLayout(LogHomeLayoutType.FLAT);
+
+    initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
+
+    // Surprisingly, verifyPodPatched() is the correct assertion -- because the logic to adjust the recipe and
+    // generate hashes for pre-existing pods works correctly, the existing pod will not be replaced; however,
+    // it will be patched to update the weblogic.operatorVersion label and the annotation with the hash.
+    verifyPodPatched();
+  }
+
+  @Test
+  void afterUpgradeLogHomeLayoutByServers_replacePod() {
+    useProductionHash();
+    defineExporterConfigurationWithResourceRequirements();
+
+    configurator.withLogHomeLayout(LogHomeLayoutType.BY_SERVERS);
 
     initializeExistingPod(loadPodModel(getReferenceIstioMonitoringExporterTcpProtocol()));
 
@@ -2842,6 +2869,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     public Step waitForDelete(V1Pod pod, Step next) {
       return next;
     }
+
+    @Override
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+      return next;
+    }
   }
 
   public static class DelayedPodAwaiterStepFactory implements PodAwaiterStepFactory {
@@ -2864,6 +2896,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     @Override
     public Step waitForDelete(V1Pod pod, Step next) {
       return new DelayStep(next, delaySeconds);
+    }
+
+    @Override
+    public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
+      return next;
     }
   }
 

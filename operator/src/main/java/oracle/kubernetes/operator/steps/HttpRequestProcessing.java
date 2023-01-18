@@ -1,12 +1,21 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -18,13 +27,17 @@ import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
+import org.jetbrains.annotations.NotNull;
 
 abstract class HttpRequestProcessing {
 
-  public static final Long HTTP_TIMEOUT_SECONDS = 60L;
-  protected final Packet packet;
+  private static final Long HTTP_TIMEOUT_SECONDS = 60L;
+  private static final Map<String, CookieList> COOKIES = new ConcurrentHashMap<>();
+
+  private final Packet packet;
   private final V1Service service;
-  protected final V1Pod pod;
+  private final V1Pod pod;
 
   HttpRequestProcessing(Packet packet, @Nonnull V1Service service, V1Pod pod) {
     this.service = service;
@@ -33,8 +46,26 @@ abstract class HttpRequestProcessing {
   }
 
   static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
+    responseStep.setCallback(HttpRequestProcessing::addCookies);
     return HttpAsyncRequestStep.create(request, responseStep)
         .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
+  }
+
+  // For unit testing only
+  static void clearCookies() {
+    COOKIES.clear();
+  }
+
+  private static void addCookies(HttpResponse<?> httpResponse) {
+    final URI uri = httpResponse.request().uri();
+    synchronized (COOKIES) {
+      COOKIES.computeIfAbsent(toCookieKey(uri), u -> new CookieList())
+            .addCookies(httpResponse.headers().allValues("Set-Cookie"));
+    }
+  }
+
+  private static String toCookieKey(URI uri) {
+    return uri.getHost() + ':' + uri.getPort();
   }
 
   @Nonnull
@@ -47,23 +78,35 @@ abstract class HttpRequestProcessing {
     return Objects.requireNonNull(service.getMetadata());
   }
 
-  public Packet getPacket() {
+  Packet getPacket() {
     return packet;
   }
 
   AuthorizationSource getAuthorizationSource() {
-    return SecretHelper.getAuthorizationSource(packet);
+    return SecretHelper.getAuthorizationSource(getPacket());
   }
 
   final HttpRequest.Builder createRequestBuilder(String url) {
+    final URI uri = URI.create(url);
     HttpRequest.Builder builder = HttpRequest.newBuilder()
-          .uri(URI.create(url))
+          .uri(uri)
           .header("Accept", "application/json")
           .header("Content-Type", "application/json")
           .header("X-Requested-By", "WebLogic Operator");
     Optional.ofNullable(getAuthorizationSource())
             .ifPresent(source -> builder.header("Authorization", source.createBasicAuthorizationString()));
+    getCookiesFor(uri).forEach(c -> builder.header("Cookie", c));
     return builder;
+  }
+
+  @NotNull
+  private List<String> getCookiesFor(URI uri) {
+    synchronized (COOKIES) {
+      COOKIES.values().forEach(CookieList::clearIfExpired);
+      return Optional.ofNullable(COOKIES.get(toCookieKey(uri)))
+            .map(CookieList::getCookieHeaders)
+            .orElse(Collections.emptyList());
+    }
   }
 
   /**
@@ -74,9 +117,7 @@ abstract class HttpRequestProcessing {
   }
 
   private String getServiceUrl(PortDetails portDetails) {
-    return Optional.ofNullable(getHost())
-          .map(portDetails::toHttpUrl)
-          .orElse(null);
+    return portDetails.toHttpUrl(getHost());
   }
 
   /**
@@ -92,4 +133,42 @@ abstract class HttpRequestProcessing {
     String ns = Optional.ofNullable(meta.getNamespace()).orElse("default");
     return meta.getName() + "." + ns;
   }
+
+  protected V1Pod getPod() {
+    return pod;
+  }
+
+  static class CookieList {
+    private OffsetDateTime expirationTime;
+    private final Map<String, String> cookies = new HashMap<>();
+
+    public CookieList() {
+      updateExpirationTime();
+    }
+
+    private void updateExpirationTime() {
+      expirationTime = SystemClock.now().plus(50, ChronoUnit.MINUTES);
+    }
+
+    void addCookies(List<String> setCookieHeaders) {
+      updateExpirationTime();
+      for (String setCookieHeader : setCookieHeaders) {
+        final String[] parts = setCookieHeader.split(";")[0].split("=");
+        cookies.put(parts[0], parts[1]);
+      }
+    }
+
+    List<String> getCookieHeaders() {
+      updateExpirationTime();
+      return cookies.entrySet().stream().map(e -> e.getKey() + '=' + e.getValue()).collect(Collectors.toList());
+    }
+
+    private void clearIfExpired() {
+      if (expirationTime.isBefore(SystemClock.now())) {
+        cookies.clear();
+      }
+
+    }
+  }
+
 }

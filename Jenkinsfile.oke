@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 
@@ -40,7 +40,6 @@ pipeline {
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
-        kubeconfig_file = "${result_root}/kubeconfig"
         oci_config_file = credentials("${wkobuild_oci_config}")
         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
 
@@ -48,6 +47,7 @@ pipeline {
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
         CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}"
+        kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
         PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false}"
@@ -62,15 +62,17 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.23.4'
+               defaultValue: '1.24.1'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaiwr25nhuo5vfiobwlsmj6qrab6xhzzlqyl7cwmmzeq6mck3w57va'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6med26u7lkdeyz6mjwaepakor5bp2y24lwr4x6adn6izidipbbsa'
+                       //8.0defaultValue: 'ocid1.image.oc1.phx.aaaaaaaan7lpv4nxnx4r772csco2nzre3owzqdebf75ty6mlbp562vn6c45q'
+            
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.23.4'
+                       defaultValue: '1.24.8'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -197,7 +199,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
-                        NODE_SHAPE="VM.Standard2.4"
+                        NODE_SHAPE="VM.Standard2.24"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
@@ -349,6 +351,7 @@ EOF
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                         oci_config_file = credentials("${wkobuild_oci_config}")
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
+                        CLUSTER_NAME="${CLUSTER_NAME}"
                         KUBECONFIG ="${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
                         terraform_script_dir_name = "${WORKSPACE}/integration-tests/src/test/resources/oke/terraform/"
 
@@ -375,6 +378,15 @@ EOF
                             chmod 777 ${WORKSPACE}/terraform/*.sh
                             mkdir -p ${WORKSPACE}/terraform/terraforminstall
                             sh ${WORKSPACE}/terraform/oke.create.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
+			    export SERVICE_ACCOUNT_NAME=${CLUSTER_NAME}-sa
+    			    ${KUBERNETES_CLI:-kubectl} -n kube-system create serviceaccount ${SERVICE_ACCOUNT_NAME}
+                            ${KUBERNETES_CLI:-kubectl} create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:${SERVICE_ACCOUNT_NAME}
+			    sed -i 's@%SERVICE_ACCOUNT_NAME%@'"${SERVICE_ACCOUNT_NAME}"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/secret.yaml
+			    ${KUBERNETES_CLI:-kubectl} apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/secret.yaml
+
+    			    TOKEN=`${KUBERNETES_CLI:-kubectl} -n kube-system get secret secret-${SERVICE_ACCOUNT_NAME} -o jsonpath='{.data.token}'| base64 --decode`
+                            ${KUBERNETES_CLI:-kubectl} config set-credentials ${SERVICE_ACCOUNT_NAME} --token=$TOKEN
+                            ${KUBERNETES_CLI:-kubectl} config set-context --current --user=${SERVICE_ACCOUNT_NAME}
                         '''
                     }
                 }
@@ -391,7 +403,6 @@ EOF
                                     }
                                     steps {
                                         sh '''
-                                        cp ${WORKSPACE}/terraform/${clusterName}_kubeconfig ${result_root}/kubeconfig
                                         export KUBECONFIG=${kubeconfig_file}
                                         export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                         export OCI_CLI_PROFILE=WKOBUILD
@@ -402,17 +413,9 @@ EOF
                                         mount_target_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
 
                                         echo "Creating Storage Class to mount OFSS"
-                                        cat << EOF | kubectl apply -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1
-metadata:
-  name: oci-fss
-provisioner: oracle.com/oci-fss
-parameters:
-  # Insert mount target from the FSS here
-  mntTargetId: ${mount_target_id}
-EOF
-
+					export MOUNT_TARGET_ID=${mount_target_id}
+					sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+					kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
 
                                         '''
                                     }

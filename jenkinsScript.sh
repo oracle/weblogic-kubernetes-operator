@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
@@ -127,6 +127,13 @@ ulimit -aH
 
 repoLogin
 
+mkdir $WORKSPACE/jdk
+cd $WORKSPACE/jdk
+wget https://download.oracle.com/java/17/archive/jdk-17.0.5_linux-x64_bin.tar.gz
+tar -xvf jdk-17.0.5_linux-x64_bin.tar.gz
+
+export JAVA_HOME=$WORKSPACE/jdk/jdk-17.0.5
+cd $WORKSPACE
 echo 'Info: Run build...'
 mvn clean install
 

@@ -176,17 +176,17 @@ class ItMultiDomainModels {
     }
 
     Callable<Boolean> isDynRestarted =
-        assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName,
-            domainNamespace, dynTs));
+        assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, domainNamespace, dynTs));
     assertFalse(assertDoesNotThrow(isDynRestarted::call),
-
         "Dynamic managed server pod must not be restated");
+
     // then scale cluster back to 1 server
     logger.info("Scaling back cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
         clusterName, domainUid, domainNamespace,numberOfServers,replicaCount);
     assertDoesNotThrow(() -> scaleCluster(clusterName, domainNamespace,
         replicaCount), "Could not scale down the cluster");
-    for (int i = (replicaCount + 1); i <= numberOfServers; i++) {
+
+    for (int i = numberOfServers; i > replicaCount; i--) {
       logger.info("Wait for managed server pod {0} to be deleted in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
