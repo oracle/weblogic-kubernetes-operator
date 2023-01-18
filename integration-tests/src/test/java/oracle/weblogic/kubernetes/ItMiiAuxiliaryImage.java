@@ -765,7 +765,7 @@ class ItMiiAuxiliaryImage {
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
                     domainUid, domainNamespace));
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "createDomain failed to find a model file in archive";
+    String expectedErrorMsg = "createDomain invoked with missing required argument: -model_file";
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
