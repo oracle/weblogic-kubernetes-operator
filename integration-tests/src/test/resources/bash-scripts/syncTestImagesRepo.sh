@@ -1,28 +1,30 @@
 #!/bin/bash
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022,2023 Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -eu
 set -o pipefail
 
-dockerLogin() {
+WLSIMG_BUILDER=${WLSIMG_BUILDER:-docker}
 
-echo "docker login to src ${SOURCE_REPO}"
+login() {
+
+echo "${WLSIMG_BUILDER} login to src ${SOURCE_REPO}"
 echo ${SOURCE_PASSWORD} > pwd.txt
-cat pwd.txt | docker login ${SOURCE_REPO} -u ${SOURCE_USER} --password-stdin 
+cat pwd.txt | ${WLSIMG_BUILDER} login ${SOURCE_REPO} -u ${SOURCE_USER} --password-stdin 
 rm -rf pwd.txt
 
 # Alternatively use 
-# docker login ${SOURCE_REPO} -u ${SOURCE_USER} -p  ${SOURCE_PASSWORD}
+# ${WLSIMG_BUILDER} login ${SOURCE_REPO} -u ${SOURCE_USER} -p  ${SOURCE_PASSWORD}
 
-echo "docker login to target ${TARGET_REPO}"
+echo "${WLSIMG_BUILDER} login to target ${TARGET_REPO}"
 echo ${TARGET_PASSWORD} > pwd.txt
-cat pwd.txt | docker login ${TARGET_REPO} -u ${TARGET_USER} --password-stdin
+cat pwd.txt | ${WLSIMG_BUILDER} login ${TARGET_REPO} -u ${TARGET_USER} --password-stdin
 rm -rf pwd.txt
 
 }
 
-dockerPullPushImage() {
+pullPushImage() {
  
  # Here the source image contains absolute image path
  # and source image contains relative path wrt to TARGET_REPO
@@ -35,22 +37,22 @@ dockerPullPushImage() {
  #printf 'SOURCE[%s] \n' "${src_image}" >> ${OUT}
  #printf 'TARGET[%s] \n' "${tgt_image}" >> ${OUT}
 
- docker pull ${src_image} || true
- sid=$(docker images ${src_image} -q)
+ ${WLSIMG_BUILDER} pull ${src_image} || true
+ sid=$(${WLSIMG_BUILDER} images ${src_image} -q)
  if [ "x$sid" == "x" ] ; then
      printf 'Could not download Source Image [%s] \n' ${src_image}
      exit -1 
  fi
 
- docker pull ${tgt_image} || true 
- tid=$(docker images ${tgt_image} -q)
+ ${WLSIMG_BUILDER} pull ${tgt_image} || true 
+ tid=$(${WLSIMG_BUILDER} images ${tgt_image} -q)
  if [ -z ${tid} ]; then
    printf 'Could not download Target Image [%s] \n' ${tgt_image}
    if [ ${DRY_RUN} != "true" ]; then
-     docker tag  ${src_image} ${tgt_image}
-     docker push ${tgt_image}
-     docker rmi -f ${src_image} 
-     docker rmi -f ${tgt_image} 
+     ${WLSIMG_BUILDER} tag  ${src_image} ${tgt_image}
+     ${WLSIMG_BUILDER} push ${tgt_image}
+     ${WLSIMG_BUILDER} rmi -f ${src_image} 
+     ${WLSIMG_BUILDER} rmi -f ${tgt_image} 
      printf 'MISSING Uploaded missing [%s] to Target \n' "${image}" >> ${OUT}
    else
      printf 'MISSING [%s] image on Target Repositoty \n' "${image}" >> ${OUT}
@@ -68,11 +70,11 @@ dockerPullPushImage() {
      printf 'UPDATE [%s] image updated \n' "${image}"  >> ${OUT}
      if [ ${DRY_RUN} != "true" ]; then
        printf 'Updating  image [%s] on Target \n' "${image}" >> ${OUT}
-       docker rmi -f ${tgt_image} 
-       docker tag  ${src_image} ${tgt_image}
-       docker push ${tgt_image}
-       docker rmi -f ${src_image} 
-       docker rmi -f ${tgt_image} 
+       ${WLSIMG_BUILDER} rmi -f ${tgt_image} 
+       ${WLSIMG_BUILDER} tag  ${src_image} ${tgt_image}
+       ${WLSIMG_BUILDER} push ${tgt_image}
+       ${WLSIMG_BUILDER} rmi -f ${src_image} 
+       ${WLSIMG_BUILDER} rmi -f ${tgt_image} 
      else 
       printf 'UPDATE [%s] image updated \n' "${image}"  >> ${OUT}
      fi
@@ -81,12 +83,12 @@ dockerPullPushImage() {
  printf '\n'  >> ${OUT}
 }
 
-dockerPullPushImages()  {
+pullPushImages()  {
  grep -E -v '^#' ${1} | grep -v "^$" |
    while IFS=";" read -r f1 f2 
    do
      #printf 'Source Location : [%s], Target: [%s] \n' "$f1" "$f2"
-     dockerPullPushImage $f1 $f2 
+     pullPushImage $f1 $f2 
    done
  }
 
@@ -127,6 +129,6 @@ if [ ${SOURCE_REPO} == ${TARGET_REPO} ]; then
   exit -1
 fi
 
-dockerLogin 
-dockerPullPushImages ${PROP_FILE}
+login 
+pullPushImages ${PROP_FILE}
 cat ${OUT}
