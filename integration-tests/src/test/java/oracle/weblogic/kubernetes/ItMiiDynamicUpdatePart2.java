@@ -204,8 +204,7 @@ class ItMiiDynamicUpdatePart2 {
     // write sparse yaml to delete datasource to file
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
-        + "  JDBCSystemResource:\n"
-        + "    '!TestDataSource2':";
+        + "  JDBCSystemResource:\n";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 

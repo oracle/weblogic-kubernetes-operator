@@ -330,9 +330,8 @@ class ItMiiDynamicUpdatePart3 {
     // write sparse yaml to delete datasource to file, delete ds to keep the config clean
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
-        + "  JDBCSystemResource:\n"
-        + "    '!TestDataSource2':";
-
+        + "  JDBCSystemResource:\n";
+    
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     pods = new LinkedHashMap<>();
