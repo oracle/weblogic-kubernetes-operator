@@ -13,7 +13,7 @@ We can also create dedicated private channels upon request.
 We would love to hear from you.
 
 To join our public channel, please
-[visit this site to get an invitation](https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1lnz4kpci-WdY2gWfeJc5jS_a_1Z06MA).
+[visit this site to get an invitation](https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ).
 The invitation email will include
 details of how to access our Slack workspace.
 After you are logged in, please come to `#operator` and say, "hello!"
