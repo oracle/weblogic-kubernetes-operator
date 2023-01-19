@@ -719,8 +719,7 @@ class ItMiiAuxiliaryImage {
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with configMap containing model files"
-      + " with empty model"
-      + " files dir in the auxiliary image")
+      + " with empty model files dir in the auxiliary image")
   void testCreateDomainWithConfigMapAndEmptyModelFileDir() {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
@@ -844,7 +843,7 @@ class ItMiiAuxiliaryImage {
         () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
             -> (cm.getMetadata().getName().equals(configMapName))),
         logger,
-        "configmap {0} to be deleted.");
+        "configmap {0} to be deleted.", configMapName);
   }
 
   /**
