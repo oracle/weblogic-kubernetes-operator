@@ -375,7 +375,7 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "deletesysrescm";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.delete.sysresources.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.delete.sysresourcesbyconfigmap.yaml"));
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
