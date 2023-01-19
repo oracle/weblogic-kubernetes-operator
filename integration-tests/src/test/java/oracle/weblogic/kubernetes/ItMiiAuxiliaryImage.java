@@ -767,7 +767,8 @@ class ItMiiAuxiliaryImage {
 
   /**
    * Create a domain using auxiliary image with empty configMap and no model files.
-   * Verify domain events and operator log contains the expected error message.
+   * Verify domain events and operator log contains the expected error message from WDT tool.
+   * WDT Create Primordial Domain Failed.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with "
@@ -818,8 +819,7 @@ class ItMiiAuxiliaryImage {
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace));
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "createDomain argument processing failed: createDomain failed to find a model file "
-        + "in archive /aux/models/sample-app.zip, and -model_file argument not specified";
+    String expectedErrorMsg = "Model in Image: WDT Create Primordial Domain Failed";
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
