@@ -127,12 +127,12 @@ public class MonitoringUtils {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
     String monitoringExporterRelease = MONITORING_EXPORTER_WEBAPP_VERSION;
     String curlDownloadCmd = String.format("cd %s && "
-            + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
+            + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get_v%s.sh",
         applicationDir,
         monitoringExporterRelease,
         monitoringExporterRelease);
     String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", applicationDir, monitoringExporterRelease);
+        "%s/get_v%s.sh", applicationDir, monitoringExporterRelease);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(Command
         .withParams(new CommandParams()
