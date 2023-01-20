@@ -278,6 +278,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     String key = resourceType;
     if (key.endsWith("Status")) {
       key = key.substring(0, key.length() - 6);
+    } else if (key.endsWith("Metadata")) {
+      key = key.substring(0, key.length() - 8);
     }
     return repositories.get(key);
   }

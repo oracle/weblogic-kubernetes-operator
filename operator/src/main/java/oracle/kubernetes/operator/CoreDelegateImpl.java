@@ -35,6 +35,8 @@ public class CoreDelegateImpl implements CoreDelegate {
   protected final Engine engine;
   protected final String deploymentImpl;
   protected final String deploymentBuildTime;
+  protected String domainCrdResourceVersion;
+  protected String clusterCrdResourceVersion;
 
   CoreDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
     buildVersion = getBuildVersion(buildProps);
@@ -78,6 +80,26 @@ public class CoreDelegateImpl implements CoreDelegate {
   @Override
   public KubernetesVersion getKubernetesVersion() {
     return kubernetesVersion;
+  }
+
+  @Override
+  public String getDomainCrdResourceVersion() {
+    return domainCrdResourceVersion;
+  }
+
+  @Override
+  public void setDomainCrdResourceVersion(String resourceVersion) {
+    this.domainCrdResourceVersion = resourceVersion;
+  }
+
+  @Override
+  public String getClusterCrdResourceVersion() {
+    return clusterCrdResourceVersion;
+  }
+
+  @Override
+  public void setClusterCrdResourceVersion(String resourceVersion) {
+    this.clusterCrdResourceVersion = resourceVersion;
   }
 
   @Override

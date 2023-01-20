@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,8 @@ import oracle.kubernetes.operator.work.Step;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_STARTUP_FAILED;
@@ -47,7 +50,6 @@ public class WebhookMain extends BaseMain {
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
-
     public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
     }
@@ -67,7 +69,6 @@ public class WebhookMain extends BaseMain {
     public String getWebhookKeyUri() {
       return SECRETS_WEBHOOK_KEY;
     }
-
   }
 
   /**
@@ -153,11 +154,37 @@ public class WebhookMain extends BaseMain {
   }
 
   Step createCRDRecheckSteps() {
+    Step optimizedRecheckSteps = Step.chain(createDomainCRDPresenceCheck(), createClusterCRDPresenceCheck());
+    try {
+      String clusterCrdResourceVersion = Optional.ofNullable(new CallBuilder().readCRDMetadata(CLUSTER_CRD_NAME))
+          .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
+      String domainCrdResourceVersion = Optional.ofNullable(new CallBuilder().readCRDMetadata(DOMAIN_CRD_NAME))
+          .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
+      if (crdMissingOrChanged(clusterCrdResourceVersion, delegate.getClusterCrdResourceVersion())) {
+        optimizedRecheckSteps = Step.chain(createClusterCrdStep(delegate.getProductVersion()), optimizedRecheckSteps);
+      }
+      if (crdMissingOrChanged(domainCrdResourceVersion, delegate.getDomainCrdResourceVersion())) {
+        optimizedRecheckSteps = Step.chain(createDomainCrdStep(delegate.getProductVersion(),
+            new Certificates(delegate)), optimizedRecheckSteps);
+      }
+      delegate.setDomainCrdResourceVersion(domainCrdResourceVersion);
+      delegate.setClusterCrdResourceVersion(clusterCrdResourceVersion);
+      return optimizedRecheckSteps;
+    } catch (Exception e) {
+      return createFullCRDRecheckSteps();
+    }
+  }
+
+  private Step createFullCRDRecheckSteps() {
     return Step.chain(
         createDomainCrdStep(delegate.getProductVersion(), new Certificates(delegate)),
         createClusterCrdStep(delegate.getProductVersion()),
         createDomainCRDPresenceCheck(),
         createClusterCRDPresenceCheck());
+  }
+
+  private boolean crdMissingOrChanged(String crdResourceVersion, String cachedCrdResourceVersion) {
+    return crdResourceVersion == null || !crdResourceVersion.equals(cachedCrdResourceVersion);
   }
 
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
