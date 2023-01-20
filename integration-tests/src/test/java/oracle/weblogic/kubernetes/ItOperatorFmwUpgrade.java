@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -219,6 +219,24 @@ class ItOperatorFmwUpgrade {
   @DisplayName("Upgrade Operator from 3.4.4 to current")
   void testOperatorFmwUpgradeFrom344ToCurrent() {
     installAndUpgradeOperator("3.4.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 4.0.3 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.0.3 to current")
+  void testOperatorFmwUpgradeFrom403ToCurrent() {
+    installAndUpgradeOperator("4.0.3", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 4.0.4 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.0.4 to current")
+  void testOperatorFmwUpgradeFrom404ToCurrent() {
+    installAndUpgradeOperator("4.0.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(
