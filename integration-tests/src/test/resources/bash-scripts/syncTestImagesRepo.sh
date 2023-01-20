@@ -98,6 +98,7 @@ if [ $# -ge 1 ]; then
  echo "Export the following Environment varaiables before running the script"
  echo "  SOURCE_REPO(ocr),SOURCE_USER,SOURCE_PASSWORD (Source Image repository)"
  echo "  TARGET_REPO(ocir),TARGET_USER,TARGET_PASSWORD(Target Image repository)"
+ echo "  PROP_FILE(images.properties) The image properties file to be loaded"
  exit 0
 fi
 
