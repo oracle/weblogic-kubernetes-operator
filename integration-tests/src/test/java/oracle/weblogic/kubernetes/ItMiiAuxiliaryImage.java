@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -51,12 +51,14 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
@@ -72,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -151,6 +154,9 @@ class ItMiiAuxiliaryImage {
   private static final String miiAuxiliaryImage14 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage14Tag;
   private static final String miiAuxiliaryImage15Tag = "image15" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage15 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage15Tag;
+
+  private static final String miiAuxiliaryImage16Tag = "image16" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage16 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage16Tag;
 
   private static final String errorPathAuxiliaryImage1Tag = "errorimage1" + MII_BASIC_IMAGE_TAG;
   private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage1Tag;
@@ -708,15 +714,13 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Create a domain using auxiliary image with configMap and no model files.
-   * Verify domain events and operator log contains the expected error message.
-   * Add to the configMap  model files.
+   * Create a domain using auxiliary image with configMap with model files.
    * Verify domain is created and running.
    */
   @Test
-  @DisplayName("Test to create domain using auxiliary image with configMap and empty model"
-          + " files dir in the auxiliary image")
-  void testCreateDomainWithConfigMapAndEmptryModelFileDir() {
+  @DisplayName("Test to create domain using auxiliary image with configMap containing model files"
+      + " with empty model files dir in the auxiliary image")
+  void testCreateDomainWithConfigMapAndEmptyModelFileDir() {
 
     final String auxiliaryImagePathCustom = "/customauxiliary";
     String domainUid = "testdomain8";
@@ -733,54 +737,9 @@ class ItMiiAuxiliaryImage {
                     .wdtModelHome(auxiliaryImagePathCustom + "/models");
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage12Tag, witParams);
 
-    String configMapName = "modelfiles-cm";
-    logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
-            configMapName, domainNamespace, MII_BASIC_WDT_MODEL_FILE, "/multi-model-one-ds.20.yaml");
-
     //create empty configMap with no models files and verify that domain creation failed.
     List<Path> cmFiles = new ArrayList<>();
 
-    assertDoesNotThrow(
-            () -> createConfigMapForDomainCreation(
-                    configMapName, cmFiles, domainNamespace, this.getClass().getSimpleName()),
-            "Create configmap for domain creation failed");
-    OffsetDateTime timestamp = now();
-
-    // create domain custom resource using auxiliary image
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-            domainUid, miiAuxiliaryImage12);
-    final DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
-            WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
-            encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
-            miiAuxiliaryImage12);
-    assertNotNull(domainCR, "failed to create domain resource");
-    domainCR.spec().configuration().model().configMap(configMapName);
-    // create domain and verify it is failed
-    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domainNamespace));
-    // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "createDomain failed to find a model file in archive";
-
-    // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
-            "Warning", timestamp, expectedErrorMsg);
-
-    // check the operator pod log contains the expected error message
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // check there are no admin server and managed server pods and services not created
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    checkServiceDoesNotExist(adminServerPodName, domainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
-      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
-    }
-
-    // delete domain3
-    deleteDomainResource(domainNamespace, domainUid);
     String configMapName1 = "modelfiles1-cm";
 
     //add model files to configmap and verify domain is running
@@ -803,6 +762,88 @@ class ItMiiAuxiliaryImage {
     domainCR1.spec().configuration().model().configMap(configMapName1);
     createDomainAndVerify(domainUid, domainCR1, domainNamespace,
             adminServerPodName, managedServerPrefix, replicaCount);
+  }
+
+  /**
+   * Create a domain using auxiliary image with empty configMap and no model files.
+   * Verify domain events and operator log contains the expected error message from WDT tool.
+   * WDT Create Primordial Domain Failed.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with "
+      + "empty configMap with no models files and verify that domain creation failed")
+  void testCreateDomainWithEmptyConfigMapWithNoModelFiles() {
+
+    final String auxiliaryImagePathCustom = "/customauxiliary";
+    String domainUid = "testdomain9";
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(MII_AUXILIARY_IMAGE_NAME)
+            .modelImageTag(miiAuxiliaryImage16Tag)
+            .wdtHome(auxiliaryImagePathCustom)
+            .modelArchiveFiles(archiveList)
+            .wdtModelHome(auxiliaryImagePathCustom + "/models");
+    createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME,miiAuxiliaryImage16Tag, witParams);
+
+    String configMapName = "modelfiles-cm";
+    logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
+        configMapName, domainNamespace, MII_BASIC_WDT_MODEL_FILE, "/multi-model-one-ds.20.yaml");
+
+    //create empty configMap with no models files and verify that domain creation failed.
+    List<Path> cmFiles = new ArrayList<>();
+
+    assertDoesNotThrow(
+        () -> createConfigMapForDomainCreation(
+            configMapName, cmFiles, domainNamespace, this.getClass().getSimpleName()),
+        "Create configmap for domain creation failed");
+    OffsetDateTime timestamp = now();
+
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, miiAuxiliaryImage16);
+    final DomainResource domainCR = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, createSecretsForImageRepos(domainNamespace),
+        encryptionSecretName, replicaCount, auxiliaryImagePathCustom,
+        miiAuxiliaryImage16);
+    assertNotNull(domainCR, "failed to create domain resource");
+    domainCR.spec().configuration().model().configMap(configMapName);
+    // create domain and verify it is failed
+    logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainUid, domainNamespace));
+    // check the introspector pod log contains the expected error message
+    String expectedErrorMsg = "Model in Image: WDT Create Primordial Domain Failed";
+
+    // check the domain event contains the expected error message
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator pod log contains the expected error message
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // check there are no admin server and managed server pods and services not created
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    checkServiceDoesNotExist(adminServerPodName, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
+    }
+
+    // delete domain9
+    deleteDomainResource(domainNamespace, domainUid);
+    deleteConfigMap(configMapName, domainNamespace);
+    testUntil(
+        withLongRetryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
+            -> (cm.getMetadata().getName().equals(configMapName))),
+        logger,
+        "configmap {0} to be deleted.", configMapName);
   }
 
   /**
@@ -1346,6 +1387,7 @@ class ItMiiAuxiliaryImage {
     deleteImage(miiAuxiliaryImage13);
     deleteImage(miiAuxiliaryImage14);
     deleteImage(miiAuxiliaryImage15);
+    deleteImage(miiAuxiliaryImage16);
     deleteImage(errorPathAuxiliaryImage1);
     deleteImage(errorPathAuxiliaryImage2);
     deleteImage(errorPathAuxiliaryImage3);
