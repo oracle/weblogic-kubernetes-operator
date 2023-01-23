@@ -14,10 +14,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PartialObjectMetadata implements KubernetesObject {
 
-  @ApiModelProperty("The API version for the Domain.")
+  @ApiModelProperty("The API version for the object.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'DomainList'.")
+  @ApiModelProperty("The type of resource.")
   private String kind;
 
   @ApiModelProperty(
