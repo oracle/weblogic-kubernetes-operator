@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -97,7 +97,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
@@ -458,7 +458,7 @@ class JobHelperTest extends DomainValidationTestBase {
     Map<String, String> data = new HashMap<>();
     data.put(FLUENTD_CONFIG_DATA_NAME, "<fakedata/>");
     V1ObjectMeta metaData = new V1ObjectMeta()
-          .name(FLUENTD_CONFIGMAP_NAME)
+          .name(UID + FLUENTD_CONFIGMAP_NAME_SUFFIX)
           .namespace(domainPresenceInfo.getNamespace());
     V1ConfigMap configMap = new V1ConfigMap()
           .metadata(metaData)

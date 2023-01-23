@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.FluentdSpecification;
 
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
@@ -185,7 +185,7 @@ public class FluentdHelper {
     data.put(FLUENTD_CONFIG_DATA_NAME, fluentdConfBuilder.toString());
 
     V1ObjectMeta meta = new V1ObjectMeta()
-        .name(FLUENTD_CONFIGMAP_NAME)
+        .name(domainUid + FLUENTD_CONFIGMAP_NAME_SUFFIX)
         .labels(labels)
         .namespace(namespace);
 
