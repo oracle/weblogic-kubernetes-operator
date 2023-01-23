@@ -130,7 +130,8 @@ public class ClientPool extends Pool<ApiClient> {
                 }
               };
           OkHttpClient httpClient =
-              client.getHttpClient().newBuilder().dispatcher(new Dispatcher(exec)).build();
+              client.getHttpClient().newBuilder().addInterceptor(new HeaderModifierInterceptor())
+                  .dispatcher(new Dispatcher(exec)).build();
           client.setHttpClient(httpClient);
         }
 

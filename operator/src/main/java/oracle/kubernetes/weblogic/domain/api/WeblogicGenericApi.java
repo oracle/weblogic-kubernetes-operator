@@ -3,24 +3,17 @@
 
 package oracle.kubernetes.weblogic.domain.api;
 
-import java.io.IOException;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
+import oracle.kubernetes.operator.helpers.HeaderModifierInterceptor;
 import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadataList;
 
 public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetadata,PartialObjectMetadataList> {
-  public static final String PARTIAL_OBJECT_METADATA_HEADER =
-      "application/json;as=PartialObjectMetadata;g=meta.k8s.io;v=v1,application/json";
   private final ApiClient apiClient;
 
   /**
@@ -40,13 +33,9 @@ public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetada
    * @throws ApiException on failure
    */
   public PartialObjectMetadata readCustomResourceDefinitionMetadata(String name) {
-    OkHttpClient httpClient = this.apiClient.getHttpClient();
-    // Add the interceptor to insert the Accept header to get the metatdata-only response
-    this.apiClient.setHttpClient(httpClient.newBuilder()
-        .addInterceptor(new ReplaceHeaderInterceptor("Accept", PARTIAL_OBJECT_METADATA_HEADER)).build());
+    HeaderModifierInterceptor.setPartialMetadataHeader(true);
     PartialObjectMetadata partialObjectMetadata = toPartialObjectMetadata(get(name));
-    // Remove the interceptor
-    this.apiClient.setHttpClient(httpClient);
+    HeaderModifierInterceptor.setPartialMetadataHeader(false);
     return partialObjectMetadata;
   }
 
@@ -61,31 +50,5 @@ public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetada
   private JsonElement convertToJson(Object o) {
     Gson gson = apiClient.getJSON().getGson();
     return gson.toJsonTree(o);
-  }
-
-  private class ReplaceHeaderInterceptor implements Interceptor {
-    private final String headerName;
-    private final String headerValue;
-
-    public ReplaceHeaderInterceptor(String headerName, String headerValue) {
-      this.headerName = headerName;
-      this.headerValue = headerValue;
-    }
-
-    public Response intercept(Chain chain) throws IOException {
-      Request request = chain.request();
-      Request newRequest;
-
-      try {
-        newRequest = request.newBuilder()
-            .removeHeader(headerName)
-            .addHeader(headerName, headerValue)
-            .build();
-      } catch (Exception e) {
-        return chain.proceed(request);
-      }
-
-      return chain.proceed(newRequest);
-    }
   }
 }
