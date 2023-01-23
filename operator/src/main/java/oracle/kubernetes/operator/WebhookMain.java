@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -156,10 +157,8 @@ public class WebhookMain extends BaseMain {
   Step createCRDRecheckSteps() {
     Step optimizedRecheckSteps = Step.chain(createDomainCRDPresenceCheck(), createClusterCRDPresenceCheck());
     try {
-      String clusterCrdResourceVersion = Optional.ofNullable(new CallBuilder().readCRDMetadata(CLUSTER_CRD_NAME))
-          .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
-      String domainCrdResourceVersion = Optional.ofNullable(new CallBuilder().readCRDMetadata(DOMAIN_CRD_NAME))
-          .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
+      String clusterCrdResourceVersion = getCrdResourceVersion(CLUSTER_CRD_NAME);
+      String domainCrdResourceVersion = getCrdResourceVersion(DOMAIN_CRD_NAME);
       if (crdMissingOrChanged(clusterCrdResourceVersion, delegate.getClusterCrdResourceVersion())) {
         optimizedRecheckSteps = Step.chain(createClusterCrdStep(delegate.getProductVersion()), optimizedRecheckSteps);
       }
@@ -173,6 +172,11 @@ public class WebhookMain extends BaseMain {
     } catch (Exception e) {
       return createFullCRDRecheckSteps();
     }
+  }
+
+  private String getCrdResourceVersion(String crdName) throws ApiException {
+    return Optional.ofNullable(new CallBuilder().readCRDMetadata(crdName))
+        .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
   }
 
   private Step createFullCRDRecheckSteps() {

@@ -38,6 +38,11 @@ public class PartialObjectMetadata implements KubernetesObject {
     this.metadata = metadata;
   }
 
+  public PartialObjectMetadata metadata(V1ObjectMeta metadata) {
+    this.metadata = metadata;
+    return this;
+  }
+
   public String getName() {
     return metadata.getName();
   }
