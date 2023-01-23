@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,6 +8,9 @@ import java.util.Map;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModelProperty;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PartialObjectMetadata implements KubernetesObject {
 
@@ -83,5 +86,39 @@ public class PartialObjectMetadata implements KubernetesObject {
   @Override
   public String getKind() {
     return kind;
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .append("apiVersion", apiVersion)
+        .append("kind", kind)
+        .append("metadata", metadata)
+        .toString();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder()
+        .append(metadata)
+        .append(apiVersion)
+        .append(kind)
+        .toHashCode();
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    if (other == this) {
+      return true;
+    }
+    if (!(other instanceof PartialObjectMetadataList)) {
+      return false;
+    }
+    PartialObjectMetadataList rhs = ((PartialObjectMetadataList) other);
+    return new EqualsBuilder()
+        .append(metadata, rhs.metadata)
+        .append(apiVersion, rhs.apiVersion)
+        .append(kind, rhs.kind)
+        .isEquals();
   }
 }
