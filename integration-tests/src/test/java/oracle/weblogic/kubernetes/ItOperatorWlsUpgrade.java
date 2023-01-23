@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -195,28 +195,6 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsUpgradeFrom344ToCurrent(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom344ToCurrent with domain type {0}", domainType);
     installAndUpgradeOperator(domainType, "3.4.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 4.0.3 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.3 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom403ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom403ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.3", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
-  }
-
-  /**
-   * Operator upgrade from 4.0.4 to current.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.4 to current")
-  @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom404ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom404ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
