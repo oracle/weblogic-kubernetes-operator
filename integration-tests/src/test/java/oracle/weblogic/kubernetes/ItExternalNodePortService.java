@@ -260,7 +260,7 @@ class ItExternalNodePortService {
   }
 
   // Run the RMI client outside the K8s Cluster using the JDK binary copied 
-  // from the Pod in the methid buildClient()
+  // from the Pod in the method buildClient()
   private void runExtClient(String hostAndPort, int serverCount, boolean checkConnection) {
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
@@ -288,8 +288,8 @@ class ItExternalNodePortService {
   // JMS client that sends messages to a Uniform Distributed Queue using
   // load balancer http(s) url which maps to custom channel on cluster member
   // server on WebLogic cluster.
-  // Copy the installed JDK from the Pod to local filesystem to build and run 
-  // the JMS client outside of K8s Cluster.
+  // Copy the installed JDK from WebLogic server pod to local filesystem to 
+  // build and run  the JMS client outside of K8s Cluster.
   private void buildClient() {
 
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,

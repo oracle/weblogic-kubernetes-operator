@@ -476,17 +476,22 @@ class ItExternalLbTunneling {
     testUntil(runJmsClient(new String(javapCmd)), logger, "Wait for t3 JMS Client to access WLS");
   }
 
-  // Run the RMI client outside the K8s Cluster
   private void runExtClient(int httpTunnelingPort, int serverCount, boolean checkConnection) {
     runExtClient(null, httpTunnelingPort, serverCount, checkConnection);
   }
 
+  // Run the RMI client outside the K8s Cluster using the JDK binary copied 
+  // from the Pod in the method buildClient()
   private void runExtClient(String routeHost, int httpTunnelingPort, int serverCount, boolean checkConnection) {
     String hostAndPort = getHostAndPort(routeHost, httpTunnelingPort);
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
     httpUrl.append(hostAndPort);
-    StringBuffer javaCmd = new StringBuffer("java -cp ");
+
+    // StringBuffer javaCmd = new StringBuffer("java -cp ");
+    StringBuffer javaCmd = new StringBuffer("");
+    javaCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/java "));
+    javaCmd.append("-cp ");
     javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javaCmd.append(":");
     javaCmd.append(Paths.get(RESULTS_ROOT));
@@ -507,8 +512,8 @@ class ItExternalLbTunneling {
   // JMS client that sends messages to a Uniform Distributed Queue using
   // load balancer http(s) url which maps to custom channel on cluster member
   // server on WebLogic cluster.
-  // Copy the installed JDK from the Pod to local filesystem to build and run 
-  // the JMS client outside of K8s Cluster.
+  // Copy the installed JDK from WebLogic server pod to local filesystem 
+  // to build and run the JMS client outside of K8s Cluster.
   private void buildClient() {
 
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
