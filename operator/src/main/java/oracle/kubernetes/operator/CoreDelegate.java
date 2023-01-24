@@ -22,21 +22,13 @@ public interface CoreDelegate extends PacketComponent {
 
   KubernetesVersion getKubernetesVersion();
 
-  default String getDomainCrdResourceVersion() {
-    return null;
-  }
+  String getDomainCrdResourceVersion();
 
-  default void setDomainCrdResourceVersion(String resourceVersion) {
-    //no-op
-  }
+  void setDomainCrdResourceVersion(String resourceVersion);
 
-  default String getClusterCrdResourceVersion() {
-    return null;
-  }
+  String getClusterCrdResourceVersion();
 
-  default void setClusterCrdResourceVersion(String resourceVersion) {
-    //no-op
-  }
+  void setClusterCrdResourceVersion(String resourceVersion);
 
   File getDeploymentHome();
 
