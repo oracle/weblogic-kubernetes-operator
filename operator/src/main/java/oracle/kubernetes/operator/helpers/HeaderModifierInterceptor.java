@@ -43,8 +43,4 @@ public class HeaderModifierInterceptor implements Interceptor {
   public static void setPartialMetadataHeader(Boolean value) {
     partialMetadataHeader.set(value);
   }
-
-  public static void removePartialMetadataHeader() {
-    partialMetadataHeader.remove();
-  }
 }
