@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,7 +13,8 @@ public interface StepContextConstants {
   String INTROSPECTOR_VOLUME = "weblogic-domain-introspect-cm-volume";
   String RUNTIME_ENCRYPTION_SECRET_VOLUME = "weblogic-domain-runtime-encryption-volume";
   String FLUENTD_CONFIGMAP_VOLUME = "weblogic-fluentd-configmap-volume";
-  String FLUENTD_CONFIGMAP_NAME = "weblogic-fluentd-configmap";
+  String OLD_FLUENTD_CONFIGMAP_NAME = "weblogic-fluentd-configmap";
+  String FLUENTD_CONFIGMAP_NAME_SUFFIX = "-" + OLD_FLUENTD_CONFIGMAP_NAME;
   String FLUENTD_CONTAINER_NAME = "fluentd";
   String FLUENTD_CONFIG_DATA_NAME = "fluentd.conf";
   String SECRETS_MOUNT_PATH = "/weblogic-operator/secrets";
