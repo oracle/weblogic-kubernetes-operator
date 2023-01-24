@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -613,7 +613,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
     return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_0))
-          || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1));
+        || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1))
+        || requiredHash.equals(adjustedHash(currentPod, this::restoreFluentdVolume));
   }
 
   private boolean hasLabel(V1Pod pod, String key) {
@@ -637,6 +638,14 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private void addLegacyPrometheusAnnotationsFrom_3_1(V1Pod pod) {
     AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
+  }
+
+  private void restoreFluentdVolume(V1Pod recipe) {
+    Optional.ofNullable(recipe.getSpec().getVolumes())
+        .ifPresent(volumes -> volumes.stream().filter(volume -> FLUENTD_CONFIGMAP_VOLUME.equals(volume.getName()))
+            .forEach(volume -> {
+              Optional.ofNullable(volume.getConfigMap()).ifPresent(cms -> cms.setName(OLD_FLUENTD_CONFIGMAP_NAME));
+            }));
   }
 
   private Integer getMetricsPort() {
@@ -948,9 +957,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Volume> getFluentdVolumes() {
     List<V1Volume> volumes = new ArrayList<>();
     Optional.ofNullable(getDomain())
-            .map(Domain::getFluentdSpecification)
-            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
-                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+        .map(Domain::getFluentdSpecification)
+        .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+            .configMap(new V1ConfigMapVolumeSource()
+                .name(getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX)
+                .defaultMode(420))));
     return volumes;
   }
 

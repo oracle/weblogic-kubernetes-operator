@@ -65,8 +65,9 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OLD_FLUENTD_CONFIGMAP_NAME;
 
 public class ConfigMapHelper {
 
@@ -796,7 +797,9 @@ public class ConfigMapHelper {
 
     private boolean isIntrospectorOrFluentdConfigMapName(String name) {
       return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
-              || FLUENTD_CONFIGMAP_NAME.equals(name);
+          || (domainUid + FLUENTD_CONFIGMAP_NAME_SUFFIX).equals(name)
+          // Match old, undecorated name of config map to clean-up
+          || OLD_FLUENTD_CONFIGMAP_NAME.equals(name);
     }
 
     @Nonnull
@@ -946,8 +949,10 @@ public class ConfigMapHelper {
   public static Step createOrReplaceFluentdConfigMapStep(DomainPresenceInfo info, Step next) {
     FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
     if (fluentdSpecification != null) {
-      return new CallBuilder().readConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-              info.getDomainUid(), new ReadFluentdConfigMapResponseStep(info, next));
+      return new CallBuilder().readConfigMapAsync(
+          info.getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX,
+          info.getNamespace(),
+          info.getDomainUid(), new ReadFluentdConfigMapResponseStep(info, next));
     } else {
       return next;
     }
@@ -1021,9 +1026,11 @@ public class ConfigMapHelper {
       FluentdSpecification fluentdSpecification = info.getDomain().getFluentdSpecification();
       if (fluentdSpecification != null) {
         return new CallBuilder()
-                .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME, info.getNamespace(),
-                        FluentdHelper.getFluentdConfigMap(info),
-                        new ReplaceFluentdConfigMapResponseStep(next));
+                .replaceConfigMapAsync(
+                    info.getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX,
+                    info.getNamespace(),
+                    FluentdHelper.getFluentdConfigMap(info),
+                    new ReplaceFluentdConfigMapResponseStep(next));
       } else {
         return next;
       }
