@@ -205,7 +205,7 @@ class ItMiiDynamicUpdatePart2 {
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
         + "  JDBCSystemResource:\n";
-      
+
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     // Replace contents of an existing configMap with cm config
