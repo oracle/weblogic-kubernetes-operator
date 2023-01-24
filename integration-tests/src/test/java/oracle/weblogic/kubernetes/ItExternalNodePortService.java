@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -213,10 +213,8 @@ class ItExternalNodePortService {
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
   void testExternalRmiAccessThruNodePortService() {
-    // Build the standalone JMS Client to send and receive messages
+    // Build the standalone JMS Client locally to send and receive messages
     buildClient();
-    buildClientOnPod();
-
     // Prepare the Nodeport service yaml file from the template file by
     // replacing domain namespace, domain UID, cluster name and host name
     Map<String, String> templateMap  = new HashMap<>();
@@ -261,12 +259,16 @@ class ItExternalNodePortService {
     logger.info("External RMI tunneling works for NodePortService");
   }
 
-  // Run the RMI client outside the K8s Cluster
+  // Run the RMI client outside the K8s Cluster using the JDK binary copied 
+  // from the Pod in the methid buildClient()
   private void runExtClient(String hostAndPort, int serverCount, boolean checkConnection) {
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
     httpUrl.append(hostAndPort);
-    StringBuffer javaCmd = new StringBuffer("java -cp ");
+    // StringBuffer javaCmd = new StringBuffer("java -cp ");
+    StringBuffer javaCmd = new StringBuffer("");
+    javaCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/java "));
+    javaCmd.append("-cp ");
     javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javaCmd.append(":");
     javaCmd.append(Paths.get(RESULTS_ROOT));
@@ -286,13 +288,29 @@ class ItExternalNodePortService {
   // JMS client that sends messages to a Uniform Distributed Queue using
   // load balancer http(s) url which maps to custom channel on cluster member
   // server on WebLogic cluster.
+  // Copy the installed JDK from the Pod to local filesystem to build and run 
+  // the JMS client outside of K8s Cluster.
   private void buildClient() {
 
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
              adminServerPodName, "weblogic-server",
              "/u01/oracle/wlserver/server/lib/wlthint3client.jar",
              Paths.get(RESULTS_ROOT, "wlthint3client.jar")));
-    StringBuffer javacCmd = new StringBuffer("javac -cp ");
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+             adminServerPodName, "weblogic-server",
+             "/u01/jdk", Paths.get(RESULTS_ROOT, "jdk")));
+    StringBuffer chmodCmd = new StringBuffer("chmod +x ");
+    chmodCmd.append(Paths.get(RESULTS_ROOT, "jdk/bin/java "));
+    chmodCmd.append(Paths.get(RESULTS_ROOT, "jdk/bin/javac "));
+    ExecResult cresult = assertDoesNotThrow(
+        () -> exec(new String(chmodCmd), true));
+    logger.info("chmod command {0}", chmodCmd.toString());
+    logger.info("chmod command returned {0}", cresult.toString());
+
+    // StringBuffer javacCmd = new StringBuffer("javac -cp ");
+    StringBuffer javacCmd = new StringBuffer("");
+    javacCmd.append(Paths.get(RESULTS_ROOT, "/jdk/bin/javac "));
+    javacCmd.append(Paths.get(" -cp "));
     javacCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar "));
     javacCmd.append(Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"));
     javacCmd.append(Paths.get(" -d "));
