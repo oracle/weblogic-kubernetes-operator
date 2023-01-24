@@ -111,7 +111,6 @@ public class CallBuilder {
   private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static final String DRY_RUN = null;
   private static final String PRETTY = null;
-
   private final CallFactory<DomainResource> replaceDomain =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1093,7 +1092,6 @@ public class CallBuilder {
   private Call readCustomResourceDefinitionAsync(
       ApiClient client, String name, ApiCallback<V1CustomResourceDefinition> callback)
       throws ApiException {
-
     return new ApiextensionsV1Api(client)
         .readCustomResourceDefinitionAsync(name, PRETTY, callback);
   }

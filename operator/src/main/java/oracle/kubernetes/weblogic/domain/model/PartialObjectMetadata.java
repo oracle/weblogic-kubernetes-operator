@@ -15,9 +15,7 @@ public class PartialObjectMetadata implements KubernetesObject {
   @ApiModelProperty("The type of resource.")
   private String kind;
 
-  @ApiModelProperty(
-      "Standard list metadata. "
-          + "More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds.")
+  @ApiModelProperty("Standard object's metadata.")
   private V1ObjectMeta metadata;
 
   public PartialObjectMetadata() {

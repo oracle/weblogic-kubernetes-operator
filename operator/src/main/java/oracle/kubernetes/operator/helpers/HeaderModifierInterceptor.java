@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.IOException;
+import javax.annotation.Nonnull;
 
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -22,16 +23,17 @@ public class HeaderModifierInterceptor implements Interceptor {
    * @param chain Chain
    * @return Response response
    */
+  @Nonnull
   public Response intercept(Chain chain) throws IOException {
-    Request request = chain.request();
-    Request newRequest;
-    if (Boolean.TRUE.equals(partialMetadataHeader.get())) {
+    final Request request = chain.request();
+    final Request newRequest;
+    if (Boolean.FALSE.equals(partialMetadataHeader.get())) {
+      return chain.proceed(request);
+    } else {
       newRequest = request.newBuilder()
           .header("Accept", PARTIAL_OBJECT_METADATA_HEADER)
           .build();
       return chain.proceed(newRequest);
-    } else {
-      return chain.proceed(request);
     }
   }
 

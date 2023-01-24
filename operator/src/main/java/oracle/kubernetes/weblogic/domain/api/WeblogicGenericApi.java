@@ -30,11 +30,10 @@ public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetada
    * Get CRD metadata.
    *
    * @return CRD metadata
-   * @throws ApiException on failure
    */
   public PartialObjectMetadata readCustomResourceDefinitionMetadata(String name) {
     HeaderModifierInterceptor.setPartialMetadataHeader(true);
-    PartialObjectMetadata partialObjectMetadata = toPartialObjectMetadata(get(name));
+    final PartialObjectMetadata partialObjectMetadata = toPartialObjectMetadata(get(name));
     HeaderModifierInterceptor.removePartialMetadataHeader();
     return partialObjectMetadata;
   }
