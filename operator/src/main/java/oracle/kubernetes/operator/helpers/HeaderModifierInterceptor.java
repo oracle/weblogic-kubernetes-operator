@@ -25,7 +25,7 @@ public class HeaderModifierInterceptor implements Interceptor {
   public Response intercept(Chain chain) throws IOException {
     Request request = chain.request();
     Request newRequest;
-    if (partialMetadataHeader.get()) {
+    if (Boolean.TRUE.equals(partialMetadataHeader.get())) {
       try {
         newRequest = request.newBuilder()
             .removeHeader("Accept")
@@ -42,5 +42,9 @@ public class HeaderModifierInterceptor implements Interceptor {
 
   public static void setPartialMetadataHeader(Boolean value) {
     partialMetadataHeader.set(value);
+  }
+
+  public static void removePartialMetadataHeader() {
+    partialMetadataHeader.remove();
   }
 }
