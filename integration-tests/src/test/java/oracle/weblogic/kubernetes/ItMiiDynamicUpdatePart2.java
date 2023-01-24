@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -204,9 +204,8 @@ class ItMiiDynamicUpdatePart2 {
     // write sparse yaml to delete datasource to file
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
-        + "  JDBCSystemResource:\n"
-        + "    '!TestDataSource2':";
-
+        + "  JDBCSystemResource:\n";
+      
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     // Replace contents of an existing configMap with cm config
