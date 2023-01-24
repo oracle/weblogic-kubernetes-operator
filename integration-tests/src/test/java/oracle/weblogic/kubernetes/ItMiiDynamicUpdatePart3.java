@@ -331,7 +331,7 @@ class ItMiiDynamicUpdatePart3 {
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
         + "  JDBCSystemResource:\n";
-      
+
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     pods = new LinkedHashMap<>();
