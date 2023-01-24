@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.helpers;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,8 +16,6 @@ import javax.annotation.Nullable;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionVersion;
 import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -62,8 +59,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class CrdHelperTest {
-  private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
+class CrdHelperTest extends CrdHelperTestBase {
   private static final SemanticVersion PRODUCT_VERSION_OLD = new SemanticVersion(2, 4, 0);
   private static final SemanticVersion PRODUCT_VERSION_FUTURE = new SemanticVersion(3, 1, 0);
   public static final String WEBHOOK_CERTIFICATE = "/deployment/webhook-identity/webhookCert";
@@ -174,7 +170,7 @@ class CrdHelperTest {
     }
 
     V1CustomResourceDefinition createCrd(Certificates certificates) {
-      return createCrdContext().createModel(CrdHelperTest.PRODUCT_VERSION, certificates);
+      return createCrdContext().createModel(CrdHelperTestBase.PRODUCT_VERSION, certificates);
     }
   }
 
@@ -589,36 +585,6 @@ class CrdHelperTest {
 
   private V1CustomResourceDefinition defineDomainCrd() {
     return new CrdHelper.DomainCrdContext().createModel(PRODUCT_VERSION, getCertificates());
-  }
-
-  private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion, String crdName) {
-    return new V1CustomResourceDefinition()
-        .apiVersion("apiextensions.k8s.io/v1")
-        .kind("CustomResourceDefinition")
-        .metadata(createMetadata(operatorVersion, crdName))
-        .spec(createSpec());
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1ObjectMeta createMetadata(SemanticVersion operatorVersion, String crdName) {
-    return new V1ObjectMeta()
-        .name(crdName)
-        .putLabelsItem(LabelConstants.OPERATOR_VERSION,
-            Optional.ofNullable(operatorVersion).map(SemanticVersion::toString).orElse(null));
-  }
-
-  private V1CustomResourceDefinitionSpec createSpec() {
-    return new V1CustomResourceDefinitionSpec()
-        .group(KubernetesConstants.DOMAIN_GROUP)
-        .scope("Namespaced")
-        .addVersionsItem(new V1CustomResourceDefinitionVersion()
-            .served(true).name(KubernetesConstants.OLD_DOMAIN_VERSION))
-        .names(
-            new V1CustomResourceDefinitionNames()
-                .plural(KubernetesConstants.DOMAIN_PLURAL)
-                .singular(KubernetesConstants.DOMAIN_SINGULAR)
-                .kind(KubernetesConstants.DOMAIN)
-                .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
   }
 
 }

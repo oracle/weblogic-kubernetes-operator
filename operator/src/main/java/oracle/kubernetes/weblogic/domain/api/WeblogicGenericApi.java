@@ -10,10 +10,10 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.helpers.HeaderModifierInterceptor;
+import oracle.kubernetes.weblogic.domain.model.KubernetesListObjectImpl;
 import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
-import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadataList;
 
-public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetadata,PartialObjectMetadataList> {
+public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetadata, KubernetesListObjectImpl> {
   private final ApiClient apiClient;
 
   /**
@@ -21,7 +21,7 @@ public class WeblogicGenericApi extends GenericKubernetesApi<PartialObjectMetada
    * @param apiClient api client.
    */
   public WeblogicGenericApi(ApiClient apiClient) {
-    super(PartialObjectMetadata.class, PartialObjectMetadataList.class, "apiextensions.k8s.io", "v1",
+    super(PartialObjectMetadata.class, KubernetesListObjectImpl.class, "apiextensions.k8s.io", "v1",
         "customresourcedefinitions", apiClient);
     this.apiClient = apiClient;
   }

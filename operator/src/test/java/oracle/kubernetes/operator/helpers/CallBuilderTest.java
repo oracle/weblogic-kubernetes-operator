@@ -1051,6 +1051,15 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
+  void readCRDMetadata_returnsResource() throws ApiException {
+    V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
+    defineHttpGetResponse(CRD_RESOURCE, UID, resource);
+
+    assertThat(callBuilder.readCRDMetadata(UID).getMetadata(), equalTo(createMetadata()));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
   void replaceCRD_returnsUpdatedResource() throws InterruptedException {
     V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
     defineHttpPutResponse(
