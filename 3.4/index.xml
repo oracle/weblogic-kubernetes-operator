@@ -255,7 +255,7 @@ A WDT archive ZIP file that contains your applications. A WDT model that describ
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.4.4:
+      <description>For the current production release 3.4.5:
 Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with kubectl version). Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
@@ -405,7 +405,7 @@ Domain in PV Model in Image with auxiliary images Model in Image without auxilia
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry. Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.4 Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.4.5 Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1 Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 General Availability (GA) installation image.
@@ -990,7 +990,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/release-notes/</guid>
-      <description>Releases Date Version Introduces backward incompatibilities? Change - See also, Change log. October 26, 2022 v3.4.4 no Support added to specify resource requests and limits for Monitoring Exporter sidecar containers. This release of the operator is compatible with running in the same Kubernetes cluster as additional operators from the upcoming 4.0 release. August 25, 2022 v3.4.3 no Resolved an issue related to introspector failure for non-English locales and improved concurrency for managing configuration override files.</description>
+      <description>Releases Date Version Introduces backward incompatibilities? Change - See also, Change log. January 24, 2023 v3.4.5 no Resolved an issue related to decorating the name of the ConfigMap created for Fluentd integration and dependency updates including WebLogic Monitoring Exporter, Jackson Databind, and the Oracle Linux base image. October 26, 2022 v3.4.4 no Support added to specify resource requests and limits for Monitoring Exporter sidecar containers. This release of the operator is compatible with running in the same Kubernetes cluster as additional operators from the upcoming 4.</description>
     </item>
     
   </channel>
