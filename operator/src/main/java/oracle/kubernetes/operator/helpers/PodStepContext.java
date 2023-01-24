@@ -777,9 +777,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected List<V1Volume> getFluentdVolumes() {
     List<V1Volume> volumes = new ArrayList<>();
     Optional.ofNullable(getDomain())
-            .map(DomainResource::getFluentdSpecification)
-            .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
-                    .configMap(new V1ConfigMapVolumeSource().name(FLUENTD_CONFIGMAP_NAME).defaultMode(420))));
+        .map(DomainResource::getFluentdSpecification)
+        .ifPresent(c -> volumes.add(new V1Volume().name(FLUENTD_CONFIGMAP_VOLUME)
+            .configMap(new V1ConfigMapVolumeSource()
+                .name(getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX)
+                .defaultMode(420))));
     return volumes;
   }
 
@@ -1329,6 +1331,14 @@ public abstract class PodStepContext extends BasePodStepContext {
           }));
     }
 
+    private void restoreFluentdVolume(V1Pod recipe, V1Pod currentPod) {
+      Optional.ofNullable(recipe.getSpec().getVolumes())
+          .ifPresent(volumes -> volumes.stream().filter(volume -> FLUENTD_CONFIGMAP_VOLUME.equals(volume.getName()))
+              .forEach(volume -> {
+                Optional.ofNullable(volume.getConfigMap()).ifPresent(cms -> cms.setName(OLD_FLUENTD_CONFIGMAP_NAME));
+              }));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
@@ -1339,7 +1349,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           this::convertAuxImagesInitContainerVolumeAndMounts,
           this::restoreLegacyIstioPortsConfig,
           this::restoreAffinityContent,
-          this::restoreLogHomeLayoutEnvVar);
+          this::restoreLogHomeLayoutEnvVar,
+          this::restoreFluentdVolume);
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);

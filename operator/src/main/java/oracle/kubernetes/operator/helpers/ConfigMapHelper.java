@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -62,8 +62,9 @@ import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABE
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OLD_FLUENTD_CONFIGMAP_NAME;
 
 public class ConfigMapHelper {
 
@@ -790,7 +791,9 @@ public class ConfigMapHelper {
 
     private boolean isIntrospectorOrFluentdConfigMapName(String name) {
       return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid))
-              || FLUENTD_CONFIGMAP_NAME.equals(name);
+          || (domainUid + FLUENTD_CONFIGMAP_NAME_SUFFIX).equals(name)
+          // Match old, undecorated name of config map to clean-up
+          || OLD_FLUENTD_CONFIGMAP_NAME.equals(name);
     }
 
     @Nonnull
@@ -977,7 +980,7 @@ public class ConfigMapHelper {
 
     private Step createNextStep(DomainPresenceInfo info) {
       return new CallBuilder().readConfigMapAsync(
-          FLUENTD_CONFIGMAP_NAME,
+          info.getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX,
           info.getNamespace(),
           info.getDomainUid(),
           new ReadFluentdConfigMapResponseStep(getNext()));
@@ -1046,7 +1049,8 @@ public class ConfigMapHelper {
 
     private static Step replaceFluentdConfigMap(DomainPresenceInfo info, Step next) {
       return new CallBuilder()
-          .replaceConfigMapAsync(FLUENTD_CONFIGMAP_NAME,
+          .replaceConfigMapAsync(
+              info.getDomainUid() + FLUENTD_CONFIGMAP_NAME_SUFFIX,
               info.getNamespace(),
               FluentdHelper.getFluentdConfigMap(info),
               new ReplaceFluentdConfigMapResponseStep(next));
