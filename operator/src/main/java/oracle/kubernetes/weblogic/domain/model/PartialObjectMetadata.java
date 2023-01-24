@@ -34,11 +34,11 @@ public class PartialObjectMetadata implements KubernetesObject {
 
   @Override
   public String getApiVersion() {
-    return kind;
+    return apiVersion;
   }
 
   @Override
   public String getKind() {
-    return apiVersion;
+    return kind;
   }
 }

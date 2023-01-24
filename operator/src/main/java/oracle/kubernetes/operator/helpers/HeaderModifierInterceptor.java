@@ -28,7 +28,6 @@ public class HeaderModifierInterceptor implements Interceptor {
     if (Boolean.TRUE.equals(partialMetadataHeader.get())) {
       try {
         newRequest = request.newBuilder()
-            //.removeHeader("Accept")
             .header("Accept", PARTIAL_OBJECT_METADATA_HEADER)
             .build();
       } catch (Exception e) {
@@ -42,5 +41,9 @@ public class HeaderModifierInterceptor implements Interceptor {
 
   public static void setPartialMetadataHeader(Boolean value) {
     partialMetadataHeader.set(value);
+  }
+
+  public static void removePartialMetadataHeader() {
+    partialMetadataHeader.remove();
   }
 }
