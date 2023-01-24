@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -547,10 +547,10 @@ class ItTwoDomainsManagedByTwoOperators {
     logger.info("Checking that domain2 admin server pod state was not changed");
     assertThat(podStateNotChanged(domain2AdminServerPodName, domain2Uid, domain2Namespace,
         domainAdminPodOriginalTimestamps.get(1)))
-        .as("Test state of pod {0} was not changed in namespace {1}",
-            domain2AdminServerPodName, domain2Namespace)
-        .withFailMessage("State of pod {0} was changed in namespace {1}",
-            domain2AdminServerPodName, domain2Namespace)
+        .as(String.format("Test state of pod %s was not changed in namespace %s",
+            domain2AdminServerPodName, domain2Namespace))
+        .withFailMessage(String.format("State of pod %s was changed in namespace %s",
+            domain2AdminServerPodName, domain2Namespace))
         .isTrue();
 
     logger.info("Checking that domain2 managed server pods states were not changed");
@@ -558,10 +558,10 @@ class ItTwoDomainsManagedByTwoOperators {
       String managedServerPodName = domain2Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       assertThat(podStateNotChanged(managedServerPodName, domain2Uid, domain2Namespace,
           domain2ManagedServerPodOriginalTimestampList.get(i - 1)))
-          .as("Test state of pod {0} was not changed in namespace {1}",
-              managedServerPodName, domain2Namespace)
-          .withFailMessage("State of pod {0} was changed in namespace {1}",
-              managedServerPodName, domain2Namespace)
+          .as(String.format("Test state of pod %s was not changed in namespace %s",
+              managedServerPodName, domain2Namespace))
+          .withFailMessage(String.format("State of pod %s was changed in namespace %s",
+              managedServerPodName, domain2Namespace))
           .isTrue();
     }
   }
@@ -736,10 +736,10 @@ class ItTwoDomainsManagedByTwoOperators {
     logger.info("Checking that domain1 admin server pod state was not changed");
     assertThat(podStateNotChanged(domain1AdminServerPodName, domain1Uid, twoDomainsNamespace,
         domainAdminPodOriginalTimestamps.get(0)))
-        .as("Test state of pod {0} was not changed in namespace {1}",
-            domain1AdminServerPodName, twoDomainsNamespace)
-        .withFailMessage("State of pod {0} was changed in namespace {1}",
-            domain1AdminServerPodName, twoDomainsNamespace)
+        .as(String.format("Test state of pod %s was not changed in namespace %s",
+            domain1AdminServerPodName, twoDomainsNamespace))
+        .withFailMessage(String.format("State of pod %s was changed in namespace %s",
+            domain1AdminServerPodName, twoDomainsNamespace))
         .isTrue();
 
     logger.info("Checking that domain1 managed server pods states were not changed");
@@ -747,10 +747,10 @@ class ItTwoDomainsManagedByTwoOperators {
       String managedServerPodName = domain1Uid + "-" + MANAGED_SERVER_NAME_BASE + i;
       assertThat(podStateNotChanged(managedServerPodName, domain1Uid, twoDomainsNamespace,
           domain1ManagedServerPodOriginalTimestampList.get(i - 1)))
-          .as("Test state of pod {0} was not changed in namespace {1}",
-              managedServerPodName, twoDomainsNamespace)
-          .withFailMessage("State of pod {0} was changed in namespace {1}",
-              managedServerPodName, twoDomainsNamespace)
+          .as(String.format("Test state of pod %s was not changed in namespace %s",
+              managedServerPodName, twoDomainsNamespace))
+          .withFailMessage(String.format("State of pod %s was changed in namespace %s",
+              managedServerPodName, twoDomainsNamespace))
           .isTrue();
     }
   }
