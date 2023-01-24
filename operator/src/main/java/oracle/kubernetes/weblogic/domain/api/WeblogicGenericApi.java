@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.api;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import oracle.kubernetes.operator.helpers.HeaderModifierInterceptor;
