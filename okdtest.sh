@@ -135,6 +135,8 @@ ${KUBERNETES_CLI} delete pv pv-testalertmanagertest3 --wait=false || true
 ${KUBERNETES_CLI} delete pv pv-testgrafanatest3 --wait=false || true
 ${KUBERNETES_CLI} delete pv pv-testprometheustest3 --wait=false || true
 
+${KUBERNETES_CLI} delete crd $(kubectl get crd | grep weblogic) || true
+
 ${KUBERNETES_CLI} get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs ${KUBERNETES_CLI} delete ingressroute || true
 ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
 ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/appscode/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
