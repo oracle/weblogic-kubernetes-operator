@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -111,15 +111,13 @@ public class MonitoringUtils {
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
     String monitoringExporterRelease = MONITORING_EXPORTER_WEBAPP_VERSION;
-    String monitoringExporterWebAppScriptVersion = monitoringExporterRelease.substring(0,
-            monitoringExporterRelease.length() - 2);
     String curlDownloadCmd = String.format("cd %s && "
-                    + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
+                    + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get_v%s.sh",
             applicationDir,
             monitoringExporterRelease,
-            monitoringExporterWebAppScriptVersion);
+            monitoringExporterRelease);
     String monitoringExporterBuildFile = String.format(
-            "%s/get%s.sh", applicationDir, monitoringExporterWebAppScriptVersion);
+            "%s/get_v%s.sh", applicationDir, monitoringExporterRelease);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(Command
             .withParams(new CommandParams()
