@@ -52,6 +52,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -160,6 +161,17 @@ class KubernetesTestSupportTest {
     testSupport.runSteps(steps);
 
     assertThat(testSupport.getResources(CUSTOM_RESOURCE_DEFINITION), contains(crd));
+  }
+
+  @Test
+  void whenCrdDefined_readJustMetaData() throws ApiException {
+    final V1CustomResourceDefinition crd = createCrd("mycrd");
+    Objects.requireNonNull(crd.getMetadata()).setGeneration(1234L);
+    testSupport.defineResources(crd);
+
+    final PartialObjectMetadata result = new CallBuilder().readCRDMetadata("mycrd");
+
+    assertThat(result.getMetadata().getGeneration(), equalTo(1234L));
   }
 
   @Test

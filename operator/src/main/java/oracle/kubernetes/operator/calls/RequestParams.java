@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.calls;
 
+import java.util.Arrays;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -13,6 +14,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.lang3.StringUtils;
 
 public final class RequestParams {
+  public static final String[] SUB_RESOURCE_SUFFIXES = {"Status", "Metadata"};
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   public final String call;
@@ -124,6 +126,15 @@ public final class RequestParams {
 
   @Nonnull
   public String getOperationName() {
-    return call.substring(0, indexOfFirstCapitalInCallName()) + (call.endsWith("Status") ? "Status" : "");
+    return call.substring(0, indexOfFirstCapitalInCallName()) + getCallSuffix();
+  }
+
+  @Nonnull
+  private String getCallSuffix() {
+    return Arrays.stream(SUB_RESOURCE_SUFFIXES).filter(this::isCallSuffix).findFirst().orElse("");
+  }
+
+  private boolean isCallSuffix(String suffix) {
+    return call.endsWith(suffix);
   }
 }

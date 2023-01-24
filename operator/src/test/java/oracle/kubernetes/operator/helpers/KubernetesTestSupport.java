@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -85,6 +86,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
@@ -276,10 +278,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private DataRepository<?> selectRepository(String resourceType) {
     String key = resourceType;
-    if (key.endsWith("Status")) {
-      key = key.substring(0, key.length() - 6);
-    } else if (key.endsWith("Metadata")) {
-      key = key.substring(0, key.length() - 8);
+    for (String suffix : RequestParams.SUB_RESOURCE_SUFFIXES) {
+      if (key.endsWith(suffix)) {
+        key = key.substring(0, key.length() - suffix.length());
+        break;
+      }
     }
     return repositories.get(key);
   }
@@ -530,6 +533,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
       @Override
       <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
         return callContext.readResource(dataRepository);
+      }
+    },
+    readMetadata {
+      @Override
+      <T> Object execute(CallContext callContext, DataRepository<T> dataRepository) {
+        return callContext.readMetadata(dataRepository);
       }
     },
     replace {
@@ -1266,6 +1275,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private <T> T readResource(DataRepository<T> dataRepository) {
       return dataRepository.readResource(requestParams.name, requestParams.namespace);
+    }
+
+    private <T> PartialObjectMetadata readMetadata(DataRepository<T> dataRepository) {
+      final T resource = dataRepository.readResource(requestParams.name, requestParams.namespace);
+      final V1ObjectMeta metadata = ((KubernetesObject) resource).getMetadata();
+      return new PartialObjectMetadata(metadata);
     }
 
     public <T> V1Status deleteCollection(DataRepository<T> dataRepository) {
