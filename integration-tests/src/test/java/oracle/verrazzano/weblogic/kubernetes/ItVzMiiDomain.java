@@ -194,7 +194,7 @@ class ItVzMiiDomain {
     
     logger.info("Deploying application");
     assertDoesNotThrow(() -> 
-        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(application));
+        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication(application));
     
     try {
       TimeUnit.MINUTES.sleep(10);

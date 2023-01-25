@@ -116,6 +116,9 @@ public class Kubernetes {
   private static final String COMPONENT_VERSION = "v1alpha2";
   private static final String COMPONENT_GROUP = "core.oam.dev";
   private static final String COMPONENT_PLURAL = "components";
+  private static final String APPLICATION_VERSION = "v1alpha2";
+  private static final String APPLICATION_GROUP = "core.oam.dev";
+  private static final String APPLICATION_PLURAL = "applicationconfigurations";  
   private static final String PRETTY = "true";
   private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static final String RESOURCE_VERSION = "";
@@ -1296,44 +1299,38 @@ public class Kubernetes {
   /**
    * Create a Domain Custom Resource.
    *
-   * @param component Component custom resource model object
-   * @param comVersion custom resource's version
+   * @param application Component custom resource model object
+   * @param appVersion custom resource's version
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createComponent(ApplicationConfiguration component, String... comVersion) throws ApiException {
-    String componentVersion = (comVersion.length == 0) ? COMPONENT_VERSION : comVersion[0];
+  public static boolean createApplication(ApplicationConfiguration application, String... appVersion) 
+      throws ApiException {
+    String componentVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
 
-    if (component == null) {
+    if (application == null) {
       throw new IllegalArgumentException(
           "Parameter 'component' cannot be null when calling createComponent()");
     }
 
-    if (component.metadata() == null) {
+    if (application.metadata() == null) {
       throw new IllegalArgumentException(
           "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
     }
 
-    if (component.metadata().getNamespace() == null) {
-      throw new IllegalArgumentException(
-          "'namespace' field in the metadata cannot be null when calling createComponent()");
-    }
-
-    String namespace = component.metadata().getNamespace();
-
-    JsonElement json = convertToJson(component);
-
+    JsonElement json = convertToJson(application);
     Object response;
     try {
-      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
-          componentVersion, //custom resource's version
-          namespace, // custom resource's namespace
-          COMPONENT_PLURAL, // custom resource's plural name
-          json, // JSON schema of the Resource to create
-          null, // pretty print output
-          null, // dry run
-          null // field manager
-      );
+      response = customObjectsApi
+          .createClusterCustomObject(
+              APPLICATION_GROUP,
+              componentVersion,
+              APPLICATION_PLURAL,
+              json,
+              null,
+              null,
+              null
+          );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
