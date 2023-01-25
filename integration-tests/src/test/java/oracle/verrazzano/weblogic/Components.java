@@ -3,10 +3,10 @@
 
 package oracle.verrazzano.weblogic;
 
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
