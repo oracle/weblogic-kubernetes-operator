@@ -191,16 +191,17 @@ class ItVzMiiDomain {
     logger.info("Deploying components");
     assertDoesNotThrow(() -> 
         oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(component));
-    
-    logger.info("Deploying application");
-    assertDoesNotThrow(() -> 
-        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication(application));
-    
     try {
       TimeUnit.MINUTES.sleep(10);
     } catch (InterruptedException ex) {
       ;
     }
+    
+    logger.info("Deploying application");
+    assertDoesNotThrow(() -> 
+        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication(application));
+    
+    
     
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
