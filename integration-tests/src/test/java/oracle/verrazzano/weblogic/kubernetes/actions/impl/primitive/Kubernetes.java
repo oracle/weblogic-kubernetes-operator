@@ -90,6 +90,7 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import oracle.verrazzano.weblogic.ApplicationConfiguration;
 import oracle.verrazzano.weblogic.Component;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
@@ -1292,6 +1293,55 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Create a Domain Custom Resource.
+   *
+   * @param component Component custom resource model object
+   * @param comVersion custom resource's version
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createComponent(ApplicationConfiguration component, String... comVersion) throws ApiException {
+    String componentVersion = (comVersion.length == 0) ? COMPONENT_VERSION : comVersion[0];
+
+    if (component == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'component' cannot be null when calling createComponent()");
+    }
+
+    if (component.metadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
+    }
+
+    if (component.metadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+          "'namespace' field in the metadata cannot be null when calling createComponent()");
+    }
+
+    String namespace = component.metadata().getNamespace();
+
+    JsonElement json = convertToJson(component);
+
+    Object response;
+    try {
+      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
+          componentVersion, //custom resource's version
+          namespace, // custom resource's namespace
+          COMPONENT_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null, // pretty print output
+          null, // dry run
+          null // field manager
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+  
   /**
    * Converts a Java Object to a JSON element.
    *

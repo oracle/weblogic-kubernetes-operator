@@ -31,7 +31,6 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -103,7 +102,7 @@ class ItVzMiiDomain {
     domainNamespace = namespaces.get(0);
     Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("verrazzano-managed", "true");
-    //setLabelToNamespace(domainNamespace, labels1);
+    setLabelToNamespace(domainNamespace, labels1);
   }
 
   /**
@@ -187,6 +186,14 @@ class ItVzMiiDomain {
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));
+    
+    logger.info("Deploying components");
+    assertDoesNotThrow(() -> 
+        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(component));
+    
+    logger.info("Deploying application");
+    assertDoesNotThrow(() -> 
+        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(application));
     
     try {
       TimeUnit.MINUTES.sleep(10);
@@ -277,9 +284,6 @@ class ItVzMiiDomain {
                                                            String repoSecretName, String encryptionSecretName,
                                                            String miiImage, String configmapName) {
 
-    Map<String, String> keyValueMap = new HashMap<>();
-    keyValueMap.put("testkey", "testvalue");
-
     // create the domain CR
     DomainResource domain = new DomainResource()
         .metadata(new V1ObjectMeta()
@@ -305,9 +309,6 @@ class ItVzMiiDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .adminChannelPortForwardingEnabled(false)
-                .serverService(new ServerService()
-                    .annotations(keyValueMap)
-                    .labels(keyValueMap))
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")
@@ -382,4 +383,5 @@ class ItVzMiiDomain {
     namespaceObject1.getMetadata().setLabels(labels);
     assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));
   }  
+
 }
