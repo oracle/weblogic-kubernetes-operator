@@ -46,7 +46,7 @@ pipeline {
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
-        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}"
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'parcluster' : 'seqcluster'}"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
@@ -72,7 +72,7 @@ pipeline {
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.24.8'
+                       defaultValue: '1.25.4'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -141,11 +141,11 @@ pipeline {
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
-               defaultValue: '6.38.6'
+               defaultValue: '6.44.11'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
