@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -430,7 +430,7 @@ public class SchemaConversionUtils {
       Object existing = domainSpec.remove("domainHomeInImage");
       if (existing != null && !domainSpec.containsKey("domainHomeSourceType")) {
         domainSpec.put("domainHomeSourceType",
-                Boolean.parseBoolean((String) existing) ? "Image" : "PersistentVolume");
+                Boolean.TRUE.equals(existing) ? "Image" : "PersistentVolume");
       }
     }
   }
