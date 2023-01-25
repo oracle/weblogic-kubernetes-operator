@@ -19,7 +19,7 @@ openAPIV3Schema:
           properties:
             image:
               description: The WebLogic Monitoring Exporter sidecar container
-                image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.0
+                image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.1
               type: string
             imagePullPolicy:
               description: The image pull policy for the WebLogic Monitoring
