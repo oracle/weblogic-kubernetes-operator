@@ -95,11 +95,12 @@ class ItVzMiiDomain {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(1) List<String> namespaces) {
+  public static void initAll(@Namespaces(1) List<String> namespaces) throws Exception {
     logger = getLogger();
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    domainNamespace = namespaces.get(0);
+    domainNamespace = namespaces.get(0);    
+    
     Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("verrazzano-managed", "true");
     setLabelToNamespace(domainNamespace, labels1);
@@ -376,12 +377,18 @@ class ItVzMiiDomain {
     assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
-  private static void setLabelToNamespace(String domainNS, Map<String, String> labels) {
+  private static void setLabelToNamespace(String domainNS, Map<String, String> labels) throws Exception {
     //add label to domain namespace
     V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
+    logger.info(Yaml.dump(namespaceObject1));
     assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
     namespaceObject1.getMetadata().setLabels(labels);
-    assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));
-  }  
+    try {
+      Kubernetes.replaceNamespace(namespaceObject1);
+    } catch (Exception ex) {
+      assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.getNamespace(domainNS))));
+      throw ex;
+    }
+  }
 
 }
