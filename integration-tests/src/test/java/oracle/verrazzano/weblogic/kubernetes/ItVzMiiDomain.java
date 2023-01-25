@@ -3,6 +3,7 @@
 
 package oracle.verrazzano.weblogic.kubernetes;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,7 @@ class ItVzMiiDomain {
     domainNamespace = namespaces.get(0);
     Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("verrazzano-managed", "true");
-    setLabelToNamespace(domainNamespace, labels1);
+    //setLabelToNamespace(domainNamespace, labels1);
   }
 
   /**
@@ -181,9 +182,8 @@ class ItVzMiiDomain {
             .name("myvzdomain")
             .annotations(keyValueMap))
         .spec(new ApplicationConfigurationSpec()
-            .components(new Components()
-                .addComponentNameItem(new V1LocalObjectReference()
-                    .name(domainUid))));
+            .components(Arrays.asList(new Components()
+                    .componentName(domainUid))));
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));

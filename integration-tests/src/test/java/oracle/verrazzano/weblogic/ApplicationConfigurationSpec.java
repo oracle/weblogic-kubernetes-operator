@@ -3,6 +3,9 @@
 
 package oracle.verrazzano.weblogic;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -15,22 +18,23 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class ApplicationConfigurationSpec {
 
   @ApiModelProperty("Specification for the Workload.")
-  private Components components;
+  private List<Components> components = new ArrayList<>();
 
-  public ApplicationConfigurationSpec components(Components components) {
+
+  public ApplicationConfigurationSpec components(List<Components> components) {
     this.components = components;
     return this;
   }
 
-  public Components components() {
+  public List<Components> components() {
     return components;
   }
 
-  public Components getComponents() {
+  public List<Components> getComponents() {
     return components;
   }
 
-  public void setComponents(Components components) {
+  public void setComponents(List<Components> components) {
     this.components = components;
   }
 
