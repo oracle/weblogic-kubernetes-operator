@@ -119,9 +119,9 @@ public class ClusterUtils {
     Cluster.deleteClusterCustomResource(clusterName, namespace);
 
     testUntil(
+        withLongRetryPolicy,
         clusterDoesNotExist(clusterName, CLUSTER_VERSION, namespace),
-        getLogger(),
-        "cluster {0} to be created in namespace {1}",
+        getLogger(), "cluster {0} to be created in namespace {1}",
         clusterName,
         namespace);
   }
