@@ -158,14 +158,14 @@ class ItVzMiiDomain {
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
 
     Component component = new Component()
-        .apiVersion("core.oam.dev")
+        .apiVersion("core.oam.dev/v1alpha2")
         .kind("Component")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(domainNamespace))
         .spec(new ComponentSpec()
             .workLoad(new Workload()
-                .apiVersion("oam.verrazzano.io")
+                .apiVersion("oam.verrazzano.io/v1alpha1")
                 .kind("VerrazzanoWebLogicWorkload")
                 .spec(new WorkloadSpec()
                     .template(domain))));
@@ -175,14 +175,15 @@ class ItVzMiiDomain {
     keyValueMap.put("description", "My vz wls application");
     
     ApplicationConfiguration application = new ApplicationConfiguration()
-        .apiVersion("core.oam.dev")
+        .apiVersion("core.oam.dev/v1alpha2")
         .kind("ApplicationConfiguration")
         .metadata(new V1ObjectMeta()
             .name("myvzdomain")
             .annotations(keyValueMap))
         .spec(new ApplicationConfigurationSpec()
             .components(new Components()
-                .addComponentNameItem("myvzdomain")));
+                .addComponentNameItem(new V1LocalObjectReference()
+                    .name(domainUid))));
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));

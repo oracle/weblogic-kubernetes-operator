@@ -13,36 +13,36 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class ComponentSpec {
 
   @ApiModelProperty("Specification for the Workload.")
-  private Workload workLoad;
+  private Workload workload;
 
   public ComponentSpec workLoad(Workload workLoad) {
-    this.workLoad = workLoad;
+    this.workload = workLoad;
     return this;
   }
 
   public Workload workLoad() {
-    return workLoad;
+    return workload;
   }
 
-  public Workload getWorkLoad() {
-    return workLoad;
+  public Workload getWorkload() {
+    return workload;
   }
 
-  public void setWorkLoad(Workload workLoad) {
-    this.workLoad = workLoad;
+  public void setWorkload(Workload workload) {
+    this.workload = workload;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("workload", workLoad)
+        .append("workload", workload)
         .toString();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(workLoad)
+        .append(workload)
         .toHashCode();
   }
 
@@ -56,7 +56,7 @@ public class ComponentSpec {
     }
     ComponentSpec rhs = (ComponentSpec) other;
     return new EqualsBuilder()
-        .append(workLoad, rhs.workLoad)
+        .append(workload, rhs.workload)
         .isEquals();
   }
 }

@@ -3,6 +3,7 @@
 
 package oracle.verrazzano.weblogic;
 
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,14 +16,14 @@ import io.swagger.annotations.ApiModelProperty;
 public class Components {
 
   @ApiModelProperty("A list of component names to deploy.")
-  private List<String> componentName = new ArrayList<>();
+  private List<V1LocalObjectReference> componentName = new ArrayList<>();
 
-  public Components componentName(List<String> componentName) {
+  public Components componentName(List<V1LocalObjectReference> componentName) {
     this.componentName = componentName;
     return this;
   }
 
-  public List<String> componentName() {
+  public List<V1LocalObjectReference> componentName() {
     return componentName;
   }
 
@@ -32,7 +33,7 @@ public class Components {
    * @param componentNameItem component item
    * @return this
    */
-  public Components addComponentNameItem(String componentNameItem) {
+  public Components addComponentNameItem(V1LocalObjectReference componentNameItem) {
     if (componentName == null) {
       componentName = new ArrayList<>();
     }
@@ -40,11 +41,11 @@ public class Components {
     return this;
   }
 
-  public List<String> getComponentName() {
+  public List<V1LocalObjectReference> getComponentName() {
     return componentName;
   }
 
-  public void setComponentName(List<String> componentName) {
+  public void setComponentName(List<V1LocalObjectReference> componentName) {
     this.componentName = componentName;
   }
 
