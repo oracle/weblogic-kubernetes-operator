@@ -98,7 +98,9 @@ class ItVzMiiDomain {
     logger = getLogger();
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    domainNamespace = namespaces.get(0);    
+    domainNamespace = namespaces.get(0);
+    
+    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
     
     Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("verrazzano-managed", "true");
@@ -140,7 +142,7 @@ class ItVzMiiDomain {
     String clusterName = "cluster-1";
 
     // create the domain object
-    DomainResource domain = createDomainResourceWithConfigMap(domainUid,
+    DomainResource domain = createDomainResource(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
@@ -265,7 +267,7 @@ class ItVzMiiDomain {
   }
 
   // Create a domain resource with a custom ConfigMap
-  private DomainResource createDomainResourceWithConfigMap(String domainUid,
+  private DomainResource createDomainResource(String domainUid,
                                                            String domNamespace, String adminSecretName,
                                                            String repoSecretName, String encryptionSecretName,
                                                            String miiImage) {
