@@ -136,15 +136,6 @@ class ItVzMiiDomain {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
             "weblogicenc", "weblogicenc");
 
-    String configMapName = "default-secure-configmap";
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'admin-server':\n"
-        + "       SSL: \n"
-        + "         Enabled: true \n"
-        + "         ListenPort: '" + adminServerSecurePort + "' \n";
-    createModelConfigMap(configMapName, yamlString, domainUid);
-
     // create cluster object
     String clusterName = "cluster-1";
 
@@ -152,7 +143,7 @@ class ItVzMiiDomain {
     DomainResource domain = createDomainResourceWithConfigMap(domainUid,
                domainNamespace, adminSecretName,
         TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
     domain = createClusterResourceAndAddReferenceToDomain(
         domainUid + "-" + clusterName, clusterName, domainNamespace, domain, replicaCount);
@@ -277,7 +268,7 @@ class ItVzMiiDomain {
   private DomainResource createDomainResourceWithConfigMap(String domainUid,
                                                            String domNamespace, String adminSecretName,
                                                            String repoSecretName, String encryptionSecretName,
-                                                           String miiImage, String configmapName) {
+                                                           String miiImage) {
 
     // create the domain CR
     DomainResource domain = new DomainResource()
@@ -306,15 +297,11 @@ class ItVzMiiDomain {
                 .adminChannelPortForwardingEnabled(false)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
-                        .channelName("default-secure")
-                        .nodePort(getNextFreePort()))
-                    .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(getNextFreePort()))))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
-                    .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
