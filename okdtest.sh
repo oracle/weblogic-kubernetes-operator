@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 set -o errexit
@@ -134,6 +134,8 @@ ${KUBERNETES_CLI} delete pv pv-testprometheustest2 --wait=false || true
 ${KUBERNETES_CLI} delete pv pv-testalertmanagertest3 --wait=false || true
 ${KUBERNETES_CLI} delete pv pv-testgrafanatest3 --wait=false || true
 ${KUBERNETES_CLI} delete pv pv-testprometheustest3 --wait=false || true
+
+${KUBERNETES_CLI} delete crd $(${KUBERNETES_CLI} get crd | grep weblogic) || true
 
 ${KUBERNETES_CLI} get ingressroutes -A --no-headers | awk '/tdlbs-/{print $2}' | xargs ${KUBERNETES_CLI} delete ingressroute || true
 ${KUBERNETES_CLI} get clusterroles --no-headers | awk '/ns-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterroles || true
