@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -130,7 +130,8 @@ public class ClientPool extends Pool<ApiClient> {
                 }
               };
           OkHttpClient httpClient =
-              client.getHttpClient().newBuilder().dispatcher(new Dispatcher(exec)).build();
+              client.getHttpClient().newBuilder().addInterceptor(new HeaderModifierInterceptor())
+                  .dispatcher(new Dispatcher(exec)).build();
           client.setHttpClient(httpClient);
         }
 
