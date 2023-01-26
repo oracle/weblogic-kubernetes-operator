@@ -121,7 +121,7 @@ public class ClusterUtils {
     testUntil(
         withLongRetryPolicy,
         clusterDoesNotExist(clusterName, CLUSTER_VERSION, namespace),
-        getLogger(), "cluster {0} to be created in namespace {1}",
+        getLogger(), "Waiting to delete cluster custom resource {0} in namespace {1}",
         clusterName,
         namespace);
   }
