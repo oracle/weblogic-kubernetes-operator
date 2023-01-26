@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
@@ -193,7 +192,7 @@ class ItVzMiiDomain {
     assertDoesNotThrow(() -> 
         oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(component));
     try {
-      TimeUnit.MINUTES.sleep(10);
+      TimeUnit.MINUTES.sleep(1);
     } catch (InterruptedException ex) {
       ;
     }
@@ -201,13 +200,6 @@ class ItVzMiiDomain {
     logger.info("Deploying application");
     assertDoesNotThrow(() -> 
         oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication(application));
-    
-    
-    
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using image {2}",
-        domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
-    createDomainAndVerify(domain, domainNamespace);
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
