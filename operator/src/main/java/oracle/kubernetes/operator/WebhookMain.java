@@ -1,14 +1,16 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -29,6 +31,8 @@ import oracle.kubernetes.operator.work.Step;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER_CRD_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_CRD_NAME;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createClusterCrdStep;
 import static oracle.kubernetes.operator.helpers.CrdHelper.createDomainCrdStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.WEBHOOK_STARTUP_FAILED;
@@ -47,7 +51,6 @@ public class WebhookMain extends BaseMain {
   private static NextStepFactory nextStepFactory = WebhookMain::createInitializeWebhookIdentityStep;
 
   static class WebhookMainDelegateImpl extends CoreDelegateImpl implements WebhookMainDelegate {
-
     public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
     }
@@ -67,7 +70,6 @@ public class WebhookMain extends BaseMain {
     public String getWebhookKeyUri() {
       return SECRETS_WEBHOOK_KEY;
     }
-
   }
 
   /**
@@ -153,11 +155,40 @@ public class WebhookMain extends BaseMain {
   }
 
   Step createCRDRecheckSteps() {
+    Step optimizedRecheckSteps = Step.chain(createDomainCRDPresenceCheck(), createClusterCRDPresenceCheck());
+    try {
+      String clusterCrdResourceVersion = getCrdResourceVersion(CLUSTER_CRD_NAME);
+      String domainCrdResourceVersion = getCrdResourceVersion(DOMAIN_CRD_NAME);
+      if (crdMissingOrChanged(clusterCrdResourceVersion, delegate.getClusterCrdResourceVersion())) {
+        optimizedRecheckSteps = Step.chain(createClusterCrdStep(delegate.getProductVersion()), optimizedRecheckSteps);
+      }
+      if (crdMissingOrChanged(domainCrdResourceVersion, delegate.getDomainCrdResourceVersion())) {
+        optimizedRecheckSteps = Step.chain(createDomainCrdStep(delegate.getProductVersion(),
+            new Certificates(delegate)), optimizedRecheckSteps);
+      }
+      delegate.setDomainCrdResourceVersion(domainCrdResourceVersion);
+      delegate.setClusterCrdResourceVersion(clusterCrdResourceVersion);
+      return optimizedRecheckSteps;
+    } catch (Exception e) {
+      return createFullCRDRecheckSteps();
+    }
+  }
+
+  private String getCrdResourceVersion(String crdName) throws ApiException {
+    return Optional.ofNullable(new CallBuilder().readCRDMetadata(crdName))
+        .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
+  }
+
+  private Step createFullCRDRecheckSteps() {
     return Step.chain(
         createDomainCrdStep(delegate.getProductVersion(), new Certificates(delegate)),
         createClusterCrdStep(delegate.getProductVersion()),
         createDomainCRDPresenceCheck(),
         createClusterCRDPresenceCheck());
+  }
+
+  private boolean crdMissingOrChanged(String crdResourceVersion, String cachedCrdResourceVersion) {
+    return crdResourceVersion == null || !crdResourceVersion.equals(cachedCrdResourceVersion);
   }
 
   // Returns a step that verifies the presence of an installed domain CRD. It does this by attempting to list the
