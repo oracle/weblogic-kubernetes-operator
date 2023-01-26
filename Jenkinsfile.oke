@@ -5,7 +5,7 @@
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
-        timeout(time: 1200, unit: 'MINUTES')
+        timeout(time: 1800, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
