@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -297,7 +297,7 @@ class SchemaConversionUtilsTest {
   }
 
   private void setDomainHomeInImage(Map<String, Object> v8Domain, boolean domainHomeInImage) {
-    getDomainSpec(v8Domain).put("domainHomeInImage", String.valueOf(domainHomeInImage));
+    getDomainSpec(v8Domain).put("domainHomeInImage", domainHomeInImage);
   }
 
   private void setDomainHomeSourceType(Map<String, Object> v8Domain, String domainHomeSourceType) {
