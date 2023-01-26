@@ -180,6 +180,7 @@ class ItVzMiiDomain {
         .kind("ApplicationConfiguration")
         .metadata(new V1ObjectMeta()
             .name("myvzdomain")
+            .namespace(domainNamespace)
             .annotations(keyValueMap))
         .spec(new ApplicationConfigurationSpec()
             .components(Arrays.asList(new Components()

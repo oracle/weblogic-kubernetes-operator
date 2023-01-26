@@ -1306,7 +1306,7 @@ public class Kubernetes {
    */
   public static boolean createApplication(ApplicationConfiguration application, String... appVersion) 
       throws ApiException {
-    String componentVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
+    String applicationVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
 
     if (application == null) {
       throw new IllegalArgumentException(
@@ -1317,20 +1317,19 @@ public class Kubernetes {
       throw new IllegalArgumentException(
           "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
     }
-
+    String namespace = application.metadata().getNamespace();
     JsonElement json = convertToJson(application);
-    Object response;
+    Object response;    
     try {
-      response = customObjectsApi
-          .createClusterCustomObject(
-              APPLICATION_GROUP,
-              componentVersion,
-              APPLICATION_PLURAL,
-              json,
-              null,
-              null,
-              null
-          );
+      response = customObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
+          applicationVersion, //custom resource's version
+          namespace, // custom resource's namespace
+          APPLICATION_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null, // pretty print output
+          null, // dry run
+          null // field manager
+      );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
