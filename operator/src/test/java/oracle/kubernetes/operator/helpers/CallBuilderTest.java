@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -1047,6 +1047,15 @@ class CallBuilderTest {
     V1CustomResourceDefinition received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readCRDMetadata_returnsResourceMetadata() throws ApiException {
+    V1CustomResourceDefinition resource = new V1CustomResourceDefinition().metadata(createMetadata());
+    defineHttpGetResponse(CRD_RESOURCE, UID, resource);
+
+    assertThat(callBuilder.readCRDMetadata(UID).getMetadata(), equalTo(createMetadata()));
   }
 
   @Test
