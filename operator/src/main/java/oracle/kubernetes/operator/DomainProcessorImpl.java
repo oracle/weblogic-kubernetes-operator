@@ -406,8 +406,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private boolean shouldContinue(MakeRightClusterOperation operation, ClusterPresenceInfo liveInfo) {
     final ClusterPresenceInfo cachedInfo = getExistingClusterPresenceInfo(liveInfo);
     if (hasDeletedClusterEventData(operation)) {
-      boolean found = findClusterPresenceInfo(liveInfo.getNamespace(), liveInfo.getResourceName());
-      return found;
+      return findClusterPresenceInfo(liveInfo.getNamespace(), liveInfo.getResourceName());
     } else if (isNewCluster(cachedInfo)) {
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)) {
@@ -426,11 +425,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private boolean isNewCluster(ClusterPresenceInfo cachedInfo) {
     return Optional.ofNullable(cachedInfo).map(ClusterPresenceInfo::getCluster).orElse(null) == null;
-  }
-
-  private boolean isDeletingNonExistCluster(MakeRightClusterOperation operation, ClusterPresenceInfo cachedInfo) {
-    return hasDeletedClusterEventData(operation)
-        && !findClusterPresenceInfo(cachedInfo.getNamespace(), cachedInfo.getResourceName());
   }
 
   private boolean findClusterPresenceInfo(String namespace, String clusterName) {
@@ -976,7 +970,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private class DomainPlan extends Plan<MakeRightDomainOperation> {
+  private static class DomainPlan extends Plan<MakeRightDomainOperation> {
 
     public DomainPlan(MakeRightDomainOperation operation, DomainProcessorDelegate delegate) {
       super(operation, delegate);
@@ -1067,7 +1061,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   }
 
-  private class ClusterPlan extends Plan<MakeRightClusterOperation> {
+  private static class ClusterPlan extends Plan<MakeRightClusterOperation> {
 
     public ClusterPlan(MakeRightClusterOperation operation, DomainProcessorDelegate delegate) {
       super(operation, delegate);
@@ -1107,7 +1101,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private abstract class Plan<T extends MakeRightOperation> {
+  private abstract static class Plan<T extends MakeRightOperation> {
 
     final T operation;
     protected final ResourcePresenceInfo presenceInfo;

@@ -108,7 +108,6 @@ public class ServerStatusReader {
     /**
      * Creates asynchronous step to read WebLogic server state from a particular pod.
      *
-     * @param info the domain presence
      * @param pod The pod
      * @param serverName Server name
      * @param timeoutSeconds Timeout in seconds
