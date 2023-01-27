@@ -96,6 +96,10 @@ public abstract class BaseConfiguration {
     return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
   }
 
+  public BaseServerPodConfiguration getBaseServerPodConfiguration() {
+    return baseServerPodConfiguration;
+  }
+
   @Nullable
   public List<V1EnvVar> getEnv() {
     return serverPod.getEnv();

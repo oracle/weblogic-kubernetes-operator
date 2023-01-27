@@ -8,7 +8,6 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import oracle.kubernetes.operator.ServerStartPolicy;
 
 /** An interface for an object to configure a server pod in a test. */
 @SuppressWarnings("UnusedReturnValue")

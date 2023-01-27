@@ -3,35 +3,15 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import oracle.kubernetes.json.Default;
-import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Introspector extends BaseConfiguration {
-
-  /**
-   * Tells the operator whether the customer wants the server to be running. For clustered servers -
-   * the operator will start it if the policy is Always or the policy is IfNeeded and the server
-   * needs to be started to get to the cluster's replica count.
-   *
-   * @since 2.0
-   */
-  @EnumClass(value = ServerStartPolicy.class, qualifier = "forServer")
-  @Description("The strategy for deciding whether to start a WebLogic Server instance. "
-      + "Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. "
-      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-lifecycle/startup/#starting-and-stopping-servers.")
-  @Default(strDefault = "IfNeeded")
-  private ServerStartPolicy serverStartPolicy;
+public class Introspector extends BaseServerPodConfiguration {
 
   protected Introspector getConfiguration() {
     Introspector configuration = new Introspector();
     configuration.fillInFrom(this);
-    configuration.setRestartVersion(this.getRestartVersion());
     return configuration;
   }
 
@@ -39,7 +19,6 @@ public class Introspector extends BaseConfiguration {
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
-        .append(serverStartPolicy)
         .toString();
   }
 
@@ -61,7 +40,6 @@ public class Introspector extends BaseConfiguration {
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(serverStartPolicy, that.serverStartPolicy)
         .isEquals();
   }
 
@@ -69,17 +47,6 @@ public class Introspector extends BaseConfiguration {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(serverStartPolicy)
         .toHashCode();
-  }
-
-  @Override
-  public ServerStartPolicy getServerStartPolicy() {
-    return serverStartPolicy;
-  }
-
-  @Override
-  public void setServerStartPolicy(ServerStartPolicy serverStartPolicy) {
-    this.serverStartPolicy = serverStartPolicy;
   }
 }

@@ -40,6 +40,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -134,6 +135,11 @@ public class JobStepContext extends BasePodStepContext {
 
   EffectiveServerSpec getServerSpec() {
     return getDomain().getAdminServerSpec();
+  }
+
+  protected EffectiveServerPodSpec getServerPodSpec() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+        .orElse(getDomain().getAdminServerSpec().getServerPodSpec());
   }
 
   String getJobName() {
@@ -657,7 +663,7 @@ public class JobStepContext extends BasePodStepContext {
   List<V1EnvVar> getConfiguredEnvVars() {
     // Pod for introspector job would use same environment variables as for admin server
     List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+          PodHelper.createCopy(getServerPodSpec().getEnvironmentVariables());
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());

@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpecBase;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -54,6 +55,10 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
 
   private Server getBaseConfiguration(Server server) {
     return server != null ? server.getConfiguration() : new Server();
+  }
+
+  public EffectiveServerPodSpec getServerPodSpec() {
+    return this.server.getBaseServerPodConfiguration();
   }
 
   @Override

@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -267,6 +268,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   public String getNamespace() {
     return metadata.getNamespace();
+  }
+
+  public EffectiveServerPodSpec getIntrospectorSpec() {
+    return getEffectiveConfigurationFactory().getIntrospectorSpec();
   }
 
   public EffectiveAdminServerSpec getAdminServerSpec() {

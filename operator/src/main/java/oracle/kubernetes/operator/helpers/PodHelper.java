@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -422,6 +423,11 @@ public class PodHelper {
     }
 
     @Override
+    protected EffectiveServerPodSpec getServerPodSpec() {
+      return getServerSpec().getServerPodSpec();
+    }
+
+    @Override
     Integer getOldMetricsPort() {
       return getAsPort();
     }
@@ -692,6 +698,11 @@ public class PodHelper {
     @Override
     protected List<String> getContainerCommand() {
       return new ArrayList<>(super.getContainerCommand());
+    }
+
+    @Override
+    protected EffectiveServerPodSpec getServerPodSpec() {
+      return getServerSpec().getServerPodSpec();
     }
 
     @Override

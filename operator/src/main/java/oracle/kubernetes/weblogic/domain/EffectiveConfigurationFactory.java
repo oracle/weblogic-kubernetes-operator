@@ -7,6 +7,7 @@ import java.util.List;
 
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 
@@ -15,6 +16,8 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
  * operator runtime.
  */
 public interface EffectiveConfigurationFactory {
+
+  EffectiveServerPodSpec getIntrospectorSpec();
 
   EffectiveAdminServerSpec getAdminServerSpec();
 
