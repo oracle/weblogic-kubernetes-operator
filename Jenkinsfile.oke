@@ -228,7 +228,7 @@ pipeline {
 
                         export OKE_CLUSTER="true"
                         if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
-                           VCN_CIDR_PREFIX="10.1"
+                           VCN_CIDR_PREFIX="10.4"
                         else
                            VCN_CIDR_PREFIX="10.3"
                         fi
