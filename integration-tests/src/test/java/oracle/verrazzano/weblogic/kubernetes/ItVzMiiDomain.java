@@ -42,6 +42,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -275,6 +276,7 @@ class ItVzMiiDomain {
 
     // create the domain CR
     DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
         .metadata(new V1ObjectMeta()
             .name(domainUid)
             .namespace(domNamespace))
