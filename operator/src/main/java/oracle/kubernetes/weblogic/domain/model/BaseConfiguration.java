@@ -38,8 +38,9 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
  */
 public abstract class BaseConfiguration {
 
-  @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
-  private final ServerPod serverPod = new ServerPod();
+  BaseServerPodConfiguration baseServerPodConfiguration = new BaseServerPodConfiguration();
+
+  ServerPod serverPod = baseServerPodConfiguration.getServerPod();
 
   @Description(
       "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.")

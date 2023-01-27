@@ -532,6 +532,32 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenIntrospectorServerHasEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .withEnvironmentVariable("item1", "domain-value1")
+        .withEnvironmentVariable("item2", "domain-value2")
+        .configureIntrospector()
+        .withEnvironmentVariable("item2", "admin-value2")
+        .withEnvironmentVariable("item3", "admin-value3");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasEnvVar("item1", "domain-value1"),
+            hasEnvVar("item2", "admin-value2"),
+            hasEnvVar("item3", "admin-value3")));
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            envVarOEVNContains("item1"),
+            envVarOEVNContains("item2"),
+            envVarOEVNContains("item3")));
+  }
+
+  @Test
   void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
           .withEnvironmentVariable("item1", "domain-value1")
@@ -579,6 +605,31 @@ class JobHelperTest extends DomainValidationTestBase {
                 envVarOEVNContains(configMapKeyRefEnvVar.getName()),
                 envVarOEVNContains(secretKeyRefEnvVar.getName()),
                 envVarOEVNContains(fieldRefEnvVar.getName())));
+  }
+
+  @Test
+  void whenIntrospectorServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureIntrospector()
+        .withEnvironmentVariable(configMapKeyRefEnvVar)
+        .withEnvironmentVariable(secretKeyRefEnvVar)
+        .withEnvironmentVariable(fieldRefEnvVar);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasItem(configMapKeyRefEnvVar),
+            hasItem(secretKeyRefEnvVar),
+            hasItem(fieldRefEnvVar)));
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            envVarOEVNContains(configMapKeyRefEnvVar.getName()),
+            envVarOEVNContains(secretKeyRefEnvVar.getName()),
+            envVarOEVNContains(fieldRefEnvVar.getName())));
   }
 
   @Test

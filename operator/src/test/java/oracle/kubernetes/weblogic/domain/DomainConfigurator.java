@@ -87,6 +87,13 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Configure introspector.
+   *
+   * @return An IntrospectorConfigurator object for configuring an admin server
+   */
+  public abstract IntrospectorConfigurator configureIntrospector();
+
+  /**
    * Configure admin server.
    *
    * @return An AdminServerConfigurator object for configuring an admin server

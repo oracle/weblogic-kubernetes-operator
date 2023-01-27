@@ -423,6 +423,16 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
       + "additional Pod content, and which channels or network access points should be exposed using "
       + "a NodePort Service.")
+  private Introspector introspector;
+
+  /**
+   * The configuration for the admin server.
+   *
+   * @since 2.0
+   */
+  @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
+      + "additional Pod content, and which channels or network access points should be exposed using "
+      + "a NodePort Service.")
   private AdminServer adminServer;
 
   /**
@@ -456,6 +466,24 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withCluster(V1LocalObjectReference reference) {
     clusters.add(reference);
     return this;
+  }
+
+  /**
+   * Get Admin Server configuration or else create default, if doesn't exist.
+   * @return Admin Server configuration.
+   */
+  public Introspector getOrCreateIntrospector() {
+    if (introspector != null) {
+      return introspector;
+    }
+
+    return createIntrospector();
+  }
+
+  private Introspector createIntrospector() {
+    Introspector newIntrospector = new Introspector();
+    setIntrospector(newIntrospector);
+    return newIntrospector;
   }
 
   /**
@@ -1095,6 +1123,15 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setMaxClusterUnavailable(Integer maxClusterUnavailable) {
     this.maxClusterUnavailable = maxClusterUnavailable;
+  }
+
+
+  public Introspector getIntrospector() {
+    return introspector;
+  }
+
+  private void setIntrospector(Introspector adminServer) {
+    this.introspector = introspector;
   }
 
   public AdminServer getAdminServer() {
