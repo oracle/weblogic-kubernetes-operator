@@ -40,6 +40,18 @@ public interface DomainProcessor {
    *
    * @param clusterEvent the event that needs to be generated
    * @param cluster the cluster resource that the event is associated with
+   * @param domainUid the UID of the domain that the cluster is referenced by
+   * @return Make-right operation
+   */
+  MakeRightClusterOperation createMakeRightOperationForClusterEvent(
+      EventItem clusterEvent, ClusterResource cluster, String domainUid);
+
+  /**
+   * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
+   * or not.
+   *
+   * @param clusterEvent the event that needs to be generated
+   * @param cluster the cluster resource that the event is associated with
    * @return Make-right operation
    */
   MakeRightClusterOperation createMakeRightOperationForClusterEvent(

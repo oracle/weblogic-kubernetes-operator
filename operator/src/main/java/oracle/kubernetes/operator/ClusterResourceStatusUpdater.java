@@ -36,6 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CLUSTER;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.helpers.EventHelper.createClusterResourceEventData;
 
 /**
  * Updates for status of Cluster resources.
@@ -255,14 +256,14 @@ public class ClusterResourceStatusUpdater {
 
     private EventData toTrueClusterResourceEvent(ClusterCondition condition) {
       return Optional.ofNullable(condition.getType().getAddedEvent())
-          .map(eventItem -> new ClusterResourceEventData(eventItem, resource))
+          .map(eventItem -> createClusterResourceEventData(eventItem, resource, domain.getDomainUid()))
           .map(this::initializeClusterResourceEventData)
           .orElse(null);
     }
 
     private EventData toFalseClusterResourceEvent(ClusterCondition removedCondition) {
       return Optional.ofNullable(removedCondition.getType().getRemovedEvent())
-          .map(eventItem -> new ClusterResourceEventData(eventItem, resource))
+          .map(eventItem -> createClusterResourceEventData(eventItem, resource, domain.getDomainUid()))
           .map(this::initializeClusterResourceEventData)
           .orElse(null);
     }

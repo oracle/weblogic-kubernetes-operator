@@ -52,11 +52,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    */
   MakeRightDomainOperation interrupt();
 
-  /**
-   * Returns true if this operation was started by an event.
-   */
-  boolean wasStartedFromEvent();
-
   boolean isDeleting();
 
   boolean isExplicitRecheck();

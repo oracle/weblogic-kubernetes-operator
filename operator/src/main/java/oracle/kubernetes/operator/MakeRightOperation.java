@@ -25,4 +25,6 @@ public interface MakeRightOperation<T extends ResourcePresenceInfo> extends Pack
   boolean isWillInterrupt();
 
   T getPresenceInfo();
+
+  boolean wasStartedFromEvent();
 }

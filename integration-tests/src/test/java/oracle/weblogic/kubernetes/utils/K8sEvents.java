@@ -372,6 +372,38 @@ public class K8sEvents {
   }
 
   /**
+   * Get the event count between a specific timestamp for the given resource (domain or cluster).
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param resourceName the Uid/name of the resource
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param timestamp the timestamp after which to see events
+   * @return count number of events count
+   */
+  public static int getOpGeneratedEventCountForResource(
+      String domainNamespace, String domainUid, String resourceName, String reason, OffsetDateTime timestamp) {
+    int count = 0;
+    try {
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+            && labels.get("weblogic.domainUID").equals(domainUid)
+            && event.getInvolvedObject().getName().equals(resourceName)
+            && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          count++;
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
+      return -1;
+    }
+    return count;
+  }
+
+  /**
    * Check if a given event is logged only once for the given pod.
    *
    * @param domainNamespace namespace in which the domain exists

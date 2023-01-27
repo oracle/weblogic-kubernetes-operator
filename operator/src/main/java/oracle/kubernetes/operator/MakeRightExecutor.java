@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.work.Step;
 
@@ -63,4 +64,16 @@ public interface MakeRightExecutor {
    * @param info the presence info which encapsulates the domain
    */
   void unregisterDomainPresenceInfo(DomainPresenceInfo info);
+
+  /**
+   * Adds the specified presence info to a cache.
+   * @param info the presence info which encapsulates the domain
+   */
+  void registerClusterPresenceInfo(ClusterPresenceInfo info);
+
+  /**
+   * Removes the specified presence info from the cache.
+   * @param info the presence info which encapsulates the domain
+   */
+  void unregisterClusterPresenceInfo(ClusterPresenceInfo info);
 }

@@ -23,8 +23,6 @@ import oracle.kubernetes.operator.work.Step;
 public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<ClusterPresenceInfo>
     implements MakeRightClusterOperation {
 
-  private ClusterResourceEventData eventData;
-
   /**
    * Create the operation.
    *

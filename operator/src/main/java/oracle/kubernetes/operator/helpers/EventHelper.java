@@ -1076,7 +1076,7 @@ public class EventHelper {
           .orElse("");
     }
 
-    private String getResourceNameFromInfo() {
+    String getResourceNameFromInfo() {
       return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
     }
   }
@@ -1278,13 +1278,20 @@ public class EventHelper {
     }
   }
 
+  public static ClusterResourceEventData createClusterResourceEventData(
+      EventItem clusterEvent, ClusterResource cluster, String domainUid) {
+    return new ClusterResourceEventData(clusterEvent, cluster, domainUid);
+  }
+
   public static class ClusterResourceEventData extends EventData {
 
     private final ClusterResource resource;
+    private String domainUid;
 
-    public ClusterResourceEventData(EventItem eventItem, ClusterResource resource) {
+    private ClusterResourceEventData(EventItem eventItem, ClusterResource resource, String domainUid) {
       super(eventItem);
       this.resource = resource;
+      this.domainUid = domainUid;
     }
 
     @Override
@@ -1309,6 +1316,11 @@ public class EventHelper {
           .map(ClusterResource::getMetadata)
           .map(V1ObjectMeta::getUid)
           .orElse("");
+    }
+
+    @Override
+    public String getResourceNameFromInfo() {
+      return Optional.ofNullable(domainUid).orElse("");
     }
   }
 }
