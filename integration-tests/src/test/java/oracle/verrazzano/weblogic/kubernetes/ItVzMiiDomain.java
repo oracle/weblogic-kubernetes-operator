@@ -104,6 +104,7 @@ class ItVzMiiDomain {
     
     Map<String, String> labels1 = new java.util.HashMap<>();
     labels1.put("verrazzano-managed", "true");
+    labels1.put("istio-injection", "enabled");
     setLabelToNamespace(domainNamespace, labels1);
   }
 
