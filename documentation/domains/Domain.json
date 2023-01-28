@@ -364,6 +364,10 @@
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
           "type": "boolean"
         },
+        "introspector": {
+          "description": "Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service.",
+          "$ref": "#/definitions/Introspector"
+        },
         "clusters": {
           "description": "References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
@@ -561,6 +565,15 @@
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
           }
+        }
+      }
+    },
+    "Introspector": {
+      "type": "object",
+      "properties": {
+        "serverPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "$ref": "#/definitions/ServerPod"
         }
       }
     },

@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.ExcludeFromSchema;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -38,8 +39,10 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
  */
 public abstract class BaseConfiguration {
 
-  BaseServerPodConfiguration baseServerPodConfiguration = new BaseServerPodConfiguration();
+  @ExcludeFromSchema()
+  private BaseServerPodConfiguration baseServerPodConfiguration = new BaseServerPodConfiguration();
 
+  @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
   ServerPod serverPod = baseServerPodConfiguration.getServerPod();
 
   @Description(

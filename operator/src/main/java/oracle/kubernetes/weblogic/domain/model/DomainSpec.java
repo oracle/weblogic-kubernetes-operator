@@ -417,13 +417,11 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * The configuration for the admin server.
+   * The configuration for the introspector job pod.
    *
-   * @since 2.0
    */
-  @Description("Lifecycle options for the Administration Server, including Java options, environment variables, "
-      + "additional Pod content, and which channels or network access points should be exposed using "
-      + "a NodePort Service.")
+  @Description("Lifecycle options for the introspector job pod, including Java options, environment variables, "
+      + "and additional Pod content.")
   private Introspector introspector;
 
   /**

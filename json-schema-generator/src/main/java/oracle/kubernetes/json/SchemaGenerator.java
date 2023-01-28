@@ -208,7 +208,11 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !isVolatile(field) && !isDisabledFeature(field);
+    return !isStatic(field) && !isVolatile(field) && !isDisabledFeature(field) && !ignoredField(field);
+  }
+
+  private boolean ignoredField(Field field) {
+    return field.getAnnotation(ExcludeFromSchema.class) != null;
   }
 
   private boolean isStatic(Field field) {
