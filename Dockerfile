@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # HOW TO BUILD THIS IMAGE
@@ -9,7 +9,7 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.1/afdd2e245b014143b62ccb916125e3ce/10/GPL/openjdk-19.0.1_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
@@ -32,7 +32,7 @@ ENV LANG="en_US.UTF-8"
 
 COPY --from=jre-build /jre jre
 
-# Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
+# Install Java and make the operator run with a non-root user id (1000 is the `oracle` user) and group id
 RUN set -eux; \
     microdnf -y update; \
     microdnf -y install jq; \
@@ -43,21 +43,22 @@ RUN set -eux; \
         alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done; \
     java -Xshare:dump; \
-    useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
+    groupadd -g 1000 oracle; \
+    useradd -d /operator -M -s /bin/bash -g oracle -u 1000 oracle; \
     mkdir -m 775 /operator; \
     mkdir -m 775 /deployment; \
     mkdir -m 775 /probes; \
     mkdir -m 775 /logs; \
     mkdir /operator/lib; \
-    chown -R oracle:root /operator /deployment /probes /logs
+    chown -R oracle:oracle /operator /deployment /probes /logs
 
 USER oracle
 
-COPY --chown=oracle:root operator/scripts/* /operator/
-COPY --chown=oracle:root deployment/scripts/* /deployment/
-COPY --chown=oracle:root probes/scripts/* /probes/
-COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
-COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
+COPY --chown=oracle:oracle operator/scripts/* /operator/
+COPY --chown=oracle:oracle deployment/scripts/* /deployment/
+COPY --chown=oracle:oracle probes/scripts/* /probes/
+COPY --chown=oracle:oracle operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
+COPY --chown=oracle:oracle operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /probes/livenessProbe.sh

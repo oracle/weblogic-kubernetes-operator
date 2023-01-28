@@ -34,10 +34,9 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
-      {{- if .runAsUser }}
       securityContext:
-        runAsUser: {{ .runAsUser }}
-      {{- end }}
+        seccompProfile:
+          type: RuntimeDefault
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -109,15 +108,20 @@ spec:
             {{- if .memoryLimits}}
             memory: {{ .memoryLimits }}
             {{- end }}
-        {{- if (eq ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
         securityContext:
+          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+          {{- if .runAsUser }}
+          runAsUser: {{ .runAsUser }}
+          {{- else }}
+          runAsUser: 1000
+          {{- end }}
+          runAsGroup: 1000
+          {{- end }}
+          runAsNonRoot: true
+          privileged: false
           allowPrivilegeEscalation: false
           capabilities:
             drop: ["ALL"]
-          runAsNonRoot: true
-          seccompProfile:
-            type: RuntimeDefault
-        {{- end }}
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/deployment/config"
@@ -259,10 +263,9 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ .serviceAccount | quote }}
-          {{- if .runAsUser }}
           securityContext:
-            runAsUser: {{ .runAsUser }}
-          {{- end }}
+            seccompProfile:
+              type: RuntimeDefault
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 8 }}
@@ -320,15 +323,20 @@ spec:
                 {{- if .memoryLimits}}
                 memory: {{ .memoryLimits }}
                 {{- end }}
-            {{- if (eq ( .kubernetesPlatform | default "Generic") "OpenShift") }}
             securityContext:
+              {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+              {{- if .runAsUser }}
+              runAsUser: {{ .runAsUser }}
+              {{- else }}
+              runAsUser: 1000
+              {{- end }}
+              runAsGroup: 1000
+              {{- end }}
+              runAsNonRoot: true
+              privileged: false
               allowPrivilegeEscalation: false
               capabilities:
-                 drop: ["ALL"]
-              runAsNonRoot: true
-              seccompProfile:
-                type: RuntimeDefault
-            {{- end }}
+                drop: ["ALL"]
             volumeMounts:
             - name: "weblogic-webhook-cm-volume"
               mountPath: "/deployment/config"
