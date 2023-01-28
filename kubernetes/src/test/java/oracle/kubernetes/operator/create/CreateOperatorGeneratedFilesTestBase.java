@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.create;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.create;
 import java.util.List;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -18,12 +19,15 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
 import io.kubernetes.client.openapi.models.V1LifecycleHandler;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
+import io.kubernetes.client.openapi.models.V1SeccompProfile;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
@@ -215,6 +219,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         .spec(
                             newPodSpec()
                                 .serviceAccountName(getInputs().getServiceAccount())
+                                .securityContext(new V1PodSecurityContext().seccompProfile(
+                                    new V1SeccompProfile().type("RuntimeDefault")))
                                 .addContainersItem(
                                     newContainer()
                                         .name("weblogic-operator")
@@ -264,6 +270,11 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .putRequestsItem("cpu", Quantity.fromString("250m"))
                                                 .putRequestsItem(
                                                     "memory", Quantity.fromString("512Mi")))
+                                        .securityContext(
+                                            new V1SecurityContext().runAsUser(1000l).runAsGroup(1000l)
+                                                .runAsNonRoot(true)
+                                                .privileged(false).allowPrivilegeEscalation(false)
+                                                .capabilities(new V1Capabilities().addDropItem("ALL")))
                                         .addVolumeMountsItem(
                                             newVolumeMount()
                                                 .name("weblogic-operator-cm-volume")
