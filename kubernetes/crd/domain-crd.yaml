@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ee4e6a789a114f3d03a7178b18dfcf6fc5e7fda6bf06de787ed4d7efd426e906
+    weblogic.sha256: c1df2899b7391d8dd5ac443657e04537fcb9a312dafcc67418884b9f8b469f70
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -3479,10 +3479,8 @@ spec:
                   in the Pod's log. Defaults to true.
                 type: boolean
               introspector:
-                description: Lifecycle options for the Administration Server, including
-                  Java options, environment variables, additional Pod content, and
-                  which channels or network access points should be exposed using
-                  a NodePort Service.
+                description: Lifecycle options for the introspector job pod, including
+                  Java options, environment variables, and additional Pod content.
                 properties:
                   serverPod:
                     description: Customization affecting the generation of Pods for
