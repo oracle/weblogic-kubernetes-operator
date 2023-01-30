@@ -58,7 +58,7 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   }
 
   public EffectiveServerPodSpec getServerPodSpec() {
-    return this.server.getBaseServerPodConfiguration();
+    return this.server.getServerPodSpec();
   }
 
   @Override

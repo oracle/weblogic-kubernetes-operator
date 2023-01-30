@@ -55,6 +55,10 @@ public class BaseServerPodConfiguration implements EffectiveServerPodSpec {
     return serverPod;
   }
 
+  public BaseServerPodConfiguration getServerPodSpec() {
+    return this;
+  }
+
   @Nullable
   public List<V1EnvVar> getEnv() {
     return serverPod.getEnv();

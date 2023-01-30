@@ -36,7 +36,7 @@ public class EffectiveIntrospectorSpecCommonImpl extends EffectiveServerPodSpecB
   EffectiveIntrospectorSpecCommonImpl(DomainSpec spec, Introspector introspector) {
     super(spec);
     this.introspector = getIntrospectorBaseConfiguration(introspector);
-    this.introspector.fillInFrom(spec.getBaseServerPodConfiguration());
+    this.introspector.fillInFrom(spec.getServerPodSpec());
   }
 
   private Introspector getIntrospectorBaseConfiguration(Introspector introspector) {
