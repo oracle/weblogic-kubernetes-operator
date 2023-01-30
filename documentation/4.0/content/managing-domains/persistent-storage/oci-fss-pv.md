@@ -63,6 +63,7 @@ Init Containers:
     Restart Count:  0
     Environment:    <none>
 ```
+**NOTE**: As of December, 2022, Oracle will continue support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
 
 #### Updating the domain on persistent volume sample
 In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
