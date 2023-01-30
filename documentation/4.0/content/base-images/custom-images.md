@@ -162,12 +162,6 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
    ```shell
    $ /tmp/imagetool/bin/imagetool.sh cache addInstaller \
      --type=wls \
-     --version=12.2.1.3.0 \
-     --path=/home/acmeuser/wls-installers/fmw_12.2.1.3.0_wls_Disk1_1of1.zip
-   ```
-   ```shell
-   $ /tmp/imagetool/bin/imagetool.sh cache addInstaller \
-     --type=wls \
      --version=12.2.1.4.0 \
      --path=/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
    ```
@@ -203,6 +197,11 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
    - The minimal patches required for the operator to run a 12.2.1.3 image
      (patches 29135930 and 27117282)
      instead of the latest recommended patches
+
+{{% notice note %}} As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
+Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+{{% /notice %}}
+
    ```shell
    $ /tmp/imagetool/bin/imagetool.sh create \
      --tag minimal_weblogic:12.2.1.3 \
@@ -593,7 +592,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    see `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`
    (or `./JRF/mii-initial-d1-JRF-v1.yaml` if using Fusion Middleware Infrastructure `JRF` mode).
 
-   __Notes__: 
+   __Notes__:
 
    - The default values for `domain.spec.configuration.model.wdtInstallHome` and `.modelHome`
      reference the location of the WDT installation and model files that WIT copied into the image.
