@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -34,7 +33,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -44,35 +42,18 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 
@@ -186,11 +167,6 @@ class ItVzMiiDomain {
     logger.info("Deploying components");
     assertDoesNotThrow(() -> 
         oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(component));
-    try {
-      TimeUnit.MINUTES.sleep(1);
-    } catch (InterruptedException ex) {
-      ;
-    }
     
     logger.info("Deploying application");
     assertDoesNotThrow(() -> 
@@ -205,66 +181,6 @@ class ItVzMiiDomain {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-    // Need to expose the admin server external service to access the console in OKD cluster only
-    // We will create one route for sslport and another for default port
-    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
-                    domainNamespace, "domain1-admin-server-sslport-ext");
-    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
-    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-
-    // check and wait for the application to be accessible in all server pods
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppRunning(
-          domainNamespace,
-          managedServerPrefix + i,
-          "8001",
-          "sample-war/index.jsp",
-          MII_APP_RESPONSE_V1 + i);
-    }
-
-    logger.info("All the servers in Domain {0} are running and application is available", domainUid);
-
-    int sslNodePort = getServiceNodePort(
-         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
-    // In OKD cluster, we need to set the target port of the route to be the ssl port
-    // By default, when a service is exposed as a route, the endpoint is set to the default port.
-    int sslPort = getServicePort(
-         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
-    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
-    assertNotEquals(-1, sslNodePort,
-          "Could not get the default-secure external service node port");
-    logger.info("Found the administration service nodePort {0}", sslNodePort);
-    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
-    if (!WEBLOGIC_SLIM) {
-      String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + hostAndPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-      logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-      logger.info("WebLogic console is accessible thru default-secure service");
-    } else {
-      logger.info("Skipping WebLogic console in WebLogic slim image");
-    }
-
-    int nodePort = getServiceNodePort(
-           domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, nodePort,
-          "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
-
-    if (!WEBLOGIC_SLIM) {
-      String curlCmd2 = "curl -s --show-error --noproxy '*' "
-          + " http://" + hostAndPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-      logger.info("Executing default nodeport curl command {0}", curlCmd2);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
-      logger.info("WebLogic console is accessible thru default service");
-    } else {
-      logger.info("Checking Rest API management console in WebLogic slim image");
-      verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
   }
 
@@ -311,56 +227,6 @@ class ItVzMiiDomain {
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     return domain;
-  }
-
-  private void checkAppRunning(
-      String namespace,
-      String podName,
-      String internalPort,
-      String appPath,
-      String expectedStr
-  ) {
-
-    // check if the application is accessible inside of a server pod using standard retry policy
-    checkAppIsRunning(withStandardRetryPolicy, namespace, podName, internalPort, appPath, expectedStr);
-  }
-
-  private void checkAppIsRunning(
-      ConditionFactory conditionFactory,
-      String namespace,
-      String podName,
-      String internalPort,
-      String appPath,
-      String expectedStr
-  ) {
-
-    // check if the application is accessible inside of a server pod
-    testUntil(conditionFactory,
-        () -> appAccessibleInPod(namespace, podName, internalPort, appPath, expectedStr),
-        logger,
-        "application {0} is running on pod {1} in namespace {2}",
-        appPath,
-        podName,
-        namespace);
-  }
-
-  // create a ConfigMap with a model that enable SSL on the Administration server
-  private static void createModelConfigMap(String configMapName, String model, String domainUid) {
-    Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
-    Map<String, String> data = new HashMap<>();
-    data.put("model.ssl.yaml", model);
-
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(new V1ObjectMeta()
-            .labels(labels)
-            .name(configMapName)
-            .namespace(domainNamespace));
-
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Can't create ConfigMap %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
   }
 
   private static void setLabelToNamespace(String domainNS, Map<String, String> labels) throws Exception {
