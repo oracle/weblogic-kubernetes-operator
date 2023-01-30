@@ -13,19 +13,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Component represents a Verrazzano component and how it will be realized in the Kubernetes cluster.")
+    = "ApplicationConfiguration represents a Verrazzano application.")
 public class ApplicationConfiguration implements KubernetesObject {
 
-  @ApiModelProperty("The API version for the Component.")
+  @ApiModelProperty("The API version for the ApplicationConfiguration.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'Component'.")
+  @ApiModelProperty("The type of resource. Must be 'ApplicationConfiguration'.")
   private String kind;
 
-  @ApiModelProperty("The Component meta-data. Must include the name and namespace.")
+  @ApiModelProperty("The ApplicationConfiguration meta-data. Must include the name and namespace.")
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
-  @ApiModelProperty("The specification of the Component. Required.")
+  @ApiModelProperty("The specification of the ApplicationConfiguration. Required.")
   private ApplicationConfigurationSpec spec = new ApplicationConfigurationSpec();
 
   public ApplicationConfiguration apiVersion(String apiVersion) {

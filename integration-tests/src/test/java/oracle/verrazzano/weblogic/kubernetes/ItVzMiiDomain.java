@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.verrazzano.weblogic.kubernetes;
@@ -35,9 +35,9 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.replaceNamespace;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -57,16 +57,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 // Test to create model in image domain and verify the domain started successfully
 
-@DisplayName("Test to a create model in image domain and start the domain")
+@DisplayName("Test to a create model in image domain and start the domain in verrazzano")
 @VzIntegrationTest
-@Tag("olcne")
-@Tag("oke-parallel")
-@Tag("kind-parallel")
-@Tag("okd-wls-srg")
 class ItVzMiiDomain {
   
   private static String domainNamespace = null;
-  private String domainUid = "domain1";
+  private final String domainUid = "domain1";
   private static LoggingFacade logger = null;
   
 
@@ -78,16 +74,10 @@ class ItVzMiiDomain {
   @BeforeAll
   public static void initAll(@Namespaces(1) List<String> namespaces) throws Exception {
     logger = getLogger();
-    logger.info("Creating unique namespace for Domain");
+    logger.info("Getting unique namespace for Domain");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     domainNamespace = namespaces.get(0);
-    
-    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
-    
-    Map<String, String> labels1 = new java.util.HashMap<>();
-    labels1.put("verrazzano-managed", "true");
-    labels1.put("istio-injection", "enabled");
-    setLabelToNamespace(domainNamespace, labels1);
+    setLabelToNamespace(domainNamespace);
   }
 
   /**
@@ -229,18 +219,17 @@ class ItVzMiiDomain {
     return domain;
   }
 
-  private static void setLabelToNamespace(String domainNS, Map<String, String> labels) throws Exception {
+  private static void setLabelToNamespace(String domainNS) {
     //add label to domain namespace
-    V1Namespace namespaceObject1 = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
-    logger.info(Yaml.dump(namespaceObject1));
-    assertNotNull(namespaceObject1, "Can't find namespace with name " + domainNS);
-    namespaceObject1.getMetadata().setLabels(labels);
-    try {
-      Kubernetes.replaceNamespace(namespaceObject1);
-    } catch (Exception ex) {
-      assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.getNamespace(domainNS))));
-      throw ex;
-    }
+    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
+    Map<String, String> labels = new java.util.HashMap<>();
+    labels.put("verrazzano-managed", "true");
+    labels.put("istio-injection", "enabled");
+    V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
+    logger.info(Yaml.dump(namespaceObject));
+    assertNotNull(namespaceObject, "Can't find namespace with name " + domainNS);
+    namespaceObject.getMetadata().setLabels(labels);
+    assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
   }
 
 }

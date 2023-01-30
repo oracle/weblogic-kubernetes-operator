@@ -7,8 +7,8 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import oracle.weblogic.domain.DomainResource;
 
-@ApiModel(description = "ComponentSpec is a description of a component.")
+@ApiModel(description = "VerrazzanoWebLogicWorkloadSpec is a description of a VerrazzanoWebLogicWorkloadSpec.")
 public class VerrazzanoWebLogicWorkloadSpec {
-  @ApiModelProperty("Configuration for the Workload.")
+  @ApiModelProperty("Specification for the VerrazzanoWebLogicWorkloadSpec.")
   private DomainResource template;
 }

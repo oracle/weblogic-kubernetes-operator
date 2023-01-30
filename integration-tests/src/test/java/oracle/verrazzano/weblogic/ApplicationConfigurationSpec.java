@@ -14,10 +14,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Component represents a Verrazzano component and how it will be realized in the Kubernetes cluster.")
+    = "ApplicationConfigurationSpec represents a verrazzano application configuration Spec and how it will "
+        + "be realized in the Kubernetes cluster.")
 public class ApplicationConfigurationSpec {
 
-  @ApiModelProperty("Specification for the Workload.")
+  @ApiModelProperty("List of verrazzano components.")
   private List<Components> components = new ArrayList<>();
 
 

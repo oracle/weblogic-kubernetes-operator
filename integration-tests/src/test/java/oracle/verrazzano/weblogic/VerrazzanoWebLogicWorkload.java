@@ -7,19 +7,19 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
-@ApiModel(description = "ComponentSpec is a description of a component.")
+@ApiModel(description = "VerrazzanoWebLogicWorkload is a description of a VerrazzanoWebLogicWorkload.")
 public class VerrazzanoWebLogicWorkload {
 
-  @ApiModelProperty("The API version for the Domain.")
+  @ApiModelProperty("The API version for the VerrazzanoWebLogicWorkload.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'Domain'.")
+  @ApiModelProperty("The type of resource. Must be 'VerrazzanoWebLogicWorkload'.")
   private String kind;
 
-  @ApiModelProperty("The domain meta-data. Must include the name and namespace.")
+  @ApiModelProperty("The VerrazzanoWebLogicWorkload meta-data. Must include the name and namespace.")
   private V1ObjectMeta metadata = new V1ObjectMeta();
   
-  @ApiModelProperty("Configuration for the Workload.")
+  @ApiModelProperty("Configuration for the VerrazzanoWebLogicWorkload.")
   private VerrazzanoWebLogicWorkloadSpec workLoadSpec;
 
 }

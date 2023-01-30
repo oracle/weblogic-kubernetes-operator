@@ -8,7 +8,7 @@ import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(
     description
-    = "Component represents a Verrazzano component and how it will be realized in the Kubernetes cluster.")
+    = "Components represents a Verrazzano component and how it will be realized in the Kubernetes cluster.")
 public class Components {
 
   @ApiModelProperty("Component name to deploy.")
