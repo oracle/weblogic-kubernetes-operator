@@ -1339,6 +1339,18 @@ public abstract class PodStepContext extends BasePodStepContext {
               }));
     }
 
+    private void restoreSecurityContext(V1Pod recipe, V1Pod currentPod) {
+      if (PodSecurityHelper.getDefaultPodSecurityContext().equals(recipe.getSpec().getSecurityContext())) {
+        recipe.getSpec().setSecurityContext(null);
+      }
+      Optional.ofNullable(recipe.getSpec().getContainers())
+          .ifPresent(containers -> containers.forEach(container -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(container.getSecurityContext())) {
+              container.setSecurityContext(null);
+            }
+          }));
+    }
+
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
       // start with list of adjustment methods
       // generate stream of combinations
@@ -1350,7 +1362,8 @@ public abstract class PodStepContext extends BasePodStepContext {
           this::restoreLegacyIstioPortsConfig,
           this::restoreAffinityContent,
           this::restoreLogHomeLayoutEnvVar,
-          this::restoreFluentdVolume);
+          this::restoreFluentdVolume,
+          this::restoreSecurityContext);
       return Combinations.of(adjustments)
           .map(adjustment -> adjustedHash(currentPod, adjustment))
           .anyMatch(requiredHash::equals);
@@ -1625,6 +1638,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .resources(getDomain().getMonitoringExporterResources())
+            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
             .addPortsItem(new V1ContainerPort()
                 .name("metrics").protocol("TCP").containerPort(getPort()));
