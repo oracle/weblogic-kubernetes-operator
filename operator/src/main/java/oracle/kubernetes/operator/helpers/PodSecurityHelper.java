@@ -13,6 +13,9 @@ import oracle.kubernetes.operator.tuning.TuningParameters;
 
 public class PodSecurityHelper {
 
+  private PodSecurityHelper() {
+  }
+
   /**
    * Default pod security context conforming to restricted.
    * @return Default pod security context
