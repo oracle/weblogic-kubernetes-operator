@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain;
 import oracle.kubernetes.weblogic.domain.model.Introspector;
 
 @SuppressWarnings("UnusedReturnValue")
-public interface IntrospectorConfigurator extends ServerPodConfigurator {
+public interface IntrospectorConfigurator extends IntroServerPodConfigurator {
 
   Introspector getIntrospector();
 }

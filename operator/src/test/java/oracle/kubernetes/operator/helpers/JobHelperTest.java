@@ -534,27 +534,23 @@ class JobHelperTest extends DomainValidationTestBase {
   @Test
   void whenIntrospectorServerHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
-        .withEnvironmentVariable("item1", "domain-value1")
-        .withEnvironmentVariable("item2", "domain-value2")
         .configureIntrospector()
-        .withEnvironmentVariable("item2", "admin-value2")
-        .withEnvironmentVariable("item3", "admin-value3");
+        .withEnvironmentVariable("item1", "introspector-value1")
+        .withEnvironmentVariable("item2", "introspector-value2");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVar("item1", "domain-value1"),
-            hasEnvVar("item2", "admin-value2"),
-            hasEnvVar("item3", "admin-value3")));
+            hasEnvVar("item1", "introspector-value1"),
+            hasEnvVar("item2", "introspector-value2")));
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
             envVarOEVNContains("item1"),
-            envVarOEVNContains("item2"),
-            envVarOEVNContains("item3")));
+            envVarOEVNContains("item2")));
   }
 
   @Test

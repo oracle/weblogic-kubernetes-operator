@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -33,7 +34,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -423,8 +423,13 @@ public class PodHelper {
     }
 
     @Override
-    protected EffectiveServerPodSpec getServerPodSpec() {
-      return getServerSpec().getServerPodSpec();
+    protected V1ResourceRequirements getResources() {
+      return getServerSpec().getServerPodSpec().getResources();
+    }
+
+    @Override
+    protected List<V1EnvVar> getServerPodEnvironmentVariables() {
+      return getServerSpec().getServerPodSpec().getEnvironmentVariables();
     }
 
     @Override
@@ -701,8 +706,13 @@ public class PodHelper {
     }
 
     @Override
-    protected EffectiveServerPodSpec getServerPodSpec() {
-      return getServerSpec().getServerPodSpec();
+    protected V1ResourceRequirements getResources() {
+      return getServerSpec().getServerPodSpec().getResources();
+    }
+
+    @Override
+    protected List<V1EnvVar> getServerPodEnvironmentVariables() {
+      return getServerSpec().getServerPodSpec().getEnvironmentVariables();
     }
 
     @Override

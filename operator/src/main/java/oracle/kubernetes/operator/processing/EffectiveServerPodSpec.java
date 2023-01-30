@@ -9,25 +9,16 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
 
-public interface EffectiveServerPodSpec {
-  /**
-   * Returns the environment variables to be defined for this server.
-   *
-   * @return a list of environment variables
-   */
-  List<V1EnvVar> getEnvironmentVariables();
-
+public interface EffectiveServerPodSpec extends EffectiveIntroServerPodSpec {
   /**
    * Returns the volume mounts to be defined for this server.
    *
@@ -91,8 +82,6 @@ public interface EffectiveServerPodSpec {
   List<V1Toleration> getTolerations();
 
   List<V1HostAlias> getHostAliases();
-
-  V1ResourceRequirements getResources();
 
   V1PodSecurityContext getPodSecurityContext();
 

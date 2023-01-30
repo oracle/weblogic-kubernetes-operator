@@ -10,8 +10,12 @@
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
+        "introServerPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "$ref": "#/definitions/BaseServerPod"
+        },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
@@ -83,6 +87,36 @@
         "sourceModelHome": {
           "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
           "type": "string"
+        }
+      }
+    },
+    "BaseServerPod": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
         }
       }
     },
@@ -166,12 +200,16 @@
           "type": "integer",
           "minimum": 0
         },
+        "introServerPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "$ref": "#/definitions/BaseServerPod"
+        },
         "clusterName": {
           "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "clusterService": {
@@ -393,6 +431,10 @@
           "type": "integer",
           "minimum": 1
         },
+        "introServerPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "$ref": "#/definitions/BaseServerPod"
+        },
         "logHomeLayout": {
           "default": "ByServers",
           "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",
@@ -513,7 +555,7 @@
           "type": "boolean"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "managedServers": {
@@ -652,9 +694,9 @@
     "Introspector": {
       "type": "object",
       "properties": {
-        "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
-          "$ref": "#/definitions/ServerPod"
+        "introServerPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "$ref": "#/definitions/BaseServerPod"
         }
       }
     },
@@ -665,12 +707,16 @@
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
+        "introServerPod": {
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "$ref": "#/definitions/BaseServerPod"
+        },
         "serverName": {
           "description": "The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required.",
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {

@@ -29,7 +29,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
@@ -101,11 +100,13 @@ public abstract class BasePodStepContext extends StepContextBase {
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
         .env(getEnvironmentVariables())
-        .resources(getServerPodSpec().getResources())
-        .securityContext(getServerPodSpec().getContainerSecurityContext());
+        .resources(getResources())
+        .securityContext(getServerSpec().getContainerSecurityContext());
   }
 
-  protected abstract EffectiveServerPodSpec getServerPodSpec();
+  protected abstract V1ResourceRequirements getResources();
+
+  protected abstract List<V1EnvVar> getServerPodEnvironmentVariables();
 
   /**
    * Return a list of environment variables to be set up in the pod. This method does some

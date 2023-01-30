@@ -28,9 +28,9 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.IntroServerPodConfigurator;
 import oracle.kubernetes.weblogic.domain.IntrospectorConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.ServerPodConfigurator;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
 
@@ -489,147 +489,38 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerPodConfigurator withEnvironmentVariable(String name, String value) {
+    public IntroServerPodConfigurator withEnvironmentVariable(String name, String value) {
       introspector.addEnvironmentVariable(name, value);
       return this;
     }
 
     @Override
-    public ServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+    public IntroServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       introspector.addEnvironmentVariable(envVar);
       return this;
     }
 
     @Override
-    public ServerPodConfigurator withLivenessProbeSettings(Integer initialDelay, Integer timeout, Integer period) {
-      introspector.setLivenessProbe(initialDelay, timeout, period);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-      introspector.setLivenessProbeThresholds(successThreshold, failureThreshold);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withReadinessProbeSettings(Integer initialDelay, Integer timeout, Integer period) {
-      introspector.setReadinessProbe(initialDelay, timeout, period);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
-      introspector.setReadinessProbeThresholds(successThreshold, failureThreshold);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withRequestRequirement(String resource, String quantity) {
+    public IntroServerPodConfigurator withRequestRequirement(String resource, String quantity) {
       introspector.addRequestRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public ServerPodConfigurator withNodeSelector(String labelKey, String labelValue) {
-      introspector.addNodeSelector(labelKey, labelValue);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withLimitRequirement(String resource, String quantity) {
+    public IntroServerPodConfigurator withLimitRequirement(String resource, String quantity) {
       introspector.addLimitRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public ServerPodConfigurator withContainerSecurityContext(
-        V1SecurityContext containerSecurityContext) {
-      introspector.setContainerSecurityContext(containerSecurityContext);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
-      introspector.setPodSecurityContext(podSecurityContext);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withAdditionalVolume(String name, String path) {
-      introspector.addAdditionalVolume(name, path);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withAdditionalVolumeMount(String name, String path) {
-      introspector.addAdditionalVolumeMount(name, path);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withInitContainer(V1Container initContainer) {
-      introspector.addInitContainer(initContainer);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withContainer(V1Container container) {
-      introspector.addContainer(container);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withPodLabel(String name, String value) {
+    public IntroServerPodConfigurator withPodLabel(String name, String value) {
       introspector.addPodLabel(name, value);
       return this;
     }
 
     @Override
-    public ServerPodConfigurator withPodAnnotation(String name, String value) {
+    public IntroServerPodConfigurator withPodAnnotation(String name, String value) {
       introspector.addPodAnnotation(name, value);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withAffinity(V1Affinity affinity) {
-      introspector.setAffinity(affinity);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withNodeName(String nodeName) {
-      introspector.setNodeName(nodeName);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withMaximumReadyWaitTimeSeconds(long waitTime) {
-      introspector.setMaxReadyWaitTimeSeconds(waitTime);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withMaximumPendingWaitTimeSeconds(long waitTime) {
-      introspector.setMaxPendingWaitTimeSeconds(waitTime);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withSchedulerName(String schedulerName) {
-      getDomainSpec().setSchedulerName(schedulerName);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withRuntimeClassName(String runtimeClassName) {
-      getDomainSpec().setRuntimeClassName(runtimeClassName);
-      return this;
-    }
-
-    @Override
-    public ServerPodConfigurator withPriorityClassName(String priorityClassName) {
-      getDomainSpec().setPriorityClassName(priorityClassName);
       return this;
     }
 

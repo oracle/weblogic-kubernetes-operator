@@ -33,10 +33,11 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
  *
  * @since 2.0
  */
-public class BaseServerPodConfiguration implements EffectiveServerPodSpec {
+public class BaseServerPodConfiguration extends BaseIntrospectorServerPodConfiguration
+    implements EffectiveServerPodSpec {
 
-  @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
-  private final ServerPod serverPod = new ServerPod();
+  @Description("Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.")
+  protected final ServerPod serverPod = new ServerPod();
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
@@ -281,7 +282,6 @@ public class BaseServerPodConfiguration implements EffectiveServerPodSpec {
     return serverPod.getContainers();
   }
 
-  @Override
   public Map<String, String> getNodeSelectors() {
     return null;
   }

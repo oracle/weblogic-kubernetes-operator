@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -31,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
-import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -42,26 +40,12 @@ import static java.util.Collections.emptyList;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
-class ServerPod extends KubernetesResource {
+class ServerPod extends BaseServerPod {
 
-  private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
-      Comparator.comparing(V1EnvVar::getName);
   private static final Comparator<V1Volume> VOLUME_COMPARATOR =
       Comparator.comparing(V1Volume::getName);
   private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
       Comparator.comparing(V1VolumeMount::getName);
-
-  /**
-   * Environment variables to pass while starting a server.
-   *
-   * @since 2.0
-   */
-  @Valid
-  @Description("A list of environment variables to set in the container running a WebLogic Server instance. "
-      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
-      + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
-      + "See `kubectl explain pods.spec.containers.env`.")
-  private List<V1EnvVar> env = new ArrayList<>();
 
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
@@ -142,16 +126,6 @@ class ServerPod extends KubernetesResource {
   @Description("HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file "
       + "if specified. This is only valid for non-hostNetwork pods.")
   private List<V1HostAlias> hostAliases = new ArrayList<>();
-
-  /**
-   * Defines the requirements and limits for the pod server.
-   *
-   * @since 2.0
-   */
-  @Description("Memory and CPU minimum requirements and limits for the WebLogic Server instance. "
-      + "See `kubectl explain pods.spec.containers.resources`.")
-  private final V1ResourceRequirements resources =
-      new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some
@@ -395,9 +369,7 @@ class ServerPod extends KubernetesResource {
   }
 
   void fillInFrom(ServerPod serverPod1) {
-    for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
-      addIfMissing(envVar);
-    }
+    super.fillInFrom(serverPod1);
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
@@ -415,7 +387,6 @@ class ServerPod extends KubernetesResource {
     }
     fillInFrom((KubernetesResource) serverPod1);
     serverPod1.nodeSelector.forEach(nodeSelector::putIfAbsent);
-    copyValues(resources, serverPod1.resources);
     copyValues(podSecurityContext, serverPod1.podSecurityContext);
     copyValues(containerSecurityContext, serverPod1.containerSecurityContext);
     if (maxReadyWaitTimeSeconds == null) {
@@ -464,12 +435,6 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private void addIfMissing(V1EnvVar envVar) {
-    if (!hasEnvVar(envVar.getName())) {
-      addEnvVar(envVar);
-    }
-  }
-
   private void addIfMissing(V1VolumeMount volumeMount) {
     if (!hasVolumeMountName(volumeMount.getName())) {
       addAdditionalVolumeMount(volumeMount);
@@ -490,18 +455,6 @@ class ServerPod extends KubernetesResource {
 
   private List<V1EnvVar> getV1EnvVars() {
     return Optional.ofNullable(getEnv()).orElse(emptyList());
-  }
-
-  private boolean hasEnvVar(String name) {
-    if (env == null) {
-      return false;
-    }
-    for (V1EnvVar envVar : env) {
-      if (envVar.getName().equals(name)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   private boolean hasVolumeName(String name) {
@@ -540,39 +493,12 @@ class ServerPod extends KubernetesResource {
     return false;
   }
 
-  List<V1EnvVar> getEnv() {
-    return this.env;
-  }
-
-  void setEnv(@Nullable List<V1EnvVar> env) {
-    this.env = env;
-  }
-
-  void addEnvVar(V1EnvVar envVar) {
-    if (this.env == null) {
-      setEnv(new ArrayList<>());
-    }
-    this.env.add(envVar);
-  }
-
   Map<String, String> getNodeSelector() {
     return nodeSelector;
   }
 
   void addNodeSelector(String labelKey, String labelValue) {
     this.nodeSelector.put(labelKey, labelValue);
-  }
-
-  V1ResourceRequirements getResourceRequirements() {
-    return resources;
-  }
-
-  void addRequestRequirement(String resource, String quantity) {
-    resources.putRequestsItem(resource, Quantity.fromString(quantity));
-  }
-
-  void addLimitRequirement(String resource, String quantity) {
-    resources.putLimitsItem(resource, Quantity.fromString(quantity));
   }
 
   V1PodSecurityContext getPodSecurityContext() {
@@ -743,13 +669,11 @@ class ServerPod extends KubernetesResource {
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
-        .append("env", env)
         .append("livenessProbe", livenessProbe)
         .append("readinessProbe", readinessProbe)
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
-        .append("resources", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .append("initContainers", initContainers)
@@ -782,9 +706,6 @@ class ServerPod extends KubernetesResource {
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
-        .append(
-            DomainResource.sortList(env, ENV_VAR_COMPARATOR),
-            DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
         .append(
@@ -794,7 +715,6 @@ class ServerPod extends KubernetesResource {
             DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR),
             DomainResource.sortList(that.volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector, that.nodeSelector)
-        .append(resources, that.resources)
         .append(podSecurityContext, that.podSecurityContext)
         .append(containerSecurityContext, that.containerSecurityContext)
         .append(initContainers, that.initContainers)
@@ -817,13 +737,11 @@ class ServerPod extends KubernetesResource {
   public int hashCode() {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
-        .append(DomainResource.sortList(env, ENV_VAR_COMPARATOR))
         .append(livenessProbe)
         .append(readinessProbe)
         .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))
         .append(DomainResource.sortList(volumeMounts, VOLUME_MOUNT_COMPARATOR))
         .append(nodeSelector)
-        .append(resources)
         .append(podSecurityContext)
         .append(containerSecurityContext)
         .append(initContainers)
