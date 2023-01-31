@@ -29,7 +29,6 @@ class BaseServerPod extends KubernetesResource {
   /**
    * Environment variables to pass while starting a server.
    *
-   * @since 4.0.5
    */
   @Valid
   @Description("A list of environment variables to set in the Introspector Job Pod container. "
@@ -41,7 +40,6 @@ class BaseServerPod extends KubernetesResource {
   /**
    * Defines the requirements and limits for the pod server.
    *
-   * @since 4.0.5
    */
   @Description("Memory and CPU minimum requirements and limits for the Introspector Job Pod. "
       + "See `kubectl explain pods.spec.containers.resources`.")
