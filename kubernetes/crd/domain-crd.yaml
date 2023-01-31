@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ac81cbd186b7f84d31d3927adfe4def64e54ebfc16637c13eae5b2cac85f0b6b
+    weblogic.sha256: ab124303eb14eb946128bf2851d2f859f5d4e121f51572d105695661ee3d3cbe
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -628,9 +628,9 @@ spec:
                       podSecurityContext:
                         description: 'Pod-level security attributes. See `kubectl
                           explain pods.spec.securityContext`. Beginning with operator
-                          version 4.0.5, the operator will use default content for
-                          the pod-level `securityContext` if no value is specified
-                          for this field. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                          version 4.0.5, if no value is specified for this field,
+                          the operator will use defaultcontent for the pod-level `securityContext`.
+                          More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
                           runAsUser:
                             type: integer
@@ -811,9 +811,9 @@ spec:
                         description: 'Container-level security attributes. Will override
                           any matching Pod-level attributes. See `kubectl explain
                           pods.spec.containers.securityContext`. Beginning with operator
-                          version 4.0.5, the operator will use default content for
-                          container-level `securityContext` if no value is specified
-                          for this field. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                          version 4.0.5, if no value is specified for this field,
+                          the operator will use default content for container-level
+                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
                           privileged:
                             type: boolean
@@ -3627,9 +3627,9 @@ spec:
                   podSecurityContext:
                     description: 'Pod-level security attributes. See `kubectl explain
                       pods.spec.securityContext`. Beginning with operator version
-                      4.0.5, the operator will use default content for the pod-level
-                      `securityContext` if no value is specified for this field. More
-                      info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                      4.0.5, if no value is specified for this field, the operator
+                      will use defaultcontent for the pod-level `securityContext`.
+                      More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
                       runAsUser:
                         type: integer
@@ -3806,9 +3806,9 @@ spec:
                   containerSecurityContext:
                     description: 'Container-level security attributes. Will override
                       any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
-                      Beginning with operator version 4.0.5, the operator will use
-                      default content for container-level `securityContext` if no
-                      value is specified for this field. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                      Beginning with operator version 4.0.5, if no value is specified
+                      for this field, the operator will use default content for container-level
+                      `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
                       privileged:
                         type: boolean
@@ -6448,9 +6448,9 @@ spec:
                         podSecurityContext:
                           description: 'Pod-level security attributes. See `kubectl
                             explain pods.spec.securityContext`. Beginning with operator
-                            version 4.0.5, the operator will use default content for
-                            the pod-level `securityContext` if no value is specified
-                            for this field. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                            version 4.0.5, if no value is specified for this field,
+                            the operator will use defaultcontent for the pod-level
+                            `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
                             runAsUser:
@@ -6634,9 +6634,9 @@ spec:
                           description: 'Container-level security attributes. Will
                             override any matching Pod-level attributes. See `kubectl
                             explain pods.spec.containers.securityContext`. Beginning
-                            with operator version 4.0.5, the operator will use default
-                            content for container-level `securityContext` if no value
-                            is specified for this field. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/'
+                            with operator version 4.0.5, if no value is specified
+                            for this field, the operator will use default content
+                            for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
                             privileged:

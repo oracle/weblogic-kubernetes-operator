@@ -35,4 +35,4 @@ On OpenShift environments, the operator omits the `runAsUser` and `runAsGroup` e
 
 Customers can [configure pod and container generation](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#domain-and-cluster-spec-elements)
 for WebLogic Server instances using the `serverPod` element in the Domain resource. If specified, the operator will use the
-`serverPod.podSecurityContext` or `serverPod.containerSecurityContext` content from the Domain resource rather than using the default content shown above.
+`serverPod.podSecurityContext` or `serverPod.containerSecurityContext` content from the Domain resource rather than using the default content shown previously.
