@@ -7,13 +7,13 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.kubernetes.operator.processing.EffectiveIntroServerPodSpecBase;
+import oracle.kubernetes.operator.processing.EffectiveBasicServerPodSpecBase;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** The effective configuration for a server configured by the version 2 domain model. */
-public class EffectiveIntrospectorSpecCommonImpl extends EffectiveIntroServerPodSpecBase {
+public class EffectiveIntrospectorSpecCommonImpl extends EffectiveBasicServerPodSpecBase {
   private final Introspector introspector;
 
   /**
@@ -25,7 +25,7 @@ public class EffectiveIntrospectorSpecCommonImpl extends EffectiveIntroServerPod
   EffectiveIntrospectorSpecCommonImpl(DomainSpec spec, Introspector introspector) {
     super(spec);
     this.introspector = getIntrospectorBaseConfiguration(introspector);
-    this.introspector.fillInFrom(spec.getServerPodSpec());
+    //this.introspector.fillInFrom(spec.getServerPod().baseIntrospectorServerPodConfiguration);
   }
 
   private Introspector getIntrospectorBaseConfiguration(Introspector introspector) {

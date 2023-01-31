@@ -8,18 +8,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.V1Capabilities;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -27,7 +20,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
-import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
 class BaseServerPod extends KubernetesResource {
 
@@ -37,10 +29,10 @@ class BaseServerPod extends KubernetesResource {
   /**
    * Environment variables to pass while starting a server.
    *
-   * @since 2.0
+   * @since 4.0.5
    */
   @Valid
-  @Description("A list of environment variables to set in the container running a WebLogic Server instance. "
+  @Description("A list of environment variables to set in the Introspector job pod container. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
       + "See `kubectl explain pods.spec.containers.env`.")
@@ -49,9 +41,9 @@ class BaseServerPod extends KubernetesResource {
   /**
    * Defines the requirements and limits for the pod server.
    *
-   * @since 2.0
+   * @since 4.0.5
    */
-  @Description("Memory and CPU minimum requirements and limits for the WebLogic Server instance. "
+  @Description("Memory and CPU minimum requirements and limits for the Introspector job pod. "
       + "See `kubectl explain pods.spec.containers.resources`.")
   private final V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
@@ -67,85 +59,12 @@ class BaseServerPod extends KubernetesResource {
     }
   }
 
-  @SuppressWarnings("Duplicates")
-  private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getFsGroup() == null) {
-      to.fsGroup(from.getFsGroup());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-    if (to.getSupplementalGroups() == null) {
-      to.supplementalGroups(from.getSupplementalGroups());
-    }
-    if (to.getSysctls() == null) {
-      to.sysctls(from.getSysctls());
-    }
-  }
-
-  @SuppressWarnings("Duplicates")
-  private void copyValues(V1SecurityContext to, V1SecurityContext from) {
-    if (to.getAllowPrivilegeEscalation() == null) {
-      to.allowPrivilegeEscalation(from.getAllowPrivilegeEscalation());
-    }
-    if (to.getPrivileged() == null) {
-      to.privileged(from.getPrivileged());
-    }
-    if (to.getReadOnlyRootFilesystem() == null) {
-      to.readOnlyRootFilesystem(from.getReadOnlyRootFilesystem());
-    }
-    if (to.getRunAsNonRoot() == null) {
-      to.runAsNonRoot(from.getRunAsNonRoot());
-    }
-    if (to.getCapabilities() == null) {
-      to.setCapabilities(from.getCapabilities());
-    } else {
-      copyValues(to.getCapabilities(), from.getCapabilities());
-    }
-    if (to.getRunAsGroup() == null) {
-      to.runAsGroup(from.getRunAsGroup());
-    }
-    if (to.getRunAsUser() == null) {
-      to.runAsUser(from.getRunAsUser());
-    }
-    if (to.getSeLinuxOptions() == null) {
-      to.seLinuxOptions(from.getSeLinuxOptions());
-    }
-  }
-
-  private void copyValues(V1Capabilities to, V1Capabilities from) {
-    if (from.getAdd() != null) {
-      Stream<String> stream = (to.getAdd() != null)
-          ? Stream.concat(to.getAdd().stream(), from.getAdd().stream()) : from.getAdd().stream();
-      to.setAdd(stream.distinct().collect(Collectors.toList()));
-    }
-
-    if (from.getDrop() != null) {
-      Stream<String> stream = (to.getDrop() != null)
-          ? Stream.concat(to.getDrop().stream(), from.getDrop().stream()) : from.getDrop().stream();
-      to.setDrop(stream.distinct().collect(Collectors.toList()));
-    }
-  }
-
   void fillInFrom(BaseServerPod serverPod1) {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
     }
     fillInFrom((KubernetesResource) serverPod1);
     copyValues(resources, serverPod1.resources);
-  }
-
-  private V1Container createWithEnvCopy(V1Container c) {
-    return new V1ContainerBuilder(c).withEnv(createCopy(c.getEnv())).build();
   }
 
   private void addIfMissing(V1EnvVar envVar) {

@@ -30,8 +30,8 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
+import oracle.kubernetes.operator.processing.EffectiveBasicServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
-import oracle.kubernetes.operator.processing.EffectiveIntroServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -1167,7 +1167,7 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public EffectiveIntroServerPodSpec getIntrospectorSpec() {
+    public EffectiveBasicServerPodSpec getIntrospectorSpec() {
       return Optional.ofNullable(introspector)
           .map(i -> new EffectiveIntrospectorSpecCommonImpl(DomainSpec.this, i))
           .orElse(null);

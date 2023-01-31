@@ -33,8 +33,7 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
  *
  * @since 2.0
  */
-public class BaseServerPodConfiguration extends BaseIntrospectorServerPodConfiguration
-    implements EffectiveServerPodSpec {
+public class BaseServerPodConfiguration implements EffectiveServerPodSpec {
 
   @Description("Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.")
   protected final ServerPod serverPod = new ServerPod();
