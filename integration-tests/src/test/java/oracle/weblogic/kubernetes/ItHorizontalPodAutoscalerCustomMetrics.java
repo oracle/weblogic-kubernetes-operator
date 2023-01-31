@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourc
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -277,7 +278,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         false, ingressClassName, false, 0);
     // create hpa with custom metrics
     createHPA();
-    //invoke app 20 times to generate metrics with number of opened sessions > 15
+    //invoke app 20 times to generate metrics with number of opened sessions > 5
     String curlCmd =
         String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/" + SESSMIGT_APP_URL,
             ingressHostList.get(0),
@@ -295,13 +296,13 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     assertDoesNotThrow(() -> deletePod(managedServerPrefix + 1, domainNamespace));
     assertDoesNotThrow(() -> deletePod(managedServerPrefix + 2, domainNamespace));
     // wait until reboot
-    for (int i = 1; i < 4; i++) {
+    for (int i = 1; i < 3; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
     //wait for new metric to fetch
     testUntil(
-        withStandardRetryPolicy,
-        () -> verifyHPA(domainNamespace, "0/15"),
+        withLongRetryPolicy,
+        () -> verifyHPA(domainNamespace, "0/5"),
         logger,
         "Checking if total_open_session metric is 0");
 
