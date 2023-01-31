@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -282,7 +283,7 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
   }
 
   public Map<String, String> getNodeSelectors() {
-    return null;
+    return Collections.emptyMap();
   }
 
   public Long getMaximumReadyWaitTimeSeconds() {

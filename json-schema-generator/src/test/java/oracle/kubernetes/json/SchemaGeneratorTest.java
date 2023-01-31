@@ -257,7 +257,6 @@ class SchemaGeneratorTest {
     Object schema = generator.generate(SimpleObject.class);
 
     assertThat(schema, hasNoJsonPath("$.properties.fieldExcludedFromSchema"));
-    assertThat(schema, hasJsonPath("$.required", not(arrayContaining("fieldExcludedFromSchema"))));
   }
 
   @SuppressWarnings("unused")

@@ -122,11 +122,6 @@ public abstract class BaseConfiguration extends ServerPodConfiguration {
   }
 
   @Override
-  public ServerPodConfiguration getServerPodSpec() {
-    return super.getServerPodSpec();
-  }
-
-  @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("serverPod", super.getServerPod())

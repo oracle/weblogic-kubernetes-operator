@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -423,16 +422,6 @@ public class PodHelper {
     }
 
     @Override
-    protected V1ResourceRequirements getResources() {
-      return getServerSpec().getServerPodSpec().getResources();
-    }
-
-    @Override
-    protected List<V1EnvVar> getServerPodEnvironmentVariables() {
-      return getServerSpec().getServerPodSpec().getEnvironmentVariables();
-    }
-
-    @Override
     Integer getOldMetricsPort() {
       return getAsPort();
     }
@@ -703,16 +692,6 @@ public class PodHelper {
     @Override
     protected List<String> getContainerCommand() {
       return new ArrayList<>(super.getContainerCommand());
-    }
-
-    @Override
-    protected V1ResourceRequirements getResources() {
-      return getServerSpec().getServerPodSpec().getResources();
-    }
-
-    @Override
-    protected List<V1EnvVar> getServerPodEnvironmentVariables() {
-      return getServerSpec().getServerPodSpec().getEnvironmentVariables();
     }
 
     @Override

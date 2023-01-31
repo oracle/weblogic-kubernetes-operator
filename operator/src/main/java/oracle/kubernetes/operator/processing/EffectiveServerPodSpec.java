@@ -7,13 +7,8 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.V1Affinity;
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1HostAlias;
-import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
@@ -54,34 +49,6 @@ public interface EffectiveServerPodSpec extends EffectiveBaseServerPodSpec {
    */
   @Nonnull
   Map<String, String> getPodAnnotations();
-
-  @Nonnull
-  List<V1Container> getInitContainers();
-
-  @Nonnull
-  List<V1Container> getContainers();
-
-  Map<String, String> getNodeSelectors();
-
-  V1Affinity getAffinity();
-
-  String getPriorityClassName();
-
-  List<V1PodReadinessGate> getReadinessGates();
-
-  String getRestartPolicy();
-
-  String getRuntimeClassName();
-
-  String getNodeName();
-
-  String getServiceAccountName();
-
-  String getSchedulerName();
-
-  List<V1Toleration> getTolerations();
-
-  List<V1HostAlias> getHostAliases();
 
   V1PodSecurityContext getPodSecurityContext();
 

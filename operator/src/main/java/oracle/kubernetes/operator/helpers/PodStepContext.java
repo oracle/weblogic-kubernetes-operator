@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodSpecBuilder;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -1643,5 +1644,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       return String.join(" ", args);
     }
+  }
+
+  @Override
+  protected List<V1EnvVar> getServerPodEnvironmentVariables() {
+    return getServerSpec().getServerPodSpec().getEnvironmentVariables();
+  }
+
+  @Override
+  protected V1ResourceRequirements getResources() {
+    return getServerSpec().getServerPodSpec().getResources();
   }
 }
