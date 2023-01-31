@@ -534,6 +534,32 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
+    configureDomain()
+          .withEnvironmentVariable("item1", "domain-value1")
+          .withEnvironmentVariable("item2", "domain-value2")
+          .configureAdminServer()
+          .withEnvironmentVariable("item2", "admin-value2")
+          .withEnvironmentVariable("item3", "admin-value3");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                hasEnvVar("item1", "domain-value1"),
+                hasEnvVar("item2", "admin-value2"),
+                hasEnvVar("item3", "admin-value3")));
+
+    assertThat(
+          getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+          allOf(
+                envVarOEVNContains("item1"),
+                envVarOEVNContains("item2"),
+                envVarOEVNContains("item3")));
+  }
+
+  @Test
   void whenIntrospectorServerHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
         .configureIntrospector()
@@ -571,29 +597,45 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
+  void whenDomainAndIntrospectorHaveEnvironmentItems_introspectorPodStartupWithOnlyIntrospectorEnvVars() {
     configureDomain()
           .withEnvironmentVariable("item1", "domain-value1")
           .withEnvironmentVariable("item2", "domain-value2")
-          .configureAdminServer()
-          .withEnvironmentVariable("item2", "admin-value2")
-          .withEnvironmentVariable("item3", "admin-value3");
+        .configureIntrospector()
+          .withEnvironmentVariable("item2", "introspector-value2")
+          .withEnvironmentVariable("item3", "introspector-value3");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getMatchingContainerEnv(domainPresenceInfo, jobSpec),
           allOf(
-                hasEnvVar("item1", "domain-value1"),
-                hasEnvVar("item2", "admin-value2"),
-                hasEnvVar("item3", "admin-value3")));
+                hasEnvVar("item2", "introspector-value2"),
+                hasEnvVar("item3", "introspector-value3")));
 
     assertThat(
           getMatchingContainerEnv(domainPresenceInfo, jobSpec),
           allOf(
-                envVarOEVNContains("item1"),
                 envVarOEVNContains("item2"),
                 envVarOEVNContains("item3")));
+  }
+
+  @Test
+  void whenAdminAndIntrospectorServerHaveResourceItems_introspectorPodStartupWithIntrospectorResources() {
+    DomainConfigurator domainConfigurator = configureDomain();
+    domainConfigurator.configureAdminServer()
+        .withRequestRequirement("cpu", "1024m")
+        .withLimitRequirement("memory", "2Gi");
+    domainConfigurator.configureIntrospector()
+        .withRequestRequirement("cpu", "512m")
+        .withLimitRequirement("memory", "1Gi");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerResources(domainPresenceInfo, jobSpec),
+        is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
+            .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
   }
 
   @Test
@@ -983,6 +1025,31 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithConfiguredAuxImageInitContainersHavingIntrospectorResources() {
+    configureDomain()
+        .withInitContainer(
+            createContainer(
+                COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
+                "echo managed server && sleep 120"))
+        .configureIntrospector()
+            .withRequestRequirement("cpu", "512m")
+             .withLimitRequirement("memory", "1Gi");    ;
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    assertThat(
+        getInitContainerResources(podSpec),
+        is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
+            .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {
+    return podSpec.getInitContainers().stream().findFirst().get().getResources();
   }
 
   @Test
