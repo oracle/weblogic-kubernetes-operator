@@ -1075,7 +1075,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
             .ifPresent(m -> m.remove(presenceInfo.getResourceName()));
       } else {
         clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
-            .computeIfAbsent(presenceInfo.getResourceName(), k -> (ClusterPresenceInfo) presenceInfo);
+            .put(presenceInfo.getResourceName(), (ClusterPresenceInfo) presenceInfo);
       }
     }
 
