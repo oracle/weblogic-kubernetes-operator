@@ -10,10 +10,6 @@
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
-        "introServerPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
-          "$ref": "#/definitions/BaseServerPod"
-        },
         "serverPod": {
           "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
           "$ref": "#/definitions/ServerPod"
@@ -94,7 +90,7 @@
       "type": "object",
       "properties": {
         "resources": {
-          "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",
+          "description": "Memory and CPU minimum requirements and limits for the Introspector job pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "annotations": {
@@ -105,7 +101,7 @@
           "$ref": "#/definitions/Map"
         },
         "env": {
-          "description": "A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "description": "A list of environment variables to set in the Introspector job pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
@@ -199,10 +195,6 @@
           "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `domain.spec.replicas`, which defaults 1.",
           "type": "integer",
           "minimum": 0
-        },
-        "introServerPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
-          "$ref": "#/definitions/BaseServerPod"
         },
         "clusterName": {
           "description": "The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required.",
@@ -430,10 +422,6 @@
           "description": "The maximum number of cluster members that can be temporarily unavailable. You can override this default on a per cluster basis by setting the cluster\u0027s `maxUnavailable` field. Defaults to 1.",
           "type": "integer",
           "minimum": 1
-        },
-        "introServerPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
-          "$ref": "#/definitions/BaseServerPod"
         },
         "logHomeLayout": {
           "default": "ByServers",
@@ -694,8 +682,8 @@
     "Introspector": {
       "type": "object",
       "properties": {
-        "introServerPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+        "serverPod": {
+          "description": "Customization affecting the generation of the introspector job pod.",
           "$ref": "#/definitions/BaseServerPod"
         }
       }
@@ -706,10 +694,6 @@
         "serverService": {
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
-        },
-        "introServerPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
-          "$ref": "#/definitions/BaseServerPod"
         },
         "serverName": {
           "description": "The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required.",

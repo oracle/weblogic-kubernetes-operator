@@ -179,7 +179,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected V1ResourceRequirements createResources() {
-    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resources = getResources();
     V1ResourceRequirements resourceRequirements = null;
     if (!resources.getLimits().isEmpty()) {
       resourceRequirements = new V1ResourceRequirements()

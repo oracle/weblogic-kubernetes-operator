@@ -18,7 +18,6 @@ The specification of the operation of the WebLogic cluster. Required.
 | --- | --- | --- |
 | `clusterName` | string | The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required. |
 | `clusterService` | [Cluster Service](#cluster-service) | Customization affecting Kubernetes Service generated for this WebLogic cluster. |
-| `introServerPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
 | `maxConcurrentShutdown` | integer | The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1. |
 | `maxConcurrentStartup` | integer | The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to `domain.spec.maxClusterConcurrentStartup`, which defaults to 0. |
 | `maxUnavailable` | integer | The maximum number of cluster members that can be temporarily unavailable. Defaults to `domain.spec.maxClusterUnavailable`, which defaults to 1. |
@@ -49,15 +48,6 @@ The specification of the operation of the WebLogic cluster. Required.
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
 | `sessionAffinity` | string | Advanced setting to enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#cluster-spec-elements |
-
-### Base Server Pod
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `annotations` | Map | The annotations to be added to generated resources. |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
-| `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Server Pod
 

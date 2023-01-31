@@ -31,7 +31,6 @@ The specification of the operation of the WebLogic domain. Required.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
-| `introServerPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
 | `introspector` | [Introspector](#introspector) | Lifecycle options for the introspector job pod, including Java options, environment variables, and additional Pod content. |
 | `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`. |
 | `livenessProbeCustomScript` | string | Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored. |
@@ -75,7 +74,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `adminChannelPortForwardingEnabled` | Boolean | When this flag is enabled, the operator updates the domain's WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for each existing admin protocol capable port. This allows external Administration Console and WLST 'T3' access when using the 'kubectl port-forward' pattern. Defaults to true. |
 | `adminService` | [Admin Service](#admin-service) | Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service. |
-| `introServerPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
@@ -107,26 +105,16 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
 | `watchIntrospectorLogs` | Boolean | Fluentd will watch introspector logs |
 
-### Base Server Pod
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `annotations` | Map | The annotations to be added to generated resources. |
-| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
-| `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
-| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`. |
-
 ### Introspector
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `introServerPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
+| `serverPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of the introspector job pod. |
 
 ### Managed Server
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `introServerPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverName` | string | The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or introspector pod. |
@@ -249,6 +237,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
+
+### Base Server Pod
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `annotations` | Map | The annotations to be added to generated resources. |
+| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the Introspector job pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
+| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector job pod. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Probe Tuning
 
