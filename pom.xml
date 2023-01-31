@@ -659,7 +659,7 @@
     <assertj.core.version>3.24.2</assertj.core.version>
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
-    <client-java-version>17.0.0</client-java-version>
+    <client-java-version>17.0.1</client-java-version>
     <kotlin-stdlib-version>1.8.0</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
