@@ -814,6 +814,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
+            .withExplicitRecheck()
             .execute();
       });
     }
