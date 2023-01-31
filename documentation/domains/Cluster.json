@@ -11,7 +11,7 @@
           "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
@@ -90,7 +90,7 @@
       "type": "object",
       "properties": {
         "resources": {
-          "description": "Memory and CPU minimum requirements and limits for the Introspector job pod. See `kubectl explain pods.spec.containers.resources`.",
+          "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "annotations": {
@@ -101,7 +101,7 @@
           "$ref": "#/definitions/Map"
         },
         "env": {
-          "description": "A list of environment variables to set in the Introspector job pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
@@ -201,7 +201,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "clusterService": {
@@ -476,7 +476,7 @@
           "type": "boolean"
         },
         "introspector": {
-          "description": "Lifecycle options for the introspector job pod, including Java options, environment variables, and additional Pod content.",
+          "description": "Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources.",
           "$ref": "#/definitions/Introspector"
         },
         "clusters": {
@@ -543,7 +543,7 @@
           "type": "boolean"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "managedServers": {
@@ -683,7 +683,7 @@
       "type": "object",
       "properties": {
         "serverPod": {
-          "description": "Customization affecting the generation of the introspector job pod.",
+          "description": "Customization affecting the generation of the Introspector Job Pod.",
           "$ref": "#/definitions/BaseServerPod"
         }
       }
@@ -700,7 +700,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or introspector pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {

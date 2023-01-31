@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -7,7 +7,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Introspector extends BasicServerPodConfiguration {
+public class Introspector extends BaseServerPodConfiguration {
 
   protected Introspector getConfiguration() {
     Introspector configuration = new Introspector();
@@ -35,8 +35,6 @@ public class Introspector extends BasicServerPodConfiguration {
     if (!(o instanceof Introspector)) {
       return false;
     }
-
-    Introspector that = (Introspector) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))

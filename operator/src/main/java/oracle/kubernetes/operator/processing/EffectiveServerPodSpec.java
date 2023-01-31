@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.processing;
@@ -18,7 +18,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
 
-public interface EffectiveServerPodSpec extends EffectiveBasicServerPodSpec {
+public interface EffectiveServerPodSpec extends EffectiveBaseServerPodSpec {
   /**
    * Returns the volume mounts to be defined for this server.
    *

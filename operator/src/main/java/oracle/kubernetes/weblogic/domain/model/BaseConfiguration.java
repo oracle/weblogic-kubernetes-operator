@@ -20,7 +20,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  *
  * @since 2.0
  */
-public abstract class BaseConfiguration extends BaseServerPodConfiguration {
+public abstract class BaseConfiguration extends ServerPodConfiguration {
 
   @Description(
       "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.")
@@ -122,7 +122,7 @@ public abstract class BaseConfiguration extends BaseServerPodConfiguration {
   }
 
   @Override
-  public BaseServerPodConfiguration getServerPodSpec() {
+  public ServerPodConfiguration getServerPodSpec() {
     return super.getServerPodSpec();
   }
 

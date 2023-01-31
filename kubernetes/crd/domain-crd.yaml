@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 5994507c2274082bf015a353766da4d71f30e392252ca11e23ae208c31f76db1
+    weblogic.sha256: bbea58a93fe87d5085efb4df42d9ec0f0a74c8961c7f71e71ad20026ebe9eb19
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -598,7 +598,7 @@ spec:
                     type: object
                   serverPod:
                     description: Customization affecting the generation of Pods for
-                      WebLogic Server instances or introspector pod.
+                      WebLogic Server instances or Introspector Job Pod.
                     properties:
                       nodeName:
                         description: NodeName is a request to schedule this Pod onto
@@ -3479,16 +3479,16 @@ spec:
                   in the Pod's log. Defaults to true.
                 type: boolean
               introspector:
-                description: Lifecycle options for the introspector job pod, including
-                  Java options, environment variables, and additional Pod content.
+                description: Lifecycle options for the Introspector Job Pod, including
+                  Java options, environment variables, and resources.
                 properties:
                   serverPod:
-                    description: Customization affecting the generation of the introspector
-                      job pod.
+                    description: Customization affecting the generation of the Introspector
+                      Job Pod.
                     properties:
                       resources:
                         description: Memory and CPU minimum requirements and limits
-                          for the Introspector job pod. See `kubectl explain pods.spec.containers.resources`.
+                          for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.
                         properties:
                           requests:
                             additionalProperties:
@@ -3506,7 +3506,7 @@ spec:
                         type: object
                       env:
                         description: 'A list of environment variables to set in the
-                          Introspector job pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
+                          Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
                           See `kubectl explain pods.spec.containers.env`.'
                         items:
                           type: object
@@ -3693,7 +3693,7 @@ spec:
                 type: boolean
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic
-                  Server instances or introspector pod.
+                  Server instances or Introspector Job Pod.
                 properties:
                   nodeName:
                     description: NodeName is a request to schedule this Pod onto a
@@ -6505,7 +6505,7 @@ spec:
                       type: string
                     serverPod:
                       description: Customization affecting the generation of Pods
-                        for WebLogic Server instances or introspector pod.
+                        for WebLogic Server instances or Introspector Job Pod.
                       type: object
                       properties:
                         nodeName:

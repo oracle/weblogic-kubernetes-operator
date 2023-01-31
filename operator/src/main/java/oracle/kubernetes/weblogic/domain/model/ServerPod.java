@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -53,7 +53,7 @@ class ServerPod extends KubernetesResource {
       Comparator.comparing(V1VolumeMount::getName);
 
   @ExcludeFromSchema
-  BasicServerPodConfiguration basicServerPodConfiguration = new BasicServerPodConfiguration();
+  BaseServerPodConfiguration baseServerPodConfiguration = new BaseServerPodConfiguration();
 
   /**
    * Environment variables to pass while starting a server.
@@ -65,7 +65,7 @@ class ServerPod extends KubernetesResource {
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
       + "See `kubectl explain pods.spec.containers.env`.")
-  private List<V1EnvVar> env = basicServerPodConfiguration.getEnv();
+  private List<V1EnvVar> env = baseServerPodConfiguration.getEnv();
 
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
@@ -154,7 +154,7 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Memory and CPU minimum requirements and limits for the WebLogic Server instance. "
       + "See `kubectl explain pods.spec.containers.resources`.")
-  private final V1ResourceRequirements resources = basicServerPodConfiguration.getResources();
+  private final V1ResourceRequirements resources = baseServerPodConfiguration.getResources();
 
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some

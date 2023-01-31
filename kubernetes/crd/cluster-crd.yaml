@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c573bcc08d4c5a433d4cd23e6f63a17aa5c0d2fd6181f9c616588eef231e3189
+    weblogic.sha256: 836d8b4bf92b5bad8e519fbef732e74a8f603c404855325c4dcbcae7de1f458b
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -87,7 +87,7 @@ spec:
                 type: string
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic
-                  Server instances or introspector pod.
+                  Server instances or Introspector Job Pod.
                 properties:
                   nodeName:
                     description: NodeName is a request to schedule this Pod onto a

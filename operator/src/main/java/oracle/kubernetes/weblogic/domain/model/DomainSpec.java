@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -30,7 +30,7 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
-import oracle.kubernetes.operator.processing.EffectiveBasicServerPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
@@ -420,8 +420,8 @@ public class DomainSpec extends BaseConfiguration {
    * The configuration for the introspector job pod.
    *
    */
-  @Description("Lifecycle options for the introspector job pod, including Java options, environment variables, "
-      + "and additional Pod content.")
+  @Description("Lifecycle options for the Introspector Job Pod, including Java options, environment variables, "
+      + "and resources.")
   private Introspector introspector;
 
   /**
@@ -1167,7 +1167,7 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public EffectiveBasicServerPodSpec getIntrospectorSpec() {
+    public EffectiveBaseServerPodSpec getIntrospectorSpec() {
       return Optional.ofNullable(introspector)
           .map(i -> new EffectiveIntrospectorSpecCommonImpl(DomainSpec.this, i))
           .orElse(null);

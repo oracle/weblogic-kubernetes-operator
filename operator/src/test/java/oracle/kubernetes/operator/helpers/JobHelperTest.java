@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -37,6 +38,7 @@ import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -551,6 +553,21 @@ class JobHelperTest extends DomainValidationTestBase {
         allOf(
             envVarOEVNContains("item1"),
             envVarOEVNContains("item2")));
+  }
+
+  @Test
+  void whenIntrospectorServerHasResourceItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureIntrospector()
+        .withRequestRequirement("cpu", "512m")
+        .withLimitRequirement("memory", "1Gi");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerResources(domainPresenceInfo, jobSpec),
+            is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
+                .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
   }
 
   @Test
@@ -1510,6 +1527,13 @@ class JobHelperTest extends DomainValidationTestBase {
     return getMatchingContainer(domainPresenceInfo, jobSpec)
           .map(V1Container::getEnv)
           .orElse(Collections.emptyList());
+  }
+
+  private V1ResourceRequirements getMatchingContainerResources(
+      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+    return getMatchingContainer(domainPresenceInfo, jobSpec)
+        .map(V1Container::getResources)
+        .orElse(null);
   }
 
   private boolean hasCreateJobName(V1Container container, String domainUid) {

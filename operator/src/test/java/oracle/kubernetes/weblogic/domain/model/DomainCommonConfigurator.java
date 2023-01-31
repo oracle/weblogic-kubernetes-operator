@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,8 +28,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.IntroServerPodConfigurator;
 import oracle.kubernetes.weblogic.domain.IntrospectorConfigurator;
+import oracle.kubernetes.weblogic.domain.IntrospectorServerPodConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
@@ -489,37 +489,37 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public IntroServerPodConfigurator withEnvironmentVariable(String name, String value) {
+    public IntrospectorServerPodConfigurator withEnvironmentVariable(String name, String value) {
       introspector.addEnvironmentVariable(name, value);
       return this;
     }
 
     @Override
-    public IntroServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+    public IntrospectorServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       introspector.addEnvironmentVariable(envVar);
       return this;
     }
 
     @Override
-    public IntroServerPodConfigurator withRequestRequirement(String resource, String quantity) {
+    public IntrospectorServerPodConfigurator withRequestRequirement(String resource, String quantity) {
       introspector.addRequestRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public IntroServerPodConfigurator withLimitRequirement(String resource, String quantity) {
+    public IntrospectorServerPodConfigurator withLimitRequirement(String resource, String quantity) {
       introspector.addLimitRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public IntroServerPodConfigurator withPodLabel(String name, String value) {
+    public IntrospectorServerPodConfigurator withPodLabel(String name, String value) {
       introspector.addPodLabel(name, value);
       return this;
     }
 
     @Override
-    public IntroServerPodConfigurator withPodAnnotation(String name, String value) {
+    public IntrospectorServerPodConfigurator withPodAnnotation(String name, String value) {
       introspector.addPodAnnotation(name, value);
       return this;
     }

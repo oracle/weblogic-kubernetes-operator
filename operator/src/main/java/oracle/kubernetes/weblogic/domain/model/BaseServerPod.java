@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -32,7 +32,7 @@ class BaseServerPod extends KubernetesResource {
    * @since 4.0.5
    */
   @Valid
-  @Description("A list of environment variables to set in the Introspector job pod container. "
+  @Description("A list of environment variables to set in the Introspector Job Pod container. "
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
       + "See `kubectl explain pods.spec.containers.env`.")
@@ -43,7 +43,7 @@ class BaseServerPod extends KubernetesResource {
    *
    * @since 4.0.5
    */
-  @Description("Memory and CPU minimum requirements and limits for the Introspector job pod. "
+  @Description("Memory and CPU minimum requirements and limits for the Introspector Job Pod. "
       + "See `kubectl explain pods.spec.containers.resources`.")
   private final V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
