@@ -21,9 +21,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.processing.EffectiveServerPodSpec;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 
@@ -286,36 +283,5 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
 
   public void setMaxPendingWaitTimeSeconds(long waitTime) {
     serverPod.setMaxPendingWaitTimeSeconds(waitTime);
-  }
-
-  @Override
-  public String toString() {
-    return new ToStringBuilder(this)
-        .append("serverPod", serverPod)
-        .toString();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-
-    ServerPodConfiguration that = (ServerPodConfiguration) o;
-
-    return new EqualsBuilder()
-        .append(serverPod, that.serverPod)
-        .isEquals();
-  }
-
-  @Override
-  public int hashCode() {
-    return new HashCodeBuilder(17, 37)
-        .append(serverPod)
-        .toHashCode();
   }
 }

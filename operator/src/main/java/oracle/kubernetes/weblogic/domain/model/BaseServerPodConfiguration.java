@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -42,6 +43,10 @@ public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
     return serverPod.getEnv();
   }
 
+  public void setEnv(@Nullable List<V1EnvVar> env) {
+    serverPod.setEnv(env);
+  }
+
   void addEnvironmentVariable(String name, String value) {
     serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
   }
@@ -60,6 +65,22 @@ public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
 
   void addLimitRequirement(String resource, String quantity) {
     serverPod.addLimitRequirement(resource, quantity);
+  }
+
+  public Map<String, String> getPodLabels() {
+    return serverPod.getLabels();
+  }
+
+  void addPodLabel(String name, String value) {
+    serverPod.addLabel(name, value);
+  }
+
+  public Map<String, String> getPodAnnotations() {
+    return serverPod.getAnnotations();
+  }
+
+  void addPodAnnotation(String name, String value) {
+    serverPod.addAnnotations(name, value);
   }
 
   @Override
