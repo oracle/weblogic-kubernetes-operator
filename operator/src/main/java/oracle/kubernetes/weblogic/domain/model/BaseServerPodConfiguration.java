@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;

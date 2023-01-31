@@ -148,13 +148,13 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
-    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getEnvironmentVariables())
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getEnv())
         .orElse(getAdminServerEnvVariables());
   }
 
   private List<V1EnvVar> getAdminServerEnvVariables() {
     return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getServerPodSpec())
-        .map(spec -> spec.getEnvironmentVariables()).orElse(null);
+        .map(spec -> spec.getEnv()).orElse(null);
   }
 
   String getJobName() {
