@@ -14,8 +14,10 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A factory which creates and executes steps to align the cached cluster status with the value read from Kubernetes.
@@ -71,8 +73,22 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   @Override
   public Step createSteps() {
     final List<Step> result = new ArrayList<>();
+    result.add(getStartPlanStep());
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     return Step.chain(result);
+  }
+
+  @NotNull
+  private StartPlanStep getStartPlanStep() {
+    if (isDeleting()) {
+      return new StartPlanStep(liveInfo, true);
+    } else {
+      return new StartPlanStep(liveInfo, false);
+    }
+  }
+
+  private boolean isDeleting() {
+    return getEventData().getItem() == EventHelper.EventItem.CLUSTER_DELETED;
   }
 
   @Override
@@ -88,5 +104,28 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   @Override
   public EventHelper.EventData getEventData() {
     return eventData;
+  }
+
+  class StartPlanStep extends Step {
+
+    private final ClusterPresenceInfo info;
+    private final boolean deleting;
+
+    StartPlanStep(ClusterPresenceInfo info, boolean deleting) {
+      super();
+      this.info = info;
+      this.deleting = deleting;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (deleting) {
+        executor.unregisterClusterPresenceInfo(info);
+      } else {
+        executor.registerClusterPresenceInfo(info);
+      }
+
+      return doNext(getNext(), packet);
+    }
   }
 }

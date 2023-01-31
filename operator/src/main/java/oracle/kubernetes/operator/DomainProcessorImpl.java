@@ -978,11 +978,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
-    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
-      //No-op.
-    }
-
-    @Override
     public CompletionCallback createCompletionCallback() {
       return new DomainPlanCompletionCallback();
     }
@@ -1059,7 +1054,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return interval.getSeconds();
 
     }
-
   }
 
   private static class ClusterPlan extends Plan<MakeRightClusterOperation> {
@@ -1069,22 +1063,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     @Override
-    protected void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo) {
-      if (operation.getEventData().getItem() == EventHelper.EventItem.CLUSTER_DELETED) {
-        Optional.ofNullable(clusters.get(presenceInfo.getNamespace()))
-            .ifPresent(m -> m.remove(presenceInfo.getResourceName()));
-      } else {
-        clusters.computeIfAbsent(presenceInfo.getNamespace(), c -> new ConcurrentHashMap<>())
-            .put(presenceInfo.getResourceName(), (ClusterPresenceInfo) presenceInfo);
-      }
-    }
-
-    @Override
     public CompletionCallback createCompletionCallback() {
       return new ClusterPlanCompletionCallback();
     }
 
-    class ClusterPlanCompletionCallback implements CompletionCallback {
+    static class ClusterPlanCompletionCallback implements CompletionCallback {
 
       @Override
       public void onCompletion(Packet packet) {
@@ -1117,10 +1100,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       this.firstStep = operation.createSteps();
       this.packet = operation.createPacket();
       this.gate = getMakeRightFiberGate(delegate, this.presenceInfo.getNamespace());
-      cacheResourcePresenceInfo(presenceInfo);
     }
-
-    protected abstract void cacheResourcePresenceInfo(ResourcePresenceInfo presenceInfo);
 
     private FiberGate getMakeRightFiberGate(DomainProcessorDelegate delegate, String ns) {
       return makeRightFiberGates.computeIfAbsent(ns, k -> delegate.createFiberGate());
