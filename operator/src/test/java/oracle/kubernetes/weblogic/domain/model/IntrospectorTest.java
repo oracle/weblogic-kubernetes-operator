@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-class IntrospectorTestBase extends BaseServerPodConfigurationTestBase {
+class IntrospectorTest extends BaseServerPodConfigurationTestBase {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -24,7 +24,7 @@ class IntrospectorTestBase extends BaseServerPodConfigurationTestBase {
   /**
    * Introspector server tests.
    */
-  public IntrospectorTestBase() {
+  public IntrospectorTest() {
     super(new Introspector(), new Introspector());
     introspector1 = getInstance1();
     introspector2 = getInstance2();
