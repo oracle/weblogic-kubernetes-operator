@@ -60,11 +60,6 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
     return this;
   }
 
-  @Nullable
-  public List<V1EnvVar> getEnv() {
-    return serverPod.getEnv();
-  }
-
   public void setEnv(@Nullable List<V1EnvVar> env) {
     serverPod.setEnv(env);
   }
@@ -189,10 +184,6 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
     serverPod.setHostAliases(hostAliases);
   }
 
-  void addHostAlias(V1HostAlias hostAlias) {
-    serverPod.addHostAlias(hostAlias);
-  }
-
   public V1ResourceRequirements getResources() {
     return serverPod.getResourceRequirements();
   }
@@ -238,7 +229,7 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
   }
 
   @Override
-  public List<V1EnvVar> getEnvironmentVariables() {
+  public List<V1EnvVar> getEnv() {
     return serverPod.getEnv();
   }
 
@@ -280,10 +271,6 @@ public class ServerPodConfiguration implements EffectiveServerPodSpec {
 
   public List<V1Container> getContainers() {
     return serverPod.getContainers();
-  }
-
-  public Map<String, String> getNodeSelectors() {
-    return Collections.emptyMap();
   }
 
   public Long getMaximumReadyWaitTimeSeconds() {

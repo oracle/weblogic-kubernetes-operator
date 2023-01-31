@@ -28,7 +28,7 @@ public class EffectiveIntrospectorSpecCommonImpl implements EffectiveBaseServerP
   }
 
   @Override
-  public List<V1EnvVar> getEnvironmentVariables() {
+  public List<V1EnvVar> getEnv() {
     return introspector.getEnv();
   }
 

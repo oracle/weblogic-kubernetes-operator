@@ -14,7 +14,7 @@ public interface EffectiveBaseServerPodSpec {
    *
    * @return a list of environment variables
    */
-  List<V1EnvVar> getEnvironmentVariables();
+  List<V1EnvVar> getEnv();
 
   V1ResourceRequirements getResources();
 }

@@ -19,7 +19,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
  * cluster.
  *
- * @since 2.0
  */
 public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
 
@@ -37,10 +36,6 @@ public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
     }
 
     serverPod.fillInFrom(other.serverPod);
-  }
-
-  public BaseServerPod getServerPod() {
-    return serverPod;
   }
 
   @Nullable
@@ -66,27 +61,6 @@ public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
 
   void addLimitRequirement(String resource, String quantity) {
     serverPod.addLimitRequirement(resource, quantity);
-  }
-
-  @Override
-  public List<V1EnvVar> getEnvironmentVariables() {
-    return serverPod.getEnv();
-  }
-
-  public Map<String, String> getPodLabels() {
-    return serverPod.getLabels();
-  }
-
-  void addPodLabel(String name, String value) {
-    serverPod.addLabel(name, value);
-  }
-
-  public Map<String, String> getPodAnnotations() {
-    return serverPod.getAnnotations();
-  }
-
-  void addPodAnnotation(String name, String value) {
-    serverPod.addAnnotations(name, value);
   }
 
   @Override

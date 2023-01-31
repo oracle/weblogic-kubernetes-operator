@@ -37,8 +37,4 @@ public interface IntrospectorServerPodConfigurator {
    * @return this object
    */
   IntrospectorServerPodConfigurator withLimitRequirement(String resource, String quantity);
-
-  IntrospectorServerPodConfigurator withPodLabel(String name, String value);
-
-  IntrospectorServerPodConfigurator withPodAnnotation(String name, String value);
 }

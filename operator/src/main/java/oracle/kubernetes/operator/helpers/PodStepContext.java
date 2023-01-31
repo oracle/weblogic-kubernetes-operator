@@ -1648,7 +1648,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   @Override
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
-    return getServerSpec().getServerPodSpec().getEnvironmentVariables();
+    return getServerSpec().getServerPodSpec().getEnv();
   }
 
   @Override

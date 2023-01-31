@@ -513,18 +513,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public IntrospectorServerPodConfigurator withPodLabel(String name, String value) {
-      introspector.addPodLabel(name, value);
-      return this;
-    }
-
-    @Override
-    public IntrospectorServerPodConfigurator withPodAnnotation(String name, String value) {
-      introspector.addPodAnnotation(name, value);
-      return this;
-    }
-
-    @Override
     public Introspector getIntrospector() {
       return introspector;
     }
