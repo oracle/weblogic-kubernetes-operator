@@ -45,6 +45,8 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -155,12 +157,9 @@ class ItVzMiiDomain {
     logger.info(Yaml.dump(application));
     
     logger.info("Deploying components");
-    assertDoesNotThrow(() -> 
-        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent(component));
-    
+    assertDoesNotThrow(() -> createComponent(component));    
     logger.info("Deploying application");
-    assertDoesNotThrow(() -> 
-        oracle.verrazzano.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication(application));
+    assertDoesNotThrow(() -> createApplication(application));
 
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
