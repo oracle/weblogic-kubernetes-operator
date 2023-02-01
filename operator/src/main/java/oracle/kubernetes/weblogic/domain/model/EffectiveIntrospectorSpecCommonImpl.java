@@ -8,6 +8,9 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** The effective configuration for the introspector pod. */
 public class EffectiveIntrospectorSpecCommonImpl implements EffectiveBaseServerPodSpec {
@@ -35,5 +38,39 @@ public class EffectiveIntrospectorSpecCommonImpl implements EffectiveBaseServerP
   @Override
   public V1ResourceRequirements getResources() {
     return introspector.getResources();
+  }
+
+  @Override
+  public String toString() {
+    return new ToStringBuilder(this)
+        .appendSuper(super.toString())
+        .append("server", introspector)
+        .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+
+    if (!(o instanceof EffectiveIntrospectorSpecCommonImpl)) {
+      return false;
+    }
+
+    EffectiveIntrospectorSpecCommonImpl that = (EffectiveIntrospectorSpecCommonImpl) o;
+
+    return new EqualsBuilder()
+        .appendSuper(super.equals(o))
+        .append(introspector, that.introspector)
+        .isEquals();
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37)
+        .appendSuper(super.hashCode())
+        .append(introspector)
+        .toHashCode();
   }
 }

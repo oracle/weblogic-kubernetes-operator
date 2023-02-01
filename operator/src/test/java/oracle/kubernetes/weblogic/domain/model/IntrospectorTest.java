@@ -5,13 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.IntrospectorConfigurator;
-import org.junit.jupiter.api.Test;
-
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectorTest extends BaseServerPodConfigurationTestBase {
 
@@ -28,41 +21,5 @@ class IntrospectorTest extends BaseServerPodConfigurationTestBase {
     super(new Introspector(), new Introspector());
     introspector1 = getInstance1();
     introspector2 = getInstance2();
-  }
-
-  private IntrospectorConfigurator configureIntrospector() {
-    return DomainConfiguratorFactory.forDomain(domain).configureIntrospector();
-  }
-
-  @Test
-  void whenDifferByPodLabel_objectsAreNotEqual() {
-    introspector1.addPodLabel("a", "b");
-    introspector2.addPodLabel("a", "c");
-
-    assertThat(introspector1, not(equalTo(introspector2)));
-  }
-
-  @Test
-  void whenDifferByPodAnnotation_objectsAreNotEqual() {
-    introspector1.addPodAnnotation("a", "b");
-    introspector2.addPodAnnotation("a", "c");
-
-    assertThat(introspector1, not(equalTo(introspector2)));
-  }
-
-  @Test
-  void whenServiceAnnotationsDiffer_hashCodesAreNotEqual() {
-    introspector1.addPodAnnotation("key", "value");
-    assertThat(introspector1.hashCode(), not(equalTo(introspector2.hashCode())));
-  }
-
-  @Test
-  void whenServiceAnnotationsDoNotDiffer_hashCodesAreEqual() {
-
-    introspector1.addPodAnnotation("key", "value");
-    introspector2.addPodAnnotation("key", "value");
-    LOGGER.fine("Verify that " + introspector1 + " and " + introspector2 + " are same.");
-
-    assertThat(introspector1.hashCode(), equalTo(introspector2.hashCode()));
   }
 }

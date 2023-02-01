@@ -6,6 +6,8 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -13,6 +15,9 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public abstract class BaseServerPodConfigurationTestBase {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private final BaseServerPodConfiguration instance1;
   private final BaseServerPodConfiguration instance2;
 
@@ -58,6 +63,7 @@ public abstract class BaseServerPodConfigurationTestBase {
     instance2.addRequestRequirement("cpu", "100m");
     instance1.addLimitRequirement("cpu", "500m");
     instance2.addLimitRequirement("cpu", "500m");
+    LOGGER.fine("Verify that " + instance1 + " and " + instance2 + " are same.");
 
     assertThat(instance1, equalTo(instance2));
   }

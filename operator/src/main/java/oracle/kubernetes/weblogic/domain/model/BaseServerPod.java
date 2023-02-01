@@ -21,7 +21,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
 
-class BaseServerPod extends KubernetesResource {
+class BaseServerPod {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
       Comparator.comparing(V1EnvVar::getName);
@@ -61,7 +61,6 @@ class BaseServerPod extends KubernetesResource {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
     }
-    fillInFrom((KubernetesResource) serverPod1);
     copyValues(resources, serverPod1.resources);
   }
 
@@ -136,7 +135,6 @@ class BaseServerPod extends KubernetesResource {
     BaseServerPod that = (BaseServerPod) o;
 
     return new EqualsBuilder()
-        .appendSuper(super.equals(o))
         .append(
             DomainResource.sortList(env, ENV_VAR_COMPARATOR),
             DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
