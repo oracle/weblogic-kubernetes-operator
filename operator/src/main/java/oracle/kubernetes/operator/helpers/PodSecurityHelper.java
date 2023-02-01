@@ -37,11 +37,10 @@ public class PodSecurityHelper {
 
     Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
       if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform())) {
-        context.runAsUser(1000L).runAsGroup(1000L);
+        context.runAsUser(1000L);
       }
     });
     return context;
   }
-
 
 }

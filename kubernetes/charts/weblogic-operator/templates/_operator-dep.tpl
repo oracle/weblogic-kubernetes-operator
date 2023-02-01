@@ -110,12 +110,7 @@ spec:
             {{- end }}
         securityContext:
           {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
-          {{- if .runAsUser }}
-          runAsUser: {{ .runAsUser }}
-          {{- else }}
-          runAsUser: 1000
-          {{- end }}
-          runAsGroup: 1000
+          runAsUser: {{ .runAsUser | default 1000 }}
           {{- end }}
           runAsNonRoot: true
           privileged: false
@@ -325,12 +320,7 @@ spec:
                 {{- end }}
             securityContext:
               {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
-              {{- if .runAsUser }}
-              runAsUser: {{ .runAsUser }}
-              {{- else }}
-              runAsUser: 1000
-              {{- end }}
-              runAsGroup: 1000
+              runAsUser: {{ .runAsUser | default 1000 }}
               {{- end }}
               runAsNonRoot: true
               privileged: false

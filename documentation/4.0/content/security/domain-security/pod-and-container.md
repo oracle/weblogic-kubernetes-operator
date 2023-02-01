@@ -22,7 +22,6 @@ The operator also adds the following container-level `securityContext` content t
 ```yaml
 securityContext:
   runAsUser: 1000
-  runAsGroup: 1000
   runAsNonRoot: true           
   privileged: false
   allowPrivilegeEscalation: false
@@ -31,7 +30,7 @@ securityContext:
     - ALL
 ```
 
-On OpenShift environments, the operator omits the `runAsUser` and `runAsGroup` elements.
+On OpenShift environments, the operator omits the `runAsUser` element.
 
 Customers can [configure pod and container generation](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#domain-and-cluster-spec-elements)
 for WebLogic Server instances using the `serverPod` element in the Domain resource. If specified, the operator will use the

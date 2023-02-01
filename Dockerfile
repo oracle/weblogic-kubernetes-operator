@@ -32,7 +32,7 @@ ENV LANG="en_US.UTF-8"
 
 COPY --from=jre-build /jre jre
 
-# Install Java and make the operator run with a non-root user id (1000 is the `oracle` user) and group id
+# Install Java and make the operator run with a non-root user id (1000 is the `oracle` user)
 RUN set -eux; \
     microdnf -y update; \
     microdnf -y install jq; \
@@ -43,22 +43,21 @@ RUN set -eux; \
         alternatives --install "/usr/bin/$base" "$base" "$bin" 20000; \
     done; \
     java -Xshare:dump; \
-    groupadd -g 1000 oracle; \
-    useradd -d /operator -M -s /bin/bash -g oracle -u 1000 oracle; \
+    useradd -d /operator -M -s /bin/bash -g root -u 1000 oracle; \
     mkdir -m 775 /operator; \
     mkdir -m 775 /deployment; \
     mkdir -m 775 /probes; \
     mkdir -m 775 /logs; \
     mkdir /operator/lib; \
-    chown -R oracle:oracle /operator /deployment /probes /logs
+    chown -R oracle:root /operator /deployment /probes /logs
 
 USER oracle
 
-COPY --chown=oracle:oracle operator/scripts/* /operator/
-COPY --chown=oracle:oracle deployment/scripts/* /deployment/
-COPY --chown=oracle:oracle probes/scripts/* /probes/
-COPY --chown=oracle:oracle operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
-COPY --chown=oracle:oracle operator/target/lib/*.jar /operator/lib/
+COPY --chown=oracle:root operator/scripts/* /operator/
+COPY --chown=oracle:root deployment/scripts/* /deployment/
+COPY --chown=oracle:root probes/scripts/* /probes/
+COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
+COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
 
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /probes/livenessProbe.sh

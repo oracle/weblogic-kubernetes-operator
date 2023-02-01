@@ -271,7 +271,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                                 .putRequestsItem(
                                                     "memory", Quantity.fromString("512Mi")))
                                         .securityContext(
-                                            new V1SecurityContext().runAsUser(1000L).runAsGroup(1000L)
+                                            new V1SecurityContext().runAsUser(1000L)
                                                 .runAsNonRoot(true)
                                                 .privileged(false).allowPrivilegeEscalation(false)
                                                 .capabilities(new V1Capabilities().addDropItem("ALL")))
