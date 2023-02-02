@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
@@ -48,19 +48,6 @@ function checkJavaVersion {
   if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
     echo "Error: Java version should be 11.0.10 or higher"
     exit 1
-  fi
-}
-function dockerLogin {
-  echo "Info: about to do docker login"
-  if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
-    out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
-    res=$?
-    if [ $res -ne 0 ]; then
-      echo 'docker login failed'
-      exit 1
-    fi
-  else
-    echo "Info: Docker credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
   fi
 }
 
@@ -125,8 +112,6 @@ echo "Info: soft limits"
 ulimit -a
 echo "Info: hard limits"
 ulimit -aH
-
-dockerLogin
 
 echo 'Info: Run build...'
 mvn clean install
