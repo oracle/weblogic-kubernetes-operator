@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
 import groovy.json.JsonSlurper
@@ -131,8 +131,6 @@ pipeline {
     environment {
         github_url = "${env.GIT_URL}"
         github_creds = 'ecnj_github'
-        dockerhub_username_creds = 'docker-username'
-        dockerhub_password_creds = 'docker-password'
         ocr_username_creds = 'OCR username'
         ocr_password_creds = 'OCR Password'
         ocir_registry_creds = 'ocir-server'
@@ -384,12 +382,7 @@ pipeline {
                 }
 
                 stage('Build WebLogic Kubernetes Operator') {
-                    environment {
-                        DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
-                        DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
-                    }
                     steps {
-                        sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
