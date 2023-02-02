@@ -284,6 +284,7 @@ public class DbUtils {
 
     // wait for the Oracle DB pod to be ready
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> checkDBPodNameReady(dbNamespace, dbPodNamePrefix),
             String.format("DB pod %s is not ready yet in namespace %s", dbPodNamePrefix, dbNamespace)),
         logger,
@@ -294,6 +295,7 @@ public class DbUtils {
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
           "oracleDBService podReady failed with ApiException"),
         logger,
@@ -527,6 +529,7 @@ public class DbUtils {
   public static void checkDbReady(String matchStr, String podName, String dbNamespace) {
     LoggingFacade logger = getLogger();
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
           String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
         logger,

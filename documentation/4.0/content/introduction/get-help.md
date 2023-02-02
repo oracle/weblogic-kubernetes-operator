@@ -19,7 +19,7 @@ details of how to access our Slack workspace.
 After you are logged in, please come to `#operator` and say, "hello!"
 
 ### GitHub issues
-To quickly get help, we strongly recommend using [Oracle Slack](#oracle-slack).
+To quickly get help, we strongly recommend using [Oracle Slack](https://join.slack.com/t/oracle-weblogic/shared_invite/zt-1ni1gtjv6-PGC6CQ4uIte3KBdm_67~aQ).
 If this is insufficient, then feel free
 to submit a [GitHub Issue](https://github.com/oracle/weblogic-kubernetes-operator/issues) on the
 WebLogic Kubernetes Operator project. All issues are public.

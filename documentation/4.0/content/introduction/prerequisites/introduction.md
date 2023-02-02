@@ -16,6 +16,11 @@ For the current production release {{< latestVersion >}}:
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
    * The existing WebLogic Server General Availability image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`,
    has this patch applied.
+   * **NOTE**:
+
+      * As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
+      * Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+
    {{% notice warning %}}
    Throughout the documentation, the sample images are General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_. For details on how to obtain or create images, see [WebLogic images]({{< relref "/base-images/_index.md" >}}).
    {{% /notice %}}
