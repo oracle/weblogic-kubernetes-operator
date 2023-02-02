@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
@@ -24,4 +24,4 @@ spec:
           name: total_opened_sessions_myear_app
         target:
           type: AverageValue
-          averageValue: 15
+          averageValue: 5
