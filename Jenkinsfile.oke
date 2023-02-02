@@ -17,8 +17,6 @@ pipeline {
     environment {
         github_url = "${env.GIT_URL}"
         github_creds = 'ecnj_github'
-        dockerhub_username_creds = 'docker-username'
-        dockerhub_password_creds = 'docker-password'
         ocr_username_creds = 'OCR username'
         ocr_password_creds = 'OCR Password'
         ocir_registry_creds = 'ocir-server'
@@ -276,10 +274,6 @@ EOF
                 }
 
                 stage('Build WebLogic Kubernetes Operator') {
-                    environment {
-                        DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
-                        DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
-                    }
                     steps {
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
@@ -437,8 +431,6 @@ EOF
                         TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
                         TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
-                        DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
-                        DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"
