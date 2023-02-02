@@ -305,8 +305,8 @@ getDomainInfo() {
   getDomainAIImages domain_info_goal_aiimages_current
   getDomainValue    domain_info_api_version            ".apiVersion"
   getDomainValue    domain_info_condition_failed_str   ".status.conditions[?(@.type==\"Failed\")]" # has full failure messages, if any
-  getDomainValue    domain_info_condition_completed    ".status.conditions[?(@.type==\"Completed\")].status" # "True" when complete
   getDomainValue    domain_info_observed_generation    ".status.observedGeneration"
+  getDomainValue    domain_info_condition_completed    ".status.conditions[?(@.type==\"Completed\")].status" # "True" when complete
 
   domain_info_clusters=$( echo "$domain_info_clusters" | sed 's/"name"//g' | tr -d '[]{}:' | sortlist | sed 's/,/ /') # convert to sorted space separated list
 

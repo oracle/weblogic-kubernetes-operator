@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -88,6 +88,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -283,6 +284,7 @@ public class DbUtils {
 
     // wait for the Oracle DB pod to be ready
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> checkDBPodNameReady(dbNamespace, dbPodNamePrefix),
             String.format("DB pod %s is not ready yet in namespace %s", dbPodNamePrefix, dbNamespace)),
         logger,
@@ -293,6 +295,7 @@ public class DbUtils {
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
           "oracleDBService podReady failed with ApiException"),
         logger,
@@ -389,6 +392,7 @@ public class DbUtils {
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
     testUntil(
+        withLongRetryPolicy,
         podReady(RCUPODNAME, null, dbNamespace),
         logger,
         "{0} to be ready in namespace {1}",
@@ -525,6 +529,7 @@ public class DbUtils {
   public static void checkDbReady(String matchStr, String podName, String dbNamespace) {
     LoggingFacade logger = getLogger();
     testUntil(
+        withLongRetryPolicy,
         assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
           String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
         logger,

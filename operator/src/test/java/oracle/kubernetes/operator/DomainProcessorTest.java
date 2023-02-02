@@ -148,7 +148,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.OK_RESPONSE;
 import static oracle.kubernetes.operator.http.client.HttpAsyncTestSupport.createExpectedRequest;
@@ -1387,7 +1387,7 @@ class DomainProcessorTest {
 
     processor.createMakeRightOperation(newInfo).execute();
 
-    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, UID + FLUENTD_CONFIGMAP_NAME_SUFFIX);
 
     assertThat(Optional.ofNullable(fluentdConfigMap)
             .map(V1ConfigMap::getData)
@@ -1405,7 +1405,7 @@ class DomainProcessorTest {
 
     processor.createMakeRightOperation(newInfo).execute();
 
-    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, FLUENTD_CONFIGMAP_NAME);
+    V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, UID + FLUENTD_CONFIGMAP_NAME_SUFFIX);
 
     assertThat(Optional.ofNullable(fluentdConfigMap)
             .map(V1ConfigMap::getData)

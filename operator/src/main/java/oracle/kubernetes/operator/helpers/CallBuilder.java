@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -71,10 +71,12 @@ import oracle.kubernetes.operator.tuning.CallBuilderTuning;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
+import oracle.kubernetes.weblogic.domain.api.WeblogicGenericApi;
 import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
@@ -479,6 +481,11 @@ public class CallBuilder {
                   RESOURCE_VERSION,
                   timeoutSeconds,
                   WATCH);
+
+  private final SynchronousCallFactory<PartialObjectMetadata> readCRDMetadataCall =
+      (client, requestParams) ->
+          new WeblogicGenericApi(client).readCustomResourceDefinitionMetadata(requestParams.name);
+
   private final SynchronousCallFactory<DomainResource> readDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -867,6 +874,18 @@ public class CallBuilder {
   public @Nonnull DomainList listDomain(String namespace) throws ApiException {
     RequestParams requestParams = new RequestParams("listDomain", namespace, null, null, callParams);
     return executeSynchronousCall(requestParams, listDomainCall);
+  }
+
+  /**
+   * Get crd metadata.
+   *
+   * @return crd metadata
+   * @throws ApiException API exception
+   */
+  public @Nonnull PartialObjectMetadata readCRDMetadata(String name) throws ApiException {
+    RequestParams requestParams = new RequestParams("readCRDMetadata", null,
+        name, null, callParams);
+    return executeSynchronousCall(requestParams, readCRDMetadataCall);
   }
 
   private Call listDomainAsync(

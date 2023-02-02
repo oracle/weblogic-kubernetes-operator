@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -41,6 +41,7 @@ import io.kubernetes.client.openapi.models.V1ValidatingWebhookConfiguration;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
+import oracle.kubernetes.operator.helpers.CrdHelperTestBase;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -56,7 +57,6 @@ import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.junit.MatcherAssert;
@@ -122,7 +122,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
-public class WebhookMainTest extends ThreadFactoryTestBase {
+public class WebhookMainTest extends CrdHelperTestBase {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -136,6 +136,7 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
   private static final String IMPL = GIT_BRANCH + "." + GIT_COMMIT;
 
   private static final Properties buildProperties;
+  public static final String RESOURCE_VERSION = "123";
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
@@ -200,7 +201,6 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StubWatchFactory.install());
-    mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "instance", this));
     mementos.add(NoopWatcherStarter.install());
     mementos.add(inMemoryFileSystem.install());
     mementos.add(InMemoryCertificates.install());
@@ -288,6 +288,20 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     recheckCRD();
 
     assertThat(logRecords, not(containsSevere(CRD_NOT_INSTALLED)));
+  }
+
+  @Test
+  void whenCRDsExist_resourceVersionsAreCached() {
+    V1CustomResourceDefinition domainCrd = defineCrd(PRODUCT_VERSION, DOMAIN_CRD_NAME);
+    domainCrd.getMetadata().resourceVersion(RESOURCE_VERSION);
+    V1CustomResourceDefinition clusterCrd = defineCrd(PRODUCT_VERSION, CLUSTER_CRD_NAME);
+    clusterCrd.getMetadata().resourceVersion(RESOURCE_VERSION);
+    testSupport.defineResources(domainCrd, clusterCrd);
+
+    recheckCRD();
+
+    assertThat(delegate.getDomainCrdResourceVersion(), is(RESOURCE_VERSION));
+    assertThat(delegate.getClusterCrdResourceVersion(), is(RESOURCE_VERSION));
   }
 
   @ParameterizedTest
@@ -792,6 +806,8 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
 
   public abstract static class WebhookMainDelegateStub implements WebhookMainDelegate {
     private final FiberTestSupport testSupport;
+    private String domainCrdResourceVersion;
+    private String clusterCrdResourceVersion;
 
     public WebhookMainDelegateStub(FiberTestSupport testSupport) {
       this.testSupport = testSupport;
@@ -828,6 +844,27 @@ public class WebhookMainTest extends ThreadFactoryTestBase {
     public String getWebhookKeyUri() {
       return SECRETS_WEBHOOK_KEY;
     }
+
+    @Override
+    public String getDomainCrdResourceVersion() {
+      return this.domainCrdResourceVersion;
+    }
+
+    @Override
+    public void setDomainCrdResourceVersion(String resourceVersion) {
+      this.domainCrdResourceVersion = resourceVersion;
+    }
+
+    @Override
+    public String getClusterCrdResourceVersion() {
+      return this.clusterCrdResourceVersion;
+    }
+
+    @Override
+    public void setClusterCrdResourceVersion(String resourceVersion) {
+      this.clusterCrdResourceVersion = resourceVersion;
+    }
+
   }
 
   static class TestStepFactory implements WebhookMain.NextStepFactory {
