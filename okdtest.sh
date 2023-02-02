@@ -32,20 +32,6 @@ usage() {
   exit $1
 }
 
-repoLogin() {
-  echo "Info: about to do ${WLSIMG_BUILDER:-docker} login"
-  if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
-    out=$(echo $DOCKER_PASSWORD | ${WLSIMG_BUILDER:-docker} login -u $DOCKER_USERNAME --password-stdin)
-    res=$?
-    if [ $res -ne 0 ]; then
-      echo "${WLSIMG_BUILDER:-docker} login failed"
-      exit 1
-    fi
-  else
-    echo "Info: Image repo credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
-  fi
-}
-
 k8s_version="1.21"
 
 KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
@@ -149,10 +135,7 @@ ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/nginx-/{print $1}
 ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
 
 sudo rm -rf ${PV_ROOT}/*
-
-repoLogin
 export OKD=true
-
 echo "${WLSIMG_BUILDER:-docker} info"
 ${WLSIMG_BUILDER:-docker} info
 ${WLSIMG_BUILDER:-docker} ps
