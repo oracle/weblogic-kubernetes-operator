@@ -49,19 +49,6 @@ function checkJavaVersion {
     exit 1
   fi
 }
-function repoLogin {
-  echo "Info: about to do ${WLSIMG_BUILDER:-docker} login"
-  if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
-    out=$(echo $DOCKER_PASSWORD | ${WLSIMG_BUILDER:-docker} login -u $DOCKER_USERNAME --password-stdin)
-    res=$?
-    if [ $res -ne 0 ]; then
-      echo "${WLSIMG_BUILDER:-docker} login failed"
-      exit 1
-    fi
-  else
-    echo "Info: Credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
-  fi
-}
 
 # Record start time in a format appropriate for journalctl --since
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
@@ -124,8 +111,6 @@ echo "Info: soft limits"
 ulimit -a
 echo "Info: hard limits"
 ulimit -aH
-
-#repoLogin
 
 mkdir $WORKSPACE/jdk
 cd $WORKSPACE/jdk

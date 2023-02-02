@@ -281,7 +281,6 @@ EOF
                         DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
                     }
                     steps {
-                        # sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
