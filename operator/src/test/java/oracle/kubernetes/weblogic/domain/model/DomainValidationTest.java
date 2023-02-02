@@ -986,7 +986,7 @@ class DomainValidationTest extends DomainValidationTestBase {
         .withEnvironmentVariable(new V1EnvVar().name("Test1").value("Test1"))
         .withEnvironmentVariable(new V1EnvVar().name("Test2").value("Test2"));
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("Unsupported", "environment variable", "Test1", "Test5", "defined")));
+        contains(stringContainsInOrder("Unsupported", "environment variable", "Test1", "Test2", "defined")));
   }
 
   @SafeVarargs
