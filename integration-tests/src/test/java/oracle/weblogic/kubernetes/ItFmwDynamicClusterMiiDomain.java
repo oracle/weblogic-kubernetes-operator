@@ -269,7 +269,7 @@ class ItFmwDynamicClusterMiiDomain {
                         .domainType("JRF")
                         .runtimeEncryptionSecret(encryptionSecretName))
                     .addSecretsItem(rcuAccessSecretName)
-                    .introspectorJobActiveDeadlineSeconds(600L)));
+                    .introspectorJobActiveDeadlineSeconds(900L)));
 
     createDomainAndVerify(domain, domainNamespace);
   }

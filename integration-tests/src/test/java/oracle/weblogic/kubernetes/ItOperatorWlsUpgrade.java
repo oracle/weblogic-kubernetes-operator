@@ -120,7 +120,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
-@Tag("oke-sequential")
 @Tag("kind-sequential")
 class ItOperatorWlsUpgrade {
 
@@ -200,6 +199,7 @@ class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 4.0.3 to current.
    */
+  @Tag("oke-sequential")
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 4.0.3 to current")
   @ValueSource(strings = { "Image", "FromModel" })
@@ -211,6 +211,7 @@ class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 4.0.4 to current.
    */
+  @Tag("oke-sequential")
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 4.0.4 to current")
   @ValueSource(strings = { "Image", "FromModel" })
