@@ -94,7 +94,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-@Tag("oke-sequential")
 @Tag("kind-sequential")
 class ItOperatorFmwUpgrade {
 
@@ -224,6 +223,7 @@ class ItOperatorFmwUpgrade {
   /**
    * Operator upgrade from 4.0.3 to current with a FMW Domain.
    */
+  @Tag("oke-sequential")
   @Test
   @DisplayName("Upgrade Operator from 4.0.3 to current")
   void testOperatorFmwUpgradeFrom403ToCurrent() {
@@ -233,6 +233,7 @@ class ItOperatorFmwUpgrade {
   /**
    * Operator upgrade from 4.0.4 to current with a FMW Domain.
    */
+  @Tag("oke-sequential")
   @Test
   @DisplayName("Upgrade Operator from 4.0.4 to current")
   void testOperatorFmwUpgradeFrom404ToCurrent() {
