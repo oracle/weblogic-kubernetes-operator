@@ -654,11 +654,11 @@
       "properties": {
         "serverPod": {
           "description": "Customization affecting the generation of the Introspector Job Pod.",
-          "$ref": "#/definitions/IntrospectorPod"
+          "$ref": "#/definitions/IntrospectorJobPod"
         }
       }
     },
-    "IntrospectorPod": {
+    "IntrospectorJobPod": {
       "type": "object",
       "properties": {
         "resources": {

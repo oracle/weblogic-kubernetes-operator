@@ -422,7 +422,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Lifecycle options for the Introspector Job Pod, including Java options, environment variables, "
       + "and resources.")
-  private IntrospectorJob introspector;
+  private Introspector introspector;
 
   /**
    * The configuration for the admin server.
@@ -471,7 +471,7 @@ public class DomainSpec extends BaseConfiguration {
    * Get Admin Server configuration or else create default, if doesn't exist.
    * @return Admin Server configuration.
    */
-  public IntrospectorJob getOrCreateIntrospector() {
+  public Introspector getOrCreateIntrospector() {
     if (introspector != null) {
       return introspector;
     }
@@ -479,8 +479,8 @@ public class DomainSpec extends BaseConfiguration {
     return createIntrospector();
   }
 
-  private IntrospectorJob createIntrospector() {
-    IntrospectorJob newIntrospector = new IntrospectorJob();
+  private Introspector createIntrospector() {
+    Introspector newIntrospector = new Introspector();
     setIntrospector(newIntrospector);
     return newIntrospector;
   }
@@ -1125,11 +1125,11 @@ public class DomainSpec extends BaseConfiguration {
   }
 
 
-  public IntrospectorJob getIntrospector() {
+  public Introspector getIntrospector() {
     return introspector;
   }
 
-  private void setIntrospector(IntrospectorJob introspector) {
+  private void setIntrospector(Introspector introspector) {
     this.introspector = introspector;
   }
 
@@ -1167,9 +1167,9 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public EffectiveIntrospectorJobPodSpec getIntrospectorSpec() {
+    public EffectiveIntrospectorJobPodSpec getIntrospectorJobPodSpec() {
       return Optional.ofNullable(introspector)
-          .map(i -> new EffectiveIntrospectorJobSpecCommonImpl(DomainSpec.this, i))
+          .map(i -> new EffectiveIntrospectorJobPodSpecCommonImpl(DomainSpec.this, i))
           .orElse(null);
     }
 

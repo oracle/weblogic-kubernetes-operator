@@ -271,7 +271,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   public EffectiveIntrospectorJobPodSpec getIntrospectorSpec() {
-    return getEffectiveConfigurationFactory().getIntrospectorSpec();
+    return getEffectiveConfigurationFactory().getIntrospectorJobPodSpec();
   }
 
   public EffectiveAdminServerSpec getAdminServerSpec() {

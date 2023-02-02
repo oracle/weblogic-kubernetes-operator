@@ -52,7 +52,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return new IntrospectorConfiguratorImpl(getOrCreateIntrospector());
   }
 
-  private IntrospectorJob getOrCreateIntrospector() {
+  private Introspector getOrCreateIntrospector() {
     return getDomainSpec().getOrCreateIntrospector();
   }
 
@@ -482,9 +482,9 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class IntrospectorConfiguratorImpl implements IntrospectorConfigurator {
-    private final IntrospectorJob introspector;
+    private final Introspector introspector;
 
-    IntrospectorConfiguratorImpl(IntrospectorJob introspector) {
+    IntrospectorConfiguratorImpl(Introspector introspector) {
       this.introspector = introspector;
     }
 
@@ -513,7 +513,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public IntrospectorJob getIntrospector() {
+    public Introspector getIntrospector() {
       return introspector;
     }
   }

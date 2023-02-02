@@ -22,7 +22,7 @@ public abstract class BaseIntrospectorJobPodConfigurationTestBase {
   private final IntrospectorJobPodConfiguration instance2;
 
   BaseIntrospectorJobPodConfigurationTestBase(IntrospectorJobPodConfiguration instance1,
-                                              IntrospectorJobPodConfiguration instance2) {
+                                           IntrospectorJobPodConfiguration instance2) {
     this.instance1 = instance1;
     this.instance2 = instance2;
   }

@@ -10,15 +10,14 @@ class IntrospectorJobPodTest extends BaseIntrospectorJobPodConfigurationTestBase
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final IntrospectorJob introspector1;
-  private final IntrospectorJob introspector2;
-  private final DomainResource domain = new DomainResource();
+  private final Introspector introspector1;
+  private final Introspector introspector2;
 
   /**
    * Introspector server tests.
    */
   public IntrospectorJobPodTest() {
-    super(new IntrospectorJob(), new IntrospectorJob());
+    super(new Introspector(), new Introspector());
     introspector1 = getInstance1();
     introspector2 = getInstance2();
   }

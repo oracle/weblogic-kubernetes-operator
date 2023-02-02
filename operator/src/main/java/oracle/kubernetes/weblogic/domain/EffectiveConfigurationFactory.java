@@ -17,7 +17,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
  */
 public interface EffectiveConfigurationFactory {
 
-  EffectiveIntrospectorJobPodSpec getIntrospectorSpec();
+  EffectiveIntrospectorJobPodSpec getIntrospectorJobPodSpec();
 
   EffectiveAdminServerSpec getAdminServerSpec();
 

@@ -7,10 +7,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class IntrospectorJob extends IntrospectorJobPodConfiguration {
+public class Introspector extends IntrospectorJobPodConfiguration {
 
-  protected IntrospectorJob getConfiguration() {
-    IntrospectorJob configuration = new IntrospectorJob();
+  protected Introspector getConfiguration() {
+    Introspector configuration = new Introspector();
     configuration.fillInFrom(this);
     return configuration;
   }
@@ -32,7 +32,7 @@ public class IntrospectorJob extends IntrospectorJobPodConfiguration {
       return false;
     }
 
-    if (!(o instanceof IntrospectorJob)) {
+    if (!(o instanceof Introspector)) {
       return false;
     }
 
