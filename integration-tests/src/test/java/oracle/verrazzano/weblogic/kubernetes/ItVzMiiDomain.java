@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -49,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Test to a create model in image domain and start the domain in verrazzano")
 @VzIntegrationTest
+@Tag("v8o")
 class ItVzMiiDomain {
   
   private static String domainNamespace = null;
