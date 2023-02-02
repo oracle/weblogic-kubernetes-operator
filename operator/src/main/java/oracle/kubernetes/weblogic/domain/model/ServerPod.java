@@ -33,7 +33,6 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1VolumeMountBuilder;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.ExcludeFromSchema;
 import oracle.kubernetes.operator.ShutdownType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -52,9 +51,6 @@ class ServerPod extends KubernetesResource {
   private static final Comparator<V1VolumeMount> VOLUME_MOUNT_COMPARATOR =
       Comparator.comparing(V1VolumeMount::getName);
 
-  @ExcludeFromSchema
-  BaseServerPodConfiguration baseServerPodConfiguration = new BaseServerPodConfiguration();
-
   /**
    * Environment variables to pass while starting a server.
    *
@@ -65,7 +61,7 @@ class ServerPod extends KubernetesResource {
       + "More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
       + "See `kubectl explain pods.spec.containers.env`.")
-  private List<V1EnvVar> env = baseServerPodConfiguration.getEnv();
+  private List<V1EnvVar> env = new ArrayList<>();
 
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
@@ -154,7 +150,8 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Memory and CPU minimum requirements and limits for the WebLogic Server instance. "
       + "See `kubectl explain pods.spec.containers.resources`.")
-  private final V1ResourceRequirements resources = baseServerPodConfiguration.getResources();
+  private final V1ResourceRequirements resources =
+      new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
   /**
    * PodSecurityContext holds pod-level security attributes and common container settings. Some

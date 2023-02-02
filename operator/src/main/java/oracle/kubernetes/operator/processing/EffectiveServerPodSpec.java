@@ -13,7 +13,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
 
-public interface EffectiveServerPodSpec extends EffectiveBaseServerPodSpec {
+public interface EffectiveServerPodSpec extends EffectiveIntrospectorPodSpec {
   /**
    * Returns the volume mounts to be defined for this server.
    *

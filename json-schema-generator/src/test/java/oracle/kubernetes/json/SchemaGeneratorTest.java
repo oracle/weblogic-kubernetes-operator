@@ -252,13 +252,6 @@ class SchemaGeneratorTest {
     assertThat(schema, hasJsonPath("$.required", not(arrayContaining("fieldAssociatedWithMountFeature"))));
   }
 
-  @Test
-  void doNotGenerateSchemaForExcludedFields() {
-    Object schema = generator.generate(SimpleObject.class);
-
-    assertThat(schema, hasNoJsonPath("$.properties.fieldExcludedFromSchema"));
-  }
-
   @SuppressWarnings("unused")
   @Test
   void generateSchemaForSimpleObject() {

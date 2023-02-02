@@ -7,10 +7,10 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
 
 /** The effective configuration for the introspector pod. */
-public class EffectiveIntrospectorSpecCommonImpl implements EffectiveBaseServerPodSpec {
+public class EffectiveIntrospectorSpecCommonImpl implements EffectiveIntrospectorPodSpec {
   private final Introspector introspector;
 
   /**

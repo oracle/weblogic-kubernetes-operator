@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.text.ChoiceFormat;
 import java.text.Format;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ResourceBundle;
 import javax.annotation.Nonnull;
@@ -17,6 +18,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.Validator.ALLOWED_INTROSPECTOR_ENV_VARS;
 
 public class DomainValidationMessages {
 
@@ -168,6 +170,7 @@ public class DomainValidationMessages {
   }
 
   public static String introspectorEnvVariableNotSupported(List<String> unsupportedEnvVars) {
-    return getMessage(MessageKeys.UNSUPPORTED_INTRO_ENV_VARIABLES, unsupportedEnvVars);
+    return getMessage(MessageKeys.UNSUPPORTED_INTRO_ENV_VARIABLES, unsupportedEnvVars,
+        Arrays.asList(ALLOWED_INTROSPECTOR_ENV_VARS));
   }
 }

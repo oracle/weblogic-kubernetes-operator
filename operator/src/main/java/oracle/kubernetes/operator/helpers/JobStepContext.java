@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -144,8 +144,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private V1ResourceRequirements getAdminServerResources() {
-    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getServerPodSpec())
-        .map(spec -> spec.getResources()).orElse(null);
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getResources()).orElse(null);
   }
 
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
@@ -157,12 +156,12 @@ public class JobStepContext extends BasePodStepContext {
 
   private List<V1EnvVar> getIntrospectorEnvVariables() {
     return Optional.ofNullable(getDomain().getIntrospectorSpec())
-        .map(EffectiveBaseServerPodSpec::getEnv).orElse(new ArrayList<>());
+        .map(EffectiveIntrospectorPodSpec::getEnv).orElse(new ArrayList<>());
   }
 
   private List<V1EnvVar> getAdminServerEnvVariables() {
-    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getServerPodSpec())
-        .map(spec -> spec.getEnv()).orElse(null);
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvironmentVariables())
+        .orElse(new ArrayList<>());
   }
 
   String getJobName() {

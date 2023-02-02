@@ -18,21 +18,21 @@ public abstract class BaseServerPodConfigurationTestBase {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final BaseServerPodConfiguration instance1;
-  private final BaseServerPodConfiguration instance2;
+  private final IntrospectorPodConfiguration instance1;
+  private final IntrospectorPodConfiguration instance2;
 
-  BaseServerPodConfigurationTestBase(BaseServerPodConfiguration instance1, BaseServerPodConfiguration instance2) {
+  BaseServerPodConfigurationTestBase(IntrospectorPodConfiguration instance1, IntrospectorPodConfiguration instance2) {
     this.instance1 = instance1;
     this.instance2 = instance2;
   }
 
   @SuppressWarnings("unchecked")
-  <T extends BaseServerPodConfiguration> T getInstance1() {
+  <T extends IntrospectorPodConfiguration> T getInstance1() {
     return (T) instance1;
   }
 
   @SuppressWarnings("unchecked")
-  <T extends BaseServerPodConfiguration> T getInstance2() {
+  <T extends IntrospectorPodConfiguration> T getInstance2() {
     return (T) instance2;
   }
 

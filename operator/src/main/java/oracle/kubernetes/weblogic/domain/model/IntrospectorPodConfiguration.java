@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -19,17 +19,17 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
  * cluster.
  *
  */
-public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
+public class IntrospectorPodConfiguration implements EffectiveIntrospectorPodSpec {
 
   @Description("Customization affecting the generation of the Introspector Job Pod.")
-  protected final BaseServerPod serverPod = new BaseServerPod();
+  protected final IntrospectorPod serverPod = new IntrospectorPod();
 
   /**
    * Fills in any undefined settings in this configuration from another configuration.
    *
    * @param other the other configuration which can override this one
    */
-  void fillInFrom(BaseServerPodConfiguration other) {
+  void fillInFrom(IntrospectorPodConfiguration other) {
     if (other == null) {
       return;
     }
@@ -83,7 +83,7 @@ public class BaseServerPodConfiguration implements EffectiveBaseServerPodSpec {
       return false;
     }
 
-    BaseServerPodConfiguration that = (BaseServerPodConfiguration) o;
+    IntrospectorPodConfiguration that = (IntrospectorPodConfiguration) o;
 
     return new EqualsBuilder()
         .append(serverPod, that.serverPod)

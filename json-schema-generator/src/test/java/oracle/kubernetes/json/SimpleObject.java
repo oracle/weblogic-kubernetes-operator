@@ -29,7 +29,4 @@ class SimpleObject {
 
   @Feature("Binding")
   private String fieldAssociatedWithBindingFeature;
-
-  @ExcludeFromSchema
-  private String fieldExcludedFromSchema;
 }

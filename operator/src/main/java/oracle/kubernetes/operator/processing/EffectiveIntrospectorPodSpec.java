@@ -8,9 +8,9 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 
-public interface EffectiveBaseServerPodSpec {
+public interface EffectiveIntrospectorPodSpec {
   /**
-   * Returns the environment variables to be defined for this server or introspector job pod.
+   * Returns the environment variables to be defined for the introspector job pod.
    *
    * @return a list of environment variables
    */

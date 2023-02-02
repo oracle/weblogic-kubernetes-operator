@@ -11,7 +11,7 @@
           "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
@@ -83,22 +83,6 @@
         "sourceModelHome": {
           "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
           "type": "string"
-        }
-      }
-    },
-    "BaseServerPod": {
-      "type": "object",
-      "properties": {
-        "resources": {
-          "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
-          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
-        },
-        "env": {
-          "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
-          "type": "array",
-          "items": {
-            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
-          }
         }
       }
     },
@@ -448,7 +432,7 @@
           "type": "boolean"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
         "managedServers": {
@@ -589,7 +573,23 @@
       "properties": {
         "serverPod": {
           "description": "Customization affecting the generation of the Introspector Job Pod.",
-          "$ref": "#/definitions/BaseServerPod"
+          "$ref": "#/definitions/IntrospectorPod"
+        }
+      }
+    },
+    "IntrospectorPod": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
         }
       }
     },
@@ -605,7 +605,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {

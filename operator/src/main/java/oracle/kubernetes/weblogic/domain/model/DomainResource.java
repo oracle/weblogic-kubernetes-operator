@@ -41,8 +41,8 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
-import oracle.kubernetes.operator.processing.EffectiveBaseServerPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -270,7 +270,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return metadata.getNamespace();
   }
 
-  public EffectiveBaseServerPodSpec getIntrospectorSpec() {
+  public EffectiveIntrospectorPodSpec getIntrospectorSpec() {
     return getEffectiveConfigurationFactory().getIntrospectorSpec();
   }
 
@@ -1117,7 +1117,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private List<V1EnvVar> getIntrospectorEnvVars() {
-      return Optional.ofNullable(getSpec().getIntrospector()).map(BaseServerPodConfiguration::getEnv)
+      return Optional.ofNullable(getSpec().getIntrospector()).map(IntrospectorPodConfiguration::getEnv)
           .orElse(new ArrayList<>());
     }
 

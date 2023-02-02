@@ -44,7 +44,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `monitoringExporter` | [Monitoring Exporter Specification](#monitoring-exporter-specification) | Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter. |
 | `replicas` | integer | The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 1. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
-| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod. |
+| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are AdminOnly, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `webLogicCredentialsSecret` | [Local Object Reference](k8s1.13.5.md#local-object-reference) | Reference to a Kubernetes Secret that contains the user name and password needed to boot a WebLogic Server under the `username` and `password` fields. |
@@ -75,7 +75,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `adminChannelPortForwardingEnabled` | Boolean | When this flag is enabled, the operator updates the domain's WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for each existing admin protocol capable port. This allows external Administration Console and WLST 'T3' access when using the 'kubectl port-forward' pattern. Defaults to true. |
 | `adminService` | [Admin Service](#admin-service) | Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
-| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod. |
+| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 
@@ -109,7 +109,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `serverPod` | [Base Server Pod](#base-server-pod) | Customization affecting the generation of the Introspector Job Pod. |
+| `serverPod` | [Introspector Pod](#introspector-pod) | Customization affecting the generation of the Introspector Job Pod. |
 
 ### Managed Server
 
@@ -117,7 +117,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverName` | string | The name of the Managed Server. This name must match the name of a Managed Server instance or of a dynamic cluster member name from a server template already defined in the WebLogic domain configuration. Required. |
-| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod. |
+| `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of ClusterIP Services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are Always, Never, or IfNeeded. Defaults to IfNeeded. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 
@@ -238,7 +238,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
 
-### Base Server Pod
+### Introspector Pod
 
 | Name | Type | Description |
 | --- | --- | --- |
