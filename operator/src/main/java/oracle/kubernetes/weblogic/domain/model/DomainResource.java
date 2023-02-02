@@ -957,6 +957,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+      verifyIntrospectorEnvVariables();
     }
 
     private List<String> getFatalValidationFailures() {
@@ -1105,6 +1106,25 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
+    }
+
+    private void verifyIntrospectorEnvVariables() {
+      List<String> unsupportedIntroEnvVars = new ArrayList<>();
+      getIntrospectorEnvVars().forEach(e -> addIfUnsupported(unsupportedIntroEnvVars, e));
+      if (!unsupportedIntroEnvVars.isEmpty()) {
+        failures.add(DomainValidationMessages.introspectorEnvVariableNotSupported(unsupportedIntroEnvVars));
+      }
+    }
+
+    private List<V1EnvVar> getIntrospectorEnvVars() {
+      return Optional.ofNullable(getSpec().getIntrospector()).map(BaseServerPodConfiguration::getEnv)
+          .orElse(new ArrayList<>());
+    }
+
+    private void addIfUnsupported(List<String> unsupportedIntroEnvVars, V1EnvVar e) {
+      if (Arrays.stream(ALLOWED_INTROSPECTOR_ENV_VARS).noneMatch(e.getName()::equals)) {
+        unsupportedIntroEnvVars.add(e.getName());
+      }
     }
 
     private void verifyLivenessProbeSuccessThresholdManagedServers() {

@@ -166,4 +166,8 @@ public class DomainValidationMessages {
   public static String missingClusterResource(String clusterName, String namespace) {
     return getMessage(MessageKeys.CLUSTER_RESOURCE_NOT_FOUND, clusterName, namespace);
   }
+
+  public static String introspectorEnvVariableNotSupported(List<String> unsupportedEnvVars) {
+    return getMessage(MessageKeys.UNSUPPORTED_INTRO_ENV_VARIABLES, unsupportedEnvVars);
+  }
 }

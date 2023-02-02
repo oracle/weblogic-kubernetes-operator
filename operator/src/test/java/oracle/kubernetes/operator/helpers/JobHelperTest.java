@@ -560,25 +560,24 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenIntrospectorServerHasEnvironmentItems_introspectorPodStartupWithThem() {
-    configureDomain()
-        .configureIntrospector()
-        .withEnvironmentVariable("item1", "introspector-value1")
-        .withEnvironmentVariable("item2", "introspector-value2");
+  void whenIntrospectorAndAdminHaveJavaEnvironmentVars_introspectorPodStartWithIntrospectorJavaEnvVars() {
+    DomainConfigurator domainConfigurator = configureDomain();
+    domainConfigurator.configureIntrospector()
+        .withEnvironmentVariable("JAVA_OPTION", "introspector-value1")
+        .withEnvironmentVariable("USER_MEM_ARGS", "introspector-value2");
+    domainConfigurator.configureAdminServer()
+        .withEnvironmentVariable("JAVA_OPTION", "admin-value1")
+        .withEnvironmentVariable("USER_MEM_ARGS", "admin-value2")
+        .withEnvironmentVariable("CUSTOM_DOMAIN_NAME", "domain1");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         allOf(
-            hasEnvVar("item1", "introspector-value1"),
-            hasEnvVar("item2", "introspector-value2")));
-
-    assertThat(
-        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        allOf(
-            envVarOEVNContains("item1"),
-            envVarOEVNContains("item2")));
+            hasEnvVar("JAVA_OPTION", "introspector-value1"),
+            hasEnvVar("USER_MEM_ARGS", "introspector-value2"),
+            hasEnvVar("CUSTOM_DOMAIN_NAME", "domain1")));
   }
 
   @Test
@@ -597,27 +596,29 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenDomainAndIntrospectorHaveEnvironmentItems_introspectorPodStartupWithOnlyIntrospectorEnvVars() {
+  void whenDomainAndIntrospectorHaveEnvironmentItems_introspectorPodStartupWithBothEnvVars() {
     configureDomain()
           .withEnvironmentVariable("item1", "domain-value1")
           .withEnvironmentVariable("item2", "domain-value2")
         .configureIntrospector()
-          .withEnvironmentVariable("item2", "introspector-value2")
-          .withEnvironmentVariable("item3", "introspector-value3");
+          .withEnvironmentVariable("JAVA_OPTIONS", "introspector-value2")
+          .withEnvironmentVariable("USER_MEM_ARGS", "introspector-value3");
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
           getMatchingContainerEnv(domainPresenceInfo, jobSpec),
           allOf(
-                hasEnvVar("item2", "introspector-value2"),
-                hasEnvVar("item3", "introspector-value3")));
+                hasEnvVar("item1", "domain-value1"),
+                hasEnvVar("JAVA_OPTIONS", "introspector-value2"),
+                hasEnvVar("USER_MEM_ARGS", "introspector-value3")));
 
     assertThat(
           getMatchingContainerEnv(domainPresenceInfo, jobSpec),
           allOf(
-                envVarOEVNContains("item2"),
-                envVarOEVNContains("item3")));
+                envVarOEVNContains("item1"),
+                envVarOEVNContains("JAVA_OPTIONS"),
+                envVarOEVNContains("USER_MEM_ARGS")));
   }
 
   @Test
