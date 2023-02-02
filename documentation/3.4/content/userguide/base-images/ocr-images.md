@@ -40,6 +40,11 @@ The Oracle Container Registry (OCR) is located at [https://container-registry.or
 
 OCR contains WebLogic Server images, which have a pre-installed Oracle Home with Oracle WebLogic Server and Coherence. OCR, also, contains Fusion Middleware Infrastructure images, which have a pre-installed Oracle Home with Oracle WebLogic Server, Coherence, Fusion Middleware Control, and Java Required Files (JRF). **Note**: Oracle strongly recommends that you use _only_ images with the latest set of recommended patches applied.
 
+{{% notice note %}}
+As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
+Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+{{% /notice %}}
+
 See the following sections for information about OCR images:
 - [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
 - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
