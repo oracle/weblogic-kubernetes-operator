@@ -150,7 +150,7 @@ ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/traefik-/{print $
 
 sudo rm -rf ${PV_ROOT}/*
 
-repoLogin
+#repoLogin
 export OKD=true
 
 echo "${WLSIMG_BUILDER:-docker} info"

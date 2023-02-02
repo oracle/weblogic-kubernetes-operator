@@ -125,7 +125,7 @@ ulimit -a
 echo "Info: hard limits"
 ulimit -aH
 
-repoLogin
+#repoLogin
 
 mkdir $WORKSPACE/jdk
 cd $WORKSPACE/jdk
