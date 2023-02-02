@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
-import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -422,7 +422,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description("Lifecycle options for the Introspector Job Pod, including Java options, environment variables, "
       + "and resources.")
-  private Introspector introspector;
+  private IntrospectorJob introspector;
 
   /**
    * The configuration for the admin server.
@@ -471,7 +471,7 @@ public class DomainSpec extends BaseConfiguration {
    * Get Admin Server configuration or else create default, if doesn't exist.
    * @return Admin Server configuration.
    */
-  public Introspector getOrCreateIntrospector() {
+  public IntrospectorJob getOrCreateIntrospector() {
     if (introspector != null) {
       return introspector;
     }
@@ -479,8 +479,8 @@ public class DomainSpec extends BaseConfiguration {
     return createIntrospector();
   }
 
-  private Introspector createIntrospector() {
-    Introspector newIntrospector = new Introspector();
+  private IntrospectorJob createIntrospector() {
+    IntrospectorJob newIntrospector = new IntrospectorJob();
     setIntrospector(newIntrospector);
     return newIntrospector;
   }
@@ -1125,11 +1125,11 @@ public class DomainSpec extends BaseConfiguration {
   }
 
 
-  public Introspector getIntrospector() {
+  public IntrospectorJob getIntrospector() {
     return introspector;
   }
 
-  private void setIntrospector(Introspector introspector) {
+  private void setIntrospector(IntrospectorJob introspector) {
     this.introspector = introspector;
   }
 
@@ -1167,9 +1167,9 @@ public class DomainSpec extends BaseConfiguration {
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
-    public EffectiveIntrospectorPodSpec getIntrospectorSpec() {
+    public EffectiveIntrospectorJobPodSpec getIntrospectorSpec() {
       return Optional.ofNullable(introspector)
-          .map(i -> new EffectiveIntrospectorSpecCommonImpl(DomainSpec.this, i))
+          .map(i -> new EffectiveIntrospectorJobSpecCommonImpl(DomainSpec.this, i))
           .orElse(null);
     }
 

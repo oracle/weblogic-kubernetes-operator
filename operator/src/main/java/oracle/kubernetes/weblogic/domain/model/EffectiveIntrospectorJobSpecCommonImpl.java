@@ -7,11 +7,11 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 
 /** The effective configuration for the introspector pod. */
-public class EffectiveIntrospectorSpecCommonImpl implements EffectiveIntrospectorPodSpec {
-  private final Introspector introspector;
+public class EffectiveIntrospectorJobSpecCommonImpl implements EffectiveIntrospectorJobPodSpec {
+  private final IntrospectorJob introspector;
 
   /**
    * Constructs an object to return the effective configuration.
@@ -19,12 +19,12 @@ public class EffectiveIntrospectorSpecCommonImpl implements EffectiveIntrospecto
    * @param spec Domain spec
    * @param introspector the server whose configuration is to be returned
    */
-  EffectiveIntrospectorSpecCommonImpl(DomainSpec spec, Introspector introspector) {
+  EffectiveIntrospectorJobSpecCommonImpl(DomainSpec spec, IntrospectorJob introspector) {
     this.introspector = getIntrospectorBaseConfiguration(introspector);
   }
 
-  private Introspector getIntrospectorBaseConfiguration(Introspector introspector) {
-    return introspector != null ? introspector.getConfiguration() : new Introspector();
+  private IntrospectorJob getIntrospectorBaseConfiguration(IntrospectorJob introspector) {
+    return introspector != null ? introspector.getConfiguration() : new IntrospectorJob();
   }
 
   @Override

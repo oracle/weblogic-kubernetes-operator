@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.processing.EffectiveIntrospectorPodSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -156,7 +156,7 @@ public class JobStepContext extends BasePodStepContext {
 
   private List<V1EnvVar> getIntrospectorEnvVariables() {
     return Optional.ofNullable(getDomain().getIntrospectorSpec())
-        .map(EffectiveIntrospectorPodSpec::getEnv).orElse(new ArrayList<>());
+        .map(EffectiveIntrospectorJobPodSpec::getEnv).orElse(new ArrayList<>());
   }
 
   private List<V1EnvVar> getAdminServerEnvVariables() {

@@ -21,7 +21,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
 
-class IntrospectorPod {
+class IntrospectorJobPod {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
       Comparator.comparing(V1EnvVar::getName);
@@ -57,7 +57,7 @@ class IntrospectorPod {
     }
   }
 
-  void fillInFrom(IntrospectorPod serverPod1) {
+  void fillInFrom(IntrospectorJobPod serverPod1) {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
     }
@@ -132,7 +132,7 @@ class IntrospectorPod {
       return false;
     }
 
-    IntrospectorPod that = (IntrospectorPod) o;
+    IntrospectorJobPod that = (IntrospectorJobPod) o;
 
     return new EqualsBuilder()
         .append(

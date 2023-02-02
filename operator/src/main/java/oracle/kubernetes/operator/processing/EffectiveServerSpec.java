@@ -24,8 +24,6 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 public interface EffectiveServerSpec {
 
-  //EffectiveServerPodSpec getServerPodSpec();
-
   String getImage();
 
   String getImagePullPolicy();

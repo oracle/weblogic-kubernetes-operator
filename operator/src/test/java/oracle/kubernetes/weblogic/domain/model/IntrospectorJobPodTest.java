@@ -6,19 +6,19 @@ package oracle.kubernetes.weblogic.domain.model;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
-class IntrospectorTest extends BaseServerPodConfigurationTestBase {
+class IntrospectorJobPodTest extends BaseIntrospectorJobPodConfigurationTestBase {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final Introspector introspector1;
-  private final Introspector introspector2;
+  private final IntrospectorJob introspector1;
+  private final IntrospectorJob introspector2;
   private final DomainResource domain = new DomainResource();
 
   /**
    * Introspector server tests.
    */
-  public IntrospectorTest() {
-    super(new Introspector(), new Introspector());
+  public IntrospectorJobPodTest() {
+    super(new IntrospectorJob(), new IntrospectorJob());
     introspector1 = getInstance1();
     introspector2 = getInstance2();
   }

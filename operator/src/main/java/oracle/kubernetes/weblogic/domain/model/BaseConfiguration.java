@@ -39,7 +39,7 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
 public abstract class BaseConfiguration {
 
   @Description("Customization affecting the generation of Pods for WebLogic Server instances.")
-  protected final ServerPod serverPod = new ServerPod();
+  private final ServerPod serverPod = new ServerPod();
 
   @Description(
       "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.")
@@ -79,6 +79,51 @@ public abstract class BaseConfiguration {
     serverPod.fillInFrom(other.serverPod);
     serverService.fillInFrom(other.serverService);
   }
+
+  private boolean overrideStartPolicyFrom(BaseConfiguration other) {
+    if (other.isStartAdminServerOnly()) {
+      return false;
+    }
+    return getServerStartPolicy() == null || other.isStartNever();
+  }
+
+  boolean isStartAdminServerOnly() {
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.ADMIN_ONLY);
+  }
+
+  private boolean isStartNever() {
+    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
+  }
+
+  @Nullable
+  public List<V1EnvVar> getEnv() {
+    return serverPod.getEnv();
+  }
+
+  public void setEnv(@Nullable List<V1EnvVar> env) {
+    serverPod.setEnv(env);
+  }
+
+  void addEnvironmentVariable(String name, String value) {
+    serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
+  }
+
+  void addEnvironmentVariable(V1EnvVar envVar) {
+    serverPod.addEnvVar(envVar);
+  }
+
+  public abstract ServerStartPolicy getServerStartPolicy();
+
+  /**
+   * Tells the operator whether the customer wants the server to be running. For non-clustered
+   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
+   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
+   * to be started to get to the cluster's replica count..
+   *
+   * @since 2.0
+   * @param serverStartPolicy start policy
+   */
+  public abstract void setServerStartPolicy(ServerStartPolicy serverStartPolicy);
 
   void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
@@ -192,6 +237,10 @@ public abstract class BaseConfiguration {
     serverPod.setHostAliases(hostAliases);
   }
 
+  void addHostAlias(V1HostAlias hostAlias) {
+    serverPod.addHostAlias(hostAlias);
+  }
+
   public V1ResourceRequirements getResources() {
     return serverPod.getResourceRequirements();
   }
@@ -204,7 +253,7 @@ public abstract class BaseConfiguration {
     serverPod.addLimitRequirement(resource, quantity);
   }
 
-  public V1PodSecurityContext getPodSecurityContext() {
+  V1PodSecurityContext getPodSecurityContext() {
     return serverPod.getPodSecurityContext();
   }
 
@@ -212,7 +261,7 @@ public abstract class BaseConfiguration {
     serverPod.setPodSecurityContext(podSecurityContext);
   }
 
-  public V1SecurityContext getContainerSecurityContext() {
+  V1SecurityContext getContainerSecurityContext() {
     return serverPod.getContainerSecurityContext();
   }
 
@@ -252,7 +301,7 @@ public abstract class BaseConfiguration {
     serverPod.addContainer(container);
   }
 
-  public Map<String, String> getPodLabels() {
+  Map<String, String> getPodLabels() {
     return serverPod.getLabels();
   }
 
@@ -260,82 +309,13 @@ public abstract class BaseConfiguration {
     serverPod.addLabel(name, value);
   }
 
-  public Map<String, String> getPodAnnotations() {
+  Map<String, String> getPodAnnotations() {
     return serverPod.getAnnotations();
   }
 
   void addPodAnnotation(String name, String value) {
     serverPod.addAnnotations(name, value);
   }
-
-  public List<V1Container> getInitContainers() {
-    return serverPod.getInitContainers();
-  }
-
-  public List<V1Container> getContainers() {
-    return serverPod.getContainers();
-  }
-
-  public Long getMaximumReadyWaitTimeSeconds() {
-    return serverPod.getMaxReadyWaitTimeSeconds();
-  }
-
-  public Long getMaximumPendingWaitTimeSeconds() {
-    return serverPod.getMaxPendingWaitTimeSeconds();
-  }
-
-  public void setMaxReadyWaitTimeSeconds(long waitTime) {
-    serverPod.setMaxReadyWaitTimeSeconds(waitTime);
-  }
-
-  public void setMaxPendingWaitTimeSeconds(long waitTime) {
-    serverPod.setMaxPendingWaitTimeSeconds(waitTime);
-  }
-
-  private boolean overrideStartPolicyFrom(BaseConfiguration other) {
-    if (other.isStartAdminServerOnly()) {
-      return false;
-    }
-    return getServerStartPolicy() == null || other.isStartNever();
-  }
-
-  boolean isStartAdminServerOnly() {
-    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.ADMIN_ONLY);
-  }
-
-  private boolean isStartNever() {
-    return Objects.equals(getServerStartPolicy(), ServerStartPolicy.NEVER);
-  }
-
-  @Nullable
-  public List<V1EnvVar> getEnv() {
-    return serverPod.getEnv();
-  }
-
-  public void setEnv(@Nullable List<V1EnvVar> env) {
-    serverPod.setEnv(env);
-  }
-
-  void addEnvironmentVariable(String name, String value) {
-    serverPod.addEnvVar(new V1EnvVar().name(name).value(value));
-  }
-
-  void addEnvironmentVariable(V1EnvVar envVar) {
-    serverPod.addEnvVar(envVar);
-  }
-
-  public abstract ServerStartPolicy getServerStartPolicy();
-
-  /**
-   * Tells the operator whether the customer wants the server to be running. For non-clustered
-   * servers - the operator will start it if the policy isn't Never. For clustered servers - the
-   * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
-   * to be started to get to the cluster's replica count..
-   *
-   * @since 2.0
-   * @param serverStartPolicy start policy
-   */
-  public abstract void setServerStartPolicy(ServerStartPolicy serverStartPolicy);
 
   public Boolean isPrecreateServerService() {
     return serverService.isPrecreateService();
@@ -357,6 +337,14 @@ public abstract class BaseConfiguration {
     return serverService.getAnnotations();
   }
 
+  public List<V1Container> getInitContainers() {
+    return serverPod.getInitContainers();
+  }
+
+  public List<V1Container> getContainers() {
+    return serverPod.getContainers();
+  }
+
   void addServiceAnnotation(String name, String value) {
     serverService.addAnnotations(name, value);
   }
@@ -367,6 +355,22 @@ public abstract class BaseConfiguration {
 
   public void setRestartVersion(String restartVersion) {
     this.restartVersion = restartVersion;
+  }
+
+  public Long getMaximumReadyWaitTimeSeconds() {
+    return serverPod.getMaxReadyWaitTimeSeconds();
+  }
+
+  public Long getMaximumPendingWaitTimeSeconds() {
+    return serverPod.getMaxPendingWaitTimeSeconds();
+  }
+
+  public void setMaxReadyWaitTimeSeconds(long waitTime) {
+    serverPod.setMaxReadyWaitTimeSeconds(waitTime);
+  }
+
+  public void setMaxPendingWaitTimeSeconds(long waitTime) {
+    serverPod.setMaxPendingWaitTimeSeconds(waitTime);
   }
 
   @Override

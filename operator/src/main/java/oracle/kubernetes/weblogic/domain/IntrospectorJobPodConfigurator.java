@@ -7,10 +7,10 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 
 /** An interface for an object to configure a introspector job pod in a test. */
 @SuppressWarnings("UnusedReturnValue")
-public interface IntrospectorServerPodConfigurator {
-  IntrospectorServerPodConfigurator withEnvironmentVariable(String name, String value);
+public interface IntrospectorJobPodConfigurator {
+  IntrospectorJobPodConfigurator withEnvironmentVariable(String name, String value);
 
-  IntrospectorServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar);
+  IntrospectorJobPodConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
   /**
    * Add a resource requirement at server level. The requests for memory are measured in bytes. You
@@ -23,7 +23,7 @@ public interface IntrospectorServerPodConfigurator {
    * @param quantity the quantity required for the resource
    * @return this object
    */
-  IntrospectorServerPodConfigurator withRequestRequirement(String resource, String quantity);
+  IntrospectorJobPodConfigurator withRequestRequirement(String resource, String quantity);
 
   /**
    * Add a resource limit at server level, the requests for memory are measured in bytes. You can
@@ -36,5 +36,5 @@ public interface IntrospectorServerPodConfigurator {
    * @param quantity the quantity required for the resource
    * @return this object
    */
-  IntrospectorServerPodConfigurator withLimitRequirement(String resource, String quantity);
+  IntrospectorJobPodConfigurator withLimitRequirement(String resource, String quantity);
 }

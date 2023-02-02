@@ -29,7 +29,7 @@ import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.IntrospectorConfigurator;
-import oracle.kubernetes.weblogic.domain.IntrospectorServerPodConfigurator;
+import oracle.kubernetes.weblogic.domain.IntrospectorJobPodConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
@@ -52,7 +52,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return new IntrospectorConfiguratorImpl(getOrCreateIntrospector());
   }
 
-  private Introspector getOrCreateIntrospector() {
+  private IntrospectorJob getOrCreateIntrospector() {
     return getDomainSpec().getOrCreateIntrospector();
   }
 
@@ -482,38 +482,38 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   class IntrospectorConfiguratorImpl implements IntrospectorConfigurator {
-    private final Introspector introspector;
+    private final IntrospectorJob introspector;
 
-    IntrospectorConfiguratorImpl(Introspector introspector) {
+    IntrospectorConfiguratorImpl(IntrospectorJob introspector) {
       this.introspector = introspector;
     }
 
     @Override
-    public IntrospectorServerPodConfigurator withEnvironmentVariable(String name, String value) {
+    public IntrospectorJobPodConfigurator withEnvironmentVariable(String name, String value) {
       introspector.addEnvironmentVariable(name, value);
       return this;
     }
 
     @Override
-    public IntrospectorServerPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+    public IntrospectorJobPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       introspector.addEnvironmentVariable(envVar);
       return this;
     }
 
     @Override
-    public IntrospectorServerPodConfigurator withRequestRequirement(String resource, String quantity) {
+    public IntrospectorJobPodConfigurator withRequestRequirement(String resource, String quantity) {
       introspector.addRequestRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public IntrospectorServerPodConfigurator withLimitRequirement(String resource, String quantity) {
+    public IntrospectorJobPodConfigurator withLimitRequirement(String resource, String quantity) {
       introspector.addLimitRequirement(resource, quantity);
       return this;
     }
 
     @Override
-    public Introspector getIntrospector() {
+    public IntrospectorJob getIntrospector() {
       return introspector;
     }
   }
