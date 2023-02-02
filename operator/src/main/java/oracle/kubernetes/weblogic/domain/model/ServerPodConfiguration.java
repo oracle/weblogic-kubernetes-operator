@@ -32,7 +32,8 @@ import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAf
  */
 public class ServerPodConfiguration implements EffectiveServerPodSpec {
 
-  @Description("Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.")
+  @Description("Customization affecting the generation of Pods for WebLogic Server instances or "
+      + "the Introspector Job Pod.")
   protected final ServerPod serverPod = new ServerPod();
 
   /**

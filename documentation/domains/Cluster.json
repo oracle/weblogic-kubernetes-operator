@@ -11,7 +11,7 @@
           "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
@@ -187,7 +187,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "clusterService": {
@@ -529,7 +529,7 @@
           "type": "boolean"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "managedServers": {
@@ -686,7 +686,7 @@
           "type": "string"
         },
         "serverPod": {
-          "description": "Customization affecting the generation of Pods for WebLogic Server instances or Introspector Job Pod.",
+          "description": "Customization affecting the generation of Pods for WebLogic Server instances or the Introspector Job Pod.",
           "$ref": "#/definitions/ServerPod"
         },
         "serverStartPolicy": {

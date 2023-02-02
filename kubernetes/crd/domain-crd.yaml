@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fb7b86a48fc285e745057ccf6f0c0b9fd82b8ecb697dc0741724e2fbff0256e9
+    weblogic.sha256: 7cd24fbad7e11311f8d6c746c55d0fb2208db6d83d69cafa775a7bf56be70b6b
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -598,7 +598,7 @@ spec:
                     type: object
                   serverPod:
                     description: Customization affecting the generation of Pods for
-                      WebLogic Server instances or Introspector Job Pod.
+                      WebLogic Server instances or the Introspector Job Pod.
                     properties:
                       nodeName:
                         description: NodeName is a request to schedule this Pod onto
@@ -3682,7 +3682,7 @@ spec:
                 type: boolean
               serverPod:
                 description: Customization affecting the generation of Pods for WebLogic
-                  Server instances or Introspector Job Pod.
+                  Server instances or the Introspector Job Pod.
                 properties:
                   nodeName:
                     description: NodeName is a request to schedule this Pod onto a
@@ -6494,7 +6494,7 @@ spec:
                       type: string
                     serverPod:
                       description: Customization affecting the generation of Pods
-                        for WebLogic Server instances or Introspector Job Pod.
+                        for WebLogic Server instances or the Introspector Job Pod.
                       type: object
                       properties:
                         nodeName:
