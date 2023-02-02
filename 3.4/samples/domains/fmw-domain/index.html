@@ -12,20 +12,20 @@
     <title>FMW Infrastructure domain on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1675105803" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1675105803" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1675356112" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1675356112" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1675105803"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1675356112"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1675105803"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1675105803"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1675356112"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1675356112"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.4";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1675105803"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1675356112"></script>
 
     
   </div>
@@ -3519,7 +3519,8 @@ and WebLogic Server pods and services.</p>
 <p>Make sure the WebLogic Kubernetes Operator is running.</p>
 </li>
 <li>
-<p>The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.</p>
+<p>The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
+<strong>NOTE</strong>: As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.</p>
 
 <div class="notices warning" ><p>This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes <em>only</em> where the environments are not available from the public Internet; they are <strong>not acceptable for production use</strong>. In production, you should always use CPU (patched) images from <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/">OCR</a> or create your images using the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/custom-images/#create-a-custom-base-image">WebLogic Image Tool</a> (WIT) with the <code>--recommendedPatches</code> option. For more guidance, see <a href="https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&amp;id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2">Apply the Latest Patches and Updates</a> in <em>Securing a Production Environment for Oracle WebLogic Server</em>. For details on how to obtain or create the image, refer to <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image">FMW Infrastructure domains</a>.</p>
 </div>
@@ -3699,7 +3700,7 @@ into the target directory, maintaining the original directory hierarchy.</p>
 </tr>
 <tr>
 <td><code>image</code></td>
-<td>FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.    <strong>NOTE</strong>: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes <em>only</em> where the environments are not available from the public Internet; they are <strong>not acceptable for production use</strong>. In production, you should always use CPU (patched) images from <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/">OCR</a> or create your images using the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/custom-images/#create-a-custom-base-image">WebLogic Image Tool</a> (WIT) with the <code>--recommendedPatches</code> option. For details on how to obtain or create the image, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image">FMW Infrastructure domains</a>.</td>
+<td>FMW Infrastructure 12.2.1.4.0 image.  <strong>NOTE</strong>: This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes <em>only</em> where the environments are not available from the public Internet; they are <strong>not acceptable for production use</strong>. In production, you should always use CPU (patched) images from <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/">OCR</a> or create your images using the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/custom-images/#create-a-custom-base-image">WebLogic Image Tool</a> (WIT) with the <code>--recommendedPatches</code> option. For details on how to obtain or create the image, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image">FMW Infrastructure domains</a>.</td>
 <td><code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4</code></td>
 </tr>
 <tr>
@@ -6395,19 +6396,19 @@ home that is generated using the <code>create-domain.sh</code> script. Do this b
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1675105803"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1675356112"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1675105803"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1675105803"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1675356112"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1675356112"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1675105803"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1675356112"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
