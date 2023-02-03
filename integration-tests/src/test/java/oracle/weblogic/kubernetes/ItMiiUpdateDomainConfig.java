@@ -369,7 +369,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(4)
+  @Order(9)
   @DisplayName("Delete SystemResources from the domain")
   void testMiiDeleteSystemResources() {
 
@@ -588,7 +588,7 @@ class ItMiiUpdateDomainConfig {
     verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount);
   }
-  
+
   /**
    * Start a WebLogic domain with a dynamic cluster with the following
    * attributes MaxDynamicClusterSize(5) and MinDynamicClusterSize(1)
@@ -758,7 +758,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(9)
+  @Order(4)
   @DisplayName("Delete SystemResources from the domain")
   void testMiiDeleteSystemResourcesByEmptyConfigMap() {
 
