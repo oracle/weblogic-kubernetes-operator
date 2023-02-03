@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ca69245b1c31c939e82d5c124a4e2e356d86dd7a8ca002bffc0d0fab3a98d45f
+    weblogic.sha256: 5613ace711131620c27c324b75c8994cc7036312a4c9a386492ced0a9b0fb38f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -626,8 +626,11 @@ spec:
                           Pod is created. See `kubectl explain pods.spec.serviceAccountName`.
                         type: string
                       podSecurityContext:
-                        description: Pod-level security attributes. See `kubectl explain
-                          pods.spec.securityContext`.
+                        description: 'Pod-level security attributes. See `kubectl
+                          explain pods.spec.securityContext`. Beginning with operator
+                          version 4.0.5, if no value is specified for this field,
+                          the operator will use default content for the pod-level
+                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
                           runAsUser:
                             type: integer
@@ -805,9 +808,12 @@ spec:
                             type: integer
                         type: object
                       containerSecurityContext:
-                        description: Container-level security attributes. Will override
+                        description: 'Container-level security attributes. Will override
                           any matching Pod-level attributes. See `kubectl explain
-                          pods.spec.containers.securityContext`.
+                          pods.spec.containers.securityContext`. Beginning with operator
+                          version 4.0.5, if no value is specified for this field,
+                          the operator will use default content for container-level
+                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                         properties:
                           privileged:
                             type: boolean
@@ -3478,6 +3484,97 @@ spec:
                 description: Specifies whether the server .out file will be included
                   in the Pod's log. Defaults to true.
                 type: boolean
+              introspector:
+                description: Lifecycle options for the Introspector Job Pod, including
+                  Java options, environment variables, and resources.
+                properties:
+                  serverPod:
+                    description: Customization affecting the generation of the Introspector
+                      Job Pod.
+                    properties:
+                      resources:
+                        description: Memory and CPU minimum requirements and limits
+                          for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.
+                        properties:
+                          requests:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          limits:
+                            additionalProperties:
+                              type: string
+                            type: object
+                        type: object
+                      env:
+                        description: 'A list of environment variables to set in the
+                          Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
+                          See `kubectl explain pods.spec.containers.env`.'
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                    key:
+                                      type: string
+                                  required:
+                                  - key
+                                resourceFieldRef:
+                                  type: object
+                                  properties:
+                                    divisor:
+                                      type: object
+                                      properties:
+                                        number:
+                                          type: integer
+                                        format:
+                                          type: string
+                                          enum:
+                                          - DECIMAL_EXPONENT
+                                          - DECIMAL_SI
+                                          - BINARY_SI
+                                    resource:
+                                      type: string
+                                    containerName:
+                                      type: string
+                                  required:
+                                  - resource
+                                configMapKeyRef:
+                                  type: object
+                                  properties:
+                                    name:
+                                      type: string
+                                    optional:
+                                      type: boolean
+                                    key:
+                                      type: string
+                                  required:
+                                  - key
+                                fieldRef:
+                                  type: object
+                                  properties:
+                                    apiVersion:
+                                      type: string
+                                    fieldPath:
+                                      type: string
+                                  required:
+                                  - fieldPath
+                          required:
+                          - name
+                        type: array
+                    type: object
+                type: object
               clusters:
                 description: References to Cluster resources that describe the lifecycle
                   options for all of the Managed Server members of a WebLogic cluster,
@@ -3619,8 +3716,11 @@ spec:
                       See `kubectl explain pods.spec.serviceAccountName`.
                     type: string
                   podSecurityContext:
-                    description: Pod-level security attributes. See `kubectl explain
-                      pods.spec.securityContext`.
+                    description: 'Pod-level security attributes. See `kubectl explain
+                      pods.spec.securityContext`. Beginning with operator version
+                      4.0.5, if no value is specified for this field, the operator
+                      will use default content for the pod-level `securityContext`.
+                      More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
                       runAsUser:
                         type: integer
@@ -3795,8 +3895,11 @@ spec:
                         type: integer
                     type: object
                   containerSecurityContext:
-                    description: Container-level security attributes. Will override
+                    description: 'Container-level security attributes. Will override
                       any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
+                      Beginning with operator version 4.0.5, if no value is specified
+                      for this field, the operator will use default content for container-level
+                      `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                     properties:
                       privileged:
                         type: boolean
@@ -6434,8 +6537,11 @@ spec:
                             Pod is created. See `kubectl explain pods.spec.serviceAccountName`.
                           type: string
                         podSecurityContext:
-                          description: Pod-level security attributes. See `kubectl
-                            explain pods.spec.securityContext`.
+                          description: 'Pod-level security attributes. See `kubectl
+                            explain pods.spec.securityContext`. Beginning with operator
+                            version 4.0.5, if no value is specified for this field,
+                            the operator will use default content for the pod-level
+                            `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
                             runAsUser:
@@ -6616,9 +6722,12 @@ spec:
                                 check is performed.
                               type: integer
                         containerSecurityContext:
-                          description: Container-level security attributes. Will override
-                            any matching Pod-level attributes. See `kubectl explain
-                            pods.spec.containers.securityContext`.
+                          description: 'Container-level security attributes. Will
+                            override any matching Pod-level attributes. See `kubectl
+                            explain pods.spec.containers.securityContext`. Beginning
+                            with operator version 4.0.5, if no value is specified
+                            for this field, the operator will use default content
+                            for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
                           type: object
                           properties:
                             privileged:

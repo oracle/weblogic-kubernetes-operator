@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -12,6 +12,7 @@ import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -977,6 +978,15 @@ class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("cluster resource", CLUSTER_2, "it is used by", UID2)));
+  }
+
+  @Test
+  void whenUnsupportedIntrospectorEnvVarDefined_reportError() {
+    configureDomain(domain).configureIntrospector()
+        .withEnvironmentVariable(new V1EnvVar().name("Test1").value("Test1"))
+        .withEnvironmentVariable(new V1EnvVar().name("Test2").value("Test2"));
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Unsupported", "environment variable", "Test1", "Test2", "defined")));
   }
 
   @SafeVarargs

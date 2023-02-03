@@ -100,9 +100,13 @@ public abstract class BasePodStepContext extends StepContextBase {
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
         .env(getEnvironmentVariables())
-        .resources(getServerSpec().getResources())
+        .resources(getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
+
+  protected abstract V1ResourceRequirements getResources();
+
+  protected abstract List<V1EnvVar> getServerPodEnvironmentVariables();
 
   /**
    * Return a list of environment variables to be set up in the pod. This method does some
@@ -141,6 +145,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
+            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -175,7 +180,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected V1ResourceRequirements createResources() {
-    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resources = getResources();
     V1ResourceRequirements resourceRequirements = null;
     if (!resources.getLimits().isEmpty()) {
       resourceRequirements = new V1ResourceRequirements()
