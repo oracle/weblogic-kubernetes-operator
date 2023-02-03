@@ -369,7 +369,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(9)
+  @Order(5)
   @DisplayName("Delete SystemResources from the domain")
   void testMiiDeleteSystemResources() {
 
@@ -436,7 +436,7 @@ class ItMiiUpdateDomainConfig {
    * Verify JMS Server logs are written on PV.
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Add new JDBC/JMS SystemResources to the domain")
   void testMiiAddSystemResources() {
 
@@ -508,7 +508,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from the new cluster are running.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   void testMiiAddDynamicCluster() {
 
@@ -582,7 +582,7 @@ class ItMiiUpdateDomainConfig {
    * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   void testMiiUpdateWebLogicCredential() {
     verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
@@ -604,7 +604,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure JMS Connections and messages are distributed across 4 servers.
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   void testMiiUpdateDynamicClusterSize() {
 
