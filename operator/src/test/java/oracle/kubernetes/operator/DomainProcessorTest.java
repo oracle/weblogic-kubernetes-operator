@@ -57,6 +57,7 @@ import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
+import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -84,14 +85,18 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
+import oracle.kubernetes.weblogic.domain.model.ClusterConditionType;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
+import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -176,6 +181,7 @@ class DomainProcessorTest {
   private static final String CLUSTER = "cluster";
   private static final String CLUSTER2 = "cluster-2";
   private static final String CLUSTER3 = "Cluster-3";
+  private static final String CLUSTER4 = "Cluster-4";
   private static final String INDEPENDENT_SERVER = "server-1";
   private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
@@ -1172,8 +1178,8 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenClusterAdded_reportClusterCreatedEvent() {
-    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+  void whenMakeRightClusterAdded_reportClusterCreatedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
 
     processor.createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster).execute();
     logRecords.clear();
@@ -1182,23 +1188,110 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenClusterDeleted_reportClusterDeletedEvent() {
-    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+  void whenMakeRightClusterAddedOnExistingCluster_dontReportClusterCreatedEvent() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster).execute();
+    logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_CREATED_EVENT)));
+  }
+
+  @Test
+  void whenMakeRightClusterDeleted_reportClusterDeletedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster);
+    processor.registerClusterPresenceInfo(info);
 
     processor.createMakeRightOperationForClusterEvent(CLUSTER_DELETED, cluster).execute();
     logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
 
     assertThat(testSupport, hasEvent(CLUSTER_DELETED_EVENT));
   }
 
-  @Test
-  void whenClusterModified_reportClusterChangedEvent() {
-    ClusterResource cluster = createClusterAlone(CLUSTER, NS);
+  @NotNull
+  private ClusterPresenceInfo getInfo(ClusterResource cluster) {
+    return new ClusterPresenceInfo(NS, cluster);
+  }
 
-    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+  @Test
+  void whenMakeRightClusterDeletedOnNonExistingCluster_dontReportClusterDeletedEvent() {
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster);
+    processor.unregisterClusterPresenceInfo(info);
+
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_DELETED, cluster).execute();
     logRecords.clear();
 
+    assertThat(testSupport, not(hasEvent(CLUSTER_DELETED_EVENT)));
+  }
+
+  @Test
+  void whenMakeRightClusterModified_reportClusterChangedEvent() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    cluster.getMetadata().setGeneration(1234L);
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+    logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
+
     assertThat(testSupport, hasEvent(CLUSTER_CHANGED_EVENT));
+  }
+
+  @Test
+  void whenMakeRightClusterModifiedWithNoRealChange_dontReportClusterChangedEvent() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+    logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_CHANGED_EVENT)));
+  }
+
+  @Test
+  void whenMakeRightClusterModifiedWithOnlyStatusChanges_dontReportClusterChangedEvent() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    ClusterPresenceInfo info = getInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    cluster.setStatus(new ClusterStatus().addCondition(
+        new ClusterCondition(ClusterConditionType.COMPLETED).withStatus(ClusterCondition.TRUE)));
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+    logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_CHANGED_EVENT)));
+  }
+
+  @Test
+  void whenMakeRightClusterModifiedWithOlderClusterObject_dontReportClusterChangedEvent() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    OffsetDateTime timeNow = OffsetDateTime.now();
+    cluster1.getMetadata().setCreationTimestamp(timeNow);
+    ClusterPresenceInfo info = getInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+
+    ClusterResource cluster = createClusterAlone(CLUSTER4, NS);
+    cluster.getMetadata().creationTimestamp(timeNow.minusSeconds(10L));
+    processor.createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster).execute();
+    logRecords.clear();
+    processor.unregisterClusterPresenceInfo(info);
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_CHANGED_EVENT)));
   }
 
   private ClusterResource createClusterAlone(String clusterName, String ns) {

@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
+import oracle.weblogic.kubernetes.utils.K8sEvents;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -399,6 +400,12 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace3, domainUid,
             DOMAIN_AVAILABLE, "Normal", timestamp);
     logger.info("verify the Cluster_Available event is generated");
+    checkEvent(opNamespace, domainNamespace3, domainUid,
+        CLUSTER_CHANGED, "Normal", timestamp);
+    assertEquals(1, getOpGeneratedEventCount(domainNamespace3, domainUid,
+        CLUSTER_CHANGED, timestamp2));
+    assertEquals(1, K8sEvents.getOpGeneratedEventCountForResource(domainNamespace3, domainUid, cluster2Name,
+        CLUSTER_CHANGED, timestamp));
     checkEvent(opNamespace, domainNamespace3, domainUid,
         CLUSTER_AVAILABLE, "Normal", timestamp);
     logger.info("verify the Completed event is generated");
