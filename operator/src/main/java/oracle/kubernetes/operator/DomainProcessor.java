@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -33,6 +33,18 @@ public interface DomainProcessor {
    * @return Make-right operation
    */
   MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo);
+
+  /**
+   * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
+   * or not.
+   *
+   * @param clusterEvent the event that needs to be generated
+   * @param cluster the cluster resource that the event is associated with
+   * @param domainUid the UID of the domain that the cluster is referenced by
+   * @return Make-right operation
+   */
+  MakeRightClusterOperation createMakeRightOperationForClusterEvent(
+      EventItem clusterEvent, ClusterResource cluster, String domainUid);
 
   /**
    * Ensures that a cluster event is generated for a cluster resource no matter whether it is referenced by a domain
