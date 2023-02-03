@@ -160,7 +160,10 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`.")
+  @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
+      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "content for the pod-level `securityContext`. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
 
   /**
@@ -196,9 +199,11 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description(
-      "Container-level security attributes. Will override any matching Pod-level attributes. "
-          + "See `kubectl explain pods.spec.containers.securityContext`.")
+  @Description("Container-level security attributes. Will override any matching Pod-level attributes. "
+      + "See `kubectl explain pods.spec.containers.securityContext`. "
+      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "content for container-level `securityContext`. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   public List<V1Volume> getVolumes() {

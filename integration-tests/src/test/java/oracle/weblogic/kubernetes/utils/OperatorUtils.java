@@ -34,6 +34,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsRea
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -492,6 +493,7 @@ public class OperatorUtils {
     if (webhookOnly) {
       logger.info("Wait for the operator webhook pod is ready in namespace {0}", opNamespace);
       testUntil(
+          withLongRetryPolicy,
           assertDoesNotThrow(() -> operatorWebhookIsReady(opNamespace),
               "operatorWebhookIsReady failed with ApiException"),
           logger,
@@ -500,6 +502,7 @@ public class OperatorUtils {
     } else {
       logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
       testUntil(
+          withLongRetryPolicy,
           assertDoesNotThrow(() -> operatorIsReady(opNamespace),
               "operatorIsReady failed with ApiException"),
           logger,
@@ -510,6 +513,7 @@ public class OperatorUtils {
     if (withRestAPI) {
       logger.info("Wait for the operator external service in namespace {0}", opNamespace);
       testUntil(
+          withLongRetryPolicy,
           assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
             "operator external service is not running"),
           logger,

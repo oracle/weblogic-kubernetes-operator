@@ -5,7 +5,7 @@
 pipeline {
     agent { label 'VM.Standard2.8' }
     options {
-        timeout(time: 1200, unit: 'MINUTES')
+        timeout(time: 1800, unit: 'MINUTES')
         disableConcurrentBuilds()
     }
 
@@ -17,8 +17,6 @@ pipeline {
     environment {
         github_url = "${env.GIT_URL}"
         github_creds = 'ecnj_github'
-        dockerhub_username_creds = 'docker-username'
-        dockerhub_password_creds = 'docker-password'
         ocr_username_creds = 'OCR username'
         ocr_password_creds = 'OCR Password'
         ocir_registry_creds = 'ocir-server'
@@ -46,7 +44,7 @@ pipeline {
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
-        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'mtcluster' : 'mkcluster'}"
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'parcluster' : 'seqcluster'}"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
         availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
@@ -62,17 +60,17 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.24.1'
+               defaultValue: '1.25.4'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaa6med26u7lkdeyz6mjwaepakor5bp2y24lwr4x6adn6izidipbbsa'
-                       //8.0defaultValue: 'ocid1.image.oc1.phx.aaaaaaaan7lpv4nxnx4r772csco2nzre3owzqdebf75ty6mlbp562vn6c45q'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaancucg25pze6m52agxwxmmfszvsdnhp3kvim53pts2tw6mik4xtha'
+                       //8.0defaultValue: 'ocid1.image.oc1.phx.aaaaaaaancq36l7q4fqwznqhnp626wuekkq7twk2em5ysyd65bd4xho72tmq'
             
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.24.8'
+                       defaultValue: '1.25.4'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -80,7 +78,7 @@ pipeline {
         )
         string(name: 'ISTIO_VERSION',
                description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
-               defaultValue: '1.10.4'
+               defaultValue: '1.16.1'
         )
 
         string(name: 'NUMBER_OF_THREADS',
@@ -141,11 +139,11 @@ pipeline {
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
-               defaultValue: '6.38.6'
+               defaultValue: '6.44.11'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -228,7 +226,7 @@ pipeline {
 
                         export OKE_CLUSTER="true"
                         if [ ${MAVEN_PROFILE_NAME} = 'oke-parallel' ]; then
-                           VCN_CIDR_PREFIX="10.1"
+                           VCN_CIDR_PREFIX="10.4"
                         else
                            VCN_CIDR_PREFIX="10.3"
                         fi
@@ -276,12 +274,7 @@ EOF
                 }
 
                 stage('Build WebLogic Kubernetes Operator') {
-                    environment {
-                        DOCKERHUB_USERNAME = credentials("${dockerhub_username_creds}")
-                        DOCKERHUB_PASSWORD = credentials("${dockerhub_password_creds}")
-                    }
                     steps {
-                        sh 'echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin'
                         sh "mvn -DtrimStackTrace=false clean install"
                     }
                 }
@@ -438,8 +431,6 @@ EOF
                         TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
                         TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
-                        DOCKER_USERNAME = credentials("${dockerhub_username_creds}")
-                        DOCKER_PASSWORD = credentials("${dockerhub_password_creds}")
                         compartment_ocid = credentials("${weblogick8s_qa_compartment_ocid}")
                         DOMAIN_IMAGES_REPO = "phx.ocir.io"
                         BASE_IMAGES_REPO = "phx.ocir.io"

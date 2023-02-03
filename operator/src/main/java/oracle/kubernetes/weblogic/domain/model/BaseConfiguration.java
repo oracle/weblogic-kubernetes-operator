@@ -29,6 +29,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultContainerSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultPodSecurityContext;
 
 /**
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
@@ -254,7 +256,7 @@ public abstract class BaseConfiguration {
   }
 
   V1PodSecurityContext getPodSecurityContext() {
-    return serverPod.getPodSecurityContext();
+    return Optional.ofNullable(serverPod.getPodSecurityContext()).orElse(getDefaultPodSecurityContext());
   }
 
   void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
@@ -262,7 +264,7 @@ public abstract class BaseConfiguration {
   }
 
   V1SecurityContext getContainerSecurityContext() {
-    return serverPod.getContainerSecurityContext();
+    return Optional.ofNullable(serverPod.getContainerSecurityContext()).orElse(getDefaultContainerSecurityContext());
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {

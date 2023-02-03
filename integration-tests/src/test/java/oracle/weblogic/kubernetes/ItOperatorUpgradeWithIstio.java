@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,7 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Operator upgrade tests with Istio")
 @IntegrationTest
-@Tag("oke-sequential")
 @Tag("kind-sequential")
 class ItOperatorUpgradeWithIstio {
 

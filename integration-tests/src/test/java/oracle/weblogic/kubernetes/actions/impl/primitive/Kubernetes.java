@@ -624,10 +624,12 @@ public class Kubernetes {
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null && pod.getMetadata() != null) {
       return pod.getMetadata().getCreationTimestamp();
+    } else if (pod == null) {
+      getLogger().info("Pod {0} does not exist in namespace {1}", podName, namespace);
     } else {
-      getLogger().info("Pod doesn't exist or pod metadata is null");
-      return null;
+      getLogger().info("The metadata of Pod {0} in namespace {1} is null", podName, namespace);
     }
+    return null;
   }
 
   /**
