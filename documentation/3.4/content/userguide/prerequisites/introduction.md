@@ -7,7 +7,7 @@ weight: 2
 
 For the current production release {{< latestVersion >}}:
 
-* Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with `kubectl version`).
+* Kubernetes 1.19.15+, 1.20.11+, 1.21.5+, 1.22.5+, 1.23.4+, and 1.24.0+ (check with `kubectl version`). **NOTE**: Kubernetes 1.25 and 1.26 will be supported _only_ by 4.0 releases.
 * Flannel networking v0.13.0-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
  *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 19.03.1+ (check with `docker version`) *or* CRI-O 1.20.2+ (check with `crictl version | grep RuntimeVersion`).
@@ -16,6 +16,10 @@ For the current production release {{< latestVersion >}}:
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
    * The existing WebLogic Server General Availability image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`,
    has this patch applied.
+   * **NOTE**:
+
+      * As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
+      * Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
    {{% notice warning %}}
    The sample image names throughout the documentation are General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_. For details on how to obtain or create the image, see [WebLogic images]({{< relref "/userguide/base-images/_index.md" >}}).
    {{% /notice %}}

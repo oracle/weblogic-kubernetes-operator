@@ -57,6 +57,7 @@ public class FluentdHelper {
     fluentdContainer.setImage(fluentdSpecification.getImage());
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
+    fluentdContainer.setSecurityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
 
     if (fluentdSpecification.getContainerCommand() != null) {
       fluentdContainer.setCommand(fluentdSpecification.getContainerCommand());
