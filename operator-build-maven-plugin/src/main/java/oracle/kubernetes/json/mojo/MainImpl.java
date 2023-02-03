@@ -55,6 +55,7 @@ public class MainImpl implements Main {
   public Map<String, Object> generateSchema(String className, File outputFile)
       throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
+    generator.initializeDefinedObjects();
     try (FileWriter writer = new FileWriter(outputFile)) {
       Class<?> theClass = classLoader.loadClass(className);
       Map<String, Object> schema = generator.generate(theClass);

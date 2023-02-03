@@ -57,7 +57,7 @@ public class SchemaGenerator {
   private final Map<Class<?>, String> references = new HashMap<>();
 
   // A map of found classes to their definitions or the constant EXTERNAL_CLASS.
-  private final Map<Class<?>, Object> definedObjects = new HashMap<>();
+  public Map<Class<?>, Object> definedObjects = new HashMap<>();
 
   // a map of external class names to the external schema that defines them
   private final Map<String, String> schemaUrls = new HashMap<>();
@@ -173,6 +173,10 @@ public class SchemaGenerator {
    */
   public void addPackageToSuppressDescriptions(String packageName) {
     this.suppressDescriptionForPackages.add(packageName);
+  }
+
+  public void initializeDefinedObjects() {
+    definedObjects = new HashMap<>();
   }
 
   /**
