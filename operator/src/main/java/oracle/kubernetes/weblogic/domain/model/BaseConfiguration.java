@@ -133,7 +133,7 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
   }
 
-  public ProbeTuning getLivenessProbe() {
+  ProbeTuning getLivenessProbe() {
     return serverPod.getLivenessProbeTuning();
   }
 
@@ -145,11 +145,11 @@ public abstract class BaseConfiguration {
     serverPod.setReadinessProbeThresholds(successThreshold, failureThreshold);
   }
 
-  public ProbeTuning getReadinessProbe() {
+  ProbeTuning getReadinessProbe() {
     return serverPod.getReadinessProbeTuning();
   }
 
-  public Shutdown getShutdown() {
+  Shutdown getShutdown() {
     return serverPod.getShutdown();
   }
 
@@ -357,11 +357,11 @@ public abstract class BaseConfiguration {
     this.restartVersion = restartVersion;
   }
 
-  public Long getMaximumReadyWaitTimeSeconds() {
+  Long getMaximumReadyWaitTimeSeconds() {
     return serverPod.getMaxReadyWaitTimeSeconds();
   }
 
-  public Long getMaximumPendingWaitTimeSeconds() {
+  Long getMaximumPendingWaitTimeSeconds() {
     return serverPod.getMaxPendingWaitTimeSeconds();
   }
 
