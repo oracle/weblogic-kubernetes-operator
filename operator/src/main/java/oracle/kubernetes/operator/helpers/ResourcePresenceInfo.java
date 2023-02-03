@@ -1,8 +1,13 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+
+import java.util.Optional;
+
+import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.work.PacketComponent;
 
 /**
@@ -31,6 +36,10 @@ public abstract class ResourcePresenceInfo implements PacketComponent {
   }
 
   public abstract String getResourceName();
+
+  Long getGeneration(KubernetesObject resource) {
+    return Optional.ofNullable(resource).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getGeneration).orElse(0L);
+  }
 
   @Override
   public String toString() {
