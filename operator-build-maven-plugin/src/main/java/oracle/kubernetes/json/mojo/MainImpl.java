@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
@@ -55,6 +55,7 @@ public class MainImpl implements Main {
   public Map<String, Object> generateSchema(String className, File outputFile)
       throws MojoExecutionException {
     outputFile.getParentFile().mkdirs();
+    generator.initializeDefinedObjects();
     try (FileWriter writer = new FileWriter(outputFile)) {
       Class<?> theClass = classLoader.loadClass(className);
       Map<String, Object> schema = generator.generate(theClass);

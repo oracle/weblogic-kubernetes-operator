@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -416,6 +417,14 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * The configuration for the introspector job pod.
+   *
+   */
+  @Description("Lifecycle options for the Introspector Job Pod, including Java options, environment variables, "
+      + "and resources.")
+  private Introspector introspector;
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -456,6 +465,24 @@ public class DomainSpec extends BaseConfiguration {
   public DomainSpec withCluster(V1LocalObjectReference reference) {
     clusters.add(reference);
     return this;
+  }
+
+  /**
+   * Get Admin Server configuration or else create default, if doesn't exist.
+   * @return Admin Server configuration.
+   */
+  public Introspector getOrCreateIntrospector() {
+    if (introspector != null) {
+      return introspector;
+    }
+
+    return createIntrospector();
+  }
+
+  private Introspector createIntrospector() {
+    Introspector newIntrospector = new Introspector();
+    setIntrospector(newIntrospector);
+    return newIntrospector;
   }
 
   /**
@@ -1097,6 +1124,15 @@ public class DomainSpec extends BaseConfiguration {
     this.maxClusterUnavailable = maxClusterUnavailable;
   }
 
+
+  public Introspector getIntrospector() {
+    return introspector;
+  }
+
+  private void setIntrospector(Introspector introspector) {
+    this.introspector = introspector;
+  }
+
   public AdminServer getAdminServer() {
     return adminServer;
   }
@@ -1130,6 +1166,13 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
+    @Override
+    public EffectiveIntrospectorJobPodSpec getIntrospectorJobPodSpec() {
+      return Optional.ofNullable(introspector)
+          .map(i -> new EffectiveIntrospectorJobPodSpecCommonImpl(DomainSpec.this, i))
+          .orElse(null);
+    }
+
     @Override
     public EffectiveAdminServerSpec getAdminServerSpec() {
       return new EffectiveAdminServerSpecCommonImpl(DomainSpec.this, adminServer);

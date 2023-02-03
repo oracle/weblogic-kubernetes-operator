@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -85,6 +85,13 @@ public abstract class DomainConfigurator {
     getDomainSpec().setModelHome(modelHome);
     return this;
   }
+
+  /**
+   * Configure introspector.
+   *
+   * @return An IntrospectorConfigurator object for configuring an admin server
+   */
+  public abstract IntrospectorConfigurator configureIntrospector();
 
   /**
    * Configure admin server.
