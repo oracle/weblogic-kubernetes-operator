@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # HOW TO BUILD THIS IMAGE
@@ -9,7 +9,7 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.1/afdd2e245b014143b62ccb916125e3ce/10/GPL/openjdk-19.0.1_linux-x64_bin.tar.gz"
+ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
