@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -42,6 +42,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
 import oracle.kubernetes.operator.processing.EffectiveClusterSpec;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -267,6 +268,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   public String getNamespace() {
     return metadata.getNamespace();
+  }
+
+  public EffectiveIntrospectorJobPodSpec getIntrospectorSpec() {
+    return getEffectiveConfigurationFactory().getIntrospectorJobPodSpec();
   }
 
   public EffectiveAdminServerSpec getAdminServerSpec() {
@@ -952,6 +957,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+      verifyIntrospectorEnvVariables();
     }
 
     private List<String> getFatalValidationFailures() {
@@ -1100,6 +1106,25 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
+    }
+
+    private void verifyIntrospectorEnvVariables() {
+      List<String> unsupportedIntroEnvVars = new ArrayList<>();
+      getIntrospectorEnvVars().forEach(e -> addIfUnsupported(unsupportedIntroEnvVars, e));
+      if (!unsupportedIntroEnvVars.isEmpty()) {
+        failures.add(DomainValidationMessages.introspectorEnvVariableNotSupported(unsupportedIntroEnvVars));
+      }
+    }
+
+    private List<V1EnvVar> getIntrospectorEnvVars() {
+      return Optional.ofNullable(getSpec().getIntrospector()).map(IntrospectorJobPodConfiguration::getEnv)
+          .orElse(new ArrayList<>());
+    }
+
+    private void addIfUnsupported(List<String> unsupportedIntroEnvVars, V1EnvVar e) {
+      if (Arrays.stream(ALLOWED_INTROSPECTOR_ENV_VARS).noneMatch(e.getName()::equals)) {
+        unsupportedIntroEnvVars.add(e.getName());
+      }
     }
 
     private void verifyLivenessProbeSuccessThresholdManagedServers() {

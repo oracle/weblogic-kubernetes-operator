@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -57,7 +57,7 @@ public class SchemaGenerator {
   private final Map<Class<?>, String> references = new HashMap<>();
 
   // A map of found classes to their definitions or the constant EXTERNAL_CLASS.
-  private final Map<Class<?>, Object> definedObjects = new HashMap<>();
+  private Map<Class<?>, Object> definedObjects = new HashMap<>();
 
   // a map of external class names to the external schema that defines them
   private final Map<String, String> schemaUrls = new HashMap<>();
@@ -173,6 +173,10 @@ public class SchemaGenerator {
    */
   public void addPackageToSuppressDescriptions(String packageName) {
     this.suppressDescriptionForPackages.add(packageName);
+  }
+
+  public void initializeDefinedObjects() {
+    definedObjects = new HashMap<>();
   }
 
   /**
