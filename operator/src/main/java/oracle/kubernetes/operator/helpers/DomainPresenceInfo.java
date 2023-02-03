@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -134,10 +133,6 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    */
   public boolean isDomainGenerationChanged(DomainPresenceInfo cachedInfo) {
     return getGeneration(getDomain()).compareTo(getGeneration(cachedInfo.getDomain())) > 0;
-  }
-
-  private Long getGeneration(KubernetesObject resource) {
-    return Optional.ofNullable(resource).map(KubernetesObject::getMetadata).map(V1ObjectMeta::getGeneration).orElse(0L);
   }
 
   /**

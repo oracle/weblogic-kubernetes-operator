@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -39,7 +39,7 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
 
   /**
    * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the
-   * DomainPresenceInfo.ServerStartupInfo value has not yet been constructed..
+   * DomainPresenceInfo.ServerStartupInfo value has not yet been constructed.
    */
   default MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
     return this;
@@ -51,11 +51,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    + @return the updated factory
    */
   MakeRightDomainOperation interrupt();
-
-  /**
-   * Returns true if this operation was started by an event.
-   */
-  boolean wasStartedFromEvent();
 
   boolean isDeleting();
 
