@@ -36,6 +36,8 @@ public abstract class Validator {
   static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
   static final String MS_SPEC_PREFIX = "spec.managedServers";
   static final String SERVER_POD_CONTAINERS = "].serverPod.containers";
+  static final String[] ALLOWED_INTROSPECTOR_ENV_VARS = {"JAVA_OPTIONS", "USER_MEM_ARGS",
+      "NODEMGR_JAVA_OPTIONS", "NODEMGR_MEM_ARGS"};
   final List<String> failures = new ArrayList<>();
 
   void addClusterInvalidMountPaths(ClusterResource cluster) {

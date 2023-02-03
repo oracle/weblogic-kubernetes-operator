@@ -90,6 +90,8 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
+import oracle.verrazzano.weblogic.ApplicationConfiguration;
+import oracle.verrazzano.weblogic.Component;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
@@ -120,12 +122,19 @@ public class Kubernetes {
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
   private static final int GRACE_PERIOD = 0;
+  private static final String COMPONENT_VERSION = "v1alpha2";
+  private static final String COMPONENT_GROUP = "core.oam.dev";
+  private static final String COMPONENT_PLURAL = "components";
+  private static final String APPLICATION_VERSION = "v1alpha2";
+  private static final String APPLICATION_GROUP = "core.oam.dev";
+  private static final String APPLICATION_PLURAL = "applicationconfigurations";   
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
+  private static CustomObjectsApi vzCustomObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
   private static AdmissionregistrationV1Api admissionregistrationApi = null;
   private static DeleteOptions deleteOptions = null;
@@ -158,6 +167,7 @@ public class Kubernetes {
       coreV1Api = new CoreV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
+      vzCustomObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       admissionregistrationApi = new AdmissionregistrationV1Api();
       initializeGenericKubernetesApiClients();
@@ -1288,6 +1298,97 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * Create a Verrazzano Component resource.
+   *
+   * @param component Component custom resource model object
+   * @param comVersion custom resource's version
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createComponent(Component component, String... comVersion) throws ApiException {
+    String componentVersion = (comVersion.length == 0) ? COMPONENT_VERSION : comVersion[0];
+
+    if (component == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'component' cannot be null when calling createComponent()");
+    }
+
+    if (component.metadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'component' cannot be null when calling createComponent()");
+    }
+
+    if (component.metadata().getNamespace() == null) {
+      throw new IllegalArgumentException(
+          "'namespace' field in the metadata cannot be null when calling createComponent()");
+    }
+
+    String namespace = component.metadata().getNamespace();
+
+    JsonElement json = convertToJson(component);
+
+    Object response;
+    try {
+      response = vzCustomObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
+          componentVersion, //custom resource's version
+          namespace, // custom resource's namespace
+          COMPONENT_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null, // pretty print output
+          null, // dry run
+          null // field manager
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a Verrazzano ApplicationConfiguration Custom Resource.
+   *
+   * @param application ApplicationConfiguration custom resource model object
+   * @param appVersion custom resource's version
+   * @return true on success, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean createApplication(ApplicationConfiguration application, String... appVersion) 
+      throws ApiException {
+    String applicationVersion = (appVersion.length == 0) ? APPLICATION_VERSION : appVersion[0];
+
+    if (application == null) {
+      throw new IllegalArgumentException(
+          "Parameter 'application' cannot be null when calling createApplication()");
+    }
+
+    if (application.metadata() == null) {
+      throw new IllegalArgumentException(
+          "'metadata' field of the parameter 'application' cannot be null when calling createApplication()");
+    }
+    String namespace = application.metadata().getNamespace();
+    JsonElement json = convertToJson(application);
+    Object response;    
+    try {
+      response = vzCustomObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
+          applicationVersion, //custom resource's version
+          namespace, // custom resource's namespace
+          APPLICATION_PLURAL, // custom resource's plural name
+          json, // JSON schema of the Resource to create
+          null, // pretty print output
+          null, // dry run
+          null // field manager
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+  
   /**
    * Converts a Java Object to a JSON element.
    *

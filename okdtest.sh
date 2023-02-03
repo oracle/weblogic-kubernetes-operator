@@ -135,6 +135,7 @@ ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/nginx-/{print $1}
 ${KUBERNETES_CLI} get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs ${KUBERNETES_CLI} delete clusterrolebindings || true
 
 sudo rm -rf ${PV_ROOT}/*
+
 export OKD=true
 echo "${WLSIMG_BUILDER:-docker} info"
 ${WLSIMG_BUILDER:-docker} info

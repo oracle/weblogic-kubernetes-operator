@@ -31,6 +31,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
+| `introspector` | [Introspector](#introspector) | Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources. |
 | `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`. |
 | `livenessProbeCustomScript` | string | Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored. |
 | `logHome` | string | The directory in a server's container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.See also `domains.spec.logHomeLayout`. |
@@ -104,6 +105,12 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
 | `watchIntrospectorLogs` | Boolean | Fluentd will watch introspector logs |
 
+### Introspector
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `serverPod` | [Introspector Job Pod](#introspector-job-pod) | Customization affecting the generation of the Introspector Job Pod. |
+
 ### Managed Server
 
 | Name | Type | Description |
@@ -131,7 +138,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `affinity` | [Affinity](k8s1.13.5.md#affinity) | The Pod's scheduling constraints. More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/.  See `kubectl explain pods.spec.affinity`. |
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `containers` | Array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
-| `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
+| `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
 | `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
 | `hostAliases` | Array of [Host Alias](k8s1.13.5.md#host-alias) | HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file if specified. This is only valid for non-hostNetwork pods. |
 | `initContainers` | Array of [Container](k8s1.13.5.md#container) | Initialization containers to be included in the server Pod. See `kubectl explain pods.spec.initContainers`. |
@@ -141,7 +148,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `maxReadyWaitTimeSeconds` | integer | The maximum time in seconds that the operator waits for a WebLogic Server pod to reach the ready state before it considers the pod failed. Defaults to 1800 seconds. |
 | `nodeName` | string | NodeName is a request to schedule this Pod onto a specific Node. If it is non-empty, the scheduler simply schedules this pod onto that node, assuming that it fits the resource requirements. See `kubectl explain pods.spec.nodeName`. |
 | `nodeSelector` | Map | Selector which must match a Node's labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`. |
-| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. |
+| `podSecurityContext` | [Pod Security Context](k8s1.13.5.md#pod-security-context) | Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/. |
 | `priorityClassName` | string | If specified, indicates the Pod's priority. "system-node-critical" and "system-cluster-critical" are two special keywords which indicate the highest priorities with the former being the highest priority. Any other name must be defined by creating a PriorityClass object with that name. If not specified, the pod priority will be the default or zero, if there is no default. See `kubectl explain pods.spec.priorityClassName`. |
 | `readinessGates` | Array of [Pod Readiness Gate](k8s1.13.5.md#pod-readiness-gate) | If specified, all readiness gates will be evaluated for Pod readiness. A Pod is ready when all its containers are ready AND all conditions specified in the readiness gates have a status equal to "True". More info: https://github.com/kubernetes/community/blob/master/keps/sig-network/0007-pod-ready%2B%2B.md. |
 | `readinessProbe` | [Probe Tuning](#probe-tuning) | Settings for the readiness probe associated with a WebLogic Server instance. |
@@ -230,6 +237,13 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
+
+### Introspector Job Pod
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Probe Tuning
 

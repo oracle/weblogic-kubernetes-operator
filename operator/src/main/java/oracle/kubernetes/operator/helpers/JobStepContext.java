@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -40,6 +41,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -134,6 +136,32 @@ public class JobStepContext extends BasePodStepContext {
 
   EffectiveServerSpec getServerSpec() {
     return getDomain().getAdminServerSpec();
+  }
+
+  protected V1ResourceRequirements getResources() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getResources())
+        .orElse(getAdminServerResources());
+  }
+
+  private V1ResourceRequirements getAdminServerResources() {
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getResources()).orElse(null);
+  }
+
+  protected List<V1EnvVar> getServerPodEnvironmentVariables() {
+    List<V1EnvVar> envVars = getIntrospectorEnvVariables();
+    getAdminServerEnvVariables().forEach(adminEnvVar -> addIfMissing(envVars, adminEnvVar.getName(),
+        adminEnvVar.getValue(), adminEnvVar.getValueFrom()));
+    return envVars;
+  }
+
+  private List<V1EnvVar> getIntrospectorEnvVariables() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+        .map(EffectiveIntrospectorJobPodSpec::getEnv).orElse(new ArrayList<>());
+  }
+
+  private List<V1EnvVar> getAdminServerEnvVariables() {
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvironmentVariables())
+        .orElse(new ArrayList<>());
   }
 
   String getJobName() {
@@ -657,7 +685,7 @@ public class JobStepContext extends BasePodStepContext {
   List<V1EnvVar> getConfiguredEnvVars() {
     // Pod for introspector job would use same environment variables as for admin server
     List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+          PodHelper.createCopy(getServerPodEnvironmentVariables());
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
