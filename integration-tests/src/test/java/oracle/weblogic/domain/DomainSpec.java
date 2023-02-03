@@ -214,7 +214,7 @@ public class DomainSpec {
       + "members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and "
       + "the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a "
       + "cluster that already exists in the WebLogic domain configuration.")
-  private List<V1LocalObjectReference> clusters = new ArrayList<>();
+  public List<V1LocalObjectReference> clusters = new ArrayList<>();
 
   @ApiModelProperty("Experimental feature configurations.")
   private Experimental experimental;
