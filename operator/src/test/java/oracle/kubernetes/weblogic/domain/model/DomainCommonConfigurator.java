@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -28,6 +28,8 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.IntrospectorConfigurator;
+import oracle.kubernetes.weblogic.domain.IntrospectorJobPodConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 
 public class DomainCommonConfigurator extends DomainConfigurator {
@@ -43,6 +45,15 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator createFor(DomainResource domain) {
     return new DomainCommonConfigurator(domain);
+  }
+
+  @Override
+  public IntrospectorConfigurator configureIntrospector() {
+    return new IntrospectorConfiguratorImpl(getOrCreateIntrospector());
+  }
+
+  private Introspector getOrCreateIntrospector() {
+    return getDomainSpec().getOrCreateIntrospector();
   }
 
   private void setApiVersion(DomainResource domain) {
@@ -468,6 +479,43 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public void setShuttingDown(boolean shuttingDown) {
     configureAdminServer().withServerStartPolicy(shuttingDown ? ServerStartPolicy.NEVER : ServerStartPolicy.ALWAYS);
+  }
+
+  class IntrospectorConfiguratorImpl implements IntrospectorConfigurator {
+    private final Introspector introspector;
+
+    IntrospectorConfiguratorImpl(Introspector introspector) {
+      this.introspector = introspector;
+    }
+
+    @Override
+    public IntrospectorJobPodConfigurator withEnvironmentVariable(String name, String value) {
+      introspector.addEnvironmentVariable(name, value);
+      return this;
+    }
+
+    @Override
+    public IntrospectorJobPodConfigurator withEnvironmentVariable(V1EnvVar envVar) {
+      introspector.addEnvironmentVariable(envVar);
+      return this;
+    }
+
+    @Override
+    public IntrospectorJobPodConfigurator withRequestRequirement(String resource, String quantity) {
+      introspector.addRequestRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public IntrospectorJobPodConfigurator withLimitRequirement(String resource, String quantity) {
+      introspector.addLimitRequirement(resource, quantity);
+      return this;
+    }
+
+    @Override
+    public Introspector getIntrospector() {
+      return introspector;
+    }
   }
 
   class AdminServerConfiguratorImpl extends ServerConfiguratorImpl

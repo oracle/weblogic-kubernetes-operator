@@ -364,6 +364,10 @@
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
           "type": "boolean"
         },
+        "introspector": {
+          "description": "Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources.",
+          "$ref": "#/definitions/Introspector"
+        },
         "clusters": {
           "description": "References to Cluster resources that describe the lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The Cluster resource must describe a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",
@@ -560,6 +564,31 @@
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+          }
+        }
+      }
+    },
+    "Introspector": {
+      "type": "object",
+      "properties": {
+        "serverPod": {
+          "description": "Customization affecting the generation of the Introspector Job Pod.",
+          "$ref": "#/definitions/IntrospectorJobPod"
+        }
+      }
+    },
+    "IntrospectorJobPod": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "env": {
+          "description": "A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
           }
         }
       }
