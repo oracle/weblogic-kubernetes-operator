@@ -504,6 +504,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from the new cluster are running.
    */
   @Test
+  @Order(2)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   void testMiiAddDynamicCluster() {
 
@@ -593,7 +594,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(2)
+  @Order(3)
   @DisplayName("Delete SystemResources from the domain")
   void testMiiDeleteSystemResourcesByEmptyConfigMap() {
 
@@ -662,6 +663,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure JMS Connections and messages are distributed across 4 servers.
    */
   @Test
+  //@Order(2)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   void testMiiUpdateDynamicClusterSize() {
 
