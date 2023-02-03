@@ -14,7 +14,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/layering/</loc>
     <lastmod>2019-04-11T13:15:32-04:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/</loc>
     <lastmod>2019-03-08T19:00:49-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/</loc>
@@ -86,8 +86,8 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/</loc>
     <lastmod>2019-03-08T19:17:42-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</loc>
-    <lastmod>2019-03-08T19:07:36-05:00</lastmod>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/image-protection/</loc>
+    <lastmod>2019-03-08T19:00:49-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/restarting/</loc>
     <lastmod>2019-02-23T20:58:51-05:00</lastmod>
@@ -133,6 +133,9 @@
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/choose-an-approach/</loc>
     <lastmod>2019-04-11T13:36:57-04:00</lastmod>
+  </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</loc>
+    <lastmod>2019-03-08T19:07:36-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/introduction/architecture/</loc>
     <lastmod>2019-02-23T20:51:45-05:00</lastmod>
