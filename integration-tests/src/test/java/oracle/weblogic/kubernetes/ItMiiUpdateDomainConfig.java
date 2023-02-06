@@ -359,8 +359,9 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain using model-in-image with JMS/JDBC SystemResources.
-   * Create a configmap to delete JMS/JDBC SystemResources.
+   * Start a WebLogic domain using model-in-image.
+   * Create 1 configmap with 2 models files, one of them to add JMS/JDBC SystemResources
+   * and another one to delete JMS/JDBC SystemResources
    * Patch the domain resource with the configmap.
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
@@ -368,14 +369,16 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisplayName("Delete SystemResources from the domain")
   void testMiiDeleteSystemResources() {
 
     String configMapName = "deletesysrescm";
+    final String modelFileAdd =  "model.add.sysresources.yaml";
+    final String modelFileDelete = "model.delete.sysresources.yaml";
+    List<String> modelFiles = Arrays.asList(MODEL_DIR + "/" + modelFileAdd, MODEL_DIR + "/" + modelFileDelete);
     createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.delete.sysresourcesbyconfigmap.yaml"));
+        configMapName, domainUid, domainNamespace, modelFiles);
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -433,7 +436,7 @@ class ItMiiUpdateDomainConfig {
    * Verify JMS Server logs are written on PV.
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Add new JDBC/JMS SystemResources to the domain")
   void testMiiAddSystemResources() {
 
@@ -505,7 +508,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from the new cluster are running.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   void testMiiAddDynamicCluster() {
 
@@ -579,7 +582,7 @@ class ItMiiUpdateDomainConfig {
    * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   void testMiiUpdateWebLogicCredential() {
     verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
@@ -601,7 +604,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure JMS Connections and messages are distributed across 4 servers.
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   void testMiiUpdateDynamicClusterSize() {
 
@@ -743,6 +746,70 @@ class ItMiiUpdateDomainConfig {
     logger.info("javac returned {0}", result.toString());
     logger.info("javac returned EXIT value {0}", result.exitValue());
     assertEquals(0, result.exitValue(), "Client compilation fails");
+  }
+
+  /**
+   * Start a WebLogic domain using model-in-image with JMS/JDBC SystemResources.
+   * Create a empty configmap to delete JMS/JDBC SystemResources
+   * Patch the domain resource with the configmap.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * for all the server pods before and after rolling restart.
+   * Verify SystemResources are deleted from the domain.
+   */
+  @Test
+  @Order(4)
+  @DisplayName("Delete SystemResources from the domain")
+  void testMiiDeleteSystemResourcesByEmptyConfigMap() {
+
+    String configMapName = "deletesysrescm";
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.delete.sysresourcesbyconfigmap.yaml"));
+
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+                "Rolling restart failed");
+
+    // Even if pods are created, need the service to created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JDBCSystemResources", "TestDataSource", "404");
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,
+                                          "JMSSystemResources", "TestClusterJmsModule", "404");
   }
 
   // Run standalone JMS Client in the pod using wlthint3client.jar in classpath.
