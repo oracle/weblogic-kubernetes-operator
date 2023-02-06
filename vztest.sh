@@ -419,7 +419,7 @@ if [ "$REGISTER_ONLY" != "true" ]; then
 delete_cluster admin
 delete_cluster managed1
 
-SUBNET=$(${CONTAINER_RUNTIME:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
 ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
 MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
 
