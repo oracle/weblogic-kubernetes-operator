@@ -136,9 +136,6 @@ nodes:
           extraArgs:
             "service-account-issuer": "kubernetes.default.svc"
             "service-account-signing-key-file": "/etc/kubernetes/pki/sa.key"
-#    extraMounts:
-#      - containerPath: /var/lib/kubelet/config.json
-#        hostPath: $HOME/.docker/config.json
 EOF
 }
 
@@ -422,7 +419,7 @@ if [ "$REGISTER_ONLY" != "true" ]; then
 delete_cluster admin
 delete_cluster managed1
 
-SUBNET=$(docker inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+SUBNET=$(${CONTAINER_RUNTIME:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
 ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
 MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
 
