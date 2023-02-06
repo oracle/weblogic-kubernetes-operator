@@ -71,6 +71,5 @@ $ ls -ltr /tmp/domain-v9.yaml
 ```
 
 {{% notice note %}}
-The manual upgrade tooling creates the init-containers names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only runs these special init-containers having names starting with `compat-` in the introspector job pod. If you want to change the names of the generated init-containers, then the new name must always start with `compat-`.
+The manual upgrade tooling creates the init-containers, volume and volume mounts names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only creates these special init-containers and volume mounts having names starting with `compat-` in the introspector job pod. If you want to change the names of the generated init-containers and volume mounts, then the new name must always start with `compat-`.
 {{% /notice %}}
-
