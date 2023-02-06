@@ -69,3 +69,8 @@ In the previous example, the tool writes the upgraded file to the `/tmp` directo
 $ ls -ltr /tmp/domain-v9.yaml
 -rw-r----- 1 user dba 2818 Apr 18 23:11 /tmp/domain-v9.yaml
 ```
+
+{{% notice note %}}
+The manual upgrade tooling creates the init-containers names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only runs these special init-containers having names starting with `compat-` in the introspector job pod. If you want to change the names of the generated init-containers, then the new name must always start with `compat-`.
+{{% /notice %}}
+

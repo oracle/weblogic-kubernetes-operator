@@ -344,6 +344,10 @@ spec:
       name: compat-ai-vol-auxiliaryimagevolume1
 ```
 
+{{% notice note %}}
+The operator creates the init-containers names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only runs these special init-containers having names starting with `compat-` in the introspector job pod. If you want to change the names of the generated init-containers, then the new name must always start with `compat-`. 
+{{% /notice %}}
+
 ### Domain upgrade tool to manually upgrade the `weblogic.oracle/v8` schema domain resource
 
 To manually upgrade the domain resource from the `weblogic.oracle/v8` schema to the `weblogic.oracle/v9` schema, see [Upgrade the `weblogic.oracle/v8` schema domain resource manually]({{< relref "/managing-domains/upgrade-domain-resource#upgrade-the-weblogicoraclev8-schema-domain-resource-manually" >}}).
