@@ -1708,7 +1708,11 @@ public class Kubernetes {
     } else {
       getLogger().warning("response object is null");
     }
-    return response != null ? response.getObject() : new ClusterList();
+    if (response != null && response.getObject() != null) {
+      return response.getObject();
+    } else {
+      return new ClusterList();
+    }
   }
   
   /**
