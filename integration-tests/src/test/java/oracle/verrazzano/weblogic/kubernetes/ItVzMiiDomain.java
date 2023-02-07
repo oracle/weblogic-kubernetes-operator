@@ -25,7 +25,6 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -42,7 +40,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.creat
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.replaceNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -69,9 +66,6 @@ class ItVzMiiDomain {
   @BeforeAll
   public static void initAll(@Namespaces(1) List<String> namespaces) throws Exception {
     logger = getLogger();
-    ExecResult result = assertDoesNotThrow(() -> exec(KUBERNETES_CLI + " get all -A", true));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
     logger.info("Getting unique namespace for Domain");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     domainNamespace = namespaces.get(0);
