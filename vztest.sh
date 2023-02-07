@@ -223,10 +223,10 @@ EOF
 
 function wait_for_installs() {
   if [ "$ADMIN_CLUSTER" != "false" ] ; then
-    $KA wait --timeout=30m --for=condition=InstallComplete verrazzano/admin
+    $KA wait --timeout=60m --for=condition=InstallComplete verrazzano/admin
   fi
   if [ "$MANAGED_CLUSTER" != "false" ] ; then
-    $K1 wait --timeout=30m --for=condition=InstallComplete verrazzano/managed1
+    $K1 wait --timeout=60m --for=condition=InstallComplete verrazzano/managed1
   fi
 }
 
