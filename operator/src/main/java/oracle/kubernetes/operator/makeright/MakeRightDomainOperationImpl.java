@@ -369,8 +369,12 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     }
 
     private void updateCache(DomainPresenceInfo info, DomainResource domain) {
-      info.setDeleting(domain.getMetadata().getDeletionTimestamp() != null);
+      info.setDeleting(isBeingDeleted(domain));
       info.setDomain(domain);
+    }
+
+    private boolean isBeingDeleted(DomainResource domain) {
+      return domain == null || domain.getMetadata().getDeletionTimestamp() != null;
     }
 
     @Override

@@ -87,7 +87,7 @@ class DomainResourcesValidation {
       @Override
       public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        //getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForDeletedClusters(dp);
@@ -189,7 +189,12 @@ class DomainResourcesValidation {
 
     getDomainPresenceInfoMap().values().stream()
         .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid())).collect(Collectors.toList())
-        .forEach(i -> getDomainPresenceInfo(i.getDomainUid()).setDomain(null));
+        .forEach(i -> recordStrandedDomain(i));
+  }
+
+  private void recordStrandedDomain(DomainPresenceInfo i) {
+    getDomainPresenceInfo(i.getDomainUid()).setDomain(null);
+    removeStrandedDomainPresenceInfo(processor, i);
   }
 
   private void addDomain(DomainResource domain) {
