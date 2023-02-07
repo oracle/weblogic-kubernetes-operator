@@ -158,6 +158,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return clusters;
   }
 
+  @Override
+  public boolean isNotBeingProcessed(String namespace, String domainUid) {
+    return makeRightFiberGates.get(namespace).getCurrentFibers().get(domainUid) == null;
+  }
+
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
     List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
     Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()

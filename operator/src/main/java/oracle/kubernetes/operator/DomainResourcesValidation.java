@@ -193,8 +193,10 @@ class DomainResourcesValidation {
   }
 
   private void recordStrandedDomain(DomainPresenceInfo i) {
-    getDomainPresenceInfo(i.getDomainUid()).setDomain(null);
-    removeStrandedDomainPresenceInfo(processor, i);
+    if (processor.isNotBeingProcessed(i.getNamespace(), i.getDomainUid())) {
+      getDomainPresenceInfo(i.getDomainUid()).setDomain(null);
+      removeStrandedDomainPresenceInfo(processor, i);
+    }
   }
 
   private void addDomain(DomainResource domain) {

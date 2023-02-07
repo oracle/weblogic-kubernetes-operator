@@ -138,6 +138,27 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(getDomainPresenceInfoMap(dp), not(hasKey(UID2)));
   }
 
+  @Test
+  void whenDomainsDeletedButBeingProcessed_dontDeleteFromPresenceMap() {
+    DomainResource domain1 = createDomain(UID1, NS);
+    DomainResource domain2 = createDomain(UID2, NS);
+    DomainResource domain3 = createDomain(UID3, NS);
+    testSupport.defineResources(domain1, domain2, domain3);
+    dp.setBeingProcessed(UID2);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
+
+    testSupport.deleteResources(domain2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
+    assertThat(getDomainPresenceInfoMap(dp), hasKey(UID2));
+  }
+
   private void addDomainResource(String uid, String namespace) {
     testSupport.defineResources(createDomain(uid, namespace));
   }
@@ -401,6 +422,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
     Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+    private Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
@@ -441,7 +463,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
             .orElse(false);
     }
 
-
     @Override
     public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo liveInfo) {
       final MakeRightDomainOperationStub stub = createStrictStub(MakeRightDomainOperationStub.class, liveInfo, dpis);
@@ -463,6 +484,15 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     public MakeRightClusterOperation createMakeRightOperationForClusterEvent(EventHelper.EventItem item,
                                                                              ClusterResource cluster) {
       return createMakeRightOperationForClusterEvent(item, cluster, null);
+    }
+
+    @Override
+    public boolean isNotBeingProcessed(String namespace, String domainUid) {
+      return beingProcessed.get(domainUid) == null || !beingProcessed.get(domainUid);
+    }
+
+    public void setBeingProcessed(String domainUid) {
+      beingProcessed.put(domainUid, true);
     }
 
     abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {

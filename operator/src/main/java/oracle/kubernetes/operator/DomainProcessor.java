@@ -131,4 +131,6 @@ public interface DomainProcessor {
   default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return new ConcurrentHashMap<>();
   }
+
+  boolean isNotBeingProcessed(String namespace, String domainUid);
 }
