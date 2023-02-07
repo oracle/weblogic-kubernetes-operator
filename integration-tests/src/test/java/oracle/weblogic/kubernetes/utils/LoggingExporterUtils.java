@@ -117,6 +117,7 @@ public class LoggingExporterUtils {
         .loggingExporterNamespace(namespace)
         .kibanaContainerPort(KIBANA_PORT);
 
+    logger.info("Choosen KIBANA_IMAGE ${0}", KIBANA_IMAGE);
     // install Kibana
     assertThat(installKibana(kibanaParams))
         .as("Kibana installation succeeds")
