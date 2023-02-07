@@ -232,21 +232,21 @@ function wait_for_installs() {
 
 function register_managed_cluster() {
 CA_SECRET_FILE=managed1.yaml
-KUBERNETES_CLI config use-context kind-managed1
-TLS_SECRET=$(KUBERNETES_CLI -n cattle-system get secret tls-ca-additional -o json | jq -r '.data."ca-additional.pem"')
+${KUBERNETES_CLI} config use-context kind-managed1
+TLS_SECRET=$(${KUBERNETES_CLI} -n cattle-system get secret tls-ca-additional -o json | jq -r '.data."ca-additional.pem"')
 if [ ! -z "${TLS_SECRET%%*( )}" ] && [ "null" != "${TLS_SECRET}" ] ; then
-  CA_CERT=$(KUBERNETES_CLI  -n cattle-system get secret tls-ca-additional -o json | jq -r '.data."ca-additional.pem"' | base64 --decode)
+  CA_CERT=$(${KUBERNETES_CLI}  -n cattle-system get secret tls-ca-additional -o json | jq -r '.data."ca-additional.pem"' | base64 --decode)
 else
-  TLS_SECRET=$(KUBERNETES_CLI -n verrazzano-system get secret verrazzano-tls -o json | jq -r '.data."ca.crt"')
+  TLS_SECRET=$(${KUBERNETES_CLI} -n verrazzano-system get secret verrazzano-tls -o json | jq -r '.data."ca.crt"')
   if [ ! -z "${TLS_SECRET%%*( )}" ] && [ "null" != "${TLS_SECRET}" ] ; then
-    CA_CERT=$(KUBERNETES_CLI  -n verrazzano-system get secret verrazzano-tls -o json | jq -r '.data."ca.crt"' | base64 --decode)
+    CA_CERT=$(${KUBERNETES_CLI}  -n verrazzano-system get secret verrazzano-tls -o json | jq -r '.data."ca.crt"' | base64 --decode)
   fi
 fi
 if [ ! -z "${CA_CERT}" ] ; then
    $K1 create secret generic "ca-secret-managed1" -n verrazzano-mc --from-literal=cacrt="$CA_CERT" --dry-run=client -o yaml > ${CA_SECRET_FILE}
 fi
 
-KUBERNETES_CLI config use-context kind-admin
+${KUBERNETES_CLI} config use-context kind-admin
 $KA apply -f ${CA_SECRET_FILE}
 
 ADMIN_K8S_SERVER_ADDRESS="$(kind get kubeconfig --internal --name admin | grep "server:" | awk '{ print $2 }')"
@@ -410,8 +410,8 @@ echo "$0 -v ${INSTALL_VERSION}"
 echo "   KIND_IMAGE=${KIND_IMAGE}"
 echo "   OPERATOR_URL=${OPERATOR_URL}"
 
-export KA='KUBERNETES_CLI --context kind-admin '
-export K1='KUBERNETES_CLI --context kind-managed1 '
+export KA="${KUBERNETES_CLI}"' --context kind-admin '
+export K1="${KUBERNETES_CLI}"' --context kind-managed1 '
 export KUBECONFIG=~/.kube/config
 
 # Cleanup the previous run and create new Kind clusters
