@@ -39,6 +39,7 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 
@@ -171,7 +172,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   protected List<V1EnvVar> createEnv(V1Container c) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!c.getName().startsWith(COMPATIBILITY_MODE) || c.getName().startsWith(WLS_SHARED)) {
       getEnvironmentVariables()
           .forEach(envVar -> addIfMissing(initContainerEnvVars,
               envVar.getName(), envVar.getValue(), envVar.getValueFrom()));

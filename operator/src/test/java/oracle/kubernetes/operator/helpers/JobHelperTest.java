@@ -74,6 +74,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
 import static oracle.kubernetes.common.utils.CommonUtils.getMD5Hash;
@@ -1029,6 +1030,19 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void introspectorPodSpec_createdWithConfiguredWlsSharedInitContainers() {
+    configureDomain()
+        .withInitContainer(
+            createContainer(
+                WLS_SHARED + "aux-image-container", "busybox", "sh", "-c",
+                "echo managed server && sleep 120"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
+  }
+
+  @Test
   void introspectorPodSpec_createdWithConfiguredAuxImageInitContainersHavingIntrospectorResources() {
     configureDomain()
         .withInitContainer(
@@ -1054,6 +1068,27 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void introspectorPodSpec_createdWithConfiguredWlsSharedInitContainersHavingIntrospectorResources() {
+    configureDomain()
+        .withInitContainer(
+            createContainer(
+                WLS_SHARED + "aux-image-container", "busybox", "sh", "-c",
+                "echo managed server && sleep 120"))
+        .configureIntrospector()
+        .withRequestRequirement("cpu", "512m")
+        .withLimitRequirement("memory", "1Gi");    ;
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    assertThat(
+        getInitContainerResources(podSpec),
+        is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
+            .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
   void introspectorPodSpec_createdWithoutConfiguredContainers() {
     configureDomain()
           .withContainer(
@@ -1076,6 +1111,19 @@ class JobHelperTest extends DomainValidationTestBase {
                 createContainer(
                       COMPATIBILITY_MODE + "aux-image-container", "busybox", "sh", "-c",
                       "echo managed server && sleep 120"));
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
+  }
+
+  @Test
+  void whenAdminServerHasWlsSharedInitContainers_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureAdminServer()
+        .withInitContainer(
+            createContainer(
+                WLS_SHARED + "aux-image-container", "busybox", "sh", "-c",
+                "echo managed server && sleep 120"));
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getNumPodSpecInitContainers(jobSpec), equalTo(1));
@@ -1142,6 +1190,18 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
           .orElse(Collections.emptyList()).size(), equalTo(4));
+  }
+
+  @Test
+  void whenAdminServerHasWlsSharedVolumeMount_introspectorPodStartupWithoutThem() {
+    configureDomain()
+        .configureAdminServer()
+        .withAdditionalVolumeMount(WLS_SHARED + "aux-image-container_volume", "/test");
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getVolumeMounts)
+        .orElse(Collections.emptyList()).size(), equalTo(4));
   }
 
   @Test

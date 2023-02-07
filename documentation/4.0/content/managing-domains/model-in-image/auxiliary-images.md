@@ -345,7 +345,7 @@ spec:
 ```
 
 {{% notice note %}}
-The conversion webhook runtime generates the init-containers names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only creates these special init-containers with a name starting with `compat-` in the introspector job pod. If you want to change the name of the generated init-containers, then the new name must begin with `compat-`.
+The conversion webhook runtime generates the init-containers names with the prefix `compat-` when converting the `weblogic.oracle/v8` schema auxiliary image configuration. The operator only creates init-containers with a name starting with either `compat-` or `wls-shared-` in the introspector job pod. If you want to change the name of the generated init-containers, then the new name must begin with either `compat-` or `wls-shared-`.
 {{% /notice %}}
 
 ### Domain upgrade tool to manually upgrade the `weblogic.oracle/v8` schema domain resource
