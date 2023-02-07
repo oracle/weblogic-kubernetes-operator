@@ -80,6 +80,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   final DomainResource domain = createDomain(UID1, NS);
+  final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -331,6 +332,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     addDomainResource(UID1, NS);
     V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
@@ -343,6 +345,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
@@ -389,6 +392,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     V1PersistentVolumeClaim claim =
         new V1PersistentVolumeClaim().metadata(createMetadata(UID1, NS, "claim1"));
     testSupport.defineResources(service1, service2, volume, claim);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
@@ -430,6 +434,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
     Map<String, ClusterPresenceInfo> getClusterPresenceInfos() {
       return clusters.get(NS);
+    }
+
+    @Override
+    public DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+      return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
     }
 
     boolean isDeletingStrandedResources(String uid) {

@@ -139,13 +139,18 @@ class DomainResourcesValidation {
   private void addPod(V1Pod pod) {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
-    if (domainUid != null && serverName != null) {
-      getDomainPresenceInfo(domainUid).setServerPodFromEvent(serverName, pod);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    if (domainUid != null && serverName != null && info != null) {
+      info.setServerPodFromEvent(serverName, pod);
     }
   }
 
-  private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
+  private DomainPresenceInfo getOrComputeDomainPresenceInfo(String domainUid) {
     return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
+  }
+
+  private DomainPresenceInfo getExistingDomainPresenceInfo(String domainUid) {
+    return getDomainPresenceInfoMap().get(domainUid);
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
@@ -162,8 +167,9 @@ class DomainResourcesValidation {
 
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
-    if (domainUid != null) {
-      ServiceHelper.addToPresence(getDomainPresenceInfo(domainUid), service);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    if (domainUid != null && info != null) {
+      ServiceHelper.addToPresence(info, service);
     }
   }
 
@@ -173,8 +179,9 @@ class DomainResourcesValidation {
 
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
-    if (domainUid != null) {
-      PodDisruptionBudgetHelper.addToPresence(getDomainPresenceInfo(domainUid), pdb);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    if (domainUid != null && info != null) {
+      PodDisruptionBudgetHelper.addToPresence(info, pdb);
     }
   }
 
@@ -192,19 +199,24 @@ class DomainResourcesValidation {
         .forEach(i -> recordStrandedDomain(i));
   }
 
-  private void recordStrandedDomain(DomainPresenceInfo i) {
-    if (processor.isNotBeingProcessed(i.getNamespace(), i.getDomainUid())) {
-      getDomainPresenceInfo(i.getDomainUid()).setDomain(null);
-      removeStrandedDomainPresenceInfo(processor, i);
+  private void recordStrandedDomain(DomainPresenceInfo info) {
+    if (processor.isNotBeingProcessed(info.getNamespace(), info.getDomainUid())) {
+      info.setDomain(null);
+      removeStrandedDomainPresenceInfo(processor, info);
     }
   }
 
   private void addDomain(DomainResource domain) {
-    getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
+    getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
   private void addClusterList(ClusterList list) {
     activeClusterResources = list;
+    list.getItems().forEach(this::addCluster);
+  }
+
+  private void addCluster(ClusterResource cluster) {
+    getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster.getNamespace(), cluster));
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {

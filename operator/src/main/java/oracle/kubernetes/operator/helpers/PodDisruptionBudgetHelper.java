@@ -347,7 +347,7 @@ public class PodDisruptionBudgetHelper {
   }
 
   public static void addToPresence(DomainPresenceInfo presenceInfo, V1PodDisruptionBudget pdb) {
-    presenceInfo.setPodDisruptionBudget(getClusterName(pdb), pdb);
+    Optional.ofNullable(presenceInfo).ifPresent(i -> i.setPodDisruptionBudget(getClusterName(pdb), pdb));
   }
 
   /**

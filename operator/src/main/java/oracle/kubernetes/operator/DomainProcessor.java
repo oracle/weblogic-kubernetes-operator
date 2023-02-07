@@ -133,4 +133,6 @@ public interface DomainProcessor {
   }
 
   boolean isNotBeingProcessed(String namespace, String domainUid);
+
+  DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 }

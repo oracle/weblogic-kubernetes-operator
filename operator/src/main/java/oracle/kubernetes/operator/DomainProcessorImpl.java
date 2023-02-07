@@ -132,19 +132,20 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     this.productVersion = productVersion;
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+  @Override
+  public DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
+  private DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
-  private static ClusterPresenceInfo getExistingClusterPresenceInfo(String ns, String clusterName) {
+  private ClusterPresenceInfo getExistingClusterPresenceInfo(String ns, String clusterName) {
     return clusters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(clusterName);
   }
 
-  private static ClusterPresenceInfo getExistingClusterPresenceInfo(ClusterPresenceInfo newPresence) {
+  private ClusterPresenceInfo getExistingClusterPresenceInfo(ClusterPresenceInfo newPresence) {
     return getExistingClusterPresenceInfo(newPresence.getNamespace(), newPresence.getResourceName());
   }
 
@@ -318,7 +319,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    if (info.isNotDeleting()) {
+    if (isNotDeleting(info)) {
       list.add(info.getDomain());
     }
   }
@@ -604,7 +605,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-        if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
+        if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
@@ -679,7 +680,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -711,12 +712,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
       default:
     }
+  }
+
+  private static boolean isNotDeleting(DomainPresenceInfo info) {
+    return info.isNotDeleting() && info.getDomain() != null;
   }
 
   private String getPDBNamespace(V1PodDisruptionBudget pdb) {
