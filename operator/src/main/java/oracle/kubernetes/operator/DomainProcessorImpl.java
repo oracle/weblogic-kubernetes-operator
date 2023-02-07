@@ -477,6 +477,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+  }
+
+  @Override
+  public void unregisterDomainEventK8SObjects(DomainPresenceInfo info) {
     unregisterEventK8SObject(info.getNamespace(), info.getDomainUid());
   }
 

@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -110,7 +111,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
    * @param eventData event data
    * @return the updated factory
    */
-  public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+  public MakeRightDomainOperation withEventData(EventData eventData) {
     this.eventData = eventData;
     return this;
   }
@@ -256,9 +257,13 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   private Step createDomainDownPlan() {
     Step eventStep = null;
     if (Optional.ofNullable(eventData).map(e -> e.getItem() != DOMAIN_DELETED).orElse(true)) {
-      eventStep = EventHelper.createEventStep(new EventHelper.EventData(DOMAIN_DELETED));
+      eventStep = EventHelper.createEventStep(new EventData(DOMAIN_DELETED));
     }
-    return Step.chain(eventStep, new DeleteDomainStep(), new UnregisterStatusUpdaterStep(), new UnregisterDPIStep());
+    return Step.chain(
+        eventStep,
+        new DeleteDomainStep(),
+        new UnregisterStatusUpdaterStep(),
+        new UnregisterEventK8SObjectsStep());
   }
 
   private class UnregisterStatusUpdaterStep extends Step {
@@ -378,11 +383,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     }
   }
 
-  private class UnregisterDPIStep extends Step {
+  private class UnregisterEventK8SObjectsStep extends Step {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::unregisterDomainPresenceInfo);
+      DomainPresenceInfo.fromPacket(packet).ifPresent(executor::unregisterDomainEventK8SObjects);
       return doNext(packet);
     }
   }
@@ -398,7 +403,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     @Override
     public NextAction apply(Packet packet) {
-      executor.registerDomainPresenceInfo(info);
+      if (deleting) {
+        executor.unregisterDomainPresenceInfo(info);
+      } else {
+        executor.registerDomainPresenceInfo(info);
+      }
 
       return doNext(getNextSteps(), packet);
     }
