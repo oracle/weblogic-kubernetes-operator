@@ -172,7 +172,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   protected List<V1EnvVar> createEnv(V1Container c) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE) || c.getName().startsWith(WLS_SHARED)) {
+    if (!(c.getName().startsWith(COMPATIBILITY_MODE) || c.getName().startsWith(WLS_SHARED))) {
       getEnvironmentVariables()
           .forEach(envVar -> addIfMissing(initContainerEnvVars,
               envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
