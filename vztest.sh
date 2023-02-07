@@ -490,6 +490,7 @@ else
 fi
 
 echo "Collect journalctl logs"
+${WLSIMG_BUILDER:-docker} ps
 ${WLSIMG_BUILDER:-docker} exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
 ${WLSIMG_BUILDER:-docker} exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
 
