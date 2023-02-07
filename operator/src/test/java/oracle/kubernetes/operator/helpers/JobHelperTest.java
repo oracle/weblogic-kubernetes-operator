@@ -1037,7 +1037,7 @@ class JobHelperTest extends DomainValidationTestBase {
                 "echo managed server && sleep 120"))
         .configureIntrospector()
             .withRequestRequirement("cpu", "512m")
-             .withLimitRequirement("memory", "1Gi");    ;
+             .withLimitRequirement("memory", "1Gi");
 
     V1JobSpec jobSpec = createJobSpec();
 

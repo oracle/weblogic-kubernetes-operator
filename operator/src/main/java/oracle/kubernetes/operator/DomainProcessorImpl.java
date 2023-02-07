@@ -106,7 +106,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
 
   // List of clusters in a namespace.
-  private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+  private static final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;

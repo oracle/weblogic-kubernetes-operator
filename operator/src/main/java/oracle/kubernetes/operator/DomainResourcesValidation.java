@@ -87,7 +87,6 @@ class DomainResourcesValidation {
       @Override
       public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        //getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForDeletedClusters(dp);
@@ -116,7 +115,7 @@ class DomainResourcesValidation {
   }
 
   private void addPodList(V1PodList list) {
-    getDomainPresenceInfoMap().values().stream().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
+    getDomainPresenceInfoMap().values().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
     list.getItems().forEach(this::addPod);
   }
 
@@ -186,7 +185,7 @@ class DomainResourcesValidation {
   }
 
   private void addDomainList(DomainList list) {
-    getDomainPresenceInfoMap().values().stream().forEach(dpi -> updateDeletedDomainsinDPI(list));
+    getDomainPresenceInfoMap().values().forEach(dpi -> updateDeletedDomainsinDPI(list));
     list.getItems().forEach(this::addDomain);
   }
 
@@ -196,10 +195,10 @@ class DomainResourcesValidation {
 
     getDomainPresenceInfoMap().values().stream()
         .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid())).collect(Collectors.toList())
-        .forEach(i -> recordStrandedDomain(i));
+        .forEach(i -> handleStrandedDomain(i));
   }
 
-  private void recordStrandedDomain(DomainPresenceInfo info) {
+  private void handleStrandedDomain(DomainPresenceInfo info) {
     if (processor.isNotBeingProcessed(info.getNamespace(), info.getDomainUid())) {
       info.setDomain(null);
       removeStrandedDomainPresenceInfo(processor, info);
@@ -217,12 +216,6 @@ class DomainResourcesValidation {
 
   private void addCluster(ClusterResource cluster) {
     getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster.getNamespace(), cluster));
-  }
-
-  private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
-    return Stream.concat(
-        getDomainPresenceInfoMap().values().stream().filter(this::isStranded),
-        dp.findStrandedDomainPresenceInfos(namespace, getDomainPresenceInfoMap().keySet()));
   }
 
   private boolean isStranded(DomainPresenceInfo dpi) {

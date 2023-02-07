@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
@@ -426,7 +427,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
     Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
-    private Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
@@ -509,7 +510,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       private final Map<String, DomainPresenceInfo> dpis;
       private boolean explicitRecheck;
       private boolean deleting;
-      private EventHelper.EventData eventData;
+      private EventData eventData;
 
       MakeRightDomainOperationStub(DomainPresenceInfo info, Map<String, DomainPresenceInfo> dpis) {
         this.info = info;
@@ -541,9 +542,14 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
-      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+      public MakeRightDomainOperation withEventData(EventData eventData) {
         this.eventData = eventData;
         return this;
+      }
+
+      @Override
+      public boolean wasStartedFromEvent() {
+        return eventData != null;
       }
 
       @Override
@@ -574,7 +580,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       if (eventItem == EventHelper.EventItem.CLUSTER_DELETED) {
         clusterResourceInfos.remove(info.getResourceName());
       } else {
-        clusterResourceInfos.computeIfAbsent(info.getResourceName(), k -> info);
+        clusterResourceInfos.put(info.getResourceName(), info);
       }
     }
   }
