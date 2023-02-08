@@ -14,7 +14,7 @@ The Domain CustomResourceDefinition in operator version 4.0 has changed signific
 ### Automated upgrade of `weblogic.oracle/v8` schema domain resource
 
 {{% notice note %}}
-The automated upgrade described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init-containers and volumes.
+The automated upgrade described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified `weblogic.oracle/v9` schema configuration for auxiliary images, as documented in the
 Auxiliary Images [Configuration]({{<relref "/managing-domains/model-in-image/auxiliary-images#configuration" >}}) section.
 {{% /notice %}}
@@ -24,7 +24,7 @@ The 4.0 operator provides a seamless upgrade of the Domain resources with the `w
 ### Upgrade the `weblogic.oracle/v8` schema domain resource manually
 
 {{% notice note %}}
-The manual upgrade tooling described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init-containers and volumes.
+The manual upgrade tooling described in this section converts `weblogic.oracle/v8` schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified `weblogic.oracle/v9` schema configuration for auxiliary images, as documented in the
 Auxiliary Images [Configuration]({{<relref "/managing-domains/model-in-image/auxiliary-images#configuration" >}}) section.
 {{% /notice %}}
@@ -69,3 +69,7 @@ In the previous example, the tool writes the upgraded file to the `/tmp` directo
 $ ls -ltr /tmp/domain-v9.yaml
 -rw-r----- 1 user dba 2818 Apr 18 23:11 /tmp/domain-v9.yaml
 ```
+
+{{% notice note %}}
+The manual upgrade tooling creates init containers with names prefixed with `compat-` when converting the auxiliary image configuration of the `weblogic.oracle/v8` schema. The operator generates only init containers with names starting with either `compat-` or `wls-shared-` in the introspector job pod. To alter the generated init container's name, the new name must start with either `compat-` or `wls-shared-`.
+{{% /notice %}}
