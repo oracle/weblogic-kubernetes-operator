@@ -57,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
@@ -213,9 +214,13 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addVolumeIfMissing(V1Volume volume, List<V1Volume> volumes) {
-    if (!volumes.contains(volume) && volume.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!volumes.contains(volume) && isAllowedInIntrospector(volume.getName())) {
       volumes.add(volume);
     }
+  }
+
+  private boolean isAllowedInIntrospector(String name) {
+    return name.startsWith(COMPATIBILITY_MODE) || name.startsWith(WLS_SHARED);
   }
 
   List<V1VolumeMount> getAdditionalVolumeMounts() {
@@ -225,7 +230,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addVolumeMountIfMissing(V1VolumeMount mount, List<V1VolumeMount> volumeMounts) {
-    if (!volumeMounts.contains(mount) && mount.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!volumeMounts.contains(mount) && isAllowedInIntrospector(mount.getName())) {
       volumeMounts.add(mount);
     }
   }
@@ -402,7 +407,7 @@ public class JobStepContext extends BasePodStepContext {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
-            .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
+            .filter(container -> isAllowedInIntrospector(container.getName()))
             .map(c -> c.env(createEnv(c)).resources(createResources()))
             .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
