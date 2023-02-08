@@ -45,6 +45,7 @@ public class SchemaConversionUtils {
   private static final String NAME = "name";
   private static final String SPEC = "spec";
   private static final String STATUS = "status";
+  private static final String CONDITIONS = "conditions";
   private static final String TYPE = "type";
   private static final String CLUSTERS = "clusters";
   private static final String CLUSTER_NAME = "clusterName";
@@ -69,6 +70,14 @@ public class SchemaConversionUtils {
   public static final List<String> SUPPORTED_FAILURE_REASONS = List.of(
         "Aborted", INTERNAL, "TopologyMismatch", "ReplicasTooHigh",
         "ServerPod", "Kubernetes", "Introspection", "DomainInvalid");
+
+  private static final String PROGRESSING = "Progressing";
+  private static final String COMPLETED = "Completed";
+  private static final String AVAILABLE = "Available";
+  private static final String FAILED = "Failed";
+
+  private static final List<String> STATUS_CONDITION_TYPES_V8 = List.of(
+      PROGRESSING, AVAILABLE, "ConfigChangesPendingRestart", FAILED);
 
   private static final String VOLUME_MOUNTS = "volumeMounts";
   private static final String VOLUMES = "volumes";
@@ -139,6 +148,7 @@ public class SchemaConversionUtils {
       try {
         Map<String, Object> toBePreserved = new TreeMap<>();
         removeAndPreserveLogHomeLayout(spec, toBePreserved);
+        removeAndPreserveConditionsV9(getStatus(domain), toBePreserved);
 
         preserveV9(PRESERVED_V9, domain, toBePreserved, apiVersion);
       } catch (IOException io) {
@@ -301,39 +311,45 @@ public class SchemaConversionUtils {
   }
 
   private void convertCompletedToProgressing(Map<String, Object> domain) {
-    Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
-    while (conditions.hasNext()) {
-      Map<String, String> condition = conditions.next();
-      if ("Completed".equals(condition.get(TYPE))) {
-        if ("False".equals(condition.get(STATUS))) {
-          condition.put(TYPE, "Progressing");
-          condition.put(STATUS, "True");
-        } else {
-          conditions.remove();
-        }
-      }
-    }
+    convertCondition(domain, COMPLETED, "False", PROGRESSING, "True");
   }
 
   private void convertProgressingToCompleted(Map<String, Object> domain) {
-    Iterator<Map<String, String>> conditions = getStatusConditions(domain).iterator();
-    while (conditions.hasNext()) {
-      Map<String, String> condition = conditions.next();
-      if ("Progressing".equals(condition.get(TYPE))) {
-        if ("True".equals(condition.get(STATUS))) {
-          condition.put(TYPE, "Completed");
-          condition.put(STATUS, "False");
-        } else {
-          conditions.remove();
+    convertCondition(domain, PROGRESSING, "True", COMPLETED, "False");
+  }
+
+  private void convertCondition(Map<String, Object> domain,
+                                String type, String expectedStatus, String repType, String repStatus) {
+    Map<String, Object> status = getStatus(domain);
+    Optional.ofNullable(status).ifPresent(s -> {
+      List<Map<String, String>> conditions = (List<Map<String, String>>) status.get(CONDITIONS);
+      Optional.ofNullable(conditions).ifPresent(c -> {
+        Iterator<Map<String, String>> it = conditions.iterator();
+        while (it.hasNext()) {
+          Map<String, String> condition = it.next();
+          if (type.equals(condition.get(TYPE))) {
+            if (expectedStatus.equals(condition.get(STATUS))) {
+              condition.put(TYPE, repType);
+              condition.put(STATUS, repStatus);
+            } else {
+              it.remove();
+            }
+          }
         }
-      }
-    }
+        if (conditions.isEmpty()) {
+          status.remove(CONDITIONS);
+        }
+        if (status.isEmpty()) {
+          domain.remove(STATUS);
+        }
+      });
+    });
   }
 
   @Nonnull
   private List<Map<String,String>> getStatusConditions(Map<String, Object> domain) {
     return (List<Map<String,String>>) Optional.ofNullable(getStatus(domain))
-          .map(status -> status.get("conditions"))
+          .map(status -> status.get(CONDITIONS))
           .orElse(Collections.emptyList());
   }
 
@@ -346,7 +362,7 @@ public class SchemaConversionUtils {
   }
 
   private void renameFailedReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
-    if ("Failed".equals(condition.get(TYPE))) {
+    if (FAILED.equals(condition.get(TYPE))) {
       String currentReason = condition.get(REASON);
       if (isUnsupportedReason(currentReason)) {
         Map<String, Object> meta = getMetadata(domain);
@@ -359,7 +375,7 @@ public class SchemaConversionUtils {
   }
 
   private void renameAvailableReasonIfUnsupported(Map<String, Object> domain, Map<String, String> condition) {
-    if ("Available".equals(condition.get(TYPE))) {
+    if (AVAILABLE.equals(condition.get(TYPE))) {
       String currentReason = condition.get(REASON);
       if (currentReason != null && isUnsupportedReason(currentReason)) {
         Map<String, Object> meta = getMetadata(domain);
@@ -388,13 +404,13 @@ public class SchemaConversionUtils {
   }
 
   private void restoreFailedReason(Map<String, String> condition, String reason) {
-    if ("Failed".equals(condition.get(TYPE))) {
+    if (FAILED.equals(condition.get(TYPE))) {
       condition.put(REASON, reason);
     }
   }
 
   private void restoreAvailableReason(Map<String, String> condition, String reason) {
-    if ("Available".equals(condition.get(TYPE))) {
+    if (AVAILABLE.equals(condition.get(TYPE))) {
       condition.put(REASON, reason);
     }
   }
@@ -776,8 +792,32 @@ public class SchemaConversionUtils {
   private void removeAndPreserveLogHomeLayout(Map<String, Object> spec, Map<String, Object> toBePreserved) {
     Object existing = Optional.ofNullable(spec.remove(LHL)).orElse("ByServers");
     if (!"Flat".equals(existing)) {
-      preserve(toBePreserved, "$.spec", Map.of(LHL, existing));
+      preserve(toBePreserved, DOLLAR_SPEC, Map.of(LHL, existing));
     }
+  }
+
+  private void removeAndPreserveConditionsV9(Map<String, Object> status, Map<String, Object> toBePreserved) {
+    Optional.ofNullable(status).ifPresent(s -> {
+      List<Map<String, String>> conditions = (List<Map<String, String>>) status.get(CONDITIONS);
+      List<Map<String, String>> removed = new ArrayList<>();
+      if (conditions != null) {
+        List<Map<String, String>> filteredConditions = conditions.stream().filter(cond -> {
+          if (!STATUS_CONDITION_TYPES_V8.contains(cond.get(TYPE))) {
+            removed.add(cond);
+            return false;
+          }
+          return true;
+        }).collect(Collectors.toList());
+        if (filteredConditions.isEmpty()) {
+          status.remove(CONDITIONS);
+        } else {
+          status.put(CONDITIONS, filteredConditions);
+        }
+      }
+      if (!removed.isEmpty()) {
+        preserve(toBePreserved, "$.status", Map.of(CONDITIONS, removed));
+      }
+    });
   }
 
   private void removeAndPreserveIstio(Map<String, Object> spec, Map<String, Object> toBePreserved) {
@@ -904,7 +944,7 @@ public class SchemaConversionUtils {
 
   @FunctionalInterface
   interface RestoreValidator {
-    public boolean validateRestore(Map<String, Object> domain, Map<String, Object> scope, Map<String, Object> value);
+    boolean validateRestore(Map<String, Object> domain, Map<String, Object> scope, Map<String, Object> value);
   }
 
   @SuppressWarnings("java:S112")
@@ -928,6 +968,9 @@ public class SchemaConversionUtils {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
       toBeRestored.forEach((key, value) -> {
+
+        // HERE
+
         JsonPath path = JsonPath.compile(key);
         Optional.of(read(context, path)).map(List::stream)
             .ifPresent(stream -> stream.forEach(item -> {
