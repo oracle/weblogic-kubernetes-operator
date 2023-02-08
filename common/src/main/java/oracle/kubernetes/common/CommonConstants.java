@@ -10,6 +10,7 @@ public class CommonConstants {
   }
 
   public static final String COMPATIBILITY_MODE = "compat-";
+  public static final String WLS_SHARED = "wls-shared-";
   public static final String API_VERSION_V9 = "weblogic.oracle/v9";
   public static final String API_VERSION_V8 = "weblogic.oracle/v8";
 
