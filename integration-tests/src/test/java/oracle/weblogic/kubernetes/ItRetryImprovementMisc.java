@@ -296,8 +296,13 @@ class ItRetryImprovementMisc {
   @DisplayName("Test domain and cluster status conditions after deleting a server pod of the cluster with "
       + "cluster replicas set to 1.")
   void testDeleteServerPodWithReplicasSetTo1() {
-    // delete a cluster server pod
+
     String podName = managedServerPrefix + 1;
+    OffsetDateTime ms1PodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", podName),
+            String.format("Failed to get creationTimestamp for pod %s", podName));
+
+    // delete a cluster server pod
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", podName, domainNamespace));
 
@@ -312,6 +317,7 @@ class ItRetryImprovementMisc {
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
     // wait the pod is restarted and back to ready
+    checkPodRestarted(domainUid, domainNamespace, podName, ms1PodCreationTime);
     checkPodReady(podName, domainUid, domainNamespace);
 
     // verify domain and cluster status conditions Available and Complete become true
