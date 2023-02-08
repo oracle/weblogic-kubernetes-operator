@@ -48,7 +48,8 @@ if [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "operator-aux-container"* ]]; then
   else
     trace FINE "Auxiliary Image: Skipping initialization due to a previous successful initialization."
   fi
-elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compat-operator-aux-container"* ]]; then
+elif [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "compat-"* ]] \
+     || [[ "$AUXILIARY_IMAGE_CONTAINER_NAME" == "wls-shared-"* ]]; then
   sucFile="${AUXILIARY_IMAGE_TARGET_PATH}/${AUXILIARY_IMAGE_COMMAND_LOGS_DIR}/${AUXILIARY_IMAGE_CONTAINER_NAME}.suc"
   if [ ! -f $sucFile ]; then
     initCompatibilityModeInitContainersWithLegacyAuxImages > /tmp/compatibilityModeInitContainers.out 2>&1
