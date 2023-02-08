@@ -251,18 +251,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void onCreateModifyEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
-    switch (kind) {
+    switch (event.getInvolvedObject().getKind()) {
       case EventConstants.EVENT_KIND_POD:
         processPodEvent(event);
         break;
@@ -279,12 +268,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void processPodEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-    if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+    if (event.getInvolvedObject().getName().equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
       processServerEvent(event);
@@ -327,16 +311,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private void onDeleteEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
-    switch (kind) {
+    switch (ref.getKind()) {
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
@@ -757,6 +732,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
     CoreV1Event e = item.object;
     if (e != null) {
+      V1ObjectReference ref = e.getInvolvedObject();
+
+      if (ref == null || ref.getName() == null) {
+        return;
+      }
+
+      String kind = ref.getKind();
+      if (kind == null) {
+        return;
+      }
+
       switch (item.type) {
         case ADDED:
         case MODIFIED:

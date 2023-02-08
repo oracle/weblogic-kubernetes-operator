@@ -1851,6 +1851,19 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenUpdateDomainStatusFail503ErrorSuccessOnRetry_observedGenerationUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+  @Test
   void whenUpdateDomainStatusWith404Error_observedGenerationNotUpdated() {
     testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
 
