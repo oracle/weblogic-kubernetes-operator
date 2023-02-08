@@ -628,8 +628,7 @@ public class DomainStatusUpdater {
       if (isDomainNotPresent(packet)) {
         return doNext(packet);
       }
-      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE,
-          Boolean.valueOf(shouldSkipDomainStatusUpdate(packet)));
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE, shouldSkipDomainStatusUpdate(packet));
       if (endOfProcessing) {
         packet.put(ProcessingConstants.END_OF_PROCESSING, Boolean.TRUE);
       }

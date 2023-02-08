@@ -32,6 +32,9 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
+import oracle.kubernetes.operator.work.Engine;
+import oracle.kubernetes.operator.work.Fiber;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
@@ -43,6 +46,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.hamcrest.MatcherAssert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -146,7 +150,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     DomainResource domain2 = createDomain(UID2, NS);
     DomainResource domain3 = createDomain(UID3, NS);
     testSupport.defineResources(domain1, domain2, domain3);
-    dp.setBeingProcessed(UID2);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
@@ -154,9 +157,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
 
     testSupport.deleteResources(domain2);
+    dp.setBeingProcessed(NS, UID2);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
+    dp.clearBeingProcessed(NS, UID2);
     assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
     assertThat(getDomainPresenceInfoMap(dp), hasKey(UID2));
   }
@@ -427,6 +432,15 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
     Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+    Map<String, FiberGate> makeRightFiberGates = createMakeRightFiberGateMap();
+
+    @NotNull
+    private Map<String, FiberGate> createMakeRightFiberGateMap() {
+      Map<String, FiberGate> map = new ConcurrentHashMap<>();
+      map.put(NS, new TestFiberGate(new Engine("Test")));
+      return map;
+    }
+
     private final Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
@@ -497,12 +511,37 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     }
 
     @Override
-    public boolean isNotBeingProcessed(String namespace, String domainUid) {
-      return beingProcessed.get(domainUid) == null || !beingProcessed.get(domainUid);
+    public Map<String, FiberGate> getMakeRightFiberGateMap() {
+      return makeRightFiberGates;
     }
 
-    public void setBeingProcessed(String domainUid) {
-      beingProcessed.put(domainUid, true);
+    public void setBeingProcessed(String namespace, String domainUid) {
+      getMakeRightFiberGateMap().get(namespace).getCurrentFibers().put(domainUid, new Fiber());
+    }
+
+    public void clearBeingProcessed(String namespace, String domainUid) {
+      getMakeRightFiberGateMap().get(namespace).getCurrentFibers().remove(domainUid);
+    }
+
+    static class TestFiberGate extends FiberGate {
+      private final Map<String, Fiber> myGateMap = new ConcurrentHashMap<>();
+
+      /**
+       * Constructor taking Engine for running Fibers.
+       *
+       * @param engine Engine
+       */
+      public TestFiberGate(Engine engine) {
+        super(engine);
+      }
+
+      /**
+       * Access map of current fibers.
+       * @return Map of fibers in this gate
+       */
+      public Map<String, Fiber> getCurrentFibers() {
+        return myGateMap;
+      }
     }
 
     abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {

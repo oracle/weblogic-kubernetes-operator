@@ -196,9 +196,13 @@ class DomainResourcesValidation {
 
     getDomainPresenceInfoMap().values().stream()
         .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid()))
-        .filter(dpi -> processor.isNotBeingProcessed(dpi.getNamespace(), dpi.getDomainUid()))
+        .filter(dpi -> isNotBeingProcessed(dpi.getNamespace(), dpi.getDomainUid()))
         .collect(Collectors.toList())
         .forEach(i -> i.setDomain(null));
+  }
+
+  private boolean isNotBeingProcessed(String namespace, String domainUid) {
+    return processor.getMakeRightFiberGateMap().get(namespace).getCurrentFibers().get(domainUid) == null;
   }
 
   private void addDomain(DomainResource domain) {

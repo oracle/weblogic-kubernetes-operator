@@ -160,8 +160,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public boolean isNotBeingProcessed(String namespace, String domainUid) {
-    return makeRightFiberGates.get(namespace).getCurrentFibers().get(domainUid) == null;
+  public Map<String, FiberGate> getMakeRightFiberGateMap() {
+    return makeRightFiberGates;
   }
 
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
@@ -250,10 +250,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(CoreV1Event event) {
-    switch (event.getInvolvedObject().getKind()) {
+  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+    switch (kind) {
       case EventConstants.EVENT_KIND_POD:
-        processPodEvent(event);
+        processPodEvent(name, event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
@@ -267,8 +267,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processPodEvent(CoreV1Event event) {
-    if (event.getInvolvedObject().getName().equals(NamespaceHelper.getOperatorPodName())) {
+  private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
+    if (name.equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
       processServerEvent(event);
@@ -308,16 +308,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void onDeleteEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    switch (ref.getKind()) {
+  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
+    switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
         break;
       case EventConstants.EVENT_KIND_POD:
-        if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+        if (name.equals(NamespaceHelper.getOperatorPodName())) {
           deleteEventK8SObjects(event);
         }
         break;
@@ -734,22 +732,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     if (e != null) {
       V1ObjectReference ref = e.getInvolvedObject();
 
-      if (ref == null || ref.getName() == null) {
-        return;
-      }
-
-      String kind = ref.getKind();
-      if (kind == null) {
+      if (ref == null || ref.getName() == null || ref.getKind() == null) {
         return;
       }
 
       switch (item.type) {
         case ADDED:
         case MODIFIED:
-          onCreateModifyEvent(e);
+          onCreateModifyEvent(ref.getKind(), ref.getName(), e);
           break;
         case DELETED:
-          onDeleteEvent(e);
+          onDeleteEvent(ref.getKind(), ref.getName(), e);
           break;
         case ERROR:
         default:
