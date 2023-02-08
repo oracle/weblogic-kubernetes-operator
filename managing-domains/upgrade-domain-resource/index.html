@@ -12,20 +12,20 @@
     <title>Upgrade Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1675438124" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1675438124" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1675883943" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1675883943" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1675438124"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1675883943"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1675438124"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1675438124"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1675883943"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1675883943"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1675438124"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1675883943"></script>
 
     
   </div>
@@ -3654,7 +3654,7 @@
 <p>The Domain CustomResourceDefinition in operator version 4.0 has changed significantly from previous operator releases. For this reason, we have updated the API version of the Domain custom resource in the CRD from <code>weblogic.oracle/v8</code> to <code>weblogic.oracle/v9</code>. We continue to support the Domains with API version <code>weblogic.oracle/v8</code> and provide full backward compatibility. If you want to use the new fields introduced in the latest <code>weblogic.oracle/v9</code> schema, then you will need to update the API version in your Domain resource YAML file.</p>
 <h3 id="automated-upgrade-of-weblogicoraclev8-schema-domain-resource">Automated upgrade of <code>weblogic.oracle/v8</code> schema domain resource</h3>
 
-<div class="notices note" ><p>The automated upgrade described in this section converts <code>weblogic.oracle/v8</code> schema auxiliary image configuration into low-level Kubernetes schema, for example, init-containers and volumes.
+<div class="notices note" ><p>The automated upgrade described in this section converts <code>weblogic.oracle/v8</code> schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified <code>weblogic.oracle/v9</code> schema configuration for auxiliary images, as documented in the
 Auxiliary Images <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/#configuration">Configuration</a> section.</p>
 </div>
@@ -3662,7 +3662,7 @@ Auxiliary Images <a href="https://oracle.github.io/weblogic-kubernetes-operator/
 <p>The 4.0 operator provides a seamless upgrade of the Domain resources with the <code>weblogic.oracle/v8</code> version of the schema. When you create a Domain using a domain resource YAML file with <code>weblogic.oracle/v8</code> schema in a namespace managed by the 4.0 operator, the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/">WebLogic Domain resource conversion webhook</a> performs an automated upgrade of the domain resource to the <code>weblogic.oracle/v9</code> schema. The conversion webhook runtime converts the <code>weblogic.oracle/v8</code> configuration to the equivalent configuration in operator 4.0. Similarly, when <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/installation/#upgrade-the-operator">upgrading the operator version</a>, Domain resources with <code>weblogic.oracle/v8</code> schema are seamlessly upgraded.</p>
 <h3 id="upgrade-the-weblogicoraclev8-schema-domain-resource-manually">Upgrade the <code>weblogic.oracle/v8</code> schema domain resource manually</h3>
 
-<div class="notices note" ><p>The manual upgrade tooling described in this section converts <code>weblogic.oracle/v8</code> schema auxiliary image configuration into low-level Kubernetes schema, for example, init-containers and volumes.
+<div class="notices note" ><p>The manual upgrade tooling described in this section converts <code>weblogic.oracle/v8</code> schema auxiliary image configuration into low-level Kubernetes schema, for example, init containers and volumes.
 Instead of relying on the generated low-level schema, Oracle recommends using a simplified <code>weblogic.oracle/v9</code> schema configuration for auxiliary images, as documented in the
 Auxiliary Images <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/#configuration">Configuration</a> section.</p>
 </div>
@@ -3727,6 +3727,10 @@ base name of the input file name. For example, assuming the name of the V8 domai
 <pre tabindex="0"><code>$ ls -ltr /tmp/domain-v9.yaml
 -rw-r----- 1 user dba 2818 Apr 18 23:11 /tmp/domain-v9.yaml
 </code></pre>
+<div class="notices note" ><p>The manual upgrade tooling creates init containers with names prefixed with <code>compat-</code> when converting the auxiliary image configuration of the <code>weblogic.oracle/v8</code> schema. The operator generates only init containers with names starting with either <code>compat-</code> or <code>wls-shared-</code> in the introspector job pod. To alter the generated init container&rsquo;s name, the new name must start with either <code>compat-</code> or <code>wls-shared-</code>.</p>
+</div>
+
+
 
 
 
@@ -6142,19 +6146,19 @@ base name of the input file name. For example, assuming the name of the V8 domai
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1675438124"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1675883943"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1675438124"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1675438124"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1675883943"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1675883943"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1675438124"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1675883943"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
