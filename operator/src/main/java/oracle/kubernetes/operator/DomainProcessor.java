@@ -133,9 +133,7 @@ public interface DomainProcessor {
     return new ConcurrentHashMap<>();
   }
 
-  default Map<String, FiberGate> getMakeRightFiberGateMap() {
-    return new ConcurrentHashMap<>();
-  }
+  Map<String, FiberGate> getMakeRightFiberGateMap();
 
   DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 }

@@ -411,7 +411,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean hasDeletedClusterEventData(MakeRightClusterOperation operation) {
-    return operation.getEventData() != null && operation.getEventData().getItem().name().equals("CLUSTER_DELETED");
+    return EventItem.CLUSTER_DELETED == getEventItem(operation);
+  }
+
+  private EventItem getEventItem(MakeRightClusterOperation operation) {
+    return Optional.ofNullable(operation.getEventData()).map(EventData::getItem).orElse(null);
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
@@ -729,24 +733,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
     CoreV1Event e = item.object;
-    if (e != null) {
-      V1ObjectReference ref = e.getInvolvedObject();
+    V1ObjectReference ref = e.getInvolvedObject();
 
-      if (ref == null || ref.getName() == null || ref.getKind() == null) {
-        return;
-      }
+    if (ref == null || ref.getName() == null || ref.getKind() == null) {
+      return;
+    }
 
-      switch (item.type) {
-        case ADDED:
-        case MODIFIED:
-          onCreateModifyEvent(ref.getKind(), ref.getName(), e);
-          break;
-        case DELETED:
-          onDeleteEvent(ref.getKind(), ref.getName(), e);
-          break;
-        case ERROR:
-        default:
-      }
+    switch (item.type) {
+      case ADDED:
+      case MODIFIED:
+        onCreateModifyEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case DELETED:
+        onDeleteEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case ERROR:
+      default:
     }
   }
 
