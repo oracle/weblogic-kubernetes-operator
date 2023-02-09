@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -347,6 +348,32 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenK8sHasOneDomainWithMissingInfo_dontRecordAdminServerService() {
+    addDomainResource(UID1, NS);
+    V1Service service = createServerService(UID1, NS, "admin");
+    testSupport.defineResources(service);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithNoDomainUidLabel_dontRecordAdminServerService() {
+    addDomainResource(UID1, NS);
+    V1Service service = createServerService(UID1, NS, "admin");
+    testSupport.defineResources(service);
+    service.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+  }
+
+  @Test
   void whenK8sHasOneDomainWithPod_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
@@ -357,6 +384,46 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodButMissingInfo_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodButPodNoServerName_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodNoDomainUidLabel_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
   }
 
   private V1Pod createPodResource(String uid, String namespace, String serverName) {

@@ -482,9 +482,8 @@ public class DomainStatusUpdater {
 
     private Step createDomainStatusReplaceStep() {
       LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getNewStatus());
-      if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("status change: " + createPatchString());
-      }
+      LOGGER.finer("status change: " + createPatchString());
+
       DomainResource oldDomain = getDomain();
       DomainStatus status = getNewStatus();
       if (isMakeRight) {
