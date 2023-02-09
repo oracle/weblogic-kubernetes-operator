@@ -317,6 +317,19 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void statusStepWhenInfoHasNullDomain_dontUpdatesDomainStatus() {
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .build();
+    domain.setStatus(null);
+    info.setDomain(null);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain().getStatus(), equalTo(null));
+  }
+
+  @Test
   void whenServerIntentionallyNotStarted_reportItsStateAsShutdown() {    
     defineScenario().withServers("server1").notStarting("server1").build();
 
