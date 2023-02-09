@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -53,6 +53,8 @@ tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 repre
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
+
+import utils
 
 env = None
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
@@ -196,9 +198,9 @@ def filter_model(model):
           customizeServerTemplates(model)
   except:
     exc_type, exc_obj, exc_tb = sys.exc_info()
-    ex_strings = traceback.format_exception(exc_type, exc_obj, exc_tb)
-    print(ex_strings)
-    raise Exception("WDT MII failed execution")
+    ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
+    utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
+    raise
 
 
 def initOfflineWlstEnv(model):
