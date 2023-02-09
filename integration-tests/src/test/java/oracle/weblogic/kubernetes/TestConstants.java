@@ -206,7 +206,7 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO 
+  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO
          +  "/weblogick8s/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
@@ -231,8 +231,9 @@ public interface TestConstants {
   public static final String LOGSTASH_NAME = "logstash";
   public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/weblogick8s/test-images/docker/logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
-  public static final String FLUENTD_IMAGE = 
-       TEST_IMAGES_REPO + "/weblogick8s/test-images/docker/fluentd-kubernetes-daemonset:" + FLUENTD_IMAGE_VERSION;
+  public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO
+            + "/weblogick8s/test-images/docker/fluentd-kubernetes-daemonset:" 
+            + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
   public static final String WLS_LOGGING_EXPORTER_YAML_FILE_NAME = "WebLogicLoggingExporter.yaml";
