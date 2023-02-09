@@ -132,6 +132,14 @@ class IntrospectionStatusTest {
   }
 
   @Test
+  void whenNewIntrospectorJobPodWhenInfoIsMissingFromMapAndJobNameLabelMissing_dontUpdateDomainStatus() {
+    presenceInfoMap.get(NS).remove(UID);
+    IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatchWithMissingJobLabel(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
+
+  @Test
   void whenPodReady_dontLogFailureMessage() {
     consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
 

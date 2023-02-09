@@ -712,7 +712,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
-    if (c != null && c.getMetadata() != null) {
+    if (c.getMetadata() != null) {
       switch (item.type) {
         case MODIFIED:
         case DELETED:
