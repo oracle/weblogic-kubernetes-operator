@@ -39,6 +39,7 @@ import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_T
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 
@@ -100,9 +101,13 @@ public abstract class BasePodStepContext extends StepContextBase {
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
         .env(getEnvironmentVariables())
-        .resources(getServerSpec().getResources())
+        .resources(getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
+
+  protected abstract V1ResourceRequirements getResources();
+
+  protected abstract List<V1EnvVar> getServerPodEnvironmentVariables();
 
   /**
    * Return a list of environment variables to be set up in the pod. This method does some
@@ -141,6 +146,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
+            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
@@ -166,7 +172,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   protected List<V1EnvVar> createEnv(V1Container c) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    if (!c.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!(c.getName().startsWith(COMPATIBILITY_MODE) || c.getName().startsWith(WLS_SHARED))) {
       getEnvironmentVariables()
           .forEach(envVar -> addIfMissing(initContainerEnvVars,
               envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
@@ -175,7 +181,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected V1ResourceRequirements createResources() {
-    V1ResourceRequirements resources = getServerSpec().getResources();
+    V1ResourceRequirements resources = getResources();
     V1ResourceRequirements resourceRequirements = null;
     if (!resources.getLimits().isEmpty()) {
       resourceRequirements = new V1ResourceRequirements()

@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -40,6 +41,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -55,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
@@ -136,6 +139,32 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getAdminServerSpec();
   }
 
+  protected V1ResourceRequirements getResources() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getResources())
+        .orElse(getAdminServerResources());
+  }
+
+  private V1ResourceRequirements getAdminServerResources() {
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getResources()).orElse(null);
+  }
+
+  protected List<V1EnvVar> getServerPodEnvironmentVariables() {
+    List<V1EnvVar> envVars = getIntrospectorEnvVariables();
+    getAdminServerEnvVariables().forEach(adminEnvVar -> addIfMissing(envVars, adminEnvVar.getName(),
+        adminEnvVar.getValue(), adminEnvVar.getValueFrom()));
+    return envVars;
+  }
+
+  private List<V1EnvVar> getIntrospectorEnvVariables() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+        .map(EffectiveIntrospectorJobPodSpec::getEnv).orElse(new ArrayList<>());
+  }
+
+  private List<V1EnvVar> getAdminServerEnvVariables() {
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvironmentVariables())
+        .orElse(new ArrayList<>());
+  }
+
   String getJobName() {
     return createJobName(getDomainUid());
   }
@@ -185,9 +214,13 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addVolumeIfMissing(V1Volume volume, List<V1Volume> volumes) {
-    if (!volumes.contains(volume) && volume.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!volumes.contains(volume) && isAllowedInIntrospector(volume.getName())) {
       volumes.add(volume);
     }
+  }
+
+  private boolean isAllowedInIntrospector(String name) {
+    return name.startsWith(COMPATIBILITY_MODE) || name.startsWith(WLS_SHARED);
   }
 
   List<V1VolumeMount> getAdditionalVolumeMounts() {
@@ -197,7 +230,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private void addVolumeMountIfMissing(V1VolumeMount mount, List<V1VolumeMount> volumeMounts) {
-    if (!volumeMounts.contains(mount) && mount.getName().startsWith(COMPATIBILITY_MODE)) {
+    if (!volumeMounts.contains(mount) && isAllowedInIntrospector(mount.getName())) {
       volumeMounts.add(mount);
     }
   }
@@ -374,7 +407,7 @@ public class JobStepContext extends BasePodStepContext {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
-            .filter(container -> container.getName().startsWith(COMPATIBILITY_MODE))
+            .filter(container -> isAllowedInIntrospector(container.getName()))
             .map(c -> c.env(createEnv(c)).resources(createResources()))
             .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
@@ -657,7 +690,7 @@ public class JobStepContext extends BasePodStepContext {
   List<V1EnvVar> getConfiguredEnvVars() {
     // Pod for introspector job would use same environment variables as for admin server
     List<V1EnvVar> vars =
-          PodHelper.createCopy(getDomain().getAdminServerSpec().getEnvironmentVariables());
+          PodHelper.createCopy(getServerPodEnvironmentVariables());
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());

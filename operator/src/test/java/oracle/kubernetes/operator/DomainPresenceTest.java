@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -450,13 +450,19 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     }
 
     @Override
-    public MakeRightClusterOperation createMakeRightOperationForClusterEvent(EventHelper.EventItem item,
-                                                                            ClusterResource cluster) {
+    public MakeRightClusterOperation createMakeRightOperationForClusterEvent(
+        EventHelper.EventItem item, ClusterResource cluster, String domainUid) {
       ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster);
       final MakeRightClusterOperationStub stub =
           createStrictStub(MakeRightClusterOperationStub.class, info, item, clusters.get(NS));
       clusterOperationStubs.add(stub);
       return stub;
+    }
+
+    @Override
+    public MakeRightClusterOperation createMakeRightOperationForClusterEvent(EventHelper.EventItem item,
+                                                                             ClusterResource cluster) {
+      return createMakeRightOperationForClusterEvent(item, cluster, null);
     }
 
     abstract static class MakeRightDomainOperationStub implements MakeRightDomainOperation {
@@ -529,7 +535,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       if (eventItem == EventHelper.EventItem.CLUSTER_DELETED) {
         clusterResourceInfos.remove(info.getResourceName());
       } else {
-        clusterResourceInfos.computeIfAbsent(info.getResourceName(), k -> (ClusterPresenceInfo) info);
+        clusterResourceInfos.computeIfAbsent(info.getResourceName(), k -> info);
       }
     }
   }
