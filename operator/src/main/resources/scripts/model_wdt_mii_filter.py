@@ -47,7 +47,7 @@
 import copy
 import inspect
 import os
-import sys
+import sys, traceback
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
@@ -157,31 +157,49 @@ class SecretManager(object):
 
 
 def filter_model(model):
-  if model is not None:
-    if getOfflineWlstEnv() is None:
+
+  try:
+    if model is not None:
+
+      if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
-    initSecretManager(env)
+      initSecretManager(env)
 
-    if model and 'resources' in model:
-      customizeCustomFileStores(model)
+      if model and 'resources' in model:
+        customizeCustomFileStores(model)
 
-    if model and 'topology' in model:
-      topology = model['topology']
-      customizeNodeManagerCreds(topology)
-      customizeDomainLogPath(topology)
+      if model and 'topology' in model:
+        topology = model['topology']
+        customizeNodeManagerCreds(topology)
+        customizeDomainLogPath(topology)
 
-      if 'Cluster' in topology:
-        # If Istio enabled, inject replication channel for each cluster
-        # before creating the corresponding NAP for each server and
-        # server-template
-        customizeIstioClusters(model)
+        if 'Cluster' in topology:
+          # If Istio enabled, inject replication channel for each cluster
+          # before creating the corresponding NAP for each server and
+          # server-template
+          customizeIstioClusters(model)
 
-      if 'Server' in topology:
+        if 'AdminServerName' in topology:
+          admin_server = topology['AdminServerName']
+        else:
+          # weblogic default
+          admin_server = 'AdminServer'
+          topology['AdminServerName'] = admin_server
+
+        if admin_server not in topology['Server']:
+          topology['Server'][admin_server] = {}
+
         customizeServers(model)
 
-      if 'ServerTemplate' in topology:
-        customizeServerTemplates(model)
+        if 'ServerTemplate' in topology:
+          customizeServerTemplates(model)
+  except:
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    ex_strings = traceback.format_exception(exc_type, exc_obj, exc_tb)
+    print(ex_strings)
+    raise Exception("WDT MII failed execution")
+
 
 def initOfflineWlstEnv(model):
   global env
@@ -450,11 +468,8 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
   if istio_readiness_port is None:
     return
-  admin_server_port = server['ListenPort']
-  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
 
-  if admin_server_port is None:
-    admin_server_port = 7001
+  admin_server_port = _get_default_listen_port(server)
 
   # readiness probe
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
@@ -585,10 +600,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   istio_readiness_port = env.getEnvOrDef("ISTIO_READINESS_PORT", None)
   if istio_readiness_port is None:
     return
-  listen_port = template['ListenPort']
-  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
-  if listen_port is None:
-    listen_port = 7001
+
+  listen_port = _get_default_listen_port(template)
 
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
@@ -651,12 +664,8 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
   if (admin_channel_port_forwarding_enabled == 'false') or \
       (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()):
     return
-
-  admin_server_port = server['ListenPort']
   # Set the default if it is not provided to avoid nap default to 0 which fails validation.
-
-  if admin_server_port is None:
-    admin_server_port = 7001
+  admin_server_port = _get_default_listen_port(server)
 
   model = env.getModel()
 
@@ -837,5 +846,10 @@ def getSecretManager():
 def istioVersionRequiresLocalHostBindings():
   if env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
     return True
-
   return False
+
+def _get_default_listen_port(server):
+  if 'ListenPort' not in server:
+    return 7001
+  else:
+    return server['ListenPort']
