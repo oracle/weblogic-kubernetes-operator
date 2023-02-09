@@ -10,14 +10,18 @@
 def filter_model(model):
 	if model and 'topology' in model:
             topology = model['topology']
-            if model['topology']['AdminServerName'] != None:
+            if 'AdminServerName' in model['topology']:
                 admin_server = topology['AdminServerName']
-                model['topology'] = {}
-                model['topology']['AdminServerName'] = admin_server
-                model['topology']['Server'] = {}
-                model['topology']['Server'][admin_server] = topology['Server'][admin_server]   
             else:
-                model['topology'] = {}
+                # weblogic default
+                admin_server = 'AdminServer'
+            model['topology'] = {}
+            model['topology']['AdminServerName'] = admin_server
+            model['topology']['Server'] = {}
+            if admin_server in topology['Server']:
+                model['topology']['Server'][admin_server] = topology['Server'][admin_server]
+            else:
+                model['topology']['Server'][admin_server] = {}
 
             if 'Name' in topology:
                 model['topology']['Name'] = topology['Name']
