@@ -117,7 +117,7 @@ public interface TestConstants {
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
   // WebLogic Base Image with Japanease Locale
-  public static final String LOCALE_IMAGE_NAME = "phx.ocir.io/weblogick8s/test-images/weblogic";
+  public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_REPO + "/weblogick8s/test-images/weblogic";
   public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
 
   // For kind, replace repo name in image name with KIND_REPO, otherwise use the actual image name
@@ -197,7 +197,7 @@ public interface TestConstants {
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
-      getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5-debian-elasticsearch7-1.1");
+      getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int DEFAULT_LISTEN_PORT = 7100;
@@ -211,12 +211,17 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE = KIBANA_NAME + ":" + ELK_STACK_VERSION;
+  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "/weblogick8s/test-images/docker/kibana";
+  public static final String KIBANA_IMAGE = KIBANA_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
-  public static final String LOGSTASH_IMAGE = LOGSTASH_NAME + ":" + ELK_STACK_VERSION;
-  public static final String FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:" + FLUENTD_IMAGE_VERSION;
+  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/weblogick8s/test-images/docker/logstash";
+  public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
+  
+  public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO
+            + "/weblogick8s/test-images/docker/fluentd-kubernetes-daemonset:"
+            + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
   public static final String WLS_LOGGING_EXPORTER_YAML_FILE_NAME = "WebLogicLoggingExporter.yaml";
