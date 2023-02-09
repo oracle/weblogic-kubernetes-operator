@@ -132,7 +132,7 @@ class ItRecoveryDomainInPV  {
    * Make sure all 100 persistent messages are recovered form managed server(2)
    */
   @Test
-  @DisplayName("verifies persistent WebLogic data survives the server pod")
+  @DisplayName("verifies persistent WebLogic data survives the server pod scaling")
   void testRecoveryDomainHomeInPv() {
 
     final String managedServerNameBase = "managed-";
