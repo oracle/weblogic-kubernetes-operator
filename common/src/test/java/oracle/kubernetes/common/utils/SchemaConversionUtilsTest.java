@@ -278,6 +278,22 @@ class SchemaConversionUtilsTest {
         hasJsonPath("$.status.conditions[?(@.type=='Available')].reason", contains("ServersReady")));
   }
 
+  @Test
+  void testV9DomainRollingCondition_preservedAndRestored() throws IOException {
+    Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
+    addStatusCondition(v9Domain, "Rolling", "True", null, "Rolling cluster-2");
+
+    converterv8.convert(v9Domain);
+
+    assertThat(converterv8.getDomain(),
+        hasNoJsonPath("$.status.conditions"));
+
+    converter.convert(converterv8.getDomain());
+
+    assertThat(converter.getDomain(),
+        hasJsonPath("$.status.conditions[?(@.type=='Rolling')].message", contains("Rolling cluster-2")));
+  }
+
   @ParameterizedTest
   @CsvSource({"true,, Image", "false,, PersistentVolume", "true, FromModel, FromModel"})
   void whenOldDomainHasDomainHomeInImageBoolean_convertToDomainSourceType(
@@ -589,8 +605,8 @@ class SchemaConversionUtilsTest {
     addStatusCondition(v9Domain, "Completed", "True", "Something", "Hello");
     converterv8.convert(v9Domain);
 
-    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Completed')]", empty()));
-    assertThat(converterv8.getDomain(), hasJsonPath("$.status.conditions[?(@.type=='Progressing')]", empty()));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.status.conditions[?(@.type=='Completed')]"));
+    assertThat(converterv8.getDomain(), hasNoJsonPath("$.status.conditions[?(@.type=='Progressing')]"));
   }
 
   @Test
