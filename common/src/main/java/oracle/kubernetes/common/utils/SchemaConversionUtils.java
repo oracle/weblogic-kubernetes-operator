@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +61,7 @@ public class SchemaConversionUtils {
   private static final String DOLLAR_SPEC = "$.spec";
   private static final String DOLLAR_SPEC_SERVERPOD = "$.spec.serverPod";
   private static final String DOLLAR_SPEC_AS_SERVERPOD = "$.spec.adminServer.serverPod";
+  private static final String DOLLAR_STATUS = "$.status";
 
   public static final String INTERNAL = "Internal";
 
@@ -148,7 +150,13 @@ public class SchemaConversionUtils {
       try {
         Map<String, Object> toBePreserved = new TreeMap<>();
         removeAndPreserveLogHomeLayout(spec, toBePreserved);
-        removeAndPreserveConditionsV9(getStatus(domain), toBePreserved);
+        Map<String, Object> status = getStatus(domain);
+        removeAndPreserveConditionsV9(status, toBePreserved);
+        Optional.ofNullable(status).ifPresent(s -> {
+          if (status.isEmpty()) {
+            domain.remove(STATUS);
+          }
+        });
 
         preserveV9(PRESERVED_V9, domain, toBePreserved, apiVersion);
       } catch (IOException io) {
@@ -815,7 +823,7 @@ public class SchemaConversionUtils {
         }
       }
       if (!removed.isEmpty()) {
-        preserve(toBePreserved, "$.status", Map.of(CONDITIONS, removed));
+        preserve(toBePreserved, DOLLAR_STATUS, Map.of(CONDITIONS, removed));
       }
     });
   }
@@ -968,9 +976,9 @@ public class SchemaConversionUtils {
     if (toBeRestored != null && !toBeRestored.isEmpty()) {
       ReadContext context = JsonPath.parse(domain);
       toBeRestored.forEach((key, value) -> {
-
-        // HERE
-
+        if (DOLLAR_STATUS.equals(key) && getStatus(domain) == null) {
+          domain.put(STATUS, new HashMap<>());
+        }
         JsonPath path = JsonPath.compile(key);
         Optional.of(read(context, path)).map(List::stream)
             .ifPresent(stream -> stream.forEach(item -> {
