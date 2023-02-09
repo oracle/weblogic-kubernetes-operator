@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -93,7 +93,9 @@ class PodPresenceTest {
     mementos.add(ScanCacheStub.install());
     mementos.add(SystemClockTestSupport.installClock());
 
-    domains.put(NS, new HashMap<>(ImmutableMap.of(UID, info)));
+    HashMap<String, DomainPresenceInfo> infoMap = new HashMap<>();
+    infoMap.put(UID, info);
+    domains.put(NS, infoMap);
     disableDomainProcessing();
     DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
@@ -270,6 +272,28 @@ class PodPresenceTest {
     processor.dispatchPodWatch(event);
 
     assertThat(info.getServerPod(SERVER), sameInstance(newPod));
+  }
+
+  @Test
+  void onAddEventWithNoRecordedServerPodButDomainUidLabelMissing_dontAddIt() {
+    V1Pod newPod = createServerPod();
+    newPod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    Watch.Response<V1Pod> event = WatchEvent.createAddedEvent(newPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(info.getServerPod(SERVER), equalTo(null));
+  }
+
+  @Test
+  void onAddEventWithNoRecordedServerPodButInfoMissing_dontAddIt() {
+    domains.get(NS).remove(UID);
+    V1Pod newPod = createServerPod();
+    Watch.Response<V1Pod> event = WatchEvent.createAddedEvent(newPod).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(info.getServerPod(SERVER), equalTo(null));
   }
 
   @Test

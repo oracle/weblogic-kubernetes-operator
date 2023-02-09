@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -87,7 +87,9 @@ class IntrospectionStatusTest {
 
     final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
     domain.setStatus(new DomainStatus().withMessage("").withReason(""));
-    presenceInfoMap.put(NS, Map.of(UID, new DomainPresenceInfo(domain)));
+    HashMap<String, DomainPresenceInfo> infoMap = new HashMap<>();
+    infoMap.put(UID, new DomainPresenceInfo(domain));
+    presenceInfoMap.put(NS, infoMap);
     testSupport.defineResources(domain);
   }
 
@@ -110,6 +112,21 @@ class IntrospectionStatusTest {
   @Test
   void whenNewIntrospectorJobPodStatusNull_dontUpdateDomainStatus() {
     IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
+
+  @Test
+  void whenNewIntrospectorJobPodWhenInfoIsMissingFromMap_dontUpdateDomainStatus() {
+    presenceInfoMap.get(NS).remove(UID);
+    IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
+
+  @Test
+  void whenNewIntrospectorJobPodJobNameLabelMissing_dontUpdateDomainStatus() {
+    IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatchWithMissingJobLabel(processor);
 
     assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
@@ -383,6 +400,12 @@ class IntrospectionStatusTest {
 
     void dispatch(DomainProcessor processor) {
       processor.dispatchPodWatch(eventType.toWatchResponse(build()));
+    }
+
+    void dispatchWithMissingJobLabel(DomainProcessor processor) {
+      V1Pod pod = build();
+      pod.getMetadata().getLabels().remove(JOBNAME_LABEL);
+      processor.dispatchPodWatch(eventType.toWatchResponse(pod));
     }
 
     private V1Pod build() {
