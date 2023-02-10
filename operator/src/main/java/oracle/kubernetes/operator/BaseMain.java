@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
@@ -87,13 +88,13 @@ public abstract class BaseMain {
       // top-level directory using either an env variable or a property. In the normal,
       // container-based use case these values won't be set and the operator will with the
       // /operator directory.
-      String deploymentHomeLoc = System.getenv("DEPLOYMENT_HOME");
+      String deploymentHomeLoc = HelmAccess.getHelmVariable("DEPLOYMENT_HOME");
       if (deploymentHomeLoc == null) {
         deploymentHomeLoc = System.getProperty("deploymentHome", "/deployment");
       }
       deploymentHome = new File(deploymentHomeLoc);
 
-      String probesHomeLoc = System.getenv("PROBES_HOME");
+      String probesHomeLoc = HelmAccess.getHelmVariable("PROBES_HOME");
       if (probesHomeLoc == null) {
         probesHomeLoc = System.getProperty("probesHome", "/probes");
       }
@@ -178,9 +179,12 @@ public abstract class BaseMain {
   void startRestServer(Container container)
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    BaseRestServer value = createRestServer();
-    restServer.set(value);
-    value.start(container);
+    if (Optional.ofNullable(HelmAccess.getHelmVariable("ENABLE_REST_ENDPOINT"))
+        .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
+      BaseRestServer value = createRestServer();
+      restServer.set(value);
+      value.start(container);
+    }
   }
 
   abstract BaseRestServer createRestServer();
