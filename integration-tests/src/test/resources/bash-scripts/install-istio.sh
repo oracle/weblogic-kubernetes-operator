@@ -5,12 +5,11 @@
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.11.1
+#  Default istio version is 1.13.2
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 #  https://github.com/istio/istio/releases
 #  https://github.com/istio/istio/tags
-
 
 # Usage:
 #
