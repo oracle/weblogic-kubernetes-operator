@@ -93,7 +93,7 @@ Please be aware that pull requests that seek to introduce a new dependency will 
 
 ## Security
 
-Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process
+Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process.
 
 ## License
 
