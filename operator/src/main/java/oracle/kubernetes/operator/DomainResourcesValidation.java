@@ -139,10 +139,13 @@ class DomainResourcesValidation {
   private void addPod(V1Pod pod) {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
-    if (domainUid != null && serverName != null && info != null) {
-      info.setServerPodFromEvent(serverName, pod);
+    if (domainUid != null && serverName != null) {
+      setServerPodFromEvent(getExistingDomainPresenceInfo(domainUid), serverName, pod);
     }
+  }
+
+  private void setServerPodFromEvent(DomainPresenceInfo info, String serverName, V1Pod pod) {
+    Optional.ofNullable(info).ifPresent(i -> i.setServerPodFromEvent(serverName, pod));
   }
 
   private DomainPresenceInfo getOrComputeDomainPresenceInfo(String domainUid) {
@@ -167,9 +170,8 @@ class DomainResourcesValidation {
 
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
-    if (domainUid != null && info != null) {
-      ServiceHelper.addToPresence(info, service);
+    if (domainUid != null) {
+      ServiceHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), service);
     }
   }
 
@@ -179,9 +181,8 @@ class DomainResourcesValidation {
 
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
-    if (domainUid != null && info != null) {
-      PodDisruptionBudgetHelper.addToPresence(info, pdb);
+    if (domainUid != null) {
+      PodDisruptionBudgetHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), pdb);
     }
   }
 
