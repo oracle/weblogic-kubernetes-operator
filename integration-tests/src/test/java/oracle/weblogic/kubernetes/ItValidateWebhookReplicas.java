@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -101,8 +101,8 @@ class ItValidateWebhookReplicas {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainNamespace2 = null;
-  private static String domainUid = "domain1";
-  private static String domainUid2 = "domain2";
+  private static String domainUid = "valwebrepdomain1";
+  private static String domainUid2 = "valwebrepdomain2";
 
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
