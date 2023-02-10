@@ -39,9 +39,9 @@ ${KUBERNETES_CLI} create namespace istio-system
 
 ( ${KUBERNETES_CLI} create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
 
-# set custom docker registry to gcr.io/istio-release to avoid 
+ # set custom docker registry to gcr.io/istio-release to avoid 
  # docker.io/istio dependency.
- echo "Modifying docker registry to gcr.io/istio-release instead of docker.io"
+ echo "Set the image registry to gcr.io/istio-release during istio installation"
 ( cd ${istiodir}
   bin/istioctl x precheck
   bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set profile=demo -y
