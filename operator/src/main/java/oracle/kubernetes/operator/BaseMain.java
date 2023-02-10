@@ -179,12 +179,9 @@ public abstract class BaseMain {
   void startRestServer(Container container)
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    if (Optional.ofNullable(HelmAccess.getHelmVariable("ENABLE_REST_ENDPOINT"))
-        .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
-      BaseRestServer value = createRestServer();
-      restServer.set(value);
-      value.start(container);
-    }
+    BaseRestServer value = createRestServer();
+    restServer.set(value);
+    value.start(container);
   }
 
   abstract BaseRestServer createRestServer();
