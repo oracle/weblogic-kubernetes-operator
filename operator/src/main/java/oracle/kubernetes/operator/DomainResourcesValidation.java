@@ -5,11 +5,9 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -223,13 +221,7 @@ class DomainResourcesValidation {
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
     return Stream.concat(
         getDomainPresenceInfoMap().values().stream().filter(this::isStranded),
-        findStrandedDomainPresenceInfos(dp, namespace, getDomainPresenceInfoMap().keySet()));
-  }
-
-  private Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(
-      DomainProcessor dp, String namespace, Set<String> domainUids) {
-    return Optional.ofNullable(dp.getDomainPresenceInfoMapInNamespace(namespace)).orElse(Collections.emptyMap())
-        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
+        dp.findStrandedDomainPresenceInfos(namespace, getDomainPresenceInfoMap().keySet()));
   }
 
   private boolean isStranded(DomainPresenceInfo dpi) {

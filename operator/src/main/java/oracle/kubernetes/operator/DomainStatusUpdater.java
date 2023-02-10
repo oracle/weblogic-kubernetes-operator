@@ -534,7 +534,7 @@ public class DomainStatusUpdater {
       if (!isStatusUnchanged()) {
         result.add(createDomainStatusReplaceStep());
       } else {
-        if (endOfProcessing) {
+        if (endOfProcessing && isMakeRight) {
           Optional.ofNullable(createDomainStatusObservedGenerationReplaceStep()).ifPresent(result::add);
         }
       }
