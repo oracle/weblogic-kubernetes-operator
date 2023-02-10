@@ -399,6 +399,19 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenK8sHasOneDomainWithPodButMissingInfoAndServerNameLabel_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
   void whenK8sHasOneDomainWithPodButPodNoServerName_dontRecordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
@@ -418,6 +431,21 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodNoDomainUidLabelAndServerNameLabel_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);

@@ -144,9 +144,9 @@ class ServicePresenceTest {
 
   @Test
   void onAddEventWithNoRecordedClusterServiceMissingInfo_dontAddIt() {
-    domains.get(NS).remove(UID);
     V1Service newService = createClusterService();
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
+    domains.get(NS).remove(UID);
 
     processor.dispatchServiceWatch(event);
 
@@ -277,6 +277,17 @@ class ServicePresenceTest {
     processor.dispatchServiceWatch(event);
 
     assertThat(info.getClusterService(CLUSTER), nullValue());
+  }
+
+  @Test
+  void onDeleteEventWithNoRecordedClusterServiceInfoMissingDomainObject_dontAddIt() {
+    V1Service newService = createClusterService();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newService).toWatchResponse();
+    domains.get(NS).get(UID).setDomain(null);
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), equalTo(null));
   }
 
   @Test

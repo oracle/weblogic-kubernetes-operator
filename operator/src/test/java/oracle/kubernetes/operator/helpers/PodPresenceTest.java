@@ -404,6 +404,44 @@ class PodPresenceTest {
   }
 
   @Test
+  void onDeleteEventWithInfoNotDeletingInfoHasMissingDomain_ignoreIt() {
+    V1Pod service = createServerPod();
+    info.setServerPod(SERVER, service);
+    info.setDeleting(false);
+    info.setDomain(null);
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(info.getServerPod(SERVER), nullValue());
+  }
+
+  @Test
+  void onDeleteEventWithInfoDeleting_ignoreIt() {
+    V1Pod service = createServerPod();
+    info.setServerPod(SERVER, service);
+    info.setDeleting(true);
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(info.getServerPod(SERVER), nullValue());
+  }
+
+  @Test
+  void onDeleteEventWithInfoDeletingInfoHasMissingDomain_ignoreIt() {
+    V1Pod service = createServerPod();
+    info.setServerPod(SERVER, service);
+    info.setDeleting(true);
+    info.setDomain(null);
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
+
+    processor.dispatchPodWatch(event);
+
+    assertThat(info.getServerPod(SERVER), nullValue());
+  }
+
+  @Test
   void onDeleteEventWithOlderServerPod_keepCurrentValue() {
     V1Pod oldPod = createServerPod();
     V1Pod currentPod = createServerPod();

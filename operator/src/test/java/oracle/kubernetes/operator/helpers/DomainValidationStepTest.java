@@ -1,10 +1,11 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainFailureSeverity;
@@ -40,6 +42,9 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.common.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestCluster;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.setupCluster;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
@@ -50,6 +55,10 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.has
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationTest.CLUSTER_1;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationTest.CLUSTER_2;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationTest.CLUSTER_3;
+import static oracle.kubernetes.weblogic.domain.model.DomainValidationTest.UID2;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -77,6 +86,7 @@ class DomainValidationStepTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
 
+  private final Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
@@ -88,10 +98,13 @@ class DomainValidationStepTest {
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
+    domains.put(NS, new HashMap<>());
+    domains.get(NS).put(UID, info);
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     domainValidationSteps = Step.chain(DomainValidationSteps.createDomainValidationSteps(NS), terminalStep);
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
@@ -377,6 +390,48 @@ class DomainValidationStepTest {
 
     assertThat(terminalStep.wasRun(), is(true));
   }
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferences_dontRunNextStep() {
+    setUpTwoDomainsWithOverlapClusterReferences(false);
+
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+
+  @Test
+  void whenTwoDomainsHaveOverlapClusterResourceReferencesButOneInfoHasNullDomainObject_runNextStep() {
+    setUpTwoDomainsWithOverlapClusterReferences(true);
+
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  private void setUpTwoDomainsWithOverlapClusterReferences(boolean withNoDomain) {
+    String wlsClusterName1 = "c1";
+    String wlsClusterName2 = "c2";
+    String wlsClusterName3 = "c3";
+    DomainResource domain2 = createTestDomain(UID2);
+    DomainPresenceInfo info = new DomainPresenceInfo(domain2);
+    if (withNoDomain) {
+      info.setDomain(null);
+    }
+    domains.get(NS).put(UID2, info);
+    ClusterResource cluster1 = createTestCluster(CLUSTER_1);
+    cluster1.getSpec().setClusterName(wlsClusterName1);
+    ClusterResource cluster2 = createTestCluster(CLUSTER_2);
+    cluster2.getSpec().setClusterName(wlsClusterName2);
+    ClusterResource cluster3 = createTestCluster(CLUSTER_3);
+    cluster3.getSpec().setClusterName(wlsClusterName3);
+    testSupport.defineResources(domain2, cluster1, cluster2, cluster3);
+
+    setupCluster(domain, new ClusterResource[] {cluster1, cluster2});
+    setupCluster(domain2, new ClusterResource[] {cluster2, cluster3});
+  }
+
 
   @SuppressWarnings("SameParameterValue")
   private void createConfigMaps(int lastConfigMapNum) {

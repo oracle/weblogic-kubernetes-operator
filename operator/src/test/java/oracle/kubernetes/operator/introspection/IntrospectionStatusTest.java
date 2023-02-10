@@ -125,6 +125,14 @@ class IntrospectionStatusTest {
   }
 
   @Test
+  void whenNewIntrospectorJobPodWhenInfoMissingDomainObject_dontUpdateDomainStatus() {
+    presenceInfoMap.get(NS).get(UID).setDomain(null);
+    IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
+
+  @Test
   void whenNewIntrospectorJobPodJobNameLabelMissing_dontUpdateDomainStatus() {
     IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatchWithMissingJobLabel(processor);
 
