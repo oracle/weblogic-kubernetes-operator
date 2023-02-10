@@ -7,11 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -374,6 +372,19 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenK8sHasOneDomainWithMissingInfoAndDomainUidLabel_dontRecordAdminServerService() {
+    addDomainResource(UID1, NS);
+    V1Service service = createServerService(UID1, NS, "admin");
+    testSupport.defineResources(service);
+    service.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(null));
+  }
+
+  @Test
   void whenK8sHasOneDomainWithPod_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
@@ -412,7 +423,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithPodButPodNoServerName_dontRecordPodPresence() {
+  void whenK8sHasOneDomainWithPodButMissingServerName_dontRecordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
@@ -440,13 +451,40 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenK8sHasOneDomainWithPodNoDomainUidLabelAndServerNameLabel_dontRecordPodPresence() {
+  void whenK8sHasOneDomainWithPodNoDomainUidLabelAndNoServerNameLabel_dontRecordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
     pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodMissingInfoNoDomainUidLabelAndServerNameLabel_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    pod.getMetadata().getLabels().remove(SERVERNAME_LABEL);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(null));
+  }
+
+  @Test
+  void whenK8sHasOneDomainWithPodMissingInfoNoDomainUidLabel_dontRecordPodPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
@@ -557,11 +595,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
             .orElse(false);
     }
 
-    @Override
-    public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-      return dpis.entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
-    }
-
     private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
       return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
     }
@@ -569,6 +602,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     @Override
     public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
       return domains;
+    }
+
+    @Override
+    public Map<String, DomainPresenceInfo> getDomainPresenceInfoMapInNamespace(String namespace) {
+      return dpis;
     }
 
     @Override

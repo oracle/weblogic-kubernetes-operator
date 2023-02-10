@@ -11,13 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -84,7 +82,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static final String ADDED = "ADDED";
   private static final String MODIFIED = "MODIFIED";
   private static final String DELETED = "DELETED";
-  private static final String ERROR = "ERROR";
 
   @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
   private static String debugPrefix = null;  // Debugging: set this to a non-null value to dump the make-right steps
@@ -150,8 +147,13 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
-  public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
+  public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
     return domains;
+  }
+
+  @Override
+  public Map<String,DomainPresenceInfo> getDomainPresenceInfoMapInNamespace(String namespace) {
+    return domains.get(namespace);
   }
 
   @Override
@@ -528,12 +530,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  @Override
-  public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-    return Optional.ofNullable(domains.get(namespace)).orElse(Collections.emptyMap())
-        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
-  }
-
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
@@ -588,7 +584,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
         break;
 
-      case ERROR:
       default:
     }
   }
@@ -721,7 +716,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
                     c.getMetadata().getNamespace(), productVersion));
           break;
 
-        case ERROR:
         default:
       }
     }
@@ -747,7 +741,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       case DELETED:
         onDeleteEvent(ref.getKind(), ref.getName(), e);
         break;
-      case ERROR:
       default:
     }
   }
@@ -769,7 +762,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         handleDeletedCluster(item.object);
         break;
 
-      case ERROR:
       default:
     }
   }
@@ -870,7 +862,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         handleDeletedDomain(item.object);
         break;
 
-      case ERROR:
       default:
     }
   }
