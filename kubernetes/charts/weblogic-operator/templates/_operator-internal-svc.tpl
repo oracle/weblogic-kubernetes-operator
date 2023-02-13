@@ -2,6 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorInternalService" }}
+{{- if and (hasKey . "restEnabled") .restEnabled }}
 ---
 apiVersion: "v1"
 kind: "Service"
@@ -21,6 +22,7 @@ spec:
     - port: 8083
       name: "metrics"
       appProtocol: http
+{{- end }}
 ---
 {{- if not .operatorOnly }}
 apiVersion: "v1"

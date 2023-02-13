@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -115,6 +115,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getLogStashImage, "logStashImage");
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
 
+    addMapEntry(map, this::isRestEnabled, "restEnabled");
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");
@@ -143,6 +144,10 @@ class HelmOperatorValues extends OperatorValues {
     if (!isNullOrEmpty(secretName)) {
       map.put("imagePullSecrets", singletonList(singletonMap("name", secretName)));
     }
+  }
+
+  private Boolean isRestEnabled() {
+    return MapUtils.valueOf(getRestEnabled());
   }
 
   private Boolean isExternalRestEnabled() {

@@ -252,7 +252,7 @@ class ItManageNameSpace {
     checkOperatorCanScaleDomain(manageByLabelNS, manageByLabelDomainUid);
 
     //check operator can't manage anymore manageByExp1NS
-    assertTrue(isOperatorFailedToScaleDomain(opNamespaces[1], manageByExpDomain1Uid,
+    assertTrue(isOperatorFailedToScaleDomain(manageByExpDomain1Uid,
         manageByExp1NS), "Operator can still manage domain "
         + manageByExp1NS + " in the namespace " + manageByExp1NS);
 
@@ -327,7 +327,7 @@ class ItManageNameSpace {
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
     checkOperatorCanScaleDomain(manageByExpDomainNS, manageByExpDomainUid);
     //verify operator can't manage anymore domain running in the namespace with label
-    assertTrue(isOperatorFailedToScaleDomain(opNamespaces[0], domainsUid[0], domainNamespaces[0]),
+    assertTrue(isOperatorFailedToScaleDomain(domainsUid[0], domainNamespaces[0]),
         "Operator can still manage domain "
             + domainsUid[0] + " in the namespace " + domainNamespaces[0]);
 
@@ -429,15 +429,13 @@ class ItManageNameSpace {
     return opHelmParam;
   }
 
-  private boolean isOperatorFailedToScaleDomain(String opNamespace, String domainUid, String domainNamespace) {
+  private boolean isOperatorFailedToScaleDomain(String domainUid, String domainNamespace) {
     try {
       //check operator can't manage domainNamespace by trying to scale domain
-      int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       String managedServerPodNamePrefix = domainUid + "-managed-server";
-      String opServiceAccount = OPERATOR_RELEASE_NAME + "-sa";
       scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
           managedServerPodNamePrefix, 2, 1,
-          true, externalRestHttpsPort, opNamespace, opServiceAccount,
+          false, 0, null, null,
           false, "", "scaleDown", 1, "", "", null, null);
       return false;
     } catch (TimeoutException ex) {
