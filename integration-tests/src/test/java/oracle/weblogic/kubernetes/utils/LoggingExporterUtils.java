@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -119,6 +119,7 @@ public class LoggingExporterUtils {
         .kibanaContainerPort(KIBANA_PORT);
 
     // install Kibana
+    logger.info("Choosen KIBANA_IMAGE {0}", KIBANA_IMAGE);
     assertThat(installKibana(kibanaParams))
         .as("Kibana installation succeeds")
         .withFailMessage("Kibana installation is failed")

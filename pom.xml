@@ -591,10 +591,10 @@
     <maven.compiler.target>11</maven.compiler.target>
     <java.version.range>11</java.version.range>
     <maven.version.range>[3.5.2,)</maven.version.range>
-    <maven-enforcer-plugin-version>3.1.0</maven-enforcer-plugin-version>
+    <maven-enforcer-plugin-version>3.2.1</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.2.0</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.10.1</maven-compiler-plugin-version>
-    <maven-deploy-plugin-version>3.0.0</maven-deploy-plugin-version>
+    <maven-deploy-plugin-version>3.1.0</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.0</maven-install-plugin-version>
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.0</maven-resources-plugin-version>
@@ -608,7 +608,7 @@
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.7.3.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.7.3</spotbugs-version>
-    <checkstyle-version>10.6.0</checkstyle-version>
+    <checkstyle-version>10.7.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -629,18 +629,18 @@
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.2</client-java-version>
-    <kotlin-stdlib-version>1.8.0</kotlin-stdlib-version>
+    <kotlin-stdlib-version>1.8.10</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>3.1.0</jersey-version>
+    <jersey-version>3.1.1</jersey-version>
     <jackson-version>2.14.2</jackson-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <jackson-databind-version>2.14.2</jackson-databind-version>
-    <dependency-check-version>8.0.2</dependency-check-version>
+    <dependency-check-version>8.1.0</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
