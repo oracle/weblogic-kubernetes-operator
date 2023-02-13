@@ -101,7 +101,7 @@ public class ServiceHelper {
   }
 
   public static void addToPresence(DomainPresenceInfo info, V1Service service) {
-    OperatorServiceType.getType(service).addToPresence(info, service);
+    Optional.ofNullable(info).ifPresent(i -> OperatorServiceType.getType(service).addToPresence(i, service));
   }
 
   public static void updatePresenceFromEvent(DomainPresenceInfo info, V1Service service) {
