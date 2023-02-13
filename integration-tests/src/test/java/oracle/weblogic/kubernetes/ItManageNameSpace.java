@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -52,7 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
@@ -249,7 +249,7 @@ class ItManageNameSpace {
     //verify domain is started
     createSecrets(manageByLabelNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
-    checkOperatorCanScaleDomain(opNamespaces[1],manageByLabelDomainUid);
+    checkOperatorCanScaleDomain(manageByLabelNS, manageByLabelDomainUid);
 
     //check operator can't manage anymore manageByExp1NS
     assertTrue(isOperatorFailedToScaleDomain(opNamespaces[1], manageByExpDomain1Uid,
@@ -299,7 +299,7 @@ class ItManageNameSpace {
         "Failed to create domain CRD or "
         + "verify that domain " + domainsUid[1]
         + " is running in namespace " + domainNamespaces[1]);
-    checkOperatorCanScaleDomain(opNamespaces[0], domainsUid[1]);
+    checkOperatorCanScaleDomain(domainNamespaces[1], domainsUid[1]);
 
     //check that with specific Selector default namespace is not under operator management
     checkDomainNotStartedInDefaultNS();
@@ -325,7 +325,7 @@ class ItManageNameSpace {
     //verify domain is started in namespace with name starting with weblogic* and operator can scale it.
     createSecrets(manageByExpDomainNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
-    checkOperatorCanScaleDomain(opNamespaces[0],manageByExpDomainUid);
+    checkOperatorCanScaleDomain(manageByExpDomainNS, manageByExpDomainUid);
     //verify operator can't manage anymore domain running in the namespace with label
     assertTrue(isOperatorFailedToScaleDomain(opNamespaces[0], domainsUid[0], domainNamespaces[0]),
         "Operator can still manage domain "
@@ -374,7 +374,7 @@ class ItManageNameSpace {
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[3], opParams));
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelDomainNS, manageByLabelDomainUid));
-    checkOperatorCanScaleDomain(opNamespaces[3], manageByLabelDomainUid);
+    checkOperatorCanScaleDomain(manageByLabelDomainNS, manageByLabelDomainUid);
   }
 
   private void checkUpgradeFailedToAddNSManagedByAnotherOperator() {
@@ -411,7 +411,7 @@ class ItManageNameSpace {
           createSecrets(domainNS);
           assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
-          checkOperatorCanScaleDomain(opNamespace, domainUid);
+          checkOperatorCanScaleDomain(domainNS, domainUid);
         }
     );
     if (domainNamespacesValue != null) {
@@ -454,10 +454,8 @@ class ItManageNameSpace {
     assertDoesNotThrow(() -> Kubernetes.replaceNamespace(namespaceObject1));
   }
 
-  private void checkOperatorCanScaleDomain(String opNamespace, String domainUid) {
-    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-    assertTrue(scaleClusterWithRestApi(domainUid, clusterName, 3,
-        externalRestHttpsPort, opNamespace, OPERATOR_RELEASE_NAME + "-sa"),
+  private void checkOperatorCanScaleDomain(String domainNamespace, String domainUid) {
+    assertTrue(scaleCluster(domainUid + "-" +  clusterName, domainNamespace, 3),
         "Domain " + domainUid + " scaling operation failed");
   }
 

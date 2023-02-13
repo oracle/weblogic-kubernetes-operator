@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -33,7 +33,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
@@ -512,7 +512,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     // scale down the cluster
     int newReplicaCount = 1;
     assertDoesNotThrow(() ->
-        scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount));
+        scaleCluster(clusterResName, domainNamespace1, 1));
 
     // verify the admin server service exists
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -544,7 +544,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     // scale up the cluster
     newReplicaCount = 2;
     assertDoesNotThrow(() ->
-        scaleClusterWithRestApi(domainUid, cluster1Name, 2, externalRestHttpsPort, opNamespace, opServiceAccount));
+        scaleCluster(clusterResName, domainNamespace1, 2));
 
     // verify the admin server service exists
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);

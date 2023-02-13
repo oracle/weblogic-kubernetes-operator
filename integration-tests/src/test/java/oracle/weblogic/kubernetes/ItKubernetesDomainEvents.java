@@ -61,7 +61,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVe
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
@@ -70,7 +70,6 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.removeReplicasSettingAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -162,6 +161,7 @@ class ItKubernetesDomainEvents {
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
+  String clusterRes2Name = cluster2Name;
   String clusterRes1Name = cluster1Name;
 
   static final String pvName1 = getUniqueName(domainUid + "-pv-");
@@ -394,8 +394,7 @@ class ItKubernetesDomainEvents {
     createNewCluster();
     OffsetDateTime timestamp2 = now();
     logger.info("Scale the newly-added cluster");
-    scaleClusterWithRestApi(domainUid, cluster2Name, 1,
-            externalRestHttpsPort, opNamespace, opServiceAccount);
+    scaleCluster(clusterRes2Name, domainNamespace3, 1);
     logger.info("verify the Domain_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid,
             DOMAIN_AVAILABLE, "Normal", timestamp);

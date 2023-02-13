@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -18,6 +18,7 @@ public class OperatorParams {
   private static final String DOMAIN_NAMESPACES = "domainNamespaces";
   private static final String IMAGE = "image";
   private static final String SERVICE_ACCOUNT = "serviceAccount";
+  private static final String ENABLED_REST = "enableRest";
   private static final String EXTERNAL_REST_ENABLED = "externalRestEnabled";
   private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
   private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
@@ -42,6 +43,7 @@ public class OperatorParams {
   private List<String> domainNamespaces;
   private String image;
   private String serviceAccount;
+  private boolean enableRest;
   private boolean externalRestEnabled;
   private String externalRestIdentitySecret;
   private int externalRestHttpsPort = 0;
@@ -77,6 +79,11 @@ public class OperatorParams {
 
   public OperatorParams serviceAccount(String serviceAccount) {
     this.serviceAccount = serviceAccount;
+    return this;
+  }
+
+  public OperatorParams restEnabled(boolean restEnabled) {
+    this.enableRest = restEnabled;
     return this;
   }
 
@@ -216,6 +223,7 @@ public class OperatorParams {
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
 
+    values.put(ENABLED_REST, Boolean.valueOf(enableRest));
     values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
 
