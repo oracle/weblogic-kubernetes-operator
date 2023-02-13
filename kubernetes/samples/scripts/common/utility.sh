@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -855,7 +855,7 @@ checkPodDelete() {
 checkPodState() {
 
  status="NotReady"
- max=60
+ max=120
  count=1
 
  pod=$1
@@ -880,7 +880,7 @@ checkPodState() {
   count=`expr $count + 1`
  done
  if [ $count -gt $max ] ; then
-   echo "[ERROR] Unable to start the Pod [$pod] after 300s "; 
+   echo "[ERROR] Unable to start the Pod [$pod] after 600s ";
    exit 1
  fi 
 
