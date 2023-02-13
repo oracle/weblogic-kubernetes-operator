@@ -256,7 +256,6 @@ class OfflineWlstEnv(object):
       # or
       # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
       childObjs = ls(returnMap='true', returnType='c')
-
       if not childObjs.isEmpty():
         # Cluster is a dynamic cluster if a DynamicServer MBean is found
         cd(childObjs[0])
