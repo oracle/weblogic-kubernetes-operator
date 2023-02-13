@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -88,6 +88,7 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessageForNamespaces;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.EventTestUtils.getFormattedMessage;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_ENABLE_REST_ENDPOINT_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -216,6 +217,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
 
     HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
     HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
+    HelmAccessStub.defineVariable(OPERATOR_ENABLE_REST_ENDPOINT_ENV, "true");
   }
 
   @AfterEach

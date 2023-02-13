@@ -52,6 +52,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_ENABLE_REST_ENDPOINT_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -300,7 +301,7 @@ public class OperatorMain extends BaseMain {
   void startRestServer(Container container)
       throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
       KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    if (Optional.ofNullable(HelmAccess.getHelmVariable("ENABLE_REST_ENDPOINT"))
+    if (Optional.ofNullable(HelmAccess.getHelmVariable(OPERATOR_ENABLE_REST_ENDPOINT_ENV))
         .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
       super.startRestServer(container);
     }
