@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -132,7 +132,7 @@ class ItRecoveryDomainInPV  {
    * Make sure all 100 persistent messages are recovered form managed server(2)
    */
   @Test
-  @DisplayName("verifies persistent WebLogic data survies the server pod")
+  @DisplayName("verifies persistent WebLogic data survives the server pod scaling")
   void testRecoveryDomainHomeInPv() {
 
     final String managedServerNameBase = "managed-";
