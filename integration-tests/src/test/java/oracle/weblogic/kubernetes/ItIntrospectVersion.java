@@ -690,10 +690,10 @@ class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
    * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
    * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
-   * First time, besides update the domain with the new image, update restartVersion at the domain level
+   * First time, update the domain with the new image, update restartVersion at the domain level
    * But do not tag the image, do not push the image to the repository
    * Verify all the pods are not restarted.
-   * Second time, tag the image and push the inage to the repository
+   * Second time, tag the image and push the image to the repository
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
