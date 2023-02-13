@@ -256,11 +256,11 @@ class OfflineWlstEnv(object):
       # or
       # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
       childObjs = ls(returnMap='true', returnType='c')
+
       if not childObjs.isEmpty():
+        # Cluster is a dynamic cluster if a DynamicServer MBean is found
         cd(childObjs[0])
-        if get('ServerTemplate') is not None:
-          # Cluster is a dynamic cluster if a ServerTemplate MBean is found
-          ret = cmo
+        ret = cmo
     except:
       trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
     return ret;
@@ -547,7 +547,7 @@ class TopologyGenerator(Generator):
             self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
             return
     if server_template is None:
-      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is not referenced by any server template.")
 
   def validateServerTemplateNapListenPortIsSet(self, server_or_template):
     naps = server_or_template.getNetworkAccessPoints()
