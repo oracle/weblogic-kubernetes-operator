@@ -141,11 +141,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
-  private ClusterPresenceInfo getExistingClusterPresenceInfo(String ns, String clusterName) {
+  private static ClusterPresenceInfo getExistingClusterPresenceInfo(String ns, String clusterName) {
     return clusters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(clusterName);
   }
 
-  private ClusterPresenceInfo getExistingClusterPresenceInfo(ClusterPresenceInfo newPresence) {
+  private static ClusterPresenceInfo getExistingClusterPresenceInfo(ClusterPresenceInfo newPresence) {
     return getExistingClusterPresenceInfo(newPresence.getNamespace(), newPresence.getResourceName());
   }
 
