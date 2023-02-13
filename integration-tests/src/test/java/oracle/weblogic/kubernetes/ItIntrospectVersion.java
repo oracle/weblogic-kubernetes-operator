@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -78,13 +79,16 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
@@ -108,7 +112,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
+//import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -686,6 +690,10 @@ class ItIntrospectVersion {
    * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
    * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
    * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
+   * First time, besides update the domain with the new image, update restartVersion at the domain level
+   * But do not tag the image, do not push the image to the repository
+   * Verify all the pods are not restarted.
+   * Second time, tag the image and push the inage to the repository
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
@@ -726,21 +734,26 @@ class ItIntrospectVersion {
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
-    getLogger().info(" The image name used for update is: {0}", imageUpdate);
+    getLogger().info(" The image name used for the 1st update is: {0}", imageUpdate);
+
+    //1st time update image and restartVersion without image tagging/pushing
+    patchDomainWithNewImage(imageUpdate);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+    // verify the server pods are not restarted because newImage is not tagged, not pushed to ocir
+    logger.info("Verifying restart did NOT occur for domain {0} in namespace {1}",
+        domainUid, introDomainNamespace);
+    verifyDomainNotRestarted();
+
+    //2nd time image update
+    imageTag = CommonTestUtils.getDateAndTimeStamp();
+    imageUpdate = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
+    getLogger().info(" The image name used for the 2nd update is: {0}", imageUpdate);
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/image\",")
-        .append("\"value\": \"")
-        .append(imageUpdate)
-        .append("\"}]");
-    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
-
-    assertTrue(patchDomainResource(domainUid, introDomainNamespace, patchStr),
-        "patchDomainCustomResource(imageUpdate) failed");
+    patchDomainWithNewImage(imageUpdate);
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -1190,8 +1203,6 @@ class ItIntrospectVersion {
         .addArgsItem("-skipWLSModuleScanning")
         .addArgsItem("-loadProperties")
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
-
-    logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer);
 
@@ -1333,5 +1344,67 @@ class ItIntrospectVersion {
             + "\"?user=" + wlsUserName
             + "&password=" + wlsPassword + "\"",managedServerPort);
     verifyServerCommunication(command, serverName, managedServerNames);
+  }
+
+  private void patchDomainWithNewImage(String newImage) {
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, introDomainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    logger.info("patch the domain resource with new image");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/image\", "
+        + "\"value\": \"" + newImage + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+  }
+
+  private boolean verifyPodsRestarted(String domainNamespace, String podName) {
+    OffsetDateTime  time = assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "",
+        podName), String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace));
+    Callable<Boolean> isPodRestarted =
+         assertDoesNotThrow(() -> isPodRestarted(podName,
+         domainNamespace, time));
+    return assertDoesNotThrow(isPodRestarted::call);
+  }
+
+  private void verifyDomainNotRestarted() {
+    // check that admin server pod is not restarted
+    logger.info("Checking that admin server pod {0} exists in namespace {1}",
+        adminServerPodName, introDomainNamespace);
+    assertFalse(verifyPodsRestarted(introDomainNamespace, adminServerPodName),
+        "adminServerPod must not be restarted");
+    // check that managed servers pod are not restarted
+    List<String> cluster1ManagedServerNames = new ArrayList<>();
+    for (int i = 1; i <= cluster1ReplicaCount; i++) {
+      String cluster1ManagedServerPodName = cluster1ManagedServerPodNamePrefix + i;
+      // check that the managed server pod is not restarted in the domain namespace
+      logger.info("Checking that admin server pod {0} exists in namespace {1}",
+          cluster1ManagedServerPodName, introDomainNamespace);
+      assertFalse(verifyPodsRestarted(introDomainNamespace, cluster1ManagedServerPodName),
+          "adminServerPod must not be restarted");
+    }
+
+    if (cluster2Created) {
+      for (int i = 1; i <= cluster2ReplicaCount; i++) {
+        String cluster2ManagedServerPodName = cluster2ManagedServerPodNamePrefix + i;
+        // check that the managed server pod is not restarted in the domain namespace
+        logger.info("Checking that admin server pod {0} exists in namespace {1}",
+            cluster2ManagedServerPodName, introDomainNamespace);
+        assertFalse(verifyPodsRestarted(introDomainNamespace, cluster2ManagedServerPodName),
+            "adminServerPod must not be restarted");
+      }
+    }
+
+
   }
 }
