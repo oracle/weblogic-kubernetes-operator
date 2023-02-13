@@ -305,8 +305,12 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         () -> verifyHPA(domainNamespace, "0/5"),
         logger,
         "Checking if total_open_session metric is 0");
-
-    checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+    try {
+      checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+    } catch (Exception ex) {
+      //retry again
+      checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+    }
   }
 
   /**
