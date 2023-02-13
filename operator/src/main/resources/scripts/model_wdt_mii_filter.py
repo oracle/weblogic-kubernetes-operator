@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -179,8 +179,17 @@ def filter_model(model):
         customizeNodeManagerCreds(topology)
         customizeDomainLogPath(topology)
 
-        if 'Server' in topology:
-          customizeServers(model)
+        if 'AdminServerName' in topology:
+          admin_server = topology['AdminServerName']
+        else:
+          # weblogic default
+          admin_server = 'AdminServer'
+          topology['AdminServerName'] = admin_server
+
+        if admin_server not in topology['Server']:
+          topology['Server'][admin_server] = {}
+
+        customizeServers(model)
 
         if 'ServerTemplate' in topology:
           customizeServerTemplates(model)
@@ -462,12 +471,8 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
   if (admin_channel_port_forwarding_enabled == 'false'):
     return
-
-  admin_server_port = server['ListenPort']
   # Set the default if it is not provided to avoid nap default to 0 which fails validation.
-
-  if admin_server_port is None:
-    admin_server_port = 7001
+  admin_server_port = _get_default_listen_port(server)
 
   model = env.getModel()
 
@@ -645,4 +650,8 @@ def getSecretManager():
 def istioVersionRequiresLocalHostBindings():
   return False
 
-
+def _get_default_listen_port(server):
+  if 'ListenPort' not in server:
+    return 7001
+  else:
+    return server['ListenPort']
