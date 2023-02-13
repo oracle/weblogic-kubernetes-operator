@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import ast
@@ -464,6 +464,26 @@ class WdtUpdateFilterCase(unittest.TestCase):
     except ImportError as ie:
       self.assertTrue(ie is not None)
 
+  def test_adminserver_name_missing(self):
+    try:
+      model = self.getModel()
+      topology = model['topology']
+      del topology['AdminServerName']
+      model_wdt_mii_filter.filter_model(model)
+      self.assertEqual('AdminServer', topology['AdminServerName'],
+                       "Expected AdminServerName set to AdminServer after filter")
+      admin_server_exists = 'AdminServer' in topology['Server']
+      self.assertTrue(admin_server_exists, "Expected AdminServer added if AdminServerName is not set")
+
+      topology['AdminServerName'] = 'MyAdminServer'
+      model_wdt_mii_filter.filter_model(model)
+      self.assertEqual('MyAdminServer', topology['AdminServerName'],
+                       "Expected AdminServerName set to MyAdminServer after filter")
+      admin_server_exists = 'MyAdminServer' in topology['Server']
+      self.assertTrue(admin_server_exists, "Expected MyAdminServer added if AdminServerName is not set")
+
+    except ImportError as ie:
+      self.assertTrue(ie is not None)
 
 
 
