@@ -116,7 +116,7 @@ class DomainResourcesValidation {
   }
 
   private void addPodList(V1PodList list) {
-    getDomainPresenceInfoMap().values().stream().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
+    getDomainPresenceInfoMap().values().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
     list.getItems().forEach(this::addPod);
   }
 
@@ -140,12 +140,20 @@ class DomainResourcesValidation {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
     if (domainUid != null && serverName != null) {
-      getDomainPresenceInfo(domainUid).setServerPodFromEvent(serverName, pod);
+      setServerPodFromEvent(getExistingDomainPresenceInfo(domainUid), serverName, pod);
     }
   }
 
-  private DomainPresenceInfo getDomainPresenceInfo(String domainUid) {
+  private void setServerPodFromEvent(DomainPresenceInfo info, String serverName, V1Pod pod) {
+    Optional.ofNullable(info).ifPresent(i -> i.setServerPodFromEvent(serverName, pod));
+  }
+
+  private DomainPresenceInfo getOrComputeDomainPresenceInfo(String domainUid) {
     return getDomainPresenceInfoMap().computeIfAbsent(domainUid, k -> new DomainPresenceInfo(namespace, domainUid));
+  }
+
+  private DomainPresenceInfo getExistingDomainPresenceInfo(String domainUid) {
+    return getDomainPresenceInfoMap().get(domainUid);
   }
 
   private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap() {
@@ -163,7 +171,7 @@ class DomainResourcesValidation {
   private void addService(V1Service service) {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid != null) {
-      ServiceHelper.addToPresence(getDomainPresenceInfo(domainUid), service);
+      ServiceHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), service);
     }
   }
 
@@ -174,12 +182,12 @@ class DomainResourcesValidation {
   private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
     String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
     if (domainUid != null) {
-      PodDisruptionBudgetHelper.addToPresence(getDomainPresenceInfo(domainUid), pdb);
+      PodDisruptionBudgetHelper.addToPresence(getExistingDomainPresenceInfo(domainUid), pdb);
     }
   }
 
   private void addDomainList(DomainList list) {
-    getDomainPresenceInfoMap().values().stream().forEach(dpi -> updateDeletedDomainsinDPI(list));
+    getDomainPresenceInfoMap().values().forEach(dpi -> updateDeletedDomainsinDPI(list));
     list.getItems().forEach(this::addDomain);
   }
 
@@ -188,16 +196,27 @@ class DomainResourcesValidation {
         .map(DomainResource::getDomainUid).collect(Collectors.toList());
 
     getDomainPresenceInfoMap().values().stream()
-        .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid())).collect(Collectors.toList())
-        .forEach(i -> getDomainPresenceInfo(i.getDomainUid()).setDomain(null));
+        .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid()))
+        .filter(dpi -> isNotBeingProcessed(dpi.getNamespace(), dpi.getDomainUid()))
+        .collect(Collectors.toList())
+        .forEach(i -> i.setDomain(null));
+  }
+
+  private boolean isNotBeingProcessed(String namespace, String domainUid) {
+    return processor.getMakeRightFiberGateMap().get(namespace).getCurrentFibers().get(domainUid) == null;
   }
 
   private void addDomain(DomainResource domain) {
-    getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
+    getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
   private void addClusterList(ClusterList list) {
     activeClusterResources = list;
+    list.getItems().forEach(this::addCluster);
+  }
+
+  private void addCluster(ClusterResource cluster) {
+    getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster.getNamespace(), cluster));
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
@@ -229,7 +248,7 @@ class DomainResourcesValidation {
     info.setPopulated(true);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (info.getDomain().getStatus() == null) {
-      makeRight = makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
+      makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
     }
     makeRight.execute();
   }
