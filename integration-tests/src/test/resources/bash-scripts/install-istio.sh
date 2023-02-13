@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Description:
@@ -39,7 +39,7 @@ kubectl create namespace istio-system
 
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-istio-secret --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set profile=demo -y
   bin/istioctl verify-install
   bin/istioctl version
 )
