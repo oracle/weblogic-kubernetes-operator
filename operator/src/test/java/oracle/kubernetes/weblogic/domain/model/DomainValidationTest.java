@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class DomainValidationTest extends DomainValidationTestBase {
+public class DomainValidationTest extends DomainValidationTestBase {
 
   private static final String ENV_NAME1 = "MY_ENV";
   private static final String RAW_VALUE_1 = "123";
