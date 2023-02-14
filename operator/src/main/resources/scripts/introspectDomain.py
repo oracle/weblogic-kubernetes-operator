@@ -493,7 +493,7 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
         return
-    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.  You must have managed servers defined and belong to this cluster")
+    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.  You must have managed servers defined that belong to this cluster")
 
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
