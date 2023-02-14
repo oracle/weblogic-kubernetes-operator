@@ -435,15 +435,6 @@ if [ "$REGISTER_ONLY" != "true" ]; then
 delete_cluster admin
 delete_cluster managed1
 
-#${WLSIMG_BUILDER:-docker} ps
-#${WLSIMG_BUILDER:-docker} images
-#${WLSIMG_BUILDER:-docker} network ls
-#${WLSIMG_BUILDER:-docker} volume ls
-#${WLSIMG_BUILDER:-docker} inspect kind | jq
-#SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
-#ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
-#MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
-
 if [ "$ADMIN_CLUSTER" != "false" ] ; then
 echo
   create_cluster admin
