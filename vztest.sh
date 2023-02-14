@@ -238,6 +238,7 @@ function wait_for_installs() {
         echo "verrazzano installtion is not complete"
       fi
       $KA get all -A
+      $KA get events -A --sort-by=.lastTimestamp
     done      
   fi
   if [ "$MANAGED_CLUSTER" != "false" ] ; then
