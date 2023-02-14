@@ -239,9 +239,6 @@ function wait_for_installs() {
       fi
       $KA get all -A
     done      
-    if[ "$?" != "0" ] ; then
-      $KA get all -A
-    fi
   fi
   if [ "$MANAGED_CLUSTER" != "false" ] ; then
     $K1 wait --timeout=60m --for=condition=InstallComplete verrazzano/managed1
