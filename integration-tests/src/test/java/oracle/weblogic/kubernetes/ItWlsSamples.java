@@ -428,7 +428,6 @@ class ItWlsSamples {
     setupSample(testSamplePath);
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("TRAEFIK_INGRESS_IMAGE_NAME", TRAEFIK_INGRESS_IMAGE_NAME);
-    templateMap.put("TRAEFIK_INGRESS_IMAGE_TAG", TRAEFIK_INGRESS_IMAGE_TAG);
     Path srcPropFile = Paths.get(RESOURCE_DIR, "traefik.template.properties");
     Path targetPropFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcPropFile.toString(), "traefik.properties", templateMap));
@@ -436,7 +435,8 @@ class ItWlsSamples {
 
     Path scriptBase = get(testSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace 
-         + " -p " + targetPropFile.toString());
+         + " -p " + targetPropFile.toString() 
+         + " -v " + TRAEFIK_INGRESS_IMAGE_TAG);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
   }
 
