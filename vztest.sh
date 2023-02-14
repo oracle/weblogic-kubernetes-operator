@@ -234,7 +234,7 @@ function wait_for_installs() {
 	echo "It took $elapsed_time minutes to complete verrazzano installation"
 	done=0
       else
-        timeout=$((elapsedtime + 3))
+        elapsed_time=$((elapsedtime + 3))
         echo "verrazzano installtion is not complete"
       fi
       $KA get all -A
