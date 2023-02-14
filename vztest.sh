@@ -223,7 +223,25 @@ EOF
 
 function wait_for_installs() {
   if [ "$ADMIN_CLUSTER" != "false" ] ; then
-    $KA wait --timeout=60m --for=condition=InstallComplete verrazzano/admin
+    done=1
+    elapsed_time=0
+    while [ $done -ne 0 ] && [ $elapsed_time -lt $VZ_INSTALL_TIMEOUT ]
+    do	    
+      install_status=$($KA wait --timeout=3m --for=condition=InstallComplete verrazzano/admin)
+      echo $install_status
+      if echo "$install_status" | grep -q 'condition met'; then
+        echo "verrazzano installation complete"
+	echo "It took $elapsed_time minutes to complete verrazzano installation"
+	done=0
+      else
+        timeout=$((elapsedtime + 3))
+        echo "verrazzano installtion is not complete"
+      fi
+      $KA get all -A
+    done      
+    if[ "$?" != "0" ] ; then
+      $KA get all -A
+    fi
   fi
   if [ "$MANAGED_CLUSTER" != "false" ] ; then
     $K1 wait --timeout=60m --for=condition=InstallComplete verrazzano/managed1
