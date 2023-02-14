@@ -10,41 +10,42 @@
 import sys, traceback
 import utils
 
+
 def filter_model(model):
-    try:
-        if model and 'topology' in model:
-                topology = model['topology']
-                if 'AdminServerName' in model['topology']:
-                    admin_server = topology['AdminServerName']
-                else:
-                    # weblogic default
-                    admin_server = 'AdminServer'
-                model['topology'] = {}
-                model['topology']['AdminServerName'] = admin_server
-                model['topology']['Server'] = {}
+  try:
+    if model and 'topology' in model:
+      topology = model['topology']
+      if 'AdminServerName' in model['topology']:
+        admin_server = topology['AdminServerName']
+      else:
+        # weblogic default
+        admin_server = 'AdminServer'
+      model['topology'] = {}
+      model['topology']['AdminServerName'] = admin_server
+      model['topology']['Server'] = {}
 
-                # cover the odd case that the model doesn't have any server!
-                if 'Server' in topology and admin_server in topology['Server']:
-                    model['topology']['Server'][admin_server] = topology['Server'][admin_server]
-                else:
-                    if 'Server' not in topology:
-                        model['topology']['Server'] = {}
-                    model['topology']['Server'][admin_server] = {}
+      # cover the odd case that the model doesn't have any server!
+      if 'Server' in topology and admin_server in topology['Server']:
+        model['topology']['Server'][admin_server] = topology['Server'][admin_server]
+      else:
+        if 'Server' not in topology:
+          model['topology']['Server'] = {}
+        model['topology']['Server'][admin_server] = {}
 
-                if 'Name' in topology:
-                    model['topology']['Name'] = topology['Name']
+      if 'Name' in topology:
+        model['topology']['Name'] = topology['Name']
 
-                if 'Security' in topology:
-                    model['topology']['Security'] = topology['Security']
+      if 'Security' in topology:
+        model['topology']['Security'] = topology['Security']
 
-        if model and 'appDeployments' in model:
-                model['appDeployments'] = {}
+    if model and 'appDeployments' in model:
+      model['appDeployments'] = {}
 
-        if model and 'resources' in model:
-                model['resources'] = {}
+    if model and 'resources' in model:
+      model['resources'] = {}
 
-    except:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
-        utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
-        raise
+except:
+  exc_type, exc_obj, exc_tb = sys.exc_info()
+  ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
+  utils.trace('SEVERE', 'Error in applying MII filter:\n ' + str(ee_string))
+  raise
