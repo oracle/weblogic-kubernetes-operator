@@ -739,6 +739,7 @@ class ItIntrospectVersion {
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
     // verify the server pods are not restarted because newImage is not tagged, not pushed to ocir
+    //admin server pod will be in pending state(ImagePullBackOff)
     logger.info("Verifying restart did NOT occur for domain {0} in namespace {1}",
         domainUid, introDomainNamespace);
     assertThrows(ConditionTimeoutException.class, () -> {
