@@ -115,7 +115,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getLogStashImage, "logStashImage");
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
 
-    addMapEntry(map, this::isRestEnabled, "restEnabled");
+    addMapEntry(map, this::isRestEnabled, "enableRest");
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
     addMapEntry(map, this::isRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
     addMapEntry(map, this::isSuspendOnDebugStartup, "suspendOnDebugStartup");

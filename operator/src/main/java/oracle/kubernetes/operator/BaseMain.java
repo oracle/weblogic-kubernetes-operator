@@ -48,8 +48,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 
-import static oracle.kubernetes.operator.http.metrics.MetricsServer.DEFAULT_METRICS_PORT;
-
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
   static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -197,7 +195,7 @@ public abstract class BaseMain {
 
   void startMetricsServer(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
       NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    startMetricsServer(container, DEFAULT_METRICS_PORT);
+    startMetricsServer(container, delegate.getMetricsPort());
   }
 
   // for test

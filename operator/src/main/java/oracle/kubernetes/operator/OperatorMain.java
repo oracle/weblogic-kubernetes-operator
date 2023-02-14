@@ -281,7 +281,7 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-  private void completeBegin() {
+  void completeBegin() {
     try {
       startMetricsServer(container);
       startRestServer(container);
@@ -309,7 +309,7 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-  private void completeStop() {
+  void completeStop() {
     stopRestServer();
     stopMetricsServer();
   }

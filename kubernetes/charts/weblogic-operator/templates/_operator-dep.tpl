@@ -77,7 +77,7 @@ spec:
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
         {{- end }}
-        {{- if and (hasKey . "restEnabled") .restEnabled }}
+        {{- if and (hasKey . "enableRest") .enableRest }}
         - name: "ENABLE_REST_ENDPOINT"
           value: "true"
         {{- end }}

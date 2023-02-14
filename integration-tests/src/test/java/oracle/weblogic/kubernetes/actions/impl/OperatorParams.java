@@ -18,7 +18,7 @@ public class OperatorParams {
   private static final String DOMAIN_NAMESPACES = "domainNamespaces";
   private static final String IMAGE = "image";
   private static final String SERVICE_ACCOUNT = "serviceAccount";
-  private static final String ENABLED_REST = "enableRest";
+  private static final String ENABLE_REST = "enableRest";
   private static final String EXTERNAL_REST_ENABLED = "externalRestEnabled";
   private static final String EXTERNAL_REST_IDENTITY_SECRET = "externalRestIdentitySecret";
   private static final String EXTERNAL_REST_HTTPS_PORT = "externalRestHttpsPort";
@@ -223,7 +223,7 @@ public class OperatorParams {
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
 
-    values.put(ENABLED_REST, Boolean.valueOf(enableRest));
+    values.put(ENABLE_REST, Boolean.valueOf(enableRest));
     values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
     values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
 

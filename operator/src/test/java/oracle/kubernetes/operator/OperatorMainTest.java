@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -49,10 +51,12 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -61,11 +65,14 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import org.glassfish.grizzly.http.server.HttpHandlerRegistration;
 import org.glassfish.grizzly.http.server.HttpServer;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
+import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -118,6 +125,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1242,10 +1250,54 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  @ResourceLock(value = "operatorMain")
   void whenShutdownMarkerIsCreate_stopOperator() {
     inMemoryFileSystem.defineFile("/deployment/marker.shutdown", "shutdown");
     operatorMain.doMain();
     assertThat(operatorMain.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
+  @Test
+  void whenOperatorStopped_restServerShutdown() {
+    OperatorMain m = OperatorMain.createMain(buildProperties);
+    BaseServerStub restServer = new BaseServerStub();
+    m.getRestServer().set(restServer);
+    m.completeStop();
+    Assert.assertTrue(restServer.isStopCalled);
+    assertThat(m.getRestServer().get(), nullValue());
+  }
+
+  @Test
+  @ResourceLock(value = "operatorMain")
+  void startAndStopOperator() {
+    assertDoesNotThrow(() -> {
+      operatorMain.completeBegin();
+      operatorMain.completeStop();
+    });
+  }
+
+  private static class BaseServerStub extends BaseServer {
+    private boolean isStopCalled = false;
+
+    @Override
+    public void start(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
+        NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
+      // no-op
+    }
+
+    @Override
+    public void stop() {
+      isStopCalled = true;
+    }
+
+    public boolean isStopCalled() {
+      return isStopCalled;
+    }
+
+    @Override
+    protected ResourceConfig createResourceConfig() {
+      throw new IllegalStateException();
+    }
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
@@ -1303,6 +1355,34 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     @Override
     public File getDeploymentHome() {
       return new File("/deployment");
+    }
+
+    @Override
+    public File getProbesHome() {
+      return new File("/probes");
+    }
+
+    public boolean createNewFile(File file) throws IOException {
+      // skip creating ready probe file
+      if ("/probes/.ready".equals(file.getPath())) {
+        return true;
+      }
+      return file.createNewFile();
+    }
+
+    @Override
+    public String getPrincipal() {
+      return null;
+    }
+
+    @Override
+    public int getMetricsPort() {
+      return 8090;
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+      return testSupport.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
   }
 
