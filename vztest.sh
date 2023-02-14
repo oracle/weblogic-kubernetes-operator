@@ -435,14 +435,14 @@ if [ "$REGISTER_ONLY" != "true" ]; then
 delete_cluster admin
 delete_cluster managed1
 
-${WLSIMG_BUILDER:-docker} ps
-${WLSIMG_BUILDER:-docker} images
-${WLSIMG_BUILDER:-docker} network ls
-${WLSIMG_BUILDER:-docker} volume ls
-${WLSIMG_BUILDER:-docker} inspect kind | jq
-SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
-ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
-MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
+#${WLSIMG_BUILDER:-docker} ps
+#${WLSIMG_BUILDER:-docker} images
+#${WLSIMG_BUILDER:-docker} network ls
+#${WLSIMG_BUILDER:-docker} volume ls
+#${WLSIMG_BUILDER:-docker} inspect kind | jq
+#SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+#ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
+#MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
 
 if [ "$ADMIN_CLUSTER" != "false" ] ; then
 echo
@@ -455,6 +455,8 @@ fi
 if [ "$MANAGED_CLUSTER" != "false" ] ; then
 echo
   create_cluster managed1
+  SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+  MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
   install_metallb $MANAGED1_ADDR_RANGE "$K1"
   install_verrazzano_managed
 fi
