@@ -683,16 +683,13 @@ class ItIntrospectVersion {
   }
 
   /**
-   * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
-   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
-   * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
-   * First time, update the domain with the new image, update restartVersion at the domain level
-   * But do not tag the image, do not push the image to the repository
-   * Verify all the pods are not restarted.
-   * Second time, update the domain with the name image, tag the image and push the image to the repository
-   * Verify all the pods are restarted and back to ready state
+   * In this test we want to verify that rolling start can happen when the pod
+   * is in "Not Ready" state
+   * Patch the running domain with an image that does not exist
+   * Update the restart version. Verify the domain does not restart
+   * Make the image available
+   * Patch the domain with the new available image
+   * Verify rolling restart is triggered 
    * Verify the admin server is accessible and cluster members are healthy
    */
   @Test
