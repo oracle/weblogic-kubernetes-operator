@@ -691,7 +691,7 @@ class ItIntrospectVersion {
    * First time, update the domain with the new image, update restartVersion at the domain level
    * But do not tag the image, do not push the image to the repository
    * Verify all the pods are not restarted.
-   * Second time, tag the image and push the image to the repository
+   * Second time, update the domain with the name image, tag the image and push the image to the repository
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    */
