@@ -415,10 +415,13 @@ def isAdministrationPortEnabledForDomain(model):
 def isSecureModeEnabledForDomain(model):
   secureModeEnabled = False
   topology = model['topology']
-  domain_info = model['domainInfo']
+  domain_info = None
+  if 'domainInfo' in model:
+    domain_info = model['domainInfo']
+
   if 'SecurityConfiguration' in topology and 'SecureMode' in topology['SecurityConfiguration'] and 'SecureModeEnabled' in topology['SecurityConfiguration']['SecureMode']:
     secureModeEnabled = topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled']
-  elif 'ServerStartMode' in domain_info and domain_info['ServerStartMode'] == 'secure':
+  elif domain_info and 'ServerStartMode' in domain_info and domain_info['ServerStartMode'] == 'secure':
     secureModeEnabled = True
   else:
     is_production_mode_enabled = False
