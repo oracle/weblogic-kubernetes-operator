@@ -48,6 +48,7 @@ import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -79,7 +80,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
@@ -88,7 +88,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
@@ -98,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -112,7 +110,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-//import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -133,6 +130,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -743,7 +741,14 @@ class ItIntrospectVersion {
     // verify the server pods are not restarted because newImage is not tagged, not pushed to ocir
     logger.info("Verifying restart did NOT occur for domain {0} in namespace {1}",
         domainUid, introDomainNamespace);
-    verifyDomainNotRestarted();
+    assertThrows(ConditionTimeoutException.class, () -> {
+      verifyRollingRestartOccurred(cl1podsWithTimeStamps, 1, introDomainNamespace);
+    });
+    if (cluster2Created) {
+      assertThrows(ConditionTimeoutException.class, () -> {
+        verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, introDomainNamespace);
+      });
+    }
 
     //2nd time image update
     imageTag = CommonTestUtils.getDateAndTimeStamp();
@@ -1364,47 +1369,6 @@ class ItIntrospectVersion {
     V1Patch patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
-
   }
 
-  private boolean verifyPodsRestarted(String domainNamespace, String podName) {
-    OffsetDateTime  time = assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "",
-        podName), String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace));
-    Callable<Boolean> isPodRestarted =
-         assertDoesNotThrow(() -> isPodRestarted(podName,
-         domainNamespace, time));
-    return assertDoesNotThrow(isPodRestarted::call);
-  }
-
-  private void verifyDomainNotRestarted() {
-    // check that admin server pod is not restarted
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, introDomainNamespace);
-    assertFalse(verifyPodsRestarted(introDomainNamespace, adminServerPodName),
-        "adminServerPod must not be restarted");
-    // check that managed servers pod are not restarted
-    List<String> cluster1ManagedServerNames = new ArrayList<>();
-    for (int i = 1; i <= cluster1ReplicaCount; i++) {
-      String cluster1ManagedServerPodName = cluster1ManagedServerPodNamePrefix + i;
-      // check that the managed server pod is not restarted in the domain namespace
-      logger.info("Checking that admin server pod {0} exists in namespace {1}",
-          cluster1ManagedServerPodName, introDomainNamespace);
-      assertFalse(verifyPodsRestarted(introDomainNamespace, cluster1ManagedServerPodName),
-          "adminServerPod must not be restarted");
-    }
-
-    if (cluster2Created) {
-      for (int i = 1; i <= cluster2ReplicaCount; i++) {
-        String cluster2ManagedServerPodName = cluster2ManagedServerPodNamePrefix + i;
-        // check that the managed server pod is not restarted in the domain namespace
-        logger.info("Checking that admin server pod {0} exists in namespace {1}",
-            cluster2ManagedServerPodName, introDomainNamespace);
-        assertFalse(verifyPodsRestarted(introDomainNamespace, cluster2ManagedServerPodName),
-            "adminServerPod must not be restarted");
-      }
-    }
-
-
-  }
 }
