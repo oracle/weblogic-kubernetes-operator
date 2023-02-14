@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.security.KeyManagementException;
@@ -50,6 +51,7 @@ import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
@@ -176,6 +178,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final OperatorMain operatorMain = new OperatorMain(delegate);
+  private static final InMemoryFileSystem inMemoryFileSystem = InMemoryFileSystem.createInstance();
 
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
@@ -214,6 +217,7 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     mementos.add(NoopWatcherStarter.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(inMemoryFileSystem.install());
 
     HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
     HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
@@ -1237,6 +1241,13 @@ class OperatorMainTest extends ThreadFactoryTestBase {
             START_MANAGING_NAMESPACE, Collections.singletonList("NS1")), is(true));
   }
 
+  @Test
+  void whenShutdownMarkerIsCreate_stopOperator() {
+    inMemoryFileSystem.defineFile("/deployment/marker.shutdown", "shutdown");
+    operatorMain.doMain();
+    assertThat(operatorMain.getShutdownSignalAvailablePermits(), equalTo(0));
+  }
+
   abstract static class MainDelegateStub implements MainDelegate {
     private final FiberTestSupport testSupport;
     private final DomainNamespaces domainNamespaces;
@@ -1287,6 +1298,11 @@ class OperatorMainTest extends ThreadFactoryTestBase {
     @Override
     public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
       return hideCRD ? new AtomicReference<>() : crdReference;
+    }
+
+    @Override
+    public File getDeploymentHome() {
+      return new File("/deployment");
     }
   }
 

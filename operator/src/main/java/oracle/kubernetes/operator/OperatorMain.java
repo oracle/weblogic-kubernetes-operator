@@ -176,15 +176,17 @@ public class OperatorMain extends BaseMain {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    OperatorMain operatorMain = createMain(getBuildProperties());
+    createMain(getBuildProperties()).doMain();
+  }
 
+  void doMain() {
     try {
-      operatorMain.startDeployment(operatorMain::completeBegin);
+      startDeployment(this::completeBegin);
 
       // now we just wait until the pod is terminated
-      operatorMain.waitForDeath();
+      waitForDeath();
 
-      operatorMain.stopDeployment(operatorMain::completeStop);
+      stopDeployment(this::completeStop);
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
