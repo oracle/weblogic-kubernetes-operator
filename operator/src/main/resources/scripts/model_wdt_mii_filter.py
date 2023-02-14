@@ -189,6 +189,11 @@ def filter_model(model):
           admin_server = 'AdminServer'
           topology['AdminServerName'] = admin_server
 
+        # cover the odd case that the model doesn't have any server!
+
+        if 'Server' not in topology:
+          topology['Server'] = {}
+
         if admin_server not in topology['Server']:
           topology['Server'][admin_server] = {}
 
