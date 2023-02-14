@@ -257,9 +257,10 @@ class OfflineWlstEnv(object):
       # /Cluster/<clusterName>/DynamicServers/NO_NAME_0/
       childObjs = ls(returnMap='true', returnType='c')
       if not childObjs.isEmpty():
-        # Cluster is a dynamic cluster if a DynamicServer MBean is found
         cd(childObjs[0])
-        ret = cmo
+        if get('ServerTemplate') is not None or int(get('DynamicClusterSize')) > 0:
+          # Cluster is a dynamic cluster if a ServerTemplate MBean is found or DynamicClusterSize is greater than 0.
+          ret = cmo
     except:
       trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
     return ret;
