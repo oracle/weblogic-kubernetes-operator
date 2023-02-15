@@ -476,6 +476,17 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenOneNapNameExceedsMaxPortNameLengthAndOtherNapWithShortName_podContainerCreatedWithCorrectPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("shortname", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "1", "admin", 8001, 8001));
+
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+            createContainerPort("shortname")));
+  }
+
+  @Test
   void whenPodCreatedWithMultipleNapsSomeWithNamesExceedingMaxPortNameLength_podContainerCreatedWithMixedPortNames() {
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("My_Channel_Name", "admin", 8001, 8001));
