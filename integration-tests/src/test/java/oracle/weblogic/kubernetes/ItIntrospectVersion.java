@@ -686,8 +686,8 @@ class ItIntrospectVersion {
    * In this test firstly we patch the running domain with an image that does not exist
    * At this moment the pods are not in "Ready" state so even with a new updated restartVersion
    * Rolling restart will not happen.
-   * Secondly we make the image available by pushing the image to OCIR with proper tagging
-   * Patch the domain with this new available image
+   * Secondly we make the image available
+   * Patch the domain with new available image
    * Verify rolling restart is triggered
    * Verify the admin server is accessible and cluster members are healthy
    */
