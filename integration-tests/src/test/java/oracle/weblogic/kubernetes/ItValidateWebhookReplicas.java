@@ -695,7 +695,7 @@ class ItValidateWebhookReplicas {
 
     // check only managed server1 pod exists, all other managed server pods are deleted
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    for (int i = DEFAULT_MAX_CLUSTER_SIZE + 1; i > 1; i--) {
+    for (int i = DEFAULT_MAX_CLUSTER_SIZE; i > 1; i--) {
       checkPodDeleted(managedServerPrefix + i, domainUid, domainNamespace);
     }
     checkPodReadyAndServiceExists(managedServerPrefix + "1", domainUid, domainNamespace);
