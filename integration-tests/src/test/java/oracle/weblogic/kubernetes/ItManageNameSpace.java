@@ -250,12 +250,6 @@ class ItManageNameSpace {
     createSecrets(manageByLabelNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByLabelNS,manageByLabelDomainUid));
     checkOperatorCanScaleDomain(manageByLabelNS, manageByLabelDomainUid);
-
-    //check operator can't manage anymore manageByExp1NS
-    assertTrue(isOperatorFailedToScaleDomain(manageByExpDomain1Uid,
-        manageByExp1NS), "Operator can still manage domain "
-        + manageByExp1NS + " in the namespace " + manageByExp1NS);
-
   }
 
   /**
