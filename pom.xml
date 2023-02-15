@@ -630,7 +630,7 @@
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.0.0-M8</maven-surefire-plugin-version>
+    <maven-surefire-plugin-version>3.0.0-M9</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.2.1</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.0-M7</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.4.1</maven-javadoc-plugin-version>
