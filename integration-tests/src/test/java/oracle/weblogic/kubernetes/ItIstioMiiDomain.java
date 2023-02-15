@@ -247,14 +247,11 @@ class ItIstioMiiDomain {
     
     String curlCmd = "curl -j -sk --show-error --noproxy '*' "
         + " -H 'Host: " + domainNamespace + ".org'"
-        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
     ExecResult result = null;
     logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(
-        () -> exec(curlCmd, true));
+    result = assertDoesNotThrow(() -> exec(curlCmd, true));
     assertEquals(0, result.exitValue(), "Got expected exit value");
-    logger.info(result.stdout());
-    logger.info(result.stderr());
     result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
         + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
     assertEquals(0, result.exitValue(), "Got expected exit value");    
