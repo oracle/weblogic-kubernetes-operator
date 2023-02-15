@@ -399,7 +399,9 @@ public class ShutdownManagedServerStep extends Step {
   static class DomainUpdateStep extends DefaultResponseStep<DomainResource> {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
-      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      if (callResponse.getResult() != null) {
+        packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      }
       return doNext(packet);
     }
   }

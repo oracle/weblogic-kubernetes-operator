@@ -1286,7 +1286,7 @@ public class EventHelper {
   public static class ClusterResourceEventData extends EventData {
 
     private final ClusterResource resource;
-    private String domainUid;
+    private final String domainUid;
 
     private ClusterResourceEventData(EventItem eventItem, ClusterResource resource, String domainUid) {
       super(eventItem);

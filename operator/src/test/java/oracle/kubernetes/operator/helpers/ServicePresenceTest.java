@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -66,7 +67,9 @@ class ServicePresenceTest {
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domains", domains));
     mementos.add(UnitTestHash.install());
 
-    domains.put(NS, ImmutableMap.of(UID, info));
+    HashMap<String, DomainPresenceInfo> infoMap = new HashMap<>();
+    infoMap.put(UID, info);
+    domains.put(NS, infoMap);
     disableMakeRightDomainProcessing();
     DomainResource domain = new DomainResource().withMetadata(new V1ObjectMeta().name(UID));
     DomainConfiguratorFactory.forDomain(domain)
@@ -137,6 +140,39 @@ class ServicePresenceTest {
     processor.dispatchServiceWatch(event);
 
     assertThat(info.getClusterService(CLUSTER), sameInstance(newService));
+  }
+
+  @Test
+  void onAddEventWithNoRecordedClusterServiceMissingInfo_dontAddIt() {
+    V1Service newService = createClusterService();
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
+    domains.get(NS).remove(UID);
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), equalTo(null));
+  }
+
+  @Test
+  void onAddEventWithNoRecordedClusterServiceMissingDomainUidLabel_dontAddIt() {
+    V1Service newService = createClusterService();
+    newService.getMetadata().getLabels().remove(DOMAINUID_LABEL);
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), equalTo(null));
+  }
+
+  @Test
+  void onAddEventWithNoRecordedClusterServiceMissingNamespace_dontAddIt() {
+    V1Service newService = createClusterService();
+    newService.getMetadata().setNamespace(null);
+    Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), equalTo(null));
   }
 
   @Test
@@ -241,6 +277,17 @@ class ServicePresenceTest {
     processor.dispatchServiceWatch(event);
 
     assertThat(info.getClusterService(CLUSTER), nullValue());
+  }
+
+  @Test
+  void onDeleteEventWithNoRecordedClusterServiceInfoMissingDomainObject_dontAddIt() {
+    V1Service newService = createClusterService();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newService).toWatchResponse();
+    domains.get(NS).get(UID).setDomain(null);
+
+    processor.dispatchServiceWatch(event);
+
+    assertThat(info.getClusterService(CLUSTER), equalTo(null));
   }
 
   @Test
