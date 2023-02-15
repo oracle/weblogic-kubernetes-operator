@@ -346,7 +346,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   @NotNull
   private String getPortNamePrefix(String name) {
     // Use first 12 characters of port name as prefix due to 15 character port name limit
-    return name.substring(0, 12);
+    return name.length() > 12 ? name.substring(0, 12) : name;
   }
 
   Integer getListenPort() {
