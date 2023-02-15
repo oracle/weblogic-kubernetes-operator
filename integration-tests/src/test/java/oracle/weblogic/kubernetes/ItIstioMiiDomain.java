@@ -244,6 +244,19 @@ class ItIstioMiiDomain {
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    
+    String curlCmd = "curl -j -sk --show-error --noproxy '*' "
+        + " -H 'Host: " + domainNamespace + ".org'"
+        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort;
+    ExecResult result = null;
+    logger.info("curl command {0}", curlCmd);
+    result = assertDoesNotThrow(
+        () -> exec(curlCmd, true));
+    assertEquals(7, result.exitValue(), "Got expected exit value");
+    result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    assertEquals(0, result.exitValue(), "Got expected exit value");
+    
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
@@ -261,7 +274,7 @@ class ItIstioMiiDomain {
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
-      ExecResult result = null;
+      result = null;
       logger.info("curl command {0}", curlCmd2);
       result = assertDoesNotThrow(
         () -> exec(curlCmd2, true));
@@ -281,7 +294,7 @@ class ItIstioMiiDomain {
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
-    ExecResult result = null;
+    result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
@@ -383,8 +396,5 @@ class ItIstioMiiDomain {
     });
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
         + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
-    logger.info(String.valueOf(result.exitValue()));
   }
 }
