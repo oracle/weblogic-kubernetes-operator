@@ -1112,6 +1112,7 @@ class ItUsabilityOperatorHelmChart {
           DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace),
           "failed to create external REST identity secret");
       opParams
+          .restEnabled(true)
           .externalRestEnabled(true)
           .externalRestHttpsPort(externalRestHttpsPort)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace);
