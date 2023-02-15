@@ -106,7 +106,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
 
   // List of clusters in a namespace.
-  private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+  private static final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
@@ -132,11 +132,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     this.productVersion = productVersion;
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+  @Override
+  public DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
+  private DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
@@ -156,6 +157,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public Map<String, Map<String,ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return clusters;
+  }
+
+  @Override
+  public Map<String, FiberGate> getMakeRightFiberGateMap() {
+    return makeRightFiberGates;
   }
 
   private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
@@ -244,21 +250,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
+  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
-        processPodEvent(event);
+        processPodEvent(name, event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
@@ -272,13 +267,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processPodEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-    if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+  private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
+    if (name.equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
       processServerEvent(event);
@@ -313,30 +303,19 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    if (info.isNotDeleting()) {
+    if (isNotDeleting(info)) {
       list.add(info.getDomain());
     }
   }
 
-  private void onDeleteEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
+  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
         break;
       case EventConstants.EVENT_KIND_POD:
-        if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+        if (name.equals(NamespaceHelper.getOperatorPodName())) {
           deleteEventK8SObjects(event);
         }
         break;
@@ -432,7 +411,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean hasDeletedClusterEventData(MakeRightClusterOperation operation) {
-    return operation.getEventData() != null && operation.getEventData().getItem().name().equals("CLUSTER_DELETED");
+    return EventItem.CLUSTER_DELETED == getEventItem(operation);
+  }
+
+  private EventItem getEventItem(MakeRightClusterOperation operation) {
+    return Optional.ofNullable(operation.getEventData()).map(EventData::getItem).orElse(null);
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
@@ -477,6 +460,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+  }
+
+  @Override
+  public void unregisterDomainEventK8SObjects(DomainPresenceInfo info) {
     unregisterEventK8SObject(info.getNamespace(), info.getDomainUid());
   }
 
@@ -595,7 +582,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-        if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
+        if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
@@ -670,7 +657,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -702,12 +689,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
       default:
     }
+  }
+
+  private static boolean isNotDeleting(DomainPresenceInfo info) {
+    return info.isNotDeleting() && info.getDomain() != null;
   }
 
   private String getPDBNamespace(V1PodDisruptionBudget pdb) {
@@ -721,7 +712,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
-    if (c != null && c.getMetadata() != null) {
+    if (c.getMetadata() != null) {
       switch (item.type) {
         case MODIFIED:
         case DELETED:
@@ -742,18 +733,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
     CoreV1Event e = item.object;
-    if (e != null) {
-      switch (item.type) {
-        case ADDED:
-        case MODIFIED:
-          onCreateModifyEvent(e);
-          break;
-        case DELETED:
-          onDeleteEvent(e);
-          break;
-        case ERROR:
-        default:
-      }
+    V1ObjectReference ref = e.getInvolvedObject();
+
+    if (ref == null || ref.getName() == null || ref.getKind() == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case ADDED:
+      case MODIFIED:
+        onCreateModifyEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case DELETED:
+        onDeleteEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case ERROR:
+      default:
     }
   }
 

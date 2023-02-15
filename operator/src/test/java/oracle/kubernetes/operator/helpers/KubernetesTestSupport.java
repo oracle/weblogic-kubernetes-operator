@@ -106,6 +106,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String CLUSTER = "Cluster";
   public static final String CLUSTER_STATUS = "ClusterStatus";
   public static final String DOMAIN = "Domain";
+  public static final String DOMAIN_STATUS = "DomainStatus";
   public static final String EVENT = "Event";
   public static final String JOB = "Job";
   public static final String PV = "PersistentVolume";
@@ -139,6 +140,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private long resourceVersion;
   private int numCalls;
   private boolean addCreationTimestamp;
+  private EmptyResponse emptyResponse;
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
@@ -501,6 +503,37 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   /**
+   * Specifies that status replacement operation should respond with a null result if it matches the specified
+   * conditions. Applies to domain resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   */
+  public void returnEmptyResult(String resourceType, String name, String namespace) {
+    emptyResponse = new EmptyResponse(Operation.replaceStatus, resourceType, name, namespace);
+  }
+
+  /**
+   * Specifies that a read operation should respond with a null result if it matches the specified conditions.
+   * Applies to domain resources.
+   *
+   * @param resourceType the type of resource
+   * @param name the name of the resource
+   * @param namespace the namespace containing the resource
+   */
+  public void returnEmptyResultOnRead(String resourceType, String name, String namespace) {
+    emptyResponse = new EmptyResponse(Operation.read, resourceType, name, namespace);
+  }
+
+  /**
+   * Cancels the currently defined 'emptyresponse' condition established by the various 'returnEmptyResult' methods.
+   */
+  public void cancelEmptyResponse() {
+    emptyResponse = null;
+  }
+
+  /**
    * Specifies an action to perform after completing the next matching invocation.
    * @param resourceType the type of resource
    * @param call the call string
@@ -634,6 +667,35 @@ public class KubernetesTestSupport extends FiberTestSupport {
             .append("namespace", namespace)
             .append("operation", operation)
             .toString();
+    }
+  }
+
+  static class EmptyResponse {
+    private final String resourceType;
+    private final String name;
+    private final String namespace;
+    private Operation operation;
+
+    public EmptyResponse(String resourceType, String name, String namespace) {
+      this.resourceType = resourceType;
+      this.name = name;
+      this.namespace = namespace;
+    }
+
+    public EmptyResponse(Operation operation, String resourceType, String name, String namespace) {
+      this(resourceType, name, namespace);
+      this.operation = operation;
+    }
+
+    boolean matches(Operation operation, String resourceType, String name) {
+      return this.resourceType.equals(resourceType)
+          && (this.operation == null || this.operation == operation)
+          && (name == null || Objects.equals(this.name, name));
+    }
+
+    boolean matches(Operation operation, String name) {
+      return (this.operation == null || this.operation == operation)
+          && (name == null || Objects.equals(this.name, name));
     }
   }
 
@@ -932,6 +994,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
       copyResourceStatus(resource, current);
       incrementResourceVersion(getMetadata(current));
       onUpdateActions.forEach(a -> a.accept(current));
+      if (emptyResponse != null && emptyResponse.matches(Operation.replaceStatus,name)) {
+        cancelEmptyResponse();
+        return null;
+      }
       return current;
     }
 
@@ -976,6 +1042,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     public T readResource(String name, String namespace) {
       if (!data.containsKey(name)) {
         throw new NotFoundException(getResourceName(), name, namespace);
+      }
+
+      if (emptyResponse != null && emptyResponse.matches(Operation.read, name)) {
+        cancelEmptyResponse();
+        return null;
       }
       return data.get(name);
     }
