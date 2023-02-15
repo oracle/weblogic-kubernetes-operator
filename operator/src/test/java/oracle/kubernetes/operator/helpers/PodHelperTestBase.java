@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -413,6 +413,17 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             getContainerPorts(),
             hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
                      createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-02")));
+  }
+
+  @Test
+  void whenOneNapNameExceedsMaxPortNameLengthAndOtherNapWithShortName_podContainerCreatedWithCorrectPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("shortname", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "1", "admin", 8001, 8001));
+
+    assertThat(
+        getContainerPorts(),
+        hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+            createContainerPort("shortname")));
   }
 
   @Test
