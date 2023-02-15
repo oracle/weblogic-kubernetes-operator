@@ -18,6 +18,7 @@ import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -131,4 +132,8 @@ public interface DomainProcessor {
   default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return new ConcurrentHashMap<>();
   }
+
+  Map<String, FiberGate> getMakeRightFiberGateMap();
+
+  DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 }

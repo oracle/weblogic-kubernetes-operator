@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -15,6 +16,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
@@ -131,6 +133,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 class EventHelperTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
@@ -624,6 +627,52 @@ class EventHelperTest {
   }
 
   @Test
+  void whenNSWatchStartedEventCreatedWithNotificationsHavingInvolvedObject_eventCreatedOnceWithOneCount() {
+    runCreateNSWatchingStartedEventStep();
+    dispatchAddedEventWatches();
+
+    assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with count of 1",
+        getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), notNullValue());
+  }
+
+  @Test
+  void whenNSWatchStartedEventCreatedWithNotificationsWithoutInvolvedObject_eventCreatedOnceWithOneCount() {
+    runCreateNSWatchingStartedEventStep();
+    dispatchAddedEventWatchesWithoutInvolvedObject();
+
+    assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with expected count",
+        getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), equalTo(null));
+  }
+
+  @Test
+  void whenNSWatchStartedEventCreatedWithNotificationsWithoutInvolvedObjectName_eventCreatedOnceWithOneCount() {
+    runCreateNSWatchingStartedEventStep();
+    dispatchAddedEventWatchesWithoutInvolvedObjectName();
+
+    assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with expected count",
+        getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), equalTo(null));
+  }
+
+  @Test
+  void whenNSWatchStartedEventCreatedWithNotificationsWithoutInvolvedObjectKind_eventCreatedOnceWithOneCount() {
+    runCreateNSWatchingStartedEventStep();
+    dispatchAddedEventWatchesWithoutInvolvedObjectKind();
+
+    assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with expected count",
+        getCachedNSEvents(NS,NAMESPACE_WATCHING_STARTED_EVENT), equalTo(null));
+  }
+
+  public CoreV1Event getCachedNSEvents(String namespace, String reason) {
+    return nsEventObjects.get(namespace).getExistingEvent(createReferenceEvent(namespace, reason));
+  }
+
+  private CoreV1Event createReferenceEvent(String namespace, String reason) {
+    String msg = "Started watching namespace " + namespace + ".";
+    return new CoreV1Event().reason(reason).message(msg)
+        .involvedObject(new V1ObjectReference().kind("Namespace").name(namespace).namespace(namespace));
+  }
+
+  @Test
   void whenCreateEventStepCalledWithNSWatchStoppedEvent_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
@@ -972,6 +1021,30 @@ class EventHelperTest {
   private void dispatchAddedEventWatches() {
     List<CoreV1Event> events = getEvents(testSupport);
     for (CoreV1Event event : events) {
+      dispatchAddedEventWatch(event);
+    }
+  }
+
+  private void dispatchAddedEventWatchesWithoutInvolvedObject() {
+    List<CoreV1Event> events = getEvents(testSupport);
+    for (CoreV1Event event : events) {
+      event.setInvolvedObject(null);
+      dispatchAddedEventWatch(event);
+    }
+  }
+
+  private void dispatchAddedEventWatchesWithoutInvolvedObjectName() {
+    List<CoreV1Event> events = getEvents(testSupport);
+    for (CoreV1Event event : events) {
+      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setName(null));
+      dispatchAddedEventWatch(event);
+    }
+  }
+
+  private void dispatchAddedEventWatchesWithoutInvolvedObjectKind() {
+    List<CoreV1Event> events = getEvents(testSupport);
+    for (CoreV1Event event : events) {
+      Optional.ofNullable(event.getInvolvedObject()).ifPresent(r -> r.setKind(null));
       dispatchAddedEventWatch(event);
     }
   }
