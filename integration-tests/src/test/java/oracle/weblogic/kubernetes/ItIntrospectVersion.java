@@ -689,7 +689,7 @@ class ItIntrospectVersion {
    * Update the restart version. Verify the domain does not restart
    * Make the image available
    * Patch the domain with the new available image
-   * Verify rolling restart is triggered 
+   * Verify rolling restart is triggered
    * Verify the admin server is accessible and cluster members are healthy
    */
   @Test
@@ -731,11 +731,12 @@ class ItIntrospectVersion {
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
     getLogger().info(" The image name used for the 1st update is: {0}", imageUpdate);
 
-    //1st time update image and restartVersion without image tagging/pushing
+    //1st time patch domain resource with an image that does not exist in the registry so even with a new
+    //domain RestartVersion pods will not be restarted
     patchDomainWithNewImage(imageUpdate);
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-    // verify the server pods are not restarted because newImage is not tagged, not pushed to ocir
+    //verify the server pods are not restarted because newImage is not available in the registry
     //admin server pod will be in pending state(ImagePullBackOff)
     logger.info("Verifying restart did NOT occur for domain {0} in namespace {1}",
         domainUid, introDomainNamespace);
@@ -754,8 +755,10 @@ class ItIntrospectVersion {
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
     getLogger().info(" The image name used for the 2nd update is: {0}", imageUpdate);
+    //make the image available by pushing it into OCIR with proper tagging
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
+    //patch domain with new available image
     patchDomainWithNewImage(imageUpdate);
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
