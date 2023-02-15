@@ -9,9 +9,10 @@ weight: 6
 
 ### Overview
 
-The operator supports a wide range of on-premises and cloud Kubernetes
-offerings where Kubernetes is supplied for you or you set up Kubernetes
-yourself. These include, but are not limited to:
+The operator supports running on production grade Kubernetes environments, including on-premises,
+cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself. 
+
+These include, but are not limited to:
 
 - WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
   - Oracle Cloud Infrastructure
