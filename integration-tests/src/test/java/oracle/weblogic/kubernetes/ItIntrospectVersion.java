@@ -683,12 +683,11 @@ class ItIntrospectVersion {
   }
 
   /**
-   * In this test we want to verify that rolling start can happen when the pod
-   * is in "Not Ready" state
-   * Patch the running domain with an image that does not exist
-   * Update the restart version. Verify the domain does not restart
-   * Make the image available
-   * Patch the domain with the new available image
+   * In this test firstly we patch the running domain with an image that does not exist
+   * At this moment the pods are not in "Ready" state so even with a new updated restartVersion
+   * Rolling restart will not happen.
+   * Secondly we make the image available by pushing the image to OCIR with proper tagging
+   * Patch the domain with this new available image
    * Verify rolling restart is triggered
    * Verify the admin server is accessible and cluster members are healthy
    */
@@ -731,8 +730,8 @@ class ItIntrospectVersion {
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag;
     getLogger().info(" The image name used for the 1st update is: {0}", imageUpdate);
 
-    //1st time patch domain resource with an image that does not exist in the registry so even with a new
-    //domain RestartVersion pods will not be restarted
+    //1st time patch domain resource with an image that does not exist in the registry, the pods will be in not
+    // "Ready" state, so even with a new domain RestartVersion pods will not be restarted
     patchDomainWithNewImage(imageUpdate);
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
