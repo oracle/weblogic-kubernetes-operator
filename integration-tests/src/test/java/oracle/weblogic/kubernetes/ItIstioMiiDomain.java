@@ -382,7 +382,9 @@ class ItIstioMiiDomain {
           "NAMESPACE", namespace);
     });
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
-        + Paths.get(WORK_DIR, "istio", "istio-tls-mode.yaml").toString(), true));
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
     logger.info(result.stdout());
+    logger.info(result.stderr());
+    logger.info(String.valueOf(result.exitValue()));
   }
 }
