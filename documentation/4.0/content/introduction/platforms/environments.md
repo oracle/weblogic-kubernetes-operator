@@ -11,6 +11,7 @@ weight: 6
 
 The operator supports running on production-quality Kubernetes environments, including on-premises,
 cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.
+Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
 These include, but are not limited to:
 
@@ -29,8 +30,6 @@ These include, but are not limited to:
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
 
-WebLogic Server and the operator are supported on production-quality Kubernetes clusters. 
-Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
 WebLogic Server and the operator are also supported on service offerings which
 deploy the WebLogic Server and the operator for you. These include:

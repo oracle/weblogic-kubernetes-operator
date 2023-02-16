@@ -28,11 +28,12 @@ weight: 3
 ### Overview
 
 The operator supports running on production grade Kubernetes environments, including on-premises,
-cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself. 
+cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.
+Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
 These include, but are not limited to:
 
-- WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
+- WebLogic Server and the operator are certified on Oracle Cloud offerings, such as:
   - Oracle Cloud Infrastructure (OCI)
   - Oracle Container Engine for Kubernetes (OKE)
   - Oracle Linux Cloud Native Environment (OLCNE)
