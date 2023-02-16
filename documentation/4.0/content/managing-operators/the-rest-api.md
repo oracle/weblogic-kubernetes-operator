@@ -15,6 +15,10 @@ or for getting certain aspects of a domain's status (for example, instead of cal
 You also can use the REST API as an alternative approach for initiating scaling operations
 (instead of using the Kubernetes API or command line to alter a domain resource's `replicas` values).
 
+{{% notice note %}}
+Beginning with operator version 4.0.5, the operator's REST endpoint is disabled by default. Install the operator with the Helm install option `--set "enableRest=true"` to enable the REST endpoint.
+{{% /notice %}}
+
 ### Configure the operator's external REST HTTPS interface
 
 The operator can expose an external REST HTTPS interface which can be accessed from outside the Kubernetes cluster. As with the operator's internal REST interface, the external REST interface requires an SSL/TLS certificate and private key that the operator will use as the identity of the external REST interface.

@@ -4,11 +4,13 @@
 package oracle.kubernetes.operator;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
+import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
@@ -33,6 +35,14 @@ public interface CoreDelegate extends PacketComponent {
   File getDeploymentHome();
 
   File getProbesHome();
+
+  default boolean createNewFile(File file) throws IOException {
+    return file.createNewFile();
+  }
+
+  default int getMetricsPort() {
+    return MetricsServer.DEFAULT_METRICS_PORT;
+  }
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);
