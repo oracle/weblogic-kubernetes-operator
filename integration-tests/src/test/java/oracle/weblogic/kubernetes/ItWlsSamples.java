@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -53,6 +53,8 @@ import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXIS
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -424,8 +426,17 @@ class ItWlsSamples {
   void testTraefikIngressController() {
     Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "traefik");
     setupSample(testSamplePath);
+    Map<String, String> templateMap  = new HashMap<>();
+    templateMap.put("TRAEFIK_INGRESS_IMAGE_NAME", TRAEFIK_INGRESS_IMAGE_NAME);
+    Path srcPropFile = Paths.get(RESOURCE_DIR, "traefik.template.properties");
+    Path targetPropFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcPropFile.toString(), "traefik.properties", templateMap));
+    logger.info("Generated traefik.properties file at {0}", targetPropFile);
+
     Path scriptBase = get(testSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
+    setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace 
+         + " -p " + targetPropFile.toString() 
+         + " -v " + TRAEFIK_INGRESS_IMAGE_TAG);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
   }
 
