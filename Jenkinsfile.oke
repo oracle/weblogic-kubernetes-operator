@@ -135,7 +135,7 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.1.1'
+               defaultValue: '2.1.2'
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
