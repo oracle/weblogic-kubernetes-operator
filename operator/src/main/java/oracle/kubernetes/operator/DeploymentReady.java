@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -13,10 +13,12 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public class DeploymentReady {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  private final CoreDelegate delegate;
   private final File readinessFile;
 
   public DeploymentReady(CoreDelegate delegate) {
-    readinessFile = new File(delegate.getProbesHome(), ".ready");
+    this.delegate = delegate;
+    this.readinessFile = new File(delegate.getProbesHome(), ".ready");
   }
 
   /**
@@ -24,7 +26,7 @@ public class DeploymentReady {
    * @throws IOException if the readiness file does not exist
    */
   public void create() throws IOException {
-    if (readinessFile.createNewFile()) {
+    if (delegate.createNewFile(readinessFile)) {
       LOGGER.fine("Readiness file created");
     }
   }

@@ -493,8 +493,16 @@ The REST interface configuration options are advanced settings for configuring t
 
 For usage information, see the operator [REST Services]({{<relref "/managing-operators/the-rest-api.md">}}).
 
+##### `enableRest`
+Determines whether the operator's REST endpoint is enabled.
+
+Beginning with operator version 4.0.5, the operator's REST endpoint is disabled by default.
+
+Defaults to `false`.
+
 ##### `externalRestEnabled`
-Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port.
+Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port. This
+value is ignored if `enableRest` is not `true`.
 
 See also `externalRestHttpsPort` for customizing the port number.
 

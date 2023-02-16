@@ -1,7 +1,8 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operatorInternalService" }}
+{{- if and (hasKey . "enableRest") .enableRest }}
 ---
 apiVersion: "v1"
 kind: "Service"
@@ -21,6 +22,7 @@ spec:
     - port: 8083
       name: "metrics"
       appProtocol: http
+{{- end }}
 ---
 {{- if not .operatorOnly }}
 apiVersion: "v1"
