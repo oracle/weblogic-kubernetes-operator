@@ -9,12 +9,12 @@ weight: 6
 
 ### Overview
 
-The operator supports running on production grade Kubernetes environments, including on-premises,
-cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself. 
+The operator supports running on production-quality Kubernetes environments, including on-premises,
+cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.
 
 These include, but are not limited to:
 
-- WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
+- WebLogic Server and the operator are certified on Oracle Cloud offerings, such as:
   - Oracle Cloud Infrastructure
   - Oracle Container Engine for Kubernetes (OKE)
   - Oracle Cloud Native Environment
@@ -28,6 +28,9 @@ These include, but are not limited to:
   - OpenShift Container Platform
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
+
+WebLogic Server and the operator are supported on production-quality Kubernetes clusters. 
+Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
 WebLogic Server and the operator are also supported on service offerings which
 deploy the WebLogic Server and the operator for you. These include:

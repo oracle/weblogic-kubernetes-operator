@@ -25,4 +25,4 @@ to submit a [GitHub Issue](https://github.com/oracle/weblogic-kubernetes-operato
 WebLogic Kubernetes Operator project. All issues are public.
 
 ### Oracle support
-To access Oracle support, see [WebLogic Server Certifications on Kubernetes in My Oracle Support Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2349228.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
+To access Oracle support, see [WebLogic Server Certifications on Kubernetes in My Oracle Support Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=466064245384567&id=2349228.1).
