@@ -356,7 +356,6 @@ class ItUsabilityOperatorHelmChart {
           null,"deployed", 0, opHelmParams, LIST_STRATEGY, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
-      createRouteForOKD("external-weblogic-operator-svc", opNamespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       assertNotEquals(-1, externalRestHttpsPort,

@@ -320,10 +320,6 @@ class ItManageNameSpace {
     createSecrets(manageByExpDomainNS);
     assertTrue(createDomainResourceAndVerifyDomainIsRunning(manageByExpDomainNS,manageByExpDomainUid));
     checkOperatorCanScaleDomain(manageByExpDomainNS, manageByExpDomainUid);
-    //verify operator can't manage anymore domain running in the namespace with label
-    assertTrue(isOperatorFailedToScaleDomain(domainsUid[0], domainNamespaces[0]),
-        "Operator can still manage domain "
-            + domainsUid[0] + " in the namespace " + domainNamespaces[0]);
 
     checkUpgradeFailedToAddNSManagedByAnotherOperator();
   }

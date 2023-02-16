@@ -43,8 +43,6 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusCond
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -106,13 +104,6 @@ class ItDiagnosticsCompleteAvailableCondition {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-
-    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough
-    logger.info("Create a route for the operator external service - only for OKD");
-    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
