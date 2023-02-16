@@ -15,14 +15,14 @@ Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.
 
 These include, but are not limited to:
 
-- WebLogic Server and the operator are certified on Oracle Cloud offerings, such as:
-  - Oracle Cloud Infrastructure
+- Oracle Cloud certified offerings, such as:
+  - Oracle Cloud Infrastructure (OCI)
   - Oracle Container Engine for Kubernetes (OKE)
-  - Oracle Cloud Native Environment
+  - Oracle Cloud Native Environment (OCNE)
   - Oracle Private Cloud Appliance (PCA)
   - Oracle Private Cloud at Customer (OPCC)
 
-- WebLogic Server and the operator are certified on offerings, such as:
+- Other certified offerings, such as:
   - Amazon Elastic Compute Cloud (EC2)
   - Microsoft Azure Platform
   - Microsoft Azure Kubernetes Service (AKS)
@@ -30,14 +30,11 @@ These include, but are not limited to:
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
 
+- Offerings which deploy the WebLogic Server and the operator for you. These include:
+  - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
+  - [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
-WebLogic Server and the operator are also supported on service offerings which
-deploy the WebLogic Server and the operator for you. These include:
-
-- [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
-- [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
-
-[Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
+- [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
 **Notes:**
 
