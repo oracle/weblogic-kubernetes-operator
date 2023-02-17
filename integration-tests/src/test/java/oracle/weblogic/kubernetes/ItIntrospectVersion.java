@@ -688,7 +688,7 @@ class ItIntrospectVersion {
    * In this test firstly we patch the running domain with an image that does not exist.
    * Admin server pod will be recreated but fail to get into "Ready" state
    * So even with a new updated restartVersion rolling restart will not be triggered in the domain
-   * Admin server pod is in Pending state with restart count 0
+   * Admin server pod is in Pending state with container restart count 0
    * Secondly we patch the domain with a new available image
    * Verify rolling restart is triggered in the domain
    * Verify the admin server is accessible and cluster members are healthy
@@ -741,6 +741,7 @@ class ItIntrospectVersion {
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
     logger.info("Verifying rolling restart did NOT occur for domain {0} in namespace {1}",
         domainUid, introDomainNamespace);
+    //verify rolling restart is not triggered in the domain
     assertThrows(ConditionTimeoutException.class, () -> {
       verifyRollingRestartOccurred(cl1podsWithTimeStamps, 1, introDomainNamespace);
     });
@@ -750,7 +751,7 @@ class ItIntrospectVersion {
       });
     }
 
-    //verify admin server pod restartCount is 0 before 2nd time image update
+    //verify admin server pod container restartCount is 0 before 2nd time image update
     assertTrue((getPodRestartCount(introDomainNamespace, adminServerPodName) == 0),
         String.format("Pod %s restart count does not equals to 0", adminServerPodName));
     //verify admin server pod is in pending state before 2nd time image update
