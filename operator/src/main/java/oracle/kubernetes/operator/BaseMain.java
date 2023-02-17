@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.http.BaseServer;
 import oracle.kubernetes.operator.http.metrics.MetricsServer;
 import oracle.kubernetes.operator.http.rest.BaseRestServer;
@@ -46,8 +47,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
-
-import static oracle.kubernetes.operator.http.metrics.MetricsServer.DEFAULT_METRICS_PORT;
 
 /** An abstract base main class for the operator and the webhook. */
 public abstract class BaseMain {
@@ -87,13 +86,13 @@ public abstract class BaseMain {
       // top-level directory using either an env variable or a property. In the normal,
       // container-based use case these values won't be set and the operator will with the
       // /operator directory.
-      String deploymentHomeLoc = System.getenv("DEPLOYMENT_HOME");
+      String deploymentHomeLoc = HelmAccess.getHelmVariable("DEPLOYMENT_HOME");
       if (deploymentHomeLoc == null) {
         deploymentHomeLoc = System.getProperty("deploymentHome", "/deployment");
       }
       deploymentHome = new File(deploymentHomeLoc);
 
-      String probesHomeLoc = System.getenv("PROBES_HOME");
+      String probesHomeLoc = HelmAccess.getHelmVariable("PROBES_HOME");
       if (probesHomeLoc == null) {
         probesHomeLoc = System.getProperty("probesHome", "/probes");
       }
@@ -196,7 +195,7 @@ public abstract class BaseMain {
 
   void startMetricsServer(Container container) throws UnrecoverableKeyException, CertificateException, IOException,
       NoSuchAlgorithmException, KeyStoreException, InvalidKeySpecException, KeyManagementException {
-    startMetricsServer(container, DEFAULT_METRICS_PORT);
+    startMetricsServer(container, delegate.getMetricsPort());
   }
 
   // for test
