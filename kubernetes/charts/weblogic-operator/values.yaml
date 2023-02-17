@@ -4,7 +4,7 @@
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
 # operator will use to make requests to the Kubernetes API server.
 # The customer is responsible for creating the ServiceAccount in the same namespace as this Helm release.
-# If not specified, the the operator will use the Helm release namespace's 'default' ServiceAccount.
+# If not specified, the operator will use the Helm release namespace's 'default' ServiceAccount.
 serviceAccount: "default"
 
 # domainNamespaceSelectionStrategy specifies how the operator will select the set of namespaces
