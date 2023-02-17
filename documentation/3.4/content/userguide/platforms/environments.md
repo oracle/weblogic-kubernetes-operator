@@ -27,30 +27,29 @@ weight: 3
 
 ### Overview
 
-The operator supports a wide range of on-premises and cloud Kubernetes
-offerings where Kubernetes is supplied for you or you set up Kubernetes
-yourself. These include, but are not limited to:
+The operator supports running on production grade Kubernetes environments, including on-premises,
+cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.
+Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
-- WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
+These include, but are not limited to:
+
+- Oracle Cloud certified offerings, such as:
   - Oracle Cloud Infrastructure (OCI)
   - Oracle Container Engine for Kubernetes (OKE)
-  - Oracle Linux Cloud Native Environment (OLCNE)
+  - Oracle Cloud Native Environment (OCNE)
   - Oracle Private Cloud Appliance (PCA)
   - Oracle Private Cloud at Customer (OPCC)
 
-- WebLogic Server and the operator are certified on offerings, such as:
-  - Amazon Elastic Compute Cloud (EC2)
+- Other certified offerings, such as:
   - Microsoft Azure Platform
   - Microsoft Azure Kubernetes Service (AKS)
   - OpenShift Container Platform
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
 
-WebLogic Server and the operator are also supported on service offerings which
-deploy the WebLogic Server and the operator for you. These include:
-
-- [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
-- [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
+- Offerings which deploy the WebLogic Server and the operator for you. These include:
+  - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
+  - [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
@@ -90,6 +89,8 @@ Container Services for use with Kubernetes* on OCI Compute, and on
 any other OCI "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
+Operator v3.4.4 is certified for use on OKE with Kubernetes 1.24.1.
+
 #### Oracle Linux Cloud Native Environment (OLCNE)
 
 [Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
@@ -97,6 +98,7 @@ as described in the [Overview](#overview).
 WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment:
 - Operator v2.6.0 is certified on OLCNE 1.1 and v3.2.5 is certified on OLCNE 1.3.
 - Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
+- Operator v3.4.4 is certified for use on Oracle Cloud Native Environment 1.5 with Kubernetes 1.24.5.
 
 #### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
@@ -120,6 +122,8 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
+Operator v3.4.4 is certified for use on PCA X9 with Kubernetes 1.24.5 and Istio 1.14.
+
 #### Microsoft Azure
 
 There are three different approaches for deploying the operator to Microsoft Azure:
@@ -135,6 +139,7 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 
 AKS support and limitations:
 
+* Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
 * All three domain home source types are supported (Domain in Image, Model in Image, and Domain in PV).
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
@@ -179,7 +184,10 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 OpenShift can be a cloud platform or can be deployed on premises.
 
-Operator 3.4.0+ is certified for use on OpenShift Container Platform 4.10.4+, with Kubernetes 1.23+.
+- Operator 3.4.0+ is certified for use on OpenShift Container Platform 4.10.4+, with Kubernetes 1.23+.
+- Operator v3.4.4 is certified for use on:
+  - OpenShift Container Platform 4.9.50 with Kubernetes 1.22, RedHat OpenShift Mesh 2.3, and Istio 1.14.
+  - OpenShift Container Platform 4.11.0 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3, and Istio 1.14.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
