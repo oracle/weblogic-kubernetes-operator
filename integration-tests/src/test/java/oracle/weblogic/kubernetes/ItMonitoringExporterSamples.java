@@ -72,11 +72,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppW
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterCreateImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
@@ -488,8 +488,7 @@ class ItMonitoringExporterSamples {
     //build webhook image
     String imagePullPolicy = IMAGE_PULL_POLICY;
     logger.info("Creating and Installing {0} in namespace {1}", baseImageName, namespace);
-    String image = buildMonitoringExporterCreateImageAndPushToRepo(
-        dockerFileDir,baseImageName, namespace, secretName, "");
+    String image = createImageAndPushToRepo(dockerFileDir, baseImageName, namespace, secretName, "");
 
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
