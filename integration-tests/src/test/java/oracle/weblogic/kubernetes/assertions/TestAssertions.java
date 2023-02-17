@@ -320,7 +320,7 @@ public class TestAssertions {
    * @param podName   name of the pod to check for
    * @param domainUid WebLogic domain uid in which the pod belongs
    * @param namespace name of the namespace in which to check the pod status
-   * @return true if the pod is pending state otherwise false
+   * @return true if the pod is pending otherwise false
    */
   public static Callable<Boolean> podPending(String podName, String domainUid, String namespace) {
     return Pod.podPending(namespace, domainUid, podName);
