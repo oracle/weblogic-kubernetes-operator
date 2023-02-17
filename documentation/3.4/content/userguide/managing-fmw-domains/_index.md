@@ -45,10 +45,6 @@ For more information about the deployment of Oracle Fusion Middleware products o
 Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for FMW Infrastructure domains:
 
-* The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
-  currently supports WebLogic Server logs only.  Other logs will not be sent to
-  Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
@@ -65,6 +61,8 @@ The WebLogic Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure General Availability image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3`, already
 has this patch applied. The FMW Infrastructure 12.2.1.4.0 images do not require this patch. For detailed instructions
 on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+
+**NOTE**: As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
 
 {{% notice warning %}}
 This sample uses General Availability (GA) images. GA images are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/userguide/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/userguide/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
