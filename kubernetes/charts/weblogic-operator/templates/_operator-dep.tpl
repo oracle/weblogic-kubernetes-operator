@@ -73,12 +73,16 @@ spec:
               fieldPath: "metadata.uid"
         - name: "OPERATOR_VERBOSE"
           value: "false"
-        - name: "JAVA_LOGGING_LEVEL"
-          value: {{ .javaLoggingLevel | quote }}
         {{- if .kubernetesPlatform }}
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
         {{- end }}
+        {{- if and (hasKey . "enableRest") .enableRest }}
+        - name: "ENABLE_REST_ENDPOINT"
+          value: "true"
+        {{- end }}
+        - name: "JAVA_LOGGING_LEVEL"
+          value: {{ .javaLoggingLevel | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
           value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
