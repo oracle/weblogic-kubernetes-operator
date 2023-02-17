@@ -132,9 +132,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
+        LOGGER.info("DEBUG: received pod modified callback.. pod is " + pod);
         copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
+        LOGGER.info("DEBUG: received pod deleted callback.. pod is " + pod);
         getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
         break;
       case "ERROR":
