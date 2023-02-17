@@ -41,6 +41,8 @@ Model in Image requires an image with a WebLogic Server installation.
 
 - Or, you can manually build your own base image, as described in [Create a custom image with patches applied]({{< relref "/userguide/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
+  **NOTE**: As of December, 2022, Oracle will continue support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+
 ### Directory structure
 
 Model in Image requires the following directory structure in its pods for
