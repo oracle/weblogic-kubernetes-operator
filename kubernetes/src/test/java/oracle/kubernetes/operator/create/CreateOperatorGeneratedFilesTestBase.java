@@ -254,6 +254,8 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .addEnvItem(
                                             newEnvVar().name("OPERATOR_VERBOSE").value("false"))
                                         .addEnvItem(
+                                            newEnvVar().name("ENABLE_REST_ENDPOINT").value("true"))
+                                        .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_LEVEL")
                                                 .value(getInputs().getJavaLoggingLevel()))

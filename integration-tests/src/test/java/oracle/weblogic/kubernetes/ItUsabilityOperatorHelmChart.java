@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,7 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
@@ -356,7 +356,6 @@ class ItUsabilityOperatorHelmChart {
           null,"deployed", 0, opHelmParams, LIST_STRATEGY, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
-      createRouteForOKD("external-weblogic-operator-svc", opNamespace);
       setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       assertNotEquals(-1, externalRestHttpsPort,
@@ -365,8 +364,7 @@ class ItUsabilityOperatorHelmChart {
 
       //check if the operator can still manage domain1
       int replicaCountDomain1 = 2;
-      assertTrue(scaleClusterWithRestApi(domain1Uid, clusterName,replicaCountDomain1 - 1,
-          externalRestHttpsPort,opNamespace, opServiceAccount),
+      assertTrue(scaleCluster(domain1Uid + "-" + clusterName, domain1Namespace, replicaCountDomain1 - 1),
           "Domain1 " + domain1Namespace + " scaling failed");
       String managedServerPodName1 = domain1Uid + managedServerPrefix + replicaCountDomain1;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -435,8 +433,7 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(createVerifyDomain(domain3Namespace, domain3Uid),
           "can't start or verify domain in namespace " + domain3Namespace);
 
-      assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,3,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain3Uid + "-" + clusterName, domain3Namespace, 3),
           "Domain3 " + domain3Namespace + " scaling operation failed");
       String managedServerPodName1 = domain3Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -448,8 +445,7 @@ class ItUsabilityOperatorHelmChart {
 
       // scale domain2
       int replicaCountDomain2 = 2;
-      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 + 1,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain2Uid + "-" + clusterName, domain2Namespace, replicaCountDomain2 + 1),
           "Domain2 in namespace " + domain2Namespace + " scaling operation failed");
 
       String managedServerPodName2 = domain2Uid + managedServerPrefix + (replicaCountDomain2 + 1);
@@ -471,8 +467,7 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(upgradeAndVerifyOperator(op2Namespace, opParams));
 
       // scale domain2
-      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
-          externalRestHttpsPort,op2Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain2Uid + "-" + clusterName, domain2Namespace, replicaCountDomain2 - 1),
           "Domain2 in namespace " + domain2Namespace + " scaling execution failed");
 
       // check new managed server pod does not exist in the namespace
@@ -485,8 +480,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
 
       //verify operator can't scale domain3 anymore
-      assertTrue(scaleClusterWithRestApi(domain3Uid, clusterName,2,
-          externalRestHttpsPort, op2Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain3Uid + "-" + clusterName, domain3Namespace, 2),
           "Domain " + domain3Namespace + " scaling execution failed ");
 
       // check new managed server pod exists in the namespace
@@ -720,8 +714,7 @@ class ItUsabilityOperatorHelmChart {
 
       //verify operator can scale domain
       int replicaCountDomain2 = 2;
-      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,replicaCountDomain2 - 1,
-          externalRestHttpsPort, op2Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain2Uid + "-" + clusterName, domain2Namespace, replicaCountDomain2 - 1),
           "Domain2 in namespace " + domain2Namespace + " scaling operation failed");
 
       String managedServerPodName2 = domain2Uid + managedServerPrefix + replicaCountDomain2;
@@ -850,8 +843,7 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(createVerifyDomain(domain4Namespace, domain5Uid),
           "can't start or verify domain5 in namespace " + domain4Namespace);
 
-      assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
-          externalRestHttpsPort,op3Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain4Uid + "-" + clusterName, domain4Namespace, 3),
           "Domain4 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -861,8 +853,7 @@ class ItUsabilityOperatorHelmChart {
           "operator failed to manage domain4, scaling was not succeeded");
       logger.info("Domain4 scaled to 3 servers");
 
-      assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
-          externalRestHttpsPort,op3Namespace, opServiceAccount),
+      assertTrue(scaleCluster(domain5Uid + "-" + clusterName, domain4Namespace, 3),
           "Domain2 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
@@ -1120,6 +1111,7 @@ class ItUsabilityOperatorHelmChart {
           DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace),
           "failed to create external REST identity secret");
       opParams
+          .restEnabled(true)
           .externalRestEnabled(true)
           .externalRestHttpsPort(externalRestHttpsPort)
           .externalRestIdentitySecret(DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME + operNamespace);
