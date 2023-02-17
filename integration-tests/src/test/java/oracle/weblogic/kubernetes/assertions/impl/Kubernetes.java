@@ -136,7 +136,7 @@ public class Kubernetes {
   }
 
   /**
-   * Checks if a pod exists in a given namespace and in Pending state.
+   * Checks if a pod exists in a given namespace and is in Pending state.
    * @param namespace in which to check for the pod running
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
