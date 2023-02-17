@@ -61,6 +61,5 @@ See [Get help]({{< relref "/introduction/get-help.md" >}}).
 * [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)
 * [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/)
 * [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
-* [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
 * [WebLogic Remote Console](https://oracle.github.io/weblogic-remote-console/)
 * [WebLogic Kubernetes Toolkit UI](https://oracle.github.io/weblogic-toolkit-ui/)
