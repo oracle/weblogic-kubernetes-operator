@@ -51,7 +51,7 @@ These include, but are not limited to:
   - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
   - [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
-- [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
+[Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
 **Notes:**
 
