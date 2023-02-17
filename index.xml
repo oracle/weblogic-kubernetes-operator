@@ -1074,7 +1074,7 @@ The WDT Discover Domain Tool is particularly useful for generating model files f
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Contents Releases Change log Operator 3.4.5 Operator 4.0.4 Operator 4.0.3 Operator 4.0.2 Operator 4.0.1 Operator 4.0.0 Major Themes Upgrade Notes Changes to domain schema Changes to operator Helm chart configuration values Minor features and fixes Operator 3.4.4 Operator 3.4.3 Operator 3.4.2 Operator 3.4.1 Operator 3.4.0 Operator 3.3.8 Operator 3.3.7 Operator 3.3.6 Operator 3.3.5 Operator 3.3.4 Operator 3.3.3 Operator 3.3.2 Operator 3.3.1 Operator 3.3.0 Operator 3.2.5 Operator 3.2.4 Operator 3.2.3 Operator 3.</description>
+      <description>Contents Releases Change log Operator 3.4.6 Operator 3.4.5 Operator 4.0.4 Operator 4.0.3 Operator 4.0.2 Operator 4.0.1 Operator 4.0.0 Major Themes Upgrade Notes Changes to domain schema Changes to operator Helm chart configuration values Minor features and fixes Operator 3.4.4 Operator 3.4.3 Operator 3.4.2 Operator 3.4.1 Operator 3.4.0 Operator 3.3.8 Operator 3.3.7 Operator 3.3.6 Operator 3.3.5 Operator 3.3.4 Operator 3.3.3 Operator 3.3.2 Operator 3.3.1 Operator 3.3.0 Operator 3.2.5 Operator 3.2.4 Operator 3.</description>
     </item>
     
   </channel>
