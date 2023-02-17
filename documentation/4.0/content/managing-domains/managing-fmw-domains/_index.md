@@ -33,10 +33,6 @@ For more information about the deployment of Oracle Fusion Middleware products o
 Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for FMW Infrastructure domains:
 
-* The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
-  currently supports WebLogic Server logs only.  Other logs will not be sent to
-  Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
