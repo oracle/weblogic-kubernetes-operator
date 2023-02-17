@@ -764,7 +764,7 @@ class ItIntrospectVersion {
         String.format("Pod %s restart count does not equals to 0", adminServerPodName));
     //verify admin server pod is in pending state before 2nd time image update
     assertDoesNotThrow(() -> podPending(adminServerPodName, domainUid, introDomainNamespace),
-        String.format("podReady failed with ApiException for pod %s in namespace %s",
+        String.format("podPending failed with ApiException for pod %s in namespace %s",
             adminServerPodName, introDomainNamespace));
 
 
