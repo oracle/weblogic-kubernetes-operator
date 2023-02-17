@@ -686,7 +686,7 @@ class ItIntrospectVersion {
 
   /**
    * In this test firstly we patch the running domain with an image that does not exist.
-   * Admin server pod will initially be recreated(restarted) but fail to get into "Ready" state
+   * Admin server pod will be recreated but fail to get into "Ready" state
    * So even with a new updated restartVersion rolling restart will not be triggered in the domain
    * Admin server pod is in Pending state with restart count 0
    * Secondly we patch the domain with a new available image
@@ -732,19 +732,10 @@ class ItIntrospectVersion {
         : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1;
     getLogger().info(" The image name used for the 1st update is: {0}", imageUpdate1);
 
-    //create image name used for 2st Update and make it available with proper tagging
-    String imageTag2 = CommonTestUtils.getDateAndTimeStamp();
-    String imageUpdate2 = KIND_REPO != null ? KIND_REPO
-        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag1).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag2;
-    getLogger().info(" The image name used for the 2st update is: {0}", imageUpdate2);
-    dockerTag(imageName, imageUpdate2);
-    dockerLoginAndPushImageToRegistry(imageUpdate2);
-
     // 1st time patch the domain resource with an image that does not exist in the registry, update domain
-    // restartVersion. After this admin server pod will initially be recreated(restarted) but fail
+    // restartVersion. After this admin server pod will be recreated but fail
     // to get into "Ready" state because of ImagePullBackOff error. Since admin server is stuck managed server
-    // pods will not be recreated(restarted). Rolling restart is not triggered in the domain.
+    // pods will not be recreated. Rolling restart is not triggered in the domain.
     patchDomainWithNewImage(imageUpdate1);
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
@@ -767,6 +758,14 @@ class ItIntrospectVersion {
         String.format("podPending failed with ApiException for pod %s in namespace %s",
             adminServerPodName, introDomainNamespace));
 
+    //create image name used for 2nd Update and make it available with proper tagging
+    String imageTag2 = CommonTestUtils.getDateAndTimeStamp();
+    String imageUpdate2 = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag1).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag2;
+    getLogger().info(" The image name used for the 2st update is: {0}", imageUpdate2);
+    dockerTag(imageName, imageUpdate2);
+    dockerLoginAndPushImageToRegistry(imageUpdate2);
 
     //2nd time update domain resource with available image
     patchDomainWithNewImage(imageUpdate2);
