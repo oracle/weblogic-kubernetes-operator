@@ -41,7 +41,6 @@ These include, but are not limited to:
   - Oracle Private Cloud at Customer (OPCC)
 
 - Other certified offerings, such as:
-  - Amazon Elastic Compute Cloud (EC2)
   - Microsoft Azure Platform
   - Microsoft Azure Kubernetes Service (AKS)
   - OpenShift Container Platform
