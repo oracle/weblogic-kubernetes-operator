@@ -140,7 +140,7 @@ public class Kubernetes {
    * @param namespace in which to check for the pod running
    * @param domainUid the label the pod is decorated with
    * @param podName name of the pod to check for
-   * @return true if pod exists and running otherwise false
+   * @return true if pod is in pending state otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean isPodPending(String namespace, String domainUid, String podName) throws ApiException {

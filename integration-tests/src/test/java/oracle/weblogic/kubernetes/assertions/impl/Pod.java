@@ -137,12 +137,12 @@ public class Pod {
   }
 
   /**
-   * Check a given pod is in pending status.
+   * Check a given pod is in pending state.
    *
    * @param namespace name of the namespace in which to check the pod status
    * @param domainUid UID of the WebLogic domain
    * @param podName name of the pod
-   * @return true if pod is ready otherwise false
+   * @return true if pod is pending otherwise false
    */
   public static Callable<Boolean> podPending(String namespace, String domainUid, String podName) {
     return () -> {

@@ -685,10 +685,10 @@ class ItIntrospectVersion {
   }
 
   /**
-   * In this test firstly we patch the running domain with an image that does not exist
-   * Admin server pod will initially be recreated but fail to go into "Ready" state
-   * So even with a new updated restartVersion rolling restart will not be triggered in the domain.
-   * Admin server is in Pending state with restart count 0
+   * In this test firstly we patch the running domain with an image that does not exist.
+   * Admin server pod will initially be recreated(restarted) but fail to get into "Ready" state
+   * So even with a new updated restartVersion rolling restart will not be triggered in the domain
+   * Admin server pod is in Pending state with restart count 0
    * Secondly we patch the domain with a new available image
    * Verify rolling restart is triggered in the domain
    * Verify the admin server is accessible and cluster members are healthy
@@ -725,7 +725,7 @@ class ItIntrospectVersion {
     String imageName = domain1.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
-    //create image name used for 1st Update. This image is essentially does not exist
+    //create image name used for 1st Update. This image essentially does not exist
     String imageTag1 = CommonTestUtils.getDateAndTimeStamp();
     String imageUpdate1 = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag1).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
