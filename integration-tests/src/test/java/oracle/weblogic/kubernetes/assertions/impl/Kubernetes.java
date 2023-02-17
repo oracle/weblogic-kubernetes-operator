@@ -136,6 +136,31 @@ public class Kubernetes {
   }
 
   /**
+   * Checks if a pod exists in a given namespace and in Pending state.
+   * @param namespace in which to check for the pod running
+   * @param domainUid the label the pod is decorated with
+   * @param podName name of the pod to check for
+   * @return true if pod exists and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isPodPending(String namespace, String domainUid, String podName) throws ApiException {
+    boolean status = false;
+    String labelSelector = null;
+    if (domainUid != null) {
+      labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+    }
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      getLogger().info("In the namespace {0} pod {1} is in the state {2}", namespace, podName,
+          pod.getStatus().getPhase());
+      status = pod.getStatus().getPhase().equals("Pending");
+    } else {
+      getLogger().info("Pod doesn't exist");
+    }
+    return status;
+  }
+
+  /**
    * Checks if a pod exists in a given namespace and in Initialized state.
    * @param namespace in which to check for the pod running
    * @param domainUid the label the pod is decorated with
