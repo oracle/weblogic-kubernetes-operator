@@ -73,7 +73,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -97,12 +96,12 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getIntrospectorPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -1239,20 +1238,15 @@ public class CommonMiiTestUtils {
     //verify the introspector pod is created and runs
     LoggingFacade logger = getLogger();
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodReady(introspectJobName, domainUid, domainNamespace);
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace));
+    checkPodReady(introspectorPodName, domainUid, domainNamespace);
 
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName),
-        "Could not get introspector pod");
-    assertTrue(introspectorPod != null && introspectorPod.getMetadata() != null,
-        "introspector pod or metadata is null");
-    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPod.getMetadata().getName(),
-        domainNamespace), "Could not get introspector pod log");
     logger.info("Introspector pod log START");
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPodName,
+        domainNamespace, null, null, null, true), "Could not get introspector pod log");
     logger.info(introspectorLog);
     logger.info("Introspector pod log END");
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectorPodName, domainUid, domainNamespace);
   }
 
   /**
