@@ -7,11 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -506,7 +504,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       map.put(NS, new TestFiberGate(new Engine("Test")));
       return map;
     }
-    
+
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }
@@ -526,11 +524,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
             .orElse(false);
     }
 
-    @Override
-    public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-      return dpis.entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
-    }
-
     private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
       return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
     }
@@ -538,6 +531,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     @Override
     public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
       return domains;
+    }
+
+    @Override
+    public Map<String,DomainPresenceInfo> getDomainPresenceInfoMapForNS(String namespace) {
+      return dpis;
     }
 
     @Override

@@ -11,13 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -154,6 +152,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public Map<String, Map<String,DomainPresenceInfo>>  getDomainPresenceInfoMap() {
     return domains;
+  }
+
+  @Override
+  public Map<String,DomainPresenceInfo>  getDomainPresenceInfoMapForNS(String namespace) {
+    return domains.get(namespace);
   }
 
   @Override
@@ -534,12 +537,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
-  }
-
-  @Override
-  public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-    return Optional.ofNullable(domains.get(namespace)).orElse(Collections.emptyMap())
-        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
   }
 
   private String getDomainUid(Fiber fiber) {
