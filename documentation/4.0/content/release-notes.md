@@ -71,7 +71,7 @@ draft: false
 * Updated the Fluentd integration to make the Elasticsearch credentials optional and to allow the specification of the container command and arguments.
 * Resolved an issue related to growth in the number of WebLogic sessions related to the monitoring exporter and health checks.
 * Resolved [issue #3865](https://github.com/oracle/weblogic-kubernetes-operator/issues/3865) related to decorating the name of the ConfigMap for Fluentd integration ([#3883](https://github.com/oracle/weblogic-kubernetes-operator/pull/3883)).
-* Updated the generation of pods and containers for [security best practices](https://oracle.github.io/weblogic-kubernetes-operator/security/pod-and-container/).
+* Updated the generation of pods and containers for [security best practices](https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/).
 * Added support to specify the [container resources and Java options for the introspector job](https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/).
 * Changed the Helm chart to disable the operator's REST endpoint by default. This endpoint is only needed for [WLDF action based scaling](https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/scaling/). All other forms of scaling are unaffected by this change.
 * Resolved an issue related to schema webhook conversion of the `domainHomeInImage` field.
