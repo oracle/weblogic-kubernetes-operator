@@ -71,6 +71,8 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailu
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
@@ -370,11 +372,17 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
+      if (!operation.hasEventData()) {
+        operation.withEventData(new EventData(DOMAIN_CREATED));
+      }
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
         || liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
     } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
+      if (!operation.hasEventData() && liveInfo.isDomainGenerationChanged(cachedInfo)) {
+        operation.withEventData(new EventData(DOMAIN_CHANGED));
+      }
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());
@@ -786,6 +794,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
+            .startedFromEvent()
             .withExplicitRecheck()
             .execute();
       });
@@ -809,6 +818,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
+            .startedFromEvent()
             .withExplicitRecheck()
             .execute();
       });
@@ -828,6 +838,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         info.removeClusterResource(cluster.getClusterName());
         createMakeRightOperation(info)
             .interrupt()
+            .startedFromEvent()
             .withExplicitRecheck()
             .execute();
       });
@@ -839,6 +850,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       EventItem clusterEvent, ClusterResource cluster, String domainUid) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
         .interrupt()
+        .startedFromEvent()
         .withEventData(EventHelper.createClusterResourceEventData(clusterEvent, cluster, domainUid));
   }
 
@@ -880,7 +892,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
+        .startedFromEvent()
+        .withEventData(new EventData(DOMAIN_CREATED))
         .execute();
   }
 
@@ -888,13 +901,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
-        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
+        .startedFromEvent()
+        .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
   }
 
   private void handleDeletedDomain(DomainResource domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+    createMakeRightOperation(new DomainPresenceInfo(domain))
+        .interrupt().forDeletion().withExplicitRecheck()
+        .startedFromEvent()
         .withEventData(new EventData(EventItem.DOMAIN_DELETED))
         .execute();
   }

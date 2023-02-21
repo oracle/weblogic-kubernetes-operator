@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
@@ -96,7 +96,7 @@ class FailureReportingTest {
   private final DomainProcessorDelegateStub delegate
       = Stub.createStrictStub(DomainProcessorDelegateStub.class, testSupport);
   private final MakeRightDomainOperation makeRight = new MakeRightDomainOperationImpl(executor, delegate, info)
-      .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED));
+      .withEventData(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_CHANGED)).startedFromEvent();
   private final TerminalStep terminalStep = new TerminalStep();
   private String introspectionString = INFO_MESSAGE;
   private Step steps;

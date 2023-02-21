@@ -26,6 +26,13 @@ public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPre
   MakeRightClusterOperation interrupt();
 
   /**
+   * Modifies the factory to indicate that the make right operation is triggered due to a ClusterResource watch event.
+   +
+   + @return the updated factory
+   */
+  MakeRightClusterOperation startedFromEvent();
+
+  /**
    * Get the event data associated with this make-right operation.
    *
    * @return the event data.

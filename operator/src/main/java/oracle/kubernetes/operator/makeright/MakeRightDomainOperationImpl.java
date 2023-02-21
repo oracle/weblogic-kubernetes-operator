@@ -137,6 +137,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     return this;
   }
 
+  public MakeRightDomainOperation startedFromEvent() {
+    wasStartedFromEvent = true;
+    return this;
+  }
+
   @Override
   public boolean isDeleting() {
     return deleting;

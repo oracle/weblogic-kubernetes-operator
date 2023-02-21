@@ -59,6 +59,11 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
     return this;
   }
 
+  public MakeRightClusterOperation startedFromEvent() {
+    wasStartedFromEvent = true;
+    return this;
+  }
+
   @Override
   public void execute() {
     executor.runMakeRight(this);

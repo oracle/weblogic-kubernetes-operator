@@ -1918,7 +1918,17 @@ abstract class DomainStatusUpdateTestBase {
       }
 
       @Override
+      public MakeRightDomainOperation startedFromEvent() {
+        return null;
+      }
+
+      @Override
       public boolean wasStartedFromEvent() {
+        return false;
+      }
+
+      @Override
+      public boolean hasEventData() {
         return false;
       }
 

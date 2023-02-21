@@ -506,9 +506,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       map.put(NS, new TestFiberGate(new Engine("Test")));
       return map;
     }
-
-    private final Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
-
+    
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }

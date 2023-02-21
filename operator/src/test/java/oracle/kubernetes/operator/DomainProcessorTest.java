@@ -60,7 +60,7 @@ import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -145,6 +145,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_C
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -196,6 +198,7 @@ class DomainProcessorTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final KubernetesExecFactoryFake execFactoryFake = new KubernetesExecFactoryFake();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
 
   private static String[] getManagedServerNames(String clusterName) {
     return IntStream.rangeClosed(1, MAX_SERVERS)
@@ -302,6 +305,22 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenDomainAdded_runMakeRightAndGenerateDomainCreatedEvent() {
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
+  }
+
+  @Test
+  void whenDomainAddedWithChangedEventData_runMakeRightButDontGenerateDomainCreatedEvent() {
+    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_CHANGED)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+    assertThat(testSupport, not(hasEvent(DOMAIN_CREATED.getReason())));
+  }
+
+  @Test
   void whenDomainSpecNotChanged_dontRunMakeRight() {
     processor.registerDomainPresenceInfo(newInfo);
 
@@ -366,7 +385,8 @@ class DomainProcessorTest {
     cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
 
     processor.createMakeRightOperation(newInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED))
+        .startedFromEvent()
+        .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
 
     assertThat(testSupport.getNumItemsRun(), equalTo(0));
@@ -393,6 +413,25 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpec_generateDomainChangedEvent() {
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.createMakeRightOperation(newInfo).execute();
+
+    assertThat(testSupport, hasEvent(DOMAIN_CHANGED.getReason()));
+  }
+
+  @Test
+  void whenDomainChangedSpecWithDeletedEventData_dontGenerateDomainChangedEvent() {
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_DELETED)).execute();
+
+    assertThat(testSupport, not(hasEvent(DOMAIN_CHANGED.getReason())));
+    assertThat(testSupport, hasEvent(DOMAIN_DELETED.getReason()));
   }
 
   @Test
@@ -560,7 +599,8 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
 
-    processor.createMakeRightOperation(newInfo).withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).execute();
+    processor.createMakeRightOperation(newInfo)
+        .withEventData(new EventData(DOMAIN_CHANGED)).startedFromEvent().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
@@ -2393,7 +2433,7 @@ class DomainProcessorTest {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(originalInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(originalInfo, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -2411,7 +2451,7 @@ class DomainProcessorTest {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(originalInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().startedFromEvent().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
