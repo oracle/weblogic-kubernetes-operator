@@ -53,7 +53,8 @@ class ItClusterResourceScaling {
   private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
   private static String adminServerPodName = domainUid + adminServerPrefix;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static String opServiceAccount = opNamespace + "-sa";
+  //private static String opServiceAccount = opNamespace + "-sa";
+  private static String opServiceAccount = null;
   private static int replicaCount = 2;
   private static String domainNamespace = null;
   private static String clusterName = "cluster-1";
@@ -86,6 +87,8 @@ class ItClusterResourceScaling {
     HelmParams op1HelmParams = new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
         .namespace(opNamespace)
         .chartDir(OPERATOR_CHART_DIR);
+    // set the service account name for the operator
+    opServiceAccount = opNamespace + "-sa";
     // install operator
     opHelmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true,
         0, op1HelmParams, domainNamespace).getHelmParams();
