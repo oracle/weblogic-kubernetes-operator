@@ -49,7 +49,7 @@ resource "oci_file_storage_file_system" "oketest_fs9" {
   availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[2]["name"]
   compartment_id      = var.compartment_ocid
 }
-resource "oci_file_storage_file_system" "oketest_fs12" {
+resource "oci_file_storage_file_system" "oketest_fs10" {
   #Required
   availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[2]["name"]
   compartment_id      = var.compartment_ocid
