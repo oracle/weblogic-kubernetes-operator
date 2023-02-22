@@ -228,6 +228,10 @@ operations on a cluster. These policies monitor one or more types of WebLogic Se
 in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/operator/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
+{{% notice note %}}
+Beginning with operator version 4.0.5, the operator's REST endpoint is disabled by default. Install the operator with the Helm install option `--set "enableRest=true"` to enable the REST endpoint.
+{{% /notice %}}
+
 ##### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
 

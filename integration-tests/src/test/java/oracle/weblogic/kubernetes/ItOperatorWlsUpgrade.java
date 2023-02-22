@@ -103,7 +103,6 @@ import static oracle.weblogic.kubernetes.utils.UpgradeUtils.cleanUpCRD;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.installOldOperator;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.upgradeOperatorToCurrent;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -335,12 +334,6 @@ class ItOperatorWlsUpgrade {
 
   // After upgrade scale up/down the cluster
   private void scaleClusterUpAndDown() {
-    String opServiceAccount = opNamespace + "-sa";
-    int externalRestHttpsPort = getServiceNodePort(
-        opNamespace, "external-weblogic-operator-svc");
-    assertNotEquals(-1, externalRestHttpsPort,
-        "Could not get the Operator external service node port");
-    logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
 
     String clusterName = domainUid + "-" + "cluster-1";
     logger.info("Updating the cluster {0} replica count to 3", clusterName);
@@ -354,7 +347,6 @@ class ItOperatorWlsUpgrade {
     assertTrue(p1Success,
         String.format("Patching replica to 2 failed for cluster %s in namespace %s",
             clusterName, domainNamespace));
-
   }
 
   private void installDomainResource(

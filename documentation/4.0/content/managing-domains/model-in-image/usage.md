@@ -18,9 +18,9 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with a WebLogic Server 12.2.1.4 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for JRF domains.
+- You can start with WebLogic Server 12.2.1.4 or later, an Oracle Container Registry pre-built base image, such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
   {{% notice note %}}
-  The images in `container-registry.oracle.com/middleware/weblogic` and `container-registry.oracle.com/middleware/fmw-infrastructure` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` and `container-registry.oracle.com/middleware/fmw-infrastructure_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
+  The images in `container-registry.oracle.com/middleware/weblogic` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
   {{% /notice %}}
 
   {{% notice warning %}}
@@ -29,7 +29,7 @@ Model in Image requires an image with a WebLogic Server installation.
 
 
 
-  For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
+  For an example of this approach, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}}).
 
 - Or, you can manually build your own base image, as described in [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
@@ -172,7 +172,7 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.configMap`              | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
 | `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
+| `configuration.model.domainType`             | Set the type of domain. `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
 | `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
@@ -187,11 +187,8 @@ that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-im
 
  - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 
- - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
-
  - For fully specified Model in Image Domain YAML file examples,
    see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
-   The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 ### Always use external state
 
@@ -204,106 +201,3 @@ For more information see:
 - [Using a JDBC Store](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm&id=STORE-GUID-328FD4C1-91C4-4901-B1C4-97B9D93B2ECE) in _Administering the WebLogic Persistent Store_.
 - [High Availability Best Practices](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-FB97F9A2-E6FA-4C51-B74E-A2A5DDB43B8C) in _Administering JMS Resources for Oracle WebLogic Server_.
 - [Leasing](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad&id=CLUST-GUID-8F7348E2-7C45-4A6B-A72C-D1FB51A8E83F) in _Administering Clusters for Oracle WebLogic Server_.
-
-### Requirements for JRF domain types
-
-{{% notice info %}} This section applies only for a `JRF` domain type. Skip it if your domain type is `WLS` or `RestrictedJRF`.
-{{% /notice %}}
-
-A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize its OPSS schema tables in the database - a process that can take several minutes.
-
-Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain's wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.
-
-#### JRF Domain YAML file and model YAML file settings
-
-Here are the required Domain YAML file and model YAML file settings for Model in Image JRF domains:
-
-- Set `configuration.model.domainType` to `JRF`.
-
-- Set `configuration.opss.walletPasswordSecret` to reference a secret that defines a `walletPassword` key. This is used to encrypt the domain's OPSS wallet file. This is a required field for JRF domains.
-
-- Set `configuration.opss.walletFileSecret` to reference a secret that contains your domain's OPSS wallet file in its `walletFile` key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its database information. This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its database information.
-
-- Set the `configuration.introspectorJobActiveDeadlineSeconds` introspection job timeout to at least 600 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain's database tables), and because Model in Image creates your domain home for you using the introspection job.
-
-- Define an `RCUDbInfo` stanza in your model. Access to an database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your Domain YAML file's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
-
-  ```yaml
-  domainInfo:
-      RCUDbInfo:
-          rcu_prefix:          '@@SECRET:sample-domain1-rcu-access:rcu_prefix@@'
-          rcu_schema_password: '@@SECRET:sample-domain1-rcu-access:rcu_schema_password@@'
-          rcu_db_conn_string:  '@@SECRET:sample-domain1-rcu-access:rcu_db_conn_string@@'
-
-  ```
-
-#### Saving and restoring JRF wallets
-
-It is important to save a JRF domain's OPSS wallet password and wallet file so that you can restore them as needed. This ensures that a restart or migration of the domain can continue to access the domain's FMW infrastructure database.
-
-When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a 'wallet' file in the domain's home directory that enables access to the domain's data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a Secret that is referenced by your Domain YAML file `configuration.opss.walletPasswordSecret` field.
-
-For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain ConfigMap in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain ConfigMap:
-
-- Option 1
-  ```shell
-  $ kubectl -n MY_DOMAIN_NAMESPACE \
-    get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm \
-    -o jsonpath='{.data.ewallet\.p12}' \
-    > ewallet.p12
-  ```
-- Option 2
-
-  Alternatively, you can use the `./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -s` command to export the wallet file (pass `-?` to this script's command-line arguments and defaults).
-
-{{% notice tip %}}
-Always back up your wallet file to a safe location that can be retrieved later. In addition, save your OPSS key password.
-{{% /notice %}}
-
-To reuse the wallet:
-  - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, substitute
-    the password in place of `MY_WALLET_PASSWORD` below:
-    ```shell
-    $ kubectl -n MY_DOMAIN_NAMESPACE \
-      create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret \
-      --from-literal=walletPassword=MY_WALLET_PASSWORD
-    ```
-    ```shell
-    $ kubectl -n MY_DOMAIN_NAMESPACE \
-      label secret MY_DOMAIN_UID-my-opss-wallet-password-secret \
-      weblogic.domainUID=sample-domain1
-    ```
-  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported previously. For example, assuming the file is `ewallet.p12`:
-    ```shell
-    $ kubectl -n MY_DOMAIN_NAMESPACE \
-      create secret generic MY_DOMAIN_UID-my-opss-wallet-file-secret \
-      --from-file=walletFile=ewallet.p12
-    ```
-    ```shell
-    $ kubectl -n sample-domain1-ns \
-      label secret MY_DOMAIN_UID-my-opss-wallet-file-secret \
-      weblogic.domainUID=sample-domain1
-    ```
-    Alternatively, you can use the `./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -r` command to deploy a local wallet file as a secret (pass `-?` to get this script's command-line arguments and defaults).
-  - Make sure that your Domain YAML file `configuration.opss.walletPasswordSecret` field names the OPSS password Secret, and make sure that your Domain YAML file `configuration.opss.walletFileSecret` field names the OPSS wallet file secret.
-
-
-#### Instructions for changing a JRF domain's database password
-
-Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.
-
-- Before changing the database password, shut down all domains that access the database schema. For example, set their `serverStartPolicy` to `Never`.
-
-- Update the password in the database.
-
-- Update the Kubernetes Secret that contains your `RCUDbInfo.rcu_schema_password` for each domain.
-
-- Restart the domains. For example, change their `serverStartPolicy` from `Never` to `IfNeeded`.
-
-- Save your wallet files again, as changing your password generates a different wallet.
-
-#### JRF references
-
-For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.
-
-See also, [Specifying RCU connection information in the model](https://oracle.github.io/weblogic-deploy-tooling/rcuinfo/) in the WDT documentation.
