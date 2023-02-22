@@ -18,7 +18,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with a WebLogic Server 12.2.1.4 or later, Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+- You can start with WebLogic Server 12.2.1.4 or later, an Oracle Container Registry pre-built base image, such as `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
   {{% notice note %}}
   The images in `container-registry.oracle.com/middleware/weblogic` are unpatched images. You should always either use patched images from `container-registry.oracle.com/middleware/weblogic_cpu` or build your own patched images (see [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})).
   {{% /notice %}}
@@ -189,7 +189,6 @@ that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-im
 
  - For fully specified Model in Image Domain YAML file examples,
    see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
-   The `WLS` subdirectory in this directory corresponds to the `configuration.model.domainType`.
 
 ### Always use external state
 
