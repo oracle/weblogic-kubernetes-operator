@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -130,6 +130,20 @@ public class Pod {
   public static Callable<Boolean> podReady(String namespace, String podName, Map<String, String> labels) {
     return () -> {
       return Kubernetes.isPodReady(namespace, labels, podName);
+    };
+  }
+
+  /**
+   * Check a given pod is in pending state.
+   *
+   * @param namespace name of the namespace in which to check the pod status
+   * @param domainUid UID of the WebLogic domain
+   * @param podName name of the pod
+   * @return true if pod is pending otherwise false
+   */
+  public static Callable<Boolean> podPending(String namespace, String domainUid, String podName) {
+    return () -> {
+      return Kubernetes.isPodPending(namespace, domainUid, podName);
     };
   }
 
