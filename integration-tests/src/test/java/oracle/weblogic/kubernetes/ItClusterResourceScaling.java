@@ -26,6 +26,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.getServiceAccountToken;
@@ -103,6 +105,13 @@ class ItClusterResourceScaling {
     assertNotEquals(-1, externalRestHttpsPort,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
+    // we need to expose the external service as route and set tls termination to  passthrough
+    logger.info("Create a route for the operator external service - only for OKD");
+    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    // Patch the route just created to set tls termination to passthrough
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
+    
     secretToken = getServiceAccountToken(opServiceAccount, opNamespace);
     assertNotNull(secretToken, "Can't retrieve secret token");
     // decode the secret encoded token
