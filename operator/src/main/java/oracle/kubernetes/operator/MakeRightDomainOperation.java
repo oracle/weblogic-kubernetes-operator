@@ -38,14 +38,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
   MakeRightDomainOperation withEventData(EventData eventData);
 
   /**
-   * Specifies that the current MakeRightOperation may skip updating the DomainStatus if the
-   * DomainPresenceInfo.ServerStartupInfo value has not yet been constructed.
-   */
-  default MakeRightDomainOperation skipUpdateDomainStatusIfNeeded() {
-    return this;
-  }
-
-  /**
    * Modifies the factory to indicate that it should interrupt any current make-right thread.
    +
    + @return the updated factory
