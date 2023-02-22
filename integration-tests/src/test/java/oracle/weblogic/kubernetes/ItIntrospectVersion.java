@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -43,6 +44,8 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
+import oracle.weblogic.kubernetes.utils.TimeoutException;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -55,7 +58,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -71,6 +73,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
@@ -80,9 +83,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podPending;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -110,7 +115,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -130,6 +134,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -684,18 +689,17 @@ class ItIntrospectVersion {
   }
 
   /**
-   * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
-   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
-   * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
-   * Verify all the pods are restarted and back to ready state
+   * In this test firstly we patch the running domain with an image that does not exist.
+   * Admin server pod will be recreated but fail to get into "Ready" state
+   * So even with a new updated restartVersion rolling restart will not be triggered in the domain
+   * Admin server pod is in Pending state with container restart count 0
+   * Secondly we patch the domain with a new available image
+   * Verify rolling restart is triggered in the domain
    * Verify the admin server is accessible and cluster members are healthy
    */
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
-
     // get the original domain resource before update
     DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -723,29 +727,52 @@ class ItIntrospectVersion {
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
     logger.info("Currently the image name used for the domain is: {0}", imageName);
-    logger.info("DOMAIN_IMAGES_REPO {0}", DOMAIN_IMAGES_REPO);
-    logger.info("WEBLOGIC_IMAGE_NAME {0}", WEBLOGIC_IMAGE_NAME);
 
-    String kindWlsImage = KIND_REPO + WEBLOGIC_IMAGE_NAME_DEFAULT;
-    String testWlsImage = TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT; 
-    //change image name to imageUpdate
-    String imageTag = CommonTestUtils.getDateAndTimeStamp();
-    String imageUpdate = KIND_REPO != null 
-         ? (kindWlsImage + ":" + imageTag)
-         : (testWlsImage + ":" + imageTag);
-    imageTag(imageName, imageUpdate);
-    imageRepoLoginAndPushImageToRegistry(imageUpdate);
+    //create image name used for 1st Update. This image essentially does not exist
+    String imageTag1 = CommonTestUtils.getDateAndTimeStamp();
+    String imageUpdate1 = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag1).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag1;
+    getLogger().info(" The image name used for the 1st update is: {0}", imageUpdate1);
 
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/image\",")
-        .append("\"value\": \"")
-        .append(imageUpdate)
-        .append("\"}]");
-    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+    // 1st time patch the domain resource with an image that does not exist in the registry, update domain
+    // restartVersion. After this admin server pod will be recreated but fail
+    // to get into "Ready" state because of ImagePullBackOff error. Since admin server is stuck managed server
+    // pods will not be recreated. Rolling restart is not triggered in the domain.
+    patchDomainWithNewImage(imageUpdate1);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, introDomainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+    logger.info("Verifying rolling restart did NOT occur for domain {0} in namespace {1}",
+        domainUid, introDomainNamespace);
+    //verify rolling restart is not triggered in the domain
+    assertThrows(TimeoutException.class, () -> {
+      verifyRollingRestartOccurred(cl1podsWithTimeStamps, 1, introDomainNamespace);
+    });
+    if (cluster2Created) {
+      assertThrows(ConditionTimeoutException.class, () -> {
+        verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, introDomainNamespace);
+      });
+    }
 
-    assertTrue(patchDomainResource(domainUid, introDomainNamespace, patchStr),
-        "patchDomainCustomResource(imageUpdate) failed");
+    //verify admin server pod container restartCount is 0 before 2nd time image update
+    assertTrue((getPodRestartCount(introDomainNamespace, adminServerPodName) == 0),
+        String.format("Pod %s restart count does not equals to 0", adminServerPodName));
+    //verify admin server pod is in pending state before 2nd time image update
+    assertDoesNotThrow(() -> podPending(adminServerPodName, domainUid, introDomainNamespace),
+        String.format("podPending failed with ApiException for pod %s in namespace %s",
+            adminServerPodName, introDomainNamespace));
+
+    //create image name used for 2nd Update and make it available with proper tagging
+    String imageTag2 = CommonTestUtils.getDateAndTimeStamp();
+    String imageUpdate2 = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag1).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : TEST_IMAGES_REPO + "/" + WEBLOGIC_IMAGE_NAME_DEFAULT + ":" + imageTag2;
+    getLogger().info(" The image name used for the 2st update is: {0}", imageUpdate2);
+    imageTag(imageName, imageUpdate2);
+    imageRepoLoginAndPushImageToRegistry(imageUpdate2);
+
+    //2nd time update domain resource with available image
+    patchDomainWithNewImage(imageUpdate2);
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -788,6 +815,7 @@ class ItIntrospectVersion {
       //verify admin server accessibility and the health of cluster2 members
       verifyMemberHealth(adminServerPodName, cluster2ManagedServerNames, wlsUserName, wlsPassword);
     }
+
   }
 
   /**
@@ -1327,4 +1355,36 @@ class ItIntrospectVersion {
 
     return execResult.toString();
   }
+
+  private void patchDomainWithNewImage(String newImage) {
+    // get the original domain resource before update
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, introDomainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, introDomainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    logger.info("patch the domain resource with new image");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/image\", "
+        + "\"value\": \"" + newImage + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, introDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+  }
+
+  private int getPodRestartCount(String nameSpace, String podName) {
+    int restartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(nameSpace, null,
+            podName, null),
+            String.format("Failed to get the restart count of the container from pod %s in namespace %s",
+                podName, nameSpace));
+    logger.info("For server pod {0} restart count is: {1}",
+        podName, restartCount);
+    return restartCount;
+  }
+
 }
