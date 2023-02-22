@@ -21,10 +21,7 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using the Domain in PV,
-Domain in Image, or Model in Image [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-If you plan to experiment with upper stack products, we strongly recommend using the domain on a persistent
-volume approach.
+FMW Infrastructure domains are supported using the Domain in PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) _only_.
 
 For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
@@ -33,10 +30,6 @@ For more information about the deployment of Oracle Fusion Middleware products o
 Compared to running a WebLogic Server domain in Kubernetes using the operator, the
 following limitations currently exist for FMW Infrastructure domains:
 
-* The [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
-  currently supports WebLogic Server logs only.  Other logs will not be sent to
-  Elasticsearch.  Note, however, that you can use a sidecar with a log handling tool
-  like Logstash or Fluentd to get logs.
 * The [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
   currently supports the WebLogic MBean trees only.  Support for JRF MBeans has not
   been added yet.
@@ -45,6 +38,7 @@ following limitations currently exist for FMW Infrastructure domains:
   you just need to define the maximum size of your cluster at domain creation time.
 * FMW Infrastructure domains are not supported with any version of the operator
   before version 2.2.0.
+* FMW Infrastructure domains are _not_ supported using the Model in Image or Domain in Image [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 
 ### Obtaining the FMW Infrastructure image
@@ -441,7 +435,3 @@ that can not be applied dynamically.
 If you are running a domain which contains Coherence, please refer to
 [Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
 for more information.
-
-### Additional considerations for Model in Image
-
-If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).

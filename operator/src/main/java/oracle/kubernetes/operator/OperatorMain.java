@@ -3,6 +3,13 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
@@ -25,6 +32,7 @@ import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -37,12 +45,14 @@ import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.operator.utils.Certificates;
 import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_ENABLE_REST_ENDPOINT_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.WEBHOOK;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -56,19 +66,21 @@ public class OperatorMain extends BaseMain {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory nextStepFactory = OperatorMain::createInitializeInternalIdentityStep;
 
-  /** The interval in sec that the operator will check the CRD presence and log a message if CRD not installed. */
+  /**
+   * The interval in sec that the operator will check the CRD presence and log a message if CRD not installed.
+   */
   private static final long CRD_DETECTION_DELAY = 10;
 
   static {
     container
-            .getComponents()
-            .put(
-                    ProcessingConstants.MAIN_COMPONENT_NAME,
-                    Component.createFor(
-                            ScheduledExecutorService.class,
-                            wrappedExecutorService,
-                            ThreadFactory.class,
-                            threadFactory));
+        .getComponents()
+        .put(
+            ProcessingConstants.MAIN_COMPONENT_NAME,
+            Component.createFor(
+                ScheduledExecutorService.class,
+                wrappedExecutorService,
+                ThreadFactory.class,
+                threadFactory));
   }
 
 
@@ -110,7 +122,7 @@ public class OperatorMain extends BaseMain {
       loggingFacade.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
       loggingFacade.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
       Optional.ofNullable(Namespaces.getConfiguredDomainNamespaces())
-            .ifPresent(strings -> logConfiguredNamespaces(loggingFacade, strings));
+          .ifPresent(strings -> logConfiguredNamespaces(loggingFacade, strings));
     }
 
     private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
@@ -164,15 +176,17 @@ public class OperatorMain extends BaseMain {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    OperatorMain operatorMain = createMain(getBuildProperties());
+    createMain(getBuildProperties()).doMain();
+  }
 
+  void doMain() {
     try {
-      operatorMain.startDeployment(operatorMain::completeBegin);
+      startDeployment(this::completeBegin);
 
       // now we just wait until the pod is terminated
-      operatorMain.waitForDeath();
+      waitForDeath();
 
-      operatorMain.stopDeployment(operatorMain::completeStop);
+      stopDeployment(this::completeStop);
     } finally {
       LOGGER.info(MessageKeys.OPERATOR_SHUTTING_DOWN);
     }
@@ -243,9 +257,9 @@ public class OperatorMain extends BaseMain {
     @Override
     public Step getDefaultSelection() {
       return Step.chain(
-            new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
-            createOperatorNamespaceEventListStep(),
-            createDomainRecheckSteps());
+          new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+          createOperatorNamespaceEventListStep(),
+          createDomainRecheckSteps());
     }
   }
 
@@ -267,7 +281,7 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-  private void completeBegin() {
+  void completeBegin() {
     try {
       startMetricsServer(container);
       startRestServer(container);
@@ -285,7 +299,17 @@ public class OperatorMain extends BaseMain {
     }
   }
 
-  private void completeStop() {
+  @Override
+  void startRestServer(Container container)
+      throws UnrecoverableKeyException, CertificateException, IOException, NoSuchAlgorithmException,
+      KeyStoreException, InvalidKeySpecException, KeyManagementException {
+    if (Optional.ofNullable(HelmAccess.getHelmVariable(OPERATOR_ENABLE_REST_ENDPOINT_ENV))
+        .map(Boolean::valueOf).orElse(Boolean.FALSE)) {
+      super.startRestServer(container);
+    }
+  }
+
+  void completeStop() {
     stopRestServer();
     stopMetricsServer();
   }

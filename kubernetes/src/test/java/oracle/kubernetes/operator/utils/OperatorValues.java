@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -27,6 +27,7 @@ public class OperatorValues {
   private String weblogicOperatorImage = "";
   private String weblogicOperatorImagePullPolicy = "Never";
   private String weblogicOperatorImagePullSecretName = "";
+  private String restEnabled = "";
   private String externalRestEnabled = "";
   private String externalRestHttpsPort = "";
   private String externalOperatorCert = "";
@@ -56,6 +57,7 @@ public class OperatorValues {
         .weblogicOperatorImagePullPolicy("Never")
         .javaLoggingLevel("FINEST")
         .logStashImage("test-logstash-image")
+        .restEnabled("true")
         .elasticSearchHost("test-elastic-search_host")
         .elasticSearchPort("9200")
         .elasticSearchProtocol("http");
@@ -221,6 +223,19 @@ public class OperatorValues {
 
   public OperatorValues weblogicOperatorImagePullSecretName(String val) {
     setWeblogicOperatorImagePullSecretName(val);
+    return this;
+  }
+
+  public String getRestEnabled() {
+    return restEnabled;
+  }
+
+  public void setRestEnabled(String val) {
+    restEnabled = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues restEnabled(String val) {
+    setRestEnabled(val);
     return this;
   }
 

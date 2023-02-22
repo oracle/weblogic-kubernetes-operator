@@ -1,8 +1,9 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,6 +30,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusClustersConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeHasExpectedStatus;
@@ -41,6 +43,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -55,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItRetryImprovementMisc {
 
   private static String domainNamespace = null;
-  private static String domainUid = "domain1";
+  private static String domainUid = "rimiscdomain1";
 
   private static String adminServerPodName = String.format("%s-%s", domainUid, ADMIN_SERVER_NAME_BASE);
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
@@ -293,8 +296,13 @@ class ItRetryImprovementMisc {
   @DisplayName("Test domain and cluster status conditions after deleting a server pod of the cluster with "
       + "cluster replicas set to 1.")
   void testDeleteServerPodWithReplicasSetTo1() {
-    // delete a cluster server pod
+
     String podName = managedServerPrefix + 1;
+    OffsetDateTime ms1PodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", podName),
+            String.format("Failed to get creationTimestamp for pod %s", podName));
+
+    // delete a cluster server pod
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", podName, domainNamespace));
 
@@ -309,6 +317,7 @@ class ItRetryImprovementMisc {
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
     // wait the pod is restarted and back to ready
+    checkPodRestarted(domainUid, domainNamespace, podName, ms1PodCreationTime);
     checkPodReady(podName, domainUid, domainNamespace);
 
     // verify domain and cluster status conditions Available and Complete become true
@@ -445,8 +454,13 @@ class ItRetryImprovementMisc {
   @DisplayName("Test domain and cluster status conditions when deleting one of the cluster server pods with cluster "
       + "replicas set to 2.")
   void testDeleteOneClusterPodWithReplicasSetTo2() {
-    // delete one server pod
     String podName = managedServerPrefix + 1;
+
+    OffsetDateTime ms1PodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", podName),
+            String.format("Failed to get creationTimestamp for pod %s", podName));
+
+    // delete one server pod
     assertDoesNotThrow(() -> deletePod(podName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", podName, domainNamespace));
 
@@ -463,6 +477,7 @@ class ItRetryImprovementMisc {
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "TRUE", DOMAIN_VERSION);
 
     // Wait for the pod restarted
+    checkPodRestarted(domainUid, domainNamespace, podName, ms1PodCreationTime);
     checkPodReady(podName, domainUid, domainNamespace);
 
     // check the cluster and domain Complete should become true
@@ -483,6 +498,10 @@ class ItRetryImprovementMisc {
   @Test
   @DisplayName("Test domain and cluster status condition when deleting the admin server pod.")
   void testDeleteAdminServer() {
+    OffsetDateTime adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+
     // delete admin server pod
     assertDoesNotThrow(() -> deletePod(adminServerPodName, domainNamespace),
         String.format("delete pod %s in namespace %s failed", adminServerPodName, domainNamespace));
@@ -500,6 +519,7 @@ class ItRetryImprovementMisc {
         clusterName, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", DOMAIN_VERSION);
 
     // wait for admin server restart
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodCreationTime);
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
 
     // check the domain status condition Available and Complete become true
