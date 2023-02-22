@@ -18,10 +18,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class IngressRule {
 
   @ApiModelProperty("Component name to deploy.")
-  private Destination destination = new Destination();
+  public Destination destination = new Destination();
 
   @ApiModelProperty("List of ingress traits.")
-  private List<Path> paths = new ArrayList<>();
+  public List<Path> paths = new ArrayList<>();
 
   public IngressRule paths(List<Path> paths) {
     this.paths = paths;

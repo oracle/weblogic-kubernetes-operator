@@ -18,7 +18,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class IngressTraitSpec {
 
   @ApiModelProperty("List of ingress traits.")
-  private List<IngressRule> ingressRules = new ArrayList<>();
+  public List<IngressRule> ingressRules = new ArrayList<>();
 
   public IngressTraitSpec ingressRules(List<IngressRule> ingressRules) {
     this.ingressRules = ingressRules;

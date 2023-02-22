@@ -12,10 +12,10 @@ import io.swagger.annotations.ApiModelProperty;
 public class Path {
 
   @ApiModelProperty("Component name to deploy.")
-  private String path;
+  public String path;
 
   @ApiModelProperty("Component name to deploy.")
-  private String pathType;
+  public String pathType;
 
   public Path pathType(String pathType) {
     this.pathType = pathType;

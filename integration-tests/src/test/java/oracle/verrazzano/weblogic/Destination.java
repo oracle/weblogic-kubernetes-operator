@@ -15,10 +15,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Destination {
 
   @ApiModelProperty("Component name to deploy.")
-  private String host;
+  public String host;
 
   @ApiModelProperty("List of ingress traits.")
-  private Integer port;
+  public Integer port;
 
   public Destination host(String host) {
     this.host = host;

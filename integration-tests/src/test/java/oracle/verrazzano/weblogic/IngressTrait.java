@@ -16,16 +16,16 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class IngressTrait {
 
   @ApiModelProperty("The API version for the ApplicationConfiguration.")
-  private String apiVersion;
+  public String apiVersion;
 
   @ApiModelProperty("The type of resource. Must be 'ApplicationConfiguration'.")
-  private String kind;
+  public String kind;
 
   @ApiModelProperty("The ApplicationConfiguration meta-data. Must include the name and namespace.")
-  private V1ObjectMeta metadata = new V1ObjectMeta();
+  public V1ObjectMeta metadata = new V1ObjectMeta();
 
   @ApiModelProperty("The specification of the ApplicationConfiguration. Required.")
-  private IngressTraitSpec spec = new IngressTraitSpec();
+  public IngressTraitSpec spec = new IngressTraitSpec();
 
   public IngressTrait apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
