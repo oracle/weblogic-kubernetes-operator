@@ -21,10 +21,12 @@ import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -130,6 +132,11 @@ public class OperatorMain extends BaseMain {
     @Override
     public DomainNamespaces getDomainNamespaces() {
       return domainNamespaces;
+    }
+
+    @Override
+    public void updateDomainStatus(V1Pod pod, DomainPresenceInfo info) {
+      getDomainProcessor().updateDomainStatus(pod, info);
     }
 
     @Override

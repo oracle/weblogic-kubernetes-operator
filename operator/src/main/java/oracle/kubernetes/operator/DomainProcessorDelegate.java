@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.makeright.MakeRightClusterOperationImpl;
@@ -56,4 +57,6 @@ public interface DomainProcessorDelegate extends CoreDelegate {
   }
 
   DomainNamespaces getDomainNamespaces();
+
+  void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
 }

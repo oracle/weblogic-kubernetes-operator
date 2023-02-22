@@ -135,7 +135,6 @@ public class IntrospectionStatus {
       }
 
       String statusMessage = getErrorMessage(pod);
-      LOGGER.info("DEBUG: statusMessage is " + statusMessage);
       return Optional.ofNullable(statusMessage)
             .map(m -> DomainStatusUpdater.createServerPodFailureSteps(createFailureMessage(pod, m)))
             .orElse(null);
@@ -176,7 +175,6 @@ public class IntrospectionStatus {
     String getErrorMessage(@Nonnull V1Pod pod) {
       boolean isNotTerminatedByOperator = isNotTerminatedByOperator(pod);
       if (isNotTerminatedByOperator) {
-        LOGGER.info("DEBUG: not terminated by operator");
         return getPodStatusMessage(pod);
       }
       return null;
@@ -215,11 +213,7 @@ public class IntrospectionStatus {
     }
 
     private String getPodStatusMessage(V1Pod pod) {
-      String statusMessage = Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
-      if (statusMessage != null) {
-        LOGGER.info("DEBUG: Pod status message is " + statusMessage);
-      }
-      return statusMessage;
+      return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
     }
   }
 
