@@ -18,6 +18,12 @@ import oracle.verrazzano.weblogic.ApplicationConfigurationSpec;
 import oracle.verrazzano.weblogic.Component;
 import oracle.verrazzano.weblogic.ComponentSpec;
 import oracle.verrazzano.weblogic.Components;
+import oracle.verrazzano.weblogic.Destination;
+import oracle.verrazzano.weblogic.IngressRule;
+import oracle.verrazzano.weblogic.IngressTrait;
+import oracle.verrazzano.weblogic.IngressTraitSpec;
+import oracle.verrazzano.weblogic.IngressTraits;
+import oracle.verrazzano.weblogic.Path;
 import oracle.verrazzano.weblogic.Workload;
 import oracle.verrazzano.weblogic.WorkloadSpec;
 import oracle.verrazzano.weblogic.kubernetes.annotations.VzIntegrationTest;
@@ -154,6 +160,22 @@ class ItVzMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    IngressTraits ingressTraits = new IngressTraits()
+        .trait(Arrays.asList(new IngressTrait()
+            .apiVersion("oam.verrazzano.io/v1alpha1")
+            .kind("IngressTrait")
+            .metadata(new V1ObjectMeta()
+                .name("mydomain-ingress")
+                .namespace(domainNamespace))
+            .spec(new IngressTraitSpec()
+                .ingressRules(Arrays.asList(new IngressRule()
+                    .destination(new Destination()
+                        .host(adminServerPodName)
+                        .port(7001))
+                    .paths(Arrays.asList(new Path()
+                        .path("/console")
+                        .pathType("Prefix"))))))));
+    logger.info(Yaml.dump(ingressTraits));
   }
 
   private static void setLabelToNamespace(String domainNS) throws ApiException {
