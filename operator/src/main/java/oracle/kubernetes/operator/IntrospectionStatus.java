@@ -134,8 +134,7 @@ public class IntrospectionStatus {
         LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED, getPodName(pod), getPodNamespace(pod), pod.getStatus());
       }
 
-      String statusMessage = getErrorMessage(pod);
-      return Optional.ofNullable(statusMessage)
+      return Optional.ofNullable(getErrorMessage(pod))
             .map(m -> DomainStatusUpdater.createServerPodFailureSteps(createFailureMessage(pod, m)))
             .orElse(null);
     }
@@ -173,11 +172,7 @@ public class IntrospectionStatus {
 
     @Override
     String getErrorMessage(@Nonnull V1Pod pod) {
-      boolean isNotTerminatedByOperator = isNotTerminatedByOperator(pod);
-      if (isNotTerminatedByOperator) {
-        return getPodStatusMessage(pod);
-      }
-      return null;
+      return isNotTerminatedByOperator(pod) ? getPodStatusMessage(pod) : null;
     }
 
     // a pod terminated by the operator will have null values for reason and message
