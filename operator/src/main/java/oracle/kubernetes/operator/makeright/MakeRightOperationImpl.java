@@ -39,7 +39,7 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
   }
 
   public boolean wasStartedFromEvent() {
-    return wasStartedFromEvent && hasEventData();
+    return wasStartedFromEvent;
   }
 
   public boolean hasEventData() {
