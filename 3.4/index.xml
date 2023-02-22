@@ -942,7 +942,7 @@ WebLogic Server has a new, important feature to ensure and help you secure your 
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/managing-domains/model-in-image/usage/</guid>
       <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
-Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial model files and WDT Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state Requirements for JRF domain types WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
+Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial model files and WDT Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See Manage operators and Quick Start.</description>
     </item>
     
     <item>

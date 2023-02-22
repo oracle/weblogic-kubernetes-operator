@@ -12,20 +12,20 @@
     <title>Usage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1676998563" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1676998563" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/nucleus.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/fontawesome-all.min.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hybrid.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/featherlight.min.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/perfect-scrollbar.min.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/auto-complete.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/atom-one-dark-reasonable.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/theme.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/tabs.css?1677082642" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/css/hugo-theme.css?1677082642" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1676998563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery-3.6.0.min.js?1677082642"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1676998563"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1676998563"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/lunr.min.js?1677082642"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/auto-complete.js?1677082642"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.4";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1676998563"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/search.js?1677082642"></script>
 
     
   </div>
@@ -3526,7 +3526,6 @@
 <li><a href="#secrets-for-model-macros">Secrets for model macros</a></li>
 <li><a href="#domain-fields">Domain fields</a></li>
 <li><a href="#always-use-external-state">Always use external state</a></li>
-<li><a href="#requirements-for-jrf-domain-types">Requirements for JRF domain types</a></li>
 </ul>
 <h4 id="weblogic-kubernetes-operator">WebLogic Kubernetes Operator</h4>
 <p>Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/managing-operators/">Manage operators</a> and <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/quickstart/">Quick Start</a>.</p>
@@ -3534,12 +3533,12 @@
 <p>Model in Image requires an image with a WebLogic Server installation.</p>
 <ul>
 <li>
-<p>You can start with a WebLogic Server 12.2.1.4 or later Oracle Container Registry pre-built base image such as <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code> for WLS domains or <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4</code> for JRF domains.</p>
+<p>You can start with WebLogic Server 12.2.1.4 or later, an Oracle Container Registry pre-built base image, such as <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>.</p>
 
 <div class="notices warning" ><p>The example base images are GA images and are suitable for demonstration and development purposes <em>only</em> where the environments are not available from the public Internet; they are <strong>not acceptable for production use</strong>. In production, you should always use CPU (patched) images from <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/">OCR</a> or create your images using the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/custom-images/#create-a-custom-base-image">WebLogic Image Tool</a> (WIT) with the <code>--recommendedPatches</code> option. For more guidance, see <a href="https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&amp;id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2">Apply the Latest Patches and Updates</a> in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</p>
 </div>
 
-<p>For an example of this approach for both WLS and JRF domains, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/domains/model-in-image/">Model in Image</a> sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">document</a>.</p>
+<p>For an example of this approach, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/domains/model-in-image/">Model in Image</a> sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">document</a>.</p>
 </li>
 <li>
 <p>Or, you can manually build your own base image, as described in <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide/base-images/custom-images/#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a>. This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).</p>
@@ -3688,7 +3687,7 @@ see <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide
 </tr>
 <tr>
 <td><code>configuration.model.domainType</code></td>
-<td>Set the type of domain. Valid values are <code>WLS</code>, <code>JRF</code>, and <code>RestrictedJRF</code>, where <code>WLS</code> is the default. See <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/">WDT Domain Types</a>.</td>
+<td>Set the type of domain. <code>WLS</code> is the default. See <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/">WDT Domain Types</a>.</td>
 </tr>
 <tr>
 <td><code>configuration.model.runtimeEncryptionSecret</code></td>
@@ -3716,8 +3715,7 @@ see <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/userguide
 <p>For fully specified Model in Image Domain YAML file examples,
 see the operator source directory
 <code>kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources</code>
-for the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/domains/model-in-image/">Model in Image sample</a>.
-The <code>WLS</code> and <code>JRF</code> subdirectories in this directory correspond to the <code>configuration.model.domainType</code>.</p>
+for the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/domains/model-in-image/">Model in Image sample</a>.</p>
 </li>
 </ul>
 <h4 id="always-use-external-state">Always use external state</h4>
@@ -3730,100 +3728,6 @@ The <code>WLS</code> and <code>JRF</code> subdirectories in this directory corre
 <li><a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-FB97F9A2-E6FA-4C51-B74E-A2A5DDB43B8C">High Availability Best Practices</a> in <em>Administering JMS Resources for Oracle WebLogic Server</em>.</li>
 <li><a href="https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad&amp;id=CLUST-GUID-8F7348E2-7C45-4A6B-A72C-D1FB51A8E83F">Leasing</a> in <em>Administering Clusters for Oracle WebLogic Server</em>.</li>
 </ul>
-<h4 id="requirements-for-jrf-domain-types">Requirements for JRF domain types</h4>
-
-<div class="notices info" ><p>This section applies only for a <code>JRF</code> domain type. Skip it if your domain type is <code>WLS</code> or <code>RestrictedJRF</code>.</p>
-</div>
-
-<p>A JRF domain requires an infrastructure database, initializing this database using RCU, and configuring your domain to access this database. All of these steps must occur before you first deploy your domain. When you first deploy your domain, the introspector job will initialize it&rsquo;s OPSS schema tables in the database - a process that can take several minutes.</p>
-<p>Furthermore, if you want to safely ensure that a restarted JRF domain can access updates to the infrastructure database that the domain made at an earlier time, the original domain&rsquo;s wallet file must be safely saved as soon as practical, and the restarted domain must be supplied a wallet file that was obtained from a previous run of the domain.</p>
-<h5 id="jrf-domain-yaml-file-and-model-yaml-file-settings">JRF Domain YAML file and model YAML file settings</h5>
-<p>Here are the required Domain YAML file and model YAML file settings for Model in Image JRF domains:</p>
-<ul>
-<li>
-<p>Set <code>configuration.model.domainType</code> to <code>JRF</code>.</p>
-</li>
-<li>
-<p>Set <code>configuration.opss.walletPasswordSecret</code> to reference a secret that defines a <code>walletPassword</code> key. This is used to encrypt the domain&rsquo;s OPSS wallet file. This is a required field for JRF domains.</p>
-</li>
-<li>
-<p>Set <code>configuration.opss.walletFileSecret</code> to reference a secret that contains your domain&rsquo;s OPSS wallet file in its <code>walletFile</code> key. This assumes you have an OPSS wallet file from a previous start of the same domain. It enables a restarted or migrated domain to access its database information. This is an optional field for JRF domains, but must always be set if you want a restarted or migrated domain to access its database information.</p>
-</li>
-<li>
-<p>Set the <code>configuration.introspectorJobActiveDeadlineSeconds</code> introspection job timeout to at least 600 seconds. This is in an optional field but is needed because domain home creation takes a considerable amount of time the first time a JRF domain is created (due to initializing the domain&rsquo;s database tables), and because Model in Image creates your domain home for you using the introspection job.</p>
-</li>
-<li>
-<p>Define an <code>RCUDbInfo</code> stanza in your model. Access to an database requires defining a <code>RCUDbInfo</code> stanza in your model&rsquo;s <code>domainInfo</code> stanza with the necessary information for accessing the domain&rsquo;s schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your Domain YAML file&rsquo;s <code>configuration.secrets</code> field. Here&rsquo;s an example <code>RCUDbInfo</code> stanza:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">domainInfo</span>:
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">RCUDbInfo</span>:
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">rcu_prefix</span>:          <span style="color:#e6db74">&#39;@@SECRET:sample-domain1-rcu-access:rcu_prefix@@&#39;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">rcu_schema_password</span>: <span style="color:#e6db74">&#39;@@SECRET:sample-domain1-rcu-access:rcu_schema_password@@&#39;</span>
-</span></span><span style="display:flex;"><span>        <span style="color:#f92672">rcu_db_conn_string</span>:  <span style="color:#e6db74">&#39;@@SECRET:sample-domain1-rcu-access:rcu_db_conn_string@@&#39;</span>
-</span></span></code></pre></div></li>
-</ul>
-<h5 id="saving-and-restoring-jrf-wallets">Saving and restoring JRF wallets</h5>
-<p>It is important to save a JRF domain&rsquo;s OPSS wallet password and wallet file so that you can restore them as needed. This ensures that a restart or migration of the domain can continue to access the domain&rsquo;s FMW infrastructure database.</p>
-<p>When you deploy a JRF domain for the first time, the domain will add itself to its RCU database tables, and also create a &lsquo;wallet&rsquo; file in the domain&rsquo;s home directory that enables access to the domain&rsquo;s data in the RCU database. This wallet is encrypted using an OPSS key password that you supply to the domain using a Secret that is referenced by your Domain YAML file <code>configuration.opss.walletPasswordSecret</code> field.</p>
-<p>For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain&rsquo;s introspector domain ConfigMap in file <code>ewallet.p12</code>. Here is how to export this wallet file from the introspector domain ConfigMap:</p>
-<ul>
-<li>
-<p>Option 1</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MY_DOMAIN_NAMESPACE <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.data.ewallet\.p12}&#39;</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  &gt; ewallet.p12
-</span></span></code></pre></div></li>
-<li>
-<p>Option 2</p>
-<p>Alternatively, you can use the <code>./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -s</code> command to export the wallet file (pass <code>-?</code> to this script&rsquo;s command-line arguments and defaults).</p>
-</li>
-</ul>
-
-<div class="notices tip" ><p>Always back up your wallet file to a safe location that can be retrieved later. In addition, save your OPSS key password.</p>
-</div>
-
-<p>To reuse the wallet:</p>
-<ul>
-<li>Create a secret with a key named <code>walletPassword</code> that contains the same OPSS password that you specified in the original domain. For example, assuming the password is <code>welcome1</code>:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MY_DOMAIN_NAMESPACE <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-literal<span style="color:#f92672">=</span>walletPassword<span style="color:#f92672">=</span>welcome1
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MY_DOMAIN_NAMESPACE <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  label secret MY_DOMAIN_UID-my-opss-wallet-password-secret <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-</span></span></code></pre></div></li>
-<li>Create a secret with a key named <code>walletFile</code> that contains the OPSS wallet file that you exported above. For example, assuming the file is <code>ewallet.p12</code>:
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n MY_DOMAIN_NAMESPACE <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  create secret generic MY_DOMAIN_UID-my-opss-wallet-file-secret <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  --from-file<span style="color:#f92672">=</span>walletFile<span style="color:#f92672">=</span>ewallet.p12
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl -n sample-domain1-ns <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  label secret MY_DOMAIN_UID-my-opss-wallet-file-secret <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-</span></span></code></pre></div>Alternatively, you can use the <code>./kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/opss-wallet.sh -r</code> command to deploy a local wallet file as a secret (pass <code>-?</code> to get this script&rsquo;s command-line arguments and defaults).</li>
-<li>Make sure that your Domain YAML file <code>configuration.opss.walletPasswordSecret</code> field names the OPSS password Secret, and make sure that your Domain YAML file <code>configuration.opss.walletFileSecret</code> field names the OPSS wallet file secret.</li>
-</ul>
-<h5 id="instructions-for-changing-a-jrf-domains-database-password">Instructions for changing a JRF domain&rsquo;s database password</h5>
-<p>Follow these steps to ensure that a JRF domain can continue to access its RCU data after changing its database password.</p>
-<ul>
-<li>
-<p>Before changing the database password, shut down all domains that access the database schema. For example, set their <code>serverStartPolicy</code> to <code>NEVER</code>.</p>
-</li>
-<li>
-<p>Update the password in the database.</p>
-</li>
-<li>
-<p>Update the Kubernetes Secret that contains your <code>RCUDbInfo.rcu_schema_password</code> for each domain.</p>
-</li>
-<li>
-<p>Restart the domains. For example, change their <code>serverStartPolicy</code> from <code>NEVER</code> to <code>IF_NEEDED</code>.</p>
-</li>
-<li>
-<p>Save your wallet files again, as changing your password generates a different wallet.</p>
-</li>
-</ul>
-<h5 id="jrf-references">JRF references</h5>
-<p>For an example of using JRF in combination with Model in Image, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/3.4/samples/domains/model-in-image/">Model in Image</a> sample.</p>
-<p>See also, <a href="https://oracle.github.io/weblogic-deploy-tooling/rcuinfo/">Specifying RCU connection information in the model</a> in the WDT documentation.</p>
 
 
 <footer class="footline">
@@ -6133,19 +6037,19 @@ The <code>WLS</code> and <code>JRF</code> subdirectories in this directory corre
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1676998563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/clipboard.min.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.min.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/perfect-scrollbar.jquery.min.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/jquery.sticky.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/featherlight.min.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/highlight.pack.js?1677082642"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1676998563"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1676998563"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/modernizr.custom-3.6.0.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/learn.js?1677082642"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/js/hugo-learn.js?1677082642"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1676998563"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/3.4/mermaid/mermaid.js?1677082642"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
