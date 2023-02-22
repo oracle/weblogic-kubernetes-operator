@@ -7,7 +7,7 @@ resource "oci_file_storage_mount_target" "oketest_mount_target" {
   availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[2]["name"]
 
   compartment_id = var.compartment_ocid
-  subnet_id      = oci_core_subnet.oke-subnet-worker-1.id
+  subnet_id      = oci_core_subnet.oke-subnet-worker-3.id
 
   #Optional
   display_name = "${var.cluster_name}-mt"
