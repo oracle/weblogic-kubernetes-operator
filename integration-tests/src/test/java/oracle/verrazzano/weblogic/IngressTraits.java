@@ -3,8 +3,6 @@
 
 package oracle.verrazzano.weblogic;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,36 +16,36 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class IngressTraits {
 
   @ApiModelProperty("List of ingress traits.")
-  public List<IngressTrait> traits = new ArrayList<>();
+  private IngressTrait trait = new IngressTrait();
 
-  public IngressTraits trait(List<IngressTrait> traits) {
-    this.traits = traits;
+  public IngressTraits trait(IngressTrait trait) {
+    this.trait = trait;
     return this;
   }
 
-  public List<IngressTrait> traits() {
-    return traits;
+  public IngressTrait trait() {
+    return trait;
   }
 
-  public List<IngressTrait> getTraits() {
-    return traits;
+  public IngressTrait getTrait() {
+    return trait;
   }
 
-  public void setTrait(List<IngressTrait> traits) {
-    this.traits = traits;
+  public void setTrait(IngressTrait trait) {
+    this.trait = trait;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("traits", traits)
+        .append("trait", trait)
         .toString();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(traits)
+        .append(trait)
         .toHashCode();
   }
 
@@ -61,7 +59,7 @@ public class IngressTraits {
     }
     IngressTraits rhs = (IngressTraits) other;
     return new EqualsBuilder()
-        .append(traits, rhs.traits)
+        .append(trait, rhs.trait)
         .isEquals();
   }
 }

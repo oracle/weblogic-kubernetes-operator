@@ -3,8 +3,6 @@
 
 package oracle.verrazzano.weblogic;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -18,22 +16,22 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Paths {
 
   @ApiModelProperty("List of ingress traits.")
-  private List<Path> path = new ArrayList<>();
+  private String path;
 
-  public Paths path(List<Path> path) {
+  public Paths path(String path) {
     this.path = path;
     return this;
   }
 
-  public List<Path> path() {
+  public String path() {
     return path;
   }
 
-  public List<Path> getPath() {
+  public String getPath() {
     return path;
   }
 
-  public void setPath(List<Path> path) {
+  public void setPath(String path) {
     this.path = path;
   }
 

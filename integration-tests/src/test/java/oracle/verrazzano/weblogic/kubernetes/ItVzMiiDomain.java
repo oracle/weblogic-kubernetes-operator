@@ -31,6 +31,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -46,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.creat
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.replaceNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -140,7 +142,22 @@ class ItVzMiiDomain {
             .annotations(keyValueMap))
         .spec(new ApplicationConfigurationSpec()
             .components(Arrays.asList(new Components()
-                    .componentName(domainUid))));
+                .componentName(domainUid)
+                .traits(Arrays.asList(new IngressTraits()
+                    .trait(new IngressTrait()
+                        .apiVersion("oam.verrazzano.io/v1alpha1")
+                        .kind("IngressTrait")
+                        .metadata(new V1ObjectMeta()
+                            .name("mydomain-ingress")
+                            .namespace("ns-abcd"))
+                        .spec(new IngressTraitSpec()
+                            .ingressRules(Arrays.asList(new IngressRule()
+                                .paths(Arrays.asList(new Path()
+                                    .path("/console")
+                                    .pathType("Prefix")))
+                                .destination(new Destination()
+                                    .host(adminServerPodName)
+                                    .port(7001)))))))))));
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));
@@ -160,22 +177,32 @@ class ItVzMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-    IngressTraits ingressTraits = new IngressTraits()
-        .trait(Arrays.asList(new IngressTrait()
-            .apiVersion("oam.verrazzano.io/v1alpha1")
-            .kind("IngressTrait")
-            .metadata(new V1ObjectMeta()
-                .name("mydomain-ingress")
-                .namespace(domainNamespace))
-            .spec(new IngressTraitSpec()
-                .ingressRules(Arrays.asList(new IngressRule()
-                    .destination(new Destination()
-                        .host(adminServerPodName)
-                        .port(7001))
-                    .paths(Arrays.asList(new Path()
-                        .path("/console")
-                        .pathType("Prefix"))))))));
-    logger.info(Yaml.dump(ingressTraits));
+    
+    String curlCmd = "kubectl get gateways.networking.istio.io -n "
+        + domainNamespace + " -o jsonpath='{.items[0].spec.servers[0].hosts[0]}'";
+    ExecResult result = null;
+    logger.info("curl command {0}", curlCmd);
+    result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
+    String host = result.stdout();
+
+    String curlCmd1 = "kubectl get service -n istio-system "
+        + "istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'";
+    logger.info("curl command {0}", curlCmd1);
+    ExecResult result1 = assertDoesNotThrow(() -> exec(curlCmd1, true));
+    logger.info(String.valueOf(result1.exitValue()));
+    logger.info(result1.stdout());
+    logger.info(result1.stderr());
+    String address = result1.stdout();
+
+    String curlCmd2 = "curl -sk https://" + host + "/console/login/LoginForm.jsp --resolve " + host + ":443:" + address;
+    logger.info("curl command {0}", curlCmd2);
+    ExecResult result2 = assertDoesNotThrow(() -> exec(curlCmd2, true));
+    logger.info(String.valueOf(result2.exitValue()));
+    logger.info(result2.stdout());
+    logger.info(result2.stderr());
   }
 
   private static void setLabelToNamespace(String domainNS) throws ApiException {

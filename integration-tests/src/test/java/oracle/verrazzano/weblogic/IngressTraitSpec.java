@@ -18,36 +18,36 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class IngressTraitSpec {
 
   @ApiModelProperty("List of ingress traits.")
-  public List<IngressRule> ingressRules = new ArrayList<>();
+  public List<IngressRule> rules = new ArrayList<>();
 
   public IngressTraitSpec ingressRules(List<IngressRule> ingressRules) {
-    this.ingressRules = ingressRules;
+    this.rules = ingressRules;
     return this;
   }
 
   public List<IngressRule> ingressRules() {
-    return ingressRules;
+    return rules;
   }
 
-  public List<IngressRule> getIngressRules() {
-    return ingressRules;
+  public List<IngressRule> getRules() {
+    return rules;
   }
 
   public void setIngressRule(List<IngressRule> ingressRules) {
-    this.ingressRules = ingressRules;
+    this.rules = ingressRules;
   }
 
   @Override
   public String toString() {
     return new ToStringBuilder(this)
-        .append("spec", ingressRules)
+        .append("spec", rules)
         .toString();
   }
 
   @Override
   public int hashCode() {
     return new HashCodeBuilder()
-        .append(ingressRules)
+        .append(rules)
         .toHashCode();
   }
 
@@ -61,7 +61,7 @@ public class IngressTraitSpec {
     }
     IngressTraitSpec rhs = (IngressTraitSpec) other;
     return new EqualsBuilder()
-        .append(ingressRules, rhs.ingressRules)
+        .append(rules, rhs.rules)
         .isEquals();
   }
 

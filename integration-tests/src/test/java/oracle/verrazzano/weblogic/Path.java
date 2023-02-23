@@ -48,7 +48,7 @@ public class Path {
   }
 
   public void setpath(String path) {
-    this.pathType = pathType;
+    this.path = path;
   }
 
 }
