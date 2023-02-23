@@ -82,15 +82,14 @@ checkClusterRunning () {
     max=50
     count=1
 
-    #privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
-    privateIP=${vcn_cidr_prefix}
+    privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
     myline=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
     NODE_IP=`${KUBERNETES_CLI:-kubectl} get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
     echo $myline
     status=$myline
     max=100
     count=1
-    while [ "$myline" != "Ready Ready" -a $count -le $max ] ; do
+    while [ "$myline" != "Ready" -a $count -le $max ] ; do
       echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
       sleep 10
       myline=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
