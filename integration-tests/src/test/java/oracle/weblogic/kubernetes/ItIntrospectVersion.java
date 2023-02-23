@@ -749,7 +749,7 @@ class ItIntrospectVersion {
       verifyRollingRestartOccurred(cl1podsWithTimeStamps, 1, introDomainNamespace);
     });
     if (cluster2Created) {
-      assertThrows(ConditionTimeoutException.class, () -> {
+      assertThrows(TimeoutException.class, () -> {
         verifyRollingRestartOccurred(cl2podsWithTimeStamps, 1, introDomainNamespace);
       });
     }
