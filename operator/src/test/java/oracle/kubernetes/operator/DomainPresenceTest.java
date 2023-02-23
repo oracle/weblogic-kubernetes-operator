@@ -489,7 +489,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   @Test
   void whenK8sHasDomainWithFailedIntrospectionPod_updateDomainStatus() {
     addDomainResource(UID1, NS);
-    V1Pod pod = createFailedIntrospectionPodResource(UID1, NS);
+    V1Pod pod = createFailedIntrospectionPod(UID1, NS);
     testSupport.defineResources(pod);
     dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
 
@@ -499,7 +499,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(dp.isStatusUpdated(), is(true));
   }
 
-  private V1Pod createFailedIntrospectionPodResource(String uid, String namespace) {
+  private V1Pod createFailedIntrospectionPod(String uid, String namespace) {
     return new V1Pod().metadata(createIntroPodMetadata(uid, namespace))
         .status(getInitContainerStatusWithImagePullError());
   }
