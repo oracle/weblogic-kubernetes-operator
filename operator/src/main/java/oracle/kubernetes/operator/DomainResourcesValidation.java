@@ -142,7 +142,6 @@ class DomainResourcesValidation {
     if (domainUid != null && serverName != null) {
       setServerPodFromEvent(getExistingDomainPresenceInfo(domainUid), serverName, pod);
     }
-
     if (PodHelper.getPodLabel(pod, LabelConstants.JOBNAME_LABEL) != null) {
       processor.updateDomainStatus(pod, getExistingDomainPresenceInfo(domainUid));
     }

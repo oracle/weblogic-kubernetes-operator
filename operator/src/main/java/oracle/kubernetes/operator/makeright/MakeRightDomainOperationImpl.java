@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.DomainProcessorDelegate;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
-import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -448,9 +447,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         private void addPod(V1Pod pod) {
           Optional.ofNullable(PodHelper.getPodServerName(pod))
               .ifPresent(name -> info.setServerPodFromEvent(name, pod));
-          if (PodHelper.getPodLabel(pod, LabelConstants.JOBNAME_LABEL) != null) {
-            delegate.updateDomainStatus(pod, info);
-          }
         }
 
         @Override
