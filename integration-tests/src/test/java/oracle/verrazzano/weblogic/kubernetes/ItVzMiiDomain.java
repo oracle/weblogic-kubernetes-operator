@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -178,7 +179,7 @@ class ItVzMiiDomain {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
     
-    String curlCmd = "kubectl get gateways.networking.istio.io -n "
+    String curlCmd = KUBERNETES_CLI + " get gateways.networking.istio.io -n "
         + domainNamespace + " -o jsonpath='{.items[0].spec.servers[0].hosts[0]}'";
     ExecResult result = null;
     logger.info("curl command {0}", curlCmd);
@@ -188,7 +189,7 @@ class ItVzMiiDomain {
     logger.info(result.stderr());
     String host = result.stdout();
 
-    String curlCmd1 = "kubectl get service -n istio-system "
+    String curlCmd1 = KUBERNETES_CLI + " get service -n istio-system "
         + "istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'";
     logger.info("curl command {0}", curlCmd1);
     ExecResult result1 = assertDoesNotThrow(() -> exec(curlCmd1, true));
