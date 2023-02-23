@@ -3,7 +3,6 @@
 
 package oracle.verrazzano.weblogic;
 
-
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -12,10 +11,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Traits represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
+    = "IngressTraits represents a Verrazzano Ingress Traits and how it will be realized in the Kubernetes cluster.")
 public class IngressTraits {
 
-  @ApiModelProperty("List of ingress traits.")
+  @ApiModelProperty("ingress trait.")
   private IngressTrait trait = new IngressTrait();
 
   public IngressTraits trait(IngressTrait trait) {

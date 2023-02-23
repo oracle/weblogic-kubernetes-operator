@@ -11,13 +11,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Traits represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
+    = "Destination represents a Verrazzano Ingress rule Destination and how it "
+    + "will be realized in the Kubernetes cluster.")
 public class Destination {
 
-  @ApiModelProperty("Component name to deploy.")
+  @ApiModelProperty("host name.")
   public String host;
 
-  @ApiModelProperty("List of ingress traits.")
+  @ApiModelProperty("port number.")
   public Integer port;
 
   public Destination host(String host) {

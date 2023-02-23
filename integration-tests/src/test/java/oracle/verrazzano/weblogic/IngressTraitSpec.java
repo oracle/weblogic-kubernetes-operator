@@ -14,10 +14,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Traits represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
+    = "IngressTraitSpec represents a Verrazzano IngressTrait specifction"
+    + " and how it will be realized in the Kubernetes cluster.")
 public class IngressTraitSpec {
 
-  @ApiModelProperty("List of ingress traits.")
+  @ApiModelProperty("List of ingress rules.")
   public List<IngressRule> rules = new ArrayList<>();
 
   public IngressTraitSpec ingressRules(List<IngressRule> ingressRules) {

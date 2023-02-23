@@ -8,13 +8,13 @@ import io.swagger.annotations.ApiModelProperty;
 
 @ApiModel(
     description
-    = "Traits represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
+    = "Path represents a Verrazzano application path.")
 public class Path {
 
-  @ApiModelProperty("Component name to deploy.")
+  @ApiModelProperty("application path name.")
   public String path;
 
-  @ApiModelProperty("Component name to deploy.")
+  @ApiModelProperty("application path type 'prefix' or 'Exact'.")
   public String pathType;
 
   public Path pathType(String pathType) {

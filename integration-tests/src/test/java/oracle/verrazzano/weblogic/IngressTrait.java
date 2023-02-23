@@ -12,19 +12,19 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @ApiModel(
     description
-    = "Traits represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
+    = "IngressTrait represents a Verrazzano IngressTrait and how it will be realized in the Kubernetes cluster.")
 public class IngressTrait {
 
   @ApiModelProperty("The API version for the ApplicationConfiguration.")
   public String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'ApplicationConfiguration'.")
+  @ApiModelProperty("The type of resource. Must be 'IngressTrait'.")
   public String kind;
 
-  @ApiModelProperty("The ApplicationConfiguration meta-data. Must include the name and namespace.")
+  @ApiModelProperty("The IngressTrait meta-data. Must include the name and namespace.")
   public V1ObjectMeta metadata = new V1ObjectMeta();
 
-  @ApiModelProperty("The specification of the ApplicationConfiguration. Required.")
+  @ApiModelProperty("The specification of the IngressTrait. Required.")
   public IngressTraitSpec spec = new IngressTraitSpec();
 
   public IngressTrait apiVersion(String apiVersion) {
