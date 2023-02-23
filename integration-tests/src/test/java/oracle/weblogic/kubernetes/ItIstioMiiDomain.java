@@ -379,11 +379,9 @@ class ItIstioMiiDomain {
   }
   
   private static void enableStrictMode(String namespace) {
-    assertDoesNotThrow(() ->
-      copyFile(Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml").toFile(),
+    assertDoesNotThrow(() -> copyFile(Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml").toFile(),
           Paths.get(WORK_DIR, "istio-tls-mode.yaml").toFile()));
-    assertDoesNotThrow(() ->
-      replaceStringInFile(Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(),
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(),
           "NAMESPACE", namespace));
 
     ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
