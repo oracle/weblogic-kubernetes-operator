@@ -53,7 +53,9 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 
@@ -150,15 +152,23 @@ class ItVzMiiDomain {
                         .kind("IngressTrait")
                         .metadata(new V1ObjectMeta()
                             .name("mydomain-ingress")
-                            .namespace("ns-abcd"))
+                            .namespace(domainNamespace))
                         .spec(new IngressTraitSpec()
-                            .ingressRules(Arrays.asList(new IngressRule()
-                                .paths(Arrays.asList(new Path()
-                                    .path("/console")
-                                    .pathType("Prefix")))
-                                .destination(new Destination()
-                                    .host(adminServerPodName)
-                                    .port(7001)))))))))));
+                            .ingressRules(Arrays.asList(
+                                new IngressRule()
+                                    .paths(Arrays.asList(new Path()
+                                        .path("/console")
+                                        .pathType("Prefix")))
+                                    .destination(new Destination()
+                                        .host(adminServerPodName)
+                                        .port(7001)),
+                                new IngressRule()
+                                    .paths(Arrays.asList(new Path()
+                                        .path("/sample-war")
+                                        .pathType("Prefix")))
+                                    .destination(new Destination()
+                                        .host(domainUid + "-cluster-" + clusterName)
+                                        .port(8001)))))))))));
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));
@@ -179,31 +189,15 @@ class ItVzMiiDomain {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
     
-    String curlCmd = KUBERNETES_CLI + " get gateways.networking.istio.io -n "
-        + domainNamespace + " -o jsonpath='{.items[0].spec.servers[0].hosts[0]}'";
-    ExecResult result = null;
-    logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    logger.info(String.valueOf(result.exitValue()));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
-    String host = result.stdout();
+    String host = getIstioHost(domainNamespace);
+    String address = getLoadbalancerAddress();
 
-    String curlCmd1 = KUBERNETES_CLI + " get service -n istio-system "
-        + "istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'";
-    logger.info("curl command {0}", curlCmd1);
-    ExecResult result1 = assertDoesNotThrow(() -> exec(curlCmd1, true));
-    logger.info(String.valueOf(result1.exitValue()));
-    logger.info(result1.stdout());
-    logger.info(result1.stderr());
-    String address = result1.stdout();
+    String consoleUrl = "https://" + host + "/console/login/LoginForm.jsp --resolve " + host + ":443:" + address;
+    assertTrue(verifyVzApplicationAccess(consoleUrl), "Failed to get WebLogic administration console");
 
-    String curlCmd2 = "curl -sk https://" + host + "/console/login/LoginForm.jsp --resolve " + host + ":443:" + address;
-    logger.info("curl command {0}", curlCmd2);
-    ExecResult result2 = assertDoesNotThrow(() -> exec(curlCmd2, true));
-    logger.info(String.valueOf(result2.exitValue()));
-    logger.info(result2.stdout());
-    logger.info(result2.stderr());
+    String appUrl = "https://" + host + "/sample-war/index.jsp --resolve " + host + ":443:" + address;
+    assertTrue(verifyVzApplicationAccess(appUrl), "Failed to get access to sample application");
+    
   }
 
   private static void setLabelToNamespace(String domainNS) throws ApiException {
@@ -218,6 +212,42 @@ class ItVzMiiDomain {
     namespaceObject.getMetadata().setLabels(labels);
     assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
     logger.info(Yaml.dump(Kubernetes.getNamespace(domainNS)));
+  }
+  
+  private String getIstioHost(String namespace) {
+    String curlCmd = KUBERNETES_CLI + " get gateways.networking.istio.io -n "
+        + namespace + " -o jsonpath='{.items[0].spec.servers[0].hosts[0]}'";
+    ExecResult result = null;
+    logger.info("curl command {0}", curlCmd);
+    result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
+    assertEquals(0, result.exitValue(), "Failed to get istio host details");
+    return result.stdout();
+  }
+
+  private String getLoadbalancerAddress() {
+    String curlCmd = KUBERNETES_CLI + " get service -n istio-system "
+        + "istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'";
+    logger.info("curl command {0}", curlCmd);
+    ExecResult result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
+    assertEquals(0, result.exitValue(), "Failed to get loadbalancer address");
+    return result.stdout();
+  }
+
+  private boolean verifyVzApplicationAccess(String url) {
+    String message = "Oracle WebLogic Server Administration Console";
+    String curlCmd = "curl -sk " + url;
+    logger.info("curl command {0}", curlCmd);
+    ExecResult result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
+    return result.stdout().contains(message);
   }
 
 }
