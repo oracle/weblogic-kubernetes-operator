@@ -9,7 +9,7 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   kubernetes_version = var.node_pool_kubernetes_version
   name               = var.node_pool_name
   node_shape         = var.node_pool_node_shape
-  subnet_ids = [oci_core_subnet.oke-subnet-worker-3.id, oci_core_subnet.oke-subnet-worker-2.id]
+  subnet_ids = [oci_core_subnet.oke-subnet-worker-1.id, oci_core_subnet.oke-subnet-worker-2.id]
 
   timeouts {
       create = "60m"
