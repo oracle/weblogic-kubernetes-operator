@@ -52,6 +52,29 @@ startWLS() {
 
   traceTiming "POD '${SERVICE_NAME}' MD5 END"
 
+  if [ -f "$wl_state_file" ]; then
+    trace "Removing stale file '$wl_state_file'."
+    rm -f ${wl_state_file}
+    [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
+  fi
+
+  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
+
+  if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
+    export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}"
+  fi
+
+  serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
+  if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
+    serverLogHome="${serverLogHome}/servers/${SERVER_NAME}/logs"
+  fi
+  export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
+  export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
+  export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
+  export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.Stdout=${SERVER_OUT_FILE}"
+  createFolder "${serverLogHome}" "This folder is used to hold server output for server '$SERVER_NAME'. If 'server.spec.logHomeEnabled' is set to true, then it is the 'domain.spec.logHome' directory, otherwise it is located within the 'domain.spec.domainHome' directory." || exit 1
+  rm -f ${SHUTDOWN_MARKER_FILE}
+
   if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
     ${SCRIPTPATH}/tailLog.sh ${SERVER_OUT_FILE} ${SERVER_PID_FILE} &
@@ -70,11 +93,10 @@ startWLS() {
   traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
 
   trace "Start WebLogic Server instance"
-  ${DOMAIN_HOME}/bin/startWebLogic.sh &> ${SERVER_OUT_FILE} &
+  ${DOMAIN_HOME}/bin/startWebLogic.sh &
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
 
-  FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
   SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
   if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
     # If Domain source type is not FromModel (MII) then monitor server logs for invalid
