@@ -342,6 +342,7 @@ class ItElasticLogging {
    * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
    * by WebLogic Logging Exporter. Verify that log occurrence for WebLogic servers are not empty.
    */
+  @Disabled("Disabled the test because WLS logging exporter is not longer used")
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
