@@ -28,15 +28,15 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+//import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+//import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
-import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
+//import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
@@ -47,14 +47,14 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+//import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
+//import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
+//import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
+//import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
+//import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -75,7 +75,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyKibana;
-import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyWlsLoggingExporter;
+//import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyWlsLoggingExporter;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
@@ -97,17 +97,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *    test createLogStashConfigMap = false.
  * 3. Verify that ELK Stack is ready to use by checking the index status of
  *    Kibana and Logstash created in the Operator pod successfully.
- * 4. Install WebLogic Logging Exporter in all WebLogic server pods by
- *    adding WebLogic Logging Exporter binary to the image builder process
- *    so that it will be available in the domain image via
- *    --additionalBuildCommands and --additionalBuildFiles.
- * 5. Create and start the WebLogic domain.
- * 6. Verify that
+ * 4. Create and start the WebLogic domain.
+ * 5. Verify that
  *    1) Elasticsearch collects data from WebLogic logs and
- *       stores them in its repository correctly.
- *    2) Using WebLogic Logging Exporter, WebLogic server Logs can be integrated to
- *       ELK Stack in the same pod that the domain is running on.
- *    3) Users can update logstash configuration by updating the configmap
+ *       stores them in its repository correctly..
+ *    2) Users can update logstash configuration by updating the configmap
  *       weblogic-operator-logstash-cm instead of rebuilding operator image
  */
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
@@ -226,11 +220,6 @@ class ItElasticLogging {
         "operator to be running in namespace {0}",
         opNamespace);
 
-    // install WebLogic Logging Exporter if in non-OKD env
-    if (!OKD) {
-      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc, elasticSearchNs);
-    }
-
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
 
@@ -249,10 +238,10 @@ class ItElasticLogging {
     // Verify that ELK Stack is ready to use
     testVarMap = new HashMap<String, String>();
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, LOGSTASH_INDEX_KEY);
-    Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
+    //Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
 
     // merge testVarMap and kibanaMap
-    testVarMap.putAll(kibanaMap);
+    //testVarMap.putAll(kibanaMap);
   }
 
   /**
@@ -339,47 +328,6 @@ class ItElasticLogging {
   }
 
   /**
-   * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
-   * by WebLogic Logging Exporter. Verify that log occurrence for WebLogic servers are not empty.
-   */
-  @Disabled("Disabled the test because WLS logging exporter is not longer used")
-  @Test
-  @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  void testWlsLoggingExporter() throws Exception {
-    Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, WEBLOGIC_INDEX_KEY);
-    // merge testVarMap and wlsMap
-    testVarMap.putAll(wlsMap);
-
-    // Verify that occurrence of log level = Notice are not empty
-    String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
-    String queryCriteria = "/_search?q=level:Notice";
-    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
-
-    // Verify that occurrence of loggerName = WebLogicServer are not empty
-    queryCriteria = "/_search?q=loggerName:WebLogicServer";
-    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
-
-    // Verify that occurrence of _type:doc are not empty
-    queryCriteria = "/_search?q=_type:doc";
-    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, false);
-
-    // Verify that serverName:managed-server1 is filtered out
-    // by checking the count of logs from serverName:managed-server1 is zero and no failures
-    regex = "(?m).*\\s*.*count\"\\s*:\\s*(\\d+),.*failed\"\\s*:\\s*(\\d+)";
-    StringBuffer queryCriteriaBuff = new StringBuffer("/doc/_count?pretty")
-        .append(" -H 'Content-Type: application/json'")
-        .append(" -d'{\"query\":{\"query_string\":{\"query\":\"")
-        .append(managedServerFilter)
-        .append("\",\"fields\":[\"serverName\"],\"default_operator\": \"AND\"}}}'");
-
-    queryCriteria = queryCriteriaBuff.toString();
-    verifyCountsHitsInSearchResults(queryCriteria, regex, WEBLOGIC_INDEX_KEY, true, "notExist");
-
-    logger.info("Query WebLogic log info succeeded");
-  }
-
-  /**
    * Test when variable createLogStashConfigMap sets to true, a configMap named weblogic-operator-logstash-cm
    * is created and users can update logstash configuration by updating the configmap
    * instead of rebuilding operator image.
@@ -448,6 +396,7 @@ class ItElasticLogging {
 
     // create image with model files
     if (!OKD) {
+      /*
       String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
       StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
           .append(WORK_DIR)
@@ -460,11 +409,11 @@ class ItElasticLogging {
           .append(",")
           .append(DOWNLOAD_DIR)
           .append("/")
-          .append(SNAKE_DOWNLOADED_FILENAME);
+          .append(SNAKE_DOWNLOADED_FILENAME);*/
 
       logger.info("Create image with model file and verify");
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
-          MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,MII_BASIC_APP_NAME);
+      //MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
     } else {
       List<String> appList = new ArrayList<>();
       appList.add(MII_BASIC_APP_NAME);

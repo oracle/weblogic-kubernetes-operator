@@ -24,8 +24,3 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : 8001
-resources:
-    StartupClass:
-        LoggingExporterStartupClass:
-            ClassName: weblogic.logging.exporter.Startup
-            Target: 'cluster-1'
