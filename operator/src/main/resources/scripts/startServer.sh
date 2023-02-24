@@ -90,6 +90,8 @@ startWLS() {
     export ADMIN_URL=$(getAdminServerUrl)
   fi
 
+  export DERBY_FLAG=false
+
   traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
 
   trace "Start WebLogic Server instance"

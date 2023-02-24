@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -565,7 +565,7 @@ getAdminServerUrl() {
 
 waitForShutdownMarker() {
   #
-  # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
+  # Wait forever.  Kubernetes will monitor this pod via liveness and readiness probes.
   #
   trace "Wait indefinitely so that the Kubernetes pod does not exit and try to restart"
   while true; do
