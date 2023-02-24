@@ -517,8 +517,7 @@
                   **/ItMiiSampleWlsAux,
                   **/ItMiiSampleWlsMain,
                   **/ItOperatorRestart,
-                  **/ItMiiClusterResource,
-                  **/ItClusterResourceScaling
+                  **/ItMiiClusterResource
                 </includes-failsafe>
             </properties>
         </profile>
