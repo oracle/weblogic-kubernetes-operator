@@ -330,7 +330,7 @@ public class Namespaces {
     // they have been deleted from the Kubernetes cluster or because the operator is no longer configured for them.
     private void stopRemovedNamespaces(NamespaceValidationContext validationContext) {
       domainNamespaces.getNamespaces().stream()
-            .filter(validationContext::isNotManaged)
+            .filter(validationContext::isNoLongerActiveDomainNamespace)
             .forEach(domainNamespaces::stopNamespace);
     }
   }
