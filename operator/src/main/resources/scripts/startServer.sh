@@ -71,7 +71,7 @@ startWLS() {
   export SERVER_OUT_FILE="${serverLogHome}/${SERVER_NAME}.out"
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
-  export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.Stdout=${SERVER_OUT_FILE}"
+  export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.Stdout=${SERVER_OUT_FILE} -Dweblogic.nmservice.RotationEnabled=true"
   createFolder "${serverLogHome}" "This folder is used to hold server output for server '$SERVER_NAME'. If 'server.spec.logHomeEnabled' is set to true, then it is the 'domain.spec.logHome' directory, otherwise it is located within the 'domain.spec.domainHome' directory." || exit 1
   rm -f ${SHUTDOWN_MARKER_FILE}
 
@@ -95,7 +95,7 @@ startWLS() {
   traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
 
   trace "Start WebLogic Server instance"
-  ${DOMAIN_HOME}/bin/startWebLogic.sh &
+  nohup ${DOMAIN_HOME}/bin/startWebLogic.sh < /dev/null &> ${SERVER_OUT_FILE} &
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
 
