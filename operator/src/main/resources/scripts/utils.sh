@@ -121,7 +121,6 @@ traceEnv() {
     ORACLE_HOME \
     WL_HOME \
     MW_HOME \
-    NODEMGR_HOME \
     INTROSPECT_HOME \
     PATH \
     TRACE_TIMING \
