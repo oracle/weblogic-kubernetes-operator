@@ -45,7 +45,7 @@ ${KUBERNETES_CLI} create namespace istio-system
   bin/istioctl x precheck
   bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set profile=demo -y
   bin/istioctl verify-install
-  bin/istioctl manifest apply --set components.cni.enabled=true
+  bin/istioctl manifest apply --set components.cni.enabled=true -y
   bin/istioctl version
 )
 }
