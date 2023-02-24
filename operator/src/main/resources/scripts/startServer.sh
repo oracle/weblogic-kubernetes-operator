@@ -87,7 +87,7 @@ startWLS() {
   export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.nodemanager.ServiceEnabled=true"
 
   if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
-    ADMIN_URL=$(getAdminServerUrl)
+    export ADMIN_URL=$(getAdminServerUrl)
   fi
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
