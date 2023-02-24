@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -15,6 +15,10 @@ fi
 echo "script path is ${SCRIPTPATH}"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
+
+STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
+STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
+createFolder "$STATEFILE_DIR" "This is the directory for holding '${SERVER_NAME}.state' for 'server '${SERVER_NAME}' within the 'domain.spec.domainHome' directory." || exitOrLoop
 
 traceTiming "POD '${SERVICE_NAME}' MAIN START"
 
@@ -39,20 +43,6 @@ checkAuxiliaryImage || exitOrLoop
 
 startWLS() {
   #
-  # Start NM
-  #
-
-  traceTiming "POD '${SERVICE_NAME}' NM START"
-
-  trace "Start node manager"
-  # call script to start node manager in same shell
-  # $SERVER_OUT_FILE, SERVER_PID_FILE, and SHUTDOWN_MARKER_FILE will be set in startNodeManager.sh
-  . ${SCRIPTPATH}/startNodeManager.sh
-  [ $? -ne 0 ] && trace SEVERE "failed to start node manager" && exitOrLoop
-
-  traceTiming "POD '${SERVICE_NAME}' NM RUNNING"
-
-  #
   # Verify that the domain secret hasn't changed
   #
 
@@ -61,12 +51,6 @@ startWLS() {
   checkDomainSecretMD5 || exitOrLoop
 
   traceTiming "POD '${SERVICE_NAME}' MD5 END"
-
-  #
-  # We "tail" the future WL Server .out file to stdout in background _before_ starting 
-  # the WLS Server because we use WLST 'nmStart()' to start the server and nmStart doesn't return
-  # control until WLS reaches the RUNNING state.
-  #
 
   if [ "${SERVER_OUT_IN_POD_LOG}" == 'true' ] ; then
     trace "Showing the server out file from ${SERVER_OUT_FILE}"
@@ -77,12 +61,16 @@ startWLS() {
   # Start WL Server
   #
 
-  # TBD We should probably || exitOrLoop if start-server.py itself fails, and dump NM log to stdout
+  export JAVA_OPTIONS="$JAVA_OPTIONS -Dweblogic.nodemanager.ServiceEnabled=true"
+
+  if [ ! "${ADMIN_NAME}" = "${SERVER_NAME}" ]; then
+    ADMIN_URL=$(getAdminServerUrl)
+  fi
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTING"
 
-  trace "Start WebLogic Server via the nodemanager"
-  ${SCRIPTPATH}/wlst.sh $SCRIPTPATH/start-server.py
+  trace "Start WebLogic Server instance"
+  ${DOMAIN_HOME}/bin/startWebLogic.sh &> ${SERVER_OUT_FILE} &
 
   traceTiming "POD '${SERVICE_NAME}' WLS STARTED"
 
@@ -100,11 +88,6 @@ startWLS() {
 mockWLS() {
 
   trace "Mocking WebLogic Server"
-
-  STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
-  STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
-
-  createFolder "$STATEFILE_DIR" "This is the directory for holding '${SERVER_NAME}.state' in mock mode for 'server '${SERVER_NAME}' within the 'domain.spec.domainHome' directory." || exitOrLoop
 
   echo "RUNNING:Y:N" > $STATEFILE
 }
@@ -184,7 +167,6 @@ checkEnv -q \
   DOMAIN_UID \
   DOMAIN_NAME \
   DOMAIN_HOME \
-  NODEMGR_HOME \
   ORACLE_HOME \
   SERVER_NAME \
   SERVICE_NAME \
@@ -299,7 +281,7 @@ else
 fi
 
 #
-# Wait forever. Kubernetes will monitor this pod via liveness and readyness probes.
+# Wait forever. Kubernetes will monitor this pod via liveness and readiness probes.
 #
 
 waitForShutdownMarker

@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Kubernetes periodically calls this liveness probe script to determine whether
-# the pod should be restarted. The script checks a WebLogic Server state file which
-# is updated by the node manager.
+# the pod should be restarted. The script checks a WebLogic Server state file.
 
 copySitCfgWhileRunning() {
   # Helper fn to copy sit cfg xml files to the WL server's domain home.
@@ -51,7 +50,6 @@ if [ ! "${DYNAMIC_CONFIG_OVERRIDE:-notset}" = notset ]; then
   fi
 }
 
-
 # if the livenessProbeSuccessOverride file is available, treat failures as success:
 RETVAL=$(test -f /weblogic-operator/debug/livenessProbeSuccessOverride ; echo $?)
 
@@ -63,33 +61,21 @@ source ${SCRIPTPATH}/utils.sh
 exportEffectiveDomainHome || exit $RETVAL
 exportInstallHomes || exit $RETVAL
 
-DN=${DOMAIN_NAME?}
-SN=${SERVER_NAME?}
-DH=${DOMAIN_HOME?}
-
-STATEFILE=${DH}/servers/${SN}/data/nodemanager/${SN}.state
-
-if [ "${MOCK_WLS}" != 'true' ]; then
-  # Adjust PATH if necessary before calling jps
-  adjustPath
-
-  if [ `jps -l | grep -c " weblogic.NodeManager"` -eq 0 ]; then
-    trace SEVERE "WebLogic NodeManager process not found."
-    exit $RETVAL
-  fi
+state=`${SCRIPTPATH}/readState.sh`
+RETVAL=$?
+if [ $RETVAL -ne 0 ]; then
+  trace "Server instance not found; assuming shutdown"
+  exit $RETVAL
 fi
 
-if [ -f ${STATEFILE} ] && [ `grep -c "FAILED_NOT_RESTARTABLE" ${STATEFILE}` -eq 1 ]; then
-  # WARNING: This state file check is essentially a public API and 
-  #          must continue to be honored even if we remove the node
-  #          manager from the life cycle.
-  #
-  #          (There is at least one WKO user that externally modifies
-  #          the file to FAILED_NOT_RESTARTABLE to force a liveness
-  #          failure when the user detects that their applications
-  #          are unresponsive.)
-  trace SEVERE "WebLogic Server state is FAILED_NOT_RESTARTABLE."
-  exit $RETVAL
+if [ "$state" = "SHUTDOWN" ]; then
+  trace "Server is shutdown"
+  exit 1
+fi
+
+if [[ "$state" =~ ^FAILED ]]; then
+  trace SEVERE "Server in failed state"
+  exit 2
 fi
 
 if [ -x ${LIVENESS_PROBE_CUSTOM_SCRIPT} ]; then
