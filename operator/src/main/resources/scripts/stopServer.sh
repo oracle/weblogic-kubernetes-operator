@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -54,8 +54,6 @@ wait_and_kill_after_timeout(){
   # Adjust PATH if necessary before calling jps
   adjustPath
 
-  #Specifically killing the NM first as it can auto-restart a killed WL server.
-  kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
   kill -9 `jps -v | grep -v Jps | awk '{ print $1 }'`
   touch ${SHUTDOWN_MARKER_FILE}
 }
@@ -69,7 +67,7 @@ check_for_shutdown() {
   state=`${SCRIPTPATH}/readState.sh`
   exit_status=$?
   if [ $exit_status -ne 0 ]; then
-    trace "Node manager not running or server instance not found; assuming shutdown" &>> ${STOP_OUT_FILE}
+    trace "Server instance not found; assuming shutdown" &>> ${STOP_OUT_FILE}
     return 0
   fi
 
@@ -94,7 +92,6 @@ check_for_shutdown() {
     # Adjust PATH if necessary before calling jps
     adjustPath
 
-    kill -9 `jps -v | grep " NodeManager " | awk '{ print $1 }'`
     kill -9 `jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{ print $1 }'`
     touch ${SHUTDOWN_MARKER_FILE}
     return 0
@@ -109,17 +106,12 @@ check_for_shutdown() {
 check_for_shutdown
 [ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
-# Otherwise, connect to the node manager and stop the server instance
+# Otherwise, connect to and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
 trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}
 ${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
 trace "After stop-server.py" &>> ${STOP_OUT_FILE}
-
-# at this point node manager should have terminated the server
-# but let's try looking for the server process and
-# kill the server if the process still exists,
-# just in case we failed to stop it via wlst
 
 # Adjust PATH if necessary before calling jps
 adjustPath
@@ -136,7 +128,7 @@ if [ -f ${SERVER_PID_FILE} ]; then
   kill -2 $(< ${SERVER_PID_FILE} )
 fi
 
-trace "Exit script"  &>> ${STOP_OUT_FILE}
+trace "Exit script" &>> ${STOP_OUT_FILE}
 
 # K8S does not print any logs in the PreStop stage in kubectl logs.
 # The workaround is to print script's output to the main process' stdout using /proc/1/fd/1
