@@ -516,20 +516,4 @@ public class LoggingExporter {
 
     return statusLine.stdout();
   }
-
-  /*
-  private static void addFilterToElkFile(String filter) throws Exception {
-    String filterStr = new StringBuffer()
-        .append(System.lineSeparator())
-        .append("weblogicLoggingExporterFilters:")
-        .append(System.lineSeparator())
-        .append("- FilterExpression: NOT(SERVER = '")
-        .append(filter)
-        .append("')")
-        .toString();
-    logger.info("Command to add filter {0}", filterStr);
-
-    Files.write(Paths.get(WORK_DIR, WLS_LOGGING_EXPORTER_YAML_FILE_NAME),
-        filterStr.getBytes(), StandardOpenOption.APPEND);
-  }*/
 }

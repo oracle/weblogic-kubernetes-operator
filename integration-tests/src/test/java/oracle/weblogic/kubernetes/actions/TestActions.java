@@ -1821,22 +1821,6 @@ public class TestActions {
     return LoggingExporter.verifyLoggingExporterReady(opNamespace, esNamespace, labelSelector, index);
   }
 
-  // --------------------------- WebLogic Logging Exporter---------------------------------
-  /**
-   * Install WebLogic Logging Exporter.
-   *
-   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
-   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param namespace logging exporter publish host namespace
-   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
-   */
-  public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
-    //return LoggingExporter.installWlsLoggingExporter(filter,
-    //wlsLoggingExporterYamlFileLoc, namespace);
-    return true;
-  }
-
   /**
    * Patch the domain resource with a new restartVersion.
    *

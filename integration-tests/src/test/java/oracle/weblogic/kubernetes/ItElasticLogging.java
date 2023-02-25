@@ -28,15 +28,12 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-//import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
-//import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
@@ -47,14 +44,9 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
-//import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
-//import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -75,7 +67,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyKibana;
-//import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyWlsLoggingExporter;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyElasticsearch;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
@@ -238,10 +229,6 @@ class ItElasticLogging {
     // Verify that ELK Stack is ready to use
     testVarMap = new HashMap<String, String>();
     testVarMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, LOGSTASH_INDEX_KEY);
-    //Map<String, String> kibanaMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, KIBANA_INDEX_KEY);
-
-    // merge testVarMap and kibanaMap
-    //testVarMap.putAll(kibanaMap);
   }
 
   /**
@@ -396,24 +383,8 @@ class ItElasticLogging {
 
     // create image with model files
     if (!OKD) {
-      /*
-      String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-      StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
-          .append(WORK_DIR)
-          .append("/")
-          .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
-          .append(",")
-          .append(DOWNLOAD_DIR)
-          .append("/")
-          .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
-          .append(",")
-          .append(DOWNLOAD_DIR)
-          .append("/")
-          .append(SNAKE_DOWNLOADED_FILENAME);*/
-
       logger.info("Create image with model file and verify");
       miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,MII_BASIC_APP_NAME);
-      //MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
     } else {
       List<String> appList = new ArrayList<>();
       appList.add(MII_BASIC_APP_NAME);

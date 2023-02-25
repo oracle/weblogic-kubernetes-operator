@@ -136,27 +136,6 @@ public class LoggingExporterUtils {
   }
 
   /**
-   * Install WebLogic Logging Exporter.
-   *
-   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
-   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param namespace logging exporter publish host namespace
-   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
-   */
-  public static boolean installAndVerifyWlsLoggingExporter(String filter,
-                                                           String wlsLoggingExporterYamlFileLoc, String namespace) {
-    /*
-    // Install WebLogic Logging Exporter
-    assertThat(TestActions.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc, namespace))
-        .as("WebLogic Logging Exporter installation succeeds")
-        .withFailMessage("WebLogic Logging Exporter installation failed")
-        .isTrue();*/
-
-    return true;
-  }
-
-  /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
    * @param opNamespace namespace of Operator pod (for ELK Stack) or
