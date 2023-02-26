@@ -649,7 +649,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
-      public boolean wasStartedFromEvent() {
+      public boolean hasEventData() {
         return eventData != null;
       }
 

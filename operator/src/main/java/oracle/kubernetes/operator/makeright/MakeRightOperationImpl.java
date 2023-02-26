@@ -16,7 +16,6 @@ import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> implements MakeRightOperation<T> {
   protected T liveInfo;
   protected boolean willInterrupt;
-  protected boolean wasStartedFromEvent;
   protected EventData eventData;
 
   protected final MakeRightExecutor executor;
@@ -36,10 +35,6 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
 
   public boolean isWillInterrupt() {
     return willInterrupt;
-  }
-
-  public boolean wasStartedFromEvent() {
-    return wasStartedFromEvent;
   }
 
   public boolean hasEventData() {

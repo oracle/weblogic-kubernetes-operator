@@ -398,7 +398,7 @@ class EventHelperTest {
   }
 
   private MakeRightDomainOperation createMakeRightWithEvent(EventHelper.EventItem eventItem) {
-    return makeRightOperation.withEventData(new EventData(eventItem)).startedFromEvent();
+    return makeRightOperation.withEventData(new EventData(eventItem));
   }
 
   @Test

@@ -342,18 +342,8 @@ class FailureRetryTest {
     }
 
     @Override
-    public MakeRightDomainOperation startedFromEvent() {
-      return this;
-    }
-
-    @Override
     public MakeRightDomainOperation withEventData(EventHelper.EventData eventItem) {
       return this;
-    }
-
-    @Override
-    public boolean wasStartedFromEvent() {
-      return false;
     }
 
     @Override

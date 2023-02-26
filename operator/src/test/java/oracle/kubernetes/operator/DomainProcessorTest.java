@@ -378,14 +378,13 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenCachedDomainIsNewerThanSpecifiedDomain_dontRunMakeRightWhenStartedFromEvent() {
+  void whenCachedDomainIsNewerThanSpecifiedDomain_dontRunMakeRightWhenHasEventData() {
     consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
     final DomainResource cachedDomain = this.domain;
     processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
     cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
 
     processor.createMakeRightOperation(newInfo)
-        .startedFromEvent()
         .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
 
@@ -600,7 +599,7 @@ class DomainProcessorTest {
     testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
 
     processor.createMakeRightOperation(newInfo)
-        .withEventData(new EventData(DOMAIN_CHANGED)).startedFromEvent().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
@@ -2451,7 +2450,7 @@ class DomainProcessorTest {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(originalInfo)
-        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().startedFromEvent().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));

@@ -44,13 +44,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    */
   MakeRightDomainOperation interrupt();
 
-  /**
-   * Modifies the factory to indicate that the make right operation is triggered due to a DomainResource watch event.
-   +
-   + @return the updated factory
-   */
-  MakeRightDomainOperation startedFromEvent();
-
   boolean isDeleting();
 
   boolean isExplicitRecheck();

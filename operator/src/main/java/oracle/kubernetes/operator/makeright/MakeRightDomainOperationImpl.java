@@ -140,12 +140,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   }
 
   @Override
-  public MakeRightDomainOperation startedFromEvent() {
-    wasStartedFromEvent = true;
-    return this;
-  }
-
-  @Override
   public boolean isDeleting() {
     return deleting;
   }
@@ -218,7 +212,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    if (wasStartedFromEvent()) {
+    if (hasEventData()) {
       result.add(createStatusInitializationStep());
     }
     if (deleting || domainHasDeletionTimestamp()) {
