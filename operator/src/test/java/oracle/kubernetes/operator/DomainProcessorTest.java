@@ -1594,13 +1594,13 @@ class DomainProcessorTest {
     V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
     testSupport.defineResources(job);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
-    setJobPodInitContainerStatusImagePullError();
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithImagePullError());
   }
 
-  private void setJobPodInitContainerStatusImagePullError() {
-    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().initContainerStatuses(
+  public static V1PodStatus getInitContainerStatusWithImagePullError() {
+    return new V1PodStatus().initContainerStatuses(
           List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
-                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image"))))));
+                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image")))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
