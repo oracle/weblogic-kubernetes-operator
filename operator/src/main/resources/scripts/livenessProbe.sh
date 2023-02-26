@@ -63,19 +63,21 @@ exportInstallHomes || exit $RETVAL
 
 state=`${SCRIPTPATH}/readState.sh`
 RETVAL=$?
-if [ $RETVAL -ne 0 ]; then
-  trace "Server instance not found; assuming shutdown"
-  exit $RETVAL
+if [ $RETVAL -eq 2 ]; then
+  trace "Server state file not found; assuming dead"
+  exit 2
 fi
 
-if [ "$state" = "SHUTDOWN" ]; then
-  trace "Server is shutdown"
-  exit 1
-fi
-
+# If state failed, then dead
 if [[ "$state" =~ ^FAILED ]]; then
   trace SEVERE "Server in failed state"
   exit 2
+fi
+
+# If state not shutdown and process not found, then dead
+if [ $RETVAL -eq 1 ] && [[ ! "$state" =~ SHUT ]]; then
+  trace "Server process not found and state not shutdown"
+  exit 1
 fi
 
 if [ -x ${LIVENESS_PROBE_CUSTOM_SCRIPT} ]; then
