@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Reads the current state of a server. The script checks a WebLogic Server state
@@ -19,6 +19,13 @@ DH=${DOMAIN_HOME?}
 
 STATEFILE=/${DH}/servers/${SN}/data/nodemanager/${SN}.state
 
+if [ ! -f ${STATEFILE} ]; then
+  trace "WebLogic Server state file not found."
+  exit 2
+fi
+
+cat ${STATEFILE} | cut -f 1 -d ':'
+
 # Adjust PATH if necessary before calling jps
 adjustPath
 
@@ -27,10 +34,4 @@ if [ `jps -v | grep -c " -Dweblogic.Name=${SERVER_NAME} "` -eq 0 ]; then
   exit 1
 fi
 
-if [ ! -f ${STATEFILE} ]; then
-  trace "WebLogic Server state file not found."
-  exit 2
-fi
-
-cat ${STATEFILE} | cut -f 1 -d ':'
 exit 0

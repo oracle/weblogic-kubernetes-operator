@@ -31,7 +31,7 @@ exit_script () {
   # K8S does not print any logs in the PreStop stage in kubectl logs.
   # The workaround is to print script's output to the main process' stdout using /proc/1/fd/1
   # See https://github.com/kubernetes/kubernetes/issues/25766 for more details.
-  trace "Stop Server: === Contents of the script output file ${STOP_OUT_FILE} ===" > /proc/1/fd/1
+  trace "Stop Server: === Contents of the script output file ${STOP_OUT_FILE} ===" >> /proc/1/fd/1
   cat ${STOP_OUT_FILE} >> /proc/1/fd/1
   trace "Stop Server: === End of ${STOP_OUT_FILE} contents. ===" >> /proc/1/fd/1
 
