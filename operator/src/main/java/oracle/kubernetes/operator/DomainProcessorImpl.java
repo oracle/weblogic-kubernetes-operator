@@ -611,7 +611,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     switch (watchType) {
       case ADDED:
       case MODIFIED:
-        updateDomainStatus(pod, info, delegate);
+        updateDomainStatus(pod, info);
         break;
       case DELETED:
         LOGGER.fine("Introspector Pod " + getPodName(pod) + " for domain " + domainUid + " is deleted.");
@@ -620,7 +620,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info, DomainProcessorDelegate delegate) {
+  @Override
+  public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
           .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
   }
