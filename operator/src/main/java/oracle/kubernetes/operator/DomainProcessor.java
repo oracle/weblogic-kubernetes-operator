@@ -136,4 +136,6 @@ public interface DomainProcessor {
   Map<String, FiberGate> getMakeRightFiberGateMap();
 
   DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
+
+  void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
 }
