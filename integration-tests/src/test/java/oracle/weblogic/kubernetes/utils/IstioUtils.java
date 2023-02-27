@@ -73,7 +73,7 @@ public class IstioUtils {
     assertTrue(() -> Command.withParams(
         defaultCommandParams()
             .command(command)
-            .redirect(true))
+            .redirect(false))
         .execute());
     
     // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
@@ -105,7 +105,7 @@ public class IstioUtils {
     assertTrue(() -> Command.withParams(
         defaultCommandParams()
             .command(command)
-            .redirect(true))
+            .redirect(false))
         .execute());
   }
 

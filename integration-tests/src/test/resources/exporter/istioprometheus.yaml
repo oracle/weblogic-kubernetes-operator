@@ -1,7 +1,7 @@
-# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 ---
-# Source: prometheus/templates/server/serviceaccount.yaml
+# Source: prometheus/templates/server-serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -9,14 +9,14 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
   namespace: istio-system
   annotations:
     {}
 ---
-# Source: prometheus/templates/server/cm.yaml
+# Source: prometheus/templates/server-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -24,7 +24,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
   namespace: istio-system
@@ -123,8 +123,7 @@ data:
       tls_config:
         ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
         insecure_skip_verify: true
-    - honor_labels: true
-      job_name: kubernetes-service-endpoints
+    - job_name: kubernetes-service-endpoints
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:
@@ -132,10 +131,6 @@ data:
         regex: true
         source_labels:
         - __meta_kubernetes_service_annotation_prometheus_io_scrape
-      - action: drop
-        regex: true
-        source_labels:
-        - __meta_kubernetes_service_annotation_prometheus_io_scrape_slow
       - action: replace
         regex: (https?)
         source_labels:
@@ -154,24 +149,20 @@ data:
         - __meta_kubernetes_service_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
-        regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
-        replacement: __param_$1
-      - action: labelmap
         regex: __meta_kubernetes_service_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: namespace
+        target_label: kubernetes_namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_service_name
-        target_label: service
+        target_label: kubernetes_name
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_node_name
-        target_label: node
-    - honor_labels: true
-      job_name: kubernetes-service-endpoints-slow
+        target_label: kubernetes_node
+    - job_name: kubernetes-service-endpoints-slow
       kubernetes_sd_configs:
       - role: endpoints
       relabel_configs:
@@ -197,22 +188,19 @@ data:
         - __meta_kubernetes_service_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
-        regex: __meta_kubernetes_service_annotation_prometheus_io_param_(.+)
-        replacement: __param_$1
-      - action: labelmap
         regex: __meta_kubernetes_service_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: namespace
+        target_label: kubernetes_namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_service_name
-        target_label: service
+        target_label: kubernetes_name
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_node_name
-        target_label: node
+        target_label: kubernetes_node
       scrape_interval: 5m
       scrape_timeout: 30s
     - honor_labels: true
@@ -224,8 +212,7 @@ data:
         regex: pushgateway
         source_labels:
         - __meta_kubernetes_service_annotation_prometheus_io_probe
-    - honor_labels: true
-      job_name: kubernetes-services
+    - job_name: kubernetes-services
       kubernetes_sd_configs:
       - role: service
       metrics_path: /probe
@@ -249,12 +236,11 @@ data:
         regex: __meta_kubernetes_service_label_(.+)
       - source_labels:
         - __meta_kubernetes_namespace
-        target_label: namespace
+        target_label: kubernetes_namespace
       - source_labels:
         - __meta_kubernetes_service_name
-        target_label: service
-    - honor_labels: true
-      job_name: kubernetes-pods
+        target_label: kubernetes_name
+    - job_name: kubernetes-pods
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -262,15 +248,6 @@ data:
         regex: true
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_scrape
-      - action: drop
-        regex: true
-        source_labels:
-        - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
-      - action: replace
-        regex: (https?)
-        source_labels:
-        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
-        target_label: __scheme__
       - action: replace
         regex: (.+)
         source_labels:
@@ -284,24 +261,16 @@ data:
         - __meta_kubernetes_pod_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
-        regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
-        replacement: __param_$1
-      - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: namespace
+        target_label: kubernetes_namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_name
-        target_label: pod
-      - action: drop
-        regex: Pending|Succeeded|Failed|Completed
-        source_labels:
-        - __meta_kubernetes_pod_phase
-    - honor_labels: true
-      job_name: kubernetes-pods-slow
+        target_label: kubernetes_pod_name
+    - job_name: kubernetes-pods-slow
       kubernetes_sd_configs:
       - role: pod
       relabel_configs:
@@ -310,11 +279,6 @@ data:
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_scrape_slow
       - action: replace
-        regex: (https?)
-        source_labels:
-        - __meta_kubernetes_pod_annotation_prometheus_io_scheme
-        target_label: __scheme__
-      - action: replace
         regex: (.+)
         source_labels:
         - __meta_kubernetes_pod_annotation_prometheus_io_path
@@ -327,22 +291,15 @@ data:
         - __meta_kubernetes_pod_annotation_prometheus_io_port
         target_label: __address__
       - action: labelmap
-        regex: __meta_kubernetes_pod_annotation_prometheus_io_param_(.+)
-        replacement: __param_$1
-      - action: labelmap
         regex: __meta_kubernetes_pod_label_(.+)
       - action: replace
         source_labels:
         - __meta_kubernetes_namespace
-        target_label: namespace
+        target_label: kubernetes_namespace
       - action: replace
         source_labels:
         - __meta_kubernetes_pod_name
-        target_label: pod
-      - action: drop
-        regex: Pending|Succeeded|Failed|Completed
-        source_labels:
-        - __meta_kubernetes_pod_phase
+        target_label: kubernetes_pod_name
       scrape_interval: 5m
       scrape_timeout: 30s
   recording_rules.yml: |
@@ -350,7 +307,7 @@ data:
   rules: |
     {}
 ---
-# Source: prometheus/templates/server/clusterrole.yaml
+# Source: prometheus/templates/server-clusterrole.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -358,7 +315,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
 rules:
@@ -392,7 +349,7 @@ rules:
     verbs:
       - get
 ---
-# Source: prometheus/templates/server/clusterrolebinding.yaml
+# Source: prometheus/templates/server-clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -400,7 +357,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
 subjects:
@@ -412,7 +369,7 @@ roleRef:
   kind: ClusterRole
   name: prometheus
 ---
-# Source: prometheus/templates/server/service.yaml
+# Source: prometheus/templates/server-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -420,7 +377,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
   namespace: istio-system
@@ -436,7 +393,7 @@ spec:
   sessionAffinity: None
   type: "NodePort"
 ---
-# Source: prometheus/templates/server/deploy.yaml
+# Source: prometheus/templates/server-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -444,7 +401,7 @@ metadata:
     component: "server"
     app: prometheus
     release: prometheus
-    chart: prometheus-15.9.0
+    chart: prometheus-11.7.0
     heritage: Helm
   name: prometheus
   namespace: istio-system
@@ -461,17 +418,14 @@ spec:
         component: "server"
         app: prometheus
         release: prometheus
-        chart: prometheus-15.9.0
+        chart: prometheus-11.7.0
         heritage: Helm
-
-        sidecar.istio.io/inject: "false"
     spec:
-      enableServiceLinks: true
       serviceAccountName: prometheus
       containers:
         - name: prometheus-server-configmap-reload
-          image: "jimmidyson/configmap-reload:v0.5.0"
-          imagePullPolicy: "IfNotPresent"
+          image: "jimmidyson/configmap-reload:v0.3.0"
+          imagePullPolicy: IfNotPresent
           args:
             - --volume-dir=/etc/config
             - --webhook-url=http://127.0.0.1:9090/-/reload
@@ -483,8 +437,8 @@ spec:
               readOnly: true
 
         - name: prometheus-server
-          image: "prom/prometheus:v2.34.0"
-          imagePullPolicy: "IfNotPresent"
+          image: "prom/prometheus:v2.19.0"
+          imagePullPolicy: IfNotPresent
           args:
             - --storage.tsdb.retention.time=15d
             - --config.file=/etc/config/prometheus.yml
@@ -498,20 +452,18 @@ spec:
             httpGet:
               path: /-/ready
               port: 9090
-              scheme: HTTP
             initialDelaySeconds: 0
             periodSeconds: 5
-            timeoutSeconds: 4
+            timeoutSeconds: 30
             failureThreshold: 3
             successThreshold: 1
           livenessProbe:
             httpGet:
               path: /-/healthy
               port: 9090
-              scheme: HTTP
             initialDelaySeconds: 30
             periodSeconds: 15
-            timeoutSeconds: 10
+            timeoutSeconds: 30
             failureThreshold: 3
             successThreshold: 1
           resources:
@@ -522,8 +474,6 @@ spec:
             - name: storage-volume
               mountPath: /data
               subPath: ""
-      hostNetwork: false
-      dnsPolicy: ClusterFirst
       securityContext:
         fsGroup: 65534
         runAsGroup: 65534
