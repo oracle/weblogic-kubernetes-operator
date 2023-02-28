@@ -317,7 +317,7 @@ public class ClusterResourceStatusUpdater {
       // Get the ClusterResource, that was refreshed, from DomainPresenceInfo.
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       ClusterResource res = info.getClusterResource(clusterName);
-      return doNext(new ReplaceClusterStatusContext(packet, res).createReplaceClusterResourceStatusStep(), packet);
+      return doNext(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet);
     }
   }
 }
