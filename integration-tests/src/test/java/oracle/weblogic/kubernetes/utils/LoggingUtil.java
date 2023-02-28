@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -295,6 +296,7 @@ public class LoggingUtil {
     V1APIResourceList apiResources = null;
     try {
       apiResources = coreV1Api.getAPIResources();
+      logger.info(Yaml.dump(apiResources));
       Optional<V1APIResource> application = apiResources.getResources().stream()
           .findAny().filter(res -> res.getName().equals(APPLICATION_PLURAL));
       if (application.isPresent()) {
