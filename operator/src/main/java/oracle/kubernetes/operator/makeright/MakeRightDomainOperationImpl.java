@@ -111,6 +111,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
    * @param eventData event data
    * @return the updated factory
    */
+  @Override
   public MakeRightDomainOperation withEventData(EventData eventData) {
     this.eventData = eventData;
     return this;
@@ -132,6 +133,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
    *
    * @return the updated factory
    */
+  @Override
   public MakeRightDomainOperation interrupt() {
     willInterrupt = true;
     return this;
@@ -210,7 +212,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    if (wasStartedFromEvent()) {
+    if (hasEventData()) {
       result.add(createStatusInitializationStep());
     }
     if (deleting || domainHasDeletionTimestamp()) {
