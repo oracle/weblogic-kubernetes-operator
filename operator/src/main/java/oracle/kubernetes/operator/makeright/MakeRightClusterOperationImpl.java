@@ -44,6 +44,7 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
    * @param eventData event data
    * @return the updated factory
    */
+  @Override
   public MakeRightClusterOperation withEventData(ClusterResourceEventData eventData) {
     this.eventData = eventData;
     return this;
@@ -54,6 +55,7 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
    *
    * @return the updated factory
    */
+  @Override
   public MakeRightClusterOperation interrupt() {
     willInterrupt = true;
     return this;
