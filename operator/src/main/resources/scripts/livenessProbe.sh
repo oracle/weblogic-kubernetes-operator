@@ -61,7 +61,7 @@ source ${SCRIPTPATH}/utils.sh
 exportEffectiveDomainHome || exit $RETVAL
 exportInstallHomes || exit $RETVAL
 
-state=`${SCRIPTPATH}/readState.sh`
+state=$(${SCRIPTPATH}/readState.sh)
 RETVAL=$?
 if [ $RETVAL -eq 2 ]; then
   trace "Server state file not found; assuming dead"

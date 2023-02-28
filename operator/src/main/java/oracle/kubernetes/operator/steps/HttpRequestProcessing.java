@@ -125,7 +125,7 @@ abstract class HttpRequestProcessing {
    */
   abstract PortDetails getPortDetails();
 
-  private String getHost() {
+  protected String getHost() {
     return toServiceHost(getServiceMeta());
   }
 

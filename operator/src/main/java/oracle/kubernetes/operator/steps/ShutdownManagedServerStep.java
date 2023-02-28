@@ -7,12 +7,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -21,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -30,19 +27,15 @@ import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.client.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.client.HttpResponseStep;
-import oracle.kubernetes.operator.http.rest.Scan;
-import oracle.kubernetes.operator.http.rest.ScanCache;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
-import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -102,9 +95,10 @@ public class ShutdownManagedServerStep extends Step {
       initializeRequestPayloadParameters();
     }
 
-    private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
+    private static String getManagedServerShutdownPath(String serverName, Boolean isGracefulShutdown) {
       String shutdownString = Boolean.TRUE.equals(isGracefulShutdown) ? "shutdown" : "forceShutdown";
-      return "/management/weblogic/latest/serverRuntime/" + shutdownString;
+      return "/management/weblogic/latest/domainRuntime/serverLifeCycleRuntimes/"
+          + serverName + "/" + shutdownString;
     }
 
     private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
@@ -207,50 +201,36 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private String getRequestUrl(Boolean isGracefulShutdown) {
-      return getServiceUrl() + getManagedServerShutdownPath(isGracefulShutdown);
+      return getServiceUrl() + getManagedServerShutdownPath(getServerName(), isGracefulShutdown);
     }
 
     protected PortDetails getPortDetails() {
-      Integer port = getWlsServerPort();
-      WlsServerConfig serverConfig = getWlsServerConfig();
-      boolean isSecure = port != null && serverConfig != null
-          && !port.equals(serverConfig.getListenPort());
-      return new PortDetails(port, isSecure);
+      return new PortDetails(getAdminServerPort(), isAdminServerPortSecure());
     }
 
-    private Integer getWlsServerPort() {
-      Integer listenPort = Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getListenPort)
-          .orElse(null);
+    protected String getHost() {
+      List<V1EnvVar> envVarList = getV1EnvVars();
+      String adminHost = Optional.ofNullable(getEnvValue(envVarList, ServerEnvVars.AS_SERVICE_NAME))
+          .orElse("admin-server");
 
-      if (listenPort == null) {
-        // This can only happen if the running server pod does not exist in the WLS Domain.
-        // This is a rare case where the server was deleted from the WLS Domain config.
-        listenPort = getListenPortFromPod(this.getPod());
-      }
-
-      return listenPort;
+      return toAdminServiceHost(adminHost, getService());
     }
 
-    private Integer getListenPortFromPod(V1Pod pod) {
-      return getContainer(pod.getSpec()).map(V1Container::getPorts).orElse(Collections.emptyList()).stream()
-          .filter(this::isTCPProtocol).findFirst().map(V1ContainerPort::getContainerPort).orElse(0);
+    private String toAdminServiceHost(String adminHost, @Nonnull V1Service service) {
+      String ns = Optional.of(service).map(V1Service::getMetadata).map(V1ObjectMeta::getNamespace).orElse("default");
+      return adminHost + "." + ns;
     }
 
-    boolean isTCPProtocol(V1ContainerPort port) {
-      return "TCP".equals(port.getProtocol());
+    private Integer getAdminServerPort() {
+      List<V1EnvVar> envVarList = getV1EnvVars();
+      return Optional.ofNullable(getEnvValue(envVarList, ServerEnvVars.ADMIN_PORT))
+          .map(Integer::valueOf).orElse(0);
     }
 
-    private WlsServerConfig getWlsServerConfig() {
-      // standalone server that does not belong to any cluster
-      WlsServerConfig serverConfig = getWlsDomainConfig().getServerConfig(getServerName());
-
-      if (serverConfig == null) {
-        // dynamic or configured server in a cluster
-        String clusterName = getClusterNameFromServiceLabel();
-        WlsClusterConfig cluster = getWlsDomainConfig().getClusterConfig(clusterName);
-        serverConfig = findServerConfig(cluster);
-      }
-      return serverConfig;
+    private boolean isAdminServerPortSecure() {
+      List<V1EnvVar> envVarList = getV1EnvVars();
+      return Optional.ofNullable(getEnvValue(envVarList, ServerEnvVars.ADMIN_PORT_SECURE))
+          .map(Boolean::valueOf).orElse(false);
     }
 
     private String getClusterNameFromServiceLabel() {
@@ -261,28 +241,8 @@ public class ShutdownManagedServerStep extends Step {
           .orElse(null);
     }
 
-    private WlsServerConfig findServerConfig(WlsClusterConfig wlsClusterConfig) {
-      for (WlsServerConfig serverConfig : wlsClusterConfig.getServerConfigs()) {
-        if (Objects.equals(getServerName(), serverConfig.getName())) {
-          return serverConfig;
-        }
-      }
-      return null;
-    }
-
     private String getServerName() {
       return this.getPod().getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
-    }
-
-    private WlsDomainConfig getWlsDomainConfig() {
-      DomainPresenceInfo info = getDomainPresenceInfo(getPacket());
-      WlsDomainConfig domainConfig =
-          (WlsDomainConfig) getPacket().get(ProcessingConstants.DOMAIN_TOPOLOGY);
-      if (domainConfig == null) {
-        Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
-        domainConfig = scan.getWlsDomainConfig();
-      }
-      return domainConfig;
     }
 
     HttpAsyncRequestStep createRequestStep(

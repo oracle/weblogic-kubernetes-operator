@@ -804,6 +804,20 @@ public class PodHelper {
 
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
+
+
+      // TEST
+      try {
+        LOGGER.info("About to delete pod " + name + ". Waiting 10 seconds...");
+        Thread.sleep(10000);
+
+        LOGGER.info("About to delete pod " + name + ". Waiting 5 more seconds...");
+        Thread.sleep(5000);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
+
       return new CallBuilder().withRetryStrategy(retryStrategy)
               .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }
