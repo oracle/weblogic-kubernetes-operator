@@ -91,7 +91,9 @@ import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import oracle.verrazzano.weblogic.ApplicationConfiguration;
+import oracle.verrazzano.weblogic.ApplicationList;
 import oracle.verrazzano.weblogic.Component;
+import oracle.verrazzano.weblogic.ComponentList;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
@@ -124,10 +126,10 @@ public class Kubernetes {
   private static final int GRACE_PERIOD = 0;
   private static final String COMPONENT_VERSION = "v1alpha2";
   private static final String COMPONENT_GROUP = "core.oam.dev";
-  private static final String COMPONENT_PLURAL = "components";
+  public static final String COMPONENT_PLURAL = "components";
   private static final String APPLICATION_VERSION = "v1alpha2";
   private static final String APPLICATION_GROUP = "core.oam.dev";
-  private static final String APPLICATION_PLURAL = "applicationconfigurations";   
+  public static final String APPLICATION_PLURAL = "applicationconfigurations";   
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
@@ -143,6 +145,8 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
+  private static GenericKubernetesApi<ApplicationConfiguration, ApplicationList> vzAppCrdClient = null;
+  private static GenericKubernetesApi<Component, ComponentList> vzComCrdClient = null;
   private static GenericKubernetesApi<ClusterResource, ClusterList> clusterCrdClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
@@ -179,7 +183,7 @@ public class Kubernetes {
   /**
    * Create static instances of GenericKubernetesApi clients.
    */
-  private static void initializeGenericKubernetesApiClients() {
+  private static void initializeGenericKubernetesApiClients() {    
     // Invocation parameters aren't changing so create them as statics
     configMapClient =
         new GenericKubernetesApi<>(
@@ -200,6 +204,26 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
+    
+    vzAppCrdClient =
+        new GenericKubernetesApi<>(
+            ApplicationConfiguration.class,  // the api type class
+            ApplicationList.class, // the api list type class
+            APPLICATION_GROUP, // the api group
+            APPLICATION_VERSION, // the api version
+            APPLICATION_PLURAL, // the resource plural
+            apiClient //the api client
+        );
+    
+    vzComCrdClient =
+        new GenericKubernetesApi<>(
+            Component.class,  // the api type class
+            ComponentList.class, // the api list type class
+            COMPONENT_GROUP, // the api group
+            COMPONENT_VERSION, // the api version
+            COMPONENT_PLURAL, // the resource plural
+            apiClient //the api client
+        );    
     
     clusterCrdClient =
         new GenericKubernetesApi<>(
@@ -1348,6 +1372,26 @@ public class Kubernetes {
   }
 
   /**
+   * List Component Custom Resources for a given namespace.
+   *
+   * @param namespace name of namespace
+   * @return List of Component Custom Resources
+   * @throws io.kubernetes.client.openapi.ApiException when list fails
+   */
+  public static ComponentList listComponents(String namespace)
+      throws ApiException {
+
+    KubernetesApiResponse<ComponentList> response = null;
+    try {
+      response = vzComCrdClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ComponentList();
+  }
+  
+  /**
    * Create a Verrazzano ApplicationConfiguration Custom Resource.
    *
    * @param application ApplicationConfiguration custom resource model object
@@ -1387,6 +1431,26 @@ public class Kubernetes {
     }
 
     return true;
+  }
+  
+  /**
+   * List ApplicationConfiguration Custom Resources for a given namespace.
+   *
+   * @param namespace name of namespace
+   * @return List of ApplicationConfiguration Custom Resources
+   * @throws io.kubernetes.client.openapi.ApiException when list fails
+   */
+  public static ApplicationList listApplications(String namespace)
+      throws ApiException {
+
+    KubernetesApiResponse<ApplicationList> response = null;
+    try {
+      response = vzAppCrdClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ApplicationList();
   }
   
   /**

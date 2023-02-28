@@ -189,7 +189,7 @@ class ItVzMiiDomain {
     String address = getLoadbalancerAddress();
 
     // verify WebLogic console page is accessible through istio/loadbalancer
-    String message = "Oracle WebLogic Server Administration Console";
+    String message = "Oracle WebLogic Server Administration Console1";
     String consoleUrl = "https://" + host + "/console/login/LoginForm.jsp --resolve " + host + ":443:" + address;
     assertTrue(verifyVzApplicationAccess(consoleUrl, message), "Failed to get WebLogic administration console");
 
