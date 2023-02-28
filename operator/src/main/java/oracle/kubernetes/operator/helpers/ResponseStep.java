@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -177,7 +178,9 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
-    if ((callResponse != null) && (callResponse.getStatusCode() != HTTP_NOT_FOUND)) {
+    if ((callResponse != null)
+        && (callResponse.getStatusCode() != HTTP_NOT_FOUND)
+        && (callResponse.getStatusCode() != HTTP_CONFLICT)) {
       addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
       if (LOGGER.isWarningEnabled()) {
         LOGGER.warning(
