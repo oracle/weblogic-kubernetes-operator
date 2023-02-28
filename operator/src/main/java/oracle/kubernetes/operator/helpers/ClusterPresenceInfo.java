@@ -54,7 +54,7 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
    * @param cachedInfo the cached domain presence info.
    */
   public boolean isFromOutOfDateEvent(MakeRightClusterOperation operation, ClusterPresenceInfo cachedInfo) {
-    return operation.wasStartedFromEvent() && !isNewerThan(cachedInfo);
+    return operation.hasEventData() && !isNewerThan(cachedInfo);
   }
 
   private boolean isNewerThan(ClusterPresenceInfo cachedInfo) {

@@ -1918,7 +1918,7 @@ abstract class DomainStatusUpdateTestBase {
       }
 
       @Override
-      public boolean wasStartedFromEvent() {
+      public boolean hasEventData() {
         return false;
       }
 
