@@ -7,11 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -53,7 +51,9 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainProcessorTest.getInitContainerStatusWithImagePullError;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -484,6 +484,34 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     assertThat(dp.isEstablishingDomain("UID" + LAST_DOMAIN_NUM), is(true));
   }
 
+  @Test
+  void whenK8sHasDomainWithFailedIntrospectionPod_updateDomainStatus() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createFailedIntrospectionPod(UID1, NS);
+    testSupport.defineResources(pod);
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(dp.isStatusUpdated(), is(true));
+  }
+
+  private V1Pod createFailedIntrospectionPod(String uid, String namespace) {
+    return new V1Pod().metadata(createIntroPodMetadata(uid, namespace))
+        .status(getInitContainerStatusWithImagePullError());
+  }
+
+  private V1ObjectMeta createIntroPodMetadata(String uid, String namespace) {
+    return createNamespacedMetadata(uid, namespace)
+        .name(getJobName(uid))
+        .putLabelsItem(JOBNAME_LABEL, getJobName(uid));
+  }
+
+  private static String getJobName(String uid) {
+    return LegalNames.toJobIntrospectorName(uid);
+  }
+
   private void createDomains(int lastDomainNum) {
     IntStream.rangeClosed(1, lastDomainNum)
           .boxed()
@@ -499,6 +527,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
     Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
     Map<String, FiberGate> makeRightFiberGates = createMakeRightFiberGateMap();
+    private boolean statusUpdated = false;
 
     @NotNull
     private Map<String, FiberGate> createMakeRightFiberGateMap() {
@@ -507,14 +536,21 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       return map;
     }
 
-    private final Map<String, Boolean> beingProcessed = new ConcurrentHashMap<>();
-
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
       return dpis;
     }
 
     Map<String, ClusterPresenceInfo> getClusterPresenceInfos() {
       return clusters.get(NS);
+    }
+
+    @Override
+    public void updateDomainStatus(V1Pod pod, DomainPresenceInfo info) {
+      statusUpdated = true;
+    }
+
+    public boolean isStatusUpdated() {
+      return statusUpdated;
     }
 
     @Override
@@ -528,11 +564,6 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
             .orElse(false);
     }
 
-    @Override
-    public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-      return dpis.entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
-    }
-
     private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
       return operationStubs.stream().filter(s -> uid.equals(s.getUid())).findFirst().orElse(null);
     }
@@ -540,6 +571,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     @Override
     public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
       return domains;
+    }
+
+    @Override
+    public Map<String,DomainPresenceInfo> getDomainPresenceInfoMapForNS(String namespace) {
+      return dpis;
     }
 
     @Override
@@ -653,7 +689,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
-      public boolean wasStartedFromEvent() {
+      public boolean hasEventData() {
         return eventData != null;
       }
 
