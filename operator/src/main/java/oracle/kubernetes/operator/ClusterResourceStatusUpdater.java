@@ -63,8 +63,8 @@ public class ClusterResourceStatusUpdater {
       Collection<ClusterResource> clusterResources) {
     List<StepAndPacket> result = clusterResources.stream()
         .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
-        .map(res -> createContext(packet, res).createReplaceClusterResourceStatusStep()).collect(
-        Collectors.toList());
+        .map(res -> new StepAndPacket(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
+        .collect(Collectors.toList());
     return result.isEmpty() ? null : new RunInParallelStep(result);
   }
 
@@ -210,7 +210,7 @@ public class ClusterResourceStatusUpdater {
       return !Objects.equals(getNewStatus(), resource.getStatus());
     }
 
-    private StepAndPacket createReplaceClusterResourceStatusStep() {
+    private Step createReplaceClusterResourceStatusStep() {
       LOGGER.fine(MessageKeys.CLUSTER_STATUS, getClusterResourceName(),
           getNewStatus());
 
@@ -229,7 +229,7 @@ public class ClusterResourceStatusUpdater {
           .map(ncs -> getClusterStatusConditionEvents(ncs.getConditions())).orElse(Collections.emptyList())
           .stream().map(EventHelper::createClusterResourceEventStep).forEach(result::add);
 
-      return new StepAndPacket(Step.chain(result), packet);
+      return Step.chain(result);
     }
 
     private List<EventData> getClusterStatusConditionEvents(List<ClusterCondition> conditions) {
@@ -317,7 +317,7 @@ public class ClusterResourceStatusUpdater {
       // Get the ClusterResource, that was refreshed, from DomainPresenceInfo.
       DomainPresenceInfo info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       ClusterResource res = info.getClusterResource(clusterName);
-      return doNext(createUpdateClusterResourceStatusSteps(packet, Collections.singletonList(res)), packet);
+      return doNext(new ReplaceClusterStatusContext(packet, res).createReplaceClusterResourceStatusStep(), packet);
     }
   }
 }
