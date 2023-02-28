@@ -14,6 +14,10 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
+# DEBUG
+trace "Entering stopServer.sh" >> /proc/1/fd/1
+
+
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
 if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
@@ -24,6 +28,11 @@ SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
 SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
 
 logFileRotate ${STOP_OUT_FILE} ${STOP_OUT_FILE_MAX:-11}
+
+
+# DEBUG
+trace "Location 1" >> /proc/1/fd/1
+
 
 exit_script () {
   trace "Exit script" &>> ${STOP_OUT_FILE}
@@ -40,17 +49,20 @@ exit_script () {
   if [ -f ${SERVER_PID_FILE} ]; then
     kill -2 $(< ${SERVER_PID_FILE} )
   fi
-
-  exit $1
 }
+trap exit_script EXIT
 
-trace "Stop server ${SERVER_NAME}" &> ${STOP_OUT_FILE}
+trace "Stop server ${SERVER_NAME}" &>> ${STOP_OUT_FILE}
 
 checkEnv SERVER_NAME || exit 1
 
 if [ "${MOCK_WLS}" == 'true' ]; then
-  exit_script 0
+  exit 0
 fi
+
+# DEBUG
+trace "Location 2" >> /proc/1/fd/1
+
 
 # Arguments for shutdown
 export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
@@ -72,39 +84,48 @@ wait_and_kill_after_timeout () {
   adjustPath
 
   kill -9 `jps -v | grep -v Jps | awk '{ print $1 }'`
-  exit_script 0
+  exit 0
 }
 
 # Wait for the timeout value to issue "kill -9" and then kill the WebLogic server processes.
 wait_and_kill_after_timeout &
 
 check_for_shutdown () {
+
+  # DEBUG
+  trace "Location 3" >> /proc/1/fd/1
+
   [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/readState.sh'." && exit 1
 
-  state=`${SCRIPTPATH}/readState.sh`
+  state=$(${SCRIPTPATH}/readState.sh)
   exit_status=$?
+
+  # DEBUG
+  trace "Location 4" >> /proc/1/fd/1
+
+
   if [ $exit_status -ne 0 ]; then
-    trace "Server instance not found; assuming shutdown" &>> ${STOP_OUT_FILE}
+    trace "Server instance not found; assuming shutdown"
     return 0
   fi
 
   if [ "$state" = "SHUTTING_DOWN" ]; then
-    trace "Server is shutting shutdown" &>> ${STOP_OUT_FILE}
+    trace "Server is shutting shutdown"
     return 0
   fi
 
   if [ "$state" = "SHUTDOWN" ]; then
-    trace "Server is shutdown" &>> ${STOP_OUT_FILE}
+    trace "Server is shutdown"
     return 0
   fi
 
   if [[ "$state" =~ ^FAILED ]]; then
-    trace "Server in failed state" &>> ${STOP_OUT_FILE}
+    trace "Server in failed state"
     return 0
   fi
 
   if [ -e /tmp/diefast ]; then
-    trace "Found '/tmp/diefast' file; skipping clean shutdown" &>> ${STOP_OUT_FILE}
+    trace "Found '/tmp/diefast' file; skipping clean shutdown"
 
     # Adjust PATH if necessary before calling jps
     adjustPath
@@ -113,29 +134,47 @@ check_for_shutdown () {
     return 0
   fi
 
-  trace "Server is currently in state $state" &>> ${STOP_OUT_FILE}
+  trace "Server is currently in state $state"
   return 1
-}
+} &>> ${STOP_OUT_FILE}
+
+
+# DEBUG
+trace "Location 5" >> /proc/1/fd/1
 
 
 # Check if the server is already shutdown
 check_for_shutdown
-[ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit_script 0
+[ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
-# Otherwise, connect to and stop the server instance
-[ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
-trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}" &>> ${STOP_OUT_FILE}
-${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py &>> ${STOP_OUT_FILE}
-trace "After stop-server.py" &>> ${STOP_OUT_FILE}
+# DEBUG
+trace "Location 6" >> /proc/1/fd/1
 
-# Adjust PATH if necessary before calling jps
-adjustPath
 
-pid=$(jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{print $1}')
-if [ ! -z $pid ]; then
-  echo "Killing the server process $pid" &>> ${STOP_OUT_FILE}
-  kill -15 $pid
-fi
+do_shutdown () {
+  # Otherwise, connect to and stop the server instance
+  [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
-exit_script 0
+  trace "Before stop-server.py [${SERVER_NAME}] ${SCRIPTDIR}"
+  ${SCRIPTPATH}/wlst.sh /weblogic-operator/scripts/stop-server.py
+  trace "After stop-server.py"
+
+  # Adjust PATH if necessary before calling jps
+  adjustPath
+
+  pid=$(jps -v | grep " -Dweblogic.Name=${SERVER_NAME} " | awk '{print $1}')
+  if [ ! -z $pid ]; then
+    echo "Killing the server process $pid"
+    kill -15 $pid
+  fi
+} &>> ${STOP_OUT_FILE}
+
+# DEBUG
+trace "Location 7" >> /proc/1/fd/1
+
+
+do_shutdown
+
+# DEBUG
+trace "Location 8" >> /proc/1/fd/1
