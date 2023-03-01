@@ -336,7 +336,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
     if (SKIP_CLEANUP) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
-      if (!OKD || !OKE_CLUSTER) {
+      if (!OKD && !OKE_CLUSTER) {
         logger.info("Uninstall istio after all test suites are run");
         uninstallIstio();
       }
