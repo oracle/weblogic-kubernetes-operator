@@ -30,10 +30,6 @@ SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
 logFileRotate ${STOP_OUT_FILE} ${STOP_OUT_FILE_MAX:-11}
 
 
-# DEBUG
-trace "Location 1" >> /proc/1/fd/1
-
-
 exit_script () {
   trace "Exit script" &>> ${STOP_OUT_FILE}
 
@@ -60,10 +56,6 @@ if [ "${MOCK_WLS}" == 'true' ]; then
   exit 0
 fi
 
-# DEBUG
-trace "Location 2" >> /proc/1/fd/1
-
-
 # Arguments for shutdown
 export SHUTDOWN_PORT_ARG=${LOCAL_ADMIN_PORT:-${MANAGED_SERVER_PORT:-8001}}
 export SHUTDOWN_PROTOCOL_ARG=${LOCAL_ADMIN_PROTOCOL:-t3}
@@ -84,6 +76,10 @@ wait_and_kill_after_timeout () {
   adjustPath
 
   kill -9 `jps -v | grep -v Jps | awk '{ print $1 }'`
+
+  # DEBUG
+  trace "Timeout stopServer.sh" >> /proc/1/fd/1
+
   exit 0
 }
 
@@ -92,17 +88,10 @@ wait_and_kill_after_timeout &
 
 check_for_shutdown () {
 
-  # DEBUG
-  trace "Location 3" >> /proc/1/fd/1
-
   [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/readState.sh'." && exit 1
 
   state=$(${SCRIPTPATH}/readState.sh)
   exit_status=$?
-
-  # DEBUG
-  trace "Location 4" >> /proc/1/fd/1
-
 
   if [ $exit_status -ne 0 ]; then
     trace "Server instance not found; assuming shutdown"
@@ -139,20 +128,14 @@ check_for_shutdown () {
 } &>> ${STOP_OUT_FILE}
 
 
-# DEBUG
-trace "Location 5" >> /proc/1/fd/1
-
-
 # Check if the server is already shutdown
 check_for_shutdown
 [ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
-
-# DEBUG
-trace "Location 6" >> /proc/1/fd/1
-
-
 do_shutdown () {
+  # DEBUG
+  trace "Performing shut down stopServer.sh" >> /proc/1/fd/1
+
   # Otherwise, connect to and stop the server instance
   [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
@@ -170,11 +153,4 @@ do_shutdown () {
   fi
 } &>> ${STOP_OUT_FILE}
 
-# DEBUG
-trace "Location 7" >> /proc/1/fd/1
-
-
 do_shutdown
-
-# DEBUG
-trace "Location 8" >> /proc/1/fd/1
