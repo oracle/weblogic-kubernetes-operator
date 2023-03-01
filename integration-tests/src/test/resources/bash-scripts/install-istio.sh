@@ -43,9 +43,8 @@ ${KUBERNETES_CLI} create namespace istio-system
  echo "Set the image registry to gcr.io/istio-release during istio installation"
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set profile=demo -y
+  bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set components.cni.enabled=true --set profile=demo -y
   bin/istioctl verify-install
-  bin/istioctl manifest apply --set components.cni.enabled=true -y
   bin/istioctl version
 )
 }
