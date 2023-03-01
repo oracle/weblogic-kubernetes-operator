@@ -59,15 +59,6 @@ public class ClusterResourceStatusUpdater {
     return new ClusterResourceStatusUpdaterStep(next);
   }
 
-  private static Step createUpdateClusterResourceStatusSteps(Packet packet,
-      Collection<ClusterResource> clusterResources) {
-    List<StepAndPacket> result = clusterResources.stream()
-        .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
-        .map(res -> new StepAndPacket(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
-        .collect(Collectors.toList());
-    return result.isEmpty() ? null : new RunInParallelStep(result);
-  }
-
   private static ReplaceClusterStatusContext createContext(Packet packet, ClusterResource resource) {
     return new ReplaceClusterStatusContext(packet, resource);
   }
@@ -91,6 +82,15 @@ public class ClusterResourceStatusUpdater {
           .map(domain -> createUpdateClusterResourceStatusSteps(packet, info.getClusterResources()))
           .orElse(null);
       return doNext(chainStep(step, getNext()), packet);
+    }
+    
+    private static Step createUpdateClusterResourceStatusSteps(Packet packet,
+                                                               Collection<ClusterResource> clusterResources) {
+      List<StepAndPacket> result = clusterResources.stream()
+          .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
+          .map(res -> new StepAndPacket(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
+          .collect(Collectors.toList());
+      return result.isEmpty() ? null : new RunInParallelStep(result);
     }
 
     private static Step chainStep(Step one, Step two) {
