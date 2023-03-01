@@ -47,7 +47,7 @@ pipeline {
         CLUSTER_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'parcluster' : 'seqcluster'}"
         kubeconfig_file = "${WORKSPACE}/terraform/${CLUSTER_NAME}_kubeconfig"
         MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'oke-parallel' : 'oke-sequential'}"
-        availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-1' : 'VPGL:PHX-AD-2'}"
+        availability_domain = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? 'VPGL:PHX-AD-3' : 'VPGL:PHX-AD-2'}"
         PARALLEL_RUN = "${env.JOB_NAME == 'wko-oke-nightly-parallel' ? true : false}"
     }
 
@@ -65,7 +65,7 @@ pipeline {
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        defaultValue: 'ocid1.image.oc1.phx.aaaaaaaancucg25pze6m52agxwxmmfszvsdnhp3kvim53pts2tw6mik4xtha'
-                       //8.0defaultValue: 'ocid1.image.oc1.phx.aaaaaaaancq36l7q4fqwznqhnp626wuekkq7twk2em5ysyd65bd4xho72tmq'
+                       //defaultValue8.0: 'ocid1.image.oc1.phx.aaaaaaaancq36l7q4fqwznqhnp626wuekkq7twk2em5ysyd65bd4xho72tmq'
             
                 )
         string(name: 'KUBECTL_VERSION',
