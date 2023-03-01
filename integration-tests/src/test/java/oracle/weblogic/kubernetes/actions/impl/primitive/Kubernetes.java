@@ -45,6 +45,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Ingress;
@@ -3486,6 +3487,29 @@ public class Kubernetes {
     return ingress;
   }
 
+  /**
+   * Get a list of custom resource definitions deployed in the cluster.
+   *
+   * @return V1CustomResourceDefinitionList list of crds
+   * @throws ApiException when list fails.
+   */
+  public static V1CustomResourceDefinitionList listCrds() throws ApiException {
+    V1CustomResourceDefinitionList crds = (V1CustomResourceDefinitionList) vzCustomObjectsApi
+        .listClusterCustomObject("apiextensions.k8s.io",
+            "v1",
+            "customresourcedefinitions",
+            null,
+            false,
+            null,
+            null,
+            null,
+            0,
+            null,
+            null,
+            0,
+            false);
+    return crds;
+  }
   //------------------------
 
   private static String readExecCmdData(InputStream is) {

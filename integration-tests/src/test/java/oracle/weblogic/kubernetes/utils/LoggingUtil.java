@@ -23,10 +23,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.apis.CoreV1Api;
-import io.kubernetes.client.openapi.models.V1APIResource;
-import io.kubernetes.client.openapi.models.V1APIResourceList;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
@@ -46,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.APPLICATION_PLURAL;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.COMPONENT_PLURAL;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listCrds;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -292,29 +292,35 @@ public class LoggingUtil {
     }
 
     // get verrazzano applications
-    CoreV1Api coreV1Api = new CoreV1Api();
-    V1APIResourceList apiResources = null;
+    V1CustomResourceDefinitionList crds = null;
     try {
-      apiResources = coreV1Api.getAPIResources();
-      logger.info(Yaml.dump(apiResources));
-      Optional<V1APIResource> application = apiResources.getResources().stream()
-          .findAny().filter(res -> res.getName().equals(APPLICATION_PLURAL));
-      if (application.isPresent()) {
-        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
-      }
-    } catch (Exception ex) {
-      logger.warning("Listing applications failed, not collecting any data for applications");
+      crds = listCrds();
+      logger.info(Yaml.dump(crds));
+    } catch (ApiException ex) {
+      logger.warning("Listing crds failed, not collecting any data for applications");
     }
-    // get verrazzano components
-    try {
-      Optional<V1APIResource> component = apiResources.getResources().stream()
-          .findAny().filter(res -> res.getName().equals(COMPONENT_PLURAL));
-      if (component.isPresent()) {
-        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.component.log");
+
+    if (crds != null) {
+      try {
+        Optional<V1CustomResourceDefinition> application = crds.getItems().stream()
+            .findAny().filter(res -> res.getMetadata().getName().equals(APPLICATION_PLURAL));
+        if (application.isPresent()) {
+          writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
+        }
+      } catch (Exception ex) {
+        logger.warning("Listing applications failed, not collecting any data for applications");
       }
-    } catch (Exception ex) {
-      logger.warning("Listing components failed, not collecting any data for components");
-    }   
+      // get verrazzano components
+      try {
+        Optional<V1CustomResourceDefinition> component = crds.getItems().stream()
+            .findAny().filter(res -> res.getMetadata().getName().equals(COMPONENT_PLURAL));
+        if (component.isPresent()) {
+          writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.component.log");
+        }
+      } catch (Exception ex) {
+        logger.warning("Listing components failed, not collecting any data for components");
+      }
+    }
 
   }
 
