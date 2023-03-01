@@ -26,6 +26,7 @@ echo "Uninstalling Istio version [${version}] from location [${istiodir}]"
   bin/istioctl x uninstall --purge -y
 )
 ${KUBERNETES_CLI:-kubectl} delete namespace istio-system --ignore-not-found
+cd ${workdir}
 rm -rf ${istiodir}
 }
 
