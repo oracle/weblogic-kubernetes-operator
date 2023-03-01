@@ -3494,7 +3494,7 @@ public class Kubernetes {
    * @throws ApiException when list fails.
    */
   public static V1CustomResourceDefinitionList listCrds() throws ApiException {
-    V1CustomResourceDefinitionList crds = (V1CustomResourceDefinitionList) vzCustomObjectsApi
+    Object listClusterCustomObject = vzCustomObjectsApi
         .listClusterCustomObject("apiextensions.k8s.io",
             "v1",
             "customresourcedefinitions",
@@ -3508,7 +3508,9 @@ public class Kubernetes {
             null,
             0,
             false);
-    return crds;
+    getLogger().info("Dumping all crds");
+    getLogger().info(Yaml.dump(listClusterCustomObject));
+    return null;
   }
   //------------------------
 
