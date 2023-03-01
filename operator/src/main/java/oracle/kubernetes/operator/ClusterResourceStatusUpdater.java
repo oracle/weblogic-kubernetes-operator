@@ -28,7 +28,6 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.model.ClusterCondition;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
@@ -83,7 +82,7 @@ public class ClusterResourceStatusUpdater {
           .orElse(null);
       return doNext(chainStep(step, getNext()), packet);
     }
-    
+
     private static Step createUpdateClusterResourceStatusSteps(Packet packet,
                                                                Collection<ClusterResource> clusterResources) {
       List<StepAndPacket> result = clusterResources.stream()
