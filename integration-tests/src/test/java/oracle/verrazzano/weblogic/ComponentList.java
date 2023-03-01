@@ -15,13 +15,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "ApplicationList is a list of ApplicationConfiguration.")
+@ApiModel(description = "ComponentList is a list of Components.")
 public class ComponentList implements KubernetesListObject {
 
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'DomainList'.")
+  @ApiModelProperty("The type of resource. Must be 'ComponentList'.")
   private String kind;
 
   @ApiModelProperty(
@@ -31,7 +31,7 @@ public class ComponentList implements KubernetesListObject {
 
   @ApiModelProperty(
       "List of domains. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md. Required.")
-  private List<ApplicationConfiguration> items = new ArrayList<ApplicationConfiguration>();
+  private List<Component> items = new ArrayList<Component>();
 
   public ComponentList apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
@@ -84,20 +84,20 @@ public class ComponentList implements KubernetesListObject {
     this.metadata = metadata;
   }
 
-  public ComponentList items(List<ApplicationConfiguration> items) {
+  public ComponentList items(List<Component> items) {
     this.items = items;
     return this;
   }
 
-  public List<ApplicationConfiguration> items() {
+  public List<Component> items() {
     return items;
   }
 
-  public List<ApplicationConfiguration> getItems() {
+  public List<Component> getItems() {
     return items;
   }
 
-  public void setItems(List<ApplicationConfiguration> items) {
+  public void setItems(List<Component> items) {
     this.items = items;
   }
 

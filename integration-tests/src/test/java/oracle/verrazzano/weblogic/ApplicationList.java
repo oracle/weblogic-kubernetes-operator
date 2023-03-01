@@ -21,7 +21,7 @@ public class ApplicationList implements KubernetesListObject {
   @ApiModelProperty("The API version for the Domain.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'DomainList'.")
+  @ApiModelProperty("The type of resource. Must be 'ComponentList'.")
   private String kind;
 
   @ApiModelProperty(
