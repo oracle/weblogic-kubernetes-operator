@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -24,8 +23,6 @@ import java.util.concurrent.TimeoutException;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
@@ -43,8 +40,6 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.APPLICATION_PLURAL;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.COMPONENT_PLURAL;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listCrds;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -292,31 +287,23 @@ public class LoggingUtil {
     }
 
     // get verrazzano applications
-    V1CustomResourceDefinitionList crds = null;
+    String crds = null;
     try {
-      crds = listCrds();
+      crds = (String)listCrds();
       logger.info(Yaml.dump(crds));
     } catch (ApiException ex) {
       logger.warning("Listing crds failed, not collecting any data for applications");
     }
 
-    if (crds != null) {
+    if (crds.toLowerCase().contains("applicationconfiguration")) {
       try {
-        Optional<V1CustomResourceDefinition> application = crds.getItems().stream()
-            .findAny().filter(res -> res.getMetadata().getName().equals(APPLICATION_PLURAL));
-        if (application.isPresent()) {
-          writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
-        }
+        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
       } catch (Exception ex) {
         logger.warning("Listing applications failed, not collecting any data for applications");
       }
       // get verrazzano components
       try {
-        Optional<V1CustomResourceDefinition> component = crds.getItems().stream()
-            .findAny().filter(res -> res.getMetadata().getName().equals(COMPONENT_PLURAL));
-        if (component.isPresent()) {
-          writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.component.log");
-        }
+        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.component.log");
       } catch (Exception ex) {
         logger.warning("Listing components failed, not collecting any data for components");
       }

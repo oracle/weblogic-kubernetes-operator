@@ -45,7 +45,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
-import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionList;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Ingress;
@@ -3493,25 +3492,30 @@ public class Kubernetes {
    * @return V1CustomResourceDefinitionList list of crds
    * @throws ApiException when list fails.
    */
-  public static V1CustomResourceDefinitionList listCrds() throws ApiException {
-    Object listClusterCustomObject = vzCustomObjectsApi
-        .listClusterCustomObject("apiextensions.k8s.io",
-            "v1",
-            "customresourcedefinitions",
-            null,
-            false,
-            null,
-            null,
-            null,
-            0,
-            null,
-            null,
-            0,
-            false);
-    getLogger().info("Dumping all crds");
-    getLogger().info(Yaml.dump(listClusterCustomObject));
-    return null;
+  public static Object listCrds() throws ApiException {
+    Object crds;
+    try {
+      crds = vzCustomObjectsApi
+          .listClusterCustomObject("apiextensions.k8s.io",
+              "v1",
+              "customresourcedefinitions",
+              null,
+              false,
+              null,
+              null,
+              null,
+              0,
+              null,
+              null,
+              0,
+              false);
+    } catch (Exception ex) {
+      getLogger().severe(ex.getMessage());
+      throw ex;
+    }
+    return crds;
   }
+  
   //------------------------
 
   private static String readExecCmdData(InputStream is) {
