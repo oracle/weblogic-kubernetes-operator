@@ -3492,7 +3492,7 @@ public class Kubernetes {
    * @return V1CustomResourceDefinitionList list of crds
    * @throws ApiException when list fails.
    */
-  public static Object listCrds() throws ApiException {
+  public static String listCrds() throws ApiException {
     Object crds;
     try {
       crds = vzCustomObjectsApi
@@ -3513,9 +3513,7 @@ public class Kubernetes {
       getLogger().severe(ex.getMessage());
       throw ex;
     }
-    getLogger().info("Dumping in listCrds method");
-    getLogger().info(crds.toString());
-    return crds;
+    return crds.toString();
   }
   
   //------------------------

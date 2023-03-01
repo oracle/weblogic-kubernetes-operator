@@ -289,14 +289,14 @@ public class LoggingUtil {
     // get verrazzano applications
     String crds = null;
     try {
-      crds = (String)listCrds();
+      crds = listCrds();
       logger.info(Yaml.dump(crds));
     } catch (Exception ex) {
       logger.warning(ex.getMessage());
       logger.warning("Listing crds failed, not collecting any data for applications");
     }
 
-    if (crds.toLowerCase().contains("applicationconfiguration")) {
+    if (crds.toLowerCase().contains("applicationconfigurations.core.oam.dev")) {
       try {
         writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
       } catch (Exception ex) {
@@ -304,7 +304,7 @@ public class LoggingUtil {
       }
       // get verrazzano components
       try {
-        writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.component.log");
+        writeToFile(Kubernetes.listComponents(namespace), resultDir, namespace + ".list.components.log");
       } catch (Exception ex) {
         logger.warning("Listing components failed, not collecting any data for components");
       }
