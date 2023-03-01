@@ -295,12 +295,24 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       removeShutdownRequestRetryCount(packet);
+
+      // TEST
+      System.out.println("!!!!!  Stop request completed successfully, code: "
+          + response.statusCode() + ", body: " + response.body());
+
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
       return doNext(pw.waitForServerShutdown(serverName, getDomainPresenceInfo(packet).getDomain(), getNext()), packet);
     }
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
+
+      // TEST
+      if (response != null) {
+        System.out.println("!!!!!  Stop request failed, code: "
+            + response.statusCode() + ", body: " + response.body());
+      }
+
       if (getThrowableResponse(packet) != null) {
         Throwable throwable = getThrowableResponse(packet);
         if (shouldRetry(packet)) {

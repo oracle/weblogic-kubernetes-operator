@@ -802,21 +802,15 @@ public class PodHelper {
                     }
                   });
 
+      // Ensure a minimum grace period so that preStop hook runs
+      gracePeriodSeconds = Math.max(gracePeriodSeconds, DEFAULT_ADDITIONAL_DELETE_TIME);
+
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
 
 
       // TEST
-      try {
-        LOGGER.info("About to delete pod " + name + ". Waiting 10 seconds...");
-        Thread.sleep(10000);
-
-        LOGGER.info("About to delete pod " + name + ". Waiting 5 more seconds...");
-        Thread.sleep(5000);
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-
+      System.out.println("!!!!!  Normal deletion of pod " + name + ", grace period: " + gracePeriodSeconds);
 
       return new CallBuilder().withRetryStrategy(retryStrategy)
               .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
