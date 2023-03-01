@@ -291,7 +291,8 @@ public class LoggingUtil {
     try {
       crds = (String)listCrds();
       logger.info(Yaml.dump(crds));
-    } catch (ApiException ex) {
+    } catch (Exception ex) {
+      logger.warning(ex.getMessage());
       logger.warning("Listing crds failed, not collecting any data for applications");
     }
 

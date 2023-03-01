@@ -3513,6 +3513,8 @@ public class Kubernetes {
       getLogger().severe(ex.getMessage());
       throw ex;
     }
+    getLogger().info("Dumping in listCrds method");
+    getLogger().info(crds.toString());
     return crds;
   }
   
