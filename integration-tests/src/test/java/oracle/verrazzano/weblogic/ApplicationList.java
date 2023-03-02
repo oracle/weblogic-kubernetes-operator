@@ -1,8 +1,7 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.verrazzano.weblogic;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,10 +17,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 @ApiModel(description = "ApplicationList is a list of ApplicationConfiguration.")
 public class ApplicationList implements KubernetesListObject {
 
-  @ApiModelProperty("The API version for the Domain.")
+  @ApiModelProperty("The API version for the ApplicationConfiguration.")
   private String apiVersion;
 
-  @ApiModelProperty("The type of resource. Must be 'ComponentList'.")
+  @ApiModelProperty("The type of resource. Must be 'ApplicationConfiguration'.")
   private String kind;
 
   @ApiModelProperty(

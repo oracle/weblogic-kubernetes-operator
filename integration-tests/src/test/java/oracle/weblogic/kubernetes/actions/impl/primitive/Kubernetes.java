@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -126,10 +126,10 @@ public class Kubernetes {
   private static final int GRACE_PERIOD = 0;
   private static final String COMPONENT_VERSION = "v1alpha2";
   private static final String COMPONENT_GROUP = "core.oam.dev";
-  public static final String COMPONENT_PLURAL = "components";
+  private static final String COMPONENT_PLURAL = "components";
   private static final String APPLICATION_VERSION = "v1alpha2";
   private static final String APPLICATION_GROUP = "core.oam.dev";
-  public static final String APPLICATION_PLURAL = "applicationconfigurations";   
+  private static final String APPLICATION_PLURAL = "applicationconfigurations";   
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
@@ -183,7 +183,7 @@ public class Kubernetes {
   /**
    * Create static instances of GenericKubernetesApi clients.
    */
-  private static void initializeGenericKubernetesApiClients() {    
+  private static void initializeGenericKubernetesApiClients() {
     // Invocation parameters aren't changing so create them as statics
     configMapClient =
         new GenericKubernetesApi<>(
@@ -1372,15 +1372,14 @@ public class Kubernetes {
   }
 
   /**
-   * List Component Custom Resources for a given namespace.
+   * List Component Custom Resources from a given namespace.
    *
-   * @param namespace name of namespace
+   * @param namespace namespace name
    * @return List of Component Custom Resources
    * @throws io.kubernetes.client.openapi.ApiException when list fails
    */
   public static ComponentList listComponents(String namespace)
       throws ApiException {
-
     KubernetesApiResponse<ComponentList> response = null;
     try {
       response = vzComCrdClient.list(namespace);
@@ -1434,15 +1433,14 @@ public class Kubernetes {
   }
   
   /**
-   * List ApplicationConfiguration Custom Resources for a given namespace.
+   * List ApplicationConfiguration Custom Resources from a given namespace.
    *
-   * @param namespace name of namespace
+   * @param namespace namespace name
    * @return List of ApplicationConfiguration Custom Resources
    * @throws io.kubernetes.client.openapi.ApiException when list fails
    */
   public static ApplicationList listApplications(String namespace)
       throws ApiException {
-
     KubernetesApiResponse<ApplicationList> response = null;
     try {
       response = vzAppCrdClient.list(namespace);
@@ -3487,9 +3485,9 @@ public class Kubernetes {
   }
 
   /**
-   * Get a list of custom resource definitions deployed in the cluster.
+   * Get a list of custom resource definitions deployed in the Kubernetes cluster.
    *
-   * @return V1CustomResourceDefinitionList list of crds
+   * @return String list of crds as String of V1CustomResourceDefinitionList
    * @throws ApiException when list fails.
    */
   public static String listCrds() throws ApiException {
