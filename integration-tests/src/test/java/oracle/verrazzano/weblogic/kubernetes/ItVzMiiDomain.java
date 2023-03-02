@@ -7,10 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Yaml;
 import oracle.verrazzano.weblogic.ApplicationConfiguration;
@@ -18,11 +15,16 @@ import oracle.verrazzano.weblogic.ApplicationConfigurationSpec;
 import oracle.verrazzano.weblogic.Component;
 import oracle.verrazzano.weblogic.ComponentSpec;
 import oracle.verrazzano.weblogic.Components;
+import oracle.verrazzano.weblogic.Destination;
+import oracle.verrazzano.weblogic.IngressRule;
+import oracle.verrazzano.weblogic.IngressTrait;
+import oracle.verrazzano.weblogic.IngressTraitSpec;
+import oracle.verrazzano.weblogic.IngressTraits;
+import oracle.verrazzano.weblogic.Path;
 import oracle.verrazzano.weblogic.Workload;
 import oracle.verrazzano.weblogic.WorkloadSpec;
 import oracle.verrazzano.weblogic.kubernetes.annotations.VzIntegrationTest;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,14 +39,18 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createApplication;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.replaceNamespace;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.VerrazzanoUtils.getIstioHost;
+import static oracle.weblogic.kubernetes.utils.VerrazzanoUtils.getLoadbalancerAddress;
+import static oracle.weblogic.kubernetes.utils.VerrazzanoUtils.setLabelToNamespace;
+import static oracle.weblogic.kubernetes.utils.VerrazzanoUtils.verifyVzApplicationAccess;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Test to create model in image domain and verify the domain started successfully
 
@@ -134,7 +140,30 @@ class ItVzMiiDomain {
             .annotations(keyValueMap))
         .spec(new ApplicationConfigurationSpec()
             .components(Arrays.asList(new Components()
-                    .componentName(domainUid))));
+                .componentName(domainUid)
+                .traits(Arrays.asList(new IngressTraits()
+                    .trait(new IngressTrait()
+                        .apiVersion("oam.verrazzano.io/v1alpha1")
+                        .kind("IngressTrait")
+                        .metadata(new V1ObjectMeta()
+                            .name("mydomain-ingress")
+                            .namespace(domainNamespace))
+                        .spec(new IngressTraitSpec()
+                            .ingressRules(Arrays.asList(
+                                new IngressRule()
+                                    .paths(Arrays.asList(new Path()
+                                        .path("/console")
+                                        .pathType("Prefix")))
+                                    .destination(new Destination()
+                                        .host(adminServerPodName)
+                                        .port(7001)),
+                                new IngressRule()
+                                    .paths(Arrays.asList(new Path()
+                                        .path("/sample-war")
+                                        .pathType("Prefix")))
+                                    .destination(new Destination()
+                                        .host(domainUid + "-cluster-" + clusterName)
+                                        .port(8001)))))))))));
     
     logger.info(Yaml.dump(component));
     logger.info(Yaml.dump(application));
@@ -154,20 +183,21 @@ class ItVzMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
-  }
+    
+    // get istio gateway host and loadbalancer address
+    String host = getIstioHost(domainNamespace);
+    String address = getLoadbalancerAddress();
 
-  private static void setLabelToNamespace(String domainNS) throws ApiException {
-    //add label to domain namespace
-    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
-    Map<String, String> labels = new java.util.HashMap<>();
-    labels.put("verrazzano-managed", "true");
-    labels.put("istio-injection", "enabled");
-    V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
-    logger.info(Yaml.dump(namespaceObject));
-    assertNotNull(namespaceObject, "Can't find namespace with name " + domainNS);
-    namespaceObject.getMetadata().setLabels(labels);
-    assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
-    logger.info(Yaml.dump(Kubernetes.getNamespace(domainNS)));
+    // verify WebLogic console page is accessible through istio/loadbalancer
+    String message = "Oracle WebLogic Server Administration Console";
+    String consoleUrl = "https://" + host + "/console/login/LoginForm.jsp --resolve " + host + ":443:" + address;
+    assertTrue(verifyVzApplicationAccess(consoleUrl, message), "Failed to get WebLogic administration console");
+
+    // verify sample running in cluster is accessible through istio/loadbalancer
+    message = "Hello World, you have reached server managed-server";
+    String appUrl = "https://" + host + "/sample-war/index.jsp --resolve " + host + ":443:" + address;
+    assertTrue(verifyVzApplicationAccess(appUrl, message), "Failed to get access to sample application");
+    
   }
 
 }

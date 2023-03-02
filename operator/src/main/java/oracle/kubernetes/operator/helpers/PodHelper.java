@@ -332,6 +332,20 @@ public class PodHelper {
   }
 
   /**
+   * get pod's label value for a label name.
+   * @param pod pod
+   * @param labelName label name
+   * @return label value
+   */
+  public static String getPodLabel(V1Pod pod, String labelName) {
+    return Optional.ofNullable(pod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(m -> m.get(labelName))
+        .orElse(null);
+  }
+
+  /**
    * Get the message from the pod's status.
    * @param pod pod
    * @return Message string from the pod's status
