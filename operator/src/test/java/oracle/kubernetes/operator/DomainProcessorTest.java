@@ -652,18 +652,17 @@ class DomainProcessorTest {
   }
 
   private void defineServerShutdownWithHttpOkResponse() {
-    httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, ADMIN_NAME, 7001),
+    httpSupport.defineResponse(createShutdownRequest(ADMIN_NAME, 7001),
         createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
     IntStream.range(1, 3).forEach(idx -> httpSupport.defineResponse(
-        createShutdownRequest(ADMIN_NAME, "cluster-managed-server" + idx, 7001),
+        createShutdownRequest("cluster-managed-server" + idx, 8001),
         createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE)));
   }
 
-  private HttpRequest createShutdownRequest(String adminName, String serverName, int portNumber) {
-    String url = "http://test-domain-" + adminName + ".namespace:" + portNumber;
+  private HttpRequest createShutdownRequest(String serverName, int portNumber) {
+    String url = "http://test-domain-" + serverName + ".namespace:" + portNumber;
     return HttpRequest.newBuilder()
-        .uri(URI.create(url + "/management/weblogic/latest/domainRuntime/serverLifeCycleRuntimes/"
-            + serverName + "/shutdown"))
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
   }

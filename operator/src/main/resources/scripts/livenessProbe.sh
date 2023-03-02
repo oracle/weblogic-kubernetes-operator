@@ -61,37 +61,22 @@ source ${SCRIPTPATH}/utils.sh
 exportEffectiveDomainHome || exit $RETVAL
 exportInstallHomes || exit $RETVAL
 
-# DEBUG
-trace "Entering livenessProbe.sh" >> /proc/1/fd/1
-
 state=$(${SCRIPTPATH}/readState.sh)
 RETVAL=$?
 if [ $RETVAL -eq 2 ]; then
   trace "Server state file not found; assuming dead"
-
-  # DEBUG
-  trace "Exiting 2 livenessProbe.sh" >> /proc/1/fd/1
-
   exit 2
 fi
 
 # If state failed, then dead
 if [[ "$state" =~ ^FAILED ]]; then
   trace SEVERE "Server in failed state"
-
-  # DEBUG
-  trace "Exiting 2 livenessProbe.sh" >> /proc/1/fd/1
-
   exit 2
 fi
 
 # If state not shutdown and process not found, then dead
 if [ $RETVAL -eq 1 ] && [[ ! "$state" =~ SHUT ]]; then
   trace "Server process not found and state not shutdown"
-
-  # DEBUG
-  trace "Exiting 1 livenessProbe.sh" >> /proc/1/fd/1
-
   exit 1
 fi
 
@@ -111,8 +96,5 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
   copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 fi
-
-# DEBUG
-trace "Exiting alive livenessProbe.sh" >> /proc/1/fd/1
 
 exit 0

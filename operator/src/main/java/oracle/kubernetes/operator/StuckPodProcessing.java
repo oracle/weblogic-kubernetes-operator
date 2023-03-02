@@ -122,10 +122,6 @@ public class StuckPodProcessing {
     }
 
     private Step createForcedDeletePodStep(V1Pod pod) {
-
-      // TEST
-      System.out.println("!!!!!  Forced deletion of pod " + pod.getMetadata().getName());
-
       return new CallBuilder()
             .withGracePeriodSeconds(0)
             .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null,

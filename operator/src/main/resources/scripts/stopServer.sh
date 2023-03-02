@@ -14,10 +14,6 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exit 1
 
-# DEBUG
-trace "Entering stopServer.sh" >> /proc/1/fd/1
-
-
 # setup ".out" location for a WL server
 serverLogHome="${LOG_HOME:-${DOMAIN_HOME}}"
 if [ -z ${LOG_HOME_LAYOUT} ] || [ "BY_SERVERS" = ${LOG_HOME_LAYOUT} ] ; then
@@ -76,10 +72,6 @@ wait_and_kill_after_timeout () {
   adjustPath
 
   kill -9 `jps -v | grep -v Jps | awk '{ print $1 }'`
-
-  # DEBUG
-  trace "Timeout stopServer.sh" >> /proc/1/fd/1
-
   exit 0
 }
 
@@ -133,9 +125,6 @@ check_for_shutdown
 [ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
 do_shutdown () {
-  # DEBUG
-  trace "Performing shut down stopServer.sh" >> /proc/1/fd/1
-
   # Otherwise, connect to and stop the server instance
   [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1
 
