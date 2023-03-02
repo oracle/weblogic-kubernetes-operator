@@ -1058,10 +1058,6 @@ public abstract class PodStepContext extends BasePodStepContext {
      * @return a step to be scheduled.
      */
     private Step deletePod(V1Pod pod, Step next) {
-
-      // TEST
-      System.out.println("!!!!!  Cycle deletion of pod " + pod.getMetadata().getName());
-
       return new CallBuilder()
           .deletePodAsync(getPodName(), getNamespace(), getDomainUid(),
               new V1DeleteOptions(), deleteResponse(pod, next));

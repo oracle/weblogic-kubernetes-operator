@@ -398,12 +398,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     @Override
     protected boolean isReady(DomainResource resource) {
-
-      // TEST
-      String state = PodHelper.getServerState(resource, serverName);
-      System.out.println("!!!!!  State of " + serverName + " is " + state);
-
-      return Optional.ofNullable(state).map(s -> s.equals(SHUTDOWN_STATE))
+      return Optional.ofNullable(PodHelper.getServerState(resource, serverName)).map(s -> s.equals(SHUTDOWN_STATE))
           .orElse(false);
     }
 

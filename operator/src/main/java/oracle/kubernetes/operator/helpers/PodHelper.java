@@ -821,11 +821,6 @@ public class PodHelper {
 
       V1DeleteOptions deleteOptions = new V1DeleteOptions().gracePeriodSeconds(gracePeriodSeconds);
       DeletePodRetryStrategy retryStrategy = new DeletePodRetryStrategy(next);
-
-
-      // TEST
-      System.out.println("!!!!!  Normal deletion of pod " + name + ", grace period: " + gracePeriodSeconds);
-
       return new CallBuilder().withRetryStrategy(retryStrategy)
               .deletePodAsync(name, namespace, domainUid, deleteOptions, new DefaultResponseStep<>(conflictStep, next));
     }

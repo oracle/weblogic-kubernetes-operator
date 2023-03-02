@@ -53,15 +53,15 @@ RUN set -eux; \
 
 USER oracle
 
+COPY --chown=oracle:root operator/scripts/* /operator/
+COPY --chown=oracle:root deployment/scripts/* /deployment/
+COPY --chown=oracle:root probes/scripts/* /probes/
+COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
+COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
+
 HEALTHCHECK --interval=1m --timeout=10s \
   CMD /probes/livenessProbe.sh
 
 WORKDIR /deployment/
 
 CMD ["/deployment/operator.sh"]
-
-COPY --chown=oracle:root operator/target/lib/*.jar /operator/lib/
-COPY --chown=oracle:root operator/target/weblogic-kubernetes-operator.jar /operator/weblogic-kubernetes-operator.jar
-COPY --chown=oracle:root operator/scripts/* /operator/
-COPY --chown=oracle:root deployment/scripts/* /deployment/
-COPY --chown=oracle:root probes/scripts/* /probes/

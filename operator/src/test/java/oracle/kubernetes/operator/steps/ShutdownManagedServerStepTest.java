@@ -167,31 +167,29 @@ class ShutdownManagedServerStepTest {
     mementos.forEach(Memento::revert);
   }
 
-  private void defineResponse(int status, String url, String serverName) {
-    defineResponse(true, status, url, serverName);
+  private void defineResponse(int status, String url) {
+    defineResponse(true, status, url);
   }
 
-  private void defineResponse(boolean gracefulShutdown, int status, String url, String serverName) {
+  private void defineResponse(boolean gracefulShutdown, int status, String url) {
     HttpRequest request = gracefulShutdown
         ? createExpectedRequest(Objects.requireNonNullElse(
-            url, "http://127.0.0.1:7001"), serverName)
+            url, "http://127.0.0.1:7001"))
         : createExpectedRequestForcedShutdown(Objects.requireNonNullElse(
-            url, "http://127.0.0.1:7001"), serverName);
+            url, "http://127.0.0.1:7001"));
     httpSupport.defineResponse(request, createStub(HttpResponseStub.class, status, ""));
   }
 
-  private HttpRequest createExpectedRequest(String url, String serverName) {
+  private HttpRequest createExpectedRequest(String url) {
     return HttpRequest.newBuilder()
-        .uri(URI.create(url + "/management/weblogic/latest/domainRuntime/serverLifeCycleRuntimes/"
-            + serverName + "/shutdown"))
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
   }
 
-  private HttpRequest createExpectedRequestForcedShutdown(String url, String serverName) {
+  private HttpRequest createExpectedRequestForcedShutdown(String url) {
     return HttpRequest.newBuilder()
-        .uri(URI.create(url + "/management/weblogic/latest/domainRuntime/serverLifeCycleRuntimes/"
-            + serverName + "/forceShutdown"))
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/forceShutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
   }
@@ -218,9 +216,6 @@ class ShutdownManagedServerStepTest {
     addEnvVar(env, "SHUTDOWN_TIMEOUT", String.valueOf(Shutdown.DEFAULT_TIMEOUT));
     addEnvVar(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(Shutdown.DEFAULT_IGNORESESSIONS));
     addEnvVar(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS));
-    addEnvVar(env, "ADMIN_NAME", ADMIN_NAME);
-    addEnvVar(env, "ADMIN_PORT", String.valueOf(ADMIN_PORT_NUM));
-    addEnvVar(env, "AS_SERVICE_NAME", UID + "-" + ADMIN_NAME);
     return env;
   }
 
@@ -232,7 +227,7 @@ class ShutdownManagedServerStepTest {
   void whenAuthorizedToInvokeShutdown_verifySecretSet() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(200, "http://test-domain-admin-server.namespace:3456", CONFIGURED_MANAGED_SERVER1);
+    defineResponse(200, "http://test-domain-conf-managed-server1.namespace:7001");
 
     // Validate not set before running steps
     assertThat(info.getWebLogicCredentialsSecret(), is(nullValue()));
@@ -248,7 +243,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_configuredClusterServer_verifySuccess() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(200, "http://test-domain-admin-server.namespace:3456", CONFIGURED_MANAGED_SERVER1);
+    defineResponse(200, "http://test-domain-conf-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
@@ -259,7 +254,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_configuredClusterServer_verifyFailure() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(404, "http://test-domain-conf-managed-server1.namespace:7001", CONFIGURED_MANAGED_SERVER1);
+    defineResponse(404, "http://test-domain-conf-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
@@ -270,7 +265,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_standaloneServer_verifySuccess() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
-    defineResponse(200, "http://test-domain-admin-server.namespace:3456", MANAGED_SERVER1);
+    defineResponse(200, "http://test-domain-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
@@ -281,7 +276,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_standaloneServer_verifyFailure() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
-    defineResponse(404, "http://test-domain-managed-server1.namespace:7001", MANAGED_SERVER1);
+    defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
@@ -292,7 +287,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_standaloneServer_DomainNotFound_verifyFailureAndRunNextStep() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
-    defineResponse(404, "http://test-domain-managed-server1.namespace:7001", MANAGED_SERVER1);
+    defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
     testSupport.failOnResource(KubernetesTestSupport.DOMAIN, UID, NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
@@ -305,7 +300,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_dynamicServer_verifySuccess() {
     selectServer(DYNAMIC_MANAGED_SERVER1, dynamicServerService);
 
-    defineResponse(200, "http://test-domain-admin-server.namespace:3456", DYNAMIC_MANAGED_SERVER1);
+    defineResponse(200, "http://test-domain-dyn-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
@@ -316,7 +311,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_dynamicServer_verifyFailure() {
     selectServer(DYNAMIC_MANAGED_SERVER1, dynamicServerService);
 
-    defineResponse(404, "http://test-domain-dyn-managed-server1.namespace:8001", DYNAMIC_MANAGED_SERVER1);
+    defineResponse(404, "http://test-domain-dyn-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
@@ -328,7 +323,7 @@ class ShutdownManagedServerStepTest {
     selectServer(MANAGED_SERVER1, standaloneServerService);
     setForcedShutdownType(MANAGED_SERVER1);
 
-    defineResponse(false, 200, "http://test-domain-admin-server.namespace:3456", MANAGED_SERVER1);
+    defineResponse(false, 200, "http://test-domain-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
