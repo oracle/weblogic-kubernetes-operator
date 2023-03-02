@@ -624,7 +624,7 @@
     <maven.version.range>[3.5.2,)</maven.version.range>
     <maven-enforcer-plugin-version>3.2.1</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.2.0</maven-clean-plugin-version>
-    <maven-compiler-plugin-version>3.10.1</maven-compiler-plugin-version>
+    <maven-compiler-plugin-version>3.11.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.0</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.0</maven-install-plugin-version>
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
@@ -638,7 +638,7 @@
     <maven-dependency-plugin-version>3.5.0</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.4.1</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
-    <checkstyle-version>10.7.0</checkstyle-version>
+    <checkstyle-version>10.8.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -675,7 +675,7 @@
     <jackson-databind-version>2.14.2</jackson-databind-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
-    <dependency-check-version>8.1.0</dependency-check-version>
+    <dependency-check-version>8.1.2</dependency-check-version>
     <logback-classic-version>1.2.11</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
