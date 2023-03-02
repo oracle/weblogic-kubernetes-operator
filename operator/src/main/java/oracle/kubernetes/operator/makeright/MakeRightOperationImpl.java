@@ -37,7 +37,7 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
     return willInterrupt;
   }
 
-  public boolean wasStartedFromEvent() {
+  public boolean hasEventData() {
     return eventData != null;
   }
 }
