@@ -30,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -39,8 +38,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.VZ_ENV;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listCrds;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -286,30 +285,19 @@ public class LoggingUtil {
       logger.warning(ex.getMessage());
     }
 
-    // get verrazzano applications
-    String crds = null;
-    try {
-      crds = listCrds();
-      logger.info(Yaml.dump(crds));
-    } catch (Exception ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Listing crds failed, not collecting any data for applications");
-    }
-
-    if (crds.toLowerCase().contains("applicationconfigurations.core.oam.dev")) {
+    // get verrazzano applications and components
+    if (VZ_ENV) {
       try {
         writeToFile(Kubernetes.listApplications(namespace), resultDir, namespace + ".list.applications.log");
       } catch (Exception ex) {
         logger.warning("Listing applications failed, not collecting any data for applications");
       }
-      // get verrazzano components
       try {
         writeToFile(Kubernetes.listComponents(namespace), resultDir, namespace + ".list.components.log");
       } catch (Exception ex) {
         logger.warning("Listing components failed, not collecting any data for components");
       }
     }
-
   }
 
   /**

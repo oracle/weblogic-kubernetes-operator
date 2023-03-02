@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
@@ -405,4 +406,12 @@ public interface TestConstants {
   // metrics server constants
   public static final String METRICS_SERVER_YAML =
       "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+  
+  // verrazzano related constants
+  public static final String VZ_SYSTEM_NS = "ingress-nginx";
+  public static final String VZ_INGRESS_NS = "verrazzano-system";
+  public static final String VZ_ISTIO_NS = "istio-system";
+  public static final boolean VZ_ENV = assertDoesNotThrow(() -> listNamespaces().stream()
+        .anyMatch(ns -> ns.equals(VZ_SYSTEM_NS)));
+  
 }
