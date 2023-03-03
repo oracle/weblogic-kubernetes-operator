@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
@@ -52,7 +53,8 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;
-  private Map<String, DomainResource> activeDomains = new HashMap<>();
+  private final Set<String> modifiedDomainNames = new HashSet<>();
+  private final Set<String> newDomainNames = new HashSet<>();
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -94,13 +96,11 @@ class DomainResourcesValidation {
       @Override
       public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        List<MakeRightDomainOperation> operations = new ArrayList<>();
-        activeDomains.values().stream().forEach(domain -> operations.add(generateMakeRightOperations(dp, domain)));
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForDeletedClusters(dp);
-        operations.forEach(op -> op.execute());
+        getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
   }
@@ -219,7 +219,13 @@ class DomainResourcesValidation {
   }
 
   private void addDomain(DomainResource domain) {
-    activeDomains.put(domain.getDomainUid(), domain);
+    DomainPresenceInfo cachedInfo = getDomainPresenceInfoMap().get(domain.getDomainUid());
+    if (cachedInfo == null) {
+      newDomainNames.add(domain.getDomainUid());
+    } else if (generationChanged(cachedInfo, domain)) {
+      modifiedDomainNames.add(domain.getDomainUid());
+    }
+    getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
   private void addClusterList(ClusterList list) {
@@ -262,27 +268,28 @@ class DomainResourcesValidation {
     return dpi.getDomain() != null;
   }
 
-  private MakeRightDomainOperation generateMakeRightOperations(DomainProcessor dp, DomainResource domain) {
-    Map<String, DomainPresenceInfo> domainInfos = getDomainPresenceInfoMap();
-    DomainPresenceInfo info = domainInfos.get(domain.getDomainUid());
-    EventItem event = null;
-    if (info == null) {
-      info = new DomainPresenceInfo(domain);
-      event = DOMAIN_CREATED;
-      domainInfos.put(domain.getDomainUid(), info);
-    } else {
-      if (!Objects.equals(info.getDomain().getMetadata().getGeneration(), domain.getMetadata().getGeneration())) {
-        event = DOMAIN_CHANGED;
-      }
-      info.setDomain(domain);
-    }
-
+  private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
-    if (event != null) {
-      makeRight.withEventData(new EventData(event)).interrupt();
+    if (newDomainNames.contains(info.getDomainUid())) {
+      makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
+    } else if (modifiedDomainNames.contains(info.getDomainUid())) {
+      makeRight.withEventData(new EventData(DOMAIN_CHANGED)).interrupt();
     }
-    return makeRight;
+    makeRight.execute();
+  }
+
+  private boolean generationChanged(DomainPresenceInfo cachedInfo, DomainResource domain) {
+    return !Objects.equals(getGeneration(cachedInfo), domain.getMetadata().getGeneration());
+  }
+
+  @Nullable
+  private Long getGeneration(DomainPresenceInfo cachedInfo) {
+    return Optional.ofNullable(cachedInfo)
+        .map(DomainPresenceInfo::getDomain)
+        .map(DomainResource::getMetadata)
+        .map(V1ObjectMeta::getGeneration)
+        .orElse(null);
   }
 
   private void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
