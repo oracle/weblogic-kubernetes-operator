@@ -270,13 +270,21 @@ class DomainResourcesValidation {
 
   private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
-    MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
+    dp.createMakeRightOperation(info)
+        .withEventData(new EventData(getEventItem(info)))
+        .withExplicitRecheck()
+        .interrupt()
+        .execute();
+  }
+
+  private EventItem getEventItem(DomainPresenceInfo info) {
     if (newDomainNames.contains(info.getDomainUid())) {
-      makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
-    } else if (modifiedDomainNames.contains(info.getDomainUid())) {
-      makeRight.withEventData(new EventData(DOMAIN_CHANGED)).interrupt();
+      return DOMAIN_CREATED;
     }
-    makeRight.execute();
+    if (modifiedDomainNames.contains(info.getDomainUid())) {
+      return DOMAIN_CHANGED;
+    }
+    return null;
   }
 
   private boolean generationChanged(DomainPresenceInfo cachedInfo, DomainResource domain) {
