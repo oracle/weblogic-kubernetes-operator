@@ -31,12 +31,29 @@ cleanupLB() {
       for i in "${iparray[@]}"
          do
             lb=`oci lb load-balancer get --load-balancer-id=$i`
+            echo "deleting lb with id $i   $lb"
             if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
                echo "deleting lb with id $i"
+               sleep 60
                oci lb load-balancer delete --load-balancer-id=$i --force || true
             fi
         done
     done
+  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
+  iparray=(${myip// /})
+   for k in "${mysubnetsidarray[@]}"
+      do
+        for i in "${iparray[@]}"
+           do
+              lb=`oci lb load-balancer get --load-balancer-id=$i`
+              echo "deleting lb with id $i   $lb"
+              if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
+                 echo "deleting lb with id $i"
+                 sleep 60
+                 oci lb load-balancer delete --load-balancer-id=$i --force || true
+              fi
+          done
+      done
 }
 
 deleteOKE() {
@@ -60,4 +77,4 @@ out=$(cleanupLB Subnet01 && :)
 echo $out
 out=$(cleanupLB Subnet02 && :)
 echo $out
-deleteOKE
+deleteOKE || true
