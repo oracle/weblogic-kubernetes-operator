@@ -6,8 +6,10 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,7 @@ import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -37,6 +40,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 
 /**
@@ -48,6 +52,7 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;
+  private Map<String, DomainResource> activeDomains = new HashMap<>();
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -89,11 +94,13 @@ class DomainResourcesValidation {
       @Override
       public void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
+        List<MakeRightDomainOperation> operations = new ArrayList<>();
+        activeDomains.values().stream().forEach(domain -> operations.add(generateMakeRightOperations(dp, domain)));
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForDeletedClusters(dp);
-        getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
+        operations.forEach(op -> op.execute());
       }
     };
   }
@@ -212,7 +219,7 @@ class DomainResourcesValidation {
   }
 
   private void addDomain(DomainResource domain) {
-    getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
+    activeDomains.put(domain.getDomainUid(), domain);
   }
 
   private void addClusterList(ClusterList list) {
@@ -244,7 +251,7 @@ class DomainResourcesValidation {
     info.setDeleting(true);
     info.setPopulated(true);
     dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().withEventData(new EventData(
-        EventHelper.EventItem.DOMAIN_DELETED)).execute();
+        EventItem.DOMAIN_DELETED)).execute();
   }
 
   private Stream<DomainPresenceInfo> getActiveDomainPresenceInfos() {
@@ -255,13 +262,27 @@ class DomainResourcesValidation {
     return dpi.getDomain() != null;
   }
 
-  private static void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
+  private MakeRightDomainOperation generateMakeRightOperations(DomainProcessor dp, DomainResource domain) {
+    Map<String, DomainPresenceInfo> domainInfos = getDomainPresenceInfoMap();
+    DomainPresenceInfo info = domainInfos.get(domain.getDomainUid());
+    EventItem event = null;
+    if (info == null) {
+      info = new DomainPresenceInfo(domain);
+      event = DOMAIN_CREATED;
+      domainInfos.put(domain.getDomainUid(), info);
+    } else {
+      if (!Objects.equals(info.getDomain().getMetadata().getGeneration(), domain.getMetadata().getGeneration())) {
+        event = DOMAIN_CHANGED;
+      }
+      info.setDomain(domain);
+    }
+
     info.setPopulated(true);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
-    if (info.getDomain().getStatus() == null) {
-      makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
+    if (event != null) {
+      makeRight.withEventData(new EventData(event)).interrupt();
     }
-    makeRight.execute();
+    return makeRight;
   }
 
   private void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
