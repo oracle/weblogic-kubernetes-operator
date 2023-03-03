@@ -136,7 +136,6 @@ public class Kubernetes {
   private static CoreV1Api coreV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
-  private static CustomObjectsApi vzCustomObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
   private static AdmissionregistrationV1Api admissionregistrationApi = null;
   private static DeleteOptions deleteOptions = null;
@@ -171,7 +170,6 @@ public class Kubernetes {
       coreV1Api = new CoreV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
-      vzCustomObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       admissionregistrationApi = new AdmissionregistrationV1Api();
       initializeGenericKubernetesApiClients();
@@ -1354,7 +1352,7 @@ public class Kubernetes {
 
     Object response;
     try {
-      response = vzCustomObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
+      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
           componentVersion, //custom resource's version
           namespace, // custom resource's namespace
           COMPONENT_PLURAL, // custom resource's plural name
@@ -1415,7 +1413,7 @@ public class Kubernetes {
     JsonElement json = convertToJson(application);
     Object response;    
     try {
-      response = vzCustomObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
+      response = customObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
           applicationVersion, //custom resource's version
           namespace, // custom resource's namespace
           APPLICATION_PLURAL, // custom resource's plural name
@@ -3493,7 +3491,7 @@ public class Kubernetes {
   public static String listCrds() throws ApiException {
     Object crds;
     try {
-      crds = vzCustomObjectsApi
+      crds = customObjectsApi
           .listClusterCustomObject("apiextensions.k8s.io",
               "v1",
               "customresourcedefinitions",
