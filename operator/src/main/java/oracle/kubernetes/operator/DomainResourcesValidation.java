@@ -270,11 +270,12 @@ class DomainResourcesValidation {
 
   private void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
-    dp.createMakeRightOperation(info)
-        .withEventData(new EventData(getEventItem(info)))
-        .withExplicitRecheck()
-        .interrupt()
-        .execute();
+    EventItem eventItem = getEventItem(info);
+    MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
+    if (eventItem != null) {
+      makeRight.withEventData(new EventData(getEventItem(info))).interrupt();
+    }
+    makeRight.execute();
   }
 
   private EventItem getEventItem(DomainPresenceInfo info) {
