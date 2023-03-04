@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -105,8 +105,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItElasticLogging {
 
   // constants for creating domain image using model in image
-  private static final String WLS_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
-  private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
+  private static final String WLS_ELK_LOGGING_MODEL_FILE = "model.wlslogging.yaml";
+  private static final String WLS_ELK_LOGGING_IMAGE_NAME = "wls-logging-image";
 
   // constants for testing WebLogic Logging Exporter
   private static final String wlsLoggingExporterYamlFileLoc = RESOURCE_DIR + "/loggingexporter";
@@ -389,17 +389,17 @@ class ItElasticLogging {
     // create image with model files
     if (!OKD) {
       logger.info("Create image with model file and verify");
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,MII_BASIC_APP_NAME);
+      miiImage = createMiiImageAndVerify(WLS_ELK_LOGGING_IMAGE_NAME, WLS_ELK_LOGGING_MODEL_FILE,MII_BASIC_APP_NAME);
     } else {
       List<String> appList = new ArrayList<>();
       appList.add(MII_BASIC_APP_NAME);
 
       // build the model file list
-      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WLS_LOGGING_MODEL_FILE);
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WLS_ELK_LOGGING_MODEL_FILE);
 
       // create image with model files
       logger.info("Create image with model file and verify");
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, modelList, appList);
+      miiImage = createMiiImageAndVerify(WLS_ELK_LOGGING_IMAGE_NAME, modelList, appList);
     }
 
     // repo login and push image to registry if necessary
