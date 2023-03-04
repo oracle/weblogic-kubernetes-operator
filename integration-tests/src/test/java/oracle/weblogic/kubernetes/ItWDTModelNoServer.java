@@ -38,6 +38,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test creating MII domain with different AdminServerName and Server settings in WDT model file.
+ * The test contains the following usecases:
+ * 1) AdminServerName is not specified and no Server section in the model file.
+ * 2) AdminServerName is not specified and no 'AdminServer' specified in Server section.
+ *    There is a server 'myadmin' specified in the Server instead.
+ * 3) AdminServerName is not specified and 'AdminServer' is specified in the Server section.
+ * 4) AdminServerName is not specified and 'adminserver' (all lower case) is specified in the Server section.
+ * 5) AdminServerName is specified and the named server is not set in the Server section.
+ * 6) Configured cluster defined but no managed server associated with it in the Server section.
  */
 @DisplayName("Test creating MII domain with different AdminServerName and Server settings in WDT model file")
 @IntegrationTest
@@ -86,7 +94,7 @@ class ItWDTModelNoServer {
 
   /**
    * Test in the WDT model file there is no AdminServerName and no Server section defined.
-   * Verify that 'AdminServer' will be generated.
+   * Verify that AdminServerName is set to 'AdminServer' and the admin server pod will be generated.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and no Server section defined")
@@ -121,8 +129,9 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is no AdminServerName and in Server section myadmin defined.
-   * Verify that 'AdminServer' will be generated. Also the pod domainuid-myadmin is also created.
+   * Test in the WDT model file AdminServerName is not specified and in Server section there is a server 'myadmin' set.
+   * Verify that AdminServerName is set to 'AdminServer' and the admin server pod with name domainuid-adminserver
+   * is created. The pod domainuid-myadmin is also created.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section myadmin defined")
@@ -160,8 +169,8 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is no AdminServerName and in Server section AdminServer defined.
-   * Verify 'AdminServer' pod is generated.
+   * Test in the WDT model file there is no AdminServerName and in Server section the server 'AdminServer' defined.
+   * Verify that AdminServerName is set to 'AdminServer' and the admin server pod is created.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section AdminServer defined")
@@ -196,12 +205,13 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is no AdminServerName and in Server section adminserver defined.
+   * Test in the WDT model file there is no AdminServerName and in Server section the server 'adminserver' defined.
+   * Note that the server name 'adminserver' is all lower case.
    * Disabled due to bug.
    */
   @Disabled
   @Test
-  @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section adminserver defined")
+  @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section 'adminserver' defined")
   void testWdtModelNoAdminServerNameWithAdminServerLLowercaseInServer() {
 
     String wdtModelFile = "model-noadminservername-hasadminserverlowercase.yaml";
@@ -234,7 +244,9 @@ class ItWDTModelNoServer {
 
   /**
    * Test in the WDT model file there is AdminServerName set and the named server is not in Server section.
-   * Verify WDT will create the named server as in the AdminServerName.
+   * In the model file, the AdminServerName is set to 'new-admin-server'. In the Server section, there is no
+   * 'new-admin-server' set. There is a server 'admin-server' set instead.
+   * Verify WDT will create the named server 'new-admin-server' as in the AdminServerName.
    */
   @Test
   @DisplayName("Test in the WDT model file there is AdminServerName set and the named server is not in Server section")
@@ -273,7 +285,7 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is configured cluster defined but no managed server associated with it in Server.
+   * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
    * Verify the operator will generate validation error in the log.
    */
   @Test
