@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -338,6 +339,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
       if (!OKD) {
         logger.info("Uninstall istio after all test suites are run");
         uninstallIstio();
+      }
+      if (!OKD && !OKE_CLUSTER) {
+        logger.info("Delete istio-system namespace after all test suites are run");
+        deleteNamespace("istio-system");
       }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
