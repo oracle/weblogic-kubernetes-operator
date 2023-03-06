@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -292,15 +293,16 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
+    String nonExistingClusterName = "nonexisting-cluster";
     OffsetDateTime timestamp = now();
     createClusterAndVerify(createClusterResource(
-        "nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
+        nonExistingClusterName, nonExistingClusterName, domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
     try {
       String patchStr
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-          + "    {\"name\" : \"nonexisting-cluster\"}"
+          + "    {\"name\" : \"" + nonExistingClusterName + "\"}"
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -316,7 +318,10 @@ class ItKubernetesDomainEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-
+      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, domainNamespace3).getSpec()
+          .getClusters().stream().anyMatch(cluster -> cluster.getName().equals(nonExistingClusterName));
+      testUntil(clusterNotFound, logger, "Waiting for cluster {0} to be removed from domain resource in namespace {1}",
+          nonExistingClusterName, domainNamespace3);
       // verify the Changed event is generated
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
