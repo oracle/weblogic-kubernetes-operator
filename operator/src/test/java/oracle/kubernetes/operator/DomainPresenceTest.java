@@ -356,6 +356,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   void whenNewDomainAdded_generateDomainCreatedEvent() {
+    processor.getDomainPresenceInfoMap().clear();
     addDomainResource(UID1, NS);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
@@ -364,7 +365,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenNewDomainChanged_generateDomainChangedEvent() {
+  void whenDomainChanged_generateDomainChangedEvent() {
     DomainResource domain1 = createDomain(UID1, NS);
     domain1.getMetadata().setGeneration(1234L);
     processor.getDomainPresenceInfoMap()
@@ -376,6 +377,20 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
     assertThat(testSupport, hasEvent(DOMAIN_CHANGED.getReason()));
+  }
+
+
+  @Test
+  void whenDomainStatusBecameNull_generateDomainCreatedEvent() {
+    DomainResource domain1 = createDomain(UID1, NS);
+    processor.getDomainPresenceInfoMap()
+        .computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, new DomainPresenceInfo(domain1));
+    domain1.setStatus(null);
+    testSupport.defineResources(domain1);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
   }
 
   @Test

@@ -273,13 +273,13 @@ class DomainResourcesValidation {
     EventItem eventItem = getEventItem(info);
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (eventItem != null) {
-      makeRight.withEventData(new EventData(getEventItem(info))).interrupt();
+      makeRight.withEventData(new EventData(eventItem)).interrupt();
     }
     makeRight.execute();
   }
 
   private EventItem getEventItem(DomainPresenceInfo info) {
-    if (newDomainNames.contains(info.getDomainUid())) {
+    if (newDomainNames.contains(info.getDomainUid()) || info.getDomain().getStatus() == null) {
       return DOMAIN_CREATED;
     }
     if (modifiedDomainNames.contains(info.getDomainUid())) {
