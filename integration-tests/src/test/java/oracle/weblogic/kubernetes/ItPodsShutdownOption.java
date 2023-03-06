@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.doesPodLogContainString;
@@ -168,10 +169,8 @@ class ItPodsShutdownOption {
   @AfterEach
   public void afterEach() {
     logger.info("Deleting the domain resource");
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName1, domainUid, domainNamespace);
     checkPodDoesNotExist(indManagedServerPodName2, domainUid, domainNamespace);
     if (cluster != null) {
