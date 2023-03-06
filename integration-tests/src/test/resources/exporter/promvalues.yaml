@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 rbac:
   create: true
@@ -12,9 +12,32 @@ serviceAccounts:
 
 pushgateway:
   enabled: false
+  image:
+    repository: phx.ocir.io/weblogick8s/test-images/prom/pushgateway
+    tag: v1.4.3
+    pullPolicy: IfNotPresent
 
 alertmanager:
   enabled: true
+configmapReload:
+  prometheus:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: true
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: phx.ocir.io/weblogick8s/test-images/jimmidyson/configmap-reload
+      tag: v0.5.0
+      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+      digest: ""
+      pullPolicy: IfNotPresent
+
 
   ## Use a ClusterRole (and ClusterRoleBinding)
   ## - If set to false - we define a Role and RoleBinding in the defined namespaces ONLY
@@ -33,8 +56,8 @@ alertmanager:
   #   runAsNonRoot: false
   #  runAsUser: 0
   image:
-    repository: quay.io/prometheus/alertmanager
-    tag: v0.23.0
+    repository: phx.ocir.io/weblogick8s/test-images/prometheus/alertmanager
+    tag: v0.24.0
     pullPolicy: IfNotPresent
   securityContext:
     runAsUser: 65534
@@ -59,8 +82,8 @@ server:
     scrape_interval: 10s
     scrape_timeout: 5s
   image:
-    repository: quay.io/prometheus/prometheus
-    tag: v2.31.1
+    repository: phx.ocir.io/weblogick8s/test-images/prometheus/prometheus
+    tag: v2.39.1
     pullPolicy: IfNotPresent
 
 alertmanagerFiles:
