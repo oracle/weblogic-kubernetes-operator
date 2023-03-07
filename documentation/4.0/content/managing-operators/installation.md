@@ -174,6 +174,11 @@ The rationale for supplying a new `image` value is because, even with a new vers
 `--reuse-values` will retain the previous `image` value from when it was installed.  To upgrade,
 you must override the `image` value to use the new operator image version.
 
+**NOTE**: When upgrading a 3.x operator to 4.x, note that the default value of `domainNamespaceSelectionStrategy`
+changed from `List` to `LabelSelector`, so you need to label the namespaces that the operator is supposed
+to watch, rather than just providing the list of namespaces. For detailed information,
+see [Namespace management]({{<relref "/managing-operators/namespace-management#check-the-namespaces-that-a-running-operator-manages">}}).
+
 For example:
 
 ```text
