@@ -378,10 +378,9 @@ class ItKubernetesDomainEvents {
     logger.info("verify domain failed event");
     checkFailedEvent(opNamespace, domainNamespace5, domainUid5, ABORTED_ERROR, "Warning", timestamp);
 
-    listObjects();
     shutdownDomain(domainUid5, domainNamespace5);
     listObjects();
-    deleteDomainResource(domainUid5, domainNamespace5);
+    deleteDomainResource(domainNamespace5, domainUid5);
   }
 
   /**
