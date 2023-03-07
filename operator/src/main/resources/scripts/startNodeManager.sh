@@ -69,6 +69,48 @@ trace "Starting node manager for domain-uid='$DOMAIN_UID' and server='$SERVER_NA
 
 checkEnv JAVA_HOME NODEMGR_HOME DOMAIN_HOME DOMAIN_UID ORACLE_HOME MW_HOME WL_HOME || exit 1
 
+if [ ! -d "${JAVA_HOME}" ]; then
+  trace SEVERE "JAVA_HOME directory not found '${JAVA_HOME}'." \
+               "The Java install may be missing from the image or" \
+               "JAVA_HOME is not set correctly."
+  exit 1
+fi
+
+if [ ! -d "${WL_HOME}" ]; then
+  trace SEVERE "WL_HOME '${WL_HOME}' not found." \
+               "The WebLogic install may be missing from the image or" \
+               "one of ORACLE_HOME, WL_HOME, or MW_HOME is not set correctly."
+  exit 1
+fi
+
+if [ ! -f "${stm_script}" ]; then
+  trace SEVERE "Missing script '${stm_script}' in WL_HOME '${WL_HOME}'." \
+               "The WebLogic install may be missing from the image or" \
+               "one of ORACLE_HOME, WL_HOME, or MW_HOME is not set correctly."
+  exit 1
+fi
+
+if [ ! -d "${DOMAIN_HOME}" ]; then
+  # MII is not specifically mentioned because MII checks for this problem earlier.
+  trace SEVERE \
+    "The directory '$DOMAIN_HOME' specified by 'domain.spec.domainHome' was not found." \
+    "For Domain-in-Image and Domain-in-PV domains," \
+    "this directory is expected to reference a fully configured WebLogic domain" \
+    "that is set up before the domain resource is deployed."
+  exit 1
+fi
+
+if [ ! -f "${DOMAIN_HOME}/config/config.xml" ]; then
+  # MII is not specifically mentioned because MII checks for this problem earlier.
+  trace SEVERE \
+    "The directory '$DOMAIN_HOME' specified by 'domain.spec.domainHome' exists" \
+    "but no 'config/config.xml' file was found within this directory." \
+    "For Domain-in-Image and Domain-in-PV domains," \
+    "this directory is expected to reference a fully configured WebLogic domain" \
+    "that is set up before the domain resource is deployed."
+  exit 1
+fi
+
 if [ "${SERVER_NAME}" = "introspector" ]; then
   SERVICE_NAME=localhost
   trace "Contents of '${DOMAIN_HOME}/config/config.xml':"
@@ -76,12 +118,6 @@ if [ "${SERVER_NAME}" = "introspector" ]; then
 else
   checkEnv SERVER_NAME ADMIN_NAME AS_SERVICE_NAME SERVICE_NAME USER_MEM_ARGS || exit 1
 fi
-
-[ ! -d "${JAVA_HOME}" ]                     && trace SEVERE "JAVA_HOME directory not found '${JAVA_HOME}'."           && exit 1 
-[ ! -d "${DOMAIN_HOME}" ]                   && trace SEVERE "DOMAIN_HOME directory not found '${DOMAIN_HOME}'."       && exit 1 
-[ ! -f "${DOMAIN_HOME}/config/config.xml" ] && trace SEVERE "'${DOMAIN_HOME}/config/config.xml' not found."           && exit 1 
-[ ! -d "${WL_HOME}" ]                       && trace SEVERE "WL_HOME '${WL_HOME}' not found."                         && exit 1 
-[ ! -f "${stm_script}" ]                    && trace SEVERE "Missing script '${stm_script}' in WL_HOME '${WL_HOME}'." && exit 1 
 
 ###############################################################################
 #

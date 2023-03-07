@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -194,6 +194,14 @@ class AsyncRequestStepTest {
         containsString(OP_NAME), containsString(RESOURCE_TYPE),
         containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
     ));
+  }
+
+  @Test
+  void afterFailedCallback409_failedStatusConditionNotSet() {
+    testSupport.addDomainPresenceInfo(info);
+    sendFailedCallback(HttpURLConnection.HTTP_CONFLICT);
+
+    assertThat(domain.getStatus().hasConditionWithType(FAILED), is(false));
   }
 
   @Test

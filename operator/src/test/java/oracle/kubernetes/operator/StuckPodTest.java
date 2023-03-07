@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -8,16 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Component;
@@ -242,11 +241,6 @@ class StuckPodTest {
       }
 
       @Override
-      public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-        return Stream.empty();
-      }
-
-      @Override
       public Map<String, Map<String,DomainPresenceInfo>> getDomainPresenceInfoMap() {
         return domains;
       }
@@ -256,6 +250,16 @@ class StuckPodTest {
 
       @Override
       public MakeRightDomainOperation withExplicitRecheck() {
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation interrupt() {
         return this;
       }
 
