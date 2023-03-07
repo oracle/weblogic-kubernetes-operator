@@ -121,7 +121,8 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 AKS support and limitations:
 
 * Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
-* All three domain home source types are supported (Domain in Image, Model in Image, and Domain in PV).
+* All three [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are supported (Domain in Image, Model in Image, and Domain in PV).
+   * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes Service of `type=LoadBalancer`.
