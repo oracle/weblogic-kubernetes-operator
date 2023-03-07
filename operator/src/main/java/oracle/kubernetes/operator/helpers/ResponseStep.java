@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -26,6 +26,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -177,7 +178,9 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
-    if ((callResponse != null) && (callResponse.getStatusCode() != HTTP_NOT_FOUND)) {
+    if ((callResponse != null)
+        && (callResponse.getStatusCode() != HTTP_NOT_FOUND)
+        && (callResponse.getStatusCode() != HTTP_CONFLICT)) {
       addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
       if (LOGGER.isWarningEnabled()) {
         LOGGER.warning(

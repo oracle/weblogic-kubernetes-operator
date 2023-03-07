@@ -26,7 +26,7 @@ AKS cluster, AKS resources, the Azure Container Registry (ACR),
 
 This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits:
+- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with model in image offers the following benefits:
 
     - Reuse image to create different domains with different `domainUID` and different configurations.
     - Mutate the domain home configuration with additional model files supplied in a `ConfigMap`.  Many such changes do not need to restart the entire domain for the change to take effect.

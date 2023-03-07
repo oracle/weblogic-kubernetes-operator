@@ -3,6 +3,9 @@
 
 package oracle.verrazzano.weblogic;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 
@@ -10,7 +13,9 @@ import io.swagger.annotations.ApiModelProperty;
     description
     = "Components represents a Verrazzano component and how it will be realized in the Kubernetes cluster.")
 public class Components {
-
+  @ApiModelProperty("List of ingress traits.")
+  public List<IngressTraits> traits = new ArrayList<>();
+  
   @ApiModelProperty("Component name to deploy.")
   private String componentName;
 
@@ -30,5 +35,21 @@ public class Components {
   public void setComponentName(String componentName) {
     this.componentName = componentName;
   }
+  
+  public Components traits(List<IngressTraits> traits) {
+    this.traits = traits;
+    return this;
+  }
 
+  public List<IngressTraits> traits() {
+    return traits;
+  }
+
+  public List<IngressTraits> getTraits() {
+    return traits;
+  }
+
+  public void setTraits(List<IngressTraits> traits) {
+    this.traits = traits;
+  }
 }
