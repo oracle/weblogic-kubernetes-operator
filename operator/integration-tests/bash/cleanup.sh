@@ -101,6 +101,11 @@ if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
   exit 1
 fi
 
+stripRange() {
+  # With newer k8s versions, 'range' json paths have spontaneously started to include a blank line, and sometimes a 'List' row
+  sed '/^[[:space:]]*$/d' | sed '/^List.*/d'
+}
+
 # wait for current jobs to finish, and kill any remaining after $1 seconds, default is 15 seconds
 jobWaitAndKill() {
   local job_timeout=${1:-15}
@@ -135,7 +140,7 @@ doDeleteByName() {
 
   local tmpfile="/tmp/$(basename $0).doDeleteByName.$PPID.$mypid.$SECONDS"
 
-  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
+  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{.items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' | stripRange > $tmpfile
 
   # exit silently if nothing to delete
   if [ `cat $tmpfile | wc -l` -eq 0 ]; then
@@ -163,7 +168,7 @@ doDeleteByRange() {
 
   local tmpfile="/tmp/$(basename $0).doDeleteByRange.$PPID.$mypid.$SECONDS"
 
-  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' > $tmpfile
+  ${KUBERNETES_CLI} get "$@" -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}' | stripRange > $tmpfile
 
   # exit silently if nothing to delete
   if [ `cat $tmpfile | wc -l` -eq 0 ]; then
@@ -193,9 +198,9 @@ waitForWebLogicPods() {
   echo -n "@@ `timestamp` Info: seconds/introspector-pod-count/wl-pod-count:"
   while [ $((SECONDS - STARTSEC)) -lt $max_secs ]; do
     # WebLogic server pods have the 'weblogic.serverName' label
-    pod_count_wls="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
+    pod_count_wls="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange | wc -l)"
     # Introspector pods have the 'weblogic.domainUID' and 'job-name' labels
-    pod_count_int="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.domainUID -l job-name -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | wc -l)"
+    pod_count_int="$(${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.domainUID -l job-name -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange | wc -l)"
     pod_count_tot=$((pod_count_wls + pod_count_int))
       if [ $((pod_count_tot)) -eq 0 ]; then
       break
@@ -250,24 +255,25 @@ deleteDomains() {
   local dn
   local domain_crd=domains.weblogic.oracle
   local count=0
+  local prefix
 
   echo "@@ `timestamp` Info: Setting /tmp/diefast on every WL pod to speedup its demise."
 
   if [ "$DRY_RUN" = "true" ]; then
-    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName \
-      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-      | awk '{ system("echo @@ DRYRUN: '${KUBERNETES_CLI}' -n " $1 " exec " $2 " touch /tmp/diefast") }'
+    prefix="echo @@ DRYRUN: "
   else
-    ${KUBERNETES_CLI} --all-namespaces=true get pods -l weblogic.serverName \
-      -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
-      | awk '{ system("set -x ; '${KUBERNETES_CLI}' -n " $1 " exec " $2 " touch /tmp/diefast") }'
+    prefix="set -x ;"
   fi
+  ${KUBERNETES_CLI:-kubectl} --all-namespaces=true get pods -l weblogic.serverName \
+    -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
+    | stripRange \
+    | awk '{ system("$prefix '${KUBERNETES_CLI:-kubectl}' -c weblogic-server -n " $1 " exec " $2 " -- touch /tmp/diefast") }'
 
   echo "@@ `timestamp` Info: About to delete each domain."
   if [ $(${KUBERNETES_CLI} get crd $domain_crd --ignore-not-found | grep $domain_crd | wc -l) = 1 ]; then
-    for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+    for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange)
     do
-      for dn in $(${KUBERNETES_CLI} -n $ns get domain -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+      for dn in $(${KUBERNETES_CLI} -n $ns get domain -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange)
       do
         doDeleteByName -n $ns domain $dn
         count=$((count + 1))
@@ -282,7 +288,7 @@ deleteDomains() {
 deleteOperators() {
   echo "@@ `timestamp` Info: Deleting operator deployments."
   local ns
-  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange)
   do
     if [ "$BG_DELETE" = "true" ]; then
       doDeleteByRange -n $ns deployments -l weblogic.operatorName &
@@ -297,7 +303,7 @@ deleteOperators() {
 deleteWebLogicPods() {
   echo "@@ `timestamp` Info: Deleting WebLogic pods."
   local ns
-  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+  for ns in $(${KUBERNETES_CLI} get namespace -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}' | stripRange)
   do
     if [ "$BG_DELETE" = "true" ]; then
       # WLS pods
@@ -338,13 +344,14 @@ deleteLabel() {
         -l "$LABEL_SELECTOR" \
         -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
         --all-namespaces=true \
+        | stripRange \
         | patchPVCFinalizer
     fi
 
     ${KUBERNETES_CLI} get $resource_type \
       -l "$LABEL_SELECTOR" \
       -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
-      --all-namespaces=true >> $1
+      --all-namespaces=true | stripRange >> $1
   done
 
   #
@@ -357,7 +364,7 @@ deleteLabel() {
     ${KUBERNETES_CLI} get $resource_type \
       -l "$LABEL_SELECTOR" \
       -o=jsonpath='{range .items[*]}{.kind}{" "}{.metadata.name}{"\n"}{end}' \
-      --all-namespaces=true >> $1
+      --all-namespaces=true | stripRange >> $1
   done
 
   #
@@ -486,7 +493,7 @@ genericDelete() {
     ${KUBERNETES_CLI} get pvc \
       -o=jsonpath='{range .items[*]}{.metadata.name}{" -n "}{.metadata.namespace}{"\n"}{end}' \
       --all-namespaces=true \
-      | grep -E -e "($3)" | patchPVCFinalizer
+      | stripRange | grep -E -e "($3)" | patchPVCFinalizer
   fi
 
   while : ; do
@@ -497,14 +504,14 @@ genericDelete() {
     ${KUBERNETES_CLI} get $1 \
         -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
-        | grep -E -e "($3)" | sort > $resfile_yes 2>&1
+        | stripRange | grep -E -e "($3)" | sort > $resfile_yes 2>&1
     artcount_yes="`cat $resfile_yes | wc -l`"
 
     # leftover non-namespaced artifacts
     ${KUBERNETES_CLI} get $2 \
         -o=jsonpath='{range .items[*]}{.kind}{"/"}{.metadata.name}{"\n"}{end}' \
         --all-namespaces=true 2>&1 \
-        | grep -E -e "($3)" | sort > $resfile_no 2>&1
+        | stripRange | grep -E -e "($3)" | sort > $resfile_no 2>&1
     artcount_no="`cat $resfile_no | wc -l`"
 
     artcount_total=$((artcount_yes + artcount_no))
