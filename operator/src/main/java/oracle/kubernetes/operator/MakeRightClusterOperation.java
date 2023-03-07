@@ -25,11 +25,12 @@ public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPre
    */
   MakeRightClusterOperation interrupt();
 
+  MakeRightClusterOperation withExplicitRecheck();
+
   /**
    * Get the event data associated with this make-right operation.
    *
    * @return the event data.
    */
   EventHelper.EventData getEventData();
-
 }

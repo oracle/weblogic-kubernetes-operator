@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -136,4 +138,8 @@ public interface DomainProcessor {
   DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 
   void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
+
+  default List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String namespace, String clusterName) {
+    return Collections.EMPTY_LIST;
+  }
 }

@@ -6,8 +6,10 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,8 +28,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -36,7 +38,11 @@ import oracle.kubernetes.weblogic.domain.model.ClusterList;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 
 /**
@@ -48,6 +54,8 @@ class DomainResourcesValidation {
   private final String namespace;
   private final DomainProcessor processor;
   private ClusterList activeClusterResources;
+  private final Set<String> modifiedClusterNames = new HashSet<>();
+  private final Set<String> newClusterNames = new HashSet<>();
 
   DomainResourcesValidation(String namespace, DomainProcessor processor) {
     this.namespace = namespace;
@@ -92,19 +100,25 @@ class DomainResourcesValidation {
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         Optional.ofNullable(activeClusterResources).ifPresent(c -> getActiveDomainPresenceInfos()
             .forEach(info -> adjustClusterResources(c, info)));
-        executeMakeRightForDeletedClusters(dp);
+        executeMakeRightForClusterEvents(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
   }
 
-  private void executeMakeRightForDeletedClusters(DomainProcessor dp) {
-    List<String> clusterNamesFromList = Optional.ofNullable(activeClusterResources).map(ClusterList::getItems)
-        .orElse(new ArrayList<>()).stream().map(ClusterResource::getMetadata).map(V1ObjectMeta::getName)
+  private void executeMakeRightForClusterEvents(DomainProcessor dp) {
+    List<String> clusterNamesFromList =
+        getActiveClusterResources().stream().map(ClusterResource::getMetadata).map(V1ObjectMeta::getName)
         .collect(Collectors.toList());
     getClusterPresenceInfoMap().values().stream()
         .filter(cpi -> !clusterNamesFromList.contains(cpi.getResourceName())).collect(Collectors.toList())
         .forEach(info -> deActivateCluster(dp, info));
+    getActiveClusterResources().forEach(cluster -> activateCluster(dp, cluster));
+  }
+
+  @NotNull
+  private List<ClusterResource> getActiveClusterResources() {
+    return Optional.ofNullable(activeClusterResources).map(ClusterList::getItems).orElse(new ArrayList<>());
   }
 
   private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
@@ -221,7 +235,26 @@ class DomainResourcesValidation {
   }
 
   private void addCluster(ClusterResource cluster) {
-    getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster.getNamespace(), cluster));
+    ClusterPresenceInfo cachedInfo = getClusterPresenceInfoMap().get(cluster.getClusterName());
+    if (cachedInfo == null) {
+      newClusterNames.add(cluster.getClusterName());
+    } else if (generationChanged(cachedInfo, cluster)) {
+      modifiedClusterNames.add(cluster.getClusterName());
+    }
+
+    getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster));
+  }
+
+  private boolean generationChanged(ClusterPresenceInfo cachedInfo, ClusterResource cluster) {
+    return !Objects.equals(getGeneration(cachedInfo), cluster.getMetadata().getGeneration());
+  }
+
+  private Long getGeneration(ClusterPresenceInfo cachedInfo) {
+    return Optional.ofNullable(cachedInfo)
+        .map(ClusterPresenceInfo::getCluster)
+        .map(ClusterResource::getMetadata)
+        .map(V1ObjectMeta::getGeneration)
+        .orElse(null);
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
@@ -244,7 +277,7 @@ class DomainResourcesValidation {
     info.setDeleting(true);
     info.setPopulated(true);
     dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().withEventData(new EventData(
-        EventHelper.EventItem.DOMAIN_DELETED)).execute();
+        EventItem.DOMAIN_DELETED)).execute();
   }
 
   private Stream<DomainPresenceInfo> getActiveDomainPresenceInfos() {
@@ -257,6 +290,7 @@ class DomainResourcesValidation {
 
   private static void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
+
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (info.getDomain().getStatus() == null) {
       makeRight.withEventData(new EventData(DOMAIN_CREATED)).interrupt();
@@ -265,7 +299,40 @@ class DomainResourcesValidation {
   }
 
   private void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
-    dp.createMakeRightOperationForClusterEvent(EventHelper.EventItem.CLUSTER_DELETED, info.getCluster()).execute();
+    dp.createMakeRightOperationForClusterEvent(CLUSTER_DELETED, info.getCluster(), info.getDomainUid()).execute();
+  }
+
+  private void activateCluster(DomainProcessor dp, ClusterResource cluster) {
+    List<DomainPresenceInfo> list =
+        dp.getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName());
+    EventItem eventItem = getEventItem(cluster);
+    if (list.isEmpty()) {
+      createAndExecuteMakeRightOperation(dp, cluster, eventItem, null);
+    } else {
+      for (DomainPresenceInfo info : list) {
+        createAndExecuteMakeRightOperation(dp, cluster, eventItem, info.getDomainUid());
+      }
+    }
+  }
+
+  private void createAndExecuteMakeRightOperation(
+      DomainProcessor dp, ClusterResource cluster, EventItem eventItem, String domainUid) {
+    MakeRightClusterOperation makeRight = dp.createMakeRightOperationForClusterEvent(
+        eventItem, cluster, domainUid).withExplicitRecheck();
+    if (eventItem != null) {
+      makeRight.interrupt();
+    }
+    makeRight.execute();
+  }
+
+  private EventItem getEventItem(ClusterResource cluster) {
+    if (newClusterNames.contains(cluster.getClusterName()) || cluster.getStatus() == null) {
+      return CLUSTER_CREATED;
+    }
+    if (modifiedClusterNames.contains(cluster.getClusterName())) {
+      return CLUSTER_CHANGED;
+    }
+    return null;
   }
 
 }
