@@ -81,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -379,7 +380,7 @@ class ItKubernetesDomainEvents {
 
     shutdownDomain(domainUid5, domainNamespace5);
     listObjects();
-    //deleteDomainResource(domainNamespace5, domainUid5);
+    deleteDomainResource(domainNamespace5, domainUid5);
   }
 
   /**
@@ -489,6 +490,7 @@ class ItKubernetesDomainEvents {
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
     shutdownDomain(domainUid, domainNamespace4);
+    deleteDomainResource(domainNamespace4, domainUid);
   }
 
   /**
@@ -690,6 +692,7 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
     //verify cluster deleted event
     checkEvent(opNamespace, domainNamespace2, null, CLUSTER_DELETED, "Normal", timestamp);
+    deleteDomainResource(domainNamespace2, domainUid);
   }
 
   /**
