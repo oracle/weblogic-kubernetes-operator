@@ -18,6 +18,8 @@ def filter_model(model):
                     admin_server = topology['AdminServerName']
                 else:
                     # weblogic default
+                    if 'Server' in topology and 'adminserver' in topology['Server']:
+                        raise ValueError('Your model does not have AdminServerName set in the topology section but have a server named "adminserver" in topology/Server section, this is not supported.  Please set the AdminServerName attribute in the topology section to the actual administration server name')
                     admin_server = 'AdminServer'
                 model['topology'] = {}
                 model['topology']['AdminServerName'] = admin_server
