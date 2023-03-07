@@ -673,7 +673,7 @@
     <prometheus-version>0.16.0</prometheus-version>
     <jackson-version>2.14.2</jackson-version>
     <jackson-databind-version>2.14.2</jackson-databind-version>
-    <snakeyaml-version>1.33</snakeyaml-version>
+    <snakeyaml-version>2.0</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
     <dependency-check-version>8.1.2</dependency-check-version>
     <logback-classic-version>1.2.11</logback-classic-version>
