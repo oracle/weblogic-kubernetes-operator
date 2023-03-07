@@ -36,6 +36,10 @@ import org.junit.jupiter.api.extension.TestWatcher;
 import static oracle.weblogic.kubernetes.TestConstants.COLLECT_LOGS_ON_SUCCESS;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.SLEEP_SECONDS_AFTER_FAILURE;
+import static oracle.weblogic.kubernetes.TestConstants.VZ_ENV;
+import static oracle.weblogic.kubernetes.TestConstants.VZ_INGRESS_NS;
+import static oracle.weblogic.kubernetes.TestConstants.VZ_ISTIO_NS;
+import static oracle.weblogic.kubernetes.TestConstants.VZ_SYSTEM_NS;
 import static oracle.weblogic.kubernetes.actions.TestActions.createUniqueNamespace;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -366,6 +370,13 @@ public class IntegrationTestWatcher implements
 
     // collect the logs in ns-webhook namespace
     LoggingUtil.collectLogs("ns-webhook", resultDir.toString());
+    
+    // collect logs for verrzzano environment    
+    if (VZ_ENV) {
+      LoggingUtil.collectLogs(VZ_SYSTEM_NS, resultDir.toString());
+      LoggingUtil.collectLogs(VZ_ISTIO_NS, resultDir.toString());
+      LoggingUtil.collectLogs(VZ_INGRESS_NS, resultDir.toString());
+    }
   }
 
   /**

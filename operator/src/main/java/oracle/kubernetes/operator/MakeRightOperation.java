@@ -26,5 +26,5 @@ public interface MakeRightOperation<T extends ResourcePresenceInfo> extends Pack
 
   T getPresenceInfo();
 
-  boolean wasStartedFromEvent();
+  boolean hasEventData();
 }

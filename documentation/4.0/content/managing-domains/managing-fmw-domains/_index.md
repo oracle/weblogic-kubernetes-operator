@@ -21,10 +21,7 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using the Domain in PV,
-Domain in Image, or Model in Image [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
-If you plan to experiment with upper stack products, we strongly recommend using the domain on a persistent
-volume approach.
+FMW Infrastructure domains are supported using the Domain in PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) _only_.
 
 For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
@@ -41,6 +38,7 @@ following limitations currently exist for FMW Infrastructure domains:
   you just need to define the maximum size of your cluster at domain creation time.
 * FMW Infrastructure domains are not supported with any version of the operator
   before version 2.2.0.
+* FMW Infrastructure domains are _not_ supported using the Model in Image or Domain in Image [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 
 ### Obtaining the FMW Infrastructure image
@@ -437,7 +435,3 @@ that can not be applied dynamically.
 If you are running a domain which contains Coherence, please refer to
 [Coherence requirements]({{< relref "/faq/coherence-requirements.md" >}})
 for more information.
-
-### Additional considerations for Model in Image
-
-If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
