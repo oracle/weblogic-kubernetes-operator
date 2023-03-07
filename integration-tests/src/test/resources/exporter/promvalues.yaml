@@ -19,33 +19,6 @@ pushgateway:
 
 alertmanager:
   enabled: true
-configmapReload:
-  prometheus:
-    ## If false, the configmap-reload container will not be deployed
-    ##
-    enabled: true
-
-    ## configmap-reload container name
-    ##
-    name: configmap-reload
-
-    ## configmap-reload container image
-    ##
-    image:
-      repository: phx.ocir.io/weblogick8s/test-images/jimmidyson/configmap-reload
-      tag: v0.5.0
-      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
-      digest: ""
-      pullPolicy: IfNotPresent
-
-
-  ## Use a ClusterRole (and ClusterRoleBinding)
-  ## - If set to false - we define a Role and RoleBinding in the defined namespaces ONLY
-  ## This makes alertmanager work - for users who do not have ClusterAdmin privs, but wants alertmanager to operate on their own namespaces, instead of clusterwide.
-  useClusterRole: true
-
-  ## Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to the rolename set here.
-  useExistingRole: false
 
   persistentVolume:
     existingClaim: pvc-alertmanager
@@ -66,6 +39,24 @@ configmapReload:
 
 nodeExporter:
   enabled: false
+configmapReload:
+  prometheus:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: true
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: phx.ocir.io/weblogick8s/test-images/jimmidyson/configmap-reload
+      tag: v0.5.0
+      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+      digest: ""
+      pullPolicy: IfNotPresent
 
 server:
   persistentVolume:
