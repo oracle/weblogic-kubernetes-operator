@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.K8sEvents;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -81,6 +83,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -375,7 +378,9 @@ class ItKubernetesDomainEvents {
     logger.info("verify domain failed event");
     checkFailedEvent(opNamespace, domainNamespace5, domainUid5, ABORTED_ERROR, "Warning", timestamp);
 
+    listObjects();
     shutdownDomain(domainUid5, domainNamespace5);
+    listObjects();
     deleteDomainResource(domainUid5, domainNamespace5);
   }
 
@@ -997,5 +1002,16 @@ class ItKubernetesDomainEvents {
       checkEventWithCount(
           opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
+  }
+  
+  private static String listObjects() {
+    String curlCmd = KUBERNETES_CLI + " get domain -A -o yaml";
+    logger.info("curl command {0}", curlCmd);
+    ExecResult result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
+    assertEquals(0, result.exitValue(), "Failed to list domain objects");
+    return result.stdout();
   }
 }
