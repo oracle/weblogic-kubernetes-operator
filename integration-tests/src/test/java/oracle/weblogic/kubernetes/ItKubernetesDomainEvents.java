@@ -79,6 +79,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -375,6 +376,7 @@ class ItKubernetesDomainEvents {
     checkFailedEvent(opNamespace, domainNamespace5, domainUid5, ABORTED_ERROR, "Warning", timestamp);
 
     shutdownDomain(domainUid5, domainNamespace5);
+    deleteDomainResource(domainUid5, domainNamespace5);
   }
 
   /**
