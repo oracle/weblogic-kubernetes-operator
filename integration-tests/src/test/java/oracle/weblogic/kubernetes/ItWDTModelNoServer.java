@@ -25,6 +25,8 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainInImageUsingWdt;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -46,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * 4) AdminServerName is not specified and 'adminserver' (all lower case) is specified in the Server section.
  * 5) AdminServerName is specified and the named server is not set in the Server section.
  * 6) Configured cluster defined but no managed server associated with it in the Server section.
+ * 7) Empty topology (no AdminServerName, Server and Cluster section)
  */
 @DisplayName("Test creating MII domain with different AdminServerName and Server settings in WDT model file")
 @IntegrationTest
@@ -94,7 +97,7 @@ class ItWDTModelNoServer {
 
   /**
    * Test in the WDT model file there is no AdminServerName and no Server section defined.
-   * Verify that AdminServerName is set to 'AdminServer' and the admin server pod will be generated.
+   * Verify AdminServer Pod "domainUid-adminserver" is running and the defined WebLogic cluster is up and running.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and no Server section defined")
@@ -103,6 +106,8 @@ class ItWDTModelNoServer {
     String wdtModelFile = "model-noadminservername-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
+    // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
+    // Also verify the cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
@@ -131,7 +136,7 @@ class ItWDTModelNoServer {
   /**
    * Test in the WDT model file AdminServerName is not specified and in Server section there is a server 'myadmin' set.
    * Verify that AdminServerName is set to 'AdminServer' and the admin server pod with name domainuid-adminserver
-   * is created. The pod domainuid-myadmin is also created.
+   * is created. A managed server pod domainuid-myadmin is also created.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section myadmin defined")
@@ -140,10 +145,12 @@ class ItWDTModelNoServer {
     String wdtModelFile = "model-noadminservername-hasmyadminserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
+    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+    // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
-    // check there is also a pod with name domainuid-myadmin running
+    // check there is also a pod with name domainUid-myadmin running
     checkPodReadyAndServiceExists(domainUid + "-myadmin", domainUid, domainNamespace);
 
     //check and wait for the application to be accessible in all server pods
@@ -179,6 +186,8 @@ class ItWDTModelNoServer {
     String wdtModelFile = "model-noadminservername-hasadminserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
+    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+    // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
@@ -205,18 +214,20 @@ class ItWDTModelNoServer {
   }
 
   /**
-   * Test in the WDT model file there is no AdminServerName and in Server section the server 'adminserver' defined.
+   * Test in the WDT model file there is no AdminServerName and in Server 'adminserver' (all lower case) defined.
    * Note that the server name 'adminserver' is all lower case.
    * Disabled due to bug.
    */
   @Disabled
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section 'adminserver' defined")
-  void testWdtModelNoAdminServerNameWithAdminServerLLowercaseInServer() {
+  void testWdtModelNoAdminServerNameWithAdminServerLowercaseInServer() {
 
     String wdtModelFile = "model-noadminservername-hasadminserverlowercase.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
+    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+    // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
@@ -256,10 +267,12 @@ class ItWDTModelNoServer {
     imageName = createAndVerifyDomainImage(wdtModelFile);
     String namedAdminServerPodName = domainUid + "-new-admin-server";
 
+    // Verify the domain is created and the admin server pod "domainUid-new-admin-server" is up and running.
+    // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid, imageName, namedAdminServerPodName,
         managedServerPrefix, replicaCount);
 
-    // check that there is another pod domainuid-admin-server running in 7001 since it is defined in Server section
+    // check that there is another pod domainUid-admin-server running in 7001 since it is defined in Server section
     checkPodReadyAndServiceExists(domainUid + "-admin-server", domainUid, domainNamespace);
 
     //check and wait for the application to be accessible in all server pods
@@ -286,11 +299,12 @@ class ItWDTModelNoServer {
 
   /**
    * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
+   * Create a model-in-image type domain using this model file.
    * Verify the operator will generate validation error in the log.
    */
   @Test
   @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
-  void testWdtModelConfiguredClusterNoManagedServersInServer() {
+  void testWdtModelConfiguredClusterNoManagedServersInServerMII() {
 
     String wdtModelFile = "model-configuredcluster-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
@@ -314,6 +328,91 @@ class ItWDTModelNoServer {
     // delete the domain and cluster
     deleteClusterCustomResource(clusterName, domainNamespace);
     deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  /**
+   * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
+   * Create a domain-in-image type of domain using this WDT model file.
+   * Verify the operator will generate validation error in the log.
+   */
+  @Test
+  @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
+  void testWdtModelConfiguredClusterNoManagedServersInServerWithDII() {
+
+    String wdtModelFile = "model-configuredcluster-noserver.yaml";
+    imageName = createAndVerifyDomainImage(wdtModelFile);
+
+    String wlSecretName = "weblogic-credentials";
+    createDomainInImageUsingWdt(domainUid, domainNamespace,
+        wdtModelFile, null, null, wlSecretName, clusterName, replicaCount);
+
+    // verify the error msg is logged in the operator log
+    String expectedErrorMsg = "The WebLogic configured cluster \\\""
+        + clusterName
+        + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // delete the domain and cluster
+    deleteClusterCustomResource(clusterName, domainNamespace);
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  /**
+   * Test in the WDT model file a configured cluster is defined but no managed server associated with it in Server.
+   * Create a domain-on-pv type of domain using this WDT model file.
+   * Verify the operator will generate validation error in the log.
+   */
+  @Test
+  @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
+  void testWdtModelConfiguredClusterNoManagedServersInServerWithDomainOnPV() {
+
+    String wdtModelFile = "model-configuredcluster-noserver.yaml";
+    imageName = createAndVerifyDomainImage(wdtModelFile);
+
+    String wlSecretName = "weblogic-credentials";
+    createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
+        clusterName, replicaCount, ItWDTModelNoServer.class.getSimpleName(), wdtModelFile, false);
+
+    // verify the error msg is logged in the operator log
+    String expectedErrorMsg = "The WebLogic configured cluster \\\""
+        + clusterName
+        + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // delete the domain and cluster
+    deleteClusterCustomResource(clusterName, domainNamespace);
+    deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  /**
+   * Test in the WDT model file there is no AdminServerName, no Server and no Cluster section defined.
+   * Verify AdminServer Pod "domainUid-adminserver" is running.
+   */
+  @Test
+  @DisplayName("Test in the WDT model file there is no AdminServerName, no Server and no Cluster section defined")
+  void testWdtModelNoAdminServerNameNoServerNoCluster() {
+
+    String wdtModelFile = "model-emptytopology.yaml";
+    imageName = createAndVerifyDomainImage(wdtModelFile);
+
+    // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
+    createMiiDomain(
+        domainNamespace,
+        domainUid,
+        imageName,
+        1,
+        null,
+        false,
+        null);
+
+    // verify the admin server is started
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    // delete domain and cluster
+    //shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
+    //deleteDomainResource(domainNamespace, domainUid);
   }
 
   private static void checkAppIsRunning(
