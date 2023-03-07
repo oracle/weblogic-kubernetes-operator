@@ -24,6 +24,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessible
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
@@ -34,6 +35,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -389,6 +391,7 @@ class ItWDTModelNoServer {
   /**
    * Test in the WDT model file there is no AdminServerName, no Server and no Cluster section defined.
    * Verify AdminServer Pod "domainUid-adminserver" is running.
+   * Verify there are no cluster service or managed server pods/services existing.
    */
   @Test
   @DisplayName("Test in the WDT model file there is no AdminServerName, no Server and no Cluster section defined")
@@ -402,7 +405,7 @@ class ItWDTModelNoServer {
         domainNamespace,
         domainUid,
         imageName,
-        1,
+        replicaCount,
         null,
         false,
         null);
@@ -410,9 +413,17 @@ class ItWDTModelNoServer {
     // verify the admin server is started
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // delete domain and cluster
-    //shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    //deleteDomainResource(domainNamespace, domainUid);
+    // check cluster-1 service does not exist
+    checkServiceDoesNotExist(domainUid + "-cluster-" + clusterName, domainNamespace);
+    // check managed server pods and services do not exist
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
+    }
+
+    // delete domain
+    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
+    deleteDomainResource(domainNamespace, domainUid);
   }
 
   private static void checkAppIsRunning(
