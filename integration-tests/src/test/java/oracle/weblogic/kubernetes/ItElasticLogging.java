@@ -92,7 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 4. Create and start the WebLogic domain.
  * 5. Verify that
  *    1) Elasticsearch collects data from WebLogic logs and
- *       stores them in its repository correctly..
+ *       stores them in its repository correctly.
  *    2) Users can update logstash configuration by updating the configmap
  *       weblogic-operator-logstash-cm instead of rebuilding operator image
  */
