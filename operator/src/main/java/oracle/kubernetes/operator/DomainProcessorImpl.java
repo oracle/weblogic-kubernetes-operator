@@ -378,17 +378,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private boolean shouldContinue(MakeRightDomainOperation operation, DomainPresenceInfo liveInfo) {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
-      if (!operation.hasEventData()) {
-        operation.withEventData(new EventData(DOMAIN_CREATED));
-      }
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
         || liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
     } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
-      if (!operation.hasEventData() && liveInfo.isDomainGenerationChanged(cachedInfo)) {
-        operation.withEventData(new EventData(DOMAIN_CHANGED));
-      }
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());

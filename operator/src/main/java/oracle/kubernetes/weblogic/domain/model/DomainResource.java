@@ -807,6 +807,20 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         .stream().map(V1LocalObjectReference::getName).anyMatch(clusterName::equals);
   }
 
+  /**
+   * Returns true if the domain resource has a later generation than the passed-in cached domain resource.
+   * @param cachedResource another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(DomainResource cachedResource) {
+    return getGeneration()
+        .map(gen -> (gen.compareTo(cachedResource.getGeneration().orElse(0L)) > 0))
+        .orElse(true);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getMetadata().getGeneration());
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

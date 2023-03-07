@@ -16,6 +16,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.work.Component;
@@ -249,6 +250,16 @@ class StuckPodTest {
 
       @Override
       public MakeRightDomainOperation withExplicitRecheck() {
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation withEventData(EventHelper.EventData eventData) {
+        return this;
+      }
+
+      @Override
+      public MakeRightDomainOperation interrupt() {
         return this;
       }
 
