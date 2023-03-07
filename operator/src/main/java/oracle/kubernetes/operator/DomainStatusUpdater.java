@@ -765,7 +765,11 @@ public class DomainStatusUpdater {
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
           this.clusterChecks = createClusterChecks();
-          conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
+          boolean isCompleted = isProcessingCompleted();
+          conditionList.add(new DomainCondition(COMPLETED).withStatus(isCompleted));
+          if (isCompleted && this.status.hasConditionWithType(FAILED)) {
+            this.status.removeConditionsWithType(FAILED);
+          }
           conditionList.add(createAvailableCondition());
           if (allIntendedServersReady()) {
             this.status.removeConditionsWithType(ROLLING);
