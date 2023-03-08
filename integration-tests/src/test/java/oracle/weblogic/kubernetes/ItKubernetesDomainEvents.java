@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -1001,12 +1002,15 @@ class ItKubernetesDomainEvents {
   
   private static void removeClusterInDomainResource(String clusterName, String domainUid, String namespace)
       throws ApiException {
+    logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
     DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
+    logger.info(Yaml.dump(domainCustomResource));
     Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
         .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
     int clusterIndex = -1;
     if (cluster.isPresent()) {
       clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster);
+      logger.info("Cluster index is {0}", clusterIndex);
     } else {
       logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
     }
