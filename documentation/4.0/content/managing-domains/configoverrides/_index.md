@@ -16,6 +16,8 @@ Configuration overrides can only be used in combination with Domain in Image and
 
 Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain in PV domain's WebLogic domain configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
+**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
+
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site. Beginning with operator version 3.0.0, you can now modify configuration overrides for running WebLogic Server instances and have these new overrides take effect dynamically. There are [limitations](#unsupported-overrides) to the WebLogic configuration attributes that can be modified by overrides and only changes to dynamic configuration MBean attributes may be changed while a server is running. Other changes, specifically overrides to non-dynamic MBeans, must be applied when servers are starting or restarting.
 
 #### How do you specify overrides?

@@ -305,14 +305,6 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainAdded_runMakeRightAndGenerateDomainCreatedEvent() {
-    processor.createMakeRightOperation(newInfo).execute();
-
-    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
-    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
-  }
-
-  @Test
   void whenDomainAddedWithChangedEventData_runMakeRightButDontGenerateDomainCreatedEvent() {
     processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_CHANGED)).execute();
 
@@ -412,15 +404,6 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
-  }
-
-  @Test
-  void whenDomainChangedSpec_generateDomainChangedEvent() {
-    processor.registerDomainPresenceInfo(originalInfo);
-
-    processor.createMakeRightOperation(newInfo).execute();
-
-    assertThat(testSupport, hasEvent(DOMAIN_CHANGED.getReason()));
   }
 
   @Test

@@ -347,7 +347,7 @@ public class Namespaces {
     }
 
     private boolean isNotManaged(String ns) {
-      return !allDomainNamespaces.contains(ns) || domainNamespaces.isStopping(ns).get();
+      return isNoLongerActiveDomainNamespace(ns) || domainNamespaces.isStopping(ns).get();
     }
 
     private boolean isNoLongerActiveDomainNamespace(String ns) {
