@@ -813,8 +813,13 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    */
   public boolean isGenerationChanged(DomainResource cachedResource) {
     return getGeneration()
-        .map(gen -> (gen.compareTo(cachedResource.getGeneration().orElse(0L)) > 0))
-        .orElse(true);
+        .map(gen -> gen.compareTo(getOrElse(cachedResource)) > 0)
+        .orElse(getOrElse(cachedResource) != 0);
+  }
+
+  @org.jetbrains.annotations.NotNull
+  private Long getOrElse(DomainResource cachedResource) {
+    return cachedResource.getGeneration().orElse(0L);
   }
 
   private Optional<Long> getGeneration() {

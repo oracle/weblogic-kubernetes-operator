@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -988,6 +989,28 @@ class DomainProcessorTest {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
+  }
+
+  private List<Object> getEventsForSeason(String reason) {
+    return testSupport.getResources(EVENT).stream()
+        .filter(e -> ((CoreV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
+  }
+
+  @Test
+  void whenClusterChangedButOlder_dontGenerateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster1.getMetadata().setGeneration(1234L);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster2.getMetadata().setGeneration(1000L);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
   }
 
   @Test
@@ -1001,7 +1024,7 @@ class DomainProcessorTest {
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
-    assertThat(testSupport.getResources(EVENT), not(contains(CLUSTER_CHANGED)));
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
   }
 
   @Test
