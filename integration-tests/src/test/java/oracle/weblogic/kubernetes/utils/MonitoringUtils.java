@@ -67,6 +67,14 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANC
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -371,6 +379,31 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "pvc-prometheus",
         "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "pushgateway_image",
+        PROMETHEUS_PUSHGATEWAY_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "pushgateway_tag",
+        PROMETHEUS_PUSHGATEWAY_IMAGE_TAG),"Failed to replace String ");
+
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_image",
+        PROMETHEUS_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_tag",
+        PROMETHEUS_IMAGE_TAG),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_alertmanager_image",
+        PROMETHEUS_ALERT_MANAGER_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_alertmanager_tag",
+        PROMETHEUS_ALERT_MANAGER_IMAGE_TAG),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_configmap_reload_image",
+        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_configmap_reload_tag",
+        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG),"Failed to replace String ");
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),

@@ -13,8 +13,8 @@ serviceAccounts:
 pushgateway:
   enabled: false
   image:
-    repository: phx.ocir.io/weblogick8s/test-images/prom/pushgateway
-    tag: v1.4.3
+    repository: pushgateway_image
+    tag: pushgateway_tag
     pullPolicy: IfNotPresent
 
 alertmanager:
@@ -29,8 +29,8 @@ alertmanager:
   #   runAsNonRoot: false
   #  runAsUser: 0
   image:
-    repository: phx.ocir.io/weblogick8s/test-images/prometheus/alertmanager
-    tag: v0.24.0
+    repository: prometheus_alertmanager_image
+    tag: prometheus_alertmanager_tag
     pullPolicy: IfNotPresent
   securityContext:
     runAsUser: 65534
@@ -73,8 +73,8 @@ server:
     scrape_interval: 10s
     scrape_timeout: 5s
   image:
-    repository: phx.ocir.io/weblogick8s/test-images/prometheus/prometheus
-    tag: v2.39.1
+    repository: prometheus_image
+    tag: prometheus_tag
     pullPolicy: IfNotPresent
 
 alertmanagerFiles:

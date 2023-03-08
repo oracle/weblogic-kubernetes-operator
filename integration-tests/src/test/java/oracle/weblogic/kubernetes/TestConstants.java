@@ -294,6 +294,22 @@ public interface TestConstants {
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
 
+  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/prometheus";
+  public static final String PROMETHEUS_IMAGE_TAG = "v2.39.1";
+
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/alertmanager";
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_TAG = "v0.24.0";
+
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/jimmidyson/configmap-reload";
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG = "v0.5.0";
+
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prom/pushgateway";
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
+
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
 
