@@ -991,6 +991,20 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenClusterUnchanged_dontGenerateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport.getResources(EVENT), not(contains(CLUSTER_CHANGED)));
+  }
+
+  @Test
   void whenNewClusterAddedAndReferenced_generateClusterCreatedEventWithDomainUidLabel() {
     ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
     testSupport.defineResources(cluster1);

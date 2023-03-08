@@ -114,8 +114,8 @@ class DomainResourcesValidation {
         .collect(Collectors.toList());
     getClusterPresenceInfoMap().values().stream()
         .filter(cpi -> !clusterNamesFromList.contains(cpi.getResourceName())).collect(Collectors.toList())
-        .forEach(info -> deActivateCluster(dp, info));
-    getActiveClusterResources().forEach(cluster -> activateCluster(dp, cluster));
+        .forEach(info -> updateCluster(dp, info.getCluster(), CLUSTER_DELETED));
+    getActiveClusterResources().forEach(cluster -> updateCluster(dp, cluster, getEventItem(cluster)));
   }
 
   @NotNull
@@ -314,14 +314,9 @@ class DomainResourcesValidation {
     return null;
   }
 
-  private void deActivateCluster(DomainProcessor dp, ClusterPresenceInfo info) {
-    dp.createMakeRightOperationForClusterEvent(CLUSTER_DELETED, info.getCluster(), info.getDomainUid()).execute();
-  }
-
-  private void activateCluster(DomainProcessor dp, ClusterResource cluster) {
+  private void updateCluster(DomainProcessor dp, ClusterResource cluster, EventItem eventItem) {
     List<DomainPresenceInfo> list =
         dp.getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName());
-    EventItem eventItem = getEventItem(cluster);
     if (list.isEmpty()) {
       createAndExecuteMakeRightOperation(dp, cluster, eventItem, null);
     } else {

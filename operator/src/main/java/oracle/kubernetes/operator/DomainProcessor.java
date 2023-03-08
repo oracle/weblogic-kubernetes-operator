@@ -140,6 +140,6 @@ public interface DomainProcessor {
   void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
 
   default List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String namespace, String clusterName) {
-    return Collections.EMPTY_LIST;
+    return Collections.emptyList();
   }
 }

@@ -18,7 +18,6 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
 
   private static final String COMPONENT_KEY = "cpi";
   private ClusterResource cluster;
-  private String domainUid;
 
   /**
    * Create presence for a cluster resource.
@@ -28,14 +27,6 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
   public ClusterPresenceInfo(ClusterResource cluster) {
     super(cluster.getNamespace());
     this.cluster = cluster;
-  }
-
-  public void setDomainUid(String domainUid) {
-    this.domainUid = domainUid;
-  }
-
-  public String getDomainUid() {
-    return domainUid;
   }
 
   @Override
