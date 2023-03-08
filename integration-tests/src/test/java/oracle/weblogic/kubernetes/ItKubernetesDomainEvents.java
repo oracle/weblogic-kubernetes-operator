@@ -1009,7 +1009,7 @@ class ItKubernetesDomainEvents {
         .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
     int clusterIndex = -1;
     if (cluster.isPresent()) {
-      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster);
+      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
       logger.info("Cluster index is {0}", clusterIndex);
     } else {
       logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
