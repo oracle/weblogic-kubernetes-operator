@@ -12,11 +12,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -317,15 +319,7 @@ class ItKubernetesDomainEvents {
     } finally {
       //remove the cluster from domain resource
       timestamp = now();
-      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, domainNamespace3).getSpec()
-          .getClusters().stream().anyMatch(cluster -> cluster.getName().equals(nonExistingClusterName));
-      testUntil(clusterNotFound, logger, "Waiting for cluster {0} to be removed from domain resource in namespace {1}",
-          nonExistingClusterName, domainNamespace3);
+      assertDoesNotThrow(() -> removeClusterInDomainResource(nonExistingClusterName, domainUid, domainNamespace3));
       // verify the Changed event is generated
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
@@ -1004,6 +998,34 @@ class ItKubernetesDomainEvents {
           opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
+  
+  private static void removeClusterInDomainResource(String clusterName, String domainUid, String namespace)
+      throws ApiException {
+    DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
+    Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
+        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
+    int clusterIndex = -1;
+    if (cluster.isPresent()) {
+      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster);
+    } else {
+      logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
+    }
+    if (clusterIndex != -1) {
+      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/" + clusterIndex + "\"}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
+          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
+      testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
+          clusterName, domainNamespace3);
+    } else {
+      logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
+    }
+  }
+
+  
   
   private static String listObjects() {
     String curlCmd = KUBERNETES_CLI + " get domain -A -o yaml";
