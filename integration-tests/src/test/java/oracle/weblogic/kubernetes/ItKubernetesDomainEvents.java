@@ -12,13 +12,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 import java.util.function.UnaryOperator;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -26,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -39,7 +35,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DomainUtils;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.K8sEvents;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -85,8 +79,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.removeClusterInDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -374,7 +368,6 @@ class ItKubernetesDomainEvents {
     checkFailedEvent(opNamespace, domainNamespace5, domainUid5, ABORTED_ERROR, "Warning", timestamp);
 
     shutdownDomain(domainUid5, domainNamespace5);
-    listObjects();
     deleteDomainResource(domainNamespace5, domainUid5);
   }
 
@@ -1000,45 +993,4 @@ class ItKubernetesDomainEvents {
     }
   }
   
-  private static void removeClusterInDomainResource(String clusterName, String domainUid, String namespace)
-      throws ApiException {
-    logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
-    DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
-    logger.info(Yaml.dump(domainCustomResource));
-    Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
-        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
-    int clusterIndex = -1;
-    if (cluster.isPresent()) {
-      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
-      logger.info("Cluster index is {0}", clusterIndex);
-    } else {
-      logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
-    }
-    if (clusterIndex != -1) {
-      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/" + clusterIndex + "\"}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
-          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
-      testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
-          clusterName, domainNamespace3);
-    } else {
-      logger.info("Cluster {0} not found in domain resource {1} in namespace {2}", clusterName, domainUid, namespace);
-    }
-  }
-
-  
-  
-  private static String listObjects() {
-    String curlCmd = KUBERNETES_CLI + " get domain -A -o yaml";
-    logger.info("curl command {0}", curlCmd);
-    ExecResult result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    logger.info(String.valueOf(result.exitValue()));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
-    assertEquals(0, result.exitValue(), "Failed to list domain objects");
-    return result.stdout();
-  }
 }
