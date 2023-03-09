@@ -196,7 +196,7 @@ public class DomainUtils {
    * verify the servers are running.
    *
    * @param domainUid domain
-   * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
+   * @param domain the oracle.weblogic.domain.DomainResource object to create domain custom resource
    * @param domainNamespace namespace in which the domain will be created
    * @param adminServerPodName admin server pod name
    * @param managedServerPodNamePrefix managed server pod prefix
@@ -747,8 +747,6 @@ public class DomainUtils {
 
     // shell script to download WDT and run the WDT createDomain script
     Path wdtScript = get(RESOURCE_DIR, "bash-scripts", "setup_wdt.sh");
-    // WDT model file containing WebLogic domain configuration
-    //Path wdtModelFile = get(RESOURCE_DIR, "wdt-models", "domain-onpv-wdt-model.yaml");
 
     // create configmap and domain in persistent volume using WDT
     runCreateDomainOnPVJobUsingWdt(wdtScript, get(RESOURCE_DIR, "wdt-models", wdtModelFile),
@@ -1101,7 +1099,7 @@ public class DomainUtils {
    * @param wlSecretName wls admin secret name
    * @param clusterName cluster name
    * @param replicaCount replica count of the cluster
-   * @return oracle.weblogic.domain.Domain object
+   * @return oracle.weblogic.domain.DomainResource object
    */
   public static DomainResource createDomainInImageUsingWdt(String domainUid,
                                                            String domainNamespace,

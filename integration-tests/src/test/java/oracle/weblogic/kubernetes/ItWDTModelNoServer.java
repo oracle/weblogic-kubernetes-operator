@@ -20,11 +20,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceDomainConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
@@ -34,11 +36,15 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test creating MII domain with different AdminServerName and Server settings in WDT model file.
@@ -113,6 +119,9 @@ class ItWDTModelNoServer {
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
+    // check the admin server name is 'AdminServer'
+    checkAdminServerName(adminServerPodName, "AdminServer");
+
     //check and wait for the application to be accessible in all server pods
     for (int j = 1; j <= replicaCount; j++) {
       String managedServerPodName = managedServerPrefix + j;
@@ -151,6 +160,9 @@ class ItWDTModelNoServer {
     // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
+
+    // check the admin server name is 'AdminServer'
+    checkAdminServerName(adminServerPodName, "AdminServer");
 
     // check there is also a pod with name domainUid-myadmin running
     checkPodReadyAndServiceExists(domainUid + "-myadmin", domainUid, domainNamespace);
@@ -193,6 +205,9 @@ class ItWDTModelNoServer {
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
 
+    // check the admin server name is 'AdminServer'
+    checkAdminServerName(adminServerPodName, "AdminServer");
+
     //check and wait for the application to be accessible in all server pods
     for (int j = 1; j <= replicaCount; j++) {
       String managedServerPodName = managedServerPrefix + j;
@@ -232,6 +247,9 @@ class ItWDTModelNoServer {
     // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid,
         imageName, adminServerPodName, managedServerPrefix, replicaCount);
+
+    // check the admin server name is 'AdminServer'
+    checkAdminServerName(adminServerPodName, "AdminServer");
 
     //check and wait for the application to be accessible in all server pods
     for (int j = 1; j <= replicaCount; j++) {
@@ -273,6 +291,9 @@ class ItWDTModelNoServer {
     // Also verify the defined cluster is up and running.
     createMiiDomainAndVerify(domainNamespace, domainUid, imageName, namedAdminServerPodName,
         managedServerPrefix, replicaCount);
+
+    // check the admin server name is 'new-admin-server'
+    checkAdminServerName(namedAdminServerPodName, "new-admin-server");
 
     // check that there is another pod domainUid-admin-server running in 7001 since it is defined in Server section
     checkPodReadyAndServiceExists(domainUid + "-admin-server", domainUid, domainNamespace);
@@ -421,6 +442,9 @@ class ItWDTModelNoServer {
       checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
     }
 
+    // check the admin server name is 'AdminServer'
+    checkAdminServerName(adminServerPodName, "AdminServer");
+
     // delete domain
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
@@ -463,4 +487,14 @@ class ItWDTModelNoServer {
     return miiImage;
   }
 
+  private void checkAdminServerName(String adminServerPodName, String expectedAdminServerName) {
+    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceDomainConfig(adminSvcExtHost, adminServiceNodePort,
+        "\"adminServerName\": \"" + expectedAdminServerName + "\""),
+        "Admin server name is not '" + expectedAdminServerName + "'");
+    logger.info("AdminServerName is {0}", expectedAdminServerName);
+  }
 }
