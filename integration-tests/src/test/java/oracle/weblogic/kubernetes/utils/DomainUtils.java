@@ -39,7 +39,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.AuxiliaryImage;
@@ -423,7 +422,6 @@ public class DomainUtils {
     LoggingFacade logger = getLogger();
     logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
     DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
-    logger.info(Yaml.dump(domainCustomResource));
     Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
         .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
     int clusterIndex = -1;

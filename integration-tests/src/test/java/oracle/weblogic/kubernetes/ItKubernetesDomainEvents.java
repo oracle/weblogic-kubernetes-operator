@@ -476,7 +476,6 @@ class ItKubernetesDomainEvents {
     createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
-    shutdownDomain(domainUid, domainNamespace4);
     deleteDomainResource(domainNamespace4, domainUid);
   }
 
