@@ -16,11 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -428,6 +430,45 @@ public class DomainUtils {
         domainNS);
   }
 
+  /**
+   * Remove cluster reference from domain resource.
+   *
+   * @param clusterName name of the cluster to be removed from domain resource
+   * @param domainUid name of the domain resource
+   * @param namespace namespace in which domain resource exists
+   * @throws ApiException throws when cluster interaction fails
+   */
+  public static void removeClusterInDomainResource(String clusterName, String domainUid, String namespace)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+    logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
+    DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
+    Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
+        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
+    int clusterIndex = -1;
+    if (cluster.isPresent()) {
+      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
+      logger.info("Cluster index is {0}", clusterIndex);
+    } else {
+      logger.warning("Cluster {0} not found in domain resource {1} in namespace {2}", 
+          clusterName, domainUid, namespace);
+    }
+    if (clusterIndex != -1) {
+      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/" + clusterIndex + "\"}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
+          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
+      testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
+          clusterName, namespace);
+    } else {
+      logger.warning("Cluster {0} not found in domain resource {1} in namespace {2}", 
+          clusterName, domainUid, namespace);
+    }
+  }
+  
   /**
    * Patch a domain with auxiliary image and verify pods are rolling restarted.
    * @param oldImageName old auxiliary image name
