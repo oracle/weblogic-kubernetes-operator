@@ -13,7 +13,7 @@ This document describes the domain home source types for deploying a domain, and
 
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
 
-{{% notice note %}}The **Domain in Image** domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
+{{% notice note %}}The **Domain in Image** domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
  - **[Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}})**:
