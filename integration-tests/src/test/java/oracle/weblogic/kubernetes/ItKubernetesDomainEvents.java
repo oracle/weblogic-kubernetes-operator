@@ -368,7 +368,6 @@ class ItKubernetesDomainEvents {
     checkFailedEvent(opNamespace, domainNamespace5, domainUid5, ABORTED_ERROR, "Warning", timestamp);
 
     shutdownDomain(domainUid5, domainNamespace5);
-    deleteDomainResource(domainNamespace5, domainUid5);
   }
 
   /**
@@ -680,7 +679,6 @@ class ItKubernetesDomainEvents {
     checkEvent(opNamespace, domainNamespace2, domainUid, DOMAIN_DELETED, "Normal", timestamp);
     //verify cluster deleted event
     checkEvent(opNamespace, domainNamespace2, null, CLUSTER_DELETED, "Normal", timestamp);
-    deleteDomainResource(domainNamespace2, domainUid);
   }
 
   /**
