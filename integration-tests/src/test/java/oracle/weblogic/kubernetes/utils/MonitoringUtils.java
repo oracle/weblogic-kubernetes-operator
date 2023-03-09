@@ -73,6 +73,8 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_REL
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
@@ -404,6 +406,12 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "prometheus_configmap_reload_tag",
         PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_node_exporter_image",
+        PROMETHEUS_NODE_EXPORTER_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_node_exporter_tag",
+        PROMETHEUS_NODE_EXPORTER_IMAGE_TAG),"Failed to replace String ");
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),

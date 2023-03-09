@@ -310,6 +310,10 @@ public interface TestConstants {
       + "/weblogick8s/test-images/prom/pushgateway";
   public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
 
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/node-exporter";
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_TAG = "v1.3.1";
+
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
 

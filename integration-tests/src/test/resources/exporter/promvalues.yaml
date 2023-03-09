@@ -10,13 +10,6 @@ serviceAccounts:
   pushgateway:
     create: false
 
-pushgateway:
-  enabled: false
-  image:
-    repository: pushgateway_image
-    tag: pushgateway_tag
-    pullPolicy: IfNotPresent
-
 alertmanager:
   enabled: true
 
@@ -39,6 +32,13 @@ alertmanager:
 
 nodeExporter:
   enabled: false
+  ## node-exporter container image
+  ##
+  image:
+    repository: prometheus_node_exporter_image
+    tag: prometheus_node_exporter_tag
+    pullPolicy: IfNotPresent
+
 configmapReload:
   prometheus:
     ## If false, the configmap-reload container will not be deployed
@@ -52,8 +52,8 @@ configmapReload:
     ## configmap-reload container image
     ##
     image:
-      repository: phx.ocir.io/weblogick8s/test-images/jimmidyson/configmap-reload
-      tag: v0.5.0
+      repository: prometheus_configmap_reload_image
+      tag: prometheus_configmap_reload_tag
       # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
       digest: ""
       pullPolicy: IfNotPresent
@@ -77,6 +77,12 @@ server:
     tag: prometheus_tag
     pullPolicy: IfNotPresent
 
+  pushgateway:
+    enabled: false
+    image:
+      repository: pushgateway_image
+      tag: pushgateway_tag
+      pullPolicy: IfNotPresent
 alertmanagerFiles:
   alertmanager.yml:
     global:
