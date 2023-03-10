@@ -25,8 +25,8 @@ You can:
 The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 4.0.4.
-This release was published on December 20, 2022.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 4.0.5.
+This release was published on February 21, 2023.
 ***
 
 ## Documentation
@@ -91,6 +91,9 @@ Only pull requests from committers that can be verified as having signed the OCA
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
 
+## Security
+
+Please consult the [security guide](./SECURITY.md) for our responsible security vulnerability disclosure process.
 
 ## License
 

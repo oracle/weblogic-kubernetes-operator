@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -26,6 +26,7 @@ import oracle.weblogic.kubernetes.annotations.DisabledOn12213Image;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -37,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -44,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
@@ -62,6 +65,7 @@ import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRe
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
@@ -72,15 +76,18 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.copyFile;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("olcne")
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;
@@ -91,7 +98,6 @@ class ItIstioMiiDomain {
   private final String clusterName = "cluster-1"; // do not modify
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
-  private final String workManagerName = "newWM";
   private final int replicaCount = 2;
 
   private static String testWebAppWarLoc = null;
@@ -126,6 +132,8 @@ class ItIstioMiiDomain {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
+    
+    enableStrictMode(domainNamespace);
   }
 
   /**
@@ -182,9 +190,6 @@ class ItIstioMiiDomain {
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.emptyList());
 
-    // create cluster object
-    String clusterName = "cluster-1";
-
     // create the domain object
     DomainResource domain = createDomainResource(domainUid,
                                       domainNamespace,
@@ -237,6 +242,17 @@ class ItIstioMiiDomain {
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    
+    String curlCmd = "curl -j -sk --show-error --noproxy '*' "
+        + " -H 'Host: " + domainNamespace + ".org'"
+        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+    ExecResult result;
+    logger.info("curl command {0}", curlCmd);
+    result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    assertEquals(0, result.exitValue(), "Got expected exit value");
+    result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    assertEquals(0, result.exitValue(), "Got expected exit value");    
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
@@ -254,7 +270,6 @@ class ItIstioMiiDomain {
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
-      ExecResult result = null;
       logger.info("curl command {0}", curlCmd2);
       result = assertDoesNotThrow(
         () -> exec(curlCmd2, true));
@@ -266,7 +281,7 @@ class ItIstioMiiDomain {
         assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
         logger.info("No minimum umask warning reported");
       } else {
-        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
+        fail("Curl command failed to get DomainSecurityRuntime");
       }
     } else {
       logger.info("Skipping Security warning check, since Security Warning tool "
@@ -274,7 +289,6 @@ class ItIstioMiiDomain {
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
-    ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
@@ -291,7 +305,6 @@ class ItIstioMiiDomain {
     //Verify the dynamic configuration update
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -363,5 +376,17 @@ class ItIstioMiiDomain {
             .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     return domain;
+  }
+  
+  private static void enableStrictMode(String namespace) {
+    assertDoesNotThrow(() -> copyFile(Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml").toFile(),
+          Paths.get(WORK_DIR, "istio-tls-mode.yaml").toFile()));
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(),
+          "NAMESPACE", namespace));
+
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
   }
 }

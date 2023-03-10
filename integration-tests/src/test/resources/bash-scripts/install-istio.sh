@@ -1,16 +1,15 @@
 #!/bin/bash -x
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.11.1
+#  Default istio version is 1.13.2
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 #  https://github.com/istio/istio/releases
 #  https://github.com/istio/istio/tags
-
 
 # Usage:
 #
@@ -39,9 +38,12 @@ ${KUBERNETES_CLI} create namespace istio-system
 
 ( ${KUBERNETES_CLI} create secret generic docker-istio-secret --type=kubernetes.io/dockerconfigjson --from-file=.dockerconfigjson=$HOME/.docker/config.json -n istio-system )
 
+ # set custom docker registry to gcr.io/istio-release to avoid 
+ # docker.io/istio dependency.
+ echo "Set the image registry to gcr.io/istio-release during istio installation"
 ( cd ${istiodir}
   bin/istioctl x precheck
-  bin/istioctl install --set profile=demo --set values.global.imagePullSecrets[0]=docker-istio-secret --set meshConfig.enablePrometheusMerge=false -y
+  bin/istioctl install --set meshConfig.enablePrometheusMerge=false --set values.global.imagePullSecrets[0]=docker-istio-secret --set hub=gcr.io/istio-release --set components.cni.enabled=true --set profile=demo -y
   bin/istioctl verify-install
   bin/istioctl version
 )

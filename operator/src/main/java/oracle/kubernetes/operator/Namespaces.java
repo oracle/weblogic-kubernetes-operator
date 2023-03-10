@@ -1,8 +1,9 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -271,7 +272,7 @@ public class Namespaces {
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
+      NamespaceValidationContext validationContext = new NamespaceValidationContext(packet, domainNamespaces);
       getNonNullConfiguredDomainNamespaces().forEach(validationContext::validateConfiguredNamespace);
       List<StepAndPacket> nsStopEventSteps = getCreateNSStopEventSteps(packet, validationContext);
       stopRemovedNamespaces(validationContext);
@@ -280,18 +281,23 @@ public class Namespaces {
 
     private List<StepAndPacket> getCreateNSStopEventSteps(Packet packet, NamespaceValidationContext validationContext) {
       return domainNamespaces.getNamespaces().stream()
-          .filter(validationContext::isNoLongerActiveDomainNamespace)
+          .filter(validationContext::isNotManaged)
           .map(n -> createNSStopEventDetails(packet, n)).collect(Collectors.toList());
     }
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
       LOGGER.info(MessageKeys.END_MANAGING_NAMESPACE, namespace);
-      return new StepAndPacket(
-          Step.chain(
-              createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
-              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(namespace)
-                  .namespace(getOperatorNamespace()))),
-          packet.copy());
+      return new StepAndPacket(getSteps(namespace), packet.copy());
+    }
+
+    private Step getSteps(String ns) {
+      List<Step> steps = new ArrayList<>();
+      if (!domainNamespaces.isStopping(ns).get()) {
+        steps.add(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(ns).namespace(ns)));
+      }
+      steps.add(createEventStep(
+          new EventData(STOP_MANAGING_NAMESPACE).resourceName(ns).namespace(getOperatorNamespace())));
+      return Step.chain(steps.toArray(new Step[0]));
     }
 
     private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
@@ -333,9 +339,15 @@ public class Namespaces {
   private static class NamespaceValidationContext {
 
     final Collection<String> allDomainNamespaces;
+    final DomainNamespaces domainNamespaces;
 
-    NamespaceValidationContext(Packet packet) {
+    NamespaceValidationContext(Packet packet, DomainNamespaces domainNamespaces) {
       allDomainNamespaces = Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());
+      this.domainNamespaces = domainNamespaces;
+    }
+
+    private boolean isNotManaged(String ns) {
+      return isNoLongerActiveDomainNamespace(ns) || domainNamespaces.isStopping(ns).get();
     }
 
     private boolean isNoLongerActiveDomainNamespace(String ns) {

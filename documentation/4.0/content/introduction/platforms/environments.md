@@ -9,30 +9,29 @@ weight: 6
 
 ### Overview
 
-The operator supports a wide range of on-premises and cloud Kubernetes
-offerings where Kubernetes is supplied for you or you set up Kubernetes
-yourself. These include, but are not limited to:
+The operator supports running on production-quality Kubernetes environments, including on-premises,
+cloud offerings where Kubernetes is supplied for you, and cloud offerings where you set up Kubernetes yourself.
+Please refer to the support statement [Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1).
 
-- WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
-  - Oracle Cloud Infrastructure
+These include, but are not limited to:
+
+- Oracle Cloud certified offerings, such as:
+  - Oracle Cloud Infrastructure (OCI)
   - Oracle Container Engine for Kubernetes (OKE)
-  - Oracle Cloud Native Environment
+  - Oracle Cloud Native Environment (OCNE)
   - Oracle Private Cloud Appliance (PCA)
   - Oracle Private Cloud at Customer (OPCC)
 
-- WebLogic Server and the operator are certified on offerings, such as:
-  - Amazon Elastic Compute Cloud (EC2)
+- Other certified offerings, such as:
   - Microsoft Azure Platform
   - Microsoft Azure Kubernetes Service (AKS)
   - OpenShift Container Platform
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
 
-WebLogic Server and the operator are also supported on service offerings which
-deploy the WebLogic Server and the operator for you. These include:
-
-- [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
-- [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
+- Offerings which deploy the WebLogic Server and the operator for you. These include:
+  - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
+  - [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
@@ -122,7 +121,8 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 AKS support and limitations:
 
 * Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
-* All three domain home source types are supported (Domain in Image, Model in Image, and Domain in PV).
+* All three [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are supported (Domain in Image, Model in Image, and Domain in PV).
+   * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
 * For Domain in PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes Service of `type=LoadBalancer`.

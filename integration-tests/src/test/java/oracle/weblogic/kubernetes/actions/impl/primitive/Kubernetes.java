@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -91,7 +91,9 @@ import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
 import io.kubernetes.client.util.generic.options.DeleteOptions;
 import oracle.verrazzano.weblogic.ApplicationConfiguration;
+import oracle.verrazzano.weblogic.ApplicationList;
 import oracle.verrazzano.weblogic.Component;
+import oracle.verrazzano.weblogic.ComponentList;
 import oracle.weblogic.domain.ClusterList;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
@@ -134,7 +136,6 @@ public class Kubernetes {
   private static CoreV1Api coreV1Api = null;
   private static PolicyV1Api policyV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
-  private static CustomObjectsApi vzCustomObjectsApi = null;
   private static RbacAuthorizationV1Api rbacAuthApi = null;
   private static AdmissionregistrationV1Api admissionregistrationApi = null;
   private static DeleteOptions deleteOptions = null;
@@ -143,6 +144,8 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1ConfigMap, V1ConfigMapList> configMapClient = null;
   private static GenericKubernetesApi<V1ClusterRoleBinding, V1ClusterRoleBindingList> roleBindingClient = null;
   private static GenericKubernetesApi<DomainResource, DomainList> crdClient = null;
+  private static GenericKubernetesApi<ApplicationConfiguration, ApplicationList> vzAppCrdClient = null;
+  private static GenericKubernetesApi<Component, ComponentList> vzComCrdClient = null;
   private static GenericKubernetesApi<ClusterResource, ClusterList> clusterCrdClient = null;
   private static GenericKubernetesApi<V1Deployment, V1DeploymentList> deploymentClient = null;
   private static GenericKubernetesApi<V1Job, V1JobList> jobClient = null;
@@ -167,7 +170,6 @@ public class Kubernetes {
       coreV1Api = new CoreV1Api();
       policyV1Api = new PolicyV1Api();
       customObjectsApi = new CustomObjectsApi();
-      vzCustomObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       admissionregistrationApi = new AdmissionregistrationV1Api();
       initializeGenericKubernetesApiClients();
@@ -200,6 +202,26 @@ public class Kubernetes {
             DOMAIN_PLURAL, // the resource plural
             apiClient //the api client
         );
+    
+    vzAppCrdClient =
+        new GenericKubernetesApi<>(
+            ApplicationConfiguration.class,  // the api type class
+            ApplicationList.class, // the api list type class
+            APPLICATION_GROUP, // the api group
+            APPLICATION_VERSION, // the api version
+            APPLICATION_PLURAL, // the resource plural
+            apiClient //the api client
+        );
+    
+    vzComCrdClient =
+        new GenericKubernetesApi<>(
+            Component.class,  // the api type class
+            ComponentList.class, // the api list type class
+            COMPONENT_GROUP, // the api group
+            COMPONENT_VERSION, // the api version
+            COMPONENT_PLURAL, // the resource plural
+            apiClient //the api client
+        );    
     
     clusterCrdClient =
         new GenericKubernetesApi<>(
@@ -1330,7 +1352,7 @@ public class Kubernetes {
 
     Object response;
     try {
-      response = vzCustomObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
+      response = customObjectsApi.createNamespacedCustomObject(COMPONENT_GROUP, // custom resource's group name
           componentVersion, //custom resource's version
           namespace, // custom resource's namespace
           COMPONENT_PLURAL, // custom resource's plural name
@@ -1347,6 +1369,25 @@ public class Kubernetes {
     return true;
   }
 
+  /**
+   * List Component Custom Resources from a given namespace.
+   *
+   * @param namespace namespace name
+   * @return List of Component Custom Resources
+   * @throws io.kubernetes.client.openapi.ApiException when list fails
+   */
+  public static ComponentList listComponents(String namespace)
+      throws ApiException {
+    KubernetesApiResponse<ComponentList> response = null;
+    try {
+      response = vzComCrdClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ComponentList();
+  }
+  
   /**
    * Create a Verrazzano ApplicationConfiguration Custom Resource.
    *
@@ -1372,7 +1413,7 @@ public class Kubernetes {
     JsonElement json = convertToJson(application);
     Object response;    
     try {
-      response = vzCustomObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
+      response = customObjectsApi.createNamespacedCustomObject(APPLICATION_GROUP, // custom resource's group name
           applicationVersion, //custom resource's version
           namespace, // custom resource's namespace
           APPLICATION_PLURAL, // custom resource's plural name
@@ -1387,6 +1428,25 @@ public class Kubernetes {
     }
 
     return true;
+  }
+  
+  /**
+   * List ApplicationConfiguration Custom Resources from a given namespace.
+   *
+   * @param namespace namespace name
+   * @return List of ApplicationConfiguration Custom Resources
+   * @throws io.kubernetes.client.openapi.ApiException when list fails
+   */
+  public static ApplicationList listApplications(String namespace)
+      throws ApiException {
+    KubernetesApiResponse<ApplicationList> response = null;
+    try {
+      response = vzAppCrdClient.list(namespace);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+    return response != null ? response.getObject() : new ApplicationList();
   }
   
   /**
@@ -3422,6 +3482,36 @@ public class Kubernetes {
     return ingress;
   }
 
+  /**
+   * Get a list of custom resource definitions deployed in the Kubernetes cluster.
+   *
+   * @return String list of crds as String of V1CustomResourceDefinitionList
+   * @throws ApiException when list fails.
+   */
+  public static String listCrds() throws ApiException {
+    Object crds;
+    try {
+      crds = customObjectsApi
+          .listClusterCustomObject("apiextensions.k8s.io",
+              "v1",
+              "customresourcedefinitions",
+              null,
+              false,
+              null,
+              null,
+              null,
+              0,
+              null,
+              null,
+              0,
+              false);
+    } catch (Exception ex) {
+      getLogger().severe(ex.getMessage());
+      throw ex;
+    }
+    return crds.toString();
+  }
+  
   //------------------------
 
   private static String readExecCmdData(InputStream is) {

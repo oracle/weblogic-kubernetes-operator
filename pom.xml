@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2023, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>4.0.4</version>
+  <version>4.0.5</version>
 
   <modules>
     <module>operator</module>
@@ -624,21 +624,21 @@
     <maven.version.range>[3.5.2,)</maven.version.range>
     <maven-enforcer-plugin-version>3.2.1</maven-enforcer-plugin-version>
     <maven-clean-plugin-version>3.2.0</maven-clean-plugin-version>
-    <maven-compiler-plugin-version>3.10.1</maven-compiler-plugin-version>
+    <maven-compiler-plugin-version>3.11.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.0</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.0</maven-install-plugin-version>
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.0</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.0.0-M8</maven-surefire-plugin-version>
+    <maven-surefire-plugin-version>3.0.0-M9</maven-surefire-plugin-version>
     <maven-checkstyle-plugin-version>3.2.1</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.0-M7</maven-release-plugin-version>
-    <maven-javadoc-plugin-version>3.4.1</maven-javadoc-plugin-version>
-    <maven-failsafe-plugin-version>3.0.0-M8</maven-failsafe-plugin-version>
+    <maven-javadoc-plugin-version>3.5.0</maven-javadoc-plugin-version>
+    <maven-failsafe-plugin-version>3.0.0-M9</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.5.0</maven-dependency-plugin-version>
     <maven-shade-plugin-version>3.4.1</maven-shade-plugin-version>
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
-    <checkstyle-version>10.7.0</checkstyle-version>
+    <checkstyle-version>10.8.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -648,7 +648,7 @@
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <commons-cli-version>1.5.0</commons-cli-version>
-    <networknt-jsonschmema-validator-version>1.0.76</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.0.78</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.3</commons-exec-version>
     <commons-codec-version>1.15</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -659,7 +659,7 @@
     <assertj.core.version>3.24.2</assertj.core.version>
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
-    <client-java-version>17.0.1</client-java-version>
+    <client-java-version>18.0.0</client-java-version>
     <kotlin-stdlib-version>1.8.10</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
@@ -673,9 +673,9 @@
     <prometheus-version>0.16.0</prometheus-version>
     <jackson-version>2.14.2</jackson-version>
     <jackson-databind-version>2.14.2</jackson-databind-version>
-    <snakeyaml-version>1.33</snakeyaml-version>
+    <snakeyaml-version>2.0</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
-    <dependency-check-version>8.0.2</dependency-check-version>
+    <dependency-check-version>8.1.2</dependency-check-version>
     <logback-classic-version>1.2.11</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>

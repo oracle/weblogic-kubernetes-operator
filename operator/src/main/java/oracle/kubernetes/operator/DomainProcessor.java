@@ -4,9 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -18,6 +16,7 @@ import io.kubernetes.client.util.Watch.Response;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
@@ -107,13 +106,13 @@ public interface DomainProcessor {
   }
 
   /**
-   * Finds stranded cached domain presence infos that are not identified by the key set.
-   * @param namespace namespace
-   * @param domainUids domain UID key set
-   * @return stream of cached domain presence infos.
+   * Get the map of domain presence infos for a given namespace.
+   *
+   * @param namespace the nnamespace
+   * @return Map of cached domain presence infos.
    */
-  default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-    return Stream.empty();
+  default Map<String,DomainPresenceInfo> getDomainPresenceInfoMapForNS(String namespace) {
+    return new ConcurrentHashMap<>();
   }
 
   /**
@@ -131,4 +130,10 @@ public interface DomainProcessor {
   default Map<String, Map<String, ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return new ConcurrentHashMap<>();
   }
+
+  Map<String, FiberGate> getMakeRightFiberGateMap();
+
+  DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
+
+  void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
 }

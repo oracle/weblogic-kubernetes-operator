@@ -165,7 +165,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    * @param cachedInfo the cached domain presence info.
    */
   public boolean isFromOutOfDateEvent(MakeRightDomainOperation operation, DomainPresenceInfo cachedInfo) {
-    return operation.wasStartedFromEvent() && !isNewerThan(cachedInfo);
+    return operation.hasEventData() && !isNewerThan(cachedInfo);
   }
 
   private boolean isNewerThan(DomainPresenceInfo cachedInfo) {

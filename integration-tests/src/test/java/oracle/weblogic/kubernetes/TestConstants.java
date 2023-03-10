@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
@@ -172,17 +173,19 @@ public interface TestConstants {
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "4.0.17";
-  public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
   public static final String NGINX_INGRESS_IMAGE_DIGEST = 
       "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";  
   public static final String TEST_NGINX_IMAGE_NAME = "weblogick8s/test-images/ingress-nginx/controller";
-  public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
+  public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://helm.traefik.io/traefik";
-  public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
+  public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_CHART_NAME = "traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_REPO 
+           + "/weblogick8s/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
 
   // Voyager constants
   public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
@@ -281,7 +284,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.1");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.2");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -403,4 +406,12 @@ public interface TestConstants {
   // metrics server constants
   public static final String METRICS_SERVER_YAML =
       "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+  
+  // verrazzano related constants
+  public static final String VZ_INGRESS_NS = "ingress-nginx";
+  public static final String VZ_SYSTEM_NS = "verrazzano-system";
+  public static final String VZ_ISTIO_NS = "istio-system";
+  public static final boolean VZ_ENV = assertDoesNotThrow(() -> listNamespaces().stream()
+        .anyMatch(ns -> ns.equals(VZ_SYSTEM_NS)));
+  
 }

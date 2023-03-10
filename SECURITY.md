@@ -21,9 +21,7 @@ security features are welcome on GitHub Issues.
 
 Security updates will be released on a regular cadence. Many of our projects
 will typically release security fixes in conjunction with the
-[Oracle Critical Patch Update][3] program. Security updates are released on the
-Tuesday closest to the 17th day of January, April, July and October. A pre-release
-announcement will be published on the Thursday preceding each release. Additional
+[Oracle Critical Patch Update][3] program. Additional
 information, including past advisories, is available on our [security alerts][4]
 page.
 

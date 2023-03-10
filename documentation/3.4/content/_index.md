@@ -31,7 +31,7 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 #### Current production release
 
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is {{< latestVersion >}}.
-This release was published on January 24, 2023. See the [operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
+This release was published on February 17, 2023. See the [operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
 
 ***
 
@@ -61,6 +61,5 @@ See [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
 * [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)
 * [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/)
 * [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
-* [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
 * [WebLogic Remote Console](https://oracle.github.io/weblogic-remote-console/)
 * [WebLogic Kubernetes Toolkit UI](https://oracle.github.io/weblogic-toolkit-ui/)

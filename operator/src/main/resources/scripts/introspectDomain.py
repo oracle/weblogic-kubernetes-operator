@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -268,8 +268,8 @@ class OfflineWlstEnv(object):
       childObjs = ls(returnMap='true', returnType='c')
       if not childObjs.isEmpty():
         cd(childObjs[0])
-        if get('ServerTemplate') is not None:
-          # Cluster is a dynamic cluster if a ServerTemplate MBean is found
+        if get('ServerTemplate') is not None or int(get('DynamicClusterSize')) > 0:
+          # Cluster is a dynamic cluster if a ServerTemplate MBean is found or DynamicClusterSize is greater than 0.
           ret = cmo
     except:
       trace("Ignoring cd() exception for cluster '" + cluster.getName() + "' in getDynamicServerOrNone() and returning None.")
@@ -493,7 +493,7 @@ class TopologyGenerator(Generator):
     for server in self.env.getDomain().getServers():
       if self.env.getClusterOrNone(server) is cluster:
         return
-    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.")
+    self.addError("The WebLogic configured cluster " + self.name(cluster) + " is not referenced by any servers.  You must have managed servers defined that belong to this cluster.")
 
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
@@ -611,7 +611,7 @@ class TopologyGenerator(Generator):
             self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is referenced the server template " + self.name(server_template) + " and the server template " + self.name(template) + ".")
             return
     if server_template is None:
-      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
+      self.addError("The WebLogic dynamic cluster " + self.name(cluster) + " is not referenced by any server template.")
 
   def validateServerTemplateNapListenPortIsSet(self, server_or_template):
     naps = server_or_template.getNetworkAccessPoints()
