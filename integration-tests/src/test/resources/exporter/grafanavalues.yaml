@@ -2,9 +2,9 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 image:
-  repository: grafana/grafana
+  repository: grafana_image
   # Overrides the Grafana image tag whose default is the chart appVersion
-  tag: "9.3.0"
+  tag: "grafana_tag"
   sha: ""
   pullPolicy: IfNotPresent
 
