@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.Collections;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -18,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
@@ -34,7 +32,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -141,7 +139,6 @@ class ItWDTModelNoServer {
     // delete domain and cluster
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -186,7 +183,6 @@ class ItWDTModelNoServer {
     // delete domain and cluster
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -227,7 +223,6 @@ class ItWDTModelNoServer {
     // delete domain and cluster
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -270,7 +265,6 @@ class ItWDTModelNoServer {
     // delete domain and cluster
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -317,7 +311,6 @@ class ItWDTModelNoServer {
     // delete domain and cluster
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
     deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -337,7 +330,7 @@ class ItWDTModelNoServer {
         domainUid,
         imageName,
         replicaCount,
-        Collections.singletonList(clusterName),
+        clusterName,
         false,
         null);
 
@@ -349,7 +342,6 @@ class ItWDTModelNoServer {
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
     deleteDomainResource(domainNamespace, domainUid);
   }
 
@@ -376,8 +368,7 @@ class ItWDTModelNoServer {
     String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
-    // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
+    // delete the domain
     deleteDomainResource(domainNamespace, domainUid);
   }
 
@@ -405,7 +396,6 @@ class ItWDTModelNoServer {
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
     deleteDomainResource(domainNamespace, domainUid);
   }
 
@@ -478,7 +468,7 @@ class ItWDTModelNoServer {
         createMiiImageAndVerify(MII_IMAGE_NAME, wdtModelFileForMiiDomain, MII_BASIC_APP_NAME);
 
     // repo login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(miiImage);
+    dockerLoginAndPushImageToRegistry(miiImage);
 
     // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster

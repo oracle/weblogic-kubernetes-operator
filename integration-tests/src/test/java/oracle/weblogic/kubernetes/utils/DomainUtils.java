@@ -90,15 +90,20 @@ import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -175,14 +180,14 @@ public class DomainUtils {
    * verify the servers are running.
    *
    * @param domainUid domain
-   * @param domain the oracle.weblogic.domain.DomainResource object to create domain custom resource
+   * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
    * @param domainNamespace namespace in which the domain will be created
    * @param adminServerPodName admin server pod name
    * @param managedServerPodNamePrefix managed server pod prefix
    * @param replicaCount replica count
    * @param verifyServerPods whether to verify server pods of the domain
    */
-  public static void createDomainAndVerify(String domainUid, DomainResource domain,
+  public static void createDomainAndVerify(String domainUid, Domain domain,
                                            String domainNamespace, String adminServerPodName,
                                            String managedServerPodNamePrefix, int replicaCount,
                                            boolean verifyServerPods) {
@@ -362,7 +367,7 @@ public class DomainUtils {
    * @param verifyServerPods whether to verify the server pods
    * @return oracle.weblogic.domain.Domain objects
    */
-  public static DomainResource createDomainOnPvUsingWdt(String domainUid,
+  public static Domain createDomainOnPvUsingWdt(String domainUid,
                                                         String domainNamespace,
                                                         String wlSecretName,
                                                         String clusterName,
@@ -438,7 +443,7 @@ public class DomainUtils {
         domainPropertiesFile.toPath(),
         domainUid, pvName, pvcName, domainNamespace, testClassName);
 
-    DomainResource domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+    Domain domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
         clusterName, replicaCount);
 
     // Verify the domain custom resource is created.
@@ -777,16 +782,16 @@ public class DomainUtils {
    * @param wlSecretName wls admin secret name
    * @param clusterName cluster name
    * @param replicaCount replica count of the cluster
-   * @return oracle.weblogic.domain.DomainResource object
+   * @return oracle.weblogic.domain.Domain object
    */
-  public static DomainResource createDomainInImageUsingWdt(String domainUid,
-                                                           String domainNamespace,
-                                                           String wdtModelFileForDomainInImage,
-                                                           List<String> appSrcDirList,
-                                                           List<String> propertyFiles,
-                                                           String wlSecretName,
-                                                           String clusterName,
-                                                           int replicaCount) {
+  public static Domain createDomainInImageUsingWdt(String domainUid,
+                                                   String domainNamespace,
+                                                   String wdtModelFileForDomainInImage,
+                                                   List<String> appSrcDirList,
+                                                   List<String> propertyFiles,
+                                                   String wlSecretName,
+                                                   String clusterName,
+                                                   int replicaCount) {
 
     // create secret for admin credentials
     getLogger().info("Create secret for admin credentials");
@@ -801,14 +806,14 @@ public class DomainUtils {
         domainUid, false);
 
     // repo login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(domainInImageWithWDTImage);
+    dockerLoginAndPushImageToRegistry(domainInImageWithWDTImage);
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createTestRepoSecret(domainNamespace);
 
     // create the domain custom resource
-    DomainResource domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, domainInImageWithWDTImage,
+    Domain domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, domainInImageWithWDTImage,
         wlSecretName, clusterName, replicaCount);
 
     // create domain and verify
