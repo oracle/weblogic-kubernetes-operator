@@ -50,7 +50,7 @@ Changes to the WebLogic domain configuration may require either a rolling or ful
 
 ##### Domain in Image
 
-{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
+{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
 For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have [followed the CI/CD guidelines]({{< relref "/managing-domains/cicd/mutate-the-domain-layer">}}) to create an image with compatible encryption keys.
