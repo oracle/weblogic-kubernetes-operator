@@ -57,6 +57,8 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -565,6 +567,12 @@ public class MonitoringUtils {
             StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
             "pvc-grafana", "pvc-" + grafanaReleaseName));
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_image",
+        GRAFANA_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_tag",
+        GRAFANA_IMAGE_TAG),"Failed to replace String ");
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
               "enabled: false", "enabled: true"));

@@ -316,6 +316,9 @@ public interface TestConstants {
 
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
+  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/grafana/grafana";
+  public static final String GRAFANA_IMAGE_TAG = "9.3.0";
 
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";

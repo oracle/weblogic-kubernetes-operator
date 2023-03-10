@@ -30,7 +30,8 @@ alertmanager:
     runAsNonRoot: true
     runAsGroup: 65534
 
-nodeExporter:
+#nodeExporter:
+prometheus-node-exporter:
   enabled: false
   ## node-exporter container image
   ##
@@ -77,12 +78,12 @@ server:
     tag: prometheus_tag
     pullPolicy: IfNotPresent
 
-  prometheus-pushgateway:
-    enabled: false
-    image:
-      repository: pushgateway_image
-      tag: pushgateway_tag
-      pullPolicy: IfNotPresent
+prometheus-pushgateway:
+  enabled: false
+  image:
+    repository: pushgateway_image
+    tag: pushgateway_tag
+    pullPolicy: IfNotPresent
 alertmanagerFiles:
   alertmanager.yml:
     global:
