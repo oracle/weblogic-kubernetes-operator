@@ -304,7 +304,7 @@ public interface TestConstants {
   public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG = "v0.5.0";
 
   public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO
-      + "/weblogick8s/test-images/prom/pushgateway";
+      + "/weblogick8s/test-images/prometheus/pushgateway";
   public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
 
   public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO
