@@ -107,7 +107,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
-//@Tag("oke-sequential")
+@Tag("oke-sequential")
 @Tag("kind-parallel")
 class ItDBOperator {
 
