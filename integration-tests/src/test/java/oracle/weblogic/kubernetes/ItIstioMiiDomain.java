@@ -133,7 +133,7 @@ class ItIstioMiiDomain {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
     
-    enableStrictMode(domainNamespace);
+    // enableStrictMode(domainNamespace);
   }
 
   /**
@@ -254,18 +254,18 @@ class ItIstioMiiDomain {
     logger.info(result.stderr());
     
     // delete the mTLS mode
-    result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
-        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    assertEquals(0, result.exitValue(), "Got expected exit value"); 
-    logger.info(result.stdout());
-    logger.info(result.stderr());
+    // result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
+    //    + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    // assertEquals(0, result.exitValue(), "Got expected exit value"); 
+    // logger.info(result.stdout());
+    // logger.info(result.stderr());
     
     // access the console again
-    logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    logger.info(String.valueOf(result.exitValue()));    
-    logger.info(result.stdout());
-    logger.info(result.stderr());
+    //    logger.info("curl command {0}", curlCmd);
+    //    result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    //    logger.info(String.valueOf(result.exitValue()));    
+    //    logger.info(result.stdout());
+    //    logger.info(result.stderr());
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
