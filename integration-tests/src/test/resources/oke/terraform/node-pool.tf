@@ -27,6 +27,7 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   node_source_details {
        image_id = var.node_pool_node_image_name
        source_type = "image"
+       boot_volume_size_in_gbs = "100"
   }
 
   # Optional
