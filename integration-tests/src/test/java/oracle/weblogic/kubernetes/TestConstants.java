@@ -327,6 +327,10 @@ public interface TestConstants {
   public static final boolean OKD =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.okd.cluster", "false"));
 
+  // OCNE constants
+  public static final boolean OCNE =
+      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.ocne.cluster", "false"));
+
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
