@@ -133,7 +133,7 @@ class ItIstioMiiDomain {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
     
-    // enableStrictMode(domainNamespace);
+    enableStrictMode(domainNamespace);
   }
 
   /**
