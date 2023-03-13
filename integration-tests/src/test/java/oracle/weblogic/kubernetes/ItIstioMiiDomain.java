@@ -133,7 +133,7 @@ class ItIstioMiiDomain {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
     
-    // enableStrictMode(domainNamespace);
+    enableStrictMode(domainNamespace);
   }
 
   /**
@@ -213,6 +213,14 @@ class ItIstioMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    
+    
+    // delete the mTLS mode
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    assertEquals(0, result.exitValue(), "Got expected exit value");
+    logger.info(result.stdout());
+    logger.info(result.stderr());   
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -246,26 +254,19 @@ class ItIstioMiiDomain {
     String curlCmd = "curl -j -sk --show-error --noproxy '*' "
         + " -H 'Host: " + domainNamespace + ".org'"
         + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    ExecResult result;
+    
     logger.info("curl command {0}", curlCmd);
     result = assertDoesNotThrow(() -> exec(curlCmd, true));
     logger.info(String.valueOf(result.exitValue()));
     logger.info(result.stdout());
     logger.info(result.stderr());
-    
-    // delete the mTLS mode
-    // result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
-    //    + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    // assertEquals(0, result.exitValue(), "Got expected exit value"); 
-    // logger.info(result.stdout());
-    // logger.info(result.stderr());
-    
+
     // access the console again
-    //    logger.info("curl command {0}", curlCmd);
-    //    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    //    logger.info(String.valueOf(result.exitValue()));    
-    //    logger.info(result.stdout());
-    //    logger.info(result.stderr());
+    logger.info("curl command {0}", curlCmd);
+    result = assertDoesNotThrow(() -> exec(curlCmd, true));
+    logger.info(String.valueOf(result.exitValue()));
+    logger.info(result.stdout());
+    logger.info(result.stderr());
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
