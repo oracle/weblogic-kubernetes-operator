@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.InitPvDomain;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -83,6 +84,11 @@ public abstract class DomainConfigurator {
 
   public DomainConfigurator withModelHome(String modelHome) {
     getDomainSpec().setModelHome(modelHome);
+    return this;
+  }
+
+  public DomainConfigurator withInitPvDomain(InitPvDomain initPvDomain) {
+    getDomainSpec().withInitPvDomain(initPvDomain);
     return this;
   }
 

@@ -1697,4 +1697,17 @@ class DomainV2Test extends DomainTestBase {
     assertThrows(AssertionError.class,
         () -> domainConfigurator.withMonitoringExporterResources(resourceRequirements));
   }
+
+  @Test
+  void whenInitPvPvcAndInitDomainConfigured_useValues() {
+    InitPvDomain initPvDomain = new InitPvDomain();
+    initPvDomain.setInitPv(new InitPv());
+    initPvDomain.setInitPvc(new InitPvc());
+    initPvDomain.setInitDomain(new InitDomain());
+    configureDomain(domain).withInitPvDomain(initPvDomain);
+
+    assertThat(domain.getSpec().getInitPvDomain().getInitPv(), not(nullValue()));
+    assertThat(domain.getSpec().getInitPvDomain().getInitPvc(), not(nullValue()));
+    assertThat(domain.getSpec().getInitPvDomain().getInitDomain(), not(nullValue()));
+  }
 }

@@ -467,6 +467,28 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
+  private InitPvDomain initPvDomain = new InitPvDomain();
+
+  public InitPvDomain getInitPvDomain() {
+    return initPvDomain;
+  }
+
+  public void setInitPvDomain(InitPvDomain initPvDomain) {
+    this.initPvDomain = initPvDomain;
+  }
+
+
+  /**
+   * Adds a init PV domain configuration to the DomainSpec.
+   *
+   * @param initPvDomain The init PV domain configuration to be added to this DomainSpec
+   * @return this object
+   */
+  public DomainSpec withInitPvDomain(InitPvDomain initPvDomain) {
+    this.initPvDomain = initPvDomain;
+    return this;
+  }
+
   /**
    * Get Admin Server configuration or else create default, if doesn't exist.
    * @return Admin Server configuration.
