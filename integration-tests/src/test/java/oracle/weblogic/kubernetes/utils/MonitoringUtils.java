@@ -374,47 +374,48 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "regex: default;domain1";
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldValue,
-        prometheusRegexValue), "Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-alertmanager",
-        "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pushgateway_image",
-        PROMETHEUS_PUSHGATEWAY_IMAGE_NAME),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pushgateway_tag",
-        PROMETHEUS_PUSHGATEWAY_IMAGE_TAG),"Failed to replace String ");
-
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_image",
-        PROMETHEUS_IMAGE_NAME),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_tag",
-        PROMETHEUS_IMAGE_TAG),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_alertmanager_image",
-        PROMETHEUS_ALERT_MANAGER_IMAGE_NAME),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_alertmanager_tag",
-        PROMETHEUS_ALERT_MANAGER_IMAGE_TAG),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_configmap_reload_image",
-        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_configmap_reload_tag",
-        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_node_exporter_image",
-        PROMETHEUS_NODE_EXPORTER_IMAGE_NAME),"Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "prometheus_node_exporter_tag",
-        PROMETHEUS_NODE_EXPORTER_IMAGE_TAG),"Failed to replace String ");
     logger.info("copy the promvalues.yaml to staging location");
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetPromFile.toString(),
+          oldValue,
+          prometheusRegexValue);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanager" + promReleaseSuffix);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-" + prometheusReleaseName);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_image",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_tag",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_image",
+          PROMETHEUS_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_tag",
+          PROMETHEUS_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_image",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_tag",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_image",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_tag",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_image",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_tag",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_TAG);
+    }, "Failed to create " + targetPromFile);
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
