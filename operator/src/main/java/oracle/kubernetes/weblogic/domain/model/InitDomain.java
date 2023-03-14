@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -13,10 +14,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class InitDomain {
 
   @Description("create domain mode.")
-  private String createMode;
+  private CreateMode createMode = CreateMode.CREATE_DOMAIN_IF_NOT_EXISTS;
 
   @Description("Type of the domain.")
-  private String domainType;
+  private DomainType domainType = DomainType.JRF;
 
   /**
    * The auxiliary images.
@@ -35,44 +36,49 @@ public class InitDomain {
   @Description("Settings for OPSS security.")
   private Opss opss;
 
-  public String getCreateMode() {
+  public CreateMode getCreateMode() {
     return createMode;
   }
 
-  public void setCreateMode(String createMode) {
+  public InitDomain createMode(CreateMode createMode) {
     this.createMode = createMode;
+    return this;
   }
 
-  public String getDomainType() {
+  public DomainType getDomainType() {
     return domainType;
   }
 
-  public void setDomainType(String domainType) {
+  public InitDomain domainType(DomainType domainType) {
     this.domainType = domainType;
+    return this;
   }
 
   public List<AuxiliaryImage> getWdtImages() {
     return wdtImages;
   }
 
-  public void setWdtImages(List<AuxiliaryImage> wdtImages) {
+  public InitDomain wdtImages(List<AuxiliaryImage> wdtImages) {
     this.wdtImages = wdtImages;
+    return this;
   }
 
   public String getWdtConfigMap() {
     return wdtConfigMap;
   }
 
-  public void setWdtConfigMap(String wdtConfigMap) {
+  public InitDomain wdtConfigMap(String wdtConfigMap) {
     this.wdtConfigMap = wdtConfigMap;
+    return this;
   }
 
   public Opss getOpss() {
     return opss;
   }
 
-  public void setOpss(Opss opss) {
+  public InitDomain opss(Opss opss) {
     this.opss = opss;
+    return this;
   }
 
   @Override

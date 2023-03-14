@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SELinuxOptions;
@@ -21,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -37,6 +40,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
+import static oracle.kubernetes.weblogic.domain.model.CreateMode.CREATE_DOMAIN_IF_NOT_EXISTS;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -44,7 +48,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -1699,15 +1705,134 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenInitPvPvcAndInitDomainConfigured_useValues() {
+  void whenInitPvConfigured_useConfiguredValues() {
     InitPvDomain initPvDomain = new InitPvDomain();
-    initPvDomain.setInitPv(new InitPv());
-    initPvDomain.setInitPvc(new InitPvc());
-    initPvDomain.setInitDomain(new InitDomain());
+    initPvDomain.setInitPv(createPv());
     configureDomain(domain).withInitPvDomain(initPvDomain);
 
-    assertThat(domain.getSpec().getInitPvDomain().getInitPv(), not(nullValue()));
-    assertThat(domain.getSpec().getInitPvDomain().getInitPvc(), not(nullValue()));
-    assertThat(domain.getSpec().getInitPvDomain().getInitDomain(), not(nullValue()));
+    assertThat(getInitPv(domain), equalTo(createPv()));
+    assertThat(getInitPv(domain).getSpec().getAccessModes(), equalTo(Collections.singletonList("ReadWriteMany")));
+    assertThat(getInitPv(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getInitPv(domain).getSpec().getCapacity(), notNullValue());
+    assertThat(getInitPv(domain).getSpec().getHostPath().getPath(), equalTo("/shared"));
+  }
+
+  private InitPv createPv() {
+    return new InitPv().metadata(new V1ObjectMeta().name("test-pv"))
+        .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
+            .accessModes(Collections.singletonList("ReadWriteMany"))
+            .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
+            .hostPath(new V1HostPathVolumeSource().path("/shared")));
+  }
+
+  @Test
+  void whenInitPvcConfigured_useConfiguredValues() {
+    InitPvDomain initPvDomain = new InitPvDomain();
+    initPvDomain.setInitPvc(createPvc());
+    configureDomain(domain).withInitPvDomain(initPvDomain);
+
+    assertThat(getInitPvc(domain), equalTo(createPvc()));
+    assertThat(getInitPvc(domain).getSpec().getAccessModes(), equalTo(Collections.singletonList("ReadWriteMany")));
+    assertThat(getInitPvc(domain).getSpec().getVolumeName(), equalTo("test-pv"));
+    assertThat(getInitPvc(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getInitPvc(domain).getSpec().getVolumeMode(), equalTo("Block"));
+    assertThat(getInitPvc(domain).getSpec().getResources(), notNullValue());
+  }
+
+  private InitPvc createPvc() {
+    return new InitPvc().metadata(new V1ObjectMeta().name("test-pvc"))
+        .spec(new PersistentVolumeClaimSpec()
+            .accessModes(Collections.singletonList("ReadWriteMany"))
+            .volumeName("test-pv")
+            .storageClassName("oke-pv")
+            .volumeMode("Block")
+            .resources(new V1ResourceRequirements()
+                .requests(Collections.singletonMap("storage", new Quantity("50Gi")))));
+  }
+
+  @Test
+  void whenInitPvDomainConfigured_useConfiguredValues() {
+    InitPvDomain initPvDomain = new InitPvDomain();
+    initPvDomain.setInitDomain(createInitDomain());
+    configureDomain(domain).withInitPvDomain(initPvDomain);
+
+    assertThat(getInitDomain(domain), equalTo(createInitDomain()));
+    assertThat(getInitDomain(domain).getCreateMode(), equalTo(CreateMode.CREATE_DOMAIN_WITH_RCU_IF_NOT_EXISTS));
+    assertThat(getInitDomain(domain).getDomainType(), equalTo(DomainType.WLS));
+    assertThat(getInitDomain(domain).getWdtConfigMap(), equalTo("wdf-config-map"));
+    assertThat(getInitDomain(domain).getWdtImages(), hasItems(new AuxiliaryImage().image("image:v1")));
+    assertThat(getInitDomain(domain).getOpss(),
+        is(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic")));
+  }
+
+
+  private InitDomain createInitDomain() {
+    return new InitDomain().domainType(DomainType.WLS)
+        .createMode(CreateMode.CREATE_DOMAIN_WITH_RCU_IF_NOT_EXISTS).wdtConfigMap("wdf-config-map")
+        .wdtImages(Collections.singletonList(new AuxiliaryImage().image("image:v1")))
+        .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
+  }
+
+  private InitPv getInitPv(DomainResource domain) {
+    return domain.getSpec().getInitPvDomain().getInitPv();
+  }
+
+  private InitPvc getInitPvc(DomainResource domain) {
+    return domain.getSpec().getInitPvDomain().getInitPvc();
+  }
+
+  private InitDomain getInitDomain(DomainResource domain) {
+    return domain.getSpec().getInitPvDomain().getInitDomain();
+  }
+
+  @Test
+  void whenDomainWithInitPvDomainSpecReadFromYaml_pvNameandSpecsAreSet() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getPvName(domain), not(nullValue()));
+    assertThat(getStorageClass(domain), not(nullValue()));
+
+  }
+
+  private String getPvName(DomainResource domain) {
+    return getInitPv(domain).getMetadata().getName();
+  }
+
+  private String getStorageClass(DomainResource domain) {
+    return getInitPv(domain).getSpec().getStorageClassName();
+  }
+
+  @Test
+  void whenDomainWithInitPvDomainSpecReadFromYaml_pvcNameAndSpecsAreSet() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getPvcName(domain), not(nullValue()));
+    assertThat(getPvcVolumeName(domain), not(nullValue()));
+  }
+
+  private String getPvcName(DomainResource domain) {
+    return getInitPvc(domain).getMetadata().getName();
+  }
+
+  private String getPvcVolumeName(DomainResource domain) {
+    return getInitPvc(domain).getSpec().getVolumeName();
+  }
+
+  @Test
+  void whenDomainWithInitPvDomainSpecReadFromYaml_initDomainSpecsHaveCorrectDefaultsAndValues()
+      throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getInitDomain(domain).getCreateMode(), equalTo(CREATE_DOMAIN_IF_NOT_EXISTS));
+    assertThat(getInitDomain(domain).getDomainType(), equalTo(DomainType.JRF));
+    assertThat(getInitDomain(domain).getWdtConfigMap(), equalTo("domain-on-pv-cm"));
+    assertThat(getInitDomain(domain).getWdtImages(), hasItems(new AuxiliaryImage().image("domain-on-pv-image:v1")));
+    assertThat(getInitDomain(domain).getOpss(),
+        is(new Opss().withWalletFileSecret("domain-opss-wallet").withWalletPasswordSecret("weblogic")));
+    assertThat(getInitPv(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
+    assertThat(getInitPvc(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
   }
 }

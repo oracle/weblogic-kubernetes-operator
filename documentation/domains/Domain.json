@@ -274,6 +274,9 @@
       "description": "The specification of the operation of the WebLogic domain. Required.",
       "type": "object",
       "properties": {
+        "initPvDomain": {
+          "$ref": "#/definitions/InitPvDomain"
+        },
         "monitoringExporter": {
           "description": "Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.",
           "$ref": "#/definitions/MonitoringExporterSpecification"
@@ -568,6 +571,83 @@
         }
       }
     },
+    "InitDomain": {
+      "type": "object",
+      "properties": {
+        "domainType": {
+          "description": "Type of the domain.",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "JRF"
+          ]
+        },
+        "opss": {
+          "description": "Settings for OPSS security.",
+          "$ref": "#/definitions/Opss"
+        },
+        "createMode": {
+          "description": "create domain mode.",
+          "type": "string",
+          "enum": [
+            "CreateDomainIfNotExists",
+            "CreateDomainWithRcuIfNoExists"
+          ]
+        },
+        "wdtImages": {
+          "description": "Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod\u0027s base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AuxiliaryImage"
+          }
+        },
+        "wdtConfigMap": {
+          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
+          "type": "string"
+        }
+      }
+    },
+    "InitPv": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "description": "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/PersistentVolumeSpec"
+        }
+      }
+    },
+    "InitPvDomain": {
+      "type": "object",
+      "properties": {
+        "initPv": {
+          "description": "Metadata and specs of the persistent volume to initialize.",
+          "$ref": "#/definitions/InitPv"
+        },
+        "initDomain": {
+          "description": "Details of the PV domain to be initialized.",
+          "$ref": "#/definitions/InitDomain"
+        },
+        "initPvc": {
+          "description": "Metadata and specs of the persistent volume claim to initialize.",
+          "$ref": "#/definitions/InitPvc"
+        }
+      }
+    },
+    "InitPvc": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "description": "ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/PersistentVolumeClaimSpec"
+        }
+      }
+    },
     "Introspector": {
       "type": "object",
       "properties": {
@@ -743,6 +823,81 @@
         },
         "walletPasswordSecret": {
           "description": "Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.",
+          "type": "string"
+        }
+      }
+    },
+    "PersistentVolumeClaimSpec": {
+      "type": "object",
+      "properties": {
+        "storageClassName": {
+          "description": "StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass.",
+          "type": "string"
+        },
+        "volumeName": {
+          "description": "VolumeName is the binding reference to the PersistentVolume backing this claim.",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to\n specify resource requirements that are lower than previous value but must\n still be higher than capacity recorded in the status field of the claim.\n More info:\n https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources\n ResourceRequirements describes the compute resource requirements.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "accessModes": {
+          "description": "AccessModes contains all ways the volume can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "volumeMode": {
+          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
+          "type": "string"
+        }
+      }
+    },
+    "PersistentVolumeSpec": {
+      "type": "object",
+      "properties": {
+        "storageClassName": {
+          "description": "StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass.",
+          "type": "string"
+        },
+        "csi": {
+          "description": "CSI represents storage that is handled by an external CSI driver (Beta feature).\nRepresents storage that is managed by an external CSI volume driver (Beta feature)",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.CSIPersistentVolumeSource"
+        },
+        "mountOptions": {
+          "description": "MountOptions is the list of mount options, e.g. [\"ro\", \"soft\"]. Not validated - mount will simply fail if one is invalid. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nodeAffinity": {
+          "description": "NodeAffinity defines constraints that limit what nodes this volume can be accessed from. This field influences the scheduling of pods that use this volume.\nVolumeNodeAffinity defines constraints that limit what nodes this volume\n can be accessed from.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeNodeAffinity"
+        },
+        "persistentVolumeReclaimPolicy": {
+          "description": "PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  ",
+          "type": "string"
+        },
+        "accessModes": {
+          "description": "AccessModes contains all ways the volume can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hostPath": {
+          "description": "HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:\n https://kubernetes.io/docs/concepts/storage/volumes#hostpath\nRepresents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
+        },
+        "capacity": {
+          "description": "Capacity is the description of the persistent volume\u0027s resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
+          "$ref": "#/definitions/Map"
+        },
+        "volumeMode": {
+          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
           "type": "string"
         }
       }

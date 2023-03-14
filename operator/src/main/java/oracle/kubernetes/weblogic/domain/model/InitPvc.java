@@ -10,24 +10,26 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class InitPvc {
 
-  V1ObjectMeta metadata;
+  private V1ObjectMeta metadata;
 
-  PersistentVolumeClaimSpec spec;
+  private PersistentVolumeClaimSpec spec;
 
   public V1ObjectMeta getMetadata() {
     return metadata;
   }
 
-  public void setMetadata(V1ObjectMeta metadata) {
+  public InitPvc metadata(V1ObjectMeta metadata) {
     this.metadata = metadata;
+    return this;
   }
 
   public PersistentVolumeClaimSpec getSpec() {
     return spec;
   }
 
-  public void setSpec(PersistentVolumeClaimSpec spec) {
+  public InitPvc spec(PersistentVolumeClaimSpec spec) {
     this.spec = spec;
+    return this;
   }
 
   @Override
@@ -53,11 +55,11 @@ public class InitPvc {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof InitDomain)) {
+    } else if (!(other instanceof InitPvc)) {
       return false;
     }
 
-    InitPv rhs = ((InitPv) other);
+    InitPvc rhs = ((InitPvc) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(metadata, rhs.metadata)

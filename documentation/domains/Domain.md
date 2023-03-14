@@ -31,6 +31,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
+| `initPvDomain` | [Init Pv Domain](#init-pv-domain) |  |
 | `introspector` | [Introspector](#introspector) | Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources. |
 | `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`. |
 | `livenessProbeCustomScript` | string | Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored. |
@@ -104,6 +105,14 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
 | `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
 | `watchIntrospectorLogs` | Boolean | Fluentd will watch introspector logs |
+
+### Init Pv Domain
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `initDomain` | [Init Domain](#init-domain) | Details of the PV domain to be initialized. |
+| `initPv` | [Init Pv](#init-pv) | Metadata and specs of the persistent volume to initialize. |
+| `initPvc` | [Init Pvc](#init-pvc) | Metadata and specs of the persistent volume claim to initialize. |
 
 ### Introspector
 
@@ -238,6 +247,30 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
 
+### Init Domain
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `createMode` | string | create domain mode. |
+| `domainType` | string | Type of the domain. |
+| `opss` | [Opss](#opss) | Settings for OPSS security. |
+| `wdtConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
+| `wdtImages` | Array of [Auxiliary Image](#auxiliary-image) | Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod's base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+
+### Init Pv
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
+| `spec` | [Persistent Volume Spec](#persistent-volume-spec) |  |
+
+### Init Pvc
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
+| `spec` | [Persistent Volume Claim Spec](#persistent-volume-claim-spec) |  |
+
 ### Introspector Job Pod
 
 | Name | Type | Description |
@@ -304,6 +337,30 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `enabled` | Boolean | Enable online update. Default is 'false'. |
 | `onNonDynamicChanges` | string | Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are 'CommitUpdateOnly' and 'CommitUpdateAndRoll'. Defaults to `CommitUpdateOnly`. If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. For more information, see the runtime update section of the Model in Image user guide. |
 | `wdtTimeouts` | [WDT Timeouts](#wdt-timeouts) |  |
+
+### Persistent Volume Spec
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `accessModes` | Array of string | AccessModes contains all ways the volume can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes |
+| `capacity` | Map | Capacity is the description of the persistent volume's resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity |
+| `csi` | [CSI Persistent Volume Source](k8s1.13.5.md#csi-persistent-volume-source) | CSI represents storage that is handled by an external CSI driver (Beta feature).<br/>Represents storage that is managed by an external CSI volume driver (Beta feature) |
+| `hostPath` | [Host Path Volume Source](k8s1.13.5.md#host-path-volume-source) | HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:<br/> https://kubernetes.io/docs/concepts/storage/volumes#hostpath<br/>Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. |
+| `mountOptions` | Array of string | MountOptions is the list of mount options, e.g. ["ro", "soft"]. Not validated - mount will simply fail if one is invalid. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options |
+| `nodeAffinity` | [Volume Node Affinity](k8s1.13.5.md#volume-node-affinity) | NodeAffinity defines constraints that limit what nodes this volume can be accessed from. This field influences the scheduling of pods that use this volume.<br/>VolumeNodeAffinity defines constraints that limit what nodes this volume<br/> can be accessed from. |
+| `persistentVolumeReclaimPolicy` | string | PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming   |
+| `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
+| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
+
+### Persistent Volume Claim Spec
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `accessModes` | Array of string | AccessModes contains all ways the volume can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes |
+| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to<br/> specify resource requirements that are lower than previous value but must<br/> still be higher than capacity recorded in the status field of the claim.<br/> More info:<br/> https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources<br/> ResourceRequirements describes the compute resource requirements. |
+| `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
+| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
+| `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 
 ### Subsystem Health
 
