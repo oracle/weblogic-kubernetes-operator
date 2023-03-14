@@ -562,9 +562,8 @@ class ItConfigDistributionStrategy {
     //copy the template datasource file for override after replacing JDBC_URL with new datasource url
     Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-1.xml");
     Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-1.xml");
-    assertDoesNotThrow(() -> Files.copy(srcDsOverrideFile, dstDsOverrideFile,
-            StandardCopyOption.REPLACE_EXISTING)," Failed to copy data source override file");
     assertDoesNotThrow(() -> {
+      Files.copy(srcDsOverrideFile, dstDsOverrideFile, StandardCopyOption.REPLACE_EXISTING);
       replaceStringInFile(dstDsOverrideFile.toString(), "JDBC_URL", dsUrl2);
       if (WEBLOGIC_12213) {
         replaceStringInFile(dstDsOverrideFile.toString(), "com.mysql.cj.jdbc.Driver", "com.mysql.jdbc.Driver");
