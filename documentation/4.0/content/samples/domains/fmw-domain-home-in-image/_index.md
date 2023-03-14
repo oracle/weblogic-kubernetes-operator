@@ -12,7 +12,7 @@ and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and Pe
 The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
 to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
-{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
+{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
 #### Prerequisites

@@ -93,7 +93,7 @@ of the WebLogic domain to update the Oracle Home of the servers.
 
 #### Domain in Image
 
-**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either the Domain in PV or Model in Image, depending on your needs.
+**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 
 If you need to update the image for a running Domain in Image domain,
 then use the WIT [`rebase`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/)
