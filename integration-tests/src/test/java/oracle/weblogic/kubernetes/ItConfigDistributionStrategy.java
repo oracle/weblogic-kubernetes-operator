@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFro
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -562,6 +563,14 @@ class ItConfigDistributionStrategy {
     //copy the template datasource file for override after replacing JDBC_URL with new datasource url
     Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-1.xml");
     Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-1.xml");
+    assertDoesNotThrow(() -> Files.copy(srcDsOverrideFile, dstDsOverrideFile,
+            StandardCopyOption.REPLACE_EXISTING)," Failed to copy data source override file");
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(dstDsOverrideFile.toString(), "JDBC_URL", dsUrl2);
+      if (WEBLOGIC_12213) {
+        replaceStringInFile(dstDsOverrideFile.toString(), "com.mysql.cj.jdbc.Driver", "com.mysql.jdbc.Driver");
+      }
+    });
     String tempString = assertDoesNotThrow(()
         -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
     assertDoesNotThrow(()
