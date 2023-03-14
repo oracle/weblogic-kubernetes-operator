@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -251,23 +253,6 @@ class ItIstioMiiDomain {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     
-    String curlCmd = "curl -j -sk --show-error --noproxy '*' "
-        + " -H 'Host: " + domainNamespace + ".org'"
-        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    
-    logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    logger.info(String.valueOf(result.exitValue()));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
-
-    // access the console again
-    logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    logger.info(String.valueOf(result.exitValue()));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
-
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
@@ -393,13 +378,16 @@ class ItIstioMiiDomain {
   }
   
   private static void enableStrictMode(String namespace) {
-    assertDoesNotThrow(() -> copyFile(Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml").toFile(),
-          Paths.get(WORK_DIR, "istio-tls-mode.yaml").toFile()));
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(),
-          "NAMESPACE", namespace));
-
-    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
-        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml");
+    Path dstFile = Paths.get(WORK_DIR, "istio-tls-mode.yaml");
+    assertDoesNotThrow(() -> copyFile(srcFile.toFile(), dstFile.toFile()));
+    assertDoesNotThrow(() -> replaceStringInFile(dstFile.toString(), "NAMESPACE", namespace));
+    assertDoesNotThrow(() -> logger.info(Files.readString(dstFile), StandardCharsets.UTF_8));
+    logger.info("Enabling STRICT mTLS mode in istio in namesapce {0}", namespace);
+    ExecResult result = assertDoesNotThrow(()
+        -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
+            + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    logger.info(String.valueOf(result.exitValue()));
     logger.info(result.stdout());
     logger.info(result.stderr());
   }
