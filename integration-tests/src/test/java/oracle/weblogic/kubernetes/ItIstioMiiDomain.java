@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -380,15 +378,15 @@ class ItIstioMiiDomain {
   private static void enableStrictMode(String namespace) {
     Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml");
     Path dstFile = Paths.get(WORK_DIR, "istio-tls-mode.yaml");
-    assertDoesNotThrow(() -> copyFile(srcFile.toFile(), dstFile.toFile()));
-    assertDoesNotThrow(() -> replaceStringInFile(dstFile.toString(), "NAMESPACE", namespace));
-    assertDoesNotThrow(() -> logger.info(Files.readString(dstFile), StandardCharsets.UTF_8));
     logger.info("Enabling STRICT mTLS mode in istio in namesapce {0}", namespace);
-    ExecResult result = assertDoesNotThrow(()
-        -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
-            + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    logger.info(String.valueOf(result.exitValue()));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
+    assertDoesNotThrow(() -> {
+      copyFile(srcFile.toFile(), dstFile.toFile());
+      replaceStringInFile(dstFile.toString(), "NAMESPACE", namespace);
+      ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " apply -f "
+          + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true);
+      assertEquals(0, result.exitValue(), "Failed to enable mTLS strict mode");
+      logger.info(result.stdout());
+      logger.info(result.stderr());
+    });
   }
 }

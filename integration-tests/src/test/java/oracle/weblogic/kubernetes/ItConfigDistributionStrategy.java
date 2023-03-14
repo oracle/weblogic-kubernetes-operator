@@ -1087,7 +1087,7 @@ class ItConfigDistributionStrategy {
       logger.info("hostAndPort = {0} ", hostAndPort);
       String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 
-      // based on image change the mysql driver to 
+      // based on WebLogic image, change the mysql driver to 
       // 12.2.1.3 - com.mysql.jdbc.Driver
       // 12.2.1.4 and above - com.mysql.cj.jdbc.Driver
       // create a temporary WebLogic domain property file
