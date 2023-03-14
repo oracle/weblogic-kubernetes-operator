@@ -10,7 +10,6 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1CSIPersistentVolumeSource;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1VolumeNodeAffinity;
-import io.swagger.annotations.ApiModelProperty;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -18,13 +17,13 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PersistentVolumeSpec {
 
-  @ApiModelProperty("accessModes contains all ways the volume can be mounted. "
+  @Description("AccessModes contains all ways the volume can be mounted. "
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes")
-  private List<String> accessModes = null;
+  private List<String> accessModes;
 
-  @ApiModelProperty("capacity is the description of the persistent volume's resources and capacity. "
+  @Description("Capacity is the description of the persistent volume's resources and capacity. "
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity")
-  private Map<String, Quantity> capacity = null;
+  private Map<String, Quantity> capacity;
 
   @Description("CSI represents storage that is handled by an external CSI driver (Beta feature)."
       + "\nRepresents storage that is managed by an external CSI volume driver (Beta feature)")
@@ -45,25 +44,102 @@ public class PersistentVolumeSpec {
       + " can be accessed from.")
   private V1VolumeNodeAffinity nodeAffinity;
 
-  @ApiModelProperty("persistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"
+  @Description("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"
       + " its claim. Valid options are Retain (default for manually created PersistentVolumes),"
       + " Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated)."
       + " Recycle must be supported by the volume plugin underlying this PersistentVolume."
       + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  ")
   private String persistentVolumeReclaimPolicy;
 
-  @ApiModelProperty("storageClassName is the name of StorageClass to which this persistent volume belongs."
+  @Description("StorageClassName is the name of StorageClass to which this persistent volume belongs."
       + " Empty value means that this volume does not belong to any StorageClass.")
   private String storageClassName;
 
-  @ApiModelProperty("volumeMode defines if a volume is intended to be used with a formatted filesystem "
+  @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
       + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
   private String volumeMode;
 
-  @ApiModelProperty("mountOptions is the list of mount options, e.g. [\"ro\", \"soft\"]. Not validated - mount will"
+  @Description("MountOptions is the list of mount options, e.g. [\"ro\", \"soft\"]. Not validated - mount will"
       + " simply fail if one is invalid."
       + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options")
   private List<String> mountOptions = null;
+
+  public List<String> getAccessModes() {
+    return accessModes;
+  }
+
+  public PersistentVolumeSpec accessModes(List<String> accessModes) {
+    this.accessModes = accessModes;
+    return this;
+  }
+
+  public Map<String, Quantity> getCapacity() {
+    return capacity;
+  }
+
+  public PersistentVolumeSpec capacity(Map<String, Quantity> capacity) {
+    this.capacity = capacity;
+    return this;
+  }
+
+  public V1CSIPersistentVolumeSource getCsi() {
+    return csi;
+  }
+
+  public void setCsi(V1CSIPersistentVolumeSource csi) {
+    this.csi = csi;
+  }
+
+  public V1HostPathVolumeSource getHostPath() {
+    return hostPath;
+  }
+
+  public PersistentVolumeSpec hostPath(V1HostPathVolumeSource hostPath) {
+    this.hostPath = hostPath;
+    return this;
+  }
+
+  public V1VolumeNodeAffinity getNodeAffinity() {
+    return nodeAffinity;
+  }
+
+  public PersistentVolumeSpec nodeAffinity(V1VolumeNodeAffinity nodeAffinity) {
+    this.nodeAffinity = nodeAffinity;
+    return this;
+  }
+
+  public String getPersistentVolumeReclaimPolicy() {
+    return persistentVolumeReclaimPolicy;
+  }
+
+  public void setPersistentVolumeReclaimPolicy(String persistentVolumeReclaimPolicy) {
+    this.persistentVolumeReclaimPolicy = persistentVolumeReclaimPolicy;
+  }
+
+  public String getStorageClassName() {
+    return storageClassName;
+  }
+
+  public PersistentVolumeSpec storageClassName(String storageClassName) {
+    this.storageClassName = storageClassName;
+    return this;
+  }
+
+  public String getVolumeMode() {
+    return volumeMode;
+  }
+
+  public void setVolumeMode(String volumeMode) {
+    this.volumeMode = volumeMode;
+  }
+
+  public List<String> getMountOptions() {
+    return mountOptions;
+  }
+
+  public void setMountOptions(List<String> mountOptions) {
+    this.mountOptions = mountOptions;
+  }
 
   @Override
   public String toString() {
@@ -102,7 +178,7 @@ public class PersistentVolumeSpec {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof InitDomain)) {
+    } else if (!(other instanceof PersistentVolumeSpec)) {
       return false;
     }
 
