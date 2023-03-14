@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -571,10 +570,6 @@ class ItConfigDistributionStrategy {
         replaceStringInFile(dstDsOverrideFile.toString(), "com.mysql.cj.jdbc.Driver", "com.mysql.jdbc.Driver");
       }
     });
-    String tempString = assertDoesNotThrow(()
-        -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
-    assertDoesNotThrow(()
-        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
 
     List<Path> overrideFiles = new ArrayList<>();
     overrideFiles.add(dstDsOverrideFile);
