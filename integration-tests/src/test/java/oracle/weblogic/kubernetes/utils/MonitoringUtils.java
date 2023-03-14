@@ -414,6 +414,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "prometheus_node_exporter_tag",
         PROMETHEUS_NODE_EXPORTER_IMAGE_TAG),"Failed to replace String ");
+    logger.info("copy the promvalues.yaml to staging location");
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
