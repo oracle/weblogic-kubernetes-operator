@@ -65,6 +65,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -1083,6 +1084,9 @@ class ItConfigDistributionStrategy {
       logger.info("hostAndPort = {0} ", hostAndPort);
       String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 
+      // based on image change the mysql driver to 
+      // 12.2.1.3 - com.mysql.jdbc.Driver
+      // 12.2.1.4 and above - com.mysql.cj.jdbc.Driver
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
       Properties p = new Properties();
@@ -1092,7 +1096,11 @@ class ItConfigDistributionStrategy {
       p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
       p.setProperty("dsName", dsName);
       p.setProperty("dsUrl", jdbcDsUrl);
-      p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      if (WEBLOGIC_12213) {
+        p.setProperty("dsDriver", "com.mysql.jdbc.Driver");
+      } else {
+        p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      }
       p.setProperty("dsUser", user);
       p.setProperty("dsPassword", password);
       p.setProperty("dsTarget", clusterName);
