@@ -583,6 +583,13 @@ function restoreDomainConfig() {
   chmod u+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
 }
 
+restoreZippedDbWallets() {
+  local count=$(find ${DOMAIN_HOME}/wlsdeploy/dbWallets/*/*.zip -type f 2>/dev/null | wc -l)
+  if [ "$count" -gt  0 ] ; then
+    find ${DOMAIN_HOME}/wlsdeploy/dbWallets/*/*.zip -type f  | xargs -I % sh -c 'unzip -jo % -d $(dirname %) ; rm %'
+  fi
+}
+
 # Expands into the root directory the MII primordial domain, stored in one or more config maps
 function restorePrimordialDomain() {
   restoreEncodedTar "primordial_domainzip.secure" || return 1
@@ -1338,6 +1345,11 @@ function prepareMIIServer() {
         # No need to have domainLibraries in domain home
         rm -fr ${WLSDEPLOY_DOMAINLIB}
     done
+
+  trace "Model-in-image: Restore dbWallets zip"
+
+  restoreZippedDbWallets || return 1
+
   return 0
 }
 
