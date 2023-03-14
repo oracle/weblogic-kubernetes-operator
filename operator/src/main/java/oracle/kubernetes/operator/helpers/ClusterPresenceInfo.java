@@ -21,11 +21,11 @@ public class ClusterPresenceInfo extends ResourcePresenceInfo {
 
   /**
    * Create presence for a cluster resource.
-   * @param namespace Namespace
    *
+   * @param cluster the cluster resource that the to be created presence info contains
    */
-  public ClusterPresenceInfo(String namespace, ClusterResource cluster) {
-    super(namespace);
+  public ClusterPresenceInfo(ClusterResource cluster) {
+    super(cluster.getNamespace());
     this.cluster = cluster;
   }
 
