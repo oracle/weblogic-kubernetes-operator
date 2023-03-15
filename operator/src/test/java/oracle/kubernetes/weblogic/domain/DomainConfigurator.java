@@ -646,4 +646,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
+
+  public abstract DomainConfigurator withInitializeDomainOnPV(InitPvDomain initPvDomain);
 }
