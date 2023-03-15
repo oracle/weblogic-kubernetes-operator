@@ -303,7 +303,7 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `createIfNotExists` | string | Domain creation mode. Legal values: CreateDomainIfNotExists, CreateDomainWithRcuIfNotExists. Defaults to CreateDomainIfNotExists. |
+| `createIfNotExists` | string | Specifies if only domain or domain with RCU needs to be created. Legal values: domain, domainAndRCU. Defaults to domain. |
 | `domainCreationConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
@@ -352,7 +352,7 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `image` | string | The domain image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required. |
+| `image` | string | The domain image containing model files, application archive files, and/or WebLogic Deploying Tooling installation files to create the domain. Required. |
 | `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the domain image. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple domain images with model files in their respective `sourceModelHome` directories, then model files are merged. |
 | `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the domain image. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple domain images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail. |

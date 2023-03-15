@@ -247,8 +247,8 @@
           "$ref": "#/definitions/Opss"
         },
         "createIfNotExists": {
-          "default": "CreateDomainIfNotExists",
-          "description": "Domain creation mode. Legal values: CreateDomainIfNotExists, CreateDomainWithRcuIfNotExists. Defaults to CreateDomainIfNotExists.",
+          "default": "domain",
+          "description": "Specifies if only domain or domain with RCU needs to be created. Legal values: domain, domainAndRCU. Defaults to domain.",
           "type": "string",
           "enum": [
             "domain",
@@ -320,7 +320,7 @@
           "type": "string"
         },
         "image": {
-          "description": "The domain image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required.",
+          "description": "The domain image containing model files, application archive files, and/or WebLogic Deploying Tooling installation files to create the domain. Required.",
           "type": "string"
         },
         "imagePullPolicy": {

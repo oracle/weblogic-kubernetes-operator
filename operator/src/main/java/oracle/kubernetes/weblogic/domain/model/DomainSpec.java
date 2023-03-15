@@ -42,6 +42,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -990,7 +991,8 @@ public class DomainSpec extends BaseConfiguration {
 
   String getAuxiliaryImageVolumeMountPath() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath)
+        .orElse(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   String getAuxiliaryImageVolumeMedium() {

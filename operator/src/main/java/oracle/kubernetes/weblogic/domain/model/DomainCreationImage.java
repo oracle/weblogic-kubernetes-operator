@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -12,7 +12,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class DomainCreationImage {
+public class DomainCreationImage implements DeploymentImage {
 
   public static final String DOMAIN_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
   public static final String DOMAIN_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
@@ -20,8 +20,8 @@ public class DomainCreationImage {
   /**
    * The domain image.
    */
-  @Description("The domain image containing Model in Image model files, application archive files, and/or WebLogic "
-          + "Deploying Tooling installation files. Required.")
+  @Description("The domain image containing model files, application archive files, and/or WebLogic "
+          + "Deploying Tooling installation files to create the domain. Required.")
   @NotNull
   private String image;
 

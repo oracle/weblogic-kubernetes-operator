@@ -139,6 +139,22 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenMoreThanOneDomainCreationImageSetsSourceWDTInstallHome_reportError() {
+    List<DomainCreationImage> domainCreationImages = new ArrayList<>();
+    domainCreationImages.add(new DomainCreationImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
+    domainCreationImages.add(new DomainCreationImage().image("image2").sourceWDTInstallHome("/wdtInstallHome2"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new Domain().domainCreationImages(domainCreationImages)));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("More than one domain creation image under",
+            "'spec.configuration.initializeDomainOnPV.domain.domainCreationImages'",
+            "sets a 'sourceWDTInstallHome'")));
+  }
+
+  @Test
   void whenTwoAuxiliaryImageSetsSourceWDTInstallHomeAndOneIsNone_noErrorReported() {
     List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
     auxiliaryImages.add(new AuxiliaryImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
@@ -151,6 +167,19 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenTwoDomainCreationImageSetsSourceWDTInstallHomeAndOneIsNone_noErrorReported() {
+    List<DomainCreationImage> domainCreationImages = new ArrayList<>();
+    domainCreationImages.add(new DomainCreationImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
+    domainCreationImages.add(new DomainCreationImage().image("image2").sourceWDTInstallHome("None"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new Domain().domainCreationImages(domainCreationImages)));
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   void wheOnlyOneAuxiliaryImageSetsSourceWDTInstallHome_noErrorReported() {
     List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
     auxiliaryImages.add(new AuxiliaryImage().image("image1"));
@@ -158,6 +187,19 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     configureDomainWithRuntimeEncryptionSecret(domain)
           .withAuxiliaryImages(auxiliaryImages);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void wheOnlyOneDomainCreationImageSetsSourceWDTInstallHome_noErrorReported() {
+    List<DomainCreationImage> domainCreationImages = new ArrayList<>();
+    domainCreationImages.add(new DomainCreationImage().image("image1"));
+    domainCreationImages.add(new DomainCreationImage().image("image2").sourceWDTInstallHome("/wdtInstallHome1"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new Domain().domainCreationImages(domainCreationImages)));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
