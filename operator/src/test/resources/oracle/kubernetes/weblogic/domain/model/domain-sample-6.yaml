@@ -7,25 +7,26 @@ metadata:
   name: domain2
   namespace: domain_ns
 spec:
-  initPvDomain:
-    initPv:
-      metadata:
-        name: pvDomainVolume
-      spec:
-        storageClassName: domain-on-pv-storage-class
-    initPvc:
-      metadata:
-        name: pvDomainVolumeClain
-      spec:
-        volumeName: pvDomainVolume
-    initDomain:
-      wdtImages:
-      - image: domain-on-pv-image:v1
-      wdtConfigMap: domain-on-pv-cm
-      opss:
-        walletFileSecret: domain-opss-wallet
-        walletPasswordSecret: weblogic
-
+  configuration:
+    initializeDomainOnPv:
+      persistentVolume:
+        metadata:
+          name: pvDomainVolume
+        spec:
+          storageClassName: domain-on-pv-storage-class
+      persistentVolumeClaim:
+        metadata:
+          name: pvDomainVolumeClaim
+        spec:
+          volumeName: pvDomainVolume
+      domain:
+        domainCreationImages:
+        - image: domain-on-pv-image:v1
+        wdtConfigMap: domain-on-pv-cm
+        opss:
+          walletFileSecret: domain-opss-wallet
+          walletPasswordSecret: weblogic
+  
   # Identify which Secret contains the WebLogic Admin credentials
   webLogicCredentialsSecret:
     name: admin-secret

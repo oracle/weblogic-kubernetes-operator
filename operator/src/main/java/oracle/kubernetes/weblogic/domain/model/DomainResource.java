@@ -720,7 +720,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the auxiliary images configured for the domain.
    */
   public List<AuxiliaryImage> getAuxiliaryImages() {
-    return spec.getAuxiliaryImages();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImages() : null;
+  }
+
+  public List<DomainCreationImage> getDomainImages() {
+    return getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME ? spec.getDomainImages() : null;
   }
 
   /**
@@ -734,14 +738,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the auxiliary image volume withAuxiliaryImageVolumeMedium.
    */
   public String getAuxiliaryImageVolumeMedium() {
-    return spec.getAuxiliaryImageVolumeMedium();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImageVolumeMedium() : null;
   }
 
   /**
    * Returns the auxiliary image volume size limit.
    */
   public String getAuxiliaryImageVolumeSizeLimit() {
-    return spec.getAuxiliaryImageVolumeSizeLimit();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImageVolumeSizeLimit() : null;
   }
 
   /**
