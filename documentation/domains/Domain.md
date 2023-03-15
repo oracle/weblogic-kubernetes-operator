@@ -31,7 +31,6 @@ The specification of the operation of the WebLogic domain. Required.
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Server image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `imagePullSecrets` | Array of [Local Object Reference](k8s1.13.5.md#local-object-reference) | A list of image pull Secrets for the WebLogic Server image. |
 | `includeServerOutInPodLog` | Boolean | Specifies whether the server .out file will be included in the Pod's log. Defaults to true. |
-| `initializeDomainOnPv` | [Init Pv Domain](#init-pv-domain) | The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ |
 | `introspector` | [Introspector](#introspector) | Lifecycle options for the Introspector Job Pod, including Java options, environment variables, and resources. |
 | `introspectVersion` | string | Changes to this field cause the operator to repeat its introspection of the WebLogic domain configuration. Repeating introspection is required for the operator to recognize changes to the domain configuration, such as adding a new WebLogic cluster or Managed Server instance, to regenerate configuration overrides, or to regenerate the WebLogic domain home when the `domainHomeSourceType` is `FromModel`. Introspection occurs automatically, without requiring change to this field, when servers are first started or restarted after a full domain shut down. For the `FromModel` `domainHomeSourceType`, introspection also occurs when a running server must be restarted because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted. The introspectVersion value must be a valid label value in Kubernetes. See also `domains.spec.configuration.overrideDistributionStrategy`. |
 | `livenessProbeCustomScript` | string | Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored. |
@@ -84,6 +83,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `initializeDomainOnPv` | [Initialize Domain On Pv](#initialize-domain-on-pv) | The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ |
 | `introspectorJobActiveDeadlineSeconds` | integer | The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
@@ -105,16 +105,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
 | `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
 | `watchIntrospectorLogs` | Boolean | Fluentd will watch introspector logs |
-
-### Init Pv Domain
-
-The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `domain` | [Init Domain](#init-domain) | Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed. |
-| `persistentVolume` | [Persistent Volume](#persistent-volume) | Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed. |
-| `persistentVolumeClaim` | [Persistent Volume Claim](#persistent-volume-claim) | Configuration including 'Metadata' and 'Specs' to create a persistent volume claim, if needed. |
 
 ### Introspector
 
@@ -227,6 +217,16 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | `channels` | Array of [Channel](#channel) | Specifies which of the Administration Server's WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server's NodePort Service will not be created. |
 | `labels` | Map | Labels to associate with the Administration Server's NodePort Service, if it is created. |
 
+### Initialize Domain On Pv
+
+The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `domain` | [Domain](#domain) | Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed. |
+| `persistentVolume` | [Persistent Volume](#persistent-volume) | Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed. |
+| `persistentVolumeClaim` | [Persistent Volume Claim](#persistent-volume-claim) | Configuration including 'Metadata' and 'Specs' to create a persistent volume claim, if needed. |
+
 ### Model
 
 | Name | Type | Description |
@@ -248,30 +248,6 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
-
-### Init Domain
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `createIfNotExists` | string | PV domain create mode. Legal values: CreateDomainIfNotExist, CreateDomainWithRcuIfNotExist. Defaults to CreateDomainIfNotExist. |
-| `domainImages` | Array of [Domain Image](#domain-image) | Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
-| `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
-| `opss` | [Opss](#opss) | Settings for OPSS security. |
-| `wdtConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
-
-### Persistent Volume
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
-| `spec` | [Persistent Volume Spec](#persistent-volume-spec) |  |
-
-### Persistent Volume Claim
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
-| `spec` | [Persistent Volume Claim Spec](#persistent-volume-claim-spec) |  |
 
 ### Introspector Job Pod
 
@@ -323,6 +299,30 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | integer | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
+### Domain
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `createIfNotExists` | string | Domain creation mode. Legal values: CreateDomainIfNotExists, CreateDomainWithRcuIfNotExists. Defaults to CreateDomainIfNotExists. |
+| `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
+| `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
+| `opss` | [Opss](#opss) | Settings for OPSS security. |
+| `wdtConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
+
+### Persistent Volume
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
+| `spec` | [Persistent Volume Spec](#persistent-volume-spec) |  |
+
+### Persistent Volume Claim
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | ObjectMeta is metadata that all persisted resources must have, which includes all objects users must create. |
+| `spec` | [Persistent Volume Claim Spec](#persistent-volume-claim-spec) |  |
+
 ### Auxiliary Image
 
 | Name | Type | Description |
@@ -340,7 +340,15 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | `onNonDynamicChanges` | string | Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are 'CommitUpdateOnly' and 'CommitUpdateAndRoll'. Defaults to `CommitUpdateOnly`. If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. For more information, see the runtime update section of the Model in Image user guide. |
 | `wdtTimeouts` | [WDT Timeouts](#wdt-timeouts) |  |
 
-### Domain Image
+### Subsystem Health
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `health` | string | Server health of this WebLogic Server instance. |
+| `subsystemName` | string | Name of subsystem providing symptom information. |
+| `symptoms` | Array of string | Symptoms provided by the reporting subsystem. |
+
+### Domain Creation Image
 
 | Name | Type | Description |
 | --- | --- | --- |
@@ -369,14 +377,6 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
 | `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
 | `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
-
-### Subsystem Health
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `health` | string | Server health of this WebLogic Server instance. |
-| `subsystemName` | string | Name of subsystem providing symptom information. |
-| `symptoms` | Array of string | Symptoms provided by the reporting subsystem. |
 
 ### WDT Timeouts
 
