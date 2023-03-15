@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 2927ddec214fcbaad0a97b1127c9314661527810f11a70740732d00a4c89bf8c
+    weblogic.sha256: e074d1a973cd3dcc22560f70c8cb6c050635aa442d438900e755b6e6b4efce24
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -36,9 +36,17 @@ spec:
               Required.
             properties:
               initPvDomain:
+                description: The configuration required to create an empty WebLogic
+                  'Domain on PV' domain, a persistent volume and a persistent volume
+                  claim, if needed. These will be one-time operations that happen
+                  only if the domain, persistent volume or persistent volume claim
+                  do not already exist. This is primarily used for a JRF-based domain.
+                  For a plain WebLogic domain, recommended approach is to use a 'Model
+                  In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
                 properties:
-                  initPv:
-                    description: Metadata and specs of the persistent volume to initialize.
+                  persistentVolume:
+                    description: Configuration including 'Metadata' and 'Specs' to
+                      create a persistent volume, if needed.
                     properties:
                       metadata:
                         properties:
@@ -126,118 +134,6 @@ spec:
                               to which this persistent volume belongs. Empty value
                               means that this volume does not belong to any StorageClass.
                             type: string
-                          csi:
-                            description: |-
-                              CSI represents storage that is handled by an external CSI driver (Beta feature).
-                              Represents storage that is managed by an external CSI volume driver (Beta feature)
-                            properties:
-                              controllerPublishSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                type: object
-                              driver:
-                                type: string
-                              nodePublishSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                type: object
-                              nodeStageSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                type: object
-                              volumeHandle:
-                                type: string
-                              nodeExpandSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                type: object
-                              readOnly:
-                                type: boolean
-                              controllerExpandSecretRef:
-                                properties:
-                                  name:
-                                    type: string
-                                  namespace:
-                                    type: string
-                                type: object
-                              fsType:
-                                type: string
-                              volumeAttributes:
-                                additionalProperties:
-                                  type: string
-                                type: object
-                            required:
-                            - driver
-                            - volumeHandle
-                            type: object
-                          mountOptions:
-                            description: 'MountOptions is the list of mount options,
-                              e.g. ["ro", "soft"]. Not validated - mount will simply
-                              fail if one is invalid. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options'
-                            items:
-                              type: string
-                            type: array
-                          nodeAffinity:
-                            description: |-
-                              NodeAffinity defines constraints that limit what nodes this volume can be accessed from. This field influences the scheduling of pods that use this volume.
-                              VolumeNodeAffinity defines constraints that limit what nodes this volume
-                               can be accessed from.
-                            properties:
-                              required:
-                                properties:
-                                  nodeSelectorTerms:
-                                    items:
-                                      type: object
-                                      properties:
-                                        matchExpressions:
-                                          type: array
-                                          items:
-                                            type: object
-                                            properties:
-                                              values:
-                                                type: array
-                                                items:
-                                                  type: string
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                            required:
-                                            - key
-                                            - operator
-                                        matchFields:
-                                          type: array
-                                          items:
-                                            type: object
-                                            properties:
-                                              values:
-                                                type: array
-                                                items:
-                                                  type: string
-                                              key:
-                                                type: string
-                                              operator:
-                                                type: string
-                                            required:
-                                            - key
-                                            - operator
-                                    type: array
-                                required:
-                                - nodeSelectorTerms
-                                type: object
-                            type: object
                           persistentVolumeReclaimPolicy:
                             description: 'PersistentVolumeReclaimPolicy defines what
                               happens to a persistent volume when released from its
@@ -281,14 +177,60 @@ spec:
                         type: object
                     type: object
                   initDomain:
-                    description: Details of the PV domain to be initialized.
+                    description: Configuration details to create an empty WebLogic
+                      'Domain on PV' domain, if needed.
                     properties:
                       domainType:
-                        description: Type of the domain.
+                        default: JRF
+                        description: 'WebLogic Deploy Tooling domain type. Legal values:
+                          WLS, JRF. Defaults to JRF.'
                         enum:
                         - WLS
                         - JRF
                         type: string
+                      domainImages:
+                        description: 'Domain images containing WebLogic Deploy Tooling
+                          model, application archive, and WebLogic Deploy Tooling
+                          installation files. These files will be used to create the
+                          domain during introspection. This feature internally uses
+                          a Kubernetes emptyDir volume and Kubernetes init containers
+                          to share the files from the additional images '
+                        items:
+                          type: object
+                          properties:
+                            sourceWDTInstallHome:
+                              description: The source location of the WebLogic Deploy
+                                Tooling installation within the domain image. Defaults
+                                to `/auxiliary/weblogic-deploy`. If the value is set
+                                to `None` or no files are found at the default location,
+                                then the source directory is ignored. When specifying
+                                multiple domain images, ensure that only one of the
+                                images supplies a WDT install home; if more than one
+                                WDT install home is provided, then the domain deployment
+                                will fail.
+                              type: string
+                            image:
+                              description: The domain image containing Model in Image
+                                model files, application archive files, and/or WebLogic
+                                Deploying Tooling installation files. Required.
+                              type: string
+                            imagePullPolicy:
+                              description: The image pull policy for the container
+                                image. Legal values are Always, Never, and IfNotPresent.
+                                Defaults to Always if image ends in :latest; IfNotPresent,
+                                otherwise.
+                              type: string
+                            sourceModelHome:
+                              description: The source location of the WebLogic Deploy
+                                Tooling model home within the domain image. Defaults
+                                to `/auxiliary/models`. If the value is set to `None`
+                                or no files are found at the default location, then
+                                the source directory is ignored. If specifying multiple
+                                domain images with model files in their respective
+                                `sourceModelHome` directories, then model files are
+                                merged.
+                              type: string
+                        type: array
                       opss:
                         description: Settings for OPSS security.
                         properties:
@@ -308,67 +250,21 @@ spec:
                             type: string
                         type: object
                       createMode:
-                        description: create domain mode.
+                        default: JRF
+                        description: 'PV domain create mode. Legal values: CreateDomainIfNotExist,
+                          CreateDomainWithRcuIfNotExist. Defaults to CreateDomainIfNotExist.'
                         enum:
                         - CreateDomainIfNotExists
                         - CreateDomainWithRcuIfNoExists
                         type: string
-                      wdtImages:
-                        description: Optionally, use auxiliary images to provide Model
-                          in Image model, application archive, and WebLogic Deploy
-                          Tooling files. This is a useful alternative for providing
-                          these files without requiring modifications to the pod's
-                          base image `domain.spec.image`. This feature internally
-                          uses a Kubernetes emptyDir volume and Kubernetes init containers
-                          to share the files from the additional images with the pod.
-                        items:
-                          type: object
-                          properties:
-                            sourceWDTInstallHome:
-                              description: The source location of the WebLogic Deploy
-                                Tooling installation within the auxiliary image that
-                                will be made available in the `/aux/weblogic-deploy`
-                                directory of the WebLogic Server container in all
-                                pods. Defaults to `/auxiliary/weblogic-deploy`. If
-                                the value is set to `None` or no files are found at
-                                the default location, then the source directory is
-                                ignored. When specifying multiple auxiliary images,
-                                ensure that only one of the images supplies a WDT
-                                install home; if more than one WDT install home is
-                                provided, then the domain deployment will fail.
-                              type: string
-                            image:
-                              description: The auxiliary image containing Model in
-                                Image model files, application archive files, and/or
-                                WebLogic Deploying Tooling installation files. Required.
-                              type: string
-                            imagePullPolicy:
-                              description: The image pull policy for the container
-                                image. Legal values are Always, Never, and IfNotPresent.
-                                Defaults to Always if image ends in :latest; IfNotPresent,
-                                otherwise.
-                              type: string
-                            sourceModelHome:
-                              description: The source location of the WebLogic Deploy
-                                Tooling model home within the auxiliary image that
-                                will be made available in the `/aux/models` directory
-                                of the WebLogic Server container in all pods. Defaults
-                                to `/auxiliary/models`. If the value is set to `None`
-                                or no files are found at the default location, then
-                                the source directory is ignored. If specifying multiple
-                                auxiliary images with model files in their respective
-                                `sourceModelHome` directories, then model files are
-                                merged.
-                              type: string
-                        type: array
                       wdtConfigMap:
                         description: Name of a ConfigMap containing the WebLogic Deploy
                           Tooling model.
                         type: string
                     type: object
-                  initPvc:
-                    description: Metadata and specs of the persistent volume claim
-                      to initialize.
+                  persistentVolumeClaim:
+                    description: Configuration including 'Metadata' and 'Specs' to
+                      create a persistent volume claim, if needed.
                     properties:
                       metadata:
                         properties:

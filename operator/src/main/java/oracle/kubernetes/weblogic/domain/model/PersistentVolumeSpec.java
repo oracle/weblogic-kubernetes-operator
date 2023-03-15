@@ -7,9 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.V1CSIPersistentVolumeSource;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
-import io.kubernetes.client.openapi.models.V1VolumeNodeAffinity;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -25,10 +23,6 @@ public class PersistentVolumeSpec {
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity")
   private Map<String, Quantity> capacity;
 
-  @Description("CSI represents storage that is handled by an external CSI driver (Beta feature)."
-      + "\nRepresents storage that is managed by an external CSI volume driver (Beta feature)")
-  private V1CSIPersistentVolumeSource csi;
-
   @Description("HostPath represents a directory on the host. Provisioned by a developer or tester."
       + " This is useful for single-node development and testing only! On-host storage is not supported in any way"
       + " and WILL NOT WORK in a multi-node cluster. More info:\n"
@@ -36,13 +30,6 @@ public class PersistentVolumeSpec {
       + "Represents a host path mapped into a pod. Host path volumes do not support ownership management"
       + " or SELinux relabeling.")
   private V1HostPathVolumeSource hostPath;
-
-  @Description("NodeAffinity defines constraints that limit what nodes this volume can be"
-      + " accessed from. This field influences the scheduling of pods that use this"
-      + " volume.\n"
-      + "VolumeNodeAffinity defines constraints that limit what nodes this volume\n"
-      + " can be accessed from.")
-  private V1VolumeNodeAffinity nodeAffinity;
 
   @Description("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"
       + " its claim. Valid options are Retain (default for manually created PersistentVolumes),"
@@ -58,11 +45,6 @@ public class PersistentVolumeSpec {
   @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
       + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
   private String volumeMode;
-
-  @Description("MountOptions is the list of mount options, e.g. [\"ro\", \"soft\"]. Not validated - mount will"
-      + " simply fail if one is invalid."
-      + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options")
-  private List<String> mountOptions = null;
 
   public List<String> getAccessModes() {
     return accessModes;
@@ -82,29 +64,12 @@ public class PersistentVolumeSpec {
     return this;
   }
 
-  public V1CSIPersistentVolumeSource getCsi() {
-    return csi;
-  }
-
-  public void setCsi(V1CSIPersistentVolumeSource csi) {
-    this.csi = csi;
-  }
-
   public V1HostPathVolumeSource getHostPath() {
     return hostPath;
   }
 
   public PersistentVolumeSpec hostPath(V1HostPathVolumeSource hostPath) {
     this.hostPath = hostPath;
-    return this;
-  }
-
-  public V1VolumeNodeAffinity getNodeAffinity() {
-    return nodeAffinity;
-  }
-
-  public PersistentVolumeSpec nodeAffinity(V1VolumeNodeAffinity nodeAffinity) {
-    this.nodeAffinity = nodeAffinity;
     return this;
   }
 
@@ -133,27 +98,16 @@ public class PersistentVolumeSpec {
     this.volumeMode = volumeMode;
   }
 
-  public List<String> getMountOptions() {
-    return mountOptions;
-  }
-
-  public void setMountOptions(List<String> mountOptions) {
-    this.mountOptions = mountOptions;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("accessModes", accessModes)
             .append("capacity", capacity)
-            .append("csi", csi)
             .append("hostPath", hostPath)
-            .append("nodeAffinity", nodeAffinity)
             .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
             .append("storageClassName", storageClassName)
-            .append("volumeMode", volumeMode)
-            .append("mountOptions", mountOptions);
+            .append("volumeMode", volumeMode);
 
     return builder.toString();
   }
@@ -163,13 +117,10 @@ public class PersistentVolumeSpec {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(accessModes)
         .append(capacity)
-        .append(csi)
         .append(hostPath)
-        .append(nodeAffinity)
         .append(persistentVolumeReclaimPolicy)
         .append(storageClassName)
-        .append(volumeMode)
-        .append(mountOptions);
+        .append(volumeMode);
 
     return builder.toHashCode();
   }
@@ -187,13 +138,10 @@ public class PersistentVolumeSpec {
         new EqualsBuilder()
             .append(accessModes, rhs.accessModes)
             .append(capacity, rhs.capacity)
-            .append(csi, rhs.csi)
             .append(hostPath, rhs.hostPath)
-            .append(nodeAffinity, rhs.nodeAffinity)
             .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
             .append(storageClassName, rhs.storageClassName)
-            .append(volumeMode, rhs.volumeMode)
-            .append(mountOptions, rhs.mountOptions);
+            .append(volumeMode, rhs.volumeMode);
 
     return builder.isEquals();
   }
