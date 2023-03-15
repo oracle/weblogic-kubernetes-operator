@@ -29,7 +29,7 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPv;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -94,7 +94,7 @@ public abstract class DomainConfigurator {
    * @param initializeDomainOnPv configuration for initialization for the domain on PV
    * @return this object
    */
-  public DomainConfigurator withInitializeDomainOnPv(InitializeDomainOnPv initializeDomainOnPv) {
+  public DomainConfigurator withInitializeDomainOnPv(InitializeDomainOnPV initializeDomainOnPv) {
     Configuration configuration = getDomainSpec().getConfiguration();
     if (configuration == null) {
       getDomainSpec().setConfiguration(new Configuration());

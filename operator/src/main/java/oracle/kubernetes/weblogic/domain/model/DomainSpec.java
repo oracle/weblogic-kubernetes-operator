@@ -978,13 +978,13 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
   }
 
-  InitializeDomainOnPv getInitPvDomain() {
+  InitializeDomainOnPV getInitializeDomainOnPV() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getInitializeDomainOnPv).orElse(null);
+        .map(Configuration::getInitializeDomainOnPV).orElse(null);
   }
 
   List<DomainCreationImage> getDomainImages() {
-    return Optional.ofNullable(getInitPvDomain()).map(InitializeDomainOnPv::getDomain)
+    return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
         .map(Domain::getDomainCreationImages).orElse(null);
   }
 

@@ -35,7 +35,7 @@ public class Domain {
   private List<DomainCreationImage> domainCreationImages;
 
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
-  private String wdtConfigMap;
+  private String domainCreationConfigMap;
 
   @Description("Settings for OPSS security.")
   private Opss opss;
@@ -67,12 +67,12 @@ public class Domain {
     return this;
   }
 
-  public String getWdtConfigMap() {
-    return wdtConfigMap;
+  public String getDomainCreationConfigMap() {
+    return domainCreationConfigMap;
   }
 
-  public Domain wdtConfigMap(String wdtConfigMap) {
-    this.wdtConfigMap = wdtConfigMap;
+  public Domain domainCreationConfigMap(String domainCreationConfigMap) {
+    this.domainCreationConfigMap = domainCreationConfigMap;
     return this;
   }
 
@@ -92,7 +92,7 @@ public class Domain {
             .append("createMode", createIfNotExists)
             .append("domainType", domainType)
             .append("wdtImages", domainCreationImages)
-            .append("wdtConfigMap", wdtConfigMap)
+            .append("domainCreationConfigMap", domainCreationConfigMap)
             .append("opss", opss);
 
     return builder.toString();
@@ -104,7 +104,7 @@ public class Domain {
         .append(createIfNotExists)
         .append(domainType)
         .append(domainCreationImages)
-        .append(wdtConfigMap)
+        .append(domainCreationConfigMap)
         .append(opss);
 
     return builder.toHashCode();
@@ -124,7 +124,7 @@ public class Domain {
             .append(createIfNotExists, rhs.createIfNotExists)
             .append(opss, rhs.opss)
             .append(domainType, rhs.domainType)
-            .append(wdtConfigMap, rhs.wdtConfigMap)
+            .append(domainCreationConfigMap, rhs.domainCreationConfigMap)
             .append(opss, rhs.opss);
 
     return builder.isEquals();

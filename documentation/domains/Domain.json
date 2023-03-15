@@ -176,9 +176,9 @@
     "Configuration": {
       "type": "object",
       "properties": {
-        "initializeDomainOnPv": {
+        "initializeDomainOnPV": {
           "description": "The configuration required to create an empty WebLogic \u0027Domain on PV\u0027 domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a \u0027Model In Image\u0027 domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/",
-          "$ref": "#/definitions/InitializeDomainOnPv"
+          "$ref": "#/definitions/InitializeDomainOnPV"
         },
         "overrideDistributionStrategy": {
           "default": "Dynamic",
@@ -222,6 +222,10 @@
     "Domain": {
       "type": "object",
       "properties": {
+        "domainCreationConfigMap": {
+          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
+          "type": "string"
+        },
         "domainCreationImages": {
           "description": "Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images ",
           "type": "array",
@@ -241,10 +245,6 @@
         "opss": {
           "description": "Settings for OPSS security.",
           "$ref": "#/definitions/Opss"
-        },
-        "wdtConfigMap": {
-          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
-          "type": "string"
         },
         "createIfNotExists": {
           "default": "CreateDomainIfNotExists",
@@ -631,7 +631,7 @@
         }
       }
     },
-    "InitializeDomainOnPv": {
+    "InitializeDomainOnPV": {
       "description": "The configuration required to create an empty WebLogic \u0027Domain on PV\u0027 domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a \u0027Model In Image\u0027 domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/",
       "type": "object",
       "properties": {
