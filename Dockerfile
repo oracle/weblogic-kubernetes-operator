@@ -9,10 +9,17 @@
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL_X64="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL_AARCH64="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-aarch64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
+    MACHINE_TYPE=`uname -m`; \
+    if [ ${MACHINE_TYPE} == 'x86_64' ]; then \
+      JAVA_URL=$JAVA_URL_X64; \
+    else \
+      JAVA_URL=$JAVA_URL_AARCH64; \
+    fi; \
     curl -fL -o /jdk.tar.gz "$JAVA_URL"; \
     mkdir -p /jdk; \
     tar --extract --file /jdk.tar.gz --directory /jdk --strip-components 1; \

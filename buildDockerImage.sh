@@ -65,7 +65,7 @@ echo "Building image '$IMAGE_NAME' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS -t $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+${WLSIMG_BUILDER:-docker} buildx build $PROXY_SETTINGS --push --platform linux/amd64,linux/arm64 --tag $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
   echo "There was an error building the image."
   exit 1
 }
