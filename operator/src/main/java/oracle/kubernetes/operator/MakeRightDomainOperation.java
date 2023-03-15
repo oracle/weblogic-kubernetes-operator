@@ -46,8 +46,6 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
 
   boolean isDeleting();
 
-  boolean isExplicitRecheck();
-
   void setInspectionRun();
 
   void setLiveInfo(@Nonnull DomainPresenceInfo info);

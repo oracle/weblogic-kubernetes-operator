@@ -935,7 +935,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreated() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster1);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
     processor.registerClusterPresenceInfo(info);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
@@ -947,7 +947,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedMessage() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster1);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
     processor.registerClusterPresenceInfo(info);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));
@@ -961,7 +961,7 @@ class EventHelperTest {
 
   @Test
   void whenMakeRightCalled_withClusterDeletedEventData_clusterDeletedEventCreatedWithExpectedNamespace() {
-    ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster1);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
     processor.registerClusterPresenceInfo(info);
 
     processor.dispatchClusterWatch(new Watch.Response<>("DELETED", cluster1));

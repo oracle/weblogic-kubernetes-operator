@@ -213,6 +213,14 @@ class ItIstioMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    
+    
+    // delete the mTLS mode
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
+        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
+    assertEquals(0, result.exitValue(), "Got expected exit value");
+    logger.info(result.stdout());
+    logger.info(result.stderr());   
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
 
@@ -243,17 +251,6 @@ class ItIstioMiiDomain {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     
-    String curlCmd = "curl -j -sk --show-error --noproxy '*' "
-        + " -H 'Host: " + domainNamespace + ".org'"
-        + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    ExecResult result;
-    logger.info("curl command {0}", curlCmd);
-    result = assertDoesNotThrow(() -> exec(curlCmd, true));
-    assertEquals(0, result.exitValue(), "Got expected exit value");
-    result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " delete -f "
-        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    assertEquals(0, result.exitValue(), "Got expected exit value");    
-
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
@@ -379,14 +376,17 @@ class ItIstioMiiDomain {
   }
   
   private static void enableStrictMode(String namespace) {
-    assertDoesNotThrow(() -> copyFile(Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml").toFile(),
-          Paths.get(WORK_DIR, "istio-tls-mode.yaml").toFile()));
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(),
-          "NAMESPACE", namespace));
-
-    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(KUBERNETES_CLI + " apply -f "
-        + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true));
-    logger.info(result.stdout());
-    logger.info(result.stderr());
+    Path srcFile = Paths.get(RESOURCE_DIR, "istio", "istio-tls-mode.yaml");
+    Path dstFile = Paths.get(WORK_DIR, "istio-tls-mode.yaml");
+    logger.info("Enabling STRICT mTLS mode in istio in namesapce {0}", namespace);
+    assertDoesNotThrow(() -> {
+      copyFile(srcFile.toFile(), dstFile.toFile());
+      replaceStringInFile(dstFile.toString(), "NAMESPACE", namespace);
+      ExecResult result = ExecCommand.exec(KUBERNETES_CLI + " apply -f "
+          + Paths.get(WORK_DIR, "istio-tls-mode.yaml").toString(), true);
+      assertEquals(0, result.exitValue(), "Failed to enable mTLS strict mode");
+      logger.info(result.stdout());
+      logger.info(result.stderr());
+    });
   }
 }
