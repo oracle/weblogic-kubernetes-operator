@@ -723,7 +723,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImages() : null;
   }
 
-  public List<DomainCreationImage> getDomainImages() {
+  public List<DomainCreationImage> getDomainCreationImages() {
     return getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME ? spec.getDomainImages() : null;
   }
 
@@ -961,6 +961,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+      whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
     }
 
@@ -1102,13 +1103,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           this::verifyWDTInstallHome);
     }
 
+    private void whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
+      Optional.ofNullable(getSpec().getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
+          .map(Domain::getDomainCreationImages).ifPresent(this::verifyWDTInstallHomeInDomainCreationImages);
+    }
+
     private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
       if (auxiliaryImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
         failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
       }
     }
 
-    private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
+    private void verifyWDTInstallHomeInDomainCreationImages(List<DomainCreationImage> domainCreationImages) {
+      if (domainCreationImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
+        failures.add(DomainValidationMessages.moreThanOneDomainCreationImageConfiguredWDTInstallHome());
+      }
+    }
+
+    private boolean isWDTInstallHomeSetAndNotNone(DeploymentImage ai) {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 

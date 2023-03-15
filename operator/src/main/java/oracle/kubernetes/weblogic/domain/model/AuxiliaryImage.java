@@ -12,7 +12,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class AuxiliaryImage {
+public class AuxiliaryImage implements DeploymentImage {
 
   public static final String AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME = "aux-image-internal-volume";
   public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";

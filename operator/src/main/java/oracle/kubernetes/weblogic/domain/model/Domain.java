@@ -14,9 +14,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Domain {
 
-  @Description("Domain creation mode. Legal values: CreateDomainIfNotExists, CreateDomainWithRcuIfNotExists."
-      + " Defaults to CreateDomainIfNotExists.")
-  @Default(strDefault = "CreateDomainIfNotExists")
+  @Description("Specifies if only domain or domain with RCU needs to be created."
+      + " Legal values: domain, domainAndRCU. Defaults to domain.")
+  @Default(strDefault = "domain")
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.")
@@ -62,8 +62,8 @@ public class Domain {
     return domainCreationImages;
   }
 
-  public Domain wdtImages(List<DomainCreationImage> wdtImages) {
-    this.domainCreationImages = wdtImages;
+  public Domain domainCreationImages(List<DomainCreationImage> domainCreationImages) {
+    this.domainCreationImages = domainCreationImages;
     return this;
   }
 
@@ -91,7 +91,7 @@ public class Domain {
         new ToStringBuilder(this)
             .append("createMode", createIfNotExists)
             .append("domainType", domainType)
-            .append("wdtImages", domainCreationImages)
+            .append("domainCreationImages", domainCreationImages)
             .append("domainCreationConfigMap", domainCreationConfigMap)
             .append("opss", opss);
 

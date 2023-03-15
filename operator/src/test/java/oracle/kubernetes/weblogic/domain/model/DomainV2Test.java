@@ -1755,7 +1755,7 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenInitializeDomainOnPvWithDomainConfigured_useConfiguredValues() {
     InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
-    initializeDomainOnPv.setDomain(createInitialPvDomain());
+    initializeDomainOnPv.domain(createInitialPvDomain());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
     assertThat(getDomain(domain), equalTo(createInitialPvDomain()));
@@ -1770,7 +1770,7 @@ class DomainV2Test extends DomainTestBase {
   private Domain createInitialPvDomain() {
     return new Domain().domainType(DomainType.WLS)
         .createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainCreationConfigMap("wdf-config-map")
-        .wdtImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
+        .domainCreationImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
         .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
   }
 

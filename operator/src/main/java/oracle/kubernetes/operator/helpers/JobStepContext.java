@@ -49,6 +49,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
+import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
@@ -382,14 +384,23 @@ public class JobStepContext extends BasePodStepContext {
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec());
     addInitContainers(podTemplateSpec.getSpec());
-    Optional.ofNullable(getAuxiliaryImages())
-            .ifPresent(p -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume()));
+    if (auxiliaryOrDomainCreationImagesConfigured()) {
+      podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume());
+    }
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
 
+  private boolean auxiliaryOrDomainCreationImagesConfigured() {
+    return getAuxiliaryImages() != null || getDomainCreationImages() != null;
+  }
+
   private List<AuxiliaryImage> getAuxiliaryImages() {
     return getDomain().getAuxiliaryImages();
+  }
+
+  private List<DomainCreationImage> getDomainCreationImages() {
+    return getDomain().getDomainCreationImages();
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
@@ -406,6 +417,7 @@ public class JobStepContext extends BasePodStepContext {
   protected void addInitContainers(V1PodSpec podSpec) {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
+    Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> isAllowedInIntrospector(container.getName()))
             .map(c -> c.env(createEnv(c)).resources(createResources()))
@@ -413,7 +425,7 @@ public class JobStepContext extends BasePodStepContext {
     podSpec.initContainers(initContainers);
   }
 
-  private void addInitContainers(List<V1Container> initContainers, List<AuxiliaryImage> auxiliaryImages) {
+  private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
   }
@@ -519,7 +531,9 @@ public class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
-    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages -> addVolumeMountIfMissing(container));
+    if (auxiliaryOrDomainCreationImagesConfigured()) {
+      addVolumeMountIfMissing(container);
+    }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
@@ -748,10 +762,11 @@ public class JobStepContext extends BasePodStepContext {
     }
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
+    Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
     return vars;
   }
 
-  private void addAuxImagePathEnv(List<AuxiliaryImage> auxiliaryImages, List<V1EnvVar> vars) {
+  private void addAuxImagePathEnv(List<? extends DeploymentImage> auxiliaryImages, List<V1EnvVar> vars) {
     if (!auxiliaryImages.isEmpty()) {
       addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
     }

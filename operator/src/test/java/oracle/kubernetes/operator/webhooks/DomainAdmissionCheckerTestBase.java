@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.BAD_
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.NEW_IMAGE_NAME;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.createAuxiliaryImage;
 import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setAuxiliaryImages;
+import static oracle.kubernetes.operator.webhooks.AdmissionWebhookTestSetUp.setDomainCreationImages;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.LOG_HOME;
 import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.SERVER_NAME;
@@ -232,7 +234,7 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   }
 
   @Test
-  void whenDomainHasOnlyOneImageSetsSourceWDTInstallHome_returnTrue() {
+  void whenDomainHasOnlyOneAuxImageSetsSourceWDTInstallHome_returnTrue() {
     AuxiliaryImage image1 = new AuxiliaryImage().image(AUX_IMAGE_1).sourceWDTInstallHome(MODEL_HOME_1);
     AuxiliaryImage image2 = new AuxiliaryImage().image(AUX_IMAGE_2);
     List<AuxiliaryImage> images = List.of(image1, image2);
@@ -242,11 +244,31 @@ abstract class DomainAdmissionCheckerTestBase extends AdmissionCheckerTestBase {
   }
 
   @Test
-  void whenDomainHasMoreThanOneImageSetsSourceWDTInstallHome_returnFalse() {
+  void whenDomainHasMoreThanOneAuxImageSetsSourceWDTInstallHome_returnFalse() {
     AuxiliaryImage image1 = new AuxiliaryImage().image(AUX_IMAGE_1).sourceWDTInstallHome(MODEL_HOME_1);
     AuxiliaryImage image2 = new AuxiliaryImage().image(AUX_IMAGE_2).sourceWDTInstallHome(MODEL_HOME_2);
     List<AuxiliaryImage> images = List.of(image1, image2);
     setAuxiliaryImages(proposedDomain, images);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
+  }
+
+  @Test
+  void whenDomainHasOnlyOneDomainCreationImageSetsSourceWDTInstallHome_returnTrue() {
+    DomainCreationImage image1 = new DomainCreationImage().image(AUX_IMAGE_1).sourceWDTInstallHome(MODEL_HOME_1);
+    DomainCreationImage image2 = new DomainCreationImage().image(AUX_IMAGE_2);
+    List<DomainCreationImage> images = List.of(image1, image2);
+    setDomainCreationImages(proposedDomain, images);
+
+    assertThat(domainChecker.isProposedChangeAllowed(), equalTo(true));
+  }
+
+  @Test
+  void whenDomainHasMoreThanOneDomainCreationImageSetsSourceWDTInstallHome_returnFalse() {
+    DomainCreationImage image1 = new DomainCreationImage().image(AUX_IMAGE_1).sourceWDTInstallHome(MODEL_HOME_1);
+    DomainCreationImage image2 = new DomainCreationImage().image(AUX_IMAGE_2).sourceWDTInstallHome(MODEL_HOME_2);
+    List<DomainCreationImage> images = List.of(image1, image2);
+    setDomainCreationImages(proposedDomain, images);
 
     assertThat(domainChecker.isProposedChangeAllowed(), equalTo(false));
   }

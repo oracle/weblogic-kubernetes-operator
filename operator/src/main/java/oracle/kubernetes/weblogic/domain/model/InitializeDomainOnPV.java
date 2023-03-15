@@ -45,8 +45,9 @@ public class InitializeDomainOnPV {
     return domain;
   }
 
-  public void setDomain(Domain domain) {
+  public InitializeDomainOnPV domain(Domain domain) {
     this.domain = domain;
+    return this;
   }
 
   @Override

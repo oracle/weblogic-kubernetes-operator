@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3054bc7f22788bbd07d8799fc376d26e2459d10f2644eaff6adf0bb52ab3eee3
+    weblogic.sha256: 65e5557a016cf3f60255534845d7631e47fb1ce269a72be829830caa1c2de4e8
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -264,10 +264,10 @@ spec:
                                     deployment will fail.
                                   type: string
                                 image:
-                                  description: The domain image containing Model in
-                                    Image model files, application archive files,
-                                    and/or WebLogic Deploying Tooling installation
-                                    files. Required.
+                                  description: The domain image containing model files,
+                                    application archive files, and/or WebLogic Deploying
+                                    Tooling installation files to create the domain.
+                                    Required.
                                   type: string
                                 imagePullPolicy:
                                   description: The image pull policy for the container
@@ -314,9 +314,10 @@ spec:
                                 type: string
                             type: object
                           createIfNotExists:
-                            default: CreateDomainIfNotExists
-                            description: 'Domain creation mode. Legal values: CreateDomainIfNotExists,
-                              CreateDomainWithRcuIfNotExists. Defaults to CreateDomainIfNotExists.'
+                            default: domain
+                            description: 'Specifies if only domain or domain with
+                              RCU needs to be created. Legal values: domain, domainAndRCU.
+                              Defaults to domain.'
                             enum:
                             - domain
                             - domainAndRCU
