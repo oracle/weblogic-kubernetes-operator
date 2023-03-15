@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 rbac:
   create: true
@@ -10,19 +10,8 @@ serviceAccounts:
   pushgateway:
     create: false
 
-pushgateway:
-  enabled: false
-
 alertmanager:
   enabled: true
-
-  ## Use a ClusterRole (and ClusterRoleBinding)
-  ## - If set to false - we define a Role and RoleBinding in the defined namespaces ONLY
-  ## This makes alertmanager work - for users who do not have ClusterAdmin privs, but wants alertmanager to operate on their own namespaces, instead of clusterwide.
-  useClusterRole: true
-
-  ## Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to the rolename set here.
-  useExistingRole: false
 
   persistentVolume:
     existingClaim: pvc-alertmanager
@@ -33,16 +22,42 @@ alertmanager:
   #   runAsNonRoot: false
   #  runAsUser: 0
   image:
-    repository: quay.io/prometheus/alertmanager
-    tag: v0.23.0
+    repository: prometheus_alertmanager_image
+    tag: prometheus_alertmanager_tag
     pullPolicy: IfNotPresent
   securityContext:
     runAsUser: 65534
     runAsNonRoot: true
     runAsGroup: 65534
 
-nodeExporter:
+#nodeExporter:
+prometheus-node-exporter:
   enabled: false
+  ## node-exporter container image
+  ##
+  image:
+    repository: prometheus_node_exporter_image
+    tag: prometheus_node_exporter_tag
+    pullPolicy: IfNotPresent
+
+configmapReload:
+  prometheus:
+    ## If false, the configmap-reload container will not be deployed
+    ##
+    enabled: true
+
+    ## configmap-reload container name
+    ##
+    name: configmap-reload
+
+    ## configmap-reload container image
+    ##
+    image:
+      repository: prometheus_configmap_reload_image
+      tag: prometheus_configmap_reload_tag
+      # When digest is set to a non-empty value, images will be pulled by digest (regardless of tag value).
+      digest: ""
+      pullPolicy: IfNotPresent
 
 server:
   persistentVolume:
@@ -59,10 +74,16 @@ server:
     scrape_interval: 10s
     scrape_timeout: 5s
   image:
-    repository: quay.io/prometheus/prometheus
-    tag: v2.31.1
+    repository: prometheus_image
+    tag: prometheus_tag
     pullPolicy: IfNotPresent
 
+prometheus-pushgateway:
+  enabled: false
+  image:
+    repository: pushgateway_image
+    tag: pushgateway_tag
+    pullPolicy: IfNotPresent
 alertmanagerFiles:
   alertmanager.yml:
     global:
