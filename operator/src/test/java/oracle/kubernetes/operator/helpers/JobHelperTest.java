@@ -66,6 +66,8 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
+import oracle.kubernetes.weblogic.domain.model.InitDomain;
+import oracle.kubernetes.weblogic.domain.model.InitPvDomain;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -103,6 +105,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createTolerat
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.INIT_DOMAIN_ON_PV_CONTAINER;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
@@ -1061,6 +1064,26 @@ class JobHelperTest extends DomainValidationTestBase {
         getInitContainerResources(podSpec),
         is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
             .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVHasCreateDHInitContainer() {
+    InitPvDomain initPvDomain = new InitPvDomain();
+    InitDomain initDomain = new InitDomain();
+    initPvDomain.setInitDomain(initDomain);
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(initPvDomain);
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
+    assertThat(
+        hasContainer,
+        is(true)
+    );
   }
 
   private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {

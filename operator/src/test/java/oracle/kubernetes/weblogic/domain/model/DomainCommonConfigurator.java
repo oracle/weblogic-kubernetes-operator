@@ -452,6 +452,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withInitializeDomainOnPV(InitPvDomain initPvDomain) {
+    getDomainSpec().setInitPvDomain(initPvDomain);
+    return this;
+  }
+
   private Configuration getOrCreateConfiguration() {
     DomainSpec spec = getDomainSpec();
     if (spec.getConfiguration() == null) {
