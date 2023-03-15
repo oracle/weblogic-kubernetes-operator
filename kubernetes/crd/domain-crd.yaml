@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fb02cf4d6a86bc94f3091999e95f502e66c540631d48b7c505b190fe8f134847
+    weblogic.sha256: 1cb257a6468abcdc88ac533a911810972028edcb57e18531c4361cf9c61e3587
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -35,6 +35,426 @@ spec:
             description: The specification of the operation of the WebLogic domain.
               Required.
             properties:
+              initPvDomain:
+                properties:
+                  initPv:
+                    description: Metadata and specs of the persistent volume to initialize.
+                    properties:
+                      metadata:
+                        properties:
+                          generation:
+                            type: integer
+                          finalizers:
+                            items:
+                              type: string
+                            type: array
+                          resourceVersion:
+                            type: string
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          generateName:
+                            type: string
+                          deletionTimestamp:
+                            format: date-time
+                            type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          ownerReferences:
+                            items:
+                              type: object
+                              properties:
+                                uid:
+                                  type: string
+                                controller:
+                                  type: boolean
+                                apiVersion:
+                                  type: string
+                                kind:
+                                  type: string
+                                name:
+                                  type: string
+                                blockOwnerDeletion:
+                                  type: boolean
+                              required:
+                              - apiVersion
+                              - kind
+                              - name
+                              - uid
+                            type: array
+                          selfLink:
+                            type: string
+                          deletionGracePeriodSeconds:
+                            type: integer
+                          uid:
+                            type: string
+                          managedFields:
+                            items:
+                              type: object
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldsV1:
+                                  type: object
+                                manager:
+                                  type: string
+                                subresource:
+                                  type: string
+                                time:
+                                  format: date-time
+                                  type: string
+                                operation:
+                                  type: string
+                                fieldsType:
+                                  type: string
+                            type: array
+                          creationTimestamp:
+                            format: date-time
+                            type: string
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        type: object
+                      spec:
+                        properties:
+                          storageClassName:
+                            type: string
+                          csi:
+                            description: |-
+                              CSI represents storage that is handled by an external CSI driver (Beta feature).
+                              Represents storage that is managed by an external CSI volume driver (Beta feature)
+                            properties:
+                              controllerPublishSecretRef:
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                              driver:
+                                type: string
+                              nodePublishSecretRef:
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                              nodeStageSecretRef:
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                              volumeHandle:
+                                type: string
+                              nodeExpandSecretRef:
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                              readOnly:
+                                type: boolean
+                              controllerExpandSecretRef:
+                                properties:
+                                  name:
+                                    type: string
+                                  namespace:
+                                    type: string
+                                type: object
+                              fsType:
+                                type: string
+                              volumeAttributes:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                            required:
+                            - driver
+                            - volumeHandle
+                            type: object
+                          mountOptions:
+                            items:
+                              type: string
+                            type: array
+                          nodeAffinity:
+                            description: |-
+                              NodeAffinity defines constraints that limit what nodes this volume can be accessed from. This field influences the scheduling of pods that use this volume.
+                              VolumeNodeAffinity defines constraints that limit what nodes this volume
+                               can be accessed from.
+                            properties:
+                              required:
+                                properties:
+                                  nodeSelectorTerms:
+                                    items:
+                                      type: object
+                                      properties:
+                                        matchExpressions:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                        matchFields:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              values:
+                                                type: array
+                                                items:
+                                                  type: string
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                            required:
+                                            - key
+                                            - operator
+                                    type: array
+                                required:
+                                - nodeSelectorTerms
+                                type: object
+                            type: object
+                          persistentVolumeReclaimPolicy:
+                            type: string
+                          accessModes:
+                            items:
+                              type: string
+                            type: array
+                          hostPath:
+                            description: |-
+                              HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:
+                               https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+                              Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.
+                            properties:
+                              path:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - path
+                            type: object
+                          capacity:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          volumeMode:
+                            type: string
+                        type: object
+                    type: object
+                  initDomain:
+                    description: Details of the PV domain to be initialized.
+                    properties:
+                      domainType:
+                        description: Type of the domain.
+                        type: string
+                      opss:
+                        description: Settings for OPSS security.
+                        properties:
+                          walletFileSecret:
+                            description: Name of a Secret containing the OPSS key
+                              wallet file, which must be in a field named `walletFile`.
+                              Use this to allow a JRF domain to reuse its entries
+                              in the RCU database. This allows you to specify a wallet
+                              file that was obtained from the domain home after the
+                              domain was booted for the first time.
+                            type: string
+                          walletPasswordSecret:
+                            description: Name of a Secret containing the OPSS key
+                              passphrase, which must be in a field named `walletPassword`.
+                              Used to encrypt and decrypt the wallet that is used
+                              for accessing the domain's entries in its RCU database.
+                            type: string
+                        type: object
+                      createMode:
+                        description: create domain mode.
+                        type: string
+                      wdtImages:
+                        description: Optionally, use auxiliary images to provide Model
+                          in Image model, application archive, and WebLogic Deploy
+                          Tooling files. This is a useful alternative for providing
+                          these files without requiring modifications to the pod's
+                          base image `domain.spec.image`. This feature internally
+                          uses a Kubernetes emptyDir volume and Kubernetes init containers
+                          to share the files from the additional images with the pod.
+                        items:
+                          type: object
+                          properties:
+                            sourceWDTInstallHome:
+                              description: The source location of the WebLogic Deploy
+                                Tooling installation within the auxiliary image that
+                                will be made available in the `/aux/weblogic-deploy`
+                                directory of the WebLogic Server container in all
+                                pods. Defaults to `/auxiliary/weblogic-deploy`. If
+                                the value is set to `None` or no files are found at
+                                the default location, then the source directory is
+                                ignored. When specifying multiple auxiliary images,
+                                ensure that only one of the images supplies a WDT
+                                install home; if more than one WDT install home is
+                                provided, then the domain deployment will fail.
+                              type: string
+                            image:
+                              description: The auxiliary image containing Model in
+                                Image model files, application archive files, and/or
+                                WebLogic Deploying Tooling installation files. Required.
+                              type: string
+                            imagePullPolicy:
+                              description: The image pull policy for the container
+                                image. Legal values are Always, Never, and IfNotPresent.
+                                Defaults to Always if image ends in :latest; IfNotPresent,
+                                otherwise.
+                              type: string
+                            sourceModelHome:
+                              description: The source location of the WebLogic Deploy
+                                Tooling model home within the auxiliary image that
+                                will be made available in the `/aux/models` directory
+                                of the WebLogic Server container in all pods. Defaults
+                                to `/auxiliary/models`. If the value is set to `None`
+                                or no files are found at the default location, then
+                                the source directory is ignored. If specifying multiple
+                                auxiliary images with model files in their respective
+                                `sourceModelHome` directories, then model files are
+                                merged.
+                              type: string
+                        type: array
+                      wdtConfigMap:
+                        description: Name of a ConfigMap containing the WebLogic Deploy
+                          Tooling model.
+                        type: string
+                    type: object
+                  initPvc:
+                    description: Metadata and specs of the persistent volume claim
+                      to initialize.
+                    properties:
+                      metadata:
+                        properties:
+                          generation:
+                            type: integer
+                          finalizers:
+                            items:
+                              type: string
+                            type: array
+                          resourceVersion:
+                            type: string
+                          annotations:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          generateName:
+                            type: string
+                          deletionTimestamp:
+                            format: date-time
+                            type: string
+                          labels:
+                            additionalProperties:
+                              type: string
+                            type: object
+                          ownerReferences:
+                            items:
+                              type: object
+                              properties:
+                                uid:
+                                  type: string
+                                controller:
+                                  type: boolean
+                                apiVersion:
+                                  type: string
+                                kind:
+                                  type: string
+                                name:
+                                  type: string
+                                blockOwnerDeletion:
+                                  type: boolean
+                              required:
+                              - apiVersion
+                              - kind
+                              - name
+                              - uid
+                            type: array
+                          selfLink:
+                            type: string
+                          deletionGracePeriodSeconds:
+                            type: integer
+                          uid:
+                            type: string
+                          managedFields:
+                            items:
+                              type: object
+                              properties:
+                                apiVersion:
+                                  type: string
+                                fieldsV1:
+                                  type: object
+                                manager:
+                                  type: string
+                                subresource:
+                                  type: string
+                                time:
+                                  format: date-time
+                                  type: string
+                                operation:
+                                  type: string
+                                fieldsType:
+                                  type: string
+                            type: array
+                          creationTimestamp:
+                            format: date-time
+                            type: string
+                          name:
+                            type: string
+                          namespace:
+                            type: string
+                        type: object
+                      spec:
+                        properties:
+                          storageClassName:
+                            type: string
+                          volumeName:
+                            type: string
+                          resources:
+                            description: |-
+                              Resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to
+                               specify resource requirements that are lower than previous value but must
+                               still be higher than capacity recorded in the status field of the claim.
+                               More info:
+                               https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+                               ResourceRequirements describes the compute resource requirements.
+                            properties:
+                              requests:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              limits:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                            type: object
+                          accessModes:
+                            items:
+                              type: string
+                            type: array
+                          volumeMode:
+                            type: string
+                        type: object
+                    type: object
+                type: object
               monitoringExporter:
                 description: Automatic deployment and configuration of the WebLogic
                   Monitoring Exporter. If specified, the operator will deploy a sidecar

@@ -69,9 +69,13 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages  || exit 1
 #
 # setup MII functions in case this is a MII domain
 #
-
-source ${SCRIPTPATH}/modelInImage.sh
-[ $? -ne 0 ] && trace SEVERE "Error sourcing ${SCRIPTPATH}/modelInImage.sh" && exit 1
+if [ ! -z ${DOMAIN_ON_PV} ] ; then
+  source ${SCRIPTPATH}/createDomainOnPV.sh
+  [ $? -ne 0 ] && trace SEVERE "Error sourcing ${SCRIPTPATH}/createDomainOnPV.sh" && exit 1
+else
+  source ${SCRIPTPATH}/modelInImage.sh
+  [ $? -ne 0 ] && trace SEVERE "Error sourcing ${SCRIPTPATH}/modelInImage.sh" && exit 1
+fi
 
 #
 # setup introspector log file
@@ -173,6 +177,10 @@ doIntrospect() {
     createWLDomain || exit 1
     created_domain=$DOMAIN_CREATED
     trace "Create domain return code = " ${created_domain}
+  elif [ ${DOMAIN_SOURCE_TYPE} == "PersistentVolume" ] && [ ! -z ${DOMAIN_ON_PV} ]; then
+    # New domain on PV create the domain
+    createDomainOnPVWLDomain
+    created_domain=$DOMAIN_CREATED
   else
     created_domain=1
   fi
