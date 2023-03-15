@@ -116,6 +116,7 @@ class OfflineWlstEnv(object):
     self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
+    self.DOMAIN_ON_PV             = self.getEnvOrDef('DOMAIN_ON_PV', 'false')
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -189,10 +190,10 @@ class OfflineWlstEnv(object):
     self.DOMAIN_NAME = self.getDomain().getName()
 
     # this should only be done for model in image case
-    if self.DOMAIN_SOURCE_TYPE == "FromModel":
-      self.handle_ModelInImageDomain()
+    if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.DOMAIN_ON_PV:
+      self.handle_JRFOPSSWallet()
 
-  def handle_ModelInImageDomain(self):
+  def handle_JRFOPSSWallet(self):
     self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
     if self.WDT_DOMAIN_TYPE == 'JRF':
@@ -1122,7 +1123,7 @@ class MII_DomainConfigGenerator(Generator):
     trace('done zipping up domain ')
 
 
-class MII_OpssWalletFileGenerator(Generator):
+class JRFOpssWalletFileGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.MII_JRF_EWALLET)
@@ -1933,9 +1934,9 @@ class DomainIntrospector(SecretManager):
         # Must be called after MII_PrimordialDomainGenerator
         MII_IntrospectCMFileGenerator(self.env, self.env.MII_DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
 
-        if self.env.WDT_DOMAIN_TYPE == 'JRF':
-          trace("cfgmap write JRF wallet")
-          MII_OpssWalletFileGenerator(self.env).generate()
+      if self.isFromModelAndJRFDomain() or self.isInitializeDomainJRFOnPV():
+        trace("cfgmap write JRF wallet")
+        JRFOpssWalletFileGenerator(self.env).generate()
 
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
@@ -1945,6 +1946,18 @@ class DomainIntrospector(SecretManager):
     # instead of a topology.
   
     tg.generate()
+
+  def isInitializeDomainJRFOnPV(self):
+    if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.DOMAIN_ON_PV:
+      return True
+    else:
+      return False
+
+  def isFromModelAndJRFDomain(self):
+    if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.DOMAIN_SOURCE_TYPE == 'FromModel':
+      return True
+    else:
+      return False
 
 def getRealSSLListenPort(server, sslport):
   """
