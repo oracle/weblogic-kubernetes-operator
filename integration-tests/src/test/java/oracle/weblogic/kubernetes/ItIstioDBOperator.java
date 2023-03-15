@@ -125,7 +125,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
-//@Tag("oke-sequential")
 @Tag("kind-parallel")
 class ItIstioDBOperator {
 
@@ -401,6 +400,7 @@ class ItIstioDBOperator {
    * Create Istio enabled WebLogic domain using model in image and Oracle database used for JMS and JTA
    * migration and service logs.
    */
+  @Tag("oke-sequential")
   @Test
   void  testIstioWlsModelInImageWithDbOperator() {
 
