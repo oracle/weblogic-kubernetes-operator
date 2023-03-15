@@ -3,19 +3,18 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 usage() {
-cat << EOF
+cat >&2 << EOF
 
-Usage: buildDockerImage.sh [-t tag]
-Builds a container image for the Oracle WebLogic Kubernetes Operator.
+Usage: buildAndPushImage.sh -t tag
+Builds and pushes a container image for the Oracle WebLogic Kubernetes Operator.
 
 Parameters:
    -t: image name and tag in 'name:tag' format
 
-Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 EOF
-exit 0
 }
 
 # WebLogic Kubernetes Operator Image Name
@@ -28,12 +27,15 @@ while getopts "t:" optname; do
       name="$OPTARG"
       ;;
     \? )
-      usage
+      usage; exit 0
       ;;
   esac
 done
 
-IMAGE_NAME=${name:-ghcr.io/oracle/weblogic-kubernetes-operator:4.0.5}
+if [ ! "$name" ]; then
+  echo "-t must be provided"
+  usage; exit 1
+fi
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 # Proxy settings
@@ -61,12 +63,32 @@ fi
 # ################## #
 # BUILDING THE IMAGE #
 # ################## #
-echo "Building image '$IMAGE_NAME' ..."
+echo "Building image '$name' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-${WLSIMG_BUILDER:-docker} buildx build $PROXY_SETTINGS --pull --push --platform linux/amd64,linux/arm64 --tag $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
-  echo "There was an error building the image."
+${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/amd64 --tag $name-amd64 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+  echo "There was an error building the amd64 image."
+  exit 1
+}
+${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-amd64 || {
+  echo "There was an error pushing the amd64 image."
+  exit 1
+}
+${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/arm64 --tag $name-aarch64 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+  echo "There was an error building the aarch64 image."
+  exit 1
+}
+${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-aarch64 || {
+  echo "There was an error pushing the amd64 image."
+  exit 1
+}
+${WLSIMG_BUILDER:-docker} manifest create $PROXY_SETTINGS $name --amend $name-amd64 --amend $name-aarch64 || {
+  echo "There was an error building the manifest."
+  exit 1
+}
+${WLSIMG_BUILDER:-docker} manifest push $PROXY_SETTINGS $name || {
+  echo "There was an error pushing the manifest."
   exit 1
 }
 BUILD_END=$(date '+%s')
@@ -78,7 +100,7 @@ if [ $? -eq 0 ]; then
 cat << EOF
   WebLogic Kubernetes Operator Image is ready:
 
-    --> $IMAGE_NAME
+    --> $name
 
   Build completed in $BUILD_ELAPSED seconds.
 

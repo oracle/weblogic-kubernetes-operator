@@ -1,10 +1,10 @@
 # Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-# HOW TO BUILD THIS IMAGE
+# HOW TO BUILD AND PUSH THIS IMAGE
 # -----------------------
 # Run:
-#      $ ./buildDockerImage.sh [-t <image-name>]
+#      $ ./buildAndPushImage.sh -t <image-name>
 #
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build

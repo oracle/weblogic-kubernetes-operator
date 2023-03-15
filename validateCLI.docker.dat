@@ -26,8 +26,8 @@ dockerFile
 dockerconfigjson
 /docker/
 /docker-images/
-"../buildDockerImage.sh"
-Usage: buildDockerImage.sh
+"../buildAndPushImage.sh"
+Usage: buildAndPushImage.sh
 docker-container\|ockerContainer\|DockerCluster
 contains."BEGIN DOCKERFILE".
 --docker-email
