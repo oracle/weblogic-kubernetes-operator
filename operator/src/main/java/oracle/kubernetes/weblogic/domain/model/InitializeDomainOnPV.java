@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
     + " do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain,"
     + " recommended approach is to use a 'Model In Image' domain home source type."
     + " See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/")
-public class InitializeDomainOnPv {
+public class InitializeDomainOnPV {
 
   @Description("Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed.")
   PersistentVolume persistentVolume;
@@ -53,9 +53,9 @@ public class InitializeDomainOnPv {
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
-            .append("initPv", persistentVolume)
-            .append("domainType", persistentVolumeClaim)
-            .append("initDomain", domain);
+            .append("persistentVolume", persistentVolume)
+            .append("persistentVolumeClaim", persistentVolumeClaim)
+            .append("domain", domain);
 
     return builder.toString();
   }
@@ -78,7 +78,7 @@ public class InitializeDomainOnPv {
       return false;
     }
 
-    InitializeDomainOnPv rhs = ((InitializeDomainOnPv) other);
+    InitializeDomainOnPV rhs = ((InitializeDomainOnPV) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(persistentVolume, rhs.persistentVolume)

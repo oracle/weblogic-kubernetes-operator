@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6b4848f58d6fe61e6d06f96a2b82ded52bb8496905f03bad272da1263f9032d8
+    weblogic.sha256: 3054bc7f22788bbd07d8799fc376d26e2459d10f2644eaff6adf0bb52ab3eee3
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -90,7 +90,7 @@ spec:
               configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.
                 properties:
-                  initializeDomainOnPv:
+                  initializeDomainOnPV:
                     description: The configuration required to create an empty WebLogic
                       'Domain on PV' domain, a persistent volume and a persistent
                       volume claim, if needed. These will be one-time operations that
@@ -236,6 +236,10 @@ spec:
                         description: Configuration details to create an empty WebLogic
                           'Domain on PV' domain, if needed.
                         properties:
+                          domainCreationConfigMap:
+                            description: Name of a ConfigMap containing the WebLogic
+                              Deploy Tooling model.
+                            type: string
                           domainCreationImages:
                             description: 'Domain images containing WebLogic Deploy
                               Tooling model, application archive, and WebLogic Deploy
@@ -309,10 +313,6 @@ spec:
                                   for accessing the domain's entries in its RCU database.
                                 type: string
                             type: object
-                          wdtConfigMap:
-                            description: Name of a ConfigMap containing the WebLogic
-                              Deploy Tooling model.
-                            type: string
                           createIfNotExists:
                             default: CreateDomainIfNotExists
                             description: 'Domain creation mode. Legal values: CreateDomainIfNotExists,

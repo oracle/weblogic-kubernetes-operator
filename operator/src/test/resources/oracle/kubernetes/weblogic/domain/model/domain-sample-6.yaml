@@ -8,7 +8,7 @@ metadata:
   namespace: domain_ns
 spec:
   configuration:
-    initializeDomainOnPv:
+    initializeDomainOnPV:
       persistentVolume:
         metadata:
           name: pvDomainVolume
@@ -22,7 +22,7 @@ spec:
       domain:
         domainCreationImages:
         - image: domain-on-pv-image:v1
-        wdtConfigMap: domain-on-pv-cm
+        domainCreationConfigMap: domain-on-pv-cm
         opss:
           walletFileSecret: domain-opss-wallet
           walletPasswordSecret: weblogic

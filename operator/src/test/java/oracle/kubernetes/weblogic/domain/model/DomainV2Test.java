@@ -1705,16 +1705,17 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenInitPvConfigured_useConfiguredValues() {
-    InitializeDomainOnPv initializeDomainOnPv = new InitializeDomainOnPv();
+  void whenPersistentVolumeConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
     initializeDomainOnPv.setPersistentVolume(createPv());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
-    assertThat(getInitPv(domain), equalTo(createPv()));
-    assertThat(getInitPv(domain).getSpec().getAccessModes(), equalTo(Collections.singletonList("ReadWriteMany")));
-    assertThat(getInitPv(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
-    assertThat(getInitPv(domain).getSpec().getCapacity(), notNullValue());
-    assertThat(getInitPv(domain).getSpec().getHostPath().getPath(), equalTo("/shared"));
+    assertThat(getPersistentVolume(domain), equalTo(createPv()));
+    assertThat(getPersistentVolume(domain).getSpec().getAccessModes(),
+        equalTo(Collections.singletonList("ReadWriteMany")));
+    assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getPersistentVolume(domain).getSpec().getCapacity(), notNullValue());
+    assertThat(getPersistentVolume(domain).getSpec().getHostPath().getPath(), equalTo("/shared"));
   }
 
   private PersistentVolume createPv() {
@@ -1726,17 +1727,18 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenInitPvcConfigured_useConfiguredValues() {
-    InitializeDomainOnPv initializeDomainOnPv = new InitializeDomainOnPv();
+  void whenPersistentVolumeClaimConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
     initializeDomainOnPv.setPersistentVolumeClaim(createPvc());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
-    assertThat(getInitPvc(domain), equalTo(createPvc()));
-    assertThat(getInitPvc(domain).getSpec().getAccessModes(), equalTo(Collections.singletonList("ReadWriteMany")));
-    assertThat(getInitPvc(domain).getSpec().getVolumeName(), equalTo("test-pv"));
-    assertThat(getInitPvc(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
-    assertThat(getInitPvc(domain).getSpec().getVolumeMode(), equalTo("Block"));
-    assertThat(getInitPvc(domain).getSpec().getResources(), notNullValue());
+    assertThat(getPersistentVolumeClaim(domain), equalTo(createPvc()));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getAccessModes(),
+        equalTo(Collections.singletonList("ReadWriteMany")));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("test-pv"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeMode(), equalTo("Block"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getResources(), notNullValue());
   }
 
   private PersistentVolumeClaim createPvc() {
@@ -1751,42 +1753,41 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
-  void whenInitPvDomainConfigured_useConfiguredValues() {
-    InitializeDomainOnPv initializeDomainOnPv = new InitializeDomainOnPv();
-    initializeDomainOnPv.setDomain(createInitDomain());
+  void whenInitializeDomainOnPvWithDomainConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
+    initializeDomainOnPv.setDomain(createInitialPvDomain());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
-    assertThat(getInitDomain(domain), equalTo(createInitDomain()));
-    assertThat(getInitDomain(domain).getCreateIfNotExists(), equalTo(CreateIfNotExists.DOMAIN_AND_RCU));
-    assertThat(getInitDomain(domain).getDomainType(), equalTo(DomainType.WLS));
-    assertThat(getInitDomain(domain).getWdtConfigMap(), equalTo("wdf-config-map"));
-    assertThat(getInitDomain(domain).getDomainCreationImages(), hasItems(new DomainCreationImage().image("image:v1")));
-    assertThat(getInitDomain(domain).getOpss(),
+    assertThat(getDomain(domain), equalTo(createInitialPvDomain()));
+    assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(CreateIfNotExists.DOMAIN_AND_RCU));
+    assertThat(getDomain(domain).getDomainType(), equalTo(DomainType.WLS));
+    assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("wdf-config-map"));
+    assertThat(getDomain(domain).getDomainCreationImages(), hasItems(new DomainCreationImage().image("image:v1")));
+    assertThat(getDomain(domain).getOpss(),
         is(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic")));
   }
 
-
-  private Domain createInitDomain() {
+  private Domain createInitialPvDomain() {
     return new Domain().domainType(DomainType.WLS)
-        .createMode(CreateIfNotExists.DOMAIN_AND_RCU).wdtConfigMap("wdf-config-map")
+        .createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainCreationConfigMap("wdf-config-map")
         .wdtImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
         .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
   }
 
-  private PersistentVolume getInitPv(DomainResource domain) {
-    return domain.getSpec().getInitPvDomain().getPersistentVolume();
+  private PersistentVolume getPersistentVolume(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getPersistentVolume();
   }
 
-  private PersistentVolumeClaim getInitPvc(DomainResource domain) {
-    return domain.getSpec().getInitPvDomain().getPersistentVolumeClaim();
+  private PersistentVolumeClaim getPersistentVolumeClaim(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getPersistentVolumeClaim();
   }
 
-  private Domain getInitDomain(DomainResource domain) {
-    return domain.getSpec().getInitPvDomain().getDomain();
+  private Domain getDomain(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getDomain();
   }
 
   @Test
-  void whenDomainWithInitPvDomainSpecReadFromYaml_pvNameandSpecsAreSet() throws IOException {
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_pvNameandSpecsAreSet() throws IOException {
     List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
     DomainResource domain = (DomainResource) resources.get(0);
 
@@ -1796,15 +1797,15 @@ class DomainV2Test extends DomainTestBase {
   }
 
   private String getPvName(DomainResource domain) {
-    return getInitPv(domain).getMetadata().getName();
+    return getPersistentVolume(domain).getMetadata().getName();
   }
 
   private String getStorageClass(DomainResource domain) {
-    return getInitPv(domain).getSpec().getStorageClassName();
+    return getPersistentVolume(domain).getSpec().getStorageClassName();
   }
 
   @Test
-  void whenDomainWithInitPvDomainSpecReadFromYaml_pvcNameAndSpecsAreSet() throws IOException {
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_pvcNameAndSpecsAreSet() throws IOException {
     List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
     DomainResource domain = (DomainResource) resources.get(0);
 
@@ -1813,27 +1814,27 @@ class DomainV2Test extends DomainTestBase {
   }
 
   private String getPvcName(DomainResource domain) {
-    return getInitPvc(domain).getMetadata().getName();
+    return getPersistentVolumeClaim(domain).getMetadata().getName();
   }
 
   private String getPvcVolumeName(DomainResource domain) {
-    return getInitPvc(domain).getSpec().getVolumeName();
+    return getPersistentVolumeClaim(domain).getSpec().getVolumeName();
   }
 
   @Test
-  void whenDomainWithInitPvDomainSpecReadFromYaml_initDomainSpecsHaveCorrectDefaultsAndValues()
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_domainSpecsHaveCorrectDefaultsAndValues()
       throws IOException {
     List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
     DomainResource domain = (DomainResource) resources.get(0);
 
-    assertThat(getInitDomain(domain).getCreateIfNotExists(), equalTo(DOMAIN));
-    assertThat(getInitDomain(domain).getDomainType(), equalTo(DomainType.JRF));
-    assertThat(getInitDomain(domain).getWdtConfigMap(), equalTo("domain-on-pv-cm"));
-    assertThat(getInitDomain(domain).getDomainCreationImages(),
+    assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(DOMAIN));
+    assertThat(getDomain(domain).getDomainType(), equalTo(DomainType.JRF));
+    assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("domain-on-pv-cm"));
+    assertThat(getDomain(domain).getDomainCreationImages(),
         hasItems(new DomainCreationImage().image("domain-on-pv-image:v1")));
-    assertThat(getInitDomain(domain).getOpss(),
+    assertThat(getDomain(domain).getOpss(),
         is(new Opss().withWalletFileSecret("domain-opss-wallet").withWalletPasswordSecret("weblogic")));
-    assertThat(getInitPv(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
-    assertThat(getInitPvc(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
+    assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
   }
 }

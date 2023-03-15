@@ -46,7 +46,7 @@ public class Configuration {
   @Default(strDefault = "Dynamic")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
-  private InitializeDomainOnPv initializeDomainOnPv;
+  private InitializeDomainOnPV initializeDomainOnPV;
 
   public Model getModel() {
     return model;
@@ -111,22 +111,22 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
-  public InitializeDomainOnPv getInitializeDomainOnPv() {
-    return initializeDomainOnPv;
+  public InitializeDomainOnPV getInitializeDomainOnPV() {
+    return initializeDomainOnPV;
   }
 
-  public void setInitializeDomainOnPv(InitializeDomainOnPv initializeDomainOnPv) {
-    this.initializeDomainOnPv = initializeDomainOnPv;
+  public void setInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
   }
 
   /**
    * Adds configuration for initializing domain on PV configuration to the DomainSpec.
    *
-   * @param initializeDomainOnPv The configuration for initializing domain on PV to be added to this DomainSpec
+   * @param initializeDomainOnPV The configuration for initializing domain on PV to be added to this DomainSpec
    * @return this object
    */
-  public Configuration withInitializeDomainOnPv(InitializeDomainOnPv initializeDomainOnPv) {
-    this.initializeDomainOnPv = initializeDomainOnPv;
+  public Configuration withInitializeDomainOnPv(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
     return this;
   }
 
@@ -140,7 +140,7 @@ public class Configuration {
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
-            .append("initPvDomain", initializeDomainOnPv);
+            .append("initializeDomainOnPV", initializeDomainOnPV);
 
     return builder.toString();
   }
@@ -154,7 +154,7 @@ public class Configuration {
           .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
           .append(introspectorJobActiveDeadlineSeconds)
-          .append(initializeDomainOnPv);
+          .append(initializeDomainOnPV);
 
     return builder.toHashCode();
   }
@@ -176,7 +176,7 @@ public class Configuration {
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
-            .append(initializeDomainOnPv, rhs.initializeDomainOnPv);
+            .append(initializeDomainOnPV, rhs.initializeDomainOnPV);
 
     return builder.isEquals();
   }

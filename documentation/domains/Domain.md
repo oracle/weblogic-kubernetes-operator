@@ -83,7 +83,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `initializeDomainOnPv` | [Initialize Domain On Pv](#initialize-domain-on-pv) | The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ |
+| `initializeDomainOnPV` | [Initialize Domain On PV](#initialize-domain-on-pv) | The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ |
 | `introspectorJobActiveDeadlineSeconds` | integer | The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
@@ -217,7 +217,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `channels` | Array of [Channel](#channel) | Specifies which of the Administration Server's WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server's NodePort Service will not be created. |
 | `labels` | Map | Labels to associate with the Administration Server's NodePort Service, if it is created. |
 
-### Initialize Domain On Pv
+### Initialize Domain On PV
 
 The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent volume and a persistent volume claim, if needed. These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain, recommended approach is to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
 
@@ -304,10 +304,10 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | Name | Type | Description |
 | --- | --- | --- |
 | `createIfNotExists` | string | Domain creation mode. Legal values: CreateDomainIfNotExists, CreateDomainWithRcuIfNotExists. Defaults to CreateDomainIfNotExists. |
+| `domainCreationConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
-| `wdtConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 
 ### Persistent Volume
 
