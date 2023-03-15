@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
@@ -72,6 +73,7 @@ import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICATION_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.DOMAIN_HOME;
 
 public class JobStepContext extends BasePodStepContext {
 
@@ -405,6 +407,9 @@ public class JobStepContext extends BasePodStepContext {
 
   protected void addInitContainers(V1PodSpec podSpec) {
     List<V1Container> initContainers = new ArrayList<>();
+    Optional.ofNullable(getDomain().getSpec().getInitPvDomain().getInitDomain()).ifPresent(
+        initPvDomain -> addInitDomainOnPVInitContainer(initContainers)
+    );
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> isAllowedInIntrospector(container.getName()))
@@ -416,6 +421,19 @@ public class JobStepContext extends BasePodStepContext {
   private void addInitContainers(List<V1Container> initContainers, List<AuxiliaryImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+  }
+
+  private void addInitDomainOnPVInitContainer(List<V1Container> initContainers) {
+    initContainers.add(new V1Container()
+        .name(INIT_DOMAIN_ON_PV_CONTAINER)
+        .image(getDomain().getSpec().getImage())
+        .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
+        .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
+        .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
+        .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+        .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
+        .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
+    );
   }
 
   @Override
@@ -693,7 +711,7 @@ public class JobStepContext extends BasePodStepContext {
           PodHelper.createCopy(getServerPodEnvironmentVariables());
 
     addEnvVar(vars, ServerEnvVars.DOMAIN_UID, getDomainUid());
-    addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
+    addEnvVar(vars, DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.NODEMGR_HOME, getNodeManagerHome());
     addEnvVar(vars, ServerEnvVars.LOG_HOME, getEffectiveLogHome());
     if (getLogHomeLayout() == LogHomeLayoutType.FLAT) {
