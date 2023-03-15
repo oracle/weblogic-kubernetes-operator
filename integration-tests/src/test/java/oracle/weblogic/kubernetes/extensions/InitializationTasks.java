@@ -293,7 +293,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
-        if (!OKD && !OCNE) {
+        if ((!OKD && !OCNE) || (OCNE && !assertDoesNotThrow(() -> Namespace.exists("istio-system")))) {
           logger.info("Installing istio before any test suites are run");
           installIstio();
         }
@@ -619,5 +619,4 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         "null" // domainNamespace
     );
   }
-
 }
