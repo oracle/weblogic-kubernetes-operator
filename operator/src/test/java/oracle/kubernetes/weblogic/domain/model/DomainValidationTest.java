@@ -1081,6 +1081,12 @@ public class DomainValidationTest extends DomainValidationTestBase {
             .opss(new Opss().withWalletPasswordSecret("wpSecret")));
   }
 
+  private InitializeDomainOnPV getInitPvDomainJRFWithWalletPasswordAndFileSecret() {
+    return new InitializeDomainOnPV().domain(
+        new Domain().domainType(DomainType.JRF)
+            .opss(new Opss().withWalletPasswordSecret("wpSecret").withWalletFileSecret("wfSecret")));
+  }
+
   private InitializeDomainOnPV getInitPvDomainWithWalletFileSecret() {
     return new InitializeDomainOnPV().domain(
         new Domain().domainType(DomainType.WLS)
@@ -1143,11 +1149,60 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenBothMiiOpssAndInitPvDomainOpssSpecified_initPvDomain_reportError() {
+  void whenBothMiiOpssAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
     configureDomain(domain).withLogHomeEnabled(false)
         .withDomainHomeSourceType(PERSISTENT_VOLUME)
         .withOpssWalletPasswordSecret("wpWallet")
         .withInitializeDomainOnPv(getInitPvDomainJRFWithWalletPasswordSecret());
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("OPSS secrets",
+            "spec.configuration.initializeDomainOnPV.domain.opss",
+            "spec.configuration.opss", "JRF")));
+  }
+
+  @Test
+  void whenBothMiiOpssWalletFileAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withOpssWalletFileSecret("wfWallet")
+        .withInitializeDomainOnPv(getInitPvDomainJRFWithWalletPasswordSecret());
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("OPSS secrets",
+            "spec.configuration.initializeDomainOnPV.domain.opss",
+            "spec.configuration.opss", "JRF")));
+  }
+
+  @Test
+  void whenBothMiiOpssWalletFileAndInitPvDomainOpssWalletFilePasswordSpecified_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withOpssWalletFileSecret("wfWallet")
+        .withInitializeDomainOnPv(getInitPvDomainJRFWithWalletPasswordAndFileSecret());
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("OPSS secrets",
+            "spec.configuration.initializeDomainOnPV.domain.opss",
+            "spec.configuration.opss", "JRF")));
+  }
+  
+  @Test
+  void whenBothMiiOpssWalletFilePasswordAndInitPvDomainOpssWalletFilePasswordSpecified_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withOpssWalletFileSecret("wfWallet")
+        .withOpssWalletPasswordSecret("wpSecret")
+        .withInitializeDomainOnPv(getInitPvDomainJRFWithWalletPasswordAndFileSecret());
 
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
