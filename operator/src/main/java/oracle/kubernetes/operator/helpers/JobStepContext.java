@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
@@ -49,6 +50,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
 import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -74,6 +76,7 @@ import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICATION_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.ServerEnvVars.DOMAIN_HOME;
 
 public class JobStepContext extends BasePodStepContext {
 
@@ -416,6 +419,10 @@ public class JobStepContext extends BasePodStepContext {
 
   protected void addInitContainers(V1PodSpec podSpec) {
     List<V1Container> initContainers = new ArrayList<>();
+    Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV)
+        .ifPresent(initPvDomain -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
@@ -428,6 +435,19 @@ public class JobStepContext extends BasePodStepContext {
   private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+  }
+
+  private void addInitDomainOnPVInitContainer(List<V1Container> initContainers) {
+    initContainers.add(new V1Container()
+        .name(INIT_DOMAIN_ON_PV_CONTAINER)
+        .image(getDomain().getSpec().getImage())
+        .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
+        .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
+        .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
+        .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+        .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
+        .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
+    );
   }
 
   @Override
@@ -760,6 +780,14 @@ public class JobStepContext extends BasePodStepContext {
     if (wdtInstallHome != null && !wdtInstallHome.isEmpty()) {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
+
+    Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV)
+        .ifPresent(initPvDomain -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
+            getDomain().getSpec().getConfiguration()
+                .getInitializeDomainOnPV().getDomain().getCreateIfNotExists().toString()
+            ));
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
