@@ -32,7 +32,7 @@ pipeline {
         weblogick8s_qa_compartment_ocid = 'WK8_QA_COMP_OCID'
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
         //wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
-        wko_oke_test_sshpubcert = 'wko-oke-test-public-cert'
+        wko_oke_test_sshpubcert = 'OKE_PUB_CERT'
 
         OKE_CLUSTER='true'
 
