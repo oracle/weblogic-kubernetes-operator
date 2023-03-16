@@ -25,6 +25,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
@@ -133,8 +134,11 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createResourc
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEYPASSPHRASE_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEY_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SECRETS_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -472,10 +476,11 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobCreatedWithInitializeDomainOnPVDefined_hasSecretsInitContainerVolumeAndMounts() {
+  void whenJobCreatedWithInitializeDomainOnPVDefined_hasSecretsVolumeAndMounts() {
     getConfigurator().withInitializeDomainOnPv(getInitializeDomainOnPV());
 
-    V1Job job = runStepsAndGetJobs().get(0);
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
         hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
@@ -486,11 +491,18 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getJobPodSpec(job).getVolumes(),
         hasItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
             new V1SecretVolumeSource().secretName("wpSecret").defaultMode(420).optional(true))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+        hasItem(new V1VolumeMount().name(OPSS_WALLETFILE_VOLUME)
+            .mountPath(OPSS_WALLETFILE_MOUNT_PATH).readOnly(true)));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+        hasItem(new V1VolumeMount().name(OPSS_KEYPASSPHRASE_VOLUME)
+            .mountPath(OPSS_KEY_MOUNT_PATH).readOnly(true)));
   }
 
   @Test
-  void whenJobCreatedWithoutInitializeDomainOnPVDefined_dontHaveSecretsInitContainerVolumeAndMounts() {
-    V1Job job = runStepsAndGetJobs().get(0);
+  void whenJobCreatedWithoutInitializeDomainOnPVDefined_dontHaveSecretsVolumeAndMounts() {
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
 
     assertThat(getJobPodSpec(job).getVolumes(),
         hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
@@ -501,6 +513,29 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getJobPodSpec(job).getVolumes(),
         not(hasItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
             new V1SecretVolumeSource().secretName("wpSecret").defaultMode(420).optional(true)))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+        not(hasItem(new V1VolumeMount().name(OPSS_WALLETFILE_VOLUME)
+            .mountPath(OPSS_WALLETFILE_MOUNT_PATH).readOnly(true))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+        not(hasItem(new V1VolumeMount().name(OPSS_KEYPASSPHRASE_VOLUME)
+            .mountPath(OPSS_KEY_MOUNT_PATH).readOnly(true))));
+  }
+
+  @Test
+  void whenJobCreatedWithInitializeDomainOnPVCreateDomainCMDefined_hasConfigMapVolumeAndMounts() {
+    V1ConfigMap cm = new V1ConfigMap().metadata(new V1ObjectMeta().name("initPvDomainCM").namespace(NS));
+    testSupport.defineResources(cm);
+    getConfigurator().withDomainCreationConfigMap("initPvDomainCM");
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    V1Job job = jobs.get(0);
+
+    assertThat(getJobPodSpec(job).getVolumes(),
+        hasItem(new V1Volume().name("initPvDomainCM-volume").configMap(
+            new V1ConfigMapVolumeSource().name("initPvDomainCM").defaultMode(365))));
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+        hasItem(new V1VolumeMount().name("initPvDomainCM-volume")
+            .mountPath(WDTCONFIGMAP_MOUNT_PATH).readOnly(true)));
   }
 
   private InitializeDomainOnPV getInitializeDomainOnPV() {
