@@ -207,7 +207,7 @@ pipeline {
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
                         //WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
-                        WKOBUILD_PUBLIC_CERT = credentials("${WKOBUILD_PUBLIC_CERT}")
+                        WKOBUILD_PUBLIC_CERT = credentials("${oke_test_ssh_public_cert}")
                     }
                     steps {
                         withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
@@ -426,6 +426,7 @@ EOF
                         OCIR_USERNAME = credentials("${ocir_username_creds}")
                         OCIR_PASSWORD = credentials("${ocir_password_creds}")
                         OCIR_EMAIL = credentials("${ocir_email_creds}")
+                        OKE_SSH_PRIVATE_KEY = credentials("${oke_test_ssh_pk}")
                         BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
                         BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
                         BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
@@ -446,6 +447,8 @@ EOF
                             export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                             export OCI_CLI_PROFILE=WKOBUILD
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
+                            cp ${OKE_SSH_PRIVATE_KEY} ${WORKSPACE}/rsaokepk
+                            chmod 600 ${WORKSPACE}/rsaokepk
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
                             NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
@@ -459,6 +462,9 @@ EOF
                             NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| head -n2 | tail -n1`
                             echo "second node external IP ${NODE_IP}"
                             export NODE_IP=${NODE_IP}
+                            echo "expand disk volume for nodes"
+                            ssh -i ${WORKSPACE}/rsaokepk opc@${K8S_NODEPORT_HOST} 'sudo /usr/libexec/oci-growfs -y'
+                            ssh -i ${WORKSPACE}/rsaokepk opc@${NODE_IP} 'sudo /usr/libexec/oci-growfs -y'
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
                            
                             mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
