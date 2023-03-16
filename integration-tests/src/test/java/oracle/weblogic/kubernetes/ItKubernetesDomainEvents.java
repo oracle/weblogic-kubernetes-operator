@@ -78,6 +78,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.removeClusterInDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -292,15 +294,16 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
+    String nonExistingClusterName = "nonexisting-cluster";
     OffsetDateTime timestamp = now();
     createClusterAndVerify(createClusterResource(
-        "nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
+        nonExistingClusterName, nonExistingClusterName, domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
     try {
       String patchStr
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-          + "    {\"name\" : \"nonexisting-cluster\"}"
+          + "    {\"name\" : \"" + nonExistingClusterName + "\"}"
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -311,12 +314,7 @@ class ItKubernetesDomainEvents {
     } finally {
       //remove the cluster from domain resource
       timestamp = now();
-      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-
+      assertDoesNotThrow(() -> removeClusterInDomainResource(nonExistingClusterName, domainUid, domainNamespace3));
       // verify the Changed event is generated
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
@@ -478,7 +476,7 @@ class ItKubernetesDomainEvents {
     createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
-    shutdownDomain(domainUid, domainNamespace4);
+    deleteDomainResource(domainNamespace4, domainUid);
   }
 
   /**
@@ -991,4 +989,5 @@ class ItKubernetesDomainEvents {
           opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
+  
 }
