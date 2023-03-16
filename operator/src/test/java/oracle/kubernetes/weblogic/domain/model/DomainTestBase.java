@@ -33,6 +33,7 @@ public abstract class DomainTestBase {
   static final String DOMAIN_V2_SAMPLE_YAML_3 = "domain-sample-3.yaml";
   static final String DOMAIN_V2_SAMPLE_YAML_4 = "domain-sample-4.yaml";
   static final String DOMAIN_V2_SAMPLE_YAML_5 = "domain-sample-5.yaml";
+  static final String DOMAIN_V2_SAMPLE_YAML_6 = "domain-sample-6.yaml";
   static final String SECRET_NAME = "secret";
   static final String NS = "test-namespace";
   static final String DOMAIN_UID = "uid1";

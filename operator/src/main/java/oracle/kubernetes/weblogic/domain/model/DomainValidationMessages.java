@@ -140,6 +140,10 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
+  public static String moreThanOneDomainCreationImageConfiguredWDTInstallHome() {
+    return getMessage(MessageKeys.MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
+  }
+
   public static String invalidLivenessProbeSuccessThresholdValue(int value, String prefix) {
     return getMessage(MessageKeys.INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE, value, prefix);
   }

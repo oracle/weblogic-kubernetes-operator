@@ -720,7 +720,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the auxiliary images configured for the domain.
    */
   public List<AuxiliaryImage> getAuxiliaryImages() {
-    return spec.getAuxiliaryImages();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImages() : null;
+  }
+
+  public List<DomainCreationImage> getDomainCreationImages() {
+    return getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME ? spec.getDomainImages() : null;
   }
 
   /**
@@ -734,14 +738,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the auxiliary image volume withAuxiliaryImageVolumeMedium.
    */
   public String getAuxiliaryImageVolumeMedium() {
-    return spec.getAuxiliaryImageVolumeMedium();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImageVolumeMedium() : null;
   }
 
   /**
    * Returns the auxiliary image volume size limit.
    */
   public String getAuxiliaryImageVolumeSizeLimit() {
-    return spec.getAuxiliaryImageVolumeSizeLimit();
+    return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL ? spec.getAuxiliaryImageVolumeSizeLimit() : null;
   }
 
   /**
@@ -957,6 +961,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
+      whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
     }
 
@@ -1098,13 +1103,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           this::verifyWDTInstallHome);
     }
 
+    private void whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
+      Optional.ofNullable(getSpec().getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
+          .map(Domain::getDomainCreationImages).ifPresent(this::verifyWDTInstallHomeInDomainCreationImages);
+    }
+
     private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
       if (auxiliaryImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
         failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
       }
     }
 
-    private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
+    private void verifyWDTInstallHomeInDomainCreationImages(List<DomainCreationImage> domainCreationImages) {
+      if (domainCreationImages.stream().filter(this::isWDTInstallHomeSetAndNotNone).count() > 1) {
+        failures.add(DomainValidationMessages.moreThanOneDomainCreationImageConfiguredWDTInstallHome());
+      }
+    }
+
+    private boolean isWDTInstallHomeSetAndNotNone(DeploymentImage ai) {
       return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 

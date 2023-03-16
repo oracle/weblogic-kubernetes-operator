@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fb02cf4d6a86bc94f3091999e95f502e66c540631d48b7c505b190fe8f134847
+    weblogic.sha256: 65e5557a016cf3f60255534845d7631e47fb1ce269a72be829830caa1c2de4e8
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -90,6 +90,366 @@ spec:
               configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.
                 properties:
+                  initializeDomainOnPV:
+                    description: The configuration required to create an empty WebLogic
+                      'Domain on PV' domain, a persistent volume and a persistent
+                      volume claim, if needed. These will be one-time operations that
+                      happen only if the domain, persistent volume or persistent volume
+                      claim do not already exist. This is primarily used for a JRF-based
+                      domain. For a plain WebLogic domain, recommended approach is
+                      to use a 'Model In Image' domain home source type. See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
+                    properties:
+                      persistentVolume:
+                        description: Configuration including 'Metadata' and 'Specs'
+                          to create a persistent volume, if needed.
+                        properties:
+                          metadata:
+                            properties:
+                              generation:
+                                type: integer
+                              finalizers:
+                                items:
+                                  type: string
+                                type: array
+                              resourceVersion:
+                                type: string
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              generateName:
+                                type: string
+                              deletionTimestamp:
+                                format: date-time
+                                type: string
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              ownerReferences:
+                                items:
+                                  type: object
+                                  properties:
+                                    uid:
+                                      type: string
+                                    controller:
+                                      type: boolean
+                                    apiVersion:
+                                      type: string
+                                    kind:
+                                      type: string
+                                    name:
+                                      type: string
+                                    blockOwnerDeletion:
+                                      type: boolean
+                                  required:
+                                  - apiVersion
+                                  - kind
+                                  - name
+                                  - uid
+                                type: array
+                              selfLink:
+                                type: string
+                              deletionGracePeriodSeconds:
+                                type: integer
+                              uid:
+                                type: string
+                              managedFields:
+                                items:
+                                  type: object
+                                  properties:
+                                    apiVersion:
+                                      type: string
+                                    fieldsV1:
+                                      type: object
+                                    manager:
+                                      type: string
+                                    subresource:
+                                      type: string
+                                    time:
+                                      format: date-time
+                                      type: string
+                                    operation:
+                                      type: string
+                                    fieldsType:
+                                      type: string
+                                type: array
+                              creationTimestamp:
+                                format: date-time
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                            type: object
+                          spec:
+                            properties:
+                              storageClassName:
+                                description: StorageClassName is the name of StorageClass
+                                  to which this persistent volume belongs. Empty value
+                                  means that this volume does not belong to any StorageClass.
+                                type: string
+                              persistentVolumeReclaimPolicy:
+                                description: 'PersistentVolumeReclaimPolicy defines
+                                  what happens to a persistent volume when released
+                                  from its claim. Valid options are Retain (default
+                                  for manually created PersistentVolumes), Delete
+                                  (default for dynamically provisioned PersistentVolumes),
+                                  and Recycle (deprecated). Recycle must be supported
+                                  by the volume plugin underlying this PersistentVolume.
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  '
+                                type: string
+                              accessModes:
+                                description: 'AccessModes contains all ways the volume
+                                  can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes'
+                                items:
+                                  type: string
+                                type: array
+                              hostPath:
+                                description: |-
+                                  HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:
+                                   https://kubernetes.io/docs/concepts/storage/volumes#hostpath
+                                  Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.
+                                properties:
+                                  path:
+                                    type: string
+                                  type:
+                                    type: string
+                                required:
+                                - path
+                                type: object
+                              capacity:
+                                additionalProperties:
+                                  type: string
+                                description: 'Capacity is the description of the persistent
+                                  volume''s resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity'
+                                type: object
+                              volumeMode:
+                                description: VolumeMode defines if a volume is intended
+                                  to be used with a formatted filesystem or to remain
+                                  in raw block state. Value of Filesystem is implied
+                                  when not included in spec.
+                                type: string
+                            type: object
+                        type: object
+                      domain:
+                        description: Configuration details to create an empty WebLogic
+                          'Domain on PV' domain, if needed.
+                        properties:
+                          domainCreationConfigMap:
+                            description: Name of a ConfigMap containing the WebLogic
+                              Deploy Tooling model.
+                            type: string
+                          domainCreationImages:
+                            description: 'Domain images containing WebLogic Deploy
+                              Tooling model, application archive, and WebLogic Deploy
+                              Tooling installation files. These files will be used
+                              to create the domain during introspection. This feature
+                              internally uses a Kubernetes emptyDir volume and Kubernetes
+                              init containers to share the files from the additional
+                              images '
+                            items:
+                              type: object
+                              properties:
+                                sourceWDTInstallHome:
+                                  description: The source location of the WebLogic
+                                    Deploy Tooling installation within the domain
+                                    image. Defaults to `/auxiliary/weblogic-deploy`.
+                                    If the value is set to `None` or no files are
+                                    found at the default location, then the source
+                                    directory is ignored. When specifying multiple
+                                    domain images, ensure that only one of the images
+                                    supplies a WDT install home; if more than one
+                                    WDT install home is provided, then the domain
+                                    deployment will fail.
+                                  type: string
+                                image:
+                                  description: The domain image containing model files,
+                                    application archive files, and/or WebLogic Deploying
+                                    Tooling installation files to create the domain.
+                                    Required.
+                                  type: string
+                                imagePullPolicy:
+                                  description: The image pull policy for the container
+                                    image. Legal values are Always, Never, and IfNotPresent.
+                                    Defaults to Always if image ends in :latest; IfNotPresent,
+                                    otherwise.
+                                  type: string
+                                sourceModelHome:
+                                  description: The source location of the WebLogic
+                                    Deploy Tooling model home within the domain image.
+                                    Defaults to `/auxiliary/models`. If the value
+                                    is set to `None` or no files are found at the
+                                    default location, then the source directory is
+                                    ignored. If specifying multiple domain images
+                                    with model files in their respective `sourceModelHome`
+                                    directories, then model files are merged.
+                                  type: string
+                            type: array
+                          domainType:
+                            default: JRF
+                            description: 'WebLogic Deploy Tooling domain type. Legal
+                              values: WLS, JRF. Defaults to JRF.'
+                            enum:
+                            - WLS
+                            - JRF
+                            type: string
+                          opss:
+                            description: Settings for OPSS security.
+                            properties:
+                              walletFileSecret:
+                                description: Name of a Secret containing the OPSS
+                                  key wallet file, which must be in a field named
+                                  `walletFile`. Use this to allow a JRF domain to
+                                  reuse its entries in the RCU database. This allows
+                                  you to specify a wallet file that was obtained from
+                                  the domain home after the domain was booted for
+                                  the first time.
+                                type: string
+                              walletPasswordSecret:
+                                description: Name of a Secret containing the OPSS
+                                  key passphrase, which must be in a field named `walletPassword`.
+                                  Used to encrypt and decrypt the wallet that is used
+                                  for accessing the domain's entries in its RCU database.
+                                type: string
+                            type: object
+                          createIfNotExists:
+                            default: domain
+                            description: 'Specifies if only domain or domain with
+                              RCU needs to be created. Legal values: domain, domainAndRCU.
+                              Defaults to domain.'
+                            enum:
+                            - domain
+                            - domainAndRCU
+                            type: string
+                        type: object
+                      persistentVolumeClaim:
+                        description: Configuration including 'Metadata' and 'Specs'
+                          to create a persistent volume claim, if needed.
+                        properties:
+                          metadata:
+                            properties:
+                              generation:
+                                type: integer
+                              finalizers:
+                                items:
+                                  type: string
+                                type: array
+                              resourceVersion:
+                                type: string
+                              annotations:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              generateName:
+                                type: string
+                              deletionTimestamp:
+                                format: date-time
+                                type: string
+                              labels:
+                                additionalProperties:
+                                  type: string
+                                type: object
+                              ownerReferences:
+                                items:
+                                  type: object
+                                  properties:
+                                    uid:
+                                      type: string
+                                    controller:
+                                      type: boolean
+                                    apiVersion:
+                                      type: string
+                                    kind:
+                                      type: string
+                                    name:
+                                      type: string
+                                    blockOwnerDeletion:
+                                      type: boolean
+                                  required:
+                                  - apiVersion
+                                  - kind
+                                  - name
+                                  - uid
+                                type: array
+                              selfLink:
+                                type: string
+                              deletionGracePeriodSeconds:
+                                type: integer
+                              uid:
+                                type: string
+                              managedFields:
+                                items:
+                                  type: object
+                                  properties:
+                                    apiVersion:
+                                      type: string
+                                    fieldsV1:
+                                      type: object
+                                    manager:
+                                      type: string
+                                    subresource:
+                                      type: string
+                                    time:
+                                      format: date-time
+                                      type: string
+                                    operation:
+                                      type: string
+                                    fieldsType:
+                                      type: string
+                                type: array
+                              creationTimestamp:
+                                format: date-time
+                                type: string
+                              name:
+                                type: string
+                              namespace:
+                                type: string
+                            type: object
+                          spec:
+                            properties:
+                              storageClassName:
+                                description: StorageClassName is the name of StorageClass
+                                  to which this persistent volume belongs. Empty value
+                                  means that this volume does not belong to any StorageClass.
+                                type: string
+                              volumeName:
+                                description: VolumeName is the binding reference to
+                                  the PersistentVolume backing this claim.
+                                type: string
+                              resources:
+                                description: |-
+                                  Resources represents the minimum resources the volume should have. If RecoverVolumeExpansionFailure feature is enabled users are allowed to
+                                   specify resource requirements that are lower than previous value but must
+                                   still be higher than capacity recorded in the status field of the claim.
+                                   More info:
+                                   https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources
+                                   ResourceRequirements describes the compute resource requirements.
+                                properties:
+                                  requests:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                  limits:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                                type: object
+                              accessModes:
+                                description: 'AccessModes contains all ways the volume
+                                  can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes'
+                                items:
+                                  type: string
+                                type: array
+                              volumeMode:
+                                description: VolumeMode defines if a volume is intended
+                                  to be used with a formatted filesystem or to remain
+                                  in raw block state. Value of Filesystem is implied
+                                  when not included in spec.
+                                type: string
+                            type: object
+                        type: object
+                    type: object
                   overrideDistributionStrategy:
                     default: Dynamic
                     description: Determines how updated configuration overrides are

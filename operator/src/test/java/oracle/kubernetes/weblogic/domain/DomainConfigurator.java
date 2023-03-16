@@ -26,9 +26,10 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.InitPvDomain;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -87,8 +88,19 @@ public abstract class DomainConfigurator {
     return this;
   }
 
-  public DomainConfigurator withInitPvDomain(InitPvDomain initPvDomain) {
-    getDomainSpec().withInitPvDomain(initPvDomain);
+  /**
+   * Sets the configuration for initialization for the domain on PV.
+   *
+   * @param initializeDomainOnPv configuration for initialization for the domain on PV
+   * @return this object
+   */
+  public DomainConfigurator withInitializeDomainOnPv(InitializeDomainOnPV initializeDomainOnPv) {
+    Configuration configuration = getDomainSpec().getConfiguration();
+    if (configuration == null) {
+      getDomainSpec().setConfiguration(new Configuration());
+    }
+    Optional.ofNullable(getDomainSpec().getConfiguration())
+        .ifPresent(c -> c.withInitializeDomainOnPv(initializeDomainOnPv));
     return this;
   }
 

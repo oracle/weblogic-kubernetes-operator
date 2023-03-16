@@ -6,7 +6,6 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.swagger.annotations.ApiModelProperty;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -14,7 +13,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PersistentVolumeClaimSpec {
 
-  @ApiModelProperty("accessModes contains all ways the volume can be mounted. "
+  @Description("AccessModes contains all ways the volume can be mounted. "
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes")
   private List<String> accessModes;
 
@@ -27,16 +26,61 @@ public class PersistentVolumeClaimSpec {
       + " ResourceRequirements describes the compute resource requirements.")
   private V1ResourceRequirements resources;
 
-  @ApiModelProperty("storageClassName is the name of StorageClass to which this persistent volume belongs."
+  @Description("StorageClassName is the name of StorageClass to which this persistent volume belongs."
       + " Empty value means that this volume does not belong to any StorageClass.")
   private String storageClassName;
 
-  @ApiModelProperty("volumeMode defines if a volume is intended to be used with a formatted filesystem "
+  @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
       + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
   private String volumeMode;
 
-  @ApiModelProperty("volumeName is the binding reference to the PersistentVolume backing this claim.")
+  @Description("VolumeName is the binding reference to the PersistentVolume backing this claim.")
   private String volumeName;
+
+  public List<String> getAccessModes() {
+    return accessModes;
+  }
+
+  public PersistentVolumeClaimSpec accessModes(List<String> accessModes) {
+    this.accessModes = accessModes;
+    return this;
+  }
+
+  public V1ResourceRequirements getResources() {
+    return resources;
+  }
+
+  public PersistentVolumeClaimSpec resources(V1ResourceRequirements resources) {
+    this.resources = resources;
+    return this;
+  }
+
+  public String getStorageClassName() {
+    return storageClassName;
+  }
+
+  public PersistentVolumeClaimSpec storageClassName(String storageClassName) {
+    this.storageClassName = storageClassName;
+    return this;
+  }
+
+  public String getVolumeMode() {
+    return volumeMode;
+  }
+
+  public PersistentVolumeClaimSpec volumeMode(String volumeMode) {
+    this.volumeMode = volumeMode;
+    return this;
+  }
+
+  public String getVolumeName() {
+    return volumeName;
+  }
+
+  public PersistentVolumeClaimSpec volumeName(String volumeName) {
+    this.volumeName = volumeName;
+    return this;
+  }
 
   @Override
   public String toString() {
@@ -67,7 +111,7 @@ public class PersistentVolumeClaimSpec {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof InitDomain)) {
+    } else if (!(other instanceof PersistentVolumeClaimSpec)) {
       return false;
     }
 
