@@ -206,7 +206,7 @@ pipeline {
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
                         //WKOBUILD_PUBLIC_CERT = credentials("${oke_test_ssh_public_cert}")
-                        WKOBUILD_PUBLIC_CERT = credentials("${WKOBUILD_PUBLIC_CERT}")
+                        WKOBUILD_PUBLIC_CERT = credentials("${wko-oke-test-sshpubcert}")
                     }
                     steps {
                         withCredentials([file(credentialsId: 'oci_pk_file', variable: 'oci_private_key')]) {
