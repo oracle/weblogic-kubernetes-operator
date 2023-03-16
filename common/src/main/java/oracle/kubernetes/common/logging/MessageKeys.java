@@ -215,6 +215,7 @@ public class MessageKeys {
   public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
   public static final String MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0050";
   public static final String INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0051";
+  public static final String CONFLICT_OPSS_SECRETS = "WLSDO-0052";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

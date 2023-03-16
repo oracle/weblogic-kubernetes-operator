@@ -1348,12 +1348,19 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
               "spec.configuration.opss.walletPasswordSecret"));
         }
       }
-      if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
-          && isInitPvDomain()
+
+      if (isInitPvDomain()
           && DomainType.JRF.equals(getInitPvDomainDomainType())
           && getInitPvDomainOpssWalletPasswordSecret() == null) {
         failures.add(DomainValidationMessages.missingRequiredInitPvDomainOpssSecret(
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
+      }
+
+      if (isInitPvDomain()
+          && DomainType.JRF.equals(getInitPvDomainDomainType())
+          && hasMiiOpssConfigured() && hasInitPvDomainOpssConfigured()) {
+        failures.add(DomainValidationMessages.conflictOpssSecrets(
+            "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
       }
 
       if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null
@@ -1363,6 +1370,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
 
+    }
+
+    private boolean hasMiiOpssConfigured() {
+      return spec.hasMiiOpssConfigured();
+    }
+
+    private boolean hasInitPvDomainOpssConfigured() {
+      return spec.hasInitPvDomainOpssConfigured();
     }
 
     private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
@@ -1385,14 +1400,30 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
       verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
+      verifyInitPvDomainConfigMapExists(resourceLookup, getDomainCreationConfigMap());
     }
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
       if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
-        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName,
+            "spec.configuration.model.configMap", getNamespace()));
       }
     }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyInitPvDomainConfigMapExists(KubernetesResourceLookup resources, String configMapName) {
+      if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
+          && getDomainCreationConfigMap() != null
+          && !resources.isConfigMapExists(configMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(configMapName,
+            "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap", getNamespace()));
+      }
+    }
+  }
+
+  private String getDomainCreationConfigMap() {
+    return spec.getDomainCreationConfigMap();
   }
 }
