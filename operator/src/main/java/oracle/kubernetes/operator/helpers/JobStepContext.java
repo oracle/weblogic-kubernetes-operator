@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.utils.CommonUtils;
@@ -58,6 +59,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
+import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.SCRIPTS_VOLUME;
@@ -67,6 +69,7 @@ import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -443,8 +446,12 @@ public class JobStepContext extends BasePodStepContext {
         .image(getDomain().getSpec().getImage())
         .volumeMounts(getDomain().getAdminServerSpec().getAdditionalVolumeMounts())
         .addVolumeMountsItem(new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH))
+        .addVolumeMountsItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+            .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
         .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
         .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+        .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
+            .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
         .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
         .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
     );
