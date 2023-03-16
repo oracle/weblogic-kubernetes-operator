@@ -781,6 +781,11 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
 
+    Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV)
+        .ifPresent(initPvDomain -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV, "true"));
+
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
     return vars;
