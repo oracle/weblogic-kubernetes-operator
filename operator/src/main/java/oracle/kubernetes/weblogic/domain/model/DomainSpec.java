@@ -900,7 +900,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   boolean isInitPvDomain() {
-    return getInitializeDomainOnPV() != null;
+    return DomainSourceType.PERSISTENT_VOLUME == (getDomainHomeSourceType()) && getInitializeDomainOnPV() != null;
   }
 
   String getInitPvDomainOpssWalletPasswordSecret() {
@@ -1022,6 +1022,13 @@ public class DomainSpec extends BaseConfiguration {
   List<DomainCreationImage> getDomainImages() {
     return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
         .map(Domain::getDomainCreationImages).orElse(null);
+  }
+
+  String getDomainCreationConfigMap() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(Domain::getDomainCreationConfigMap)
+        .orElse(null);
   }
 
   String getAuxiliaryImageVolumeMountPath() {
@@ -1210,6 +1217,14 @@ public class DomainSpec extends BaseConfiguration {
 
   long getFailureRetryLimitMinutes() {
     return Optional.ofNullable(failureRetryLimitMinutes).orElse(DEFAULT_RETRY_LIMIT_MINUTES);
+  }
+
+  public boolean hasMiiOpssConfigured() {
+    return getModelOpssWalletPasswordSecret() != null || getModelOpssWalletFileSecret() != null;
+  }
+
+  public boolean hasInitPvDomainOpssConfigured() {
+    return getInitPvDomainOpssWalletPasswordSecret() != null || getInitPvDomainOpssWalletFileSecret() != null;
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
