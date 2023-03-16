@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -658,4 +659,36 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
+
+  /**
+   * Add OPSS wallet password secret for the domain resource's initializeDomainOnPV.
+   *
+   * @param secret the OPSS wallet password secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitPvDomainOpssWalletPasswordSecret(String secret);
+
+  /**
+   * Add OPSS wallet file secret for the domain resource's initializeDomainOnPV.
+   *
+   * @param secret the OPSS wallet file secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitPvDomainOpssWalletFileSecret(String secret);
+
+  /**
+   * Add domain type for the domain resource's initializeDomainOnPV.
+   *
+   * @param type the domain type
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitPvDomainType(DomainType type);
+
+  /**
+   * Add domain type for the domain resource's initializeDomainOnPV.
+   *
+   * @param cm the configmap
+   * @return this object
+   */
+  public abstract DomainConfigurator withDomainCreationConfigMap(String cm);
 }

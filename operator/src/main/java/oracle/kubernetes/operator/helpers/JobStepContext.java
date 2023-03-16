@@ -289,8 +289,16 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
+  boolean isInitPvDomain() {
+    return getDomain().isInitPvDomain();
+  }
+
   boolean isUseOnlineUpdate() {
     return getDomain().isUseOnlineUpdate();
+  }
+
+  String getDomainCreationConfigMap() {
+    return getDomain().getDomainCreationConfigMap();
   }
 
   public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
@@ -466,6 +474,10 @@ public class JobStepContext extends BasePodStepContext {
       addWdtSecretVolume(podSpec);
     }
 
+    if (isInitPvDomain()) {
+      Optional.ofNullable(getDomainCreationConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
+    }
+
     if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
@@ -551,6 +563,11 @@ public class JobStepContext extends BasePodStepContext {
           readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
               RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
+    }
+
+    if (isInitPvDomain() && getDomainCreationConfigMap() != null) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(getVolumeName(getDomainCreationConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
     }
 
     return container;

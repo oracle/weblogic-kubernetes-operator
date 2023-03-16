@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -421,7 +422,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
-
   @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
     getOrCreateOpss().withWalletPasswordSecret(secret);
@@ -431,6 +431,30 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withOpssWalletFileSecret(String secret) {
     getOrCreateOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitPvDomainOpssWalletPasswordSecret(String secret) {
+    getOrCreateInitPvDomainOpss().withWalletPasswordSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitPvDomainOpssWalletFileSecret(String secret) {
+    getOrCreateInitPvDomainOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitPvDomainType(DomainType type) {
+    getOrCreateInitPvDomainDomain().domainType(type);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withDomainCreationConfigMap(String cm) {
+    getOrCreateInitPvDomainDomain().domainCreationConfigMap(cm);
     return this;
   }
 
@@ -474,6 +498,30 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.setOpss(new Opss());
     }
     return configuration.getOpss();   
+  }
+
+  private InitializeDomainOnPV getOrCreateInitPvDomain() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getInitializeDomainOnPV() == null) {
+      configuration.setInitializeDomainOnPV(new InitializeDomainOnPV());
+    }
+    return configuration.getInitializeDomainOnPV();
+  }
+
+  private Domain getOrCreateInitPvDomainDomain() {
+    InitializeDomainOnPV initPvDomain = getOrCreateInitPvDomain();
+    if (initPvDomain.getDomain() == null) {
+      initPvDomain.domain(new Domain());
+    }
+    return initPvDomain.getDomain();
+  }
+
+  private Opss getOrCreateInitPvDomainOpss() {
+    Domain domain = getOrCreateInitPvDomainDomain();
+    if (domain.getOpss() == null) {
+      domain.opss(new Opss());
+    }
+    return domain.getOpss();
   }
 
   @Override
