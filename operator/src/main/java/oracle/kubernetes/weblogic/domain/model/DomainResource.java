@@ -33,6 +33,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
@@ -429,6 +430,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
+   * Reference to secret opss key passphrase for MII.
+   *
+   * @return opss key passphrase
+   */
+  public String getModelOpssWalletPasswordSecret() {
+    return spec.getModelOpssWalletPasswordSecret();
+  }
+
+  /**
    * Reference to runtime encryption secret.
    *
    * @return runtime encryption secret
@@ -504,9 +514,32 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns if the domain is using online update.
    * return true if using online update
    */
-
   public boolean isUseOnlineUpdate() {
     return spec.isUseOnlineUpdate();
+  }
+
+  /**
+   * Returns the domain type when initializeDomainOnPV is specified.
+   * @return domain type
+   */
+  public DomainType getInitPvDomainDomainType() {
+    return spec.getInitPvDomainDomainType();
+  }
+
+  /**
+   * Returns the wallet password secret name if InitializeDomainOnPV is specified.
+   * @return domain type
+   */
+  public String getInitPvDomainOpssWalletPasswordSecret() {
+    return spec.getInitPvDomainOpssWalletPasswordSecret();
+  }
+
+  /**
+   * Returns true if InitializeDomainOnPV is specified.
+   * @return domain type
+   */
+  public boolean isInitPvDomain() {
+    return spec.isInitPvDomain();
   }
 
   /**
@@ -1310,10 +1343,17 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           verifySecretExists(resourceLookup, getRuntimeEncryptionSecret(), SecretType.RUNTIME_ENCRYPTION);
         }
         if (ModelInImageDomainType.JRF.equals(getWdtDomainType())
-            && getOpssWalletPasswordSecret() == null) {
+            && getModelOpssWalletPasswordSecret() == null) {
           failures.add(DomainValidationMessages.missingRequiredOpssSecret(
               "spec.configuration.opss.walletPasswordSecret"));
         }
+      }
+      if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
+          && isInitPvDomain()
+          && DomainType.JRF.equals(getInitPvDomainDomainType())
+          && getInitPvDomainOpssWalletPasswordSecret() == null) {
+        failures.add(DomainValidationMessages.missingRequiredInitPvDomainOpssSecret(
+            "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
       }
 
       if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null

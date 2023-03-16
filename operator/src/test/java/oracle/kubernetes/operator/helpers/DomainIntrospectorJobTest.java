@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
@@ -41,6 +42,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.SchemaConversionUtils;
@@ -79,6 +81,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.Opss;
+import oracle.kubernetes.weblogic.domain.model.PersistentVolume;
+import oracle.kubernetes.weblogic.domain.model.PersistentVolumeSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,6 +132,9 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createLegacyD
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createResources;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getLegacyAuxiliaryImageVolumeName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEYPASSPHRASE_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_VOLUME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.SECRETS_VOLUME;
 import static oracle.kubernetes.operator.tuning.TuningParameters.DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
@@ -461,6 +469,65 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                     .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenJobCreatedWithInitializeDomainOnPVDefined_hasSecretsInitContainerVolumeAndMounts() {
+    getConfigurator().withInitializeDomainOnPv(getInitializeDomainOnPV());
+
+    V1Job job = runStepsAndGetJobs().get(0);
+
+    assertThat(getJobPodSpec(job).getVolumes(),
+        hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("webLogicCredentialsSecretName").defaultMode(420))));
+    assertThat(getJobPodSpec(job).getVolumes(),
+        hasItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("wfSecret").defaultMode(420).optional(true))));
+    assertThat(getJobPodSpec(job).getVolumes(),
+        hasItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("wpSecret").defaultMode(420).optional(true))));
+  }
+
+  @Test
+  void whenJobCreatedWithoutInitializeDomainOnPVDefined_dontHaveSecretsInitContainerVolumeAndMounts() {
+    V1Job job = runStepsAndGetJobs().get(0);
+
+    assertThat(getJobPodSpec(job).getVolumes(),
+        hasItem(new V1Volume().name(SECRETS_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("webLogicCredentialsSecretName").defaultMode(420))));
+    assertThat(getJobPodSpec(job).getVolumes(),
+        not(hasItem(new V1Volume().name(OPSS_WALLETFILE_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("wfSecret").defaultMode(420).optional(true)))));
+    assertThat(getJobPodSpec(job).getVolumes(),
+        not(hasItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
+            new V1SecretVolumeSource().secretName("wpSecret").defaultMode(420).optional(true)))));
+  }
+
+  private InitializeDomainOnPV getInitializeDomainOnPV() {
+    InitializeDomainOnPV initPvDomain = new InitializeDomainOnPV().domain(getInitDomain());
+    initPvDomain.setPersistentVolume(createPv());
+    return initPvDomain;
+  }
+
+  private Domain getInitDomain() {
+    Domain initDomain = new Domain();
+    initDomain.opss(getOpss());
+    return initDomain;
+  }
+
+  private Opss getOpss() {
+    Opss opss = new Opss();
+    opss.withWalletFileSecret("wfSecret");
+    opss.withWalletPasswordSecret("wpSecret");
+    return opss;
+  }
+
+  private PersistentVolume createPv() {
+    return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
+        .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
+            .accessModes(Collections.singletonList("ReadWriteMany"))
+            .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
+            .hostPath(new V1HostPathVolumeSource().path("/shared")));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
