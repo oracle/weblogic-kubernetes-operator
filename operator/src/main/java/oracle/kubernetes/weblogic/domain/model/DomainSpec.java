@@ -42,6 +42,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -464,28 +465,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withCluster(V1LocalObjectReference reference) {
     clusters.add(reference);
-    return this;
-  }
-
-  private InitPvDomain initPvDomain = new InitPvDomain();
-
-  public InitPvDomain getInitPvDomain() {
-    return initPvDomain;
-  }
-
-  public void setInitPvDomain(InitPvDomain initPvDomain) {
-    this.initPvDomain = initPvDomain;
-  }
-
-
-  /**
-   * Adds a init PV domain configuration to the DomainSpec.
-   *
-   * @param initPvDomain The init PV domain configuration to be added to this DomainSpec
-   * @return this object
-   */
-  public DomainSpec withInitPvDomain(InitPvDomain initPvDomain) {
-    this.initPvDomain = initPvDomain;
     return this;
   }
 
@@ -1000,9 +979,20 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
   }
 
+  InitializeDomainOnPV getInitializeDomainOnPV() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getInitializeDomainOnPV).orElse(null);
+  }
+
+  List<DomainCreationImage> getDomainImages() {
+    return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
+        .map(Domain::getDomainCreationImages).orElse(null);
+  }
+
   String getAuxiliaryImageVolumeMountPath() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath)
+        .orElse(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   String getAuxiliaryImageVolumeMedium() {

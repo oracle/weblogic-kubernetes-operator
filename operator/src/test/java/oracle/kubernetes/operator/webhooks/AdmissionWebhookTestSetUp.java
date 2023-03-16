@@ -16,8 +16,11 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Model;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -121,6 +124,11 @@ class AdmissionWebhookTestSetUp {
 
   public static void setAuxiliaryImages(DomainResource domain, List<AuxiliaryImage> images) {
     domain.getSpec().withConfiguration(new Configuration().withModel(new Model().withAuxiliaryImages(images)));
+  }
+
+  public static void setDomainCreationImages(DomainResource domain, List<DomainCreationImage> images) {
+    domain.getSpec().withConfiguration(new Configuration()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(new Domain().domainCreationImages(images))));
   }
 
   /**
