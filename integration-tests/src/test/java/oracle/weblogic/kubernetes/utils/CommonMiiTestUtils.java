@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -238,6 +238,77 @@ public class CommonMiiTestUtils {
   }
 
   /**
+   * Create a basic Kubernetes domain resource and verify the domain is created.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param imageName name of the image including its tag
+   * @param replicaCount number of managed servers to start
+   * @param clusterName names of cluster
+   * @param setDataHome whether to set dataHome in the domain spec
+   * @param dataHome dataHome override in the domain spec
+   * @return DomainResource
+   */
+  public static Domain createMiiDomain(
+      String domainNamespace,
+      String domainUid,
+      String imageName,
+      int replicaCount,
+      String clusterName,
+      boolean setDataHome,
+      String dataHome) {
+
+    LoggingFacade logger = getLogger();
+    // this secret is used only for non-kind cluster
+    logger.info("Create the repo secret {0} to pull the image", TEST_IMAGES_REPO_SECRET_NAME);
+    assertDoesNotThrow(() -> createTestRepoSecret(domainNamespace),
+        String.format("createSecret failed for %s", TEST_IMAGES_REPO_SECRET_NAME));
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create the domain custom resource
+    logger.info("Create domain resource {0} object in namespace {1} and verify that it is created",
+        domainUid, domainNamespace);
+    Domain domain = createDomainResource(domainUid,
+        domainNamespace,
+        imageName,
+        adminSecretName,
+        new String[]{TEST_IMAGES_REPO_SECRET_NAME},
+        encryptionSecretName,
+        replicaCount,
+        clusterName);
+
+    // set the dataHome in the domain spec
+    if (setDataHome) {
+      DomainSpec domainSpec = domain.getSpec();
+      domainSpec.dataHome(dataHome);
+      domain.spec(domainSpec);
+    }
+
+    createDomainAndVerify(domain, domainNamespace);
+
+    return domain;
+  }
+
+  /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
    * image.
    *
@@ -295,15 +366,18 @@ public class CommonMiiTestUtils {
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new oracle.weblogic.domain.Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new oracle.weblogic.domain.Configuration()
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
+    if (clusterName != null && !clusterName.isEmpty()) {
+      domain.spec().addClustersItem(new oracle.weblogic.domain.Cluster()
+          .clusterName(clusterName)
+          .replicas(replicaCount)
+          .serverStartState("RUNNING"));
+    }
     domain.spec().setImagePullSecrets(secrets);
 
     setPodAntiAffinity(domain);
