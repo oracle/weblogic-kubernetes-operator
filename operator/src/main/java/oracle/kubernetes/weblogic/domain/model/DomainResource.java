@@ -911,6 +911,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         getLastRetryTime(domainStatus));
   }
 
+  public String getDomainCreationConfigMap() {
+    return spec.getDomainCreationConfigMap();
+  }
+
   class PrivateDomainApiImpl implements PrivateDomainApi {
 
     @Override
