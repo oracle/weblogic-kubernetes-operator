@@ -24,6 +24,7 @@ import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -888,8 +889,24 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   String getOpssWalletPasswordSecret() {
+    return isInitPvDomain() ? getInitPvDomainOpssWalletPasswordSecret() : getModelOpssWalletPasswordSecret();
+  }
+
+  String getModelOpssWalletPasswordSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
+        .map(Opss::getWalletPasswordSecret)
+        .orElse(null);
+  }
+
+  boolean isInitPvDomain() {
+    return getInitializeDomainOnPV() != null;
+  }
+
+  String getInitPvDomainOpssWalletPasswordSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(Domain::getOpss)
         .map(Opss::getWalletPasswordSecret)
         .orElse(null);
   }
@@ -899,10 +916,28 @@ public class DomainSpec extends BaseConfiguration {
    * @return wallet file secret
    */
   public String getOpssWalletFileSecret() {
+    return isInitPvDomain() ? getInitPvDomainOpssWalletFileSecret() : getModelOpssWalletFileSecret();
+  }
+
+  private String getModelOpssWalletFileSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
         .map(Opss::getWalletFileSecret)
         .orElse(null);
+  }
+
+  private String getInitPvDomainOpssWalletFileSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(Domain::getOpss)
+        .map(Opss::getWalletFileSecret)
+        .orElse(null);
+  }
+
+  DomainType getInitPvDomainDomainType() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(Domain::getDomainType).get();
   }
 
   String getRuntimeEncryptionSecret() {
