@@ -691,4 +691,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainCreationConfigMap(String cm);
+
+  public abstract DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain);
 }
