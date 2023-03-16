@@ -42,35 +42,32 @@ do
    test_dir="/${temp_dir// //}"
    trace "Testing base mount path at "$test_dir
    if [ -d $test_dir ] ; then
-       root_dir=test_dir
        trace "Found base mount path at "$test_dir
-       break
+       SHARE_ROOT=$test_dir
+
+       trace "Creating domain home and setting the permission from share root "$SHARE_ROOT
+       if ! errmsg=$(mkdir -p "$DOMAIN_HOME" 2>&1)
+         then
+           trace SEVERE "Could not create directory "${DOMAIN_HOME}" specified in 'domain.spec.domainHome'.  Error: "${errmsg}
+           exit 1
+       fi
+
+       if ! errmsg=$(find "$SHARE_ROOT" ! -path "$SHARE_ROOT/.snapshot*" -exec chown 1000:0 {} \;)
+         then
+           trace SEVERE "Failed to change directory permission at "$SHARE_ROOT" Error: "$errmsg
+           exit 1
+       fi
+
+       trace "Creating domain home completed"
+       ls -Rl $DOMAIN_HOME
+       exit
    fi
 done
 
-if [ -z $root_dir ] ; then
-   trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' "$DOAMIN_HOME" is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'"
-   exit 1
-fi
+trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' "$DOAMIN_HOME" is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'"
+exit 1
 
-SHARE_ROOT=$root_dir
 
-trace "Creating domain home and setting the permission from share root "$SHARE_ROOT
-if ! errmsg=$(mkdir -p $DOMAIN_HOME 2>&1)
-then
-  trace SEVERE "Could not create directory $DOMAIN_HOME specified in 'domain.spec.domainHome'.  Error: ${errmsg}"
-  exit 1
-fi
-
-if ! errmsg=$(find $SHAER_ROOT ! -path "$SHARE_ROOT/.snapshot*" -exec chown 1000:0 {} \;)
-then
-  trace SEVERE "Failed to change directory permission at "$SHARE_ROOT" Error: "$errmsg
-  exit 1
-fi
-
-trace "Creating domain home completed"
-ls -Rl $DOMAIN_HOME
-exit
 
 
 
