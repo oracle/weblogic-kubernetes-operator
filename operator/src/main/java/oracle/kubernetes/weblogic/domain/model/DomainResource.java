@@ -1403,6 +1403,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyInitPvDomainConfigMapExists(resourceLookup, getDomainCreationConfigMap());
     }
 
+    private String getDomainCreationConfigMap() {
+      return spec.getDomainCreationConfigMap();
+    }
+
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
       if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
@@ -1423,7 +1427,4 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
   }
 
-  private String getDomainCreationConfigMap() {
-    return spec.getDomainCreationConfigMap();
-  }
 }
