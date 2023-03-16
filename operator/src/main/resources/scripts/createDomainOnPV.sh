@@ -13,11 +13,11 @@ OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
+IMG_MODELS_HOME="/aux/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
+WDT_ROOT="/aux/weblogic-deploy"
 WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
 WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
 WDT_CREATE_DOMAIN_LOG=createDomain.log
@@ -41,6 +41,7 @@ if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding Model In Image WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
+
 createDomainOnPVWLDomain() {
   start_trap
   trace "Entering createDomainOnPVWLDomain"
@@ -56,7 +57,6 @@ createDomainOnPVWLDomain() {
      exitOrLoop
   fi
 
-  # Check if modelHome (default /u01/wdt/models) and wdtInstallHome (default /u01/wdt/weblogic-deploy) exists
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
@@ -87,7 +87,7 @@ buildWDTParams() {
 
   model_list=""
   archive_list=""
-  variable_list="/u01/_k8s_generated_props.properties"
+  variable_list="/tmp/_k8s_generated_props.properties"
 
   #
   # First build the command line parameters for WDT
