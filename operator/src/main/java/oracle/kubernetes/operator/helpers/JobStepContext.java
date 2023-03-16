@@ -50,6 +50,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
 import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
@@ -418,9 +419,10 @@ public class JobStepContext extends BasePodStepContext {
 
   protected void addInitContainers(V1PodSpec podSpec) {
     List<V1Container> initContainers = new ArrayList<>();
-    Optional.ofNullable(getDomain().getSpec().getInitPvDomain().getInitDomain()).ifPresent(
-        initPvDomain -> addInitDomainOnPVInitContainer(initContainers)
-    );
+    Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV)
+        .ifPresent(initPvDomain -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()

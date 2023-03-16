@@ -66,8 +66,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
-import oracle.kubernetes.weblogic.domain.model.InitDomain;
-import oracle.kubernetes.weblogic.domain.model.InitPvDomain;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -1068,9 +1067,7 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void introspectorPodSpec_createdWithInitDomainOnPVHasCreateDHInitContainer() {
-    InitPvDomain initPvDomain = new InitPvDomain();
-    InitDomain initDomain = new InitDomain();
-    initPvDomain.setInitDomain(initDomain);
+    InitializeDomainOnPV initPvDomain = new InitializeDomainOnPV();
 
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
