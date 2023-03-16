@@ -197,7 +197,6 @@ pipeline {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
                         NODE_SHAPE="VM.Standard2.24"
-                        //NODE_SHAPE="BM.Standard3.64"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
@@ -206,7 +205,6 @@ pipeline {
                         TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
-                        //WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
                         WKOBUILD_PUBLIC_CERT = credentials("${oke_test_ssh_public_cert}")
                     }
                     steps {
