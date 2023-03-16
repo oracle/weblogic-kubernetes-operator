@@ -400,7 +400,6 @@ class ItIstioDBOperator {
    * Create Istio enabled WebLogic domain using model in image and Oracle database used for JMS and JTA
    * migration and service logs.
    */
-  @Tag("oke-sequential")
   @Test
   void  testIstioWlsModelInImageWithDbOperator() {
 
