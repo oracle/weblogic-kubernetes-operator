@@ -33,6 +33,7 @@ pipeline {
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
         //wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
         wko_oke_test_sshpubcert = 'OKE_PUB_CERT'
+        oke_test_ssh_pk = 'oke_test_ssh_pk'
 
         OKE_CLUSTER='true'
 
