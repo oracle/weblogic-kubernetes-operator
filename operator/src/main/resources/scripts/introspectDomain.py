@@ -116,7 +116,7 @@ class OfflineWlstEnv(object):
     self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
-    self.DOMAIN_ON_PV             = self.getEnvOrDef('DOMAIN_ON_PV', 'false')
+    self.INIT_DOMAIN_ON_PV        = self.getEnvOrDef('INIT_DOMAIN_ON_PV', None)
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -190,7 +190,7 @@ class OfflineWlstEnv(object):
     self.DOMAIN_NAME = self.getDomain().getName()
 
     # this should only be done for model in image case
-    if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.DOMAIN_ON_PV:
+    if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.INIT_DOMAIN_ON_PV:
       self.handle_JRFOPSSWallet()
 
   def handle_JRFOPSSWallet(self):
@@ -1948,7 +1948,7 @@ class DomainIntrospector(SecretManager):
     tg.generate()
 
   def isInitializeDomainJRFOnPV(self):
-    if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.DOMAIN_ON_PV:
+    if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.INIT_DOMAIN_ON_PV:
       return True
     else:
       return False
