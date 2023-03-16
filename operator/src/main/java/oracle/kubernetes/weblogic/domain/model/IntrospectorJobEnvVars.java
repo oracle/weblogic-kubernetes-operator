@@ -131,6 +131,9 @@ public class IntrospectorJobEnvVars {
   /** The path to the WDT installation home. */
   public static final String WDT_INSTALL_HOME = "WDT_INSTALL_HOME";
 
+  /** Has InitializedDomainOnPV in configuration spec. */
+  public static final String INIT_DOMAIN_ON_PV = "INIT_DOMAIN_ON_PV";
+  
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.
@@ -147,6 +150,6 @@ public class IntrospectorJobEnvVars {
       WDT_MODEL_HOME, MII_USE_ONLINE_UPDATE,
       MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, MII_WDT_CONNECT_TIMEOUT, MII_WDT_ACTIVATE_TIMEOUT, MII_WDT_DEPLOY_TIMEOUT,
       MII_WDT_REDEPLOY_TIMEOUT, MII_WDT_UNDEPLOY_TIMEOUT, MII_WDT_START_APPLICATION_TIMEOUT,
-        MII_WDT_STOP_APPLICATION_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT,
+        MII_WDT_STOP_APPLICATION_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT, INIT_DOMAIN_ON_PV,
           ADMIN_CHANNEL_PORT_FORWARDING_ENABLED);
 }
