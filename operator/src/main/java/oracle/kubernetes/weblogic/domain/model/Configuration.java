@@ -46,6 +46,8 @@ public class Configuration {
   @Default(strDefault = "Dynamic")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
+  private InitializeDomainOnPV initializeDomainOnPV;
+
   public Model getModel() {
     return model;
   }
@@ -109,6 +111,25 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
+  public InitializeDomainOnPV getInitializeDomainOnPV() {
+    return initializeDomainOnPV;
+  }
+
+  public void setInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+  }
+
+  /**
+   * Adds configuration for initializing domain on PV configuration to the DomainSpec.
+   *
+   * @param initializeDomainOnPV The configuration for initializing domain on PV to be added to this DomainSpec
+   * @return this object
+   */
+  public Configuration withInitializeDomainOnPv(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -118,7 +139,8 @@ public class Configuration {
             .append("secrets", secrets)
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
+            .append("initializeDomainOnPV", initializeDomainOnPV);
 
     return builder.toString();
   }
@@ -131,7 +153,8 @@ public class Configuration {
           .append(secrets)
           .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
-          .append(introspectorJobActiveDeadlineSeconds);
+          .append(introspectorJobActiveDeadlineSeconds)
+          .append(initializeDomainOnPV);
 
     return builder.toHashCode();
   }
@@ -152,7 +175,8 @@ public class Configuration {
             .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(initializeDomainOnPV, rhs.initializeDomainOnPV);
 
     return builder.isEquals();
   }
