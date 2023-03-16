@@ -75,15 +75,15 @@ ${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-amd64 || {
   echo "There was an error pushing the amd64 image."
   exit 1
 }
-${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/arm64 --tag $name-aarch64 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
-  echo "There was an error building the aarch64 image."
+${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/arm64 --tag $name-arm64v8 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+  echo "There was an error building the arm64v8 image."
   exit 1
 }
-${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-aarch64 || {
-  echo "There was an error pushing the aarch64 image."
+${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-arm64v8 || {
+  echo "There was an error pushing the arm64v8 image."
   exit 1
 }
-${WLSIMG_BUILDER:-docker} manifest create $PROXY_SETTINGS $name --amend $name-amd64 --amend $name-aarch64 || {
+${WLSIMG_BUILDER:-docker} manifest create $PROXY_SETTINGS $name --amend $name-amd64 --amend $name-arm64v8 || {
   echo "There was an error building the manifest."
   exit 1
 }
