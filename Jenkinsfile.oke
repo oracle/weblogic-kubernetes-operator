@@ -465,8 +465,8 @@ EOF
                             echo "second node external IP ${NODE_IP}"
                             export NODE_IP=${NODE_IP}
                             echo "expand disk volume for nodes"
-                            ssh -i ${WORKSPACE}/rsaokepk opc@${K8S_NODEPORT_HOST} 'sudo /usr/libexec/oci-growfs -y'
-                            ssh -i ${WORKSPACE}/rsaokepk opc@${NODE_IP} 'sudo /usr/libexec/oci-growfs -y'
+                            ssh -o StrictHostKeyChecking=no -i ${WORKSPACE}/rsaokepk opc@${K8S_NODEPORT_HOST} 'sudo /usr/libexec/oci-growfs -y'
+                            ssh -o StrictHostKeyChecking=no -i ${WORKSPACE}/rsaokepk opc@${NODE_IP} 'sudo /usr/libexec/oci-growfs -y'
                             mt_privateip_id=`oci fs mount-target  list --compartment-id=${compartment_ocid}  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
                            
                             mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
