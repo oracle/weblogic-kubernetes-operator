@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -214,6 +214,7 @@ public class MessageKeys {
   public static final String CLUSTER_NOT_READY = "WLSDO-0048";
   public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
   public static final String MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0050";
+  public static final String INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0051";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
