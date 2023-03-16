@@ -240,7 +240,8 @@ pipeline {
 
                         #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
-
+                        ssh_pubkey=`cat ${WKOBUILD_PUBLIC_CERT}`
+                        echo ${ssh_pubkey}
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
 
@@ -260,7 +261,7 @@ pipeline {
                         nodepool.shape=${NODE_SHAPE}
                         nodepool.imagename=${IMAGE_ID}
                         k8s.version=v${KUBE_VERSION}
-                        nodepool.ssh.pubkey=${WKOBUILD_PUBLIC_CERT}
+                        nodepool.ssh.pubkey=${ssh_pubkey}
                         terraform.installdir=${WORKSPACE}/terraform/terraforminstall
 EOF
 
