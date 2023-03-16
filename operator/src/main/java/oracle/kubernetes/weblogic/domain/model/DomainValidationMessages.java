@@ -124,8 +124,8 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
   }
 
-  static String noSuchModelConfigMap(String configMapName, String namespace) {
-    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
+  static String noSuchModelConfigMap(String configMapName, String location, String namespace) {
+    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, location, namespace);
   }
 
   static String cannotExposeDefaultChannelIstio(String channelName) {
@@ -180,5 +180,9 @@ public class DomainValidationMessages {
   public static String introspectorEnvVariableNotSupported(List<String> unsupportedEnvVars) {
     return getMessage(MessageKeys.UNSUPPORTED_INTRO_ENV_VARIABLES, unsupportedEnvVars,
         Arrays.asList(ALLOWED_INTROSPECTOR_ENV_VARS));
+  }
+
+  public static String conflictOpssSecrets(String initPvDomainOpss, String miiOpss) {
+    return getMessage(MessageKeys.CONFLICT_OPSS_SECRETS, initPvDomainOpss, miiOpss);
   }
 }
