@@ -31,7 +31,7 @@ pipeline {
         weblogick8s_tenancy_ocid = 'WK8_TENANCY_OCID'
         weblogick8s_qa_compartment_ocid = 'WK8_QA_COMP_OCID'
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
-        wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
+        //wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
         wko_oke_test_sshpubcert = 'wko-oke-test-public-cert'
 
         OKE_CLUSTER='true'
