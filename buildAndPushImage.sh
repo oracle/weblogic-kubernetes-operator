@@ -61,11 +61,11 @@ if [ "$PROXY_SETTINGS" != "" ]; then
 fi
 
 # ################## #
-# BUILDING THE IMAGE #
+# BUILDING AND PUSHING THE IMAGE #
 # ################## #
 echo "Building image '$name' ..."
 
-# BUILD THE IMAGE (replace all environment variables)
+# BUILD AND PUSH THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
 ${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/amd64 --tag $name-amd64 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
   echo "There was an error building the amd64 image."
@@ -80,7 +80,7 @@ ${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/arm64 --
   exit 1
 }
 ${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-aarch64 || {
-  echo "There was an error pushing the amd64 image."
+  echo "There was an error pushing the aarch64 image."
   exit 1
 }
 ${WLSIMG_BUILDER:-docker} manifest create $PROXY_SETTINGS $name --amend $name-amd64 --amend $name-aarch64 || {
@@ -102,7 +102,7 @@ cat << EOF
 
     --> $name
 
-  Build completed in $BUILD_ELAPSED seconds.
+  Build and push completed in $BUILD_ELAPSED seconds.
 
 EOF
 else
