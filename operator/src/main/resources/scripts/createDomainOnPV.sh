@@ -21,10 +21,8 @@ WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
 WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
 WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
 WDT_CREATE_DOMAIN_LOG=createDomain.log
-WDT_VALIDATE_MODEL_LOG=validateModel.log
 WDT_BINDIR="${WDT_ROOT}/bin"
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
-#RUN_RCU="${RUN_RCU:-}
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 
 FATAL_JRF_INTROSPECTOR_ERROR_MSG="Domain On PV JRF domain creation and schema initialization encountered an unrecoverable error.
@@ -149,15 +147,16 @@ buildWDTParams() {
     model_list="-model_file ${model_list}"
   fi
 
-  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
-       "is 'FromModel' and the 'spec.configuration.model.domainType' is 'JRF';" \
-       "this combination requires specifying a" \
-       "'spec.configuration.model.walletPasswordSecret' in your domain" \
-       "resource and deploying this secret with a 'walletPassword' key," \
-       "but the secret does not have this key."
-    exitOrLoop
-  fi
+  # Remove operator already checking it
+#  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
+#    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+#       "is 'PersistentVolume' and the 'spec.configuration.initializeDomainOnPV.domain.domainType' is 'JRF';" \
+#       "this combination requires specifying a" \
+#       "'spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret' in your domain" \
+#       "resource and deploying this secret with a 'walletPassword' key," \
+#       "but the secret does not have this key."
+#    exitOrLoop
+#  fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
   #  We shouldn't require user to drop the db first since it may have data in it
@@ -189,10 +188,6 @@ createDomainFromWDTModel() {
   wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
   wdtArgs+=" ${OPSS_FLAGS}"
 
-  if [ ! -z ${RUN_RCU} ] ; then
-    wdtArgs+=" -run_rcu"
-  fi
-
   cd $WDT_ROOT
   trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
 
@@ -213,6 +208,10 @@ createDomainFromWDTModel() {
     #  file using the spec.configuration.opss.walletPasswordSecret as its passphrase
     #  so that an administrator can then retrieve the file from the introspector's
     #  output configmap and save it for reuse.
+
+    if [ ${INIT_DOMAIN_ON_PV} == "domainAndRCU" ] && [ ${WDT_DOMAIN_TYPE} == 'JRF' ]; then
+      wdtArgs+=" -run_rcu"
+    fi
 
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   else
