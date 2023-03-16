@@ -659,5 +659,5 @@ public abstract class DomainConfigurator {
    */
   public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
 
-  public abstract DomainConfigurator withInitializeDomainOnPV(InitPvDomain initPvDomain);
+  public abstract DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain);
 }
