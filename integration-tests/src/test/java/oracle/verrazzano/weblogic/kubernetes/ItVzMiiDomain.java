@@ -398,7 +398,7 @@ class ItVzMiiDomain {
     String host = getIstioHost(namespace);
     String address = getLoadbalancerAddress();
 
-    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    StringBuffer curlString = new StringBuffer("status=$(curl -k --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" https://" + host)
         .append("/management/weblogic/latest/domainConfig")
