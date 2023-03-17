@@ -147,17 +147,6 @@ buildWDTParams() {
     model_list="-model_file ${model_list}"
   fi
 
-  # Remove operator already checking it
-#  if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-#    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
-#       "is 'PersistentVolume' and the 'spec.configuration.initializeDomainOnPV.domain.domainType' is 'JRF';" \
-#       "this combination requires specifying a" \
-#       "'spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret' in your domain" \
-#       "resource and deploying this secret with a 'walletPassword' key," \
-#       "but the secret does not have this key."
-#    exitOrLoop
-#  fi
-
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
   #  We shouldn't require user to drop the db first since it may have data in it
   #
@@ -192,37 +181,18 @@ createDomainFromWDTModel() {
 
   if [ -z "${OPSS_FLAGS}" ]; then
 
-    # We get here for WLS domains, and for the JRF 'first time' case
+    # Determine run rcu or not
 
-    # JRF wallet generation note:
-    #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
-    #  via spec.configuration.opss.walletFileSecret and so we assume that this is
-    #  the first time this domain started for this RCU database. We also assume
-    #  that 'createDomain.sh' will perform the one time initialization of the
-    #  empty RCU schema for the domain in the database (where the empty schema
-    #  itself must be setup external to the Operator by calling 'create_rcu_schema.sh'
-    #  or similar prior to deploying the domain for the first time).
-    #
-    #  The 'introspectDomain.py' script, which runs later, will create a wallet
-    #  file using the spec.configuration.opss.walletPasswordSecret as its passphrase
-    #  so that an administrator can then retrieve the file from the introspector's
-    #  output configmap and save it for reuse.
-
-    if [ ${INIT_DOMAIN_ON_PV} == "domainAndRCU" ] && [ ${WDT_DOMAIN_TYPE} == 'JRF' ]; then
+    if [ "${INIT_DOMAIN_ON_PV}" == "domainAndRCU" ] && [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
       wdtArgs+=" -run_rcu"
     fi
     trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   else
-    # We get here only for JRF domain 'second time' (or more) case.
-
-    # JRF wallet reuse note:
-    #  The set OPSS_FLAGS indicates a wallet file was specified
-    #  via spec.configuration.opss.walletFileSecret on the domain resource.
-    #  So we assume that this domain already
-    #  has its RCU tables and the wallet file will give us access to them.
+    # when there is a wallet presence either in the configmap or secret
 
     trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
+    # shellcheck disable=SC2046
     echo $(cat ${OPSS_KEY_PASSPHRASE}) | \
       ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
 
@@ -233,11 +203,13 @@ createDomainFromWDTModel() {
     # Important:
     # The "FatalIntrospectorError" keyword is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
-    # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
+    # We need to prevent retries with a "FatalIntrospectorError" because JRF without the OPSS_FLAGS indicates
     # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
-    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
+
+    # TODO:  Waiting on WDT enhancement to detect RCU connectivity test for possible retry
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] && [ "$INIT_DOMAIN_ON_PV" != "domainAndRCU" ] ; then
       trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return ${ret}. " \
         ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
     else
