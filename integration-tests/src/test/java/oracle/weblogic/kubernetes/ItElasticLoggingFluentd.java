@@ -117,8 +117,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItElasticLoggingFluentd {
 
   // constants for creating domain image using model in image
-  private static final String WLS_LOGGING_MODEL_FILE = WORK_DIR + "/" + "new.model.wlslogging.yaml";
-  private static final String WLS_LOGGING_IMAGE_NAME = "wls-logging-image";
+  private static final String WLS_ELK_LOGGING_MODEL_FILE = WORK_DIR + "/" + "new.model.wlslogging.yaml";
+  private static final String WLS_ELK_LOGGING_IMAGE_NAME = "wls-logging-image";
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
 
   // constants for Domain
@@ -315,7 +315,7 @@ class ItElasticLoggingFluentd {
     // create image with model files
     logger.info("Create image with model file and verify");
     String miiImage =
-        createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME);
+        createMiiImageAndVerify(WLS_ELK_LOGGING_IMAGE_NAME, WLS_ELK_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME);
 
     // repo login and push image to registry if necessary
     imageRepoLoginAndPushImageToRegistry(miiImage);
@@ -493,12 +493,12 @@ class ItElasticLoggingFluentd {
   private static void modifyModelConfigfile() {
     final String sourceConfigFile = MODEL_DIR + "/model.wlslogging.yaml";
 
-    assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(WLS_LOGGING_MODEL_FILE)),
+    assertDoesNotThrow(() -> copy(Paths.get(sourceConfigFile), Paths.get(WLS_ELK_LOGGING_MODEL_FILE)),
         "copy model.wlslogging.yaml failed");
 
     String[] deleteLineKeys
         = new String[]{"resources", "StartupClass", "LoggingExporterStartupClass", "ClassName", "Target"};
-    try (RandomAccessFile file = new RandomAccessFile(WLS_LOGGING_MODEL_FILE, "rw")) {
+    try (RandomAccessFile file = new RandomAccessFile(WLS_ELK_LOGGING_MODEL_FILE, "rw")) {
       String lineToKeep = "";
       String allLines = "";
       boolean fountit = false;
@@ -515,7 +515,7 @@ class ItElasticLoggingFluentd {
         allLines += lineToKeep + "\n";
       }
 
-      try (BufferedWriter writer = new BufferedWriter(new FileWriter(WLS_LOGGING_MODEL_FILE))) {
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(WLS_ELK_LOGGING_MODEL_FILE))) {
         writer.write(allLines);
       } catch (Exception ex) {
         ex.printStackTrace();

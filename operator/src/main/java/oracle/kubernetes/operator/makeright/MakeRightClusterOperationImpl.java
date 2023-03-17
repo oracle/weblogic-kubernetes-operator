@@ -39,6 +39,17 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   }
 
   /**
+   * Modifies the factory to run even if the domain spec is unchanged.
+   *
+   * @return the updated factory
+   */
+  @Override
+  public MakeRightClusterOperation withExplicitRecheck() {
+    explicitRecheck = true;
+    return this;
+  }
+
+  /**
    * Set the event data that is associated with this operation.
    *
    * @param eventData event data
@@ -90,7 +101,11 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   }
 
   private boolean isDeleting() {
-    return getEventData().getItem() == EventHelper.EventItem.CLUSTER_DELETED;
+    return getEventItem() == EventHelper.EventItem.CLUSTER_DELETED;
+  }
+
+  private EventHelper.EventItem getEventItem() {
+    return Optional.ofNullable(getEventData()).map(EventHelper.EventData::getItem).orElse(null);
   }
 
   @Override
@@ -101,6 +116,11 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   @Override
   public ClusterPresenceInfo getPresenceInfo() {
     return liveInfo;
+  }
+
+  @Override
+  public boolean isExplicitRecheck() {
+    return explicitRecheck;
   }
 
   @Override

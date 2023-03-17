@@ -14,7 +14,7 @@ mkdir -m 750 -p "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/" || exit 1
 chown -R 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}"
 output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.out"
 
-create_failure_file_and_exit() {
+failure_exit() {
   exit 1
 }
 
@@ -35,7 +35,7 @@ if [ -f "$DOMAIN_HOME" ]; then
     create_success_file_and_exit
   else
     trace SEVERE "DOMAIN_HOME "$DOMAIN_HOME" is not empty and does not contain any WebLogic Domain. Please specify an empty directory in n 'domain.spec.domainHome'." >> "$output_file"
-    create_failure_file_and_exit
+    failure_exit
   fi
 fi
 
@@ -63,13 +63,13 @@ do
        if ! errmsg=$(mkdir -p "$DOMAIN_HOME" 2>&1)
          then
            trace SEVERE "Could not create directory "${DOMAIN_HOME}" specified in 'domain.spec.domainHome'.  Error: "${errmsg} >> "$output_file"
-           create_failure_file_and_exit
+           failure_exit
        fi
 
        if ! errmsg=$(find "$SHARE_ROOT" ! -path "$SHARE_ROOT/.snapshot*" -exec chown 1000:0 {} \;)
          then
            trace SEVERE "Failed to change directory permission at "$SHARE_ROOT" Error: "$errmsg >> "$output_file"
-           create_failure_file_and_exit
+           failure_exit
        fi
 
        trace "Creating domain home completed"
@@ -79,5 +79,5 @@ do
 done
 
 trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' "$DOMAIN_HOME" is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
-create_failure_file_and_exit
+failure_exit
 

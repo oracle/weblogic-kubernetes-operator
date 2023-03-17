@@ -1706,9 +1706,7 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenPersistentVolumeConfigured_useConfiguredValues() {
-    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
-    initializeDomainOnPv.setPersistentVolume(createPv());
-    configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
+    configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(createPv()));
 
     assertThat(getPersistentVolume(domain), equalTo(createPv()));
     assertThat(getPersistentVolume(domain).getSpec().getAccessModes(),
@@ -1723,14 +1721,13 @@ class DomainV2Test extends DomainTestBase {
         .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
             .accessModes(Collections.singletonList("ReadWriteMany"))
             .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
-            .hostPath(new V1HostPathVolumeSource().path("/shared")));
+            .hostPath(new V1HostPathVolumeSource().path("/shared"))
+            .volumeMode("Block"));
   }
 
   @Test
   void whenPersistentVolumeClaimConfigured_useConfiguredValues() {
-    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
-    initializeDomainOnPv.setPersistentVolumeClaim(createPvc());
-    configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
+    configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(createPvc()));
 
     assertThat(getPersistentVolumeClaim(domain), equalTo(createPvc()));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getAccessModes(),
@@ -1755,10 +1752,10 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenInitializeDomainOnPvWithDomainConfigured_useConfiguredValues() {
     InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
-    initializeDomainOnPv.domain(createInitialPvDomain());
+    initializeDomainOnPv.domain(createDomainOnPV());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
-    assertThat(getDomain(domain), equalTo(createInitialPvDomain()));
+    assertThat(getDomain(domain), equalTo(createDomainOnPV()));
     assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(CreateIfNotExists.DOMAIN_AND_RCU));
     assertThat(getDomain(domain).getDomainType(), equalTo(DomainType.WLS));
     assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("wdf-config-map"));
@@ -1767,8 +1764,8 @@ class DomainV2Test extends DomainTestBase {
         is(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic")));
   }
 
-  private Domain createInitialPvDomain() {
-    return new Domain().domainType(DomainType.WLS)
+  private DomainOnPV createDomainOnPV() {
+    return new DomainOnPV().domainType(DomainType.WLS)
         .createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainCreationConfigMap("wdf-config-map")
         .domainCreationImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
         .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
@@ -1782,7 +1779,7 @@ class DomainV2Test extends DomainTestBase {
     return domain.getSpec().getInitializeDomainOnPV().getPersistentVolumeClaim();
   }
 
-  private Domain getDomain(DomainResource domain) {
+  private DomainOnPV getDomain(DomainResource domain) {
     return domain.getSpec().getInitializeDomainOnPV().getDomain();
   }
 
@@ -1836,5 +1833,18 @@ class DomainV2Test extends DomainTestBase {
         is(new Opss().withWalletFileSecret("domain-opss-wallet").withWalletPasswordSecret("weblogic")));
     assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
+  }
+
+  @Test
+  void whenDomainWithInitializeDomainOnPvReadFromYamlTwice_matchingIntrospectionVersionValuesLeaveDomainsEqual()
+      throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain1 = (DomainResource) resources.get(0);
+    List<KubernetesObject> resources2 = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain2 = (DomainResource) resources2.get(0);
+
+    domain1.getSpec().setIntrospectVersion("123");
+    domain2.getSpec().setIntrospectVersion("123");
+    assertThat(domain1, equalTo(domain2));
   }
 }
