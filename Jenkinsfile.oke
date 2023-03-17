@@ -31,7 +31,6 @@ pipeline {
         weblogick8s_tenancy_ocid = 'WK8_TENANCY_OCID'
         weblogick8s_qa_compartment_ocid = 'WK8_QA_COMP_OCID'
         wkobuild_user_ocid = 'WKOBUILD_USER_OCID'
-        //wkobuild_public_cert = 'WKOBUILD_PUBLIC_CERT'
         wko_oke_test_sshpubcert = 'OKE_PUB_CERT'
         oke_test_ssh_pk = 'oke_test_ssh_pk'
 
@@ -207,7 +206,6 @@ pipeline {
                         TENANCY_OCID = credentials("${weblogick8s_tenancy_ocid}")
                         COMPARTMENT_OCID = credentials("${weblogick8s_qa_compartment_ocid}")
                         USER_OCID = credentials("${wkobuild_user_ocid}")
-                        //WKOBUILD_PUBLIC_CERT = credentials("${wkobuild_public_cert}")
                         WKOBUILD_PUBLIC_CERT = credentials("${wko_oke_test_sshpubcert}")
                     }
                     steps {
@@ -243,7 +241,7 @@ pipeline {
                         #export IMAGE_TAG_WEBLOGIC="12.2.1.4"
                         #export IMAGE_TAG_FMWINFRA="12.2.1.4"
                         ssh_pubkey=`cat ${WKOBUILD_PUBLIC_CERT}`
-                        echo ${ssh_pubkey}
+
                         #################
                         echo "Generating property file oci.prop for terraform scripts"
 

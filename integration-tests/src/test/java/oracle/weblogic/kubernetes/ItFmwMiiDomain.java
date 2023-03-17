@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create FMW model in image domain and start the domain")
 @IntegrationTest
 @Tag("olcne")
-//@Tag("oke-parallel")
+@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-fmw-cert")
 class ItFmwMiiDomain {
