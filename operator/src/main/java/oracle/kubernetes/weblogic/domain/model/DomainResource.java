@@ -522,24 +522,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the domain type when initializeDomainOnPV is specified.
    * @return domain type
    */
-  public DomainType getInitPvDomainDomainType() {
-    return spec.getInitPvDomainDomainType();
+  public DomainType getInitializeDomainOnPVDomainType() {
+    return spec.getInitializeDomainOnPVDomainType();
   }
 
   /**
    * Returns the wallet password secret name if InitializeDomainOnPV is specified.
    * @return domain type
    */
-  public String getInitPvDomainOpssWalletPasswordSecret() {
-    return spec.getInitPvDomainOpssWalletPasswordSecret();
+  public String getInitializeDomainOnPVOpssWalletPasswordSecret() {
+    return spec.getInitializeDomainOnPVOpssWalletPasswordSecret();
   }
 
   /**
    * Returns true if InitializeDomainOnPV is specified.
    * @return domain type
    */
-  public boolean isInitPvDomain() {
-    return spec.isInitPvDomain();
+  public boolean isInitializeDomainOnPV() {
+    return spec.isInitializeDomainOnPV();
   }
 
   /**
@@ -844,6 +844,25 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         .stream().map(V1LocalObjectReference::getName).anyMatch(clusterName::equals);
   }
 
+  /**
+   * Returns true if the domain resource has a later generation than the passed-in cached domain resource.
+   * @param cachedResource another presence info against which to compare this one.
+   */
+  public boolean isGenerationChanged(DomainResource cachedResource) {
+    return getGeneration()
+        .map(gen -> gen.compareTo(getOrElse(cachedResource)) > 0)
+        .orElse(getOrElse(cachedResource) != 0);
+  }
+
+  @org.jetbrains.annotations.NotNull
+  private Long getOrElse(DomainResource cachedResource) {
+    return cachedResource.getGeneration().orElse(0L);
+  }
+
+  private Optional<Long> getGeneration() {
+    return Optional.ofNullable(getMetadata().getGeneration());
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -909,6 +928,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         getNextRetryTime(domainStatus),
         getFailureRetryIntervalSeconds(),
         getLastRetryTime(domainStatus));
+  }
+
+  public String getDomainCreationConfigMap() {
+    return spec.getDomainCreationConfigMap();
   }
 
   class PrivateDomainApiImpl implements PrivateDomainApi {
@@ -996,6 +1019,28 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
+      verifyModelNotConfiguredWithInitializeDomainOnPV();
+    }
+
+    private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
+      if (isInitializeDomainOnPV()) {
+        if (isModelConfigured()) {
+          failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
+              "spec.configuration.initializeDomainOnPV"));
+        }
+        if (DomainType.JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
+          failures.add(DomainValidationMessages.conflictOpssSecrets(
+              "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
+        }
+      }
+    }
+
+    private boolean hasMiiOpssConfigured() {
+      return spec.hasMiiOpssConfigured();
+    }
+
+    private boolean isModelConfigured() {
+      return spec.isModelConfigured();
     }
 
     private List<String> getFatalValidationFailures() {
@@ -1348,11 +1393,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
               "spec.configuration.opss.walletPasswordSecret"));
         }
       }
-      if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
-          && isInitPvDomain()
-          && DomainType.JRF.equals(getInitPvDomainDomainType())
-          && getInitPvDomainOpssWalletPasswordSecret() == null) {
-        failures.add(DomainValidationMessages.missingRequiredInitPvDomainOpssSecret(
+
+      if (isInitializeDomainOnPV()
+          && DomainType.JRF.equals(getInitializeDomainOnPVDomainType())
+          && getInitializeDomainOnPVOpssWalletPasswordSecret() == null) {
+        failures.add(DomainValidationMessages.missingRequiredInitializeDomainOnPVOpssSecret(
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
       }
 
@@ -1362,7 +1407,6 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
-
     }
 
     private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
@@ -1385,14 +1429,31 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
       verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
+      verifyInitializeDomainOnPVConfigMapExists(resourceLookup, getDomainCreationConfigMap());
+    }
+
+    private String getDomainCreationConfigMap() {
+      return spec.getDomainCreationConfigMap();
     }
 
     @SuppressWarnings("SameParameterValue")
     private void verifyModelConfigMapExists(KubernetesResourceLookup resources, String modelConfigMapName) {
       if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL
           && modelConfigMapName != null && !resources.isConfigMapExists(modelConfigMapName, getNamespace())) {
-        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName, getNamespace()));
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(modelConfigMapName,
+            "spec.configuration.model.configMap", getNamespace()));
+      }
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private void verifyInitializeDomainOnPVConfigMapExists(KubernetesResourceLookup resources, String configMapName) {
+      if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
+          && getDomainCreationConfigMap() != null
+          && !resources.isConfigMapExists(configMapName, getNamespace())) {
+        failures.add(DomainValidationMessages.noSuchModelConfigMap(configMapName,
+            "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap", getNamespace()));
       }
     }
   }
+
 }
