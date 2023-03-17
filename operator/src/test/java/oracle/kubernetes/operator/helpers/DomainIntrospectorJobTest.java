@@ -43,6 +43,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -477,7 +478,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithInitializeDomainOnPVDefined_hasSecretsVolumeAndMounts() {
-    getConfigurator().withInitializeDomainOnPv(getInitializeDomainOnPV());
+    getConfigurator().withInitializeDomainOnPVOpssWalletFileSecret("wfSecret")
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
+
+    testSupport.defineResources(createSecret("wpSecret"), createSecret("wfSecret"));
 
     List<V1Job> jobs = runStepsAndGetJobs();
     V1Job job = jobs.get(0);
@@ -497,6 +501,10 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
         hasItem(new V1VolumeMount().name(OPSS_KEYPASSPHRASE_VOLUME)
             .mountPath(OPSS_KEY_MOUNT_PATH).readOnly(true)));
+  }
+
+  private V1Secret createSecret(String name) {
+    return new V1Secret().metadata(new V1ObjectMeta().name(name).namespace(NS));
   }
 
   @Test
@@ -536,12 +544,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
         hasItem(new V1VolumeMount().name("initPvDomainCM-volume")
             .mountPath(WDTCONFIGMAP_MOUNT_PATH).readOnly(true)));
-  }
-
-  private InitializeDomainOnPV getInitializeDomainOnPV() {
-    InitializeDomainOnPV initPvDomain = new InitializeDomainOnPV().domain(getInitDomain());
-    initPvDomain.setPersistentVolume(createPv());
-    return initPvDomain;
   }
 
   private DomainOnPV getInitDomain() {
