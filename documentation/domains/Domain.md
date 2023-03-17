@@ -223,7 +223,7 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `domain` | [Domain](#domain) | Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed. |
+| `domain` | [Domain On PV](#domain-on-pv) | Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed. |
 | `persistentVolume` | [Persistent Volume](#persistent-volume) | Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed. |
 | `persistentVolumeClaim` | [Persistent Volume Claim](#persistent-volume-claim) | Configuration including 'Metadata' and 'Specs' to create a persistent volume claim, if needed. |
 
@@ -299,7 +299,7 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | integer | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
-### Domain
+### Domain On PV
 
 | Name | Type | Description |
 | --- | --- | --- |
