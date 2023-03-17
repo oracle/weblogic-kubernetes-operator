@@ -1222,6 +1222,33 @@ public class DomainValidationTest extends DomainValidationTestBase {
             "spec.configuration.opss", "JRF")));
   }
 
+  @Test
+  void whenModelSpecified_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS())
+        .withModel(new Model());
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("configuration",
+            "spec.configuration.model", "not allowed",
+            "spec.configuration.initializeDomainOnPV",
+            "specified")));
+  }
+
+  private InitializeDomainOnPV getInitPvDomainWithDomainTypeWLS() {
+    return new InitializeDomainOnPV().domain(new Domain().domainType(WLS));
+  }
+
+  @Test
+  void whenModelNotSpecified_initPvDomain_dontReportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS());
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
   @SafeVarargs
   private <T> void defineResources(T... resources) {
     for (T resource : resources) {

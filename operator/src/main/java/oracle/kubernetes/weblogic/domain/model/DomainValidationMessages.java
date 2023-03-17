@@ -108,7 +108,7 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
-  static String missingRequiredInitPvDomainOpssSecret(String secret) {
+  static String missingRequiredInitializeDomainOnPVOpssSecret(String secret) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
@@ -184,5 +184,9 @@ public class DomainValidationMessages {
 
   public static String conflictOpssSecrets(String initPvDomainOpss, String miiOpss) {
     return getMessage(MessageKeys.CONFLICT_OPSS_SECRETS, initPvDomainOpss, miiOpss);
+  }
+
+  public static String conflictModelConfiguration(String model, String initializeDomainOnPV) {
+    return getMessage(MessageKeys.CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV, model, initializeDomainOnPV);
   }
 }
