@@ -1000,10 +1000,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
-      verifyModelMotConfiguredWithInitializeDomainOnPV();
+      verifyModelNotConfiguredWithInitializeDomainOnPV();
     }
 
-    private void verifyModelMotConfiguredWithInitializeDomainOnPV() {
+    private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
       if (isInitializeDomainOnPV()) {
         if (isModelConfigured()) {
           failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
