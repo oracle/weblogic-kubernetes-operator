@@ -1000,6 +1000,28 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
+      verifyModelMotConfiguredWithInitializeDomainOnPV();
+    }
+
+    private void verifyModelMotConfiguredWithInitializeDomainOnPV() {
+      if (isInitializeDomainOnPV()) {
+        if (isModelConfigured()) {
+          failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
+              "spec.configuration.initializeDomainOnPV"));
+        }
+        if (DomainType.JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
+          failures.add(DomainValidationMessages.conflictOpssSecrets(
+              "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
+        }
+      }
+    }
+
+    private boolean hasMiiOpssConfigured() {
+      return spec.hasMiiOpssConfigured();
+    }
+
+    private boolean isModelConfigured() {
+      return spec.isModelConfigured();
     }
 
     private List<String> getFatalValidationFailures() {
@@ -1360,33 +1382,12 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
       }
 
-      if (isInitializeDomainOnPV()
-          && DomainType.JRF.equals(getInitializeDomainOnPVDomainType())
-          && hasMiiOpssConfigured()) {
-        failures.add(DomainValidationMessages.conflictOpssSecrets(
-            "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
-      }
-
-      if (isInitializeDomainOnPV()
-          && isModelConfigured()) {
-        failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
-            "spec.configuration.initializeDomainOnPV"));
-      }
-
       if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null
             && getFluentdSpecification().getContainerCommand() == null
             && getFluentdSpecification().getContainerArgs() == null) {
         failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
-    }
-
-    private boolean hasMiiOpssConfigured() {
-      return spec.hasMiiOpssConfigured();
-    }
-
-    private boolean isModelConfigured() {
-      return spec.isModelConfigured();
     }
 
     private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
