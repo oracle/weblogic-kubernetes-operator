@@ -19,6 +19,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR_FOR_JE
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchDeployment;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
@@ -94,7 +95,7 @@ public class Operator {
    * @return true on success
    */
   public static boolean buildImage(String image) {
-    return Image.createImage("..", image, "");
+    return Image.createImage("..", image, getImageBuilderExtraArgs());
   }
 
   /**
