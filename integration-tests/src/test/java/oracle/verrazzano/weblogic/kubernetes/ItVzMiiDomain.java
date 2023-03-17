@@ -336,10 +336,17 @@ class ItVzMiiDomain {
                                         .port(7001)),
                                 new IngressRule()
                                     .paths(Arrays.asList(new Path()
+                                        .path("/management")
+                                        .pathType("Prefix")))
+                                    .destination(new Destination()
+                                        .host(adminServerPodName)
+                                        .port(7001)),
+                                new IngressRule()
+                                    .paths(Arrays.asList(new Path()
                                         .path("/sample-war")
                                         .pathType("Prefix")))
                                     .destination(new Destination()
-                                        .host(domainUid + "-cluster-" + clusterName)
+                                        .host(auxDomainUid + "-cluster-" + clusterName)
                                         .port(8001)))))))))));
 
     logger.info(Yaml.dump(component));
