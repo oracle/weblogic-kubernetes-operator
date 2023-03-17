@@ -1135,6 +1135,16 @@ class JobHelperTest extends DomainValidationTestBase {
 
   }
 
+  @Test
+  void introspectorPodSpec_createdWithOutInitDomainOnPVContainerNotSetEnv() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
+
+    runCreateJob();
+
+    assertThat(getEnvNames(job), not(hasItems("INIT_DOMAIN_ON_PV")));
+  }
+
   private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {
     return podSpec.getInitContainers().stream().findFirst().get().getResources();
   }
