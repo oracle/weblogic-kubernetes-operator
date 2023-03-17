@@ -73,9 +73,9 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
+import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
@@ -509,8 +509,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     return initPvDomain;
   }
 
-  private Domain getInitDomain() {
-    Domain initDomain = new Domain();
+  private DomainOnPV getInitDomain() {
+    DomainOnPV initDomain = new DomainOnPV();
     initDomain.opss(getOpss());
     return initDomain;
   }
@@ -708,7 +708,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     getConfigurator()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
-            .domain(new Domain().domainCreationImages(getDomainCreationImages("wdt-image1:v1", "wdt-image2:v1"))));
+            .domain(new DomainOnPV().domainCreationImages(getDomainCreationImages("wdt-image1:v1", "wdt-image2:v1"))));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),

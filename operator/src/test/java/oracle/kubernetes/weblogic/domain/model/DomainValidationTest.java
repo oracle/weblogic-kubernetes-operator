@@ -148,7 +148,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     configureDomainWithRuntimeEncryptionSecret(domain)
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
-            .domain(new Domain().domainCreationImages(domainCreationImages)));
+            .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("More than one domain creation image under",
@@ -176,7 +176,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     configureDomainWithRuntimeEncryptionSecret(domain)
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
-            .domain(new Domain().domainCreationImages(domainCreationImages)));
+            .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -201,7 +201,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     configureDomainWithRuntimeEncryptionSecret(domain)
         .withInitializeDomainOnPv(new InitializeDomainOnPV()
-            .domain(new Domain().domainCreationImages(domainCreationImages)));
+            .domain(new DomainOnPV().domainCreationImages(domainCreationImages)));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -1046,19 +1046,19 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   private InitializeDomainOnPV getInitPvDomainWithWalletPasswordSecret() {
     return new InitializeDomainOnPV().domain(
-        new Domain().domainType(DomainType.WLS)
+        new DomainOnPV().domainType(DomainType.WLS)
             .opss(new Opss().withWalletPasswordSecret("wpSecret")));
   }
 
   private InitializeDomainOnPV getInitPvDomainJRFWithWalletPasswordSecret() {
     return new InitializeDomainOnPV().domain(
-        new Domain().domainType(DomainType.JRF)
+        new DomainOnPV().domainType(DomainType.JRF)
             .opss(new Opss().withWalletPasswordSecret("wpSecret")));
   }
 
   private InitializeDomainOnPV getInitPvDomainWithWalletFileSecret() {
     return new InitializeDomainOnPV().domain(
-        new Domain().domainType(DomainType.WLS)
+        new DomainOnPV().domainType(DomainType.WLS)
             .opss(new Opss().withWalletFileSecret("wfSecret")));
   }
 
@@ -1088,7 +1088,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withLogHomeEnabled(false)
         .withDomainHomeSourceType(PERSISTENT_VOLUME)
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
-            new Domain().domainType(DomainType.JRF)));
+            new DomainOnPV().domainType(DomainType.JRF)));
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("secret",
@@ -1101,7 +1101,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configureDomain(domain).withLogHomeEnabled(false)
         .withDomainHomeSourceType(PERSISTENT_VOLUME)
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
-            new Domain().domainType(DomainType.WLS)));
+            new DomainOnPV().domainType(DomainType.WLS)));
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }

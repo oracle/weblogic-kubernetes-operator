@@ -1723,7 +1723,8 @@ class DomainV2Test extends DomainTestBase {
         .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
             .accessModes(Collections.singletonList("ReadWriteMany"))
             .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
-            .hostPath(new V1HostPathVolumeSource().path("/shared")));
+            .hostPath(new V1HostPathVolumeSource().path("/shared"))
+            .volumeMode("Block"));
   }
 
   @Test
@@ -1755,10 +1756,10 @@ class DomainV2Test extends DomainTestBase {
   @Test
   void whenInitializeDomainOnPvWithDomainConfigured_useConfiguredValues() {
     InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
-    initializeDomainOnPv.domain(createInitialPvDomain());
+    initializeDomainOnPv.domain(createInitialDomainOnPV());
     configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
 
-    assertThat(getDomain(domain), equalTo(createInitialPvDomain()));
+    assertThat(getDomain(domain), equalTo(createInitialDomainOnPV()));
     assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(CreateIfNotExists.DOMAIN_AND_RCU));
     assertThat(getDomain(domain).getDomainType(), equalTo(DomainType.WLS));
     assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("wdf-config-map"));
@@ -1767,8 +1768,8 @@ class DomainV2Test extends DomainTestBase {
         is(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic")));
   }
 
-  private Domain createInitialPvDomain() {
-    return new Domain().domainType(DomainType.WLS)
+  private DomainOnPV createInitialDomainOnPV() {
+    return new DomainOnPV().domainType(DomainType.WLS)
         .createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainCreationConfigMap("wdf-config-map")
         .domainCreationImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
         .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
@@ -1782,7 +1783,7 @@ class DomainV2Test extends DomainTestBase {
     return domain.getSpec().getInitializeDomainOnPV().getPersistentVolumeClaim();
   }
 
-  private Domain getDomain(DomainResource domain) {
+  private DomainOnPV getDomain(DomainResource domain) {
     return domain.getSpec().getInitializeDomainOnPV().getDomain();
   }
 

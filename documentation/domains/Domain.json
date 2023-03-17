@@ -219,44 +219,6 @@
       "format": "date-time",
       "type": "string"
     },
-    "Domain": {
-      "type": "object",
-      "properties": {
-        "domainCreationConfigMap": {
-          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
-          "type": "string"
-        },
-        "domainCreationImages": {
-          "description": "Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images ",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/DomainCreationImage"
-          }
-        },
-        "domainType": {
-          "default": "JRF",
-          "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.",
-          "type": "string",
-          "enum": [
-            "WLS",
-            "JRF"
-          ]
-        },
-        "opss": {
-          "description": "Settings for OPSS security.",
-          "$ref": "#/definitions/Opss"
-        },
-        "createIfNotExists": {
-          "default": "domain",
-          "description": "Specifies if only domain or domain with RCU needs to be created. Legal values: domain, domainAndRCU. Defaults to domain.",
-          "type": "string",
-          "enum": [
-            "domain",
-            "domainAndRCU"
-          ]
-        }
-      }
-    },
     "DomainCondition": {
       "type": "object",
       "properties": {
@@ -330,6 +292,44 @@
         "sourceModelHome": {
           "description": "The source location of the WebLogic Deploy Tooling model home within the domain image. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple domain images with model files in their respective `sourceModelHome` directories, then model files are merged.",
           "type": "string"
+        }
+      }
+    },
+    "DomainOnPV": {
+      "type": "object",
+      "properties": {
+        "domainCreationConfigMap": {
+          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
+          "type": "string"
+        },
+        "domainCreationImages": {
+          "description": "Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images ",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DomainCreationImage"
+          }
+        },
+        "domainType": {
+          "default": "JRF",
+          "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "JRF"
+          ]
+        },
+        "opss": {
+          "description": "Settings for OPSS security.",
+          "$ref": "#/definitions/Opss"
+        },
+        "createIfNotExists": {
+          "default": "domain",
+          "description": "Specifies if only domain or domain with RCU needs to be created. Legal values: domain, domainAndRCU. Defaults to domain.",
+          "type": "string",
+          "enum": [
+            "domain",
+            "domainAndRCU"
+          ]
         }
       }
     },
@@ -641,7 +641,7 @@
         },
         "domain": {
           "description": "Configuration details to create an empty WebLogic \u0027Domain on PV\u0027 domain, if needed.",
-          "$ref": "#/definitions/Domain"
+          "$ref": "#/definitions/DomainOnPV"
         },
         "persistentVolumeClaim": {
           "description": "Configuration including \u0027Metadata\u0027 and \u0027Specs\u0027 to create a persistent volume claim, if needed.",

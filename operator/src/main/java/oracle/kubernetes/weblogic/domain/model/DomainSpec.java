@@ -906,7 +906,7 @@ public class DomainSpec extends BaseConfiguration {
   String getInitPvDomainOpssWalletPasswordSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getOpss)
+        .map(DomainOnPV::getOpss)
         .map(Opss::getWalletPasswordSecret)
         .orElse(null);
   }
@@ -929,7 +929,7 @@ public class DomainSpec extends BaseConfiguration {
   private String getInitPvDomainOpssWalletFileSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getOpss)
+        .map(DomainOnPV::getOpss)
         .map(Opss::getWalletFileSecret)
         .orElse(null);
   }
@@ -937,7 +937,7 @@ public class DomainSpec extends BaseConfiguration {
   DomainType getInitPvDomainDomainType() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainType).get();
+        .map(DomainOnPV::getDomainType).get();
   }
 
   String getRuntimeEncryptionSecret() {
@@ -1021,7 +1021,7 @@ public class DomainSpec extends BaseConfiguration {
 
   List<DomainCreationImage> getDomainImages() {
     return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainCreationImages).orElse(null);
+        .map(DomainOnPV::getDomainCreationImages).orElse(null);
   }
 
   String getAuxiliaryImageVolumeMountPath() {
