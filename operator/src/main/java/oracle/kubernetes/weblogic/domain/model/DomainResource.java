@@ -522,24 +522,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the domain type when initializeDomainOnPV is specified.
    * @return domain type
    */
-  public DomainType getInitPvDomainDomainType() {
-    return spec.getInitPvDomainDomainType();
+  public DomainType getInitializeDomainOnPVDomainType() {
+    return spec.getInitializeDomainOnPVDomainType();
   }
 
   /**
    * Returns the wallet password secret name if InitializeDomainOnPV is specified.
    * @return domain type
    */
-  public String getInitPvDomainOpssWalletPasswordSecret() {
-    return spec.getInitPvDomainOpssWalletPasswordSecret();
+  public String getInitializeDomainOnPVOpssWalletPasswordSecret() {
+    return spec.getInitializeDomainOnPVOpssWalletPasswordSecret();
   }
 
   /**
    * Returns true if InitializeDomainOnPV is specified.
    * @return domain type
    */
-  public boolean isInitPvDomain() {
-    return spec.isInitPvDomain();
+  public boolean isInitializeDomainOnPV() {
+    return spec.isInitializeDomainOnPV();
   }
 
   /**
@@ -1353,18 +1353,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         }
       }
 
-      if (isInitPvDomain()
-          && DomainType.JRF.equals(getInitPvDomainDomainType())
-          && getInitPvDomainOpssWalletPasswordSecret() == null) {
-        failures.add(DomainValidationMessages.missingRequiredInitPvDomainOpssSecret(
+      if (isInitializeDomainOnPV()
+          && DomainType.JRF.equals(getInitializeDomainOnPVDomainType())
+          && getInitializeDomainOnPVOpssWalletPasswordSecret() == null) {
+        failures.add(DomainValidationMessages.missingRequiredInitializeDomainOnPVOpssSecret(
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
       }
 
-      if (isInitPvDomain()
-          && DomainType.JRF.equals(getInitPvDomainDomainType())
+      if (isInitializeDomainOnPV()
+          && DomainType.JRF.equals(getInitializeDomainOnPVDomainType())
           && hasMiiOpssConfigured()) {
         failures.add(DomainValidationMessages.conflictOpssSecrets(
             "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
+      }
+
+      if (isInitializeDomainOnPV()
+          && isModelConfigured()) {
+        failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
+            "spec.configuration.initializeDomainOnPV"));
       }
 
       if (getFluentdSpecification() != null && getFluentdSpecification().getElasticSearchCredentials() == null
@@ -1373,11 +1379,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         failures.add(DomainValidationMessages.missingRequiredFluentdSecret(
             "spec.fluentdSpecification.elasticSearchCredentials"));
       }
-
     }
 
     private boolean hasMiiOpssConfigured() {
       return spec.hasMiiOpssConfigured();
+    }
+
+    private boolean isModelConfigured() {
+      return spec.isModelConfigured();
     }
 
     private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {
@@ -1400,7 +1409,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
       verifyModelConfigMapExists(resourceLookup, getWdtConfigMap());
-      verifyInitPvDomainConfigMapExists(resourceLookup, getDomainCreationConfigMap());
+      verifyInitializeDomainOnPVConfigMapExists(resourceLookup, getDomainCreationConfigMap());
     }
 
     private String getDomainCreationConfigMap() {
@@ -1417,7 +1426,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private void verifyInitPvDomainConfigMapExists(KubernetesResourceLookup resources, String configMapName) {
+    private void verifyInitializeDomainOnPVConfigMapExists(KubernetesResourceLookup resources, String configMapName) {
       if (getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME
           && getDomainCreationConfigMap() != null
           && !resources.isConfigMapExists(configMapName, getNamespace())) {

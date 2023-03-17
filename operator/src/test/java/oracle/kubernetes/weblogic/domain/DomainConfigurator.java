@@ -31,6 +31,7 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Model;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -693,4 +694,6 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainCreationConfigMap(String cm);
+
+  public abstract DomainConfigurator withModel(Model model);
 }

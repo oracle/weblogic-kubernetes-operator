@@ -292,8 +292,8 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
-  boolean isInitPvDomain() {
-    return getDomain().isInitPvDomain();
+  boolean isInitializeDomainOnPV() {
+    return getDomain().isInitializeDomainOnPV();
   }
 
   boolean isUseOnlineUpdate() {
@@ -430,7 +430,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initPvDomain -> addInitDomainOnPVInitContainer(initContainers));
+        .ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
@@ -494,7 +494,7 @@ public class JobStepContext extends BasePodStepContext {
       addWdtSecretVolume(podSpec);
     }
 
-    if (isInitPvDomain()) {
+    if (isInitializeDomainOnPV()) {
       Optional.ofNullable(getDomainCreationConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
     }
 
@@ -585,7 +585,7 @@ public class JobStepContext extends BasePodStepContext {
 
     }
 
-    if (isInitPvDomain() && getDomainCreationConfigMap() != null) {
+    if (isInitializeDomainOnPV() && getDomainCreationConfigMap() != null) {
       container.addVolumeMountsItem(
           readOnlyVolumeMount(getVolumeName(getDomainCreationConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
     }
@@ -801,7 +801,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initPvDomain -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
+        .ifPresent(initializeDomainOnPV -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
             getDomain().getSpec().getConfiguration()
                 .getInitializeDomainOnPV().getDomain().getCreateIfNotExists().toString()
             ));

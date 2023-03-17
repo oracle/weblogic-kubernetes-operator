@@ -423,6 +423,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withModel(Model model) {
+    getOrCreateConfiguration().withModel(model);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
     getOrCreateOpss().withWalletPasswordSecret(secret);
     return this;
@@ -478,7 +484,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain) {
-    getDomainSpec().withConfiguration(new Configuration()).getConfiguration().setInitializeDomainOnPV(initPvDomain);
+    getOrCreateConfiguration().setInitializeDomainOnPV(initPvDomain);
     return this;
   }
 
