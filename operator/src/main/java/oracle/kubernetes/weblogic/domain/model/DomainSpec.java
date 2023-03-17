@@ -937,7 +937,8 @@ public class DomainSpec extends BaseConfiguration {
   DomainType getInitPvDomainDomainType() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainType).get();
+        .map(Domain::getDomainType)
+        .orElse(null);
   }
 
   String getRuntimeEncryptionSecret() {
