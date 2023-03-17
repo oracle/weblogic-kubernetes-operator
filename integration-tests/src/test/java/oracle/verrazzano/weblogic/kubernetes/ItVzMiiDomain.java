@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,6 @@ class ItVzMiiDomain {
   /**
    * Create a WebLogic domain VerrazzanoWebLogicWorkload component in verrazzano.
    */
-  @Disabled
   @Test
   @DisplayName("Create model in image domain and verify services and pods are created and ready in verrazzano.")
   void testCreateVzMiiDomain() {
