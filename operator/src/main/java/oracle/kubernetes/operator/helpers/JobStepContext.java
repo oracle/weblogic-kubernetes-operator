@@ -304,8 +304,16 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
+  boolean isInitializeDomainOnPV() {
+    return getDomain().isInitializeDomainOnPV();
+  }
+
   boolean isUseOnlineUpdate() {
     return getDomain().isUseOnlineUpdate();
+  }
+
+  String getDomainCreationConfigMap() {
+    return getDomain().getDomainCreationConfigMap();
   }
 
   public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
@@ -434,7 +442,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initPvDomain -> addInitDomainOnPVInitContainer(initContainers));
+        .ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
@@ -505,6 +513,10 @@ public class JobStepContext extends BasePodStepContext {
       }
     }
 
+    if (isInitializeDomainOnPV()) {
+      Optional.ofNullable(getDomainCreationConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
+    }
+
     if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
@@ -527,10 +539,6 @@ public class JobStepContext extends BasePodStepContext {
 
   private boolean isDomainSourceFromModel() {
     return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL;
-  }
-
-  private boolean isInitializeDomainOnPV() {
-    return getDomain().isInitPvDomain();
   }
 
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
@@ -597,6 +605,11 @@ public class JobStepContext extends BasePodStepContext {
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
       }
+    }
+
+    if (isInitializeDomainOnPV() && getDomainCreationConfigMap() != null) {
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(getVolumeName(getDomainCreationConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
     }
 
     return container;
@@ -810,7 +823,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initPvDomain -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
+        .ifPresent(initializeDomainOnPV -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
             getDomain().getSpec().getConfiguration()
                 .getInitializeDomainOnPV().getDomain().getCreateIfNotExists().toString()
             ));

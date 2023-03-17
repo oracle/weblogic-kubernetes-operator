@@ -63,8 +63,8 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.CreateIfNotExists;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -1074,7 +1074,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN)));
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
 
     V1JobSpec jobSpec = createJobSpec();
     V1PodSpec podSpec = getPodSpec(jobSpec);
@@ -1092,7 +1092,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN)));
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
 
     V1JobSpec jobSpec = createJobSpec();
     V1PodSpec podSpec = getPodSpec(jobSpec);
@@ -1121,7 +1121,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)));
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)));
 
     V1JobSpec jobSpec = createJobSpec();
     V1PodSpec podSpec = getPodSpec(jobSpec);
@@ -1142,7 +1142,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
                 .domainType(DomainType.JRF)
                 .domainCreationConfigMap("wdt-config-map")));
 

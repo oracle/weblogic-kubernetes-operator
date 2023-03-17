@@ -12,7 +12,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-public class Domain {
+public class DomainOnPV {
 
   @Description("Specifies if only domain or domain with RCU needs to be created."
       + " Legal values: domain, domainAndRCU. Defaults to domain.")
@@ -44,7 +44,7 @@ public class Domain {
     return createIfNotExists;
   }
 
-  public Domain createMode(CreateIfNotExists createIfNotExists) {
+  public DomainOnPV createMode(CreateIfNotExists createIfNotExists) {
     this.createIfNotExists = createIfNotExists;
     return this;
   }
@@ -53,7 +53,7 @@ public class Domain {
     return domainType;
   }
 
-  public Domain domainType(DomainType domainType) {
+  public DomainOnPV domainType(DomainType domainType) {
     this.domainType = domainType;
     return this;
   }
@@ -62,7 +62,7 @@ public class Domain {
     return domainCreationImages;
   }
 
-  public Domain domainCreationImages(List<DomainCreationImage> domainCreationImages) {
+  public DomainOnPV domainCreationImages(List<DomainCreationImage> domainCreationImages) {
     this.domainCreationImages = domainCreationImages;
     return this;
   }
@@ -71,7 +71,7 @@ public class Domain {
     return domainCreationConfigMap;
   }
 
-  public Domain domainCreationConfigMap(String domainCreationConfigMap) {
+  public DomainOnPV domainCreationConfigMap(String domainCreationConfigMap) {
     this.domainCreationConfigMap = domainCreationConfigMap;
     return this;
   }
@@ -80,7 +80,7 @@ public class Domain {
     return opss;
   }
 
-  public Domain opss(Opss opss) {
+  public DomainOnPV opss(Opss opss) {
     this.opss = opss;
     return this;
   }
@@ -114,11 +114,11 @@ public class Domain {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof Domain)) {
+    } else if (!(other instanceof DomainOnPV)) {
       return false;
     }
 
-    Domain rhs = ((Domain) other);
+    DomainOnPV rhs = ((DomainOnPV) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(createIfNotExists, rhs.createIfNotExists)
