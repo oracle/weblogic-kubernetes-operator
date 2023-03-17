@@ -953,10 +953,18 @@ public class DomainSpec extends BaseConfiguration {
    * @return config map name
    */
   public String getWdtConfigMap() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getConfigMap)
-        .orElse(null);
+    if (isInitPvDomain()) {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getInitializeDomainOnPV)
+          .map(InitializeDomainOnPV::getDomain)
+          .map(Domain::getDomainCreationConfigMap)
+          .orElse(null);
+    } else {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getModel)
+          .map(Model::getConfigMap)
+          .orElse(null);
+    }
   }
 
   /**

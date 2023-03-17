@@ -46,6 +46,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -1120,7 +1121,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN)));
+            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)));
 
     V1JobSpec jobSpec = createJobSpec();
     V1PodSpec podSpec = getPodSpec(jobSpec);

@@ -37,7 +37,6 @@ import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
-import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
@@ -287,8 +286,18 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  ModelInImageDomainType getWdtDomainType() {
-    return getDomain().getWdtDomainType();
+  String getWdtDomainType() {
+    boolean hasNoInitPvDomain = Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV)
+        .isEmpty();
+
+    if (hasNoInitPvDomain) {
+      return getDomain().getWdtDomainType().toString();
+    } else {
+      return getDomain().getSpec().getConfiguration().getInitializeDomainOnPV().getDomain().getDomainType().toString();
+    }
+
   }
 
   DomainSourceType getDomainHomeSourceType() {
@@ -488,9 +497,12 @@ public class JobStepContext extends BasePodStepContext {
     getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
     Optional.ofNullable(getConfigOverrides()).ifPresent(overrides -> addConfigOverrideVolume(podSpec, overrides));
 
-    if (isSourceWdt()) {
+    if (isDomainSourceFromModel() || isInitializeDomainOnPV()) {
       Optional.ofNullable(getWdtConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
-      addWdtSecretVolume(podSpec);
+      if (isDomainSourceFromModel()) {
+        addWdtSecretVolume(podSpec);
+
+      }
     }
 
     if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
@@ -513,8 +525,12 @@ public class JobStepContext extends BasePodStepContext {
                 .configMap(getOverridesVolumeSource(configOverrides)));
   }
 
-  private boolean isSourceWdt() {
+  private boolean isDomainSourceFromModel() {
     return getDomainHomeSourceType() == DomainSourceType.FROM_MODEL;
+  }
+
+  private boolean isInitializeDomainOnPV() {
+    return getDomain().isInitPvDomain();
   }
 
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
@@ -569,15 +585,18 @@ public class JobStepContext extends BasePodStepContext {
                   getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (isSourceWdt()) {
+    if (isDomainSourceFromModel() || isInitializeDomainOnPV()) {
       if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
-      container.addVolumeMountsItem(
-          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
-              RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
 
+      if (isDomainSourceFromModel()) {
+        container.addVolumeMountsItem(
+            readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+                RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
+
+      }
     }
 
     return container;
@@ -748,7 +767,7 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
-    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType().toString());
+    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
     addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));

@@ -189,7 +189,6 @@ createDomainFromWDTModel() {
   wdtArgs+=" ${OPSS_FLAGS}"
 
   cd $WDT_ROOT
-  trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
 
   if [ -z "${OPSS_FLAGS}" ]; then
 
@@ -212,7 +211,7 @@ createDomainFromWDTModel() {
     if [ ${INIT_DOMAIN_ON_PV} == "domainAndRCU" ] && [ ${WDT_DOMAIN_TYPE} == 'JRF' ]; then
       wdtArgs+=" -run_rcu"
     fi
-
+    trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   else
     # We get here only for JRF domain 'second time' (or more) case.
@@ -223,6 +222,7 @@ createDomainFromWDTModel() {
     #  So we assume that this domain already
     #  has its RCU tables and the wallet file will give us access to them.
 
+    trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."
     echo $(cat ${OPSS_KEY_PASSPHRASE}) | \
       ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
 
