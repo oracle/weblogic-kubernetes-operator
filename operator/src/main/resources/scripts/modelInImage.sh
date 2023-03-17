@@ -1290,7 +1290,7 @@ restorAppAndLibs() {
         # exclude standalone app module in wlsdeploy/applications/*.xml since it is included int zipped up domain config
         # zip, the original xml in the archive may have wdt tokenized notations.
         cd ${DOMAIN_HOME} || return 1
-        unzip ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*"
+        unzip -o ${IMG_ARCHIVES_ROOTDIR}/${file} -x "wlsdeploy/domainBin/*"
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
@@ -1298,6 +1298,15 @@ restorAppAndLibs() {
     done
 
 }
+
+#
+restoreZippedDbWallets() {
+  local count=$(find ${DOMAIN_HOME}/wlsdeploy/dbWallets/*/*.zip -type f 2>/dev/null | wc -l)
+  if [ "$count" -gt  0 ] ; then
+    find ${DOMAIN_HOME}/wlsdeploy/dbWallets/*/*.zip -type f  | xargs -I % sh -c 'unzip -jo % -d $(dirname %) ; rm %'
+  fi
+}
+
 
 prepareMIIServer() {
 
@@ -1341,6 +1350,9 @@ prepareMIIServer() {
   trace "Model-in-Image: Restore domain config"
   restoreDomainConfig || return 1
 
+  trace "Model-in-image: Restore dbWallets zip"
+
+  restoreZippedDbWallets || return 1
   return 0
 }
 
