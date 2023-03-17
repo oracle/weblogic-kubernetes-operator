@@ -94,8 +94,9 @@ public class PersistentVolumeSpec {
     return volumeMode;
   }
 
-  public void setVolumeMode(String volumeMode) {
+  public PersistentVolumeSpec volumeMode(String volumeMode) {
     this.volumeMode = volumeMode;
+    return this;
   }
 
   @Override

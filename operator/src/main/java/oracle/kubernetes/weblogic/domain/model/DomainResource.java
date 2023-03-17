@@ -1142,7 +1142,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
       Optional.ofNullable(getSpec().getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
-          .map(Domain::getDomainCreationImages).ifPresent(this::verifyWDTInstallHomeInDomainCreationImages);
+          .map(DomainOnPV::getDomainCreationImages).ifPresent(this::verifyWDTInstallHomeInDomainCreationImages);
     }
 
     private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {

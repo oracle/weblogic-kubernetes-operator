@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -23,7 +24,8 @@ public class InitializeDomainOnPV {
   PersistentVolumeClaim persistentVolumeClaim;
 
   @Description("Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed.")
-  Domain domain;
+  @SerializedName("domain")
+  DomainOnPV domain;
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
@@ -41,11 +43,11 @@ public class InitializeDomainOnPV {
     this.persistentVolumeClaim = persistentVolumeClaim;
   }
 
-  public Domain getDomain() {
+  public DomainOnPV getDomain() {
     return domain;
   }
 
-  public InitializeDomainOnPV domain(Domain domain) {
+  public InitializeDomainOnPV domain(DomainOnPV domain) {
     this.domain = domain;
     return this;
   }
@@ -75,7 +77,7 @@ public class InitializeDomainOnPV {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof Domain)) {
+    } else if (!(other instanceof DomainOnPV)) {
       return false;
     }
 
