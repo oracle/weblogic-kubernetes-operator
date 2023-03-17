@@ -70,6 +70,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Opss;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -1121,7 +1122,10 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)));
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
 
     V1JobSpec jobSpec = createJobSpec();
     V1PodSpec podSpec = getPodSpec(jobSpec);
@@ -1156,6 +1160,35 @@ class JobHelperTest extends DomainValidationTestBase {
             .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/wdt-config-map")),
         is(true));
 
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasWalletSecretsMount() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletkey-secret")),
+        is(true));
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletfile-secret")),
+        is(true));
   }
 
   @Test
