@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -30,6 +31,7 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Model;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -660,4 +662,38 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes);
 
   public abstract DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain);
+
+  /**
+   * Add OPSS wallet password secret for the domain resource's initializeDomainOnPV.
+   *
+   * @param secret the OPSS wallet password secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitializeDomainOnPVOpssWalletPasswordSecret(String secret);
+
+  /**
+   * Add OPSS wallet file secret for the domain resource's initializeDomainOnPV.
+   *
+   * @param secret the OPSS wallet file secret
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitializeDomainOnPVOpssWalletFileSecret(String secret);
+
+  /**
+   * Add domain type for the domain resource's initializeDomainOnPV.
+   *
+   * @param type the domain type
+   * @return this object
+   */
+  public abstract DomainConfigurator withInitializeDomainOnPVType(DomainType type);
+
+  /**
+   * Add domain type for the domain resource's initializeDomainOnPV.
+   *
+   * @param cm the configmap
+   * @return this object
+   */
+  public abstract DomainConfigurator withDomainCreationConfigMap(String cm);
+
+  public abstract DomainConfigurator withModel(Model model);
 }

@@ -33,6 +33,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -51,9 +52,13 @@ import org.apache.commons.io.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -64,12 +69,24 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANC
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
@@ -357,15 +374,48 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "regex: default;domain1";
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldValue,
-        prometheusRegexValue), "Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-alertmanager",
-        "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    logger.info("copy the promvalues.yaml to staging location");
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetPromFile.toString(),
+          oldValue,
+          prometheusRegexValue);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanager" + promReleaseSuffix);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-" + prometheusReleaseName);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_image",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_tag",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_image",
+          PROMETHEUS_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_tag",
+          PROMETHEUS_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_image",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_tag",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_image",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_tag",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_image",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_tag",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_TAG);
+    }, "Failed to create " + targetPromFile);
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
@@ -379,6 +429,9 @@ public class MonitoringUtils {
     }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
+
+    assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
+        BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
 
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
@@ -516,6 +569,12 @@ public class MonitoringUtils {
             StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
             "pvc-grafana", "pvc-" + grafanaReleaseName));
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_image",
+        GRAFANA_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_tag",
+        GRAFANA_IMAGE_TAG),"Failed to replace String ");
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
               "enabled: false", "enabled: true"));

@@ -622,6 +622,8 @@ public class OperatorUtils {
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
+    } else if (domainNamespace.length > 0) {
+      opParams.domainNamespaceSelectionStrategy("List");
     }
 
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
