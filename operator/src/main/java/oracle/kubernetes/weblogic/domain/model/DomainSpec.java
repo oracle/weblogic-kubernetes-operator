@@ -908,7 +908,7 @@ public class DomainSpec extends BaseConfiguration {
   String getInitializeDomainOnPVOpssWalletPasswordSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getOpss)
+        .map(DomainOnPV::getOpss)
         .map(Opss::getWalletPasswordSecret)
         .orElse(null);
   }
@@ -931,7 +931,7 @@ public class DomainSpec extends BaseConfiguration {
   private String getInitializeDomainOnPVOpssWalletFileSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getOpss)
+        .map(DomainOnPV::getOpss)
         .map(Opss::getWalletFileSecret)
         .orElse(null);
   }
@@ -939,7 +939,8 @@ public class DomainSpec extends BaseConfiguration {
   DomainType getInitializeDomainOnPVDomainType() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainType).get();
+        .map(DomainOnPV::getDomainType)
+        .orElse(null);
   }
 
   String getRuntimeEncryptionSecret() {
@@ -1023,13 +1024,13 @@ public class DomainSpec extends BaseConfiguration {
 
   List<DomainCreationImage> getDomainImages() {
     return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainCreationImages).orElse(null);
+        .map(DomainOnPV::getDomainCreationImages).orElse(null);
   }
 
   String getDomainCreationConfigMap() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
-        .map(Domain::getDomainCreationConfigMap)
+        .map(DomainOnPV::getDomainCreationConfigMap)
         .orElse(null);
   }
 

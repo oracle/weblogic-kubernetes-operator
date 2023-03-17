@@ -669,7 +669,7 @@ public abstract class DomainConfigurator {
    * @param secret the OPSS wallet password secret
    * @return this object
    */
-  public abstract DomainConfigurator withInitPvDomainOpssWalletPasswordSecret(String secret);
+  public abstract DomainConfigurator withInitializeDomainOnPVOpssWalletPasswordSecret(String secret);
 
   /**
    * Add OPSS wallet file secret for the domain resource's initializeDomainOnPV.
@@ -677,7 +677,7 @@ public abstract class DomainConfigurator {
    * @param secret the OPSS wallet file secret
    * @return this object
    */
-  public abstract DomainConfigurator withInitPvDomainOpssWalletFileSecret(String secret);
+  public abstract DomainConfigurator withInitializeDomainOnPVOpssWalletFileSecret(String secret);
 
   /**
    * Add domain type for the domain resource's initializeDomainOnPV.
@@ -685,7 +685,7 @@ public abstract class DomainConfigurator {
    * @param type the domain type
    * @return this object
    */
-  public abstract DomainConfigurator withInitPvDomainType(DomainType type);
+  public abstract DomainConfigurator withInitializeDomainOnPVType(DomainType type);
 
   /**
    * Add domain type for the domain resource's initializeDomainOnPV.

@@ -441,26 +441,26 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withInitPvDomainOpssWalletPasswordSecret(String secret) {
-    getOrCreateInitPvDomainOpss().withWalletPasswordSecret(secret);
+  public DomainConfigurator withInitializeDomainOnPVOpssWalletPasswordSecret(String secret) {
+    getOrCreateInitializeDomainOnPVOpss().withWalletPasswordSecret(secret);
     return this;
   }
 
   @Override
-  public DomainConfigurator withInitPvDomainOpssWalletFileSecret(String secret) {
-    getOrCreateInitPvDomainOpss().withWalletFileSecret(secret);
+  public DomainConfigurator withInitializeDomainOnPVOpssWalletFileSecret(String secret) {
+    getOrCreateInitializeDomainOnPVOpss().withWalletFileSecret(secret);
     return this;
   }
 
   @Override
-  public DomainConfigurator withInitPvDomainType(DomainType type) {
-    getOrCreateInitPvDomainDomain().domainType(type);
+  public DomainConfigurator withInitializeDomainOnPVType(DomainType type) {
+    getOrCreateInitializeDomainOnPVDomain().domainType(type);
     return this;
   }
 
   @Override
   public DomainConfigurator withDomainCreationConfigMap(String cm) {
-    getOrCreateInitPvDomainDomain().domainCreationConfigMap(cm);
+    getOrCreateInitializeDomainOnPVDomain().domainCreationConfigMap(cm);
     return this;
   }
 
@@ -483,8 +483,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain) {
-    getOrCreateConfiguration().setInitializeDomainOnPV(initPvDomain);
+  public DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    getOrCreateConfiguration().setInitializeDomainOnPV(initializeDomainOnPV);
     return this;
   }
 
@@ -512,7 +512,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return configuration.getOpss();   
   }
 
-  private InitializeDomainOnPV getOrCreateInitPvDomain() {
+  private InitializeDomainOnPV getOrCreateInitializeDomainOnPV() {
     Configuration configuration = getOrCreateConfiguration();
     if (configuration.getInitializeDomainOnPV() == null) {
       configuration.setInitializeDomainOnPV(new InitializeDomainOnPV());
@@ -520,16 +520,16 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return configuration.getInitializeDomainOnPV();
   }
 
-  private Domain getOrCreateInitPvDomainDomain() {
-    InitializeDomainOnPV initPvDomain = getOrCreateInitPvDomain();
-    if (initPvDomain.getDomain() == null) {
-      initPvDomain.domain(new Domain());
+  private DomainOnPV getOrCreateInitializeDomainOnPVDomain() {
+    InitializeDomainOnPV initializeDomainOnPV = getOrCreateInitializeDomainOnPV();
+    if (initializeDomainOnPV.getDomain() == null) {
+      initializeDomainOnPV.domain(new DomainOnPV());
     }
-    return initPvDomain.getDomain();
+    return initializeDomainOnPV.getDomain();
   }
 
-  private Opss getOrCreateInitPvDomainOpss() {
-    Domain domain = getOrCreateInitPvDomainDomain();
+  private Opss getOrCreateInitializeDomainOnPVOpss() {
+    DomainOnPV domain = getOrCreateInitializeDomainOnPVDomain();
     if (domain.getOpss() == null) {
       domain.opss(new Opss());
     }

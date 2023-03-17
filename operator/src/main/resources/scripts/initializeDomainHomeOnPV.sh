@@ -64,7 +64,7 @@ do
    fi
 done
 
-trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' "$DOAMIN_HOME" is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'"
+trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' "$DOMAIN_HOME" is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'"
 exit 1
 
 
