@@ -31,16 +31,18 @@ public class InitializeDomainOnPV {
     return persistentVolume;
   }
 
-  public void setPersistentVolume(PersistentVolume persistentVolume) {
+  public InitializeDomainOnPV persistentVolume(PersistentVolume persistentVolume) {
     this.persistentVolume = persistentVolume;
+    return this;
   }
 
   public PersistentVolumeClaim getPersistentVolumeClaim() {
     return persistentVolumeClaim;
   }
 
-  public void setPersistentVolumeClaim(PersistentVolumeClaim persistentVolumeClaim) {
+  public InitializeDomainOnPV persistentVolumeClaim(PersistentVolumeClaim persistentVolumeClaim) {
     this.persistentVolumeClaim = persistentVolumeClaim;
+    return this;
   }
 
   public DomainOnPV getDomain() {
@@ -77,7 +79,7 @@ public class InitializeDomainOnPV {
   public boolean equals(Object other) {
     if (other == this) {
       return true;
-    } else if (!(other instanceof DomainOnPV)) {
+    } else if (!(other instanceof InitializeDomainOnPV)) {
       return false;
     }
 

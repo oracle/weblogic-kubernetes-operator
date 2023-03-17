@@ -473,7 +473,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   @Test
   void whenJobCreatedWithInitializeDomainOnPVDefined_hasSecretsInitContainerVolumeAndMounts() {
-    getConfigurator().withInitializeDomainOnPv(getInitializeDomainOnPV());
+    getConfigurator().withInitializeDomainOnPv(
+        new InitializeDomainOnPV().domain(getInitDomain()).persistentVolume(createPv()));
 
     V1Job job = runStepsAndGetJobs().get(0);
 
@@ -501,12 +502,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getJobPodSpec(job).getVolumes(),
         not(hasItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
             new V1SecretVolumeSource().secretName("wpSecret").defaultMode(420).optional(true)))));
-  }
-
-  private InitializeDomainOnPV getInitializeDomainOnPV() {
-    InitializeDomainOnPV initPvDomain = new InitializeDomainOnPV().domain(getInitDomain());
-    initPvDomain.setPersistentVolume(createPv());
-    return initPvDomain;
   }
 
   private DomainOnPV getInitDomain() {
