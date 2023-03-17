@@ -1085,6 +1085,56 @@ class JobHelperTest extends DomainValidationTestBase {
     );
   }
 
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVDHContainerHasDHSet() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
+
+    assertThat(
+        hasContainer,
+        is(true)
+    );
+
+    assertThat(podSpec.getInitContainers()
+        .stream()
+        .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
+        .findFirst()
+        .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+        .map(V1EnvVar::getName)
+        .collect(Collectors.toList()),
+        hasItems("DOMAIN_HOME"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasEnvSet() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .map(V1EnvVar::getName)
+            .collect(Collectors.toList()),
+        hasItems("INIT_DOMAIN_ON_PV"));
+
+  }
+
   private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {
     return podSpec.getInitContainers().stream().findFirst().get().getResources();
   }
