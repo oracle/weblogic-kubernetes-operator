@@ -1137,6 +1137,28 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVHasConfigMapMounted() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new Domain().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                .domainType(DomainType.JRF)
+                .domainCreationConfigMap("wdt-config-map")));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/wdt-config-map")),
+        is(true));
+
+  }
+
+  @Test
   void introspectorPodSpec_createdWithOutInitDomainOnPVContainerNotSetEnv() {
     defineTopology();
     testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
