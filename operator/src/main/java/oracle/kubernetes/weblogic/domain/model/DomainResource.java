@@ -1362,7 +1362,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
       if (isInitPvDomain()
           && DomainType.JRF.equals(getInitPvDomainDomainType())
-          && hasMiiOpssConfigured() && hasInitPvDomainOpssConfigured()) {
+          && hasMiiOpssConfigured()) {
         failures.add(DomainValidationMessages.conflictOpssSecrets(
             "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
       }
@@ -1378,10 +1378,6 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private boolean hasMiiOpssConfigured() {
       return spec.hasMiiOpssConfigured();
-    }
-
-    private boolean hasInitPvDomainOpssConfigured() {
-      return spec.hasInitPvDomainOpssConfigured();
     }
 
     private void addMissingClusterResource(KubernetesResourceLookup resourceLookup) {

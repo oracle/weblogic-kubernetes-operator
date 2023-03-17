@@ -1223,10 +1223,6 @@ public class DomainSpec extends BaseConfiguration {
     return getModelOpssWalletPasswordSecret() != null || getModelOpssWalletFileSecret() != null;
   }
 
-  public boolean hasInitPvDomainOpssConfigured() {
-    return getInitPvDomainOpssWalletPasswordSecret() != null || getInitPvDomainOpssWalletFileSecret() != null;
-  }
-
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {
     @Override
     public EffectiveIntrospectorJobPodSpec getIntrospectorJobPodSpec() {
