@@ -133,6 +133,20 @@ compareArtifactsMD5() {
   trace "Exiting checkExistInventory"
 }
 
+# get_opss_key_wallet   returns opss key wallet ewallet.p12 location
+#
+# if there is one from the user config map, use it first
+# otherwise use the one in the introspect job config map
+#
+
+get_opss_key_wallet() {
+  if [ -f ${OPSS_KEY_B64EWALLET} ]; then
+    echo ${OPSS_KEY_B64EWALLET}
+  else
+    echo "/weblogic-operator/introspectormii/ewallet.p12"
+  fi
+}
+
 #
 # buildWDTParams_MD5   Setup the WDT artifacts MD5 for comparison between updates
 #  Also setup the wdt parameters
