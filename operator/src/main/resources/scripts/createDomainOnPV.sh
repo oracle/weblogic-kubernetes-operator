@@ -150,7 +150,7 @@ buildWDTParams() {
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
   #  We shouldn't require user to drop the db first since it may have data in it
   #
-  opss_wallet=$(get_opss_key_wallet)
+  opss_wallet=$(get_opss_key_wallet_dopv)
   if [ -f "${opss_wallet}" ] ; then
     trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
     createFolder "/tmp/opsswallet" "This folder is used to hold a generated OPSS wallet file." || exitOrLoop
@@ -230,3 +230,13 @@ createDomainFromWDTModel() {
   trace "Exiting createDomainFromWDTModel"
 }
 
+# get_opss_key_wallet_dopv   returns opss key wallet ewallet.p12 location
+#
+# if there is one from the user config map, use it first
+#
+
+get_opss_key_wallet_dopv() {
+  if [ -f ${OPSS_KEY_B64EWALLET} ]; then
+    echo ${OPSS_KEY_B64EWALLET}
+  fi
+}
