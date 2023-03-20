@@ -6,6 +6,7 @@
 # It is used by introspectDomain.sh job and startServer.sh
 
 source ${SCRIPTPATH}/utils.sh
+source ${SCRIPTPATH}/wdt_common.sh
 
 OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
@@ -81,31 +82,6 @@ if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding Model In Image WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
-# sort_files  sort the files according to the names and naming conventions and write the result to stdout
-#    $1  directory
-#    $2  extension
-#
-
-sort_files() {
-  shopt -s nullglob
-  root_dir=$1
-  ext=$2
-  declare -A sequence_array
-  for file in ${root_dir}/*${ext} ;
-    do
-      actual_filename=$(basename $file)
-      base_filename=$(basename ${file%.*})
-      sequence="${base_filename##*.}"
-      sequence_array[${actual_filename}]=${sequence}
-    done
-  for k in "${!sequence_array[@]}" ;
-    do
-      # MUST use echo , caller depends on stdout
-      echo $k ' - ' ${sequence_array["$k"]}
-    done |
-  sort -n -k3  | cut -d' ' -f 1
-  shopt -u nullglob
-}
 
 #
 # compareArtifactsMD5  checks the WDT artifacts MD5s in the introspect config map against the current introspect job
@@ -155,20 +131,6 @@ compareArtifactsMD5() {
   fi
 
   trace "Exiting checkExistInventory"
-}
-
-# get_opss_key_wallet   returns opss key wallet ewallet.p12 location
-#
-# if there is one from the user config map, use it first
-# otherwise use the one in the introspect job config map
-#
-
-get_opss_key_wallet() {
-  if [ -f ${OPSS_KEY_B64EWALLET} ]; then
-    echo ${OPSS_KEY_B64EWALLET}
-  else
-    echo "/weblogic-operator/introspectormii/ewallet.p12"
-  fi
 }
 
 #
@@ -419,53 +381,6 @@ createWLDomain() {
   stop_trap
 }
 
-# checkDirNotExistsOrEmpty
-#  Test directory exists or empty
-
-checkDirNotExistsOrEmpty() {
-  trace "Entering checkDirNotExistsOrEmpty"
-
-  if [ $# -eq 1 ] ; then
-    if [ ! -d $1 ] ; then
-      trace SEVERE "Directory '$1' does not exist"
-      exitOrLoop
-    else
-      if [ -z "$(ls -A $1)" ] ; then
-        trace SEVERE "Directory '$1' is empty"
-        exitOrLoop
-      fi
-    fi
-  fi
-
-  trace "Exiting checkDirNotExistsOrEmpty"
-}
-
-# limit the file extensions in the model directories
-
-checkModelDirectoryExtensions() {
-  trace "Entering checkModelDirectoryExtensions"
-
-  cd ${IMG_MODELS_HOME}
-  counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
-  if [ $counter -ne 0 ] ; then
-    trace SEVERE "Model image home '${IMG_MODELS_HOME}' contains files with unsupported extensions." \
-      "Expected extensions: '.yaml', '.properties', or '.zip'." \
-      "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
-    exitOrLoop
-  fi
-  if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
-    cd ${WDT_CONFIGMAP_ROOT}
-    counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
-    if [ $counter -ne 0 ] ; then
-      trace SEVERE "Model 'spec.configuration.model.configMap' contains files with unsupported extensions." \
-        "Expected extensions: '.yaml' or '.properties'." \
-        "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.properties")'"
-      exitOrLoop
-    fi
-  fi
-
-  trace "Exiting checkModelDirectoryExtensions"
-}
 
 # Check for WDT version
 
@@ -1356,28 +1271,6 @@ prepareMIIServer() {
   return 0
 }
 
-#
-# Generic error handler
-#
-error_handler() {
-    if [ $1 -ne 0 ]; then
-        # Use FINE instead of SEVERE, avoid showing in domain status
-        trace FINE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
-        stop_trap
-        exitOrLoop
-    fi
-}
-
-start_trap() {
-    set -eE
-    trap 'error_handler $? $BASH_LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
-}
-
-stop_trap() {
-    trap -  ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
-    set +eE
-}
-
 cleanup_mii() {
   rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
 }
@@ -1385,17 +1278,6 @@ cleanup_mii() {
 logSevereAndExit() {
   trace SEVERE "cp '$1' failed"
   exitOrLoop
-}
-
-# Function to rotate WDT script log file and copy the file to WDT output dir.
-# parameter:
-#   1 - Name of the log file to rotate and copy to WDT output directory.
-wdtRotateAndCopyLogFile() {
-  local logFileName=$1
-
-  logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
-
-  cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
 }
 
 # Function to expand the WDT custom folder from the archive before calling update or create domain.
