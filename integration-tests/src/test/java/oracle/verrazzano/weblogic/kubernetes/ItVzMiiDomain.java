@@ -32,14 +32,15 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -57,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPush
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -224,7 +226,7 @@ class ItVzMiiDomain {
    * Create a WebLogic domain VerrazzanoWebLogicWorkload component in verrazzano with auxilary images.
    */
   @Test
-  @DisplayName("Verrazzano mill domain with auxilary image")
+  @DisplayName("Verrazzano mii domain with auxilary image")
   void testVzMiiAuxilaryImage() {
     String auxDomainUid = "aux-domain";
     String miiAuxiliaryImage1Tag = "image1" + MII_BASIC_IMAGE_TAG;
@@ -233,8 +235,8 @@ class ItVzMiiDomain {
     String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage2Tag;
     
     final int replicaCount = 2;
-    final String adminServerPodName = auxDomainUid + "-admin-server";
-    final String managedServerPrefix = auxDomainUid + "-managed-server";
+    final String adminServerPodName = auxDomainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    final String managedServerPrefix = auxDomainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
     String adminSecretName = "weblogic-credentials";
     String encryptionSecretName = "encryptionsecret";
@@ -281,7 +283,7 @@ class ItVzMiiDomain {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         auxDomainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    DomainResource domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(
+    DomainResource domainCR = createDomainResourceWithAuxiliaryImage(
         auxDomainUid, auxDomainNamespace, WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, 
         createSecretsForImageRepos(auxDomainNamespace), encryptionSecretName, auxiliaryImagePath, 
         miiAuxiliaryImage1, miiAuxiliaryImage2);
