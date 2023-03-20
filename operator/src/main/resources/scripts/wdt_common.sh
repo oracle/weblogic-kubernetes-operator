@@ -75,33 +75,6 @@ sort_files() {
   shopt -u nullglob
 }
 
-# limit the file extensions in the model directories
-
-checkModelDirectoryExtensions() {
-  trace "Entering checkModelDirectoryExtensions"
-
-  cd ${IMG_MODELS_HOME}
-  counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
-  if [ $counter -ne 0 ] ; then
-    trace SEVERE "Model image home '${IMG_MODELS_HOME}' contains files with unsupported extensions." \
-      "Expected extensions: '.yaml', '.properties', or '.zip'." \
-      "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
-    exitOrLoop
-  fi
-  if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
-    cd ${WDT_CONFIGMAP_ROOT}
-    counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
-    if [ $counter -ne 0 ] ; then
-      trace SEVERE "Model 'spec.configuration.model.configMap' contains files with unsupported extensions." \
-        "Expected extensions: '.yaml' or '.properties'." \
-        "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.properties")'"
-      exitOrLoop
-    fi
-  fi
-
-  trace "Exiting checkModelDirectoryExtensions"
-}
-
 
 # Function to rotate WDT script log file and copy the file to WDT output dir.
 # parameter:
