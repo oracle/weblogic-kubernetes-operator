@@ -87,21 +87,6 @@ wdtRotateAndCopyLogFile() {
   cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
 }
 
-# get_opss_key_wallet_dopv   returns opss key wallet ewallet.p12 location
-#
-# if there is one from the user config map, use it first
-# otherwise use the one in the introspect job config map
-#
-
-get_opss_key_wallet() {
-  if [ -f ${OPSS_KEY_B64EWALLET} ]; then
-    echo ${OPSS_KEY_B64EWALLET}
-  else
-    # This is just a temporary mount path during introspection job  See JobStepContext.createPrimaryContainer
-    #
-    echo "/weblogic-operator/introspectormii/ewallet.p12"
-  fi
-}
 
 #
 # Generic error handler
