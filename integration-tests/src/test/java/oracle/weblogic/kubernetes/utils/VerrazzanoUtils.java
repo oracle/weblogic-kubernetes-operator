@@ -3,12 +3,12 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -30,21 +30,21 @@ public class VerrazzanoUtils {
   /**
    * set labels to domain namespace for the WKO to manage it through namespace label selection strategy.
    *
-   * @param domainNS domain namespace to label
+   * @param namespaces list of domain namespace to label
    * @throws ApiException throws exception when label cannot be set
    */
-  public static void setLabelToNamespace(String domainNS) throws ApiException {
+  public static void setLabelToNamespace(List<String> namespaces) throws ApiException {
     //add label to domain namespace
     assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
     Map<String, String> labels = new java.util.HashMap<>();
     labels.put("verrazzano-managed", "true");
     labels.put("istio-injection", "enabled");
-    V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(domainNS));
-    logger.info(Yaml.dump(namespaceObject));
-    assertNotNull(namespaceObject, "Can't find namespace with name " + domainNS);
-    namespaceObject.getMetadata().setLabels(labels);
-    assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
-    logger.info(Yaml.dump(Kubernetes.getNamespace(domainNS)));
+    for (String namespace : namespaces) {
+      V1Namespace namespaceObject = assertDoesNotThrow(() -> Kubernetes.getNamespace(namespace));
+      assertNotNull(namespaceObject, "Can't find namespace with name " + namespace);
+      namespaceObject.getMetadata().setLabels(labels);
+      assertDoesNotThrow(() -> replaceNamespace(namespaceObject));
+    }
   }
 
   /**
