@@ -1727,8 +1727,6 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(createPvc()));
 
     assertThat(getPersistentVolumeClaim(domain), equalTo(createPvc()));
-    assertThat(getPersistentVolumeClaim(domain).getSpec().getAccessModes(),
-        equalTo(Collections.singletonList("ReadWriteMany")));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("test-pv"));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeMode(), equalTo("Block"));
@@ -1738,7 +1736,6 @@ class DomainV2Test extends DomainTestBase {
   private PersistentVolumeClaim createPvc() {
     return new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("test-pvc"))
         .spec(new PersistentVolumeClaimSpec()
-            .accessModes(Collections.singletonList("ReadWriteMany"))
             .volumeName("test-pv")
             .storageClassName("oke-pv")
             .volumeMode("Block")
