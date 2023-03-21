@@ -2065,7 +2065,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for reading PodDisruptionBudget.
+   * Asynchronous step for reading PersistentVolume.
    *
    * @param name Name
    * @param responseStep Response step for when call completes
@@ -2087,7 +2087,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for creating PodDisruptionBudget.
+   * Asynchronous step for creating PersistentVolume.
    *
    * @param body Body
    * @param responseStep Response step for when call completes
@@ -2112,9 +2112,10 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for reading PodDisruptionBudget.
+   * Asynchronous step for reading PersistentVolumeClaim.
    *
    * @param name Name
+   * @param namespace Name space
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
@@ -2134,8 +2135,9 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for creating PodDisruptionBudget.
+   * Asynchronous step for creating PersistentVolumeClaim.
    *
+   * @param namespace Namespace
    * @param body Body
    * @param responseStep Response step for when call completes
    * @return Asynchronous step

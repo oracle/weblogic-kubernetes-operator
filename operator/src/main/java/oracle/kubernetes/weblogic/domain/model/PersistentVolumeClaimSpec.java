@@ -3,8 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.List;
-
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -12,10 +10,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PersistentVolumeClaimSpec {
-
-  @Description("AccessModes contains all ways the volume can be mounted. "
-      + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes")
-  private List<String> accessModes;
 
   @Description("Resources represents the minimum resources the volume should have. If"
       + " RecoverVolumeExpansionFailure feature is enabled users are allowed to\n"
@@ -36,15 +30,6 @@ public class PersistentVolumeClaimSpec {
 
   @Description("VolumeName is the binding reference to the PersistentVolume backing this claim.")
   private String volumeName;
-
-  public List<String> getAccessModes() {
-    return accessModes;
-  }
-
-  public PersistentVolumeClaimSpec accessModes(List<String> accessModes) {
-    this.accessModes = accessModes;
-    return this;
-  }
 
   public V1ResourceRequirements getResources() {
     return resources;
@@ -86,7 +71,6 @@ public class PersistentVolumeClaimSpec {
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
-            .append("accessModes", accessModes)
             .append("resources", resources)
             .append("storageClassName", storageClassName)
             .append("volumeMode", volumeMode)
@@ -98,7 +82,6 @@ public class PersistentVolumeClaimSpec {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
-        .append(accessModes)
         .append(resources)
         .append(storageClassName)
         .append(volumeMode)
@@ -118,7 +101,6 @@ public class PersistentVolumeClaimSpec {
     PersistentVolumeClaimSpec rhs = ((PersistentVolumeClaimSpec) other);
     EqualsBuilder builder =
         new EqualsBuilder()
-            .append(accessModes, rhs.accessModes)
             .append(resources, rhs.resources)
             .append(storageClassName, rhs.storageClassName)
             .append(volumeMode, rhs.volumeMode)

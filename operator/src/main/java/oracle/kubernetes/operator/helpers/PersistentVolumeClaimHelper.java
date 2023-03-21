@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -38,10 +39,10 @@ public class PersistentVolumeClaimHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
-   * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
+   * Factory for {@link Step} that verifies and creates persistent volume claim if needed.
    *
    * @param next the next step
-   * @return Step for creating pod disruption budget
+   * @return Step for creating persistent volume claim
    */
   public static Step createPersistentVolumeClaimStep(Step next) {
     return new CreatePersistentVolumeClaimStep(next);
@@ -204,12 +205,16 @@ public class PersistentVolumeClaimHelper {
               .spec(createSpec(getSpec()));
     }
 
+    @Nonnull
     private PersistentVolumeClaimSpec getSpec() {
-      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipc -> ipc.getSpec()).orElse(null);
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipc -> ipc.getSpec())
+          .orElse(new PersistentVolumeClaimSpec());
     }
 
+    @Nonnull
     private V1ObjectMeta getMetadata() {
-      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipv -> ipv.getMetadata()).orElse(null);
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
+          .map(ipv -> ipv.getMetadata()).orElse(new V1ObjectMeta());
     }
 
     private V1PersistentVolumeClaimSpec createSpec(PersistentVolumeClaimSpec spec) {

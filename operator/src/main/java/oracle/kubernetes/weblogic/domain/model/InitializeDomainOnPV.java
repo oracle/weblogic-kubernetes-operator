@@ -9,12 +9,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent"
-    + " volume and a persistent volume claim, if needed."
-    + " These will be one-time operations that happen only if the domain, persistent volume or persistent volume claim"
-    + " do not already exist. This is primarily used for a JRF-based domain. For a plain WebLogic domain,"
-    + " recommended approach is to use a 'Model In Image' domain home source type."
-    + " See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/")
 public class InitializeDomainOnPV {
 
   @Description("Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed.")

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,7 +11,6 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
-import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -36,17 +35,13 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
  */
 public class PersistentVolumeHelper {
 
-  private PersistentVolumeHelper() {
-    // no-op
-  }
-  
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
-   * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
+   * Factory for {@link Step} that verifies and creates persistent volume if needed.
    *
    * @param next the next step
-   * @return Step for creating pod disruption budget
+   * @return Step for creating persistent volume
    */
   public static Step createPersistentVolumeStep(Step next) {
     return new CreatePersistentVolumeStep(next);
@@ -199,7 +194,6 @@ public class PersistentVolumeHelper {
     }
 
     public V1PersistentVolume createModel() {
-      //return withNonHashedElements(AnnotationHelper.withSha256Hash(createRecipe()));
       return createRecipe();
     }
 
@@ -208,9 +202,17 @@ public class PersistentVolumeHelper {
       labels.put(CREATEDBYOPERATOR_LABEL, "true");
       labels.put(DOMAINUID_LABEL, info.getDomainUid());
       return new V1PersistentVolume()
-              .metadata(getInitPvDomainPersistentVolume().getMetadata().labels(labels))
+              .metadata(getMetadata().labels(labels))
               .apiVersion("v1")
-              .spec(createSpec(getInitPvDomainPersistentVolume().getSpec()));
+              .spec(createSpec(getSpec()));
+    }
+
+    private V1ObjectMeta getMetadata() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolume().getMetadata()).orElse(new V1ObjectMeta());
+    }
+
+    private PersistentVolumeSpec getSpec() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolume().getSpec()).orElse(new PersistentVolumeSpec());
     }
 
     private V1PersistentVolumeSpec createSpec(PersistentVolumeSpec spec) {
@@ -224,16 +226,5 @@ public class PersistentVolumeHelper {
     protected void logPersistentVolumeCreated(String messageKey) {
       LOGGER.info(messageKey, getPersistentVolumeName(), getDomainUid());
     }
-  }
-
-  /**
-   * get PodDisruptionBudget's domain uid.
-   *
-   * @param pdb PodDisruptionBudget
-   * @return Domain uid
-   */
-  public static String getDomainUid(V1PodDisruptionBudget pdb) {
-    return Optional.ofNullable(pdb.getMetadata()).map(V1ObjectMeta::getLabels)
-            .map(s -> s.get(DOMAINUID_LABEL)).orElse(null);
   }
 }
