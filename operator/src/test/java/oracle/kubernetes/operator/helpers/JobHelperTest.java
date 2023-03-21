@@ -46,6 +46,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -69,6 +70,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Opss;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -1083,6 +1085,120 @@ class JobHelperTest extends DomainValidationTestBase {
         hasContainer,
         is(true)
     );
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVDHContainerHasDHSet() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
+
+    assertThat(
+        hasContainer,
+        is(true)
+    );
+
+    assertThat(podSpec.getInitContainers()
+        .stream()
+        .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
+        .findFirst()
+        .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+        .map(V1EnvVar::getName)
+        .collect(Collectors.toList()),
+        hasItems("DOMAIN_HOME"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasEnvSet() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .map(V1EnvVar::getName)
+            .collect(Collectors.toList()),
+        hasItems("INIT_DOMAIN_ON_PV"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVHasConfigMapMounted() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                .domainType(DomainType.JRF)
+                .domainCreationConfigMap("wdt-config-map")));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/wdt-config-map")),
+        is(true));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasWalletSecretsMount() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletkey-secret")),
+        is(true));
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletfile-secret")),
+        is(true));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithOutInitDomainOnPVContainerNotSetEnv() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
+
+    runCreateJob();
+
+    assertThat(getEnvNames(job), not(hasItems("INIT_DOMAIN_ON_PV")));
   }
 
   private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {

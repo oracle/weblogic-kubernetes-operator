@@ -889,7 +889,9 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   String getOpssWalletPasswordSecret() {
-    return isInitPvDomain() ? getInitPvDomainOpssWalletPasswordSecret() : getModelOpssWalletPasswordSecret();
+    return isInitializeDomainOnPV()
+        ? getInitializeDomainOnPVOpssWalletPasswordSecret()
+        : getModelOpssWalletPasswordSecret();
   }
 
   String getModelOpssWalletPasswordSecret() {
@@ -899,11 +901,11 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  boolean isInitPvDomain() {
-    return getInitializeDomainOnPV() != null;
+  boolean isInitializeDomainOnPV() {
+    return DomainSourceType.PERSISTENT_VOLUME == (getDomainHomeSourceType()) && getInitializeDomainOnPV() != null;
   }
 
-  String getInitPvDomainOpssWalletPasswordSecret() {
+  String getInitializeDomainOnPVOpssWalletPasswordSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getOpss)
@@ -916,7 +918,7 @@ public class DomainSpec extends BaseConfiguration {
    * @return wallet file secret
    */
   public String getOpssWalletFileSecret() {
-    return isInitPvDomain() ? getInitPvDomainOpssWalletFileSecret() : getModelOpssWalletFileSecret();
+    return isInitializeDomainOnPV() ? getInitializeDomainOnPVOpssWalletFileSecret() : getModelOpssWalletFileSecret();
   }
 
   private String getModelOpssWalletFileSecret() {
@@ -926,7 +928,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  private String getInitPvDomainOpssWalletFileSecret() {
+  private String getInitializeDomainOnPVOpssWalletFileSecret() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getOpss)
@@ -934,7 +936,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  DomainType getInitPvDomainDomainType() {
+  DomainType getInitializeDomainOnPVDomainType() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getDomainType)
@@ -953,10 +955,18 @@ public class DomainSpec extends BaseConfiguration {
    * @return config map name
    */
   public String getWdtConfigMap() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getConfigMap)
-        .orElse(null);
+    if (isInitializeDomainOnPV()) {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getInitializeDomainOnPV)
+          .map(InitializeDomainOnPV::getDomain)
+          .map(DomainOnPV::getDomainCreationConfigMap)
+          .orElse(null);
+    } else {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getModel)
+          .map(Model::getConfigMap)
+          .orElse(null);
+    }
   }
 
   /**
@@ -1023,6 +1033,13 @@ public class DomainSpec extends BaseConfiguration {
   List<DomainCreationImage> getDomainImages() {
     return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getDomainCreationImages).orElse(null);
+  }
+
+  String getDomainCreationConfigMap() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getDomainCreationConfigMap)
+        .orElse(null);
   }
 
   String getAuxiliaryImageVolumeMountPath() {
@@ -1211,6 +1228,14 @@ public class DomainSpec extends BaseConfiguration {
 
   long getFailureRetryLimitMinutes() {
     return Optional.ofNullable(failureRetryLimitMinutes).orElse(DEFAULT_RETRY_LIMIT_MINUTES);
+  }
+
+  public boolean hasMiiOpssConfigured() {
+    return getModelOpssWalletPasswordSecret() != null || getModelOpssWalletFileSecret() != null;
+  }
+  
+  public boolean isModelConfigured() {
+    return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null) != null;
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {

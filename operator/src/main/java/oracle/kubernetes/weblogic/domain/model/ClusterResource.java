@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -18,6 +18,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * An element representing a cluster in the domain configuration.
@@ -270,8 +271,13 @@ public class ClusterResource implements KubernetesObject {
    */
   public boolean isGenerationChanged(ClusterResource cachedResource) {
     return getGeneration()
-        .map(gen -> (gen.compareTo(cachedResource.getGeneration().orElse(0L)) > 0))
-        .orElse(true);
+        .map(gen -> gen.compareTo(getOrElse(cachedResource)) > 0)
+        .orElse(getOrElse(cachedResource) != 0);
+  }
+
+  @NotNull
+  private Long getOrElse(ClusterResource cachedResource) {
+    return cachedResource.getGeneration().orElse(0L);
   }
 
   private Optional<Long> getGeneration() {
