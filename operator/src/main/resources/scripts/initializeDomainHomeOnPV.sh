@@ -15,12 +15,13 @@ chown -R 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}"
 output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.out"
 
 failure_exit() {
+  chown 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV*"
   exit 1
 }
 
 create_success_file_and_exit() {
   echo "0" > "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
-  chown 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
+  chown 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV*"
   exit
 }
 
@@ -47,13 +48,14 @@ IFS=$OLDIFS
 number_of_tokens=${#dh_array[@]}
 trace "Number of tokens in domain home "$number_of_tokens  >> "$output_file"
 
-# walk through the list of tokens and reconstruct the path from beginning to find the
-# base path
-for (( i=1 ; i<=number_of_tokens; i++))
+# walk through the list of tokens backwards and reconstruct the path from beginning to find the
+# base path since the share root can be in any of the mount path
+
+for (( i=$number_of_tokens ; i>=1; i--))
 do
-   temp_dir=${dh_array[@]:1:i}
+   temp_dir=${dh_array[@]:0:i}
    # parameter substitution turns spece to slash
-   test_dir="/${temp_dir// //}"
+   test_dir="${temp_dir// //}"
    trace "Testing base mount path at "$test_dir >> "$output_file"
    if [ -d $test_dir ] ; then
        trace "Found base mount path at "$test_dir >> "$output_file"
@@ -65,15 +67,15 @@ do
            trace SEVERE "Could not create directory "${DOMAIN_HOME}" specified in 'domain.spec.domainHome'.  Error: "${errmsg} >> "$output_file"
            failure_exit
        fi
-
-       if ! errmsg=$(find "$SHARE_ROOT" ! -path "$SHARE_ROOT/.snapshot*" -exec chown 1000:0 {} \;)
+       next_level_dir=${dh_array[@]:0:i+1}
+       next_level_dir="${next_level_dir// //}"
+       if ! errmsg=$(chown -R 1000:0 "${next_level_dir}")
          then
-           trace SEVERE "Failed to change directory permission at "$SHARE_ROOT" Error: "$errmsg >> "$output_file"
+           trace SEVERE "Failed to change directory permission at "${next_level_dir}" Error: "$errmsg >> "$output_file"
            failure_exit
        fi
 
        trace "Creating domain home completed"
-       chown 1000:0 $output_file
        create_success_file_and_exit
    fi
 done
