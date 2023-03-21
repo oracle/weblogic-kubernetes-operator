@@ -32,4 +32,8 @@ public interface StepContextConstants {
 
   @SuppressWarnings("OctalInteger")
   int ALL_READ_AND_EXECUTE = 0555;
+
+  // Access modes for PV and PVC
+  String READ_WRITE_MANY = "ReadWriteMany";
+
 }

@@ -361,7 +361,6 @@ The configuration required to create an empty WebLogic 'Domain on PV' domain, a 
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `accessModes` | Array of string | AccessModes contains all ways the volume can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes |
 | `capacity` | Map | Capacity is the description of the persistent volume's resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity |
 | `hostPath` | [Host Path Volume Source](k8s1.13.5.md#host-path-volume-source) | HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:<br/> https://kubernetes.io/docs/concepts/storage/volumes#hostpath<br/>Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. |
 | `persistentVolumeReclaimPolicy` | string | PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming   |

@@ -1,0 +1,231 @@
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package oracle.kubernetes.operator.helpers;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.PersistentVolumeClaim;
+import oracle.kubernetes.weblogic.domain.model.PersistentVolumeClaimSpec;
+
+import static oracle.kubernetes.common.logging.MessageKeys.PVC_CREATED;
+import static oracle.kubernetes.common.logging.MessageKeys.PVC_EXISTS;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+
+/**
+ * Operations for dealing with namespaces.
+ */
+public class PersistentVolumeClaimHelper {
+
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  /**
+   * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
+   *
+   * @param next the next step
+   * @return Step for creating pod disruption budget
+   */
+  public static Step createPersistentVolumeClaimStep(Step next) {
+    return new CreatePersistentVolumeClaimStep(next);
+  }
+
+  static class CreatePersistentVolumeClaimStep extends Step {
+    private DomainPresenceInfo info;
+
+    CreatePersistentVolumeClaimStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      info = packet.getSpi(DomainPresenceInfo.class);
+      if (info.getDomain().getInitPvDomainPersistentVolumeClaim() != null) {
+        return doNext(createContext(packet).readAndCreatePersistentVolumeClaimStep(getNext()), packet);
+      }
+      return doNext(packet);
+    }
+
+    protected PersistentVolumeClaimContext createContext(Packet packet) {
+      return new PersistentVolumeClaimContext(this, packet);
+    }
+  }
+
+  static class PersistentVolumeClaimContext extends StepContextBase {
+    private final Step conflictStep;
+
+    PersistentVolumeClaimContext(Step conflictStep, Packet packet) {
+      super(packet.getSpi(DomainPresenceInfo.class));
+      this.conflictStep = conflictStep;
+    }
+
+    Step getConflictStep() {
+      return new PersistentVolumeClaimContext.ConflictStep();
+    }
+
+    Step readAndCreatePersistentVolumeClaimStep(Step next) {
+      return new CallBuilder().readPersistentVolumeClaimAsync(getPersistentVolumeClaimName(), info.getNamespace(),
+              new ReadResponseStep(next));
+    }
+
+    private String getPersistentVolumeClaimName() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
+          .map(ipv -> ipv.getMetadata()).map(m -> m.getName()).orElse(null);
+    }
+
+    private PersistentVolumeClaim getInitPvDomainPersistentVolumeClaim() {
+      return getDomain().getInitPvDomainPersistentVolumeClaim();
+    }
+
+    DomainResource getDomain() {
+      return info.getDomain();
+    }
+
+    String getDomainUid() {
+      return getDomain().getDomainUid();
+    }
+
+    private Step createNewPersistentVolumeClaim(Step next) {
+      return createPersistentVolumeClaim(getPVCCreatedMessageKey(), next);
+    }
+
+    protected String getPVCCreatedMessageKey() {
+      return PVC_CREATED;
+    }
+
+    private class CreateResponseStep extends ResponseStep<V1PersistentVolumeClaim> {
+      private final String messageKey;
+
+      CreateResponseStep(String messageKey, Step next) {
+        super(next);
+        this.messageKey = messageKey;
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
+        if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return updateDomainStatus(packet, callResponse);
+        } else {
+          return onFailure(getConflictStep(), packet, callResponse);
+        }
+      }
+
+      private NextAction updateDomainStatus(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
+        return doNext(createKubernetesFailureSteps(callResponse), packet);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
+        logPersistentVolumeClaimCreated(messageKey);
+        return doNext(packet);
+      }
+    }
+
+    private class ReadResponseStep extends DefaultResponseStep<V1PersistentVolumeClaim> {
+      ReadResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
+                ? onSuccess(packet, callResponse)
+                : super.onFailure(packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+        V1PersistentVolumeClaim persistentVolumeClaim = callResponse.getResult();
+        if (persistentVolumeClaim == null) {
+          return doNext(createNewPersistentVolumeClaim(getNext()), packet);
+        } else {
+          logPersistentVolumeClaimExists(info.getDomain().getDomainUid(),
+              info.getDomain().getInitPvDomainPersistentVolumeClaim());
+        }
+        return doNext(packet);
+      }
+
+      protected void logPersistentVolumeClaimExists(String domainUid, PersistentVolumeClaim pvc) {
+        LOGGER.fine(PVC_EXISTS, pvc.getMetadata().getName(), domainUid);
+      }
+    }
+
+    private class ConflictStep extends Step {
+      @Override
+      public NextAction apply(Packet packet) {
+        return doNext(
+                new CallBuilder().readPersistentVolumeClaimAsync(getPersistentVolumeClaimName(),
+                    info.getNamespace(), new ReadResponseStep(conflictStep)), packet);
+      }
+
+      private String getPersistentVolumeClaimName() {
+        return getInitPvDomainPersistentVolumeClaim().getMetadata().getName();
+      }
+    }
+
+    private Step createPersistentVolumeClaim(String messageKey, Step next) {
+      return new CallBuilder()
+              .createPersistentVolumeClaimAsync(
+                      info.getNamespace(),
+                      createModel(),
+                      new PersistentVolumeClaimHelper.PersistentVolumeClaimContext
+                              .CreateResponseStep(messageKey, next));
+    }
+
+    public V1PersistentVolumeClaim createModel() {
+      return createRecipe();
+    }
+
+    V1PersistentVolumeClaim createRecipe() {
+      Map<String, String> labels = new HashMap<>();
+      labels.put(CREATEDBYOPERATOR_LABEL, "true");
+      labels.put(DOMAINUID_LABEL, info.getDomainUid());
+      return new V1PersistentVolumeClaim()
+              .metadata(getMetadata().labels(labels))
+              .apiVersion("v1")
+              .spec(createSpec(getSpec()));
+    }
+
+    private PersistentVolumeClaimSpec getSpec() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipc -> ipc.getSpec()).orElse(null);
+    }
+
+    private V1ObjectMeta getMetadata() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipv -> ipv.getMetadata()).orElse(null);
+    }
+
+    private V1PersistentVolumeClaimSpec createSpec(PersistentVolumeClaimSpec spec) {
+      return new V1PersistentVolumeClaimSpec().accessModes(Collections.singletonList(READ_WRITE_MANY))
+          .storageClassName(spec.getStorageClassName())
+          .volumeName(Optional.ofNullable(spec.getVolumeName()).orElse(getInitPvDomainPersistentVolumeName()))
+          .resources(spec.getResources());
+    }
+
+    public String getInitPvDomainPersistentVolumeName() {
+      return Optional.ofNullable(info.getDomain()).map(d -> d.getInitPvDomainPersistentVolume())
+          .map(ipv -> ipv.getMetadata()).map(m -> m.getName()).orElse(null);
+    }
+
+    protected void logPersistentVolumeClaimCreated(String messageKey) {
+      LOGGER.info(messageKey, getPersistentVolumeClaimName(), getDomainUid());
+    }
+  }
+}

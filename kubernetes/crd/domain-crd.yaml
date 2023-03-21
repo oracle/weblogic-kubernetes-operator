@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 65e5557a016cf3f60255534845d7631e47fb1ce269a72be829830caa1c2de4e8
+    weblogic.sha256: 5387c83537bd55d2b1f513ef276eedd826907fa974f5f14356ef2cf3aa350e99
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -199,12 +199,6 @@ spec:
                                   by the volume plugin underlying this PersistentVolume.
                                   More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  '
                                 type: string
-                              accessModes:
-                                description: 'AccessModes contains all ways the volume
-                                  can be mounted. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes'
-                                items:
-                                  type: string
-                                type: array
                               hostPath:
                                 description: |-
                                   HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:

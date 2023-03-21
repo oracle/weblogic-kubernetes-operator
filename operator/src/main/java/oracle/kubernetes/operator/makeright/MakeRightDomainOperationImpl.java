@@ -36,6 +36,8 @@ import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.PersistentVolumeClaimHelper;
+import oracle.kubernetes.operator.helpers.PersistentVolumeHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -294,6 +296,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     Step domainUpStrategy =
         Step.chain(
+            initializePvPvcStep(),
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(),
             new DomainStatusStep(),
@@ -311,6 +314,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         ConfigMapHelper.readIntrospectionVersionStep(),
         new IntrospectionRequestStep(),
         JobHelper.createIntrospectionStartStep());
+  }
+
+  static Step initializePvPvcStep() {
+    return Step.chain(PersistentVolumeHelper.createPersistentVolumeStep(null),
+        PersistentVolumeClaimHelper.createPersistentVolumeClaimStep(null));
   }
 
   /**

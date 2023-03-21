@@ -519,6 +519,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
+   * Returns the persistent volume configuration details when initializeDomainOnPV is specified.
+   * @return persistent volume configuration details
+   */
+  public PersistentVolume getInitPvDomainPersistentVolume() {
+    return Optional.ofNullable(spec.getInitializeDomainOnPV()).map(ipv -> ipv.getPersistentVolume()).orElse(null);
+  }
+
+  /**
+   * Returns the persistent volume claim configuration details when initializeDomainOnPV is specified.
+   * @return persistent volume claim configuration details
+   */
+  public PersistentVolumeClaim getInitPvDomainPersistentVolumeClaim() {
+    return Optional.ofNullable(spec.getInitializeDomainOnPV()).map(ipv -> ipv.getPersistentVolumeClaim()).orElse(null);
+  }
+
+  /**
    * Returns the domain type when initializeDomainOnPV is specified.
    * @return domain type
    */
@@ -996,6 +1012,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
+      verifyPVSpecWhenInitDomainOnPVDefined();
+      verifyPVCSpecWhenInitDomainOnPVDefined();
     }
 
     private List<String> getFatalValidationFailures() {
@@ -1173,6 +1191,44 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private void addIfUnsupported(List<String> unsupportedIntroEnvVars, V1EnvVar e) {
       if (Arrays.stream(ALLOWED_INTROSPECTOR_ENV_VARS).noneMatch(e.getName()::equals)) {
         unsupportedIntroEnvVars.add(e.getName());
+      }
+    }
+
+    private void verifyPVSpecWhenInitDomainOnPVDefined() {
+      Optional.ofNullable(getSpec().getInitializeDomainOnPV())
+          .map(ipv -> ipv.getPersistentVolume()).ifPresent(pv -> verifyPVSpecs(pv));
+    }
+
+    private void verifyPVSpecs(PersistentVolume pv) {
+      if (Optional.ofNullable(pv.getMetadata()).map(m -> m.getName()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeNameNotSpecified());
+        return;
+      }
+      String name = pv.getMetadata().getName();
+      if (Optional.ofNullable(pv.getSpec()).map(s -> s.getCapacity()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeCapacityNotSpecified(name));
+      }
+      if (Optional.ofNullable(pv.getSpec()).map(s -> s.getStorageClassName()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeStorageClassNotSpecified(name));
+      }
+    }
+
+    private void verifyPVCSpecWhenInitDomainOnPVDefined() {
+      Optional.ofNullable(getSpec().getInitializeDomainOnPV())
+          .map(ipv -> ipv.getPersistentVolumeClaim()).ifPresent(pvc -> verifyPVCSpecs(pvc));
+    }
+
+    private void verifyPVCSpecs(PersistentVolumeClaim pvc) {
+      if (Optional.ofNullable(pvc.getMetadata()).map(m -> m.getName()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimNameNotSpecified());
+        return;
+      }
+      String name = pvc.getMetadata().getName();
+      if (Optional.ofNullable(pvc.getSpec()).map(s -> s.getResources()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimResourcesNotSpecified(name));
+      }
+      if (Optional.ofNullable(pvc.getSpec()).map(s -> s.getStorageClassName()).orElse(null) == null) {
+        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimStorageClassNotSpecified(name));
       }
     }
 

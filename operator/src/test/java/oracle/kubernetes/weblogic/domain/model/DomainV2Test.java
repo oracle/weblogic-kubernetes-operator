@@ -1709,8 +1709,6 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(createPv()));
 
     assertThat(getPersistentVolume(domain), equalTo(createPv()));
-    assertThat(getPersistentVolume(domain).getSpec().getAccessModes(),
-        equalTo(Collections.singletonList("ReadWriteMany")));
     assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
     assertThat(getPersistentVolume(domain).getSpec().getCapacity(), notNullValue());
     assertThat(getPersistentVolume(domain).getSpec().getHostPath().getPath(), equalTo("/shared"));
@@ -1719,7 +1717,6 @@ class DomainV2Test extends DomainTestBase {
   private PersistentVolume createPv() {
     return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
         .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
-            .accessModes(Collections.singletonList("ReadWriteMany"))
             .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
             .hostPath(new V1HostPathVolumeSource().path("/shared"))
             .volumeMode("Block"));

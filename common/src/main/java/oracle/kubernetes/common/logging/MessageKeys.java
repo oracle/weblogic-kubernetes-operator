@@ -168,6 +168,10 @@ public class MessageKeys {
   public static final String CLUSTER_STATUS = "WLSKO-0230";
   public static final String DOMAIN_INTROSPECTION_INCOMPLETE = "WLSKO-0231";
   public static final String WATCH_CLUSTER_WITHOUT_DOMAIN = "WLSKO-0232";
+  public static final String PV_CREATED = "WLSKO-0233";
+  public static final String PVC_CREATED = "WLSKO-0234";
+  public static final String PV_EXISTS = "WLSKO-0235";
+  public static final String PVC_EXISTS = "WLSKO-0236";
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
@@ -215,6 +219,12 @@ public class MessageKeys {
   public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
   public static final String MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0050";
   public static final String INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0051";
+  public static final String INIT_PV_DOMAIN_PV_NAME_NOT_SPECIFIED = "WLSDO-0052";
+  public static final String INIT_PV_DOMAIN_PV_CAPACITY_NOT_SPECIFIED = "WLSDO-0053";
+  public static final String INIT_PV_DOMAIN_PV_STORAGE_CLASS_NOT_SPECIFIED = "WLSDO-0054";
+  public static final String INIT_PV_DOMAIN_PVC_NAME_NOT_SPECIFIED = "WLSDO-0055";
+  public static final String INIT_PV_DOMAIN_PVC_RESOURCES_NOT_SPECIFIED = "WLSDO-0056";
+  public static final String INIT_PV_DOMAIN_PVC_STORAGE_CLASS_NOT_SPECIFIED = "WLSDO-0057";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
