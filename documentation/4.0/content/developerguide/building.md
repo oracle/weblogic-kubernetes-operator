@@ -18,12 +18,12 @@ This will compile the source files, build JAR files containing the compiled clas
 
 Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).
 
-#### Building the operator container image
+#### Building and pushing the operator container image
 
 These commands should be executed in the project root directory:
 
 ```shell
-$ ./buildDockerImage.sh -t weblogic-kubernetes-operator:some-tag
+$ ./buildAndPushImage.sh -t weblogic-kubernetes-operator:some-tag
 ```
 
 Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.

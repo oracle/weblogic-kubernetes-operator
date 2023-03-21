@@ -108,7 +108,7 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
-  static String missingRequiredInitPvDomainOpssSecret(String secret) {
+  static String missingRequiredInitializeDomainOnPVOpssSecret(String secret) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED, secret);
   }
 
@@ -124,8 +124,8 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_SIT_CONFIG_MII, configOverrides);
   }
 
-  static String noSuchModelConfigMap(String configMapName, String namespace) {
-    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, namespace);
+  static String noSuchModelConfigMap(String configMapName, String location, String namespace) {
+    return getMessage(MessageKeys.MODEL_CONFIGMAP_NOT_FOUND, configMapName, location, namespace);
   }
 
   static String cannotExposeDefaultChannelIstio(String channelName) {
@@ -204,5 +204,13 @@ public class DomainValidationMessages {
   public static String introspectorEnvVariableNotSupported(List<String> unsupportedEnvVars) {
     return getMessage(MessageKeys.UNSUPPORTED_INTRO_ENV_VARIABLES, unsupportedEnvVars,
         Arrays.asList(ALLOWED_INTROSPECTOR_ENV_VARS));
+  }
+
+  public static String conflictOpssSecrets(String initPvDomainOpss, String miiOpss) {
+    return getMessage(MessageKeys.CONFLICT_OPSS_SECRETS, initPvDomainOpss, miiOpss);
+  }
+
+  public static String conflictModelConfiguration(String model, String initializeDomainOnPV) {
+    return getMessage(MessageKeys.CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV, model, initializeDomainOnPV);
   }
 }

@@ -1,14 +1,14 @@
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
 
 topology:
-    Name: "wls-logging-domain1"
-    AdminServerName: "admin-server"
+    Name: "wls-domain1"
+    ProductionModeEnabled: 'true'
+    AdminServerName: "new-admin-server"
     Cluster:
         "cluster-1":
             DynamicServers:
@@ -24,3 +24,13 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : 8001
+            WebServer:
+                WebServerLog:
+                    BufferSizeKb: 1
+
+appDeployments:
+    Application:
+        myear:
+            SourcePath: "wlsdeploy/applications/sample-app.ear"
+            ModuleType: ear
+            Target: 'cluster-1'

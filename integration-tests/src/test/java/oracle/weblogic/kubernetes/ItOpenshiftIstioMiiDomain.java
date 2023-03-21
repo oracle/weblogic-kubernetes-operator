@@ -295,7 +295,7 @@ class ItOpenshiftIstioMiiDomain {
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
+            .serverStartPolicy("IfNeeded")
             .serverPod(new ServerPod()
                 .putAnnotationsItem("sidecar.istio.io/inject", "true")
                 .addEnvItem(new V1EnvVar()
