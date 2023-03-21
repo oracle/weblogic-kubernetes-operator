@@ -148,6 +148,30 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
+  public static String invalidPersistentVolumeNameNotSpecified() {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_NAME_NOT_SPECIFIED);
+  }
+
+  public static String invalidPersistentVolumeCapacityNotSpecified(String name) {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_CAPACITY_NOT_SPECIFIED, name);
+  }
+
+  public static String invalidPersistentVolumeStorageClassNotSpecified(String name) {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_STORAGE_CLASS_NOT_SPECIFIED, name);
+  }
+
+  public static String invalidPersistentVolumeClaimNameNotSpecified() {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_NAME_NOT_SPECIFIED);
+  }
+
+  public static String invalidPersistentVolumeClaimResourcesNotSpecified(String name) {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_RESOURCES_NOT_SPECIFIED, name);
+  }
+
+  public static String invalidPersistentVolumeClaimStorageClassNotSpecified(String name) {
+    return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_STORAGE_CLASS_NOT_SPECIFIED, name);
+  }
+
   public static String invalidLivenessProbeSuccessThresholdValue(int value, String prefix) {
     return getMessage(MessageKeys.INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE, value, prefix);
   }

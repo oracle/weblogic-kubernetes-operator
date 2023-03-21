@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
@@ -14,10 +13,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PersistentVolumeSpec {
-
-  @Description("AccessModes contains all ways the volume can be mounted. "
-      + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#access-modes")
-  private List<String> accessModes;
 
   @Description("Capacity is the description of the persistent volume's resources and capacity. "
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity")
@@ -45,15 +40,6 @@ public class PersistentVolumeSpec {
   @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
       + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
   private String volumeMode;
-
-  public List<String> getAccessModes() {
-    return accessModes;
-  }
-
-  public PersistentVolumeSpec accessModes(List<String> accessModes) {
-    this.accessModes = accessModes;
-    return this;
-  }
 
   public Map<String, Quantity> getCapacity() {
     return capacity;
@@ -103,7 +89,6 @@ public class PersistentVolumeSpec {
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
-            .append("accessModes", accessModes)
             .append("capacity", capacity)
             .append("hostPath", hostPath)
             .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
@@ -116,7 +101,6 @@ public class PersistentVolumeSpec {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
-        .append(accessModes)
         .append(capacity)
         .append(hostPath)
         .append(persistentVolumeReclaimPolicy)
@@ -137,7 +121,6 @@ public class PersistentVolumeSpec {
     PersistentVolumeSpec rhs = ((PersistentVolumeSpec) other);
     EqualsBuilder builder =
         new EqualsBuilder()
-            .append(accessModes, rhs.accessModes)
             .append(capacity, rhs.capacity)
             .append(hostPath, rhs.hostPath)
             .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)

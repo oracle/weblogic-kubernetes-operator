@@ -36,6 +36,8 @@ import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -283,6 +285,26 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
+
+  private final CallFactory<V1PersistentVolume> readPersistentVolume =
+      (requestParams, usage, cont, callback) ->
+          wrap(readPersistentVolumeAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1PersistentVolume> createPersistentVolume =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createPersistentVolumeAsync(
+                  usage, (V1PersistentVolume)
+                      requestParams.body, callback));
+
+  private final CallFactory<V1PersistentVolumeClaim> readPersistentVolumeClaim =
+      (requestParams, usage, cont, callback) ->
+          wrap(readPersistentVolumeClaimAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1PersistentVolumeClaim> createPersistentVolumeClaim =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createPersistentVolumeClaimAsync(
+                  usage, requestParams.namespace, (V1PersistentVolumeClaim)
+                      requestParams.body, callback));
 
   private final CallFactory<V1ValidatingWebhookConfigurationList> listValidatingWebhookConfiguration =
       (requestParams, usage, cont, callback) ->
@@ -1457,8 +1479,6 @@ public class CallBuilder {
         createPod);
   }
 
-  /* Persistent Volumes */
-
   private Call deletePodAsync(
       ApiClient client,
       String name,
@@ -1747,8 +1767,6 @@ public class CallBuilder {
             callback);
   }
 
-  /* Persistent Volume Claims */
-
   /**
    * Asynchronous step for deleting job.
    *
@@ -2036,6 +2054,100 @@ public class CallBuilder {
         responseStep,
         new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
         deletePodDisruptionBudget);
+  }
+
+  /* Persistent Volumes */
+  private Call readPersistentVolumeAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1PersistentVolume> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .readPersistentVolumeAsync(name, PRETTY, callback);
+  }
+
+  /**
+   * Asynchronous step for reading PodDisruptionBudget.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readPersistentVolumeAsync(
+      String name, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readPersistentVolume", null, name, null, callParams),
+        readPersistentVolume);
+  }
+
+  private Call createPersistentVolumeAsync(
+      ApiClient client, V1PersistentVolume body,
+      ApiCallback<V1PersistentVolume> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .createPersistentVolumeAsync(body, PRETTY, null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating PodDisruptionBudget.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createPersistentVolumeAsync(
+      V1PersistentVolume body, ResponseStep<V1PersistentVolume> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolume",null,null, body,
+            getDomainUidLabel(Optional.ofNullable(body)
+                .map(V1PersistentVolume::getMetadata).orElse(null))),
+        createPersistentVolume);
+  }
+
+  /* Persistent Volume Claims */
+  private Call readPersistentVolumeClaimAsync(
+      ApiClient client, String name, String namespace, ApiCallback<V1PersistentVolumeClaim> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .readNamespacedPersistentVolumeClaimAsync(name, namespace, PRETTY, callback);
+  }
+
+  /**
+   * Asynchronous step for reading PodDisruptionBudget.
+   *
+   * @param name Name
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readPersistentVolumeClaimAsync(String name, String namespace,
+                                             ResponseStep<V1PersistentVolumeClaim> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readPersistentVolumeClaim", namespace, name, null, callParams),
+        readPersistentVolumeClaim);
+  }
+
+  private Call createPersistentVolumeClaimAsync(
+      ApiClient client, String namespace, V1PersistentVolumeClaim body,
+      ApiCallback<V1PersistentVolumeClaim> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .createNamespacedPersistentVolumeClaimAsync(namespace, body, PRETTY, null, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating PodDisruptionBudget.
+   *
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createPersistentVolumeClaimAsync(String namespace,
+      V1PersistentVolumeClaim body, ResponseStep<V1PersistentVolumeClaim> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("createPersistentVolumeClaim",namespace,null, body,
+            getDomainUidLabel(Optional.ofNullable(body)
+                .map(V1PersistentVolumeClaim::getMetadata).orElse(null))),
+        createPersistentVolumeClaim);
   }
 
   /* Events */

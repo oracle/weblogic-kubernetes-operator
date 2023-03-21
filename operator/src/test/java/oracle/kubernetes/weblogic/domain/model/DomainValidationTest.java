@@ -9,11 +9,14 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -1126,6 +1129,86 @@ public class DomainValidationTest extends DomainValidationTestBase {
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenPersistentVolumeNameNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(new PersistentVolume()));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume",
+            "spec.configuration.initializeDomainOnPV.persistentVolume", "is invalid", "metadata.name",
+            "must be specified")));
+  }
+
+  @Test
+  void whenPersistentVolumeCapacityNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+            new PersistentVolume().metadata(new V1ObjectMeta().name("Test"))
+                .spec(new PersistentVolumeSpec().storageClassName("SC"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume Test",
+            "is invalid", "spec.capacity", "must be specified")));
+  }
+
+  @Test
+  void whenPersistentVolumeStorageClassNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
+            new PersistentVolume().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeSpec()
+                .capacity(Collections.singletonMap("storage", new Quantity("50Gi"))))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume Test",
+            "is invalid", "spec.storageClass", "must be specified")));
+  }
+
+  @Test
+  void whenPersistentVolumeClaimNameNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(new PersistentVolumeClaim()));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume claim",
+            "spec.configuration.initializeDomainOnPV.persistentVolumeClaim", "is invalid", "metadata.name",
+            "must be specified")));
+  }
+
+  @Test
+  void whenPersistentVolumeClaimResourcesNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
+            new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test"))
+                .spec(new PersistentVolumeClaimSpec().storageClassName("SC"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume claim Test",
+            "is invalid", "spec.resources", "must be specified")));
+  }
+
+  @Test
+  void whenPersistentVolumeClaimStorageClassNotSpecifiedUnderInitPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
+            new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
+                .resources(createResources()))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("Persistent volume claim Test",
+            "is invalid", "spec.storageClass", "must be specified")));
+  }
+
+  public static V1ResourceRequirements createResources() {
+    return new V1ResourceRequirements().requests(Collections.singletonMap("storage", new Quantity("5Gi")));
   }
 
   @SafeVarargs

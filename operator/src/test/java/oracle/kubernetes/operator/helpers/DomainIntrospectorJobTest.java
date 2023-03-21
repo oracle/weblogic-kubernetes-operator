@@ -520,7 +520,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   private PersistentVolume createPv() {
     return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
         .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
-            .accessModes(Collections.singletonList("ReadWriteMany"))
             .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
             .hostPath(new V1HostPathVolumeSource().path("/shared")));
   }
