@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -65,6 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -95,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFro
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -561,10 +562,13 @@ class ItConfigDistributionStrategy {
     //copy the template datasource file for override after replacing JDBC_URL with new datasource url
     Path srcDsOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/jdbc-JdbcTestDataSource-1.xml");
     Path dstDsOverrideFile = Paths.get(WORK_DIR, "jdbc-JdbcTestDataSource-1.xml");
-    String tempString = assertDoesNotThrow(()
-        -> Files.readString(srcDsOverrideFile).replaceAll("JDBC_URL", dsUrl2));
-    assertDoesNotThrow(()
-        -> Files.write(dstDsOverrideFile, tempString.getBytes(StandardCharsets.UTF_8)));
+    assertDoesNotThrow(() -> {
+      Files.copy(srcDsOverrideFile, dstDsOverrideFile, StandardCopyOption.REPLACE_EXISTING);
+      replaceStringInFile(dstDsOverrideFile.toString(), "JDBC_URL", dsUrl2);
+      if (WEBLOGIC_12213) {
+        replaceStringInFile(dstDsOverrideFile.toString(), "com.mysql.cj.jdbc.Driver", "com.mysql.jdbc.Driver");
+      }
+    });
 
     List<Path> overrideFiles = new ArrayList<>();
     overrideFiles.add(dstDsOverrideFile);
@@ -1083,6 +1087,9 @@ class ItConfigDistributionStrategy {
       logger.info("hostAndPort = {0} ", hostAndPort);
       String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 
+      // based on WebLogic image, change the mysql driver to 
+      // 12.2.1.3 - com.mysql.jdbc.Driver
+      // 12.2.1.4 and above - com.mysql.cj.jdbc.Driver
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
       Properties p = new Properties();
@@ -1092,7 +1099,11 @@ class ItConfigDistributionStrategy {
       p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
       p.setProperty("dsName", dsName);
       p.setProperty("dsUrl", jdbcDsUrl);
-      p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      if (WEBLOGIC_12213) {
+        p.setProperty("dsDriver", "com.mysql.jdbc.Driver");
+      } else {
+        p.setProperty("dsDriver", "com.mysql.cj.jdbc.Driver");
+      }
       p.setProperty("dsUser", user);
       p.setProperty("dsPassword", password);
       p.setProperty("dsTarget", clusterName);

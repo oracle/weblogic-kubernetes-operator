@@ -1,12 +1,8 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,17 +30,13 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallSnakeParams;
@@ -333,47 +325,6 @@ public class LoggingExporter {
         .download();
   }
 
-  /**
-   * Install WebLogic Logging Exporter.
-   *
-   * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
-   * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param namespace logging exporter publish host namespace
-   * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
-   */
-  public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc, String namespace) {
-    // Copy WebLogic Logging Exporter files to WORK_DIR
-    String[] loggingExporterFiles =
-        {WLS_LOGGING_EXPORTER_YAML_FILE_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME};
-
-    for (String loggingFile : loggingExporterFiles) {
-      Path srcPath = Paths.get(wlsLoggingExporterYamlFileLoc, loggingFile);
-      Path destPath = Paths.get(WORK_DIR, loggingFile);
-      assertDoesNotThrow(() -> FileUtils.copy(srcPath, destPath),
-          String.format("Failed to copy %s to %s", srcPath, destPath));
-      assertDoesNotThrow(() -> FileUtils.replaceStringInFile(destPath.toString(), "default", namespace),
-          String.format("Failed to replace namespace default to %s", namespace));
-      logger.info("Copied {0} to {1}}", srcPath, destPath);
-    }
-
-    // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
-    assertDoesNotThrow(() -> addFilterToElkFile(filter),
-        "Failed to add WebLogic Logging Exporter filter");
-
-    // Download WebLogic Logging Exporter jar file
-    if (!downloadWle()) {
-      return false;
-    }
-
-    // Download the YAML parser, SnakeYAML
-    if (!downloadSnake()) {
-      return false;
-    }
-
-    return true;
-  }
-
   private static V1Deployment createElasticsearchDeploymentCr(LoggingExporterParams params) {
 
     String elasticsearchName = params.getElasticsearchName();
@@ -561,20 +512,5 @@ public class LoggingExporter {
     }
 
     return statusLine.stdout();
-  }
-
-  private static void addFilterToElkFile(String filter) throws Exception {
-    String filterStr = new StringBuffer()
-        .append(System.lineSeparator())
-        .append("weblogicLoggingExporterFilters:")
-        .append(System.lineSeparator())
-        .append("- FilterExpression: NOT(SERVER = '")
-        .append(filter)
-        .append("')")
-        .toString();
-    logger.info("Command to add filter {0}", filterStr);
-
-    Files.write(Paths.get(WORK_DIR, WLS_LOGGING_EXPORTER_YAML_FILE_NAME),
-        filterStr.getBytes(), StandardOpenOption.APPEND);
   }
 }
