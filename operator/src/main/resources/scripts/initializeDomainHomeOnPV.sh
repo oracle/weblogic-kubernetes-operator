@@ -15,6 +15,7 @@ output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainH
 
 failure_exit() {
   chown 1000:0 $output_file
+  cat $output_file
   exit 1
 }
 
