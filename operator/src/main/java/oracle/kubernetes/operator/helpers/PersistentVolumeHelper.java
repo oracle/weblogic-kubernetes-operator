@@ -35,6 +35,10 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
  */
 public class PersistentVolumeHelper {
 
+  private PersistentVolumeHelper() {
+    // no-op
+  }
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
@@ -48,7 +52,6 @@ public class PersistentVolumeHelper {
   }
 
   static class CreatePersistentVolumeStep extends Step {
-    private DomainPresenceInfo info;
 
     CreatePersistentVolumeStep(Step next) {
       super(next);
@@ -56,7 +59,7 @@ public class PersistentVolumeHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (info.getDomain().getInitPvDomainPersistentVolume() != null) {
         return doNext(createContext(packet).readAndCreatePersistentVolumeStep(getNext()), packet);
       }
@@ -87,7 +90,7 @@ public class PersistentVolumeHelper {
 
     private String getPersistentVolumeName() {
       return Optional.ofNullable(getInitPvDomainPersistentVolume())
-          .map(ipv -> ipv.getMetadata()).map(m -> m.getName()).orElse(null);
+          .map(PersistentVolume::getMetadata).map(V1ObjectMeta::getName).orElse(null);
     }
 
     private PersistentVolume getInitPvDomainPersistentVolume() {
@@ -100,10 +103,6 @@ public class PersistentVolumeHelper {
 
     String getDomainUid() {
       return getDomain().getDomainUid();
-    }
-
-    private Step createNewPersistentVolume(Step next) {
-      return createPersistentVolume(getPVCreatedMessageKey(), next);
     }
 
     protected String getPVCreatedMessageKey() {
@@ -166,6 +165,18 @@ public class PersistentVolumeHelper {
       protected void logPersistentVolumeExists(String domainUid, PersistentVolume pv) {
         LOGGER.fine(PV_EXISTS, pv.getMetadata().getName(), domainUid);
       }
+
+      private Step createNewPersistentVolume(Step next) {
+        return createPersistentVolume(getPVCreatedMessageKey(), next);
+      }
+
+      private Step createPersistentVolume(String messageKey, Step next) {
+        return new CallBuilder()
+            .createPersistentVolumeAsync(
+                createModel(),
+                new PersistentVolumeHelper.PersistentVolumeContext
+                    .CreateResponseStep(messageKey, next));
+      }
     }
 
     private class ConflictStep extends Step {
@@ -183,14 +194,6 @@ public class PersistentVolumeHelper {
       private PersistentVolume getInitPvDomainPersistentVolume(DomainPresenceInfo info) {
         return info.getDomain().getInitPvDomainPersistentVolume();
       }
-    }
-
-    private Step createPersistentVolume(String messageKey, Step next) {
-      return new CallBuilder()
-              .createPersistentVolumeAsync(
-                      createModel(),
-                      new PersistentVolumeHelper.PersistentVolumeContext
-                              .CreateResponseStep(messageKey, next));
     }
 
     public V1PersistentVolume createModel() {

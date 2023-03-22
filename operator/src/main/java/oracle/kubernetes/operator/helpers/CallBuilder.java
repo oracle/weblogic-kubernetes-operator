@@ -288,7 +288,7 @@ public class CallBuilder {
 
   private final CallFactory<V1PersistentVolume> readPersistentVolume =
       (requestParams, usage, cont, callback) ->
-          wrap(readPersistentVolumeAsync(usage, requestParams.name, requestParams.namespace, callback));
+          wrap(readPersistentVolumeAsync(usage, requestParams.name, callback));
   private final CallFactory<V1PersistentVolume> createPersistentVolume =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -2058,7 +2058,7 @@ public class CallBuilder {
 
   /* Persistent Volumes */
   private Call readPersistentVolumeAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1PersistentVolume> callback)
+      ApiClient client, String name, ApiCallback<V1PersistentVolume> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .readPersistentVolumeAsync(name, PRETTY, callback);
