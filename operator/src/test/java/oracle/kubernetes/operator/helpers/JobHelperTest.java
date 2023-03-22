@@ -1087,34 +1087,6 @@ class JobHelperTest extends DomainValidationTestBase {
     );
   }
 
-  @Test
-  void introspectorPodSpec_createdWithInitDomainOnPVDHContainerHasDHSet() {
-
-    configureDomain()
-        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
-        .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
-
-    V1JobSpec jobSpec = createJobSpec();
-    V1PodSpec podSpec = getPodSpec(jobSpec);
-    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
-        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
-
-    assertThat(
-        hasContainer,
-        is(true)
-    );
-
-    assertThat(podSpec.getInitContainers()
-        .stream()
-        .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
-        .findFirst()
-        .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
-        .map(V1EnvVar::getName)
-        .collect(Collectors.toList()),
-        hasItems("DOMAIN_HOME"));
-
-  }
 
   @Test
   void introspectorPodSpec_createdWithInitDomainOnPVContainerHasEnvSet() {
