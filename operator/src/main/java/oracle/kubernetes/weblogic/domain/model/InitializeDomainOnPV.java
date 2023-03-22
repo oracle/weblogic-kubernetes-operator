@@ -11,10 +11,12 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class InitializeDomainOnPV {
 
-  @Description("Configuration including 'Metadata' and 'Specs' to create a persistent volume, if needed.")
+  @Description("Configuration including 'Metadata' and 'Specs' to create a PersistentVolume, if it does not exist."
+      + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes")
   PersistentVolume persistentVolume;
 
-  @Description("Configuration including 'Metadata' and 'Specs' to create a persistent volume claim, if needed.")
+  @Description("Configuration including 'Metadata' and 'Specs' to create a PersistentVolumeClaim, if it does not"
+      + " exist. PersistentVolumeClaim is a user's request for and claim to a persistent volume.")
   PersistentVolumeClaim persistentVolumeClaim;
 
   @Description("Configuration details to create an empty WebLogic 'Domain on PV' domain, if needed.")

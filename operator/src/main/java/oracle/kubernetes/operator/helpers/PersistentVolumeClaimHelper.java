@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
+import oracle.kubernetes.weblogic.domain.model.PersistentVolume;
 import oracle.kubernetes.weblogic.domain.model.PersistentVolumeClaim;
 import oracle.kubernetes.weblogic.domain.model.PersistentVolumeClaimSpec;
 
@@ -36,6 +37,10 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
  */
 public class PersistentVolumeClaimHelper {
 
+  private PersistentVolumeClaimHelper() {
+    // no-op
+  }
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
@@ -49,7 +54,6 @@ public class PersistentVolumeClaimHelper {
   }
 
   static class CreatePersistentVolumeClaimStep extends Step {
-    private DomainPresenceInfo info;
 
     CreatePersistentVolumeClaimStep(Step next) {
       super(next);
@@ -57,7 +61,7 @@ public class PersistentVolumeClaimHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      info = packet.getSpi(DomainPresenceInfo.class);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (info.getDomain().getInitPvDomainPersistentVolumeClaim() != null) {
         return doNext(createContext(packet).readAndCreatePersistentVolumeClaimStep(getNext()), packet);
       }
@@ -88,7 +92,7 @@ public class PersistentVolumeClaimHelper {
 
     private String getPersistentVolumeClaimName() {
       return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
-          .map(ipv -> ipv.getMetadata()).map(m -> m.getName()).orElse(null);
+          .map(PersistentVolumeClaim::getMetadata).map(V1ObjectMeta::getName).orElse(null);
     }
 
     private PersistentVolumeClaim getInitPvDomainPersistentVolumeClaim() {
@@ -101,10 +105,6 @@ public class PersistentVolumeClaimHelper {
 
     String getDomainUid() {
       return getDomain().getDomainUid();
-    }
-
-    private Step createNewPersistentVolumeClaim(Step next) {
-      return createPersistentVolumeClaim(getPVCCreatedMessageKey(), next);
     }
 
     protected String getPVCCreatedMessageKey() {
@@ -167,6 +167,19 @@ public class PersistentVolumeClaimHelper {
       protected void logPersistentVolumeClaimExists(String domainUid, PersistentVolumeClaim pvc) {
         LOGGER.fine(PVC_EXISTS, pvc.getMetadata().getName(), domainUid);
       }
+
+      private Step createNewPersistentVolumeClaim(Step next) {
+        return createPersistentVolumeClaim(getPVCCreatedMessageKey(), next);
+      }
+
+      private Step createPersistentVolumeClaim(String messageKey, Step next) {
+        return new CallBuilder()
+            .createPersistentVolumeClaimAsync(
+                info.getNamespace(),
+                createModel(),
+                new PersistentVolumeClaimHelper.PersistentVolumeClaimContext
+                    .CreateResponseStep(messageKey, next));
+      }
     }
 
     private class ConflictStep extends Step {
@@ -180,15 +193,6 @@ public class PersistentVolumeClaimHelper {
       private String getPersistentVolumeClaimName() {
         return getInitPvDomainPersistentVolumeClaim().getMetadata().getName();
       }
-    }
-
-    private Step createPersistentVolumeClaim(String messageKey, Step next) {
-      return new CallBuilder()
-              .createPersistentVolumeClaimAsync(
-                      info.getNamespace(),
-                      createModel(),
-                      new PersistentVolumeClaimHelper.PersistentVolumeClaimContext
-                              .CreateResponseStep(messageKey, next));
     }
 
     public V1PersistentVolumeClaim createModel() {
@@ -207,14 +211,14 @@ public class PersistentVolumeClaimHelper {
 
     @Nonnull
     private PersistentVolumeClaimSpec getSpec() {
-      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(ipc -> ipc.getSpec())
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim()).map(PersistentVolumeClaim::getSpec)
           .orElse(new PersistentVolumeClaimSpec());
     }
 
     @Nonnull
     private V1ObjectMeta getMetadata() {
       return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
-          .map(ipv -> ipv.getMetadata()).orElse(new V1ObjectMeta());
+          .map(PersistentVolumeClaim::getMetadata).orElse(new V1ObjectMeta());
     }
 
     private V1PersistentVolumeClaimSpec createSpec(PersistentVolumeClaimSpec spec) {
@@ -225,8 +229,8 @@ public class PersistentVolumeClaimHelper {
     }
 
     public String getInitPvDomainPersistentVolumeName() {
-      return Optional.ofNullable(info.getDomain()).map(d -> d.getInitPvDomainPersistentVolume())
-          .map(ipv -> ipv.getMetadata()).map(m -> m.getName()).orElse(null);
+      return Optional.ofNullable(info.getDomain()).map(DomainResource::getInitPvDomainPersistentVolume)
+          .map(PersistentVolume::getMetadata).map(V1ObjectMeta::getName).orElse(null);
     }
 
     protected void logPersistentVolumeClaimCreated(String messageKey) {

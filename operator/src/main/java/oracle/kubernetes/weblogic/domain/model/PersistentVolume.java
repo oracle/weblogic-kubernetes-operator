@@ -4,14 +4,20 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class PersistentVolume {
 
+  @Description("Standard object's metadata. "
+      + "More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata")
   private V1ObjectMeta metadata;
 
+  @Description("Spec defines a specification of a persistent volume owned by the cluster. More info:"
+      + "https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistent-volumes . "
+      + "Note: Only a subset of fields in standard Kubernetes PersistentVolume are supported.")
   private PersistentVolumeSpec spec;
 
   public V1ObjectMeta getMetadata() {

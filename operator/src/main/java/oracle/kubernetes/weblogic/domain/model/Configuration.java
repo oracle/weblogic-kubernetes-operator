@@ -48,10 +48,10 @@ public class Configuration {
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Feature("DomainOnPvSimplification")
-  @Description("The configuration required to create an empty WebLogic 'Domain on PV' domain, a persistent"
-      + " volume and a persistent volume claim, if needed."
+  @Description("The configuration required to create a WebLogic `Domain in PV` domain, a persistent"
+      + " volume and/or a persistent volume claim, if they do not already exist."
       + " These will be one-time operations that happen only if the domain, persistent volume or persistent volume"
-      + " claim do not already exist. This is primarily used for a JRF-based WebLogic domain. For a plain WebLogic"
+      + " claim do not already exist. This feature is primarily used for a JRF-based domains. For a plain WebLogic"
       + " domain, the recommended approach is to use a 'Model In Image' domain home source type."
       + " See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/")
   private InitializeDomainOnPV initializeDomainOnPV;
