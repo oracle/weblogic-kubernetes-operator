@@ -1144,6 +1144,7 @@ class JobHelperTest extends DomainValidationTestBase {
   void introspectorPodSpec_createdWithInitDomainOnPVHasConfigMapMounted() {
 
     configureDomain()
+        .withLogHome("/share/logs/domain1")
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)

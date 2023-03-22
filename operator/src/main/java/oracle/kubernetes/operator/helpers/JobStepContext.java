@@ -467,6 +467,7 @@ public class JobStepContext extends BasePodStepContext {
             .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
         .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
         .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+        .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
         .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
@@ -505,12 +506,9 @@ public class JobStepContext extends BasePodStepContext {
     getConfigOverrideSecrets().forEach(secretName -> addConfigOverrideSecretVolume(podSpec, secretName));
     Optional.ofNullable(getConfigOverrides()).ifPresent(overrides -> addConfigOverrideVolume(podSpec, overrides));
 
-    if (isDomainSourceFromModel() || isInitializeDomainOnPV()) {
+    if (isDomainSourceFromModel()) {
       Optional.ofNullable(getWdtConfigMap()).ifPresent(mapName -> addWdtConfigMapVolume(podSpec, mapName));
-      if (isDomainSourceFromModel()) {
-        addWdtSecretVolume(podSpec);
-
-      }
+      addWdtSecretVolume(podSpec);
     }
 
     if (isInitializeDomainOnPV()) {
@@ -593,18 +591,14 @@ public class JobStepContext extends BasePodStepContext {
                   getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
-    if (isDomainSourceFromModel() || isInitializeDomainOnPV()) {
+    if (isDomainSourceFromModel()) {
       if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
             readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
-
-      if (isDomainSourceFromModel()) {
-        container.addVolumeMountsItem(
-            readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
-                RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
-
-      }
+      container.addVolumeMountsItem(
+          readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
+              RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH));
     }
 
     if (isInitializeDomainOnPV() && getDomainCreationConfigMap() != null) {
