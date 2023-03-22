@@ -467,6 +467,7 @@ public class JobStepContext extends BasePodStepContext {
             .mountPath(AUXILIARY_IMAGE_TARGET_PATH))
         .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
         .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
+        .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
         .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
