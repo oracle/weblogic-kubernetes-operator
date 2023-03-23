@@ -6,7 +6,6 @@ if [ "${debug}" == "true" ]; then set -x; fi;
 
 . ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
-UNKNOWN_SHELL=true
 checkEnv DOMAIN_HOME AUXILIARY_IMAGE_TARGET_PATH || exit 1
 
 mkdir -m 750 -p "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/" || exit 1
@@ -15,6 +14,7 @@ output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainH
 
 failure_exit() {
   chown 1000:0 $output_file
+  cat $output_file
   exit 1
 }
 
@@ -22,6 +22,7 @@ create_success_file_and_exit() {
   echo "0" > "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
   chown 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
   chown 1000:0 $output_file 2>&1
+  cat $output_file
   exit
 }
 
@@ -63,7 +64,7 @@ create_directory_path_and_set_permission() {
                failure_exit
            fi
 
-           trace "Creating domain home completed"
+           trace "Creating directory path completed" >> "$output_file"
            return 0
        fi
     done
@@ -74,7 +75,7 @@ create_directory_path_and_set_permission() {
 
 
 ORIGIFS=$IFS
-trace "DOMAIN HOME is $DOMAIN_HOME" >> "$output_file"
+trace "DOMAIN HOME is $DOMAIN_HOME" > "$output_file"
 trace "Running the script as "`id` >> "$output_file"
 
 if [ -f "$DOMAIN_HOME" ]; then
@@ -87,6 +88,8 @@ if [ -f "$DOMAIN_HOME" ]; then
   fi
 fi
 
+trace "Creating path for domain home $DOMAIN_HOME" >> "$output_file"
+
 create_directory_path_and_set_permission $DOMAIN_HOME
 if [ $? -ne 0 ] ; then
   trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
@@ -94,6 +97,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 if [ ! -z $LOG_HOME ] ; then
+  trace "Creating path for log home $LOG_HOME" >> "$output_file"
   create_directory_path_and_set_permission $LOG_HOME
   if [ $? -ne 0 ] ; then
     trace SEVERE "Error: Unable initialize log home: 'domain.spec.logHome' $LOG_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
