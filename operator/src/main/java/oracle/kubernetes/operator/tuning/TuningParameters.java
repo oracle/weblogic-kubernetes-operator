@@ -422,16 +422,13 @@ public class TuningParameters {
 
     @Nonnull
     private List<String> parseEnabledFeatures(String list) {
-      List<String> features = Arrays.stream(list.split(","))
+      return Arrays.stream(list.split(","))
           .filter(this::isEnabledFeatureName)
           .map(this::getFeatureName)
           .collect(Collectors.toList());
-      System.out.println("enabled features " + features);
-      return features;
     }
 
     private boolean isEnabledFeatureName(String v) {
-      System.out.println("Feature is " + v);
       return v.endsWith("=true");
     }
 

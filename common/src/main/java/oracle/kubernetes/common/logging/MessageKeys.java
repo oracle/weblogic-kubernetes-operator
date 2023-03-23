@@ -172,6 +172,10 @@ public class MessageKeys {
   public static final String PVC_CREATED = "WLSKO-0234";
   public static final String PV_EXISTS = "WLSKO-0235";
   public static final String PVC_EXISTS = "WLSKO-0236";
+  public static final String PVC_IS_BOUND = "WLSKO-0237";
+  public static final String WAITING_FOR_PVC_TO_BIND = "WLSKO-0238";
+  public static final String PVC_PENDING_ERROR = "WLSKO-0239";
+
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
@@ -266,6 +270,7 @@ public class MessageKeys {
   public static final String CLUSTER_COMPLETED_EVENT_PATTERN = "WLSEO-0035";
   public static final String CLUSTER_UNAVAILABLE_EVENT_PATTERN = "WLSEO-0036";
   public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
+  public static final String PERSISTENT_VOLUME_CLAIM_EVENT_ERROR = "WLSEO-0038";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

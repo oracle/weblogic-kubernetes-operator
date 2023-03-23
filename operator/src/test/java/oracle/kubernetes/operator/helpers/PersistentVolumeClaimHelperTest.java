@@ -15,9 +15,11 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.PvcAwaiterStepFactory;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -50,6 +52,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getLocalizedString;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.PVCWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PVC;
@@ -98,6 +101,8 @@ class PersistentVolumeClaimHelperTest {
     WlsDomainConfig domainConfig = configSupport.createDomainConfig();
     testSupport
         .addToPacket(DOMAIN_TOPOLOGY, domainConfig)
+        .addComponent(PVCWATCHER_COMPONENT_NAME, PvcAwaiterStepFactory.class,
+            new DomainProcessorDelegateStub.TestPvcAwaiterStepFactory())
         .addDomainPresenceInfo(domainPresenceInfo);
     configureDomain();
   }

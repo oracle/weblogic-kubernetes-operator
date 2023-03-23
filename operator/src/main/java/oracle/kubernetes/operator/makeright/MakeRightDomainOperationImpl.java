@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.Processors;
+import oracle.kubernetes.operator.PvcAwaiterStepFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -195,7 +196,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             ProcessingConstants.DOMAIN_COMPONENT_NAME,
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
+                JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace()),
+                PvcAwaiterStepFactory.class, delegate.getPvcAwaiterStepFactory(getNamespace())));
     return packet;
   }
 

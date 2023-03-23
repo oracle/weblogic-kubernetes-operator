@@ -12,6 +12,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import oracle.kubernetes.operator.PvcAwaiterStepFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -87,7 +88,7 @@ public class PersistentVolumeClaimHelper {
 
     Step readAndCreatePersistentVolumeClaimStep(Step next) {
       return new CallBuilder().readPersistentVolumeClaimAsync(getPersistentVolumeClaimName(), info.getNamespace(),
-              new ReadResponseStep(next));
+              new ReadResponseStep(waitForPvcToBind(getPersistentVolumeClaimName(), next)));
     }
 
     private String getPersistentVolumeClaimName() {
@@ -135,6 +136,7 @@ public class PersistentVolumeClaimHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
         logPersistentVolumeClaimCreated(messageKey);
+        addPersistentVolumeClaimToRecord(callResponse.getResult());
         return doNext(packet);
       }
     }
@@ -155,11 +157,14 @@ public class PersistentVolumeClaimHelper {
       public NextAction onSuccess(Packet packet, CallResponse<V1PersistentVolumeClaim> callResponse) {
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         V1PersistentVolumeClaim persistentVolumeClaim = callResponse.getResult();
+
         if (persistentVolumeClaim == null) {
+          removePersistentVolumeClaimFromRecord();
           return doNext(createNewPersistentVolumeClaim(getNext()), packet);
         } else {
           logPersistentVolumeClaimExists(info.getDomain().getDomainUid(),
               info.getDomain().getInitPvDomainPersistentVolumeClaim());
+          addPersistentVolumeClaimToRecord(callResponse.getResult());
         }
         return doNext(packet);
       }
@@ -235,6 +240,37 @@ public class PersistentVolumeClaimHelper {
 
     protected void logPersistentVolumeClaimCreated(String messageKey) {
       LOGGER.info(messageKey, getPersistentVolumeClaimName(), getDomainUid());
+    }
+
+    protected void addPersistentVolumeClaimToRecord(@Nonnull V1PersistentVolumeClaim pvc) {
+      info.addPersistentVolumeClaim(pvc);
+    }
+
+    protected void removePersistentVolumeClaimFromRecord() {
+      info.removePersistentVolumeClaim(getPersistentVolumeClaimName());
+    }
+  }
+
+  public static Step waitForPvcToBind(String pvcName, Step next) {
+    return new WaitForPvcToBind(pvcName, next);
+  }
+
+  static class WaitForPvcToBind extends Step {
+
+    private final String pvcName;
+
+    WaitForPvcToBind(String pvcName, Step next) {
+      super(next);
+      this.pvcName = pvcName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      V1PersistentVolumeClaim domainPvc = info.getPersistentVolumeClaim(pvcName);
+
+      PvcAwaiterStepFactory pw = packet.getSpi(PvcAwaiterStepFactory.class);
+      return doNext(pw.waitForReady(domainPvc, getNext()), packet);
     }
   }
 }
