@@ -210,7 +210,7 @@ createDomainFromWDTModel() {
 
     # TODO:  Waiting on WDT enhancement to detect RCU connectivity test for possible retry
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] && [ "$INIT_DOMAIN_ON_PV" != "domainAndRCU" ] ; then
-      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return ${ret}. " \
+      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return code ${ret}. " \
         ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
     else
       trace SEVERE "Domain On PV: WDT Create Domain Failed, ret=${ret}"

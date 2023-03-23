@@ -56,7 +56,7 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
-  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
+  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - Fatal Error: ";
 
   String FATAL_DOMAIN_INVALID_ERROR = "FatalDomainInvalidError";
 
