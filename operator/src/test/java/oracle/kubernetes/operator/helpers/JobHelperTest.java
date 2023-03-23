@@ -79,6 +79,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
@@ -109,6 +110,9 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.INIT_DOMAIN_ON_PV_CONTAINER;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEY_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
@@ -1087,34 +1091,6 @@ class JobHelperTest extends DomainValidationTestBase {
     );
   }
 
-  @Test
-  void introspectorPodSpec_createdWithInitDomainOnPVDHContainerHasDHSet() {
-
-    configureDomain()
-        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
-        .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
-
-    V1JobSpec jobSpec = createJobSpec();
-    V1PodSpec podSpec = getPodSpec(jobSpec);
-    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
-        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
-
-    assertThat(
-        hasContainer,
-        is(true)
-    );
-
-    assertThat(podSpec.getInitContainers()
-        .stream()
-        .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
-        .findFirst()
-        .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
-        .map(V1EnvVar::getName)
-        .collect(Collectors.toList()),
-        hasItems("DOMAIN_HOME"));
-
-  }
 
   @Test
   void introspectorPodSpec_createdWithInitDomainOnPVContainerHasEnvSet() {
@@ -1136,7 +1112,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
             .map(V1EnvVar::getName)
             .collect(Collectors.toList()),
-        hasItems("INIT_DOMAIN_ON_PV"));
+        hasItems("INIT_DOMAIN_ON_PV", "DOMAIN_HOME", "OPSS_KEY_SECRET_NAME", "OPSS_WALLETFILE_SECRET_NAME"));
 
   }
 
@@ -1158,8 +1134,36 @@ class JobHelperTest extends DomainValidationTestBase {
             .stream()
             .findFirst()
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
-            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/wdt-config-map")),
+            .anyMatch(p -> p.getMountPath().equals(WDTCONFIGMAP_MOUNT_PATH)),
         is(true));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVInitContainerHasCorrectVolumeMounts() {
+
+    configureDomain()
+        .withLogHome("/share/logs/domain1")
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1Mount", VOLUME_MOUNT_PATH_1)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                .domainType(DomainType.JRF)
+                .domainCreationConfigMap("wdt-config-map")));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(
+        podSpec.getInitContainers()
+            .stream()
+            .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .map(V1VolumeMount::getMountPath)
+            .collect(Collectors.toList()),
+          hasItems(SCRIPTS_MOUNTS_PATH, "/tmpAuxiliaryImage", VOLUME_MOUNT_PATH_1));
 
   }
 
@@ -1181,14 +1185,14 @@ class JobHelperTest extends DomainValidationTestBase {
             .stream()
             .findFirst()
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
-            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletkey-secret")),
+            .anyMatch(p -> p.getMountPath().equals(OPSS_KEY_MOUNT_PATH)),
         is(true));
 
     assertThat(podSpec.getContainers()
             .stream()
             .findFirst()
             .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
-            .anyMatch(p -> p.getMountPath().equals("/weblogic-operator/opss-walletfile-secret")),
+            .anyMatch(p -> p.getMountPath().equals(OPSS_WALLETFILE_MOUNT_PATH)),
         is(true));
   }
 
