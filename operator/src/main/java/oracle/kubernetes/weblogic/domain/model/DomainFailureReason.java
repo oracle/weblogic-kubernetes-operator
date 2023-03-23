@@ -15,6 +15,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INVALID_EVENT_
 import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
@@ -77,7 +78,13 @@ public enum DomainFailureReason {
     public String getEventError() {
       return SERVER_POD_EVENT_ERROR;
     }
-
+  },
+  @SerializedName("PersistentVolumeClaim")
+  PERSISTENT_VOLUME_CLAIM("PersistentVolumeClaim") {
+    @Override
+    public String getEventError() {
+      return PERSISTENT_VOLUME_CLAIM_EVENT_ERROR;
+    }
   },
   @SerializedName("ReplicasTooHigh")
   REPLICAS_TOO_HIGH("ReplicasTooHigh") {

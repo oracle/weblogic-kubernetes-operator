@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -64,6 +65,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.common.logging.MessageKeys.PVC_PENDING_ERROR;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -626,6 +628,18 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
           .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
+  }
+
+  @Override
+  public void updateDomainStatus(@Nonnull V1PersistentVolumeClaim pvc, DomainPresenceInfo info) {
+    if (ProcessingConstants.PENDING.equals(pvc.getStatus().getPhase())) {
+      delegate.runSteps(new Packet().with(info), DomainStatusUpdater
+              .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
+    }
+  }
+
+  private String getMessage(V1PersistentVolumeClaim pvc) {
+    return LOGGER.formatMessage(PVC_PENDING_ERROR, pvc.getMetadata().getName(), pvc.getStatus());
   }
 
 
