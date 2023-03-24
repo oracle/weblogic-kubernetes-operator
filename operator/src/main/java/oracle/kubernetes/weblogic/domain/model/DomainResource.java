@@ -432,7 +432,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
-   * Reference to secret opss key passphrase for MII.
+   * Reference to secret opss key passphrase for model in image.
    *
    * @return opss key passphrase
    */
@@ -548,7 +548,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   /**
    * Returns the wallet password secret name if InitializeDomainOnPV is specified.
-   * @return domain type
+   * @return wallet password secret name.
    */
   public String getInitializeDomainOnPVOpssWalletPasswordSecret() {
     return spec.getInitializeDomainOnPVOpssWalletPasswordSecret();
@@ -556,7 +556,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
   /**
    * Returns true if InitializeDomainOnPV is specified.
-   * @return domain type
+   * @return a boolean value indicating if InitializeDomainOnPV is specified.
    */
   public boolean isInitializeDomainOnPV() {
     return spec.isInitializeDomainOnPV();
@@ -777,7 +777,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   public List<DomainCreationImage> getDomainCreationImages() {
-    return getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME ? spec.getDomainImages() : null;
+    return getDomainHomeSourceType() == DomainSourceType.PERSISTENT_VOLUME ? spec.getPVDomainCreationImages() : null;
   }
 
   /**
@@ -1040,8 +1040,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       whenDomainCreationImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       verifyIntrospectorEnvVariables();
       verifyModelNotConfiguredWithInitializeDomainOnPV();
-      verifyPVSpecWhenInitDomainOnPVDefined();
-      verifyPVCSpecWhenInitDomainOnPVDefined();
+      verifyPVSpecificationsWhenInitDomainOnPVDefined();
+      verifyPVCSpecificationsWhenInitDomainOnPVDefined();
     }
 
     private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
@@ -1243,22 +1243,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private void verifyPVSpecWhenInitDomainOnPVDefined() {
+    private void verifyPVSpecificationsWhenInitDomainOnPVDefined() {
       Optional.ofNullable(getSpec().getInitializeDomainOnPV())
           .map(InitializeDomainOnPV::getPersistentVolume).ifPresent(this::verifyPVSpecs);
     }
 
     private void verifyPVSpecs(PersistentVolume pv) {
       if (getName(pv.getMetadata()) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeNameNotSpecified());
+        failures.add(DomainValidationMessages.persistentVolumeNameNotSpecified());
         return;
       }
       String name = pv.getMetadata().getName();
       if (getCapacity(pv) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeCapacityNotSpecified(name));
+        failures.add(DomainValidationMessages.persistentVolumeCapacityNotSpecified(name));
       }
       if (getPvStorageClass(pv) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeStorageClassNotSpecified(name));
+        failures.add(DomainValidationMessages.persistentVolumeStorageClassNotSpecified(name));
       }
     }
 
@@ -1270,22 +1270,22 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       return Optional.ofNullable(pv.getSpec()).map(PersistentVolumeSpec::getCapacity).orElse(null);
     }
 
-    private void verifyPVCSpecWhenInitDomainOnPVDefined() {
+    private void verifyPVCSpecificationsWhenInitDomainOnPVDefined() {
       Optional.ofNullable(getSpec().getInitializeDomainOnPV())
           .map(InitializeDomainOnPV::getPersistentVolumeClaim).ifPresent(this::verifyPVCSpecs);
     }
 
     private void verifyPVCSpecs(PersistentVolumeClaim pvc) {
       if (getName(pvc.getMetadata()) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimNameNotSpecified());
+        failures.add(DomainValidationMessages.persistentVolumeClaimNameNotSpecified());
         return;
       }
       String name = pvc.getMetadata().getName();
       if (getResourceRequirements(pvc) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimResourcesNotSpecified(name));
+        failures.add(DomainValidationMessages.persistentVolumeClaimResourcesNotSpecified(name));
       }
       if (getPvcStorageClass(pvc) == null) {
-        failures.add(DomainValidationMessages.invalidPersistentVolumeClaimStorageClassNotSpecified(name));
+        failures.add(DomainValidationMessages.persistentVolumeClaimStorageClassNotSpecified(name));
       }
     }
 

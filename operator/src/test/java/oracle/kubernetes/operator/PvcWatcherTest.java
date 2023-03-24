@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.meterware.simplestub.Memento;
-import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
@@ -49,7 +48,6 @@ class PvcWatcherTest {
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
-
   }
 
   @AfterEach
@@ -87,11 +85,6 @@ class PvcWatcherTest {
 
   private OffsetDateTime getCurrentTime() {
     return clock;
-  }
-
-  @SuppressWarnings("unchecked")
-  protected <T> T createObjectWithMetaData(V1ObjectMeta metaData) {
-    return (T) new V1Job().metadata(metaData);
   }
 
   protected PvcWatcher createWatcher() {
@@ -157,10 +150,10 @@ class PvcWatcherTest {
     return pvc.status(new V1PersistentVolumeClaimStatus().phase(PENDING));
   }
 
-  // Starts the waitForReady step with job modified as needed
-  private void startWaitForReady(Function<V1PersistentVolumeClaim,V1PersistentVolumeClaim> jobFunction) {
+  // Starts the waitForReady step with pvc modified as needed
+  private void startWaitForReady(Function<V1PersistentVolumeClaim,V1PersistentVolumeClaim> pvcFunction) {
     PvcWatcher watcher = createWatcher();
-    V1PersistentVolumeClaim cachedPvc = jobFunction.apply(createPvc());
+    V1PersistentVolumeClaim cachedPvc = pvcFunction.apply(createPvc());
 
     testSupport.runSteps(watcher.waitForReady(cachedPvc, terminalStep));
   }
@@ -186,7 +179,7 @@ class PvcWatcherTest {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
-  // Starts the waitForReady step with an incomplete job cached, but a modified one in kubernetes
+  // Starts the waitForReady step with an incomplete pvc cached, but a modified one in kubernetes
   private void startWaitForReadyThenReadPvc(Function<V1PersistentVolumeClaim,V1PersistentVolumeClaim> pvcFunction) {
     startWaitForReadyThenReadPvc(pvcFunction, terminalStep);
   }

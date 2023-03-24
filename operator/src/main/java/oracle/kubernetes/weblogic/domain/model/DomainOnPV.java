@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class DomainOnPV {
 
-  @Description("Specifies if only domain or domain with RCU needs to be created."
+  @Description("Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains)."
       + " Legal values: domain, domainAndRCU. Defaults to domain.")
   @Default(strDefault = "domain")
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
@@ -27,8 +27,8 @@ public class DomainOnPV {
    * The domain images.
    *
    */
-  @Description("Domain images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy "
-      + "Tooling installation files."
+  @Description("Domain creation images containing WebLogic Deploy Tooling model, application archive, and WebLogic"
+      + " Deploy Tooling installation files."
       + " These files will be used to create the domain during introspection. This feature"
       + " internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share"
       + " the files from the additional images ")

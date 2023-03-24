@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -48,12 +48,13 @@ public class Configuration {
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
   @Feature("DomainOnPvSimplification")
-  @Description("The configuration required to create a WebLogic `Domain in PV` domain, a persistent"
-      + " volume and/or a persistent volume claim, if they do not already exist."
-      + " These will be one-time operations that happen only if the domain, persistent volume or persistent volume"
-      + " claim do not already exist. This feature is primarily used for a JRF-based domains. For a plain WebLogic"
-      + " domain, the recommended approach is to use a 'Model In Image' domain home source type."
-      + " See https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/")
+  @Description("This field describes the configuration required to initialize or create a WebLogic Domain in persistent"
+      + " volume (`Domain in pv`) and related resources such as a persistent volume and a persistent volume claim. The"
+      + " operator will not recreate or update the domain and resources if they already exist. This feature helps in"
+      + " creating an initial JRF-based domain. For plain WebLogic domains, we recommend using a 'Model In Image'"
+      + " domain home source type instead. For more information, see"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ")
   private InitializeDomainOnPV initializeDomainOnPV;
 
   public Model getModel() {

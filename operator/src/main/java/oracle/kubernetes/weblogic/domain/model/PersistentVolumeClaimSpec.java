@@ -12,11 +12,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class PersistentVolumeClaimSpec {
 
   @Description("Resources represents the minimum resources the volume should have. If"
-      + " RecoverVolumeExpansionFailure feature is enabled users are allowed to\n"
-      + " specify resource requirements that are lower than previous value but must\n"
-      + " still be higher than capacity recorded in the status field of the claim.\n"
-      + " More info:\n"
-      + " https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources\n"
+      + " RecoverVolumeExpansionFailure feature is enabled users are allowed to"
+      + " specify resource requirements that are lower than previous value but must"
+      + " still be higher than capacity recorded in the status field of the claim."
+      + " More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources."
       + " ResourceRequirements describes the compute resource requirements.")
   private V1ResourceRequirements resources;
 

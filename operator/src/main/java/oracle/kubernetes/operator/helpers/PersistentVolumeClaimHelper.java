@@ -30,11 +30,12 @@ import static oracle.kubernetes.common.logging.MessageKeys.PVC_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.PVC_EXISTS;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.PV_PVC_API_VERSION;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 
 /**
- * Operations for dealing with namespaces.
+ * Operations for dealing with persistent volume claims.
  */
 public class PersistentVolumeClaimHelper {
 
@@ -210,7 +211,7 @@ public class PersistentVolumeClaimHelper {
       labels.put(DOMAINUID_LABEL, info.getDomainUid());
       return new V1PersistentVolumeClaim()
               .metadata(getMetadata().labels(labels))
-              .apiVersion("v1")
+              .apiVersion(PV_PVC_API_VERSION)
               .spec(createSpec(getSpec()));
     }
 

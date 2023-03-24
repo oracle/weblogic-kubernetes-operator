@@ -1030,7 +1030,7 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getInitializeDomainOnPV).orElse(null);
   }
 
-  List<DomainCreationImage> getDomainImages() {
+  List<DomainCreationImage> getPVDomainCreationImages() {
     return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getDomainCreationImages).orElse(null);
   }
