@@ -11,6 +11,7 @@ import java.util.Optional;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -31,7 +32,7 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 
 /**
- * Operations for dealing with namespaces.
+ * Operations for dealing with perisstent volumes.
  */
 public class PersistentVolumeHelper {
 
@@ -206,7 +207,7 @@ public class PersistentVolumeHelper {
       labels.put(DOMAINUID_LABEL, info.getDomainUid());
       return new V1PersistentVolume()
               .metadata(getMetadata().labels(labels))
-              .apiVersion("v1")
+              .apiVersion(KubernetesConstants.PV_PVC_API_VERSION)
               .spec(createSpec(getSpec()));
     }
 

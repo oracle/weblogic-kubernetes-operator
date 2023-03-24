@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
+// Copyright (c) 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -38,8 +38,8 @@ public class PvcWatcher implements PvcAwaiterStepFactory {
   }
 
   /**
-   * Test if pvc is bound.
-   * @param pvc pvc
+   * Test if PersistentVolumeClaim is bound.
+   * @param pvc PersistentVolumeClaim
    * @return true, if bound
    */
   public static boolean isBound(V1PersistentVolumeClaim pvc) {
@@ -60,10 +60,10 @@ public class PvcWatcher implements PvcAwaiterStepFactory {
   }
 
   /**
-   * Waits until the pvc is Ready.
+   * Waits until the PersistentVolumeClaim is Ready.
    *
-   * @param pvc pvc to watch
-   * @param next Next processing step once pvc is ready
+   * @param pvc PersistentVolumeClaim to watch
+   * @param next Next processing step once PersistentVolumeClaim is ready
    * @return Asynchronous step
    */
   @Override
@@ -77,7 +77,7 @@ public class PvcWatcher implements PvcAwaiterStepFactory {
       super(pvc, next);
     }
 
-    // A pvc is considered ready once it has either successfully completed, or been marked as failed.
+    // A pvc is considered ready once the status is Bound.
     @Override
     boolean isReady(V1PersistentVolumeClaim pvc) {
       return isBound(pvc);

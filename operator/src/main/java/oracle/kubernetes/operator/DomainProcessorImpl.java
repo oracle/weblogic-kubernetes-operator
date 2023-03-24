@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimStatus;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -632,10 +633,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void updateDomainStatus(@Nonnull V1PersistentVolumeClaim pvc, DomainPresenceInfo info) {
-    if (ProcessingConstants.PENDING.equals(pvc.getStatus().getPhase())) {
+    if (ProcessingConstants.PENDING.equals(getPhase(pvc))) {
       delegate.runSteps(new Packet().with(info), DomainStatusUpdater
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
     }
+  }
+
+  private String getPhase(@Nonnull V1PersistentVolumeClaim pvc) {
+    return Optional.ofNullable(pvc).map(V1PersistentVolumeClaim::getStatus)
+        .map(V1PersistentVolumeClaimStatus::getPhase).orElse(null);
   }
 
   private String getMessage(V1PersistentVolumeClaim pvc) {

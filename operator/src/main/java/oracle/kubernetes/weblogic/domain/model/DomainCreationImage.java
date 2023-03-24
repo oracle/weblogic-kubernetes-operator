@@ -20,8 +20,8 @@ public class DomainCreationImage implements DeploymentImage {
   /**
    * The domain image.
    */
-  @Description("The domain image containing model files, application archive files, and/or WebLogic "
-          + "Deploying Tooling installation files to create the domain. Required.")
+  @Description("The domain creation image containing model files, application archive files, and/or WebLogic "
+          + "Deploying Tooling installation files to create the domain in persistent volume. Required.")
   @NotNull
   private String image;
 
@@ -30,7 +30,7 @@ public class DomainCreationImage implements DeploymentImage {
       + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   private String imagePullPolicy;
 
-  @Description("The source location of the WebLogic Deploy Tooling installation within the domain image. "
+  @Description("The source location of the WebLogic Deploy Tooling installation within the domain creation image. "
           + "Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at "
           + "the default location, then the source directory is ignored. When specifying multiple domain images, "
           + "ensure that only one of the images supplies a WDT install home; if more than one WDT install home is "

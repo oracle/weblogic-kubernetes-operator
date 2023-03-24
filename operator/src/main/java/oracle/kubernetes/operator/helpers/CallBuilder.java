@@ -2115,7 +2115,7 @@ public class CallBuilder {
    * Asynchronous step for reading PersistentVolumeClaim.
    *
    * @param name Name
-   * @param namespace Name space
+   * @param namespace Namespace
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */

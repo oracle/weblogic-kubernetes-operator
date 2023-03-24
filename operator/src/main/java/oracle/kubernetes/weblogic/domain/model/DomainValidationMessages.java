@@ -148,27 +148,27 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
-  public static String invalidPersistentVolumeNameNotSpecified() {
+  public static String persistentVolumeNameNotSpecified() {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_NAME_NOT_SPECIFIED);
   }
 
-  public static String invalidPersistentVolumeCapacityNotSpecified(String name) {
+  public static String persistentVolumeCapacityNotSpecified(String name) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_CAPACITY_NOT_SPECIFIED, name);
   }
 
-  public static String invalidPersistentVolumeStorageClassNotSpecified(String name) {
+  public static String persistentVolumeStorageClassNotSpecified(String name) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PV_STORAGE_CLASS_NOT_SPECIFIED, name);
   }
 
-  public static String invalidPersistentVolumeClaimNameNotSpecified() {
+  public static String persistentVolumeClaimNameNotSpecified() {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_NAME_NOT_SPECIFIED);
   }
 
-  public static String invalidPersistentVolumeClaimResourcesNotSpecified(String name) {
+  public static String persistentVolumeClaimResourcesNotSpecified(String name) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_RESOURCES_NOT_SPECIFIED, name);
   }
 
-  public static String invalidPersistentVolumeClaimStorageClassNotSpecified(String name) {
+  public static String persistentVolumeClaimStorageClassNotSpecified(String name) {
     return getMessage(MessageKeys.INIT_PV_DOMAIN_PVC_STORAGE_CLASS_NOT_SPECIFIED, name);
   }
 

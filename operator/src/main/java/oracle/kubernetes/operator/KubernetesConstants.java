@@ -105,4 +105,5 @@ public interface KubernetesConstants {
   String DOMAIN_IMAGE = "spec.image";
   String DOMAIN_INTROSPECT_VERSION = "spec.introspectVersion";
   String AUXILIARY_IMAGES = "spec.configuration.model.auxiliaryImages";
+  String PV_PVC_API_VERSION = "v1";
 }
