@@ -863,7 +863,7 @@ wdtCreatePrimordialDomain() {
     # Important:
     # The "FatalIntrospectorError" keyword is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
-    # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
+    # We need to prevent retries with a "FatalIntrospectorError" because JRF without the OPSS_FLAGS indicates
     # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
