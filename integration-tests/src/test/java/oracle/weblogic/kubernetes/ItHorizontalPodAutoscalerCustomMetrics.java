@@ -306,6 +306,12 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         () -> verifyHPA(domainNamespace, "0/5"),
         logger,
         "Checking if total_open_session metric is 0");
+    testUntil(
+        withLongRetryPolicy,
+        () -> verifyHPA(domainNamespace, "2         3         2"),
+        logger,
+        "Checking if replica switched to 2");
+
     try {
       checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
     } catch (Exception ex) {
