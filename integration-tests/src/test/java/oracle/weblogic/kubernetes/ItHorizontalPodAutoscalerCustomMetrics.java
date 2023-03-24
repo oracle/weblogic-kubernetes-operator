@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
+import oracle.weblogic.kubernetes.assertions.impl.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -308,8 +309,18 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     try {
       checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
     } catch (Exception ex) {
-      //retry again
-      checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+      //check if different server was scaled down
+      try {
+        if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 1)) {
+          logger.info("HPA scaled down managed server 1");
+        } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 2)) {
+          logger.info("HPA scaled down managed server 2");
+        } else {
+          checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+        }
+      } catch (Exception ex1) {
+        throw ex;
+      }
     }
   }
 
