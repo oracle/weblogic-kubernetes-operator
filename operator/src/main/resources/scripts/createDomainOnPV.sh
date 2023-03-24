@@ -8,7 +8,6 @@
 source ${SCRIPTPATH}/utils.sh
 source ${SCRIPTPATH}/wdt_common.sh
 
-OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
@@ -20,7 +19,7 @@ IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="/aux/weblogic-deploy"
 WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
 WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
-WDT_CREATE_DOMAIN_LOG=createDomain.log
+WDT_CREATE_DOMAIN_LOG=${WDT_ROOT}/logs/createDomain.log
 WDT_BINDIR="${WDT_ROOT}/bin"
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
@@ -168,7 +167,15 @@ createDomainFromWDTModel() {
   trace "Entering createDomainFromWDTModel"
   stop_trap
 
-  export __WLSDEPLOY_STORE_MODEL__=1
+  # optional but useful - no need to fail
+  if [ -d "$LOG_HOME" ] ; then
+    trace "Creating rcu log directory "
+    local LOG_DIR_RCU="$LOG_HOME/rculogdir"
+    createFolder "$LOG_DIR_RCU" "This folder is used to hold rcu logs"
+    if [ -d "$LOG_DIR_RCU" ] ; then
+      export RCU_LOG_LOCATION=$LOG_DIR_RCU
+    fi
+  fi
 
   local wdtArgs=""
   wdtArgs+=" -oracle_home ${ORACLE_HOME}"
@@ -176,8 +183,6 @@ createDomainFromWDTModel() {
   wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
   wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
   wdtArgs+=" ${OPSS_FLAGS}"
-
-  cd $WDT_ROOT
 
   if [ -z "${OPSS_FLAGS}" ]; then
 
@@ -203,26 +208,30 @@ createDomainFromWDTModel() {
     # Important:
     # The "FatalIntrospectorError" keyword is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
-    # We need to prevent retries with a "FatalIntrospectorError" because JRF without the OPSS_FLAGS indicates
-    # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
-    # without admin intervention (retrying can compound the problem and obscure the original issue).
+    # We need to prevent retries with a "FatalIntrospectorError" because JRF failure involves database tables and
+    # schemas, the kind of failure may not be advisable for retry (e.g. wrong password can lead to account lock up,
+    # wrong url is useless to retry) and there is no easy way to determine the kind of failure is recoverable
     #
 
-    # TODO:  Waiting on WDT enhancement to detect RCU connectivity test for possible retry
-    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] && [ "$INIT_DOMAIN_ON_PV" != "domainAndRCU" ] ; then
-      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return code ${ret}. " \
-        ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
+    # TODO:  Waiting on WDT enhancement to detect RCU connectivity test for possible retry - may not be feasible
+
+    #if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] && [ "$INIT_DOMAIN_ON_PV" != "domainAndRCU" ] ; then
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
+      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
     else
-      trace SEVERE "Domain On PV: WDT Create Domain Failed, ret=${ret}"
+      trace SEVERE "Domain On PV: WDT Create Domain Failed, return code ${ret}."
     fi
     cat ${WDT_OUTPUT}
+
+    if [ -d "$LOG_HOME" ] ; then
+      cp "$WDT_CREATE_DOMAIN_LOG" "$LOG_HOME"
+    fi
+
     exitOrLoop
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
     cat ${WDT_OUTPUT}
   fi
-
-  wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
 
   # restore trap
   start_trap
