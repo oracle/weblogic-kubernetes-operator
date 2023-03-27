@@ -467,6 +467,11 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                         "patch")))
         .addRulesItem(
             newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(singletonList("persistentvolume"))
+                .verbs(asList("get", "list", "create")))
+        .addRulesItem(
+            newPolicyRule()
                 .addApiGroupsItem("weblogic.oracle")
                 .addResourcesItem("domains")
                 .addResourcesItem("clusters")
@@ -647,6 +652,16 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                 .addApiGroupsItem("")
                 .resources(singletonList("secrets"))
                 .verbs(asList("get", "list", "watch")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(singletonList("persistentvolumeclaims"))
+                .verbs(asList("get", "list", "create")))
+        .addRulesItem(
+            newPolicyRule()
+                .addApiGroupsItem("")
+                .resources(singletonList("persistentvolumes"))
+                .verbs(asList("get", "list", "create")))
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
