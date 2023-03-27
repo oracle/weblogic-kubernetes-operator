@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -395,7 +395,9 @@ public class DomainStatusUpdater {
   static class DomainUpdateStep extends ResponseStep<DomainResource> {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<DomainResource> callResponse) {
-      packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      if (callResponse.getResult() != null) {
+        packet.getSpi(DomainPresenceInfo.class).setDomain(callResponse.getResult());
+      }
       return doNext(packet);
     }
 
@@ -480,9 +482,8 @@ public class DomainStatusUpdater {
 
     private Step createDomainStatusReplaceStep() {
       LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getNewStatus());
-      if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("status change: " + createPatchString());
-      }
+      LOGGER.finer("status change: " + createPatchString());
+
       DomainResource oldDomain = getDomain();
       DomainStatus status = getNewStatus();
       if (isMakeRight) {
@@ -622,13 +623,11 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    void modifyStatus(DomainStatus domainStatus) { // no-op; modification happens in the context itself.
-    }
-
-    @Override
     public NextAction apply(Packet packet) {
-      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE,
-          Boolean.valueOf(shouldSkipDomainStatusUpdate(packet)));
+      if (isDomainNotPresent(packet)) {
+        return doNext(packet);
+      }
+      packet.put(ProcessingConstants.SKIP_STATUS_UPDATE, shouldSkipDomainStatusUpdate(packet));
       if (endOfProcessing) {
         packet.put(ProcessingConstants.END_OF_PROCESSING, Boolean.TRUE);
       }
@@ -640,6 +639,11 @@ public class DomainStatusUpdater {
       return info.getServerStartupInfo() == null
           && info.clusterStatusInitialized()
           && !endOfProcessing;
+    }
+
+    private boolean isDomainNotPresent(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return info == null || info.getDomain() == null;
     }
 
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
@@ -761,7 +765,11 @@ public class DomainStatusUpdater {
         public Conditions(DomainStatus status) {
           this.status = status != null ? status : new DomainStatus();
           this.clusterChecks = createClusterChecks();
-          conditionList.add(new DomainCondition(COMPLETED).withStatus(isProcessingCompleted()));
+          boolean isCompleted = isProcessingCompleted();
+          conditionList.add(new DomainCondition(COMPLETED).withStatus(isCompleted));
+          if (isCompleted && this.status.hasConditionWithType(FAILED)) {
+            this.status.removeConditionsWithType(FAILED);
+          }
           conditionList.add(createAvailableCondition());
           if (allIntendedServersReady()) {
             this.status.removeConditionsWithType(ROLLING);

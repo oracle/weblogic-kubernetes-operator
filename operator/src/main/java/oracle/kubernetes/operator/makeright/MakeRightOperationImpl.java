@@ -20,6 +20,7 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
 
   protected final MakeRightExecutor executor;
   protected final DomainProcessorDelegate delegate;
+  protected boolean explicitRecheck;
 
   /**
    * Create the operation.
@@ -37,7 +38,7 @@ public abstract class MakeRightOperationImpl<T extends ResourcePresenceInfo> imp
     return willInterrupt;
   }
 
-  public boolean wasStartedFromEvent() {
+  public boolean hasEventData() {
     return eventData != null;
   }
 }

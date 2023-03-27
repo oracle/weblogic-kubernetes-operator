@@ -11,13 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -35,7 +33,6 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
@@ -71,6 +68,11 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailu
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createClusterResourceEventData;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
@@ -106,7 +108,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   private static Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
 
   // List of clusters in a namespace.
-  private static Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+  private static final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
 
   private final DomainProcessorDelegate delegate;
   private final SemanticVersion productVersion;
@@ -132,11 +134,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     this.productVersion = productVersion;
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+  @Override
+  public DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return domains.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
+  private DomainPresenceInfo getExistingDomainPresenceInfo(DomainPresenceInfo newPresence) {
     return getExistingDomainPresenceInfo(newPresence.getNamespace(), newPresence.getDomainUid());
   }
 
@@ -154,11 +157,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   @Override
+  public Map<String,DomainPresenceInfo>  getDomainPresenceInfoMapForNS(String namespace) {
+    return domains.get(namespace);
+  }
+
+  @Override
   public Map<String, Map<String,ClusterPresenceInfo>>  getClusterPresenceInfoMap() {
     return clusters;
   }
 
-  private static List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
+  @Override
+  public Map<String, FiberGate> getMakeRightFiberGateMap() {
+    return makeRightFiberGates;
+  }
+
+  @Override
+  public List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String ns, String cluster) {
     List<DomainPresenceInfo> referencingDomains = new ArrayList<>();
     Optional.ofNullable(domains.get(ns)).ifPresent(d -> d.values().stream()
         .filter(info -> info.doesReferenceCluster(cluster)).forEach(referencingDomains::add));
@@ -244,21 +258,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
+  private static void onCreateModifyEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
-        processPodEvent(event);
+        processPodEvent(name, event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
@@ -272,13 +275,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static void processPodEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-    if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+  private static void processPodEvent(@Nonnull String name, CoreV1Event event) {
+    if (name.equals(NamespaceHelper.getOperatorPodName())) {
       updateEventK8SObjects(event);
     } else {
       processServerEvent(event);
@@ -313,30 +311,19 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void addToList(List<DomainResource> list, DomainPresenceInfo info) {
-    if (info.isNotDeleting()) {
+    if (isNotDeleting(info)) {
       list.add(info.getDomain());
     }
   }
 
-  private void onDeleteEvent(CoreV1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String kind = ref.getKind();
-    if (kind == null) {
-      return;
-    }
-
+  private void onDeleteEvent(@Nonnull String kind, @Nonnull String name, CoreV1Event event) {
     switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
         break;
       case EventConstants.EVENT_KIND_POD:
-        if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+        if (name.equals(NamespaceHelper.getOperatorPodName())) {
           deleteEventK8SObjects(event);
         }
         break;
@@ -411,7 +398,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return true;
     } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)) {
       return false;
-    } else if (liveInfo.isClusterGenerationChanged(cachedInfo)) {
+    } else if (operation.isExplicitRecheck() || liveInfo.isClusterGenerationChanged(cachedInfo)) {
       return true;
     } else {
       cachedInfo.setCluster(liveInfo.getCluster());
@@ -432,7 +419,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private boolean hasDeletedClusterEventData(MakeRightClusterOperation operation) {
-    return operation.getEventData() != null && operation.getEventData().getItem().name().equals("CLUSTER_DELETED");
+    return EventItem.CLUSTER_DELETED == getEventItem(operation);
+  }
+
+  private EventItem getEventItem(MakeRightClusterOperation operation) {
+    return Optional.ofNullable(operation.getEventData()).map(EventData::getItem).orElse(null);
   }
 
   private void logStartingDomain(DomainPresenceInfo presenceInfo) {
@@ -477,6 +468,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void unregisterDomainPresenceInfo(DomainPresenceInfo info) {
     unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+  }
+
+  @Override
+  public void unregisterDomainEventK8SObjects(DomainPresenceInfo info) {
     unregisterEventK8SObject(info.getNamespace(), info.getDomainUid());
   }
 
@@ -541,12 +536,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  @Override
-  public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
-    return Optional.ofNullable(domains.get(namespace)).orElse(Collections.emptyMap())
-        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
-  }
-
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
@@ -595,7 +584,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
-        if (removed && info.isNotDeleting() && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
+        if (removed && isNotDeleting(info) && Boolean.FALSE.equals(info.isServerPodBeingDeleted(serverName))) {
           LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
@@ -624,7 +613,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     switch (watchType) {
       case ADDED:
       case MODIFIED:
-        updateDomainStatus(pod, info, delegate);
+        updateDomainStatus(pod, info);
         break;
       case DELETED:
         LOGGER.fine("Introspector Pod " + getPodName(pod) + " for domain " + domainUid + " is deleted.");
@@ -633,7 +622,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info, DomainProcessorDelegate delegate) {
+  @Override
+  public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
           .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
   }
@@ -670,7 +660,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -702,12 +692,16 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         break;
       case DELETED:
         boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
-        if (removed && info.isNotDeleting()) {
+        if (removed && isNotDeleting(info)) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
       default:
     }
+  }
+
+  private static boolean isNotDeleting(DomainPresenceInfo info) {
+    return info.isNotDeleting() && info.getDomain() != null;
   }
 
   private String getPDBNamespace(V1PodDisruptionBudget pdb) {
@@ -721,7 +715,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchConfigMapWatch(Watch.Response<V1ConfigMap> item) {
     V1ConfigMap c = item.object;
-    if (c != null && c.getMetadata() != null) {
+    if (c.getMetadata() != null) {
       switch (item.type) {
         case MODIFIED:
         case DELETED:
@@ -742,18 +736,22 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
    */
   public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
     CoreV1Event e = item.object;
-    if (e != null) {
-      switch (item.type) {
-        case ADDED:
-        case MODIFIED:
-          onCreateModifyEvent(e);
-          break;
-        case DELETED:
-          onDeleteEvent(e);
-          break;
-        case ERROR:
-        default:
-      }
+    V1ObjectReference ref = e.getInvolvedObject();
+
+    if (ref == null || ref.getName() == null || ref.getKind() == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case ADDED:
+      case MODIFIED:
+        onCreateModifyEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case DELETED:
+        onDeleteEvent(ref.getKind(), ref.getName(), e);
+        break;
+      case ERROR:
+      default:
     }
   }
 
@@ -784,11 +782,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
     if (hostingDomains.isEmpty()) {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
-      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster, null).execute();
+      createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, null).execute();
     } else {
       hostingDomains.forEach(info -> {
         LOGGER.info(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
+        createMakeRightOperationForClusterEvent(CLUSTER_CREATED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
             .withExplicitRecheck()
@@ -802,7 +800,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getMetadata().getName());
     if (hostingDomains.isEmpty()) {
       LOGGER.info(MessageKeys.WATCH_CLUSTER_WITHOUT_DOMAIN, cluster.getMetadata().getName());
-      createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster, null).execute();
+      createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, null).execute();
     } else {
       hostingDomains.forEach(info -> {
         ClusterResource cachedResource = info.getClusterResource(cluster.getClusterName());
@@ -811,7 +809,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         }
 
         LOGGER.fine(MessageKeys.WATCH_CLUSTER, cluster.getMetadata().getName(), info.getDomainUid());
-        createMakeRightOperationForClusterEvent(EventItem.CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
+        createMakeRightOperationForClusterEvent(CLUSTER_CHANGED, cluster, info.getDomainUid()).execute();
         createMakeRightOperation(info)
             .interrupt()
             .withExplicitRecheck()
@@ -844,7 +842,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       EventItem clusterEvent, ClusterResource cluster, String domainUid) {
     return delegate.createMakeRightOperation(this, createInfoForClusterEventOnly(cluster))
         .interrupt()
-        .withEventData(EventHelper.createClusterResourceEventData(clusterEvent, cluster, domainUid));
+        .withEventData(createClusterResourceEventData(clusterEvent, cluster, domainUid));
   }
 
   @Override
@@ -855,7 +853,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @NotNull
   private ClusterPresenceInfo createInfoForClusterEventOnly(ClusterResource cluster) {
-    return new ClusterPresenceInfo(cluster.getNamespace(), cluster);
+    return new ClusterPresenceInfo(cluster);
   }
 
   /**
@@ -885,7 +883,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
         .withExplicitRecheck()
-        .withEventData(new EventData(EventItem.DOMAIN_CREATED))
+        .withEventData(new EventData(DOMAIN_CREATED))
         .execute();
   }
 
@@ -893,7 +891,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
     createMakeRightOperation(new DomainPresenceInfo(domain))
         .interrupt()
-        .withEventData(new EventData(EventItem.DOMAIN_CHANGED))
+        .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
   }
 

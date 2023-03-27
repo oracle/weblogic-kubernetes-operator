@@ -1,5 +1,5 @@
 /*
-# Copyright (c) 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
 resource "oci_containerengine_node_pool" "tfsample_node_pool" {
@@ -27,6 +27,7 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
   node_source_details {
        image_id = var.node_pool_node_image_name
        source_type = "image"
+       boot_volume_size_in_gbs = "200"
   }
 
   # Optional

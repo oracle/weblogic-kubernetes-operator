@@ -21,7 +21,6 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.domain.AdminServer;
@@ -34,6 +33,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
@@ -52,12 +52,15 @@ import org.apache.commons.io.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
-import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
@@ -66,6 +69,16 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANC
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -73,10 +86,9 @@ import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.callTestWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -94,10 +106,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -109,7 +121,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * A utility class for Monitoring Weblogic Domain via Weblogic MonitoringExporter and Prometheus.
+ * A utility class for Monitoring WebLogic Domain via WebLogic MonitoringExporter and Prometheus.
  */
 public class MonitoringUtils {
 
@@ -362,15 +374,48 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "regex: default;domain1";
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldValue,
-        prometheusRegexValue), "Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-alertmanager",
-        "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    logger.info("copy the promvalues.yaml to staging location");
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetPromFile.toString(),
+          oldValue,
+          prometheusRegexValue);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanager" + promReleaseSuffix);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-" + prometheusReleaseName);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_image",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_tag",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_image",
+          PROMETHEUS_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_tag",
+          PROMETHEUS_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_image",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_tag",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_image",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_tag",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_image",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_tag",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_TAG);
+    }, "Failed to create " + targetPromFile);
     if (webhookNS != null) {
       //replace with webhook ns
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
@@ -384,6 +429,9 @@ public class MonitoringUtils {
     }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
+
+    assertTrue(imageRepoLogin(TestConstants.BASE_IMAGES_REPO,
+        BASE_IMAGES_REPO_USERNAME, BASE_IMAGES_REPO_PASSWORD), WLSIMG_BUILDER + " login failed");
 
     // Helm install parameters
     HelmParams promHelmParams = new HelmParams()
@@ -521,6 +569,12 @@ public class MonitoringUtils {
             StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
             "pvc-grafana", "pvc-" + grafanaReleaseName));
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_image",
+        GRAFANA_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_tag",
+        GRAFANA_IMAGE_TAG),"Failed to replace String ");
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
               "enabled: false", "enabled: true"));
@@ -1001,52 +1055,6 @@ public class MonitoringUtils {
   }
 
   /**
-   * Install wls dashboard from endtoend sample and verify it is accessable.
-   *
-   * @param hostPort  host:nodeport string for grafana
-   * @param monitoringExporterEndToEndDir endtoend sample directory
-   *
-   */
-  //public static void installVerifyGrafanaDashBoard(int nodeportGrafana, String monitoringExporterEndToEndDir) {
-  public static void installVerifyGrafanaDashBoard(String hostPort, String monitoringExporterEndToEndDir) {
-    //wait until it starts dashboard
-    String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s/api/dashboards",
-        hostPort);
-    testUntil(
-        assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"), "Check access to grafana dashboard"),
-        logger,
-        "Check access to grafana dashboard");
-    logger.info("installing grafana dashboard");
-    // url
-    String curlCmd0 =
-        String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s/api/datasources/"
-                + "  --data-binary @%s/grafana/datasource.json",
-            hostPort, monitoringExporterEndToEndDir);
-
-    logger.info("Executing Curl cmd {0}", curlCmd);
-    assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
-
-    String curlCmd1 =
-        String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s/api/dashboards/db/"
-                + "  --data-binary @%s/grafana/dashboard.json",
-            hostPort, monitoringExporterEndToEndDir);
-    logger.info("Executing Curl cmd {0}", curlCmd1);
-    assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
-
-    String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s/api/dashboards/db/weblogic-server-dashboard",
-        hostPort);
-    testUntil(
-        assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
-            String.format("Check grafana dashboard wls against expected %s", "wls_jvm_uptime")),
-        logger,
-        "Check grafana dashboard metric against expected wls_jvm_uptime");
-  }
-
-  /**
    * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
    * @param nginxHost nginx host name
@@ -1180,63 +1188,25 @@ public class MonitoringUtils {
     return isFound;
   }
 
-  /** To build monitoring exporter sidecar image.
+  /**
+   * Build exporter, create image with unique name, create corresponding repo secret and push to registry.
    *
-   * @param imageName image nmae
-   * @param monitoringExporterSrcDir path to monitoring exporter src location
+   * @param srcDir directory where source is located
+   * @param baseImageName base image name
+   * @param namespace image namespace
+   * @param secretName repo secretname for image
+   * @param extraImageBuilderArgs user specified extra args
+   * @return image name
    */
-  public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
-    String httpsproxy = HTTPS_PROXY;
-    logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    String command;
-    if (httpsproxy != null) {
-      int firstIndex = httpsproxy.lastIndexOf("www");
-      int lastIndex = httpsproxy.lastIndexOf(":");
-      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
-      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
-      logger.info(" proxyHost: " + proxyHost);
-
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-              + " &&   " + WLSIMG_BUILDER + " build . -t "
-              + imageName
-              + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
-          monitoringExporterSrcDir, proxyHost, httpsproxy);
-    } else {
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-          + " &&   " + WLSIMG_BUILDER + " build . -t "
-          + imageName
-          + monitoringExporterSrcDir);
-    }
+  public static String buildMonitoringExporterCreateImageAndPushToRepo(String srcDir, String baseImageName,
+                                                String namespace, String secretName,
+                                                String extraImageBuilderArgs) throws ApiException {
+    String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true", srcDir);
     logger.info("Executing command " + command);
     assertTrue(Command
         .withParams(new CommandParams()
             .command(command))
-        .execute(), "Failed to build monitoring exporter image");
-    // login and push image to registry if necessary
-    imageRepoLoginAndPushImageToRegistry(imageName);
+        .execute(), "Failed to build monitoring exporter");
+    return createImageAndPushToRepo(srcDir, baseImageName, namespace, secretName, extraImageBuilderArgs);
   }
-
-  /** Change monitoring exporter webapp confiuration inside the pod.
-   *
-   * @param podName pod name
-   * @param namespace pod namespace
-   * @param configYaml monitorin exporter configuration
-   */
-  public static void changeConfigInPod(String podName, String namespace, String configYaml) {
-    V1Pod exporterPod = assertDoesNotThrow(() -> getPod(namespace, "", podName),
-        " Can't retreive pod " + podName);
-    logger.info("Copying config file {0} to pod directory {1}",
-        Paths.get(RESOURCE_DIR,"/exporter/" + configYaml).toString(), "/tmp/" + configYaml);
-    assertDoesNotThrow(() -> copyFileToPod(namespace, podName, "monitoring-exporter",
-        Paths.get(RESOURCE_DIR,"/exporter/" + configYaml), Paths.get("/tmp/" + configYaml)),
-        "Copying file to pod failed");
-    execInPod(exporterPod, "monitoring-exporter", true,
-        "curl -X PUT -H \"content-type: application/yaml\" --data-binary \"@/tmp/"
-            + configYaml + "\" -i -u weblogic:welcome1 http://localhost:8080/configuration");
-    execInPod(exporterPod, "monitoring-exporter", true, "curl -X GET  "
-        + " -i -u weblogic:welcome1 http://localhost:8080/metrics");
-
-  }
-
 }

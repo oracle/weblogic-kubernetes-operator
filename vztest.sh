@@ -223,7 +223,23 @@ EOF
 
 function wait_for_installs() {
   if [ "$ADMIN_CLUSTER" != "false" ] ; then
-    $KA wait --timeout=60m --for=condition=InstallComplete verrazzano/admin
+    done=1
+    elapsed_time=0
+    while [ $done -ne 0 ] && [ $elapsed_time -lt $VZ_INSTALL_TIMEOUT ]
+    do	    
+      install_status=$($KA wait --timeout=3m --for=condition=InstallComplete verrazzano/admin)
+      echo $install_status
+      if echo "$install_status" | grep -q 'condition met'; then
+        echo "verrazzano installation complete"
+	echo "It took $elapsed_time minutes to complete verrazzano installation"
+	done=0
+      else
+        elapsed_time=$((elapsed_time + 3))
+        echo "verrazzano installtion is not complete"
+      fi
+      $KA get all -A
+      $KA get events -A --sort-by=.lastTimestamp
+    done      
   fi
   if [ "$MANAGED_CLUSTER" != "false" ] ; then
     $K1 wait --timeout=60m --for=condition=InstallComplete verrazzano/managed1
@@ -419,19 +435,19 @@ if [ "$REGISTER_ONLY" != "true" ]; then
 delete_cluster admin
 delete_cluster managed1
 
-SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
-ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
-MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
-
 if [ "$ADMIN_CLUSTER" != "false" ] ; then
 echo
   create_cluster admin
+  SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+  ADMIN_ADDR_RANGE="${SUBNET%.*}.230-${SUBNET%.*}.250"
   install_metallb $ADMIN_ADDR_RANGE "$KA"
   install_verrazzano_admin
 fi
 if [ "$MANAGED_CLUSTER" != "false" ] ; then
 echo
   create_cluster managed1
+  SUBNET=$(${WLSIMG_BUILDER:-docker} inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+  MANAGED1_ADDR_RANGE="${SUBNET%.*}.210-${SUBNET%.*}.229"
   install_metallb $MANAGED1_ADDR_RANGE "$K1"
   install_verrazzano_managed
 fi

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -92,6 +92,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   private Collection<Fiber> children = null;
   // Will only be populated if log level is at least FINE
   private List<BreadCrumbFactory> breadCrumbs = null;
+
+  // for unit test only
+  public Fiber() {
+    this(null);
+  }
 
   Fiber(Engine engine) {
     this(engine, null);

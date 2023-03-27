@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -75,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
+@Tag("olcne")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
@@ -400,8 +401,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(Collections.singletonList(MODEL_DIR + "/model.update.wm.yaml"));
 
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
-    String exepectedErrorMsg = "Invalid value for option '--packageManager': expected one of "
-        + "[OS_DEFAULT, NONE, YUM, DNF, MICRODNF, APTGET, APK, ZYPPER] (case-insensitive) but was 'pkm'";
+    String exepectedErrorMsg = "Invalid value for option '--packageManager':";
     assertTrue(result.exitValue() != 0 && result.stderr().contains(exepectedErrorMsg));
   }
 

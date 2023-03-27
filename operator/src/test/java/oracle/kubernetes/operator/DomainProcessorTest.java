@@ -19,6 +19,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -60,7 +61,7 @@ import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -96,6 +97,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.hamcrest.MatcherAssert;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -122,6 +124,7 @@ import static oracle.kubernetes.operator.EventConstants.CLUSTER_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.CLUSTER_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -145,8 +148,11 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_C
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
@@ -196,6 +202,7 @@ class DomainProcessorTest {
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final KubernetesExecFactoryFake execFactoryFake = new KubernetesExecFactoryFake();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
 
   private static String[] getManagedServerNames(String clusterName) {
     return IntStream.rangeClosed(1, MAX_SERVERS)
@@ -287,7 +294,6 @@ class DomainProcessorTest {
     mementos.add(ScanCacheStub.install());
     mementos.add(StubWatchFactory.install());
     mementos.add(NoopWatcherStarter.install());
-
     testSupport.defineResources(newDomain);
     IntrospectionTestUtils.defineIntrospectionTopology(testSupport, createDomainConfig(), jobStatusSupplier);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
@@ -299,6 +305,14 @@ class DomainProcessorTest {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
+  }
+
+  @Test
+  void whenDomainAddedWithChangedEventData_runMakeRightButDontGenerateDomainCreatedEvent() {
+    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_CHANGED)).execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+    assertThat(testSupport, not(hasEvent(DOMAIN_CREATED.getReason())));
   }
 
   @Test
@@ -359,14 +373,14 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenCachedDomainIsNewerThanSpecifiedDomain_dontRunMakeRightWhenStartedFromEvent() {
+  void whenCachedDomainIsNewerThanSpecifiedDomain_dontRunMakeRightWhenHasEventData() {
     consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
     final DomainResource cachedDomain = this.domain;
     processor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
     cachedDomain.getMetadata().setCreationTimestamp(laterThan(newDomain));
 
     processor.createMakeRightOperation(newInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED))
+        .withEventData(new EventData(DOMAIN_CHANGED))
         .execute();
 
     assertThat(testSupport.getNumItemsRun(), equalTo(0));
@@ -393,6 +407,16 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainChangedSpecWithDeletedEventData_dontGenerateDomainChangedEvent() {
+    processor.registerDomainPresenceInfo(originalInfo);
+
+    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_DELETED)).execute();
+
+    assertThat(testSupport, not(hasEvent(DOMAIN_CHANGED.getReason())));
+    assertThat(testSupport, hasEvent(DOMAIN_DELETED.getReason()));
   }
 
   @Test
@@ -560,7 +584,8 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
 
-    processor.createMakeRightOperation(newInfo).withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).execute();
+    processor.createMakeRightOperation(newInfo)
+        .withEventData(new EventData(DOMAIN_CHANGED)).execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain, hasCondition(AVAILABLE).withStatus("False"));
@@ -941,6 +966,131 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenNewClusterAdded_generateClusterCreatedEvent() {
+    processor.getClusterPresenceInfoMap().values().clear();
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    testSupport.defineResources(cluster1);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
+  }
+
+  @Test
+  void whenClusterChanged_generateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster2.getMetadata().setGeneration(1234L);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
+  }
+
+  private List<Object> getEventsForSeason(String reason) {
+    return testSupport.getResources(EVENT).stream()
+        .filter(e -> ((CoreV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
+  }
+
+  @Test
+  void whenClusterChangedButOlder_dontGenerateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster1.getMetadata().setGeneration(1234L);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster2.getMetadata().setGeneration(1000L);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
+  }
+
+  @Test
+  void whenClusterUnchanged_dontGenerateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), empty());
+  }
+
+  @Test
+  void whenNewClusterAddedAndReferenced_generateClusterCreatedEventWithDomainUidLabel() {
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    testSupport.defineResources(cluster1);
+    newInfo.getDomain().getClusters().add(new V1LocalObjectReference().name(CLUSTER4));
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
+    MatcherAssert.assertThat("Found CLUSTER_CREATED event with expected labels",
+        containsEventWithLabels(testSupport.getResources(EVENT),
+            CLUSTER_CREATED.getReason(), getExpectedLabels()), is(true));
+  }
+
+  @NotNull
+  private Map<String, String> getExpectedLabels() {
+    Map<String, String> expectedLabels = new HashMap<>();
+    expectedLabels.put(LabelConstants.DOMAINUID_LABEL, newInfo.getDomainUid());
+    expectedLabels.put(CREATEDBYOPERATOR_LABEL, "true");
+    return expectedLabels;
+  }
+
+  @NotNull
+  private Map<String, String> getExpectedLabelCreatedByOp() {
+    Map<String, String> expectedLabels = new HashMap<>();
+    expectedLabels.put(CREATEDBYOPERATOR_LABEL, "true");
+    return expectedLabels;
+  }
+
+  @Test
+  void whenClusterStatusChangedToNull_generateClusterCreatedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    newInfo.getDomain().getClusters().add(new V1LocalObjectReference().name(CLUSTER4));
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(null);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
+  }
+
+  @Test
+  void whenClusterChangedAndReferenced_generateClusterChangedEventWithDomainUIDLabel() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    newInfo.getDomain().getClusters().add(new V1LocalObjectReference().name(CLUSTER4));
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
+    cluster2.getMetadata().setGeneration(1234L);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
+    MatcherAssert.assertThat("Found CLUSTER_CHANGED event with expected labels",
+        containsEventWithLabels(testSupport.getResources(EVENT),
+            CLUSTER_CHANGED.getReason(), getExpectedLabels()), is(true));
+  }
+
+  @Test
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(ServerStartPolicy.ALWAYS);
@@ -1217,7 +1367,7 @@ class DomainProcessorTest {
 
   @NotNull
   private ClusterPresenceInfo getInfo(ClusterResource cluster) {
-    return new ClusterPresenceInfo(NS, cluster);
+    return new ClusterPresenceInfo(cluster);
   }
 
   @Test
@@ -1594,13 +1744,13 @@ class DomainProcessorTest {
     V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
     testSupport.defineResources(job);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
-    setJobPodInitContainerStatusImagePullError();
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithImagePullError());
   }
 
-  private void setJobPodInitContainerStatusImagePullError() {
-    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().initContainerStatuses(
+  public static V1PodStatus getInitContainerStatusWithImagePullError() {
+    return new V1PodStatus().initContainerStatuses(
           List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
-                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image"))))));
+                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image")))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
@@ -2393,7 +2543,7 @@ class DomainProcessorTest {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(originalInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     assertServerPodAndServiceNotPresent(originalInfo, ADMIN_NAME);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -2411,7 +2561,7 @@ class DomainProcessorTest {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(originalInfo)
-        .withEventData(new EventHelper.EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
+        .withEventData(new EventData(DOMAIN_CHANGED)).withExplicitRecheck().execute();
 
     DomainResource updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));

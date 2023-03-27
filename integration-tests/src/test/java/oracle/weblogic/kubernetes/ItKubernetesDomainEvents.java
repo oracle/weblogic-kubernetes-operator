@@ -61,7 +61,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVe
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Cluster.listClusterCustomResources;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
@@ -70,7 +70,6 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVeri
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.removeReplicasSettingAndVerify;
-import static oracle.weblogic.kubernetes.utils.ClusterUtils.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -79,6 +78,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.removeClusterInDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -104,8 +105,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCou
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -162,6 +161,7 @@ class ItKubernetesDomainEvents {
   static String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   static final int managedServerPort = 8001;
   static int replicaCount = 2;
+  String clusterRes2Name = cluster2Name;
   String clusterRes1Name = cluster1Name;
 
   static final String pvName1 = getUniqueName(domainUid + "-pv-");
@@ -218,13 +218,6 @@ class ItKubernetesDomainEvents {
             true, 0, domainNamespace1, domainNamespace2, domainNamespace3,
             domainNamespace4, domainNamespace5);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
-
-    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough
-    logger.info("Create a route for the operator external service - only for OKD");
-    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
     createDomain(domainNamespace3, domainUid, pvName3, pvcName3);
   }
@@ -301,15 +294,16 @@ class ItKubernetesDomainEvents {
   @Test
   @DisplayName("Test domain Failed event for non-existing cluster")
   void testDomainK8sEventsNonExistingCluster() {
+    String nonExistingClusterName = "nonexisting-cluster";
     OffsetDateTime timestamp = now();
     createClusterAndVerify(createClusterResource(
-        "nonexisting-cluster", "nonexisting-cluster", domainNamespace3, replicaCount));
+        nonExistingClusterName, nonExistingClusterName, domainNamespace3, replicaCount));
     logger.info("patch the domain resource with new cluster");
     try {
       String patchStr
           = "["
           + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-          + "    {\"name\" : \"nonexisting-cluster\"}"
+          + "    {\"name\" : \"" + nonExistingClusterName + "\"}"
           + "}]";
       logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
       V1Patch patch = new V1Patch(patchStr);
@@ -320,12 +314,7 @@ class ItKubernetesDomainEvents {
     } finally {
       //remove the cluster from domain resource
       timestamp = now();
-      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
-      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
-      V1Patch patch = new V1Patch(patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace3, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-          "Failed to patch domain");
-
+      assertDoesNotThrow(() -> removeClusterInDomainResource(nonExistingClusterName, domainUid, domainNamespace3));
       // verify the Changed event is generated
       checkEvent(opNamespace, domainNamespace3, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
@@ -394,8 +383,7 @@ class ItKubernetesDomainEvents {
     createNewCluster();
     OffsetDateTime timestamp2 = now();
     logger.info("Scale the newly-added cluster");
-    scaleClusterWithRestApi(domainUid, cluster2Name, 1,
-            externalRestHttpsPort, opNamespace, opServiceAccount);
+    scaleCluster(clusterRes2Name, domainNamespace3, 1);
     logger.info("verify the Domain_Available event is generated");
     checkEvent(opNamespace, domainNamespace3, domainUid,
             DOMAIN_AVAILABLE, "Normal", timestamp);
@@ -488,7 +476,7 @@ class ItKubernetesDomainEvents {
     createDomain(domainNamespace4, domainUid, pvName4, pvcName4);
     scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true, domainNamespace4);
     scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true, domainNamespace4);
-    shutdownDomain(domainUid, domainNamespace4);
+    deleteDomainResource(domainNamespace4, domainUid);
   }
 
   /**
@@ -1001,4 +989,5 @@ class ItKubernetesDomainEvents {
           opNamespace, namespace, domainUid, DOMAIN_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
+  
 }

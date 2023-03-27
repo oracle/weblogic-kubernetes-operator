@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+<!-- Copyright (c) 2020, 2023, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.0.5</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -50,6 +50,7 @@
         <wko.it.node.ip>${env.NODE_IP}</wko.it.node.ip>
         <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
         <wko.it.okd.cluster>${env.OKD}</wko.it.okd.cluster>
+        <wko.it.ocne.cluster>${env.OCNE}</wko.it.ocne.cluster>
         <wko.it.oracle.db.operator.release>${env.ORACLE_DB_OPERATOR_RELEASE}</wko.it.oracle.db.operator.release>
         <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
         <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
@@ -228,6 +229,7 @@
                                 <wko.it.nfs.server>${wko.it.nfs.server}</wko.it.nfs.server>
                                 <wko.it.fss.dir>${wko.it.fss.dir}</wko.it.fss.dir>
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
+                                <wko.it.ocne.cluster>${wko.it.ocne.cluster}</wko.it.ocne.cluster>
                                 <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>

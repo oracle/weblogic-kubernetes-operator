@@ -73,12 +73,16 @@ spec:
               fieldPath: "metadata.uid"
         - name: "OPERATOR_VERBOSE"
           value: "false"
-        - name: "JAVA_LOGGING_LEVEL"
-          value: {{ .javaLoggingLevel | quote }}
         {{- if .kubernetesPlatform }}
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
         {{- end }}
+        {{- if and (hasKey . "enableRest") .enableRest }}
+        - name: "ENABLE_REST_ENDPOINT"
+          value: "true"
+        {{- end }}
+        - name: "JAVA_LOGGING_LEVEL"
+          value: {{ .javaLoggingLevel | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
           value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
@@ -263,11 +267,11 @@ spec:
               type: RuntimeDefault
           {{- with .nodeSelector }}
           nodeSelector:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           {{- with .affinity }}
           affinity:
-            {{- toYaml . | nindent 8 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
           containers:
           - name: "weblogic-operator-webhook"

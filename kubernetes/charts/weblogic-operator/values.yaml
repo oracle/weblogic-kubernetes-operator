@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # serviceAccount specifies the name of the ServiceAccount in the operator's namespace that the
@@ -54,7 +54,7 @@ domainNamespaceSelectionStrategy: LabelSelector
 enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
-image: "ghcr.io/oracle/weblogic-kubernetes-operator:4.0.4"
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:4.0.5"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
@@ -69,9 +69,13 @@ imagePullPolicy: IfNotPresent
 # imagePullSecrets:
 # - name: "my-operator-secret"
 
+# enableRest specifies whether the operator's REST interface is enabled. Beginning with version 4.0.5,
+# the REST interface will be disabled by default.
+# enableRest: true
+
 # externalRestEnabled specifies whether the operator's REST interface is exposed
 # outside the Kubernetes cluster on the port specified by the 'externalRestHttpsPort'
-# property.
+# property. Ignored if 'enableRest' is not true.
 #
 # If set to true, then the customer must provide the SSL certificate and private key for
 # the operator's external REST interface by specifying the 'externalOperatorCert' and

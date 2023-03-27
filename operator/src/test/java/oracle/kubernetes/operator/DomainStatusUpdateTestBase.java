@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.RetryStrategyStub;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParameters;
@@ -65,6 +66,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.common.logging.MessageKeys.CLUSTER_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.NON_CLUSTERED_SERVERS_NOT_READY;
 import static oracle.kubernetes.common.logging.MessageKeys.NO_APPLICATION_SERVERS_READY;
@@ -93,6 +97,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN_STATUS;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.FALSE;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -124,6 +130,7 @@ abstract class DomainStatusUpdateTestBase {
   private final DomainResource domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private List<String> liveServers;
+  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
 
   @BeforeEach
   void setUp() throws NoSuchFieldException {
@@ -307,6 +314,19 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasStatusForServer("server1").withClusterName("clusterA"));
+  }
+
+  @Test
+  void statusStepWhenInfoHasNullDomain_dontUpdatesDomainStatus() {
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .build();
+    domain.setStatus(null);
+    info.setDomain(null);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain().getStatus(), equalTo(null));
   }
 
   @Test
@@ -1818,6 +1838,57 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
   }
 
+  @Test
+  void whenUpdateDomainStatusWithEmptyResult_observedGenerationUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.returnEmptyResult(DOMAIN, info.getDomainUid(), info.getNamespace());
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+  @Test
+  void whenUpdateDomainStatusWithEmptyResultOnRetry_observedGenerationUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
+    testSupport.returnEmptyResultOnRead(DOMAIN, info.getDomainUid(), info.getNamespace());
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+  @Test
+  void whenUpdateDomainStatusFail503ErrorSuccessOnRetry_observedGenerationUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_UNAVAILABLE);
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), equalTo(2L));
+  }
+
+  @Test
+  void whenUpdateDomainStatusWith404Error_observedGenerationNotUpdated() {
+    testSupport.getPacket().put(MAKE_RIGHT_DOMAIN_OPERATION, createDummyMakeRightOperation());
+
+    info.getDomain().getMetadata().setGeneration(2L);
+    testSupport.failOnReplaceStatus(DOMAIN_STATUS, info.getDomainUid(), info.getNamespace(), HTTP_NOT_FOUND);
+    retryStrategy.setNumRetriesLeft(1);
+    testSupport.addRetryStrategy(retryStrategy);
+    updateDomainStatusInEndOfProcessing();
+
+    assertThat(getRecordedDomain().getStatus().getObservedGeneration(), not(equalTo(2L)));
+  }
+
   @Nullable
   private MakeRightOperation<DomainPresenceInfo> createDummyMakeRightOperation() {
     return new MakeRightDomainOperation() {
@@ -1847,7 +1918,7 @@ abstract class DomainStatusUpdateTestBase {
       }
 
       @Override
-      public boolean wasStartedFromEvent() {
+      public boolean hasEventData() {
         return false;
       }
 
