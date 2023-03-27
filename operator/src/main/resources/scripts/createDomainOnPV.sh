@@ -37,7 +37,7 @@ export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-oper
 
 if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"
-  createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding Model In Image WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
+  createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
 
@@ -52,7 +52,7 @@ createDomainOnPVWLDomain() {
          "'spec.configuration.model.wdtInstallHome' " \
          "which is currently set to '${WDT_ROOT}'. A WDT install " \
          "is normally created when you use the WebLogic Image Tool " \
-         "to create an image for Model in Image."
+         "to create an image for PersistentVolume."
      exitOrLoop
   fi
 
