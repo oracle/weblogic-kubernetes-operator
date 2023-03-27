@@ -16,6 +16,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.INTERNAL_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTION_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.KUBERNETES_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_EVENT_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_ERROR_EVENT_SUGGESTION;
 import static oracle.kubernetes.common.logging.MessageKeys.REPLICAS_TOO_HIGH_EVENT_ERROR;
 import static oracle.kubernetes.common.logging.MessageKeys.SERVER_POD_EVENT_ERROR;
@@ -84,6 +85,16 @@ public enum DomainFailureReason {
     @Override
     public String getEventError() {
       return PERSISTENT_VOLUME_CLAIM_EVENT_ERROR;
+    }
+
+    @Override
+    public String getEventSuggestion() {
+      return PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION;
+    }
+
+    @Override
+    DomainFailureSeverity getDefaultSeverity() {
+      return DomainFailureSeverity.WARNING;
     }
   },
   @SerializedName("ReplicasTooHigh")

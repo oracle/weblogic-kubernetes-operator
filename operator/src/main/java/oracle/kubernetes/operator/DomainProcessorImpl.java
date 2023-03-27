@@ -81,6 +81,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.PERSISTENT_VOLUME_CLAIM;
 
 public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
@@ -636,6 +637,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     if (!ProcessingConstants.BOUND.equals(getPhase(pvc))) {
       delegate.runSteps(new Packet().with(info), DomainStatusUpdater
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
+    } else {
+      delegate.runSteps(new Packet().with(info), DomainStatusUpdater
+          .createRemoveSelectedFailuresStep(null, PERSISTENT_VOLUME_CLAIM), null);
     }
   }
 
@@ -645,7 +649,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private String getMessage(V1PersistentVolumeClaim pvc) {
-    return LOGGER.formatMessage(PVC_NOT_BOUND_ERROR, pvc.getMetadata().getName(), pvc.getStatus());
+    return LOGGER.formatMessage(PVC_NOT_BOUND_ERROR, pvc.getMetadata().getName(), getPhase(pvc));
   }
 
 

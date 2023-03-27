@@ -468,7 +468,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .addRulesItem(
             newPolicyRule()
                 .addApiGroupsItem("")
-                .resources(singletonList("persistentvolume"))
+                .resources(singletonList("persistentvolumes"))
                 .verbs(asList("get", "list", "create")))
         .addRulesItem(
             newPolicyRule()
@@ -656,11 +656,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
             newPolicyRule()
                 .addApiGroupsItem("")
                 .resources(singletonList("persistentvolumeclaims"))
-                .verbs(asList("get", "list", "create")))
-        .addRulesItem(
-            newPolicyRule()
-                .addApiGroupsItem("")
-                .resources(singletonList("persistentvolumes"))
                 .verbs(asList("get", "list", "create")))
         .addRulesItem(
             newPolicyRule()
