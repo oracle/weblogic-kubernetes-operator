@@ -49,8 +49,7 @@ createDomainOnPVWLDomain() {
     trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
          "is 'PersistentVolume' " \
          "and a WebLogic Deploy Tool (WDT) install is not located at " \
-         "'spec.configuration.model.wdtInstallHome' " \
-         "which is currently set to '${WDT_ROOT}'. A WDT install " \
+         "'${WDT_ROOT}'. A WDT install " \
          "is normally created when you use the WebLogic Image Tool " \
          "to create an image for PersistentVolume."
      exitOrLoop
