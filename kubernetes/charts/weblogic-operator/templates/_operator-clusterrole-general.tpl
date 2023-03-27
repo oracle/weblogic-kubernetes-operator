@@ -28,7 +28,7 @@ rules:
   verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
 - apiGroups: [""]
-  resources: ["persistentvolume"]
+  resources: ["persistentvolumes"]
   verbs: ["get", "list", "create"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains", "clusters", "domains/status", "clusters/status"]
