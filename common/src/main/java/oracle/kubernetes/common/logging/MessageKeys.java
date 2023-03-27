@@ -174,7 +174,7 @@ public class MessageKeys {
   public static final String PVC_EXISTS = "WLSKO-0236";
   public static final String PVC_IS_BOUND = "WLSKO-0237";
   public static final String WAITING_FOR_PVC_TO_BIND = "WLSKO-0238";
-  public static final String PVC_PENDING_ERROR = "WLSKO-0239";
+  public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
 
 
   // domain status messages
