@@ -11,7 +11,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class InitializeDomainOnPV {
 
-  @Description("Describes the configuration for creating a PersistentVolume for `Domain in PV``. The operator will"
+  @Description("An optional field that describes the configuration for creating a PersistentVolume for `Domain in PV`."
+      + " domain. If specified, it must match one of the volumes specified under `serverPod.volumes`. The operator will"
       + " not recreate or update the PersistentVolume if it already exists. More info:"
       + " https://kubernetes.io/docs/concepts/storage/persistent-volumes")
   PersistentVolume persistentVolume;
@@ -19,11 +20,11 @@ public class InitializeDomainOnPV {
   @Description("Describes the configuration for creating a PersistentVolumeClaim for `Domain in PV`."
       + " PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator will"
       + " not recreate or update the PersistentVolumeClaim if it already exists. More info:"
-      + " https://kubernetes.io/docs/concepts/storage/persistent-volumes")
+      + " https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims")
   PersistentVolumeClaim persistentVolumeClaim;
 
   @Description("Describes the configuration for creating an initial WebLogic Domain in persistent volume"
-      + " (`Domain in PV`). The operator will not recreate or update the domain if it already exists.")
+      + " (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.")
   @SerializedName("domain")
   DomainOnPV domain;
 

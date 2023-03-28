@@ -162,7 +162,7 @@ public class OperatorMain extends BaseMain {
     }
 
     @Override
-    public PvcAwaiterStepFactory getPvcAwaiterStepFactory(String namespace) {
+    public PvcAwaiterStepFactory getPvcAwaiterStepFactory() {
       return new PvcWatcher(domainProcessor);
     }
 

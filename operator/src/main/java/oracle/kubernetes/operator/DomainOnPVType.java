@@ -3,13 +3,13 @@
 
 package oracle.kubernetes.operator;
 
-public enum DomainType {
+public enum DomainOnPVType {
   WLS("WLS"),
   JRF("JRF");
 
   private final String value;
 
-  DomainType(String value) {
+  DomainOnPVType(String value) {
     this.value = value;
   }
 

@@ -5,9 +5,10 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.DomainType;
+import oracle.kubernetes.operator.DomainOnPVType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -20,8 +21,9 @@ public class DomainOnPV {
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.")
+  @SerializedName("domainType")
   @Default(strDefault = "JRF")
-  private DomainType domainType = DomainType.JRF;
+  private DomainOnPVType domainType = DomainOnPVType.JRF;
 
   /**
    * The domain images.
@@ -49,11 +51,11 @@ public class DomainOnPV {
     return this;
   }
 
-  public DomainType getDomainType() {
+  public DomainOnPVType getDomainType() {
     return domainType;
   }
 
-  public DomainOnPV domainType(DomainType domainType) {
+  public DomainOnPV domainType(DomainOnPVType domainType) {
     this.domainType = domainType;
     return this;
   }
