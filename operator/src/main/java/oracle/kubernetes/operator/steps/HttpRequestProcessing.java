@@ -131,7 +131,7 @@ abstract class HttpRequestProcessing {
 
   private String toServiceHost(@Nonnull V1ObjectMeta meta) {
     String ns = Optional.ofNullable(meta.getNamespace()).orElse("default");
-    return meta.getName() + "." + ns;
+    return meta.getName() + "." + ns + ".svc";
   }
 
   protected V1Pod getPod() {
