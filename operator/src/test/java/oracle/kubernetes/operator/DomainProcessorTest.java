@@ -646,7 +646,7 @@ class DomainProcessorTest {
   }
 
   private HttpRequest createShutdownRequest(String serverName, int portNumber) {
-    String url = "http://test-domain-" + serverName + ".namespace:" + portNumber;
+    String url = "http://test-domain-" + serverName + ".namespace.svc:" + portNumber;
     return HttpRequest.newBuilder()
         .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
@@ -739,7 +739,7 @@ class DomainProcessorTest {
 
   @SuppressWarnings("HttpUrlsUsage")
   private void defineOKResponse(@Nonnull String serverName, int port) {
-    final String url = "http://" + UID + "-" + serverName + "." + NS + ":" + port;
+    final String url = "http://" + UID + "-" + serverName + "." + NS + ".svc:" + port;
     httpSupport.defineResponse(createExpectedRequest(url), createStub(HttpResponseStub.class, HTTP_OK, OK_RESPONSE));
   }
 
