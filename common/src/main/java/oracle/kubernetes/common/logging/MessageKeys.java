@@ -231,6 +231,7 @@ public class MessageKeys {
   public static final String INIT_PV_DOMAIN_PVC_STORAGE_CLASS_NOT_SPECIFIED = "WLSDO-0057";
   public static final String CONFLICT_OPSS_SECRETS = "WLSDO-0058";
   public static final String CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV = "WLSDO-0059";
+  public static final String OVERLAPPING_VOLUME_MOUNT_PATH = "WLSDO-0060";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

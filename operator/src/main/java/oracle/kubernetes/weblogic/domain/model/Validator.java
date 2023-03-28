@@ -43,7 +43,17 @@ public abstract class Validator {
   void addClusterInvalidMountPaths(ClusterResource cluster) {
     ClusterSpec spec = cluster.getSpec();
     Optional.of(spec).map(ClusterSpec::getAdditionalVolumeMounts)
-        .ifPresent(mounts -> mounts.forEach(mount -> checkValidMountPath(mount, getEnvNames(spec))));
+        .ifPresent(mounts -> mounts.forEach(mount ->
+            checkValidMountPath(mount, getEnvNames(spec), getRemainingVolumeMounts(mounts, mount))));
+  }
+
+  List<V1VolumeMount> getRemainingVolumeMounts(List<V1VolumeMount> list, V1VolumeMount mount) {
+    List<V1VolumeMount> ret = new ArrayList<>();
+    int index = list.indexOf(mount);
+    for (int i = index + 1; i < list.size(); i++) {
+      ret.add(list.get(i));
+    }
+    return ret;
   }
 
   @Nonnull
@@ -54,7 +64,7 @@ public abstract class Validator {
         .collect(toSet());
   }
 
-  void checkValidMountPath(V1VolumeMount mount, Set<String> envNames) {
+  void checkValidMountPath(V1VolumeMount mount, Set<String> envNames, List<V1VolumeMount> mounts) {
     if (skipValidation(mount.getMountPath(), envNames)) {
       return;
     }
@@ -62,6 +72,26 @@ public abstract class Validator {
     if (!new File(mount.getMountPath()).isAbsolute()) {
       failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
+
+    mounts.stream().forEach(m -> checkOverlappingMountPath(mount, m));
+  }
+
+  private void checkOverlappingMountPath(V1VolumeMount mount1, V1VolumeMount mount2) {
+    List<String> list1 = getTokensWithCollection(mount1.getMountPath());
+    List<String> list2 = getTokensWithCollection(mount2.getMountPath());
+    for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
+      if (!list1.get(i).equals(list2.get(i))) {
+        return;
+      }
+    }
+
+    failures.add(DomainValidationMessages.overlappingVolumeMountPath(mount1, mount2));
+  }
+
+  private List<String> getTokensWithCollection(String str) {
+    return Collections.list(new StringTokenizer(str, "/")).stream()
+        .map(token -> (String) token)
+        .collect(Collectors.toList());
   }
 
   boolean skipValidation(String mountPath, Set<String> envNames) {

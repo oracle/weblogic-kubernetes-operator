@@ -1346,6 +1346,43 @@ public class DomainValidationTest extends DomainValidationTestBase {
             "is invalid", "spec.storageClass", "must be specified")));
   }
 
+  @Test
+  void whenMultipleVolumeMountHaveOverlappingMountPath_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV())
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapped.")));
+  }
+
+  @Test
+  void whenMultipleVolumeMountHaveSameMountPath_initPvDomain_reportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV())
+        .withAdditionalVolumeMount("volume1", "/domain-path1/dir1")
+        .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapped.")));
+  }
+
+  @Test
+  void whenMultipleVolumeMountHaveNoOverlappingMountPath_initPvDomain_dontReportError() {
+    configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV())
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path2");
+
+    assertThat(domain.getValidationFailures(resourceLookup),empty());
+  }
+
   public static V1ResourceRequirements createResources() {
     return new V1ResourceRequirements().requests(Collections.singletonMap("storage", new Quantity("5Gi")));
   }
