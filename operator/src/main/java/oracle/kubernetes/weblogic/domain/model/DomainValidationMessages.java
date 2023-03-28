@@ -56,6 +56,17 @@ public class DomainValidationMessages {
   }
 
   /**
+   * Returns a validation message indicating that a specified volume mount's path overlaps with another volume.
+   * @param mount1 the problematic volume mount
+   * @param mount2 the problematic volume mount
+   * @return the localized message
+   */
+  static String overlappingVolumeMountPath(@Nonnull V1VolumeMount mount1, @Nonnull V1VolumeMount mount2) {
+    return getMessage(MessageKeys.OVERLAPPING_VOLUME_MOUNT_PATH,
+        mount1.getMountPath(), mount1.getName(), mount2.getMountPath(), mount2.getName());
+  }
+
+  /**
    * Returns a validation message indicating that none of the additional volume mounts contains a path which
    * includes the log home.
    * @param logHome the log home to be used

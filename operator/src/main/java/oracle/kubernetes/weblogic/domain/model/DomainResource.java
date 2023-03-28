@@ -1153,10 +1153,12 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void addInvalidMountPathsManagedServers() {
-      getSpec().getAdditionalVolumeMounts().forEach(mount -> checkValidMountPath(mount, getEnvNames()));
+      spec.getAdditionalVolumeMounts().forEach(mount -> checkValidMountPath(mount, getEnvNames(),
+          getRemainingVolumeMounts(spec.getAdditionalVolumeMounts(), mount)));
       if (getSpec().getAdminServer() != null) {
         getSpec().getAdminServer().getAdditionalVolumeMounts()
-            .forEach(mount -> checkValidMountPath(mount, getEnvNames()));
+            .forEach(mount -> checkValidMountPath(mount, getEnvNames(),
+                getRemainingVolumeMounts(getSpec().getAdminServer().getAdditionalVolumeMounts(), mount)));
       }
     }
 
@@ -1172,7 +1174,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       podSpec.getContainers()
           .forEach(container ->
               Optional.ofNullable(container.getVolumeMounts())
-                  .ifPresent(volumes -> volumes.forEach(mount -> checkValidMountPath(mount, getEnvNames()))));
+                  .ifPresent(volumes -> volumes.forEach(mount ->
+                      checkValidMountPath(mount, getEnvNames(), getRemainingVolumeMounts(volumes, mount)))));
     }
 
     private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUseManagedServers() {
