@@ -25,6 +25,7 @@ public class TraefikParams {
   private static final String NODEPORTS_HTTP = "ports.web.nodePort";
   private static final String NODEPORTS_HTTPS = "ports.websecure.nodePort";
   private static final String TRAEFIK_IMAGE = "image.repository";
+  private static final String TRAEFIK_IMAGE_REGISTRY = "image.registry";
   private static final String TRAEFIK_IMAGE_TAG = "image.tag";
 
   public TraefikParams nodePortsHttp(int nodePortsHttp) {
@@ -72,6 +73,7 @@ public class TraefikParams {
     }
 
     values.put(TRAEFIK_IMAGE, traefikImage);
+    values.put(TRAEFIK_IMAGE_REGISTRY, "");
     values.put(TRAEFIK_IMAGE_TAG, traefikImageTag);
 
     values.values().removeIf(Objects::isNull);
