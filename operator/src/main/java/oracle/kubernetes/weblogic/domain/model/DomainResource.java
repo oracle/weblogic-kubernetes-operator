@@ -34,8 +34,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
@@ -525,7 +525,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * @return persistent volume configuration details
    */
   public PersistentVolume getInitPvDomainPersistentVolume() {
-    return Optional.ofNullable(spec.getInitializeDomainOnPV())
+    return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getPersistentVolume).orElse(null);
   }
 
@@ -534,15 +534,23 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * @return persistent volume claim configuration details
    */
   public PersistentVolumeClaim getInitPvDomainPersistentVolumeClaim() {
-    return Optional.ofNullable(spec.getInitializeDomainOnPV())
+    return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getPersistentVolumeClaim).orElse(null);
+  }
+
+  /**
+   * Returns the initialize domain on PV configuration details when initializeDomainOnPV is specified.
+   * @return initialize domain on PV configuration details
+   */
+  public InitializeDomainOnPV getInitializeDomainOnPV() {
+    return spec.getInitializeDomainOnPV();
   }
 
   /**
    * Returns the domain type when initializeDomainOnPV is specified.
    * @return domain type
    */
-  public DomainType getInitializeDomainOnPVDomainType() {
+  public DomainOnPVType getInitializeDomainOnPVDomainType() {
     return spec.getInitializeDomainOnPVDomainType();
   }
 
@@ -1050,7 +1058,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
               "spec.configuration.initializeDomainOnPV"));
         }
-        if (DomainType.JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
+        if (DomainOnPVType.JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
           failures.add(DomainValidationMessages.conflictOpssSecrets(
               "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
         }
@@ -1475,7 +1483,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
 
       if (isInitializeDomainOnPV()
-          && DomainType.JRF.equals(getInitializeDomainOnPVDomainType())
+          && DomainOnPVType.JRF.equals(getInitializeDomainOnPVDomainType())
           && getInitializeDomainOnPVOpssWalletPasswordSecret() == null) {
         failures.add(DomainValidationMessages.missingRequiredInitializeDomainOnPVOpssSecret(
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));

@@ -197,7 +197,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
                 JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace()),
-                PvcAwaiterStepFactory.class, delegate.getPvcAwaiterStepFactory(getNamespace())));
+                PvcAwaiterStepFactory.class, delegate.getPvcAwaiterStepFactory()));
     return packet;
   }
 
@@ -297,12 +297,15 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     Step domainUpStrategy =
         Step.chain(
-            initializePvPvcStep(),
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(),
             new DomainStatusStep(),
             DomainProcessorImpl.bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
+
+    if (info.getDomain().getInitializeDomainOnPV() != null) {
+      domainUpStrategy = Step.chain(initializePvPvcStep(), domainUpStrategy);
+    }
 
     Step introspectionAndDomainPresenceSteps = Step.chain(ConfigMapHelper.readExistingIntrospectorConfigMap(),
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
