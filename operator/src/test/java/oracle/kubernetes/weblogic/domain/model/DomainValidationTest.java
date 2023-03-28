@@ -37,6 +37,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.setupCluster;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
+import static oracle.kubernetes.operator.DomainType.JRF;
 import static oracle.kubernetes.operator.DomainType.WLS;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
@@ -1354,11 +1355,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenVolumeMountHasDomainHomeDirectory_dontReportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
-        .withDomainHome("/shared/domains/mydomain")
-        .withInitializeDomainOnPv(new InitializeDomainOnPV())
-        .withAdditionalVolumeMount("sharedDomains", "/shared/domains");
+    configuredDomainWithInitializeDomainOnPV()
+        .withDomainHome("/shared/domains/mydomain");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -1373,6 +1371,45 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("domain home", "/private/domains/mydomain")));
+  }
+
+  @Test
+  void whenDomainTypeJRFAndCreateIfNotExistsDomainAndRCU_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN_AND_RCU)))
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenDomainTypeJRFAndCreateIfNotExistsDomain_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN)))
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenDomainTypeWLSAndCreateIfNotExistsDomainAndRCU_initDomainOnPV_reportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(WLS).createMode(CreateIfNotExists.DOMAIN_AND_RCU)));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV.domain.createIfNotExists",
+            "DOMAIN_AND_RCU", "WLS")));
   }
 
   @SafeVarargs

@@ -1043,6 +1043,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyPVSpecificationsWhenInitDomainOnPVDefined();
       verifyPVCSpecificationsWhenInitDomainOnPVDefined();
       verifyDomainHomeWhenInitDomainOnPVDefined();
+      verifyDomainTypeWLSAndCreateIfNotExistsWhenInitDomainOnPVDefined();
     }
 
     private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
@@ -1543,6 +1544,18 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       if (isInitializeDomainOnPV() && noMatchingVolumeMount()) {
         failures.add(DomainValidationMessages.domainHomeNotMounted(getDomainHome()));
       }
+    }
+
+    private void verifyDomainTypeWLSAndCreateIfNotExistsWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV()
+          && spec.getInitializeDomainOnPVDomainType() == DomainType.WLS
+          && getCreateIfNotExists() == CreateIfNotExists.DOMAIN_AND_RCU) {
+        failures.add(DomainValidationMessages.mismatchDomainTypeAndCreateIfNoeExists(getCreateIfNotExists()));
+      }
+    }
+
+    private CreateIfNotExists getCreateIfNotExists() {
+      return spec.getInitializeDomainOnPV().getDomain().getCreateIfNotExists();
     }
 
     private boolean noMatchingVolumeMount() {

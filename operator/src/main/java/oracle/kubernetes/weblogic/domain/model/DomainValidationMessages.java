@@ -234,4 +234,15 @@ public class DomainValidationMessages {
   static String domainHomeNotMounted(@Nonnull String domainHome) {
     return getMessage(MessageKeys.DOMAIN_HOME_NOT_MOUNTED, domainHome);
   }
+
+  /**
+   * Returns a validation message indicating that none of the additional volume mounts contains a path which
+   * includes the domain home.
+   * @param createIfNotExists the value of createIfNotExists
+   * @return the localized message
+   */
+  static String mismatchDomainTypeAndCreateIfNoeExists(@Nonnull CreateIfNotExists createIfNotExists) {
+    return getMessage(MessageKeys.MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS, createIfNotExists);
+  }
+
 }
