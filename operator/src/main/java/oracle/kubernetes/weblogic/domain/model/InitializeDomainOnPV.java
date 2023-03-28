@@ -13,13 +13,15 @@ public class InitializeDomainOnPV {
 
   @Description("An optional field that describes the configuration for creating a PersistentVolume for `Domain in PV`."
       + " domain. If specified, it must match one of the volumes specified under `serverPod.volumes`. The operator will"
-      + " not recreate or update the PersistentVolume if it already exists. More info:"
+      + " perform this one-time creation operation only if the persistent volume do not already exist. The operator"
+      + " will not recreate or update the PersistentVolume when it exists. More info:"
       + " https://kubernetes.io/docs/concepts/storage/persistent-volumes")
   PersistentVolume persistentVolume;
 
   @Description("Describes the configuration for creating a PersistentVolumeClaim for `Domain in PV`."
       + " PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator will"
-      + " not recreate or update the PersistentVolumeClaim if it already exists. More info:"
+      + " perform this one-time creation operation only if the persistent volume claim do not already exist."
+      + " The operator will not recreate or update the PersistentVolumeClaim when it exists. More info:"
       + " https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims")
   PersistentVolumeClaim persistentVolumeClaim;
 
