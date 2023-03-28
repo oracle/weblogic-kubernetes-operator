@@ -232,6 +232,7 @@ public class MessageKeys {
   public static final String CONFLICT_OPSS_SECRETS = "WLSDO-0058";
   public static final String CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV = "WLSDO-0059";
   public static final String OVERLAPPING_VOLUME_MOUNT_PATH = "WLSDO-0060";
+  public static final String DOMAIN_HOME_NOT_MOUNTED = "WLSDO-0061";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

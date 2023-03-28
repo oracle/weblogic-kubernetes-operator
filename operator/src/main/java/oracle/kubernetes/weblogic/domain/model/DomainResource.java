@@ -1042,6 +1042,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelNotConfiguredWithInitializeDomainOnPV();
       verifyPVSpecificationsWhenInitDomainOnPVDefined();
       verifyPVCSpecificationsWhenInitDomainOnPVDefined();
+      verifyDomainHomeWhenInitDomainOnPVDefined();
     }
 
     private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
@@ -1537,6 +1538,23 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap", getNamespace()));
       }
     }
+
+    private void verifyDomainHomeWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV() && noMatchingVolumeMount()) {
+        failures.add(DomainValidationMessages.domainHomeNotMounted(getDomainHome()));
+      }
+    }
+
+    private boolean noMatchingVolumeMount() {
+      return getSpec().getAdditionalVolumeMounts().stream()
+      .map(V1VolumeMount::getMountPath)
+      .noneMatch(this::mapsDomainHome);
+    }
+
+    private boolean mapsDomainHome(String mountPath) {
+      return getDomainHome().startsWith(separatorTerminated(mountPath));
+    }
+
   }
 
 }
