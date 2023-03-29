@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG_DEFAULT;
@@ -428,6 +429,7 @@ class ItWlsSamples {
     setupSample(testSamplePath);
     Map<String, String> templateMap  = new HashMap<>();
     templateMap.put("TRAEFIK_INGRESS_IMAGE_NAME", TRAEFIK_INGRESS_IMAGE_NAME);
+    templateMap.put("TRAEFIK_INGRESS_IMAGE_REGISTRY", TRAEFIK_INGRESS_IMAGE_REGISTRY);
     Path srcPropFile = Paths.get(RESOURCE_DIR, "traefik.template.properties");
     Path targetPropFile = assertDoesNotThrow(
         () -> generateFileFromTemplate(srcPropFile.toString(), "traefik.properties", templateMap));
