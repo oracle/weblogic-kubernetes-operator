@@ -444,6 +444,7 @@ public class CommonLBTestUtils {
       for (int i = 1; i <= 10; i++) {
         getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
         final WebClient webClient = new WebClient();
+        webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
         final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
             "connection to the WebLogic admin console failed");
         HtmlForm form = loginPage.getFormByName("loginData");
