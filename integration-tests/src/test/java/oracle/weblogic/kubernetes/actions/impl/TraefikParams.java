@@ -10,6 +10,7 @@ import java.util.Objects;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_TAG;
 
 // All parameters needed to install Traefik Operator
@@ -21,11 +22,12 @@ public class TraefikParams {
   private HelmParams helmParams;
   private String traefikImage = TRAEFIK_INGRESS_IMAGE_NAME;
   private String traefikImageTag = TRAEFIK_INGRESS_IMAGE_TAG;
-
+  private String traefikRegistry = TRAEFIK_INGRESS_IMAGE_REGISTRY;
   private static final String NODEPORTS_HTTP = "ports.web.nodePort";
   private static final String NODEPORTS_HTTPS = "ports.websecure.nodePort";
   private static final String TRAEFIK_IMAGE = "image.repository";
   private static final String TRAEFIK_IMAGE_TAG = "image.tag";
+  private static final String TRAEFIK_IMAGE_REGISTRY = "image.registry";
 
   public TraefikParams nodePortsHttp(int nodePortsHttp) {
     this.nodePortsHttp = nodePortsHttp;
@@ -44,6 +46,11 @@ public class TraefikParams {
 
   public HelmParams getHelmParams() {
     return helmParams;
+  }
+
+  public TraefikParams traefikRegistry(String traefikRegistry) {
+    this.traefikRegistry = traefikRegistry;
+    return this;
   }
 
   public TraefikParams traefikImage(String traefikImage) {
@@ -73,7 +80,7 @@ public class TraefikParams {
 
     values.put(TRAEFIK_IMAGE, traefikImage);
     values.put(TRAEFIK_IMAGE_TAG, traefikImageTag);
-
+    values.put(TRAEFIK_IMAGE_REGISTRY, traefikRegistry);
     values.values().removeIf(Objects::isNull);
     return values;
   }
