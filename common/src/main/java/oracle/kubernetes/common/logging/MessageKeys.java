@@ -234,6 +234,8 @@ public class MessageKeys {
   public static final String OVERLAPPING_VOLUME_MOUNT_PATH = "WLSDO-0060";
   public static final String DOMAIN_HOME_NOT_MOUNTED = "WLSDO-0061";
   public static final String MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS = "WLSDO-0062";
+  public static final String NO_MATCH_VOLUME_WITH_PVC = "WLSDO-0063";
+  public static final String NO_VOLUME_WITH_PVC = "WLSDO-0064";
 
 
   // domain event messages

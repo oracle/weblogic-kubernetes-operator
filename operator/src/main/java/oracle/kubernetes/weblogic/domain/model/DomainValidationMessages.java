@@ -245,4 +245,11 @@ public class DomainValidationMessages {
     return getMessage(MessageKeys.MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS, createIfNotExists);
   }
 
+  static String noMatchVolumeWithPVC() {
+    return getMessage(MessageKeys.NO_MATCH_VOLUME_WITH_PVC);
+  }
+
+  static String noVolumeWithPVC() {
+    return getMessage(MessageKeys.NO_VOLUME_WITH_PVC);
+  }
 }
