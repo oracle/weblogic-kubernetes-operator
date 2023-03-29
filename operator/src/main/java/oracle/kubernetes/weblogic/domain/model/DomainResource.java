@@ -1056,8 +1056,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyPVCSpecificationsWhenInitDomainOnPVDefined();
       verifyDomainHomeWhenInitDomainOnPVDefined();
       verifyDomainTypeWLSAndCreateIfNotExistsWhenInitDomainOnPVDefined();
-      verifyHasVolumeWithPVCWhenInitDomainOnPVDefined();
-      verifyHasMatchVolumeWithPVCWhenInitDomainOnPVDefined();
+      verifyVolumeWithPVCWhenInitDomainOnPVDefined();
     }
 
     private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
@@ -1268,7 +1267,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void verifyPVSpecs(PersistentVolume pv) {
-      if (getPVCName(pv.getMetadata()) == null) {
+      if (getName(pv.getMetadata()) == null) {
         failures.add(DomainValidationMessages.persistentVolumeNameNotSpecified());
         return;
       }
@@ -1295,7 +1294,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void verifyPVCSpecs(PersistentVolumeClaim pvc) {
-      if (getPVCName(pvc.getMetadata()) == null) {
+      if (getName(pvc.getMetadata()) == null) {
         failures.add(DomainValidationMessages.persistentVolumeClaimNameNotSpecified());
         return;
       }
@@ -1308,7 +1307,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private String getPVCName(V1ObjectMeta metadata) {
+    private String getName(V1ObjectMeta metadata) {
       return Optional.ofNullable(metadata).map(V1ObjectMeta::getName).orElse(null);
     }
 
@@ -1554,17 +1553,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private void verifyHasVolumeWithPVCWhenInitDomainOnPVDefined() {
-      if (isInitializeDomainOnPV() && !isPVCSpecConfigured() && noVolumeWithPVC()) {
-        failures.add(DomainValidationMessages.noVolumeWithPVC());
-      }
-    }
-
-    private void verifyHasMatchVolumeWithPVCWhenInitDomainOnPVDefined() {
-      if (isInitializeDomainOnPV()
-          && isPVCSpecConfigured()
-          && noMatchVolumeWithPVC(getInitPvDomainPVCName())) {
-        failures.add(DomainValidationMessages.noMatchVolumeWithPVC());
+    private void verifyVolumeWithPVCWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV()) {
+        if (isPVCSpecConfigured()) {
+          if (noMatchVolumeWithPVC(getInitPvDomainPVCName())) {
+            failures.add(DomainValidationMessages.noMatchVolumeWithPVC(getInitPvDomainPVCName()));
+          }
+        } else if (noVolumeWithPVC()) {
+          failures.add(DomainValidationMessages.noVolumeWithPVC());
+        }
       }
     }
 
@@ -1583,24 +1580,24 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private String getInitPvDomainPVCName() {
       return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
           .map(PersistentVolumeClaim::getMetadata)
-          .map(this::getPVCName)
+          .map(V1ObjectMeta::getName)
           .orElse(null);
     }
 
     private boolean noMatchVolumeWithPVC(String pvcName) {
       return getSpec().getAdditionalVolumes().stream()
-          .noneMatch(volume -> this.isMatch(volume, pvcName));
+          .noneMatch(volume -> this.isPVCNameMatch(volume, pvcName));
     }
 
     private boolean noVolumeWithPVC() {
-      return getSpec().getAdditionalVolumes().stream().noneMatch(this::nonNull);
+      return getSpec().getAdditionalVolumes().stream().noneMatch(this::nonNullPVCName);
     }
 
-    private boolean isMatch(V1Volume volume, String pvcName) {
+    private boolean isPVCNameMatch(V1Volume volume, String pvcName) {
       return Objects.equals(pvcName, getVolumePVCName(volume));
     }
 
-    private boolean nonNull(V1Volume volume) {
+    private boolean nonNullPVCName(V1Volume volume) {
       return getVolumePVCName(volume) != null;
     }
 
@@ -1621,7 +1618,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       if (isInitializeDomainOnPV()
           && isDomainTypeWLS()
           && isCreateIfNotExistsDomainAndRCU()) {
-        failures.add(DomainValidationMessages.mismatchDomainTypeAndCreateIfNoeExists(getCreateIfNotExists()));
+        failures.add(DomainValidationMessages.mismatchDomainTypeAndCreateIfNoeExists());
       }
     }
 

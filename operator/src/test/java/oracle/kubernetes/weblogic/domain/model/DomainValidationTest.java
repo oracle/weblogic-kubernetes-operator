@@ -1315,7 +1315,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
-            "volume", "and the mount path", "in entry", "volume", "are", "overlapped.")));
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
   }
 
   @Test
@@ -1327,7 +1327,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
-            "volume", "and the mount path", "in entry", "volume", "are", "overlapped.")));
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
   }
 
   private DomainConfigurator configuredDomainWithInitializeDomainOnPV() {
@@ -1437,12 +1437,13 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withAdditionalVolume("sharedDomains", "/shared/domains")
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
-            new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
+            new PersistentVolumeClaim()
+                .metadata(new V1ObjectMeta().name("TestPVC")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()).storageClassName("mystoreage"))));
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
-            "spec.configuration.initializeDomainOnPV.persistentVolumeClaim")));
+            "spec.configuration.initializeDomainOnPV.persistentVolumeClaim", "TestPVC")));
   }
 
   @Test

@@ -49,8 +49,7 @@ public abstract class Validator {
 
   List<V1VolumeMount> getRemainingVolumeMounts(List<V1VolumeMount> list, V1VolumeMount mount) {
     List<V1VolumeMount> ret = new ArrayList<>();
-    int index = list.indexOf(mount);
-    for (int i = index + 1; i < list.size(); i++) {
+    for (int i = list.indexOf(mount) + 1; i < list.size(); i++) {
       ret.add(list.get(i));
     }
     return ret;
@@ -73,10 +72,10 @@ public abstract class Validator {
       failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
 
-    mounts.stream().forEach(m -> checkOverlappingMountPath(mount, m));
+    mounts.stream().forEach(m -> checkOverlappingMountPaths(mount, m));
   }
 
-  private void checkOverlappingMountPath(V1VolumeMount mount1, V1VolumeMount mount2) {
+  private void checkOverlappingMountPaths(V1VolumeMount mount1, V1VolumeMount mount2) {
     List<String> list1 = getTokensWithCollection(mount1.getMountPath());
     List<String> list2 = getTokensWithCollection(mount2.getMountPath());
     for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
