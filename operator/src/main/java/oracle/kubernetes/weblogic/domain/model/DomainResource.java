@@ -1555,7 +1555,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     private void verifyVolumeWithPVCWhenInitDomainOnPVDefined() {
       if (isInitializeDomainOnPV()) {
-        if (isPVCSpecConfigured()) {
+        if (isPVCConfigured()) {
           if (noMatchVolumeWithPVC(getInitPvDomainPVCName())) {
             failures.add(DomainValidationMessages.noMatchVolumeWithPVC(getInitPvDomainPVCName()));
           }
@@ -1565,16 +1565,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
     }
 
-    private boolean isPVCSpecConfigured() {
-      return isPVCConfigured()
-          && getInitPvDomainPersistentVolumeClaim().getSpec() != null
-          && getInitPvDomainPersistentVolumeClaim().getSpec().getStorageClassName() != null
-          && getInitPvDomainPersistentVolumeClaim().getSpec().getResources() != null;
-    }
-
     private boolean isPVCConfigured() {
-      return getInitPvDomainPersistentVolumeClaim() != null
-          && getInitPvDomainPersistentVolumeClaim().getMetadata() != null;
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
+          .map(PersistentVolumeClaim::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse(null) != null;
     }
 
     private String getInitPvDomainPVCName() {

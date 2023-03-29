@@ -89,7 +89,7 @@ public abstract class Validator {
 
   private List<String> getTokensWithCollection(String str) {
     return Collections.list(new StringTokenizer(str, "/")).stream()
-        .map(token -> (String) token)
+        .map(String.class::cast)
         .collect(Collectors.toList());
   }
 
