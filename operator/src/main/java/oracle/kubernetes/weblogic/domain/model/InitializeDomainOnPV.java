@@ -11,18 +11,20 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class InitializeDomainOnPV {
 
-  @Description("An optional field that describes the configuration for creating a PersistentVolume for `Domain in PV`."
-      + " domain. If specified, it must match one of the volumes specified under `serverPod.volumes`. The operator will"
-      + " perform this one-time creation operation only if the persistent volume do not already exist. The operator"
+  @Description("Describes the configuration to create a PersistentVolume for `Domain on PV`"
+      + " domain. Omit this section if you have manually created a persistent volume. The operator will"
+      + " perform this one-time create operation only if the persistent volume does not already exist. The operator"
       + " will not recreate or update the PersistentVolume when it exists. More info:"
-      + " https://kubernetes.io/docs/concepts/storage/persistent-volumes")
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv")
   PersistentVolume persistentVolume;
 
-  @Description("Describes the configuration for creating a PersistentVolumeClaim for `Domain in PV`."
-      + " PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator will"
-      + " perform this one-time creation operation only if the persistent volume claim do not already exist."
-      + " The operator will not recreate or update the PersistentVolumeClaim when it exists. More info:"
-      + " https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims")
+  @Description("An optional field that describes the configuration for creating a PersistentVolumeClaim for"
+      + " `Domain on PV`. PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator"
+      + " will perform this one-time create operation only if the persistent volume claim does not already exist. Omit"
+      + " this section if you have manually created a persistent volume claim."
+      + " If specified, the name must match one of the volumes under `serverPod.volumes` and"
+      + " the domain home must reside in the mount path of the volume using this claim. More info:"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc")
   PersistentVolumeClaim persistentVolumeClaim;
 
   @Description("Describes the configuration for creating an initial WebLogic Domain in persistent volume"

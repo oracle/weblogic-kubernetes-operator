@@ -33,9 +33,8 @@ public class PersistentVolume {
   @SerializedName("spec")
   @Expose
   @Valid
-  @Description("The specification of a persistent volume for `Domain in PV` domain. Required."
-      + " This section provides a subset of fields in standard Kubernetes PersistentVolume specifications."
-      + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistent-volumes")
+  @Description("The specification of a persistent volume for `Domain on PV` domain. Required."
+      + " This section provides a subset of fields in standard Kubernetes PersistentVolume specifications.")
   @NotNull
   private PersistentVolumeSpec spec;
 
