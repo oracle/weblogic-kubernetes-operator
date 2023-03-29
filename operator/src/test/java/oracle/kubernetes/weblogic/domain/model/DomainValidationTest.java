@@ -1343,7 +1343,6 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withAdditionalPvClaimVolume("pvcVolume", "Test");
   }
 
-
   @Test
   void whenMultipleVolumeMountHaveNoOverlappingMountPath_initPvDomain_dontReportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
@@ -1409,7 +1408,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV.domain.createIfNotExists",
-            "DOMAIN_AND_RCU", "WLS")));
+            "domainAndRCU", "WLS")));
   }
 
   @Test
@@ -1459,9 +1458,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
-  void whenServerPodHasMatchVolumesForPVCWhenPVCNotSpecified_initDomainOnPV_dontReportError() {
-    configuredDomainWithInitializeDomainOnPV()
-        .withAdditionalPvClaimVolume("sharedDomains", "Test");
+  void whenServerPodHasPVCVolumesWhenPVCNotSpecified_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume();
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
