@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -188,7 +188,7 @@ class MonitoringExporterStepsTest {
 
   @Nonnull
   private String getExporterHost(String serverName) {
-    return DOMAIN_NAME + "-" + serverName + "." + NS;
+    return DOMAIN_NAME + "-" + serverName + "." + NS + ".svc";
   }
 
   @Nonnull
