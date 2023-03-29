@@ -216,9 +216,9 @@ public class TuningParameters {
   public long getActiveJobInitialDeadlineSeconds(boolean isInitializeDomainOnPV, DomainOnPVType type) {
     long defaultValue = 120L;
     if (isInitializeDomainOnPV && DomainOnPVType.JRF.equals(type)) {
-      defaultValue = ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS;
+      defaultValue = ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
     } else if (isInitializeDomainOnPV) {
-      defaultValue = ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS;
+      defaultValue = ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
     }
     return getParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, defaultValue);
   }

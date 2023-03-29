@@ -89,8 +89,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
-import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS;
-import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -956,9 +956,9 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(
         getPodSpecActiveDeadlineSeconds(jobSpec),
-        is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS));
+        is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS));
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   @Test
@@ -972,9 +972,9 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(
         getPodSpecActiveDeadlineSeconds(jobSpec),
-        is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS));
+        is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECODNDS));
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   @Test
