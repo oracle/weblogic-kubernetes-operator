@@ -226,8 +226,8 @@ public class DomainValidationMessages {
   }
 
   /**
-   * Returns a validation message indicating that none of the additional volume mounts contains a path which
-   * includes the domain home.
+   * Returns a validation message indicating that none of the volume mounts contains a path which includes
+   * the domain home.
    * @param domainHome the domain home to be used
    * @return the localized message
    */
@@ -236,17 +236,15 @@ public class DomainValidationMessages {
   }
 
   /**
-   * Returns a validation message indicating that none of the additional volume mounts contains a path which
-   * includes the domain home.
-   * @param createIfNotExists the value of createIfNotExists
+   * Returns a validation message indicating that the domainOnPVType and createIfNotExists settings are incompatible.
    * @return the localized message
    */
-  static String mismatchDomainTypeAndCreateIfNoeExists(@Nonnull CreateIfNotExists createIfNotExists) {
-    return getMessage(MessageKeys.MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS, createIfNotExists);
+  static String mismatchDomainTypeAndCreateIfNoeExists() {
+    return getMessage(MessageKeys.MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS);
   }
 
-  static String noMatchVolumeWithPVC() {
-    return getMessage(MessageKeys.NO_MATCH_VOLUME_WITH_PVC);
+  static String noMatchVolumeWithPVC(String pvcName) {
+    return getMessage(MessageKeys.NO_MATCH_VOLUME_WITH_PVC, pvcName);
   }
 
   static String noVolumeWithPVC() {
