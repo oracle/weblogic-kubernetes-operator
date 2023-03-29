@@ -66,7 +66,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.common.logging.MessageKeys.PVC_PENDING_ERROR;
+import static oracle.kubernetes.common.logging.MessageKeys.PVC_NOT_BOUND_ERROR;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -81,6 +81,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodStatusMessage;
 import static oracle.kubernetes.operator.logging.ThreadLoggingContext.setThreadContext;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.PERSISTENT_VOLUME_CLAIM;
 
 public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
@@ -633,9 +634,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   @Override
   public void updateDomainStatus(@Nonnull V1PersistentVolumeClaim pvc, DomainPresenceInfo info) {
-    if (ProcessingConstants.PENDING.equals(getPhase(pvc))) {
+    if (!ProcessingConstants.BOUND.equals(getPhase(pvc))) {
       delegate.runSteps(new Packet().with(info), DomainStatusUpdater
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
+    } else {
+      delegate.runSteps(new Packet().with(info), DomainStatusUpdater
+          .createRemoveSelectedFailuresStep(null, PERSISTENT_VOLUME_CLAIM), null);
     }
   }
 
@@ -645,7 +649,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private String getMessage(V1PersistentVolumeClaim pvc) {
-    return LOGGER.formatMessage(PVC_PENDING_ERROR, pvc.getMetadata().getName(), pvc.getStatus());
+    return LOGGER.formatMessage(PVC_NOT_BOUND_ERROR, pvc.getMetadata().getName(), getPhase(pvc));
   }
 
 

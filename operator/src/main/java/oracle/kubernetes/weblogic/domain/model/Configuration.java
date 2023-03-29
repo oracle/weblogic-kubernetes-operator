@@ -49,7 +49,7 @@ public class Configuration {
 
   @Feature("DomainOnPvSimplification")
   @Description("This field describes the configuration required to initialize or create a WebLogic Domain in persistent"
-      + " volume (`Domain in pv`) and related resources such as a persistent volume and a persistent volume claim. The"
+      + " volume (`Domain in PV`) and related resources such as a persistent volume and a persistent volume claim. The"
       + " operator will not recreate or update the domain and resources if they already exist. This feature helps in"
       + " creating an initial JRF-based domain. For plain WebLogic domains, we recommend using a 'Model In Image'"
       + " domain home source type instead. For more information, see"

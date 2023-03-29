@@ -19,7 +19,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
-import oracle.kubernetes.operator.DomainType;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -453,7 +453,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withInitializeDomainOnPVType(DomainType type) {
+  public DomainConfigurator withInitializeDomainOnPVType(DomainOnPVType type) {
     getOrCreateInitializeDomainOnPVDomain().domainType(type);
     return this;
   }

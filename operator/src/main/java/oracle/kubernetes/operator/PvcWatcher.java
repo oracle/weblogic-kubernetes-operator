@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -48,15 +48,23 @@ public class PvcWatcher implements PvcAwaiterStepFactory {
     }
 
     V1PersistentVolumeClaimStatus status = pvc.getStatus();
-    LOGGER.fine("Status of pvc " + Objects.requireNonNull(pvc.getMetadata()).getName() + ": " + status);
+    LOGGER.fine("Status phase of pvc " + getName(pvc) + " is : " + getPhase(status));
     if (status != null) {
-      String phase = status.getPhase();
+      String phase = getPhase(status);
       if (ProcessingConstants.BOUND.equals(phase)) {
-        LOGGER.fine(MessageKeys.PVC_IS_BOUND, pvc.getMetadata().getName(), status);
+        LOGGER.fine(MessageKeys.PVC_IS_BOUND, getName(pvc));
         return true;
       }
     }
     return false;
+  }
+
+  private static String getPhase(V1PersistentVolumeClaimStatus status) {
+    return Optional.ofNullable(status).map(V1PersistentVolumeClaimStatus::getPhase).orElse(null);
+  }
+
+  private static String getName(V1PersistentVolumeClaim pvc) {
+    return Optional.ofNullable(pvc.getMetadata()).map(V1ObjectMeta::getName).orElse(null);
   }
 
   /**
@@ -131,6 +139,7 @@ public class PvcWatcher implements PvcAwaiterStepFactory {
           V1PersistentVolumeClaim pvc = callResponse.getResult();
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
+            processor.updateDomainStatus(pvc, info);
             return doNext(packet);
           }
           if (callback.getAndIncrementRecheckCount() % ProcessingConstants.PVC_WAIT_STATUS_UPDATE_COUNT == 0) {

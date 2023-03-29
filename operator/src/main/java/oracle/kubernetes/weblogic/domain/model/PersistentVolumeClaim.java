@@ -34,8 +34,7 @@ public class PersistentVolumeClaim {
   @Expose
   @Valid
   @Description("The specification of a persistent volume claim for `Domain in PV` domain. Required."
-      + " This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications."
-      + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#persistentvolumeclaims")
+      + " This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications.")
   @NotNull
   private PersistentVolumeClaimSpec spec;
 
