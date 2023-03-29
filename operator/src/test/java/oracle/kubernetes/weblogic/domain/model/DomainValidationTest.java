@@ -1340,7 +1340,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   private DomainConfigurator configuredDomainWithInitializeDomainOnPVWithPVCVolume() {
     return configuredDomainWithInitializeDomainOnPV()
-        .withAdditionalPvClaimVolume("pvcVolume", "pvc");
+        .withAdditionalPvClaimVolume("pvcVolume", "Test");
   }
 
 
@@ -1429,7 +1429,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPV();
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume")));
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
+            "PersistentVolumeClaim")));
   }
 
   @Test
@@ -1453,6 +1454,14 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()).storageClassName("mystoreage"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenServerPodHasMatchVolumesForPVCWhenPVCNotSpecified_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withAdditionalPvClaimVolume("sharedDomains", "Test");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
