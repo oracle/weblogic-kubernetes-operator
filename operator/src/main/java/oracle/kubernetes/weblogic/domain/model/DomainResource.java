@@ -28,8 +28,10 @@ import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -54,6 +56,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.common.logging.MessageKeys.MAKE_RIGHT_WILL_RETRY;
+import static oracle.kubernetes.operator.DomainOnPVType.JRF;
+import static oracle.kubernetes.operator.DomainOnPVType.WLS;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.clusterInUse;
@@ -1050,6 +1054,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       verifyModelNotConfiguredWithInitializeDomainOnPV();
       verifyPVSpecificationsWhenInitDomainOnPVDefined();
       verifyPVCSpecificationsWhenInitDomainOnPVDefined();
+      verifyDomainHomeWhenInitDomainOnPVDefined();
+      verifyDomainTypeWLSAndCreateIfNotExistsWhenInitDomainOnPVDefined();
+      verifyVolumeWithPVCWhenInitDomainOnPVDefined();
     }
 
     private void verifyModelNotConfiguredWithInitializeDomainOnPV() {
@@ -1058,7 +1065,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
           failures.add(DomainValidationMessages.conflictModelConfiguration("spec.configuration.model",
               "spec.configuration.initializeDomainOnPV"));
         }
-        if (DomainOnPVType.JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
+        if (JRF.equals(getInitializeDomainOnPVDomainType()) && hasMiiOpssConfigured()) {
           failures.add(DomainValidationMessages.conflictOpssSecrets(
               "spec.configuration.initializeDomainOnPV.domain.opss", "spec.configuration.opss"));
         }
@@ -1161,10 +1168,12 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void addInvalidMountPathsManagedServers() {
-      getSpec().getAdditionalVolumeMounts().forEach(mount -> checkValidMountPath(mount, getEnvNames()));
+      spec.getAdditionalVolumeMounts().forEach(mount -> checkValidMountPath(mount, getEnvNames(),
+          getRemainingVolumeMounts(spec.getAdditionalVolumeMounts(), mount)));
       if (getSpec().getAdminServer() != null) {
         getSpec().getAdminServer().getAdditionalVolumeMounts()
-            .forEach(mount -> checkValidMountPath(mount, getEnvNames()));
+            .forEach(mount -> checkValidMountPath(mount, getEnvNames(),
+                getRemainingVolumeMounts(getSpec().getAdminServer().getAdditionalVolumeMounts(), mount)));
       }
     }
 
@@ -1180,7 +1189,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       podSpec.getContainers()
           .forEach(container ->
               Optional.ofNullable(container.getVolumeMounts())
-                  .ifPresent(volumes -> volumes.forEach(mount -> checkValidMountPath(mount, getEnvNames()))));
+                  .ifPresent(volumes -> volumes.forEach(mount ->
+                      checkValidMountPath(mount, getEnvNames(), getRemainingVolumeMounts(volumes, mount)))));
     }
 
     private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUseManagedServers() {
@@ -1483,7 +1493,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       }
 
       if (isInitializeDomainOnPV()
-          && DomainOnPVType.JRF.equals(getInitializeDomainOnPVDomainType())
+          && JRF.equals(getInitializeDomainOnPVDomainType())
           && getInitializeDomainOnPVOpssWalletPasswordSecret() == null) {
         failures.add(DomainValidationMessages.missingRequiredInitializeDomainOnPVOpssSecret(
             "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret"));
@@ -1542,6 +1552,93 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
             "spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap", getNamespace()));
       }
     }
+
+    private void verifyVolumeWithPVCWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV()) {
+        if (isPVCConfigured()) {
+          if (noMatchVolumeWithPVC(getInitPvDomainPVCName())) {
+            failures.add(DomainValidationMessages.noMatchVolumeWithPVC(getInitPvDomainPVCName()));
+          }
+        } else if (noVolumeWithPVC()) {
+          failures.add(DomainValidationMessages.noVolumeWithPVC());
+        }
+      }
+    }
+
+    private boolean isPVCConfigured() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
+          .map(PersistentVolumeClaim::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse(null) != null;
+    }
+
+    private String getInitPvDomainPVCName() {
+      return Optional.ofNullable(getInitPvDomainPersistentVolumeClaim())
+          .map(PersistentVolumeClaim::getMetadata)
+          .map(V1ObjectMeta::getName)
+          .orElse(null);
+    }
+
+    private boolean noMatchVolumeWithPVC(String pvcName) {
+      return getSpec().getAdditionalVolumes().stream()
+          .noneMatch(volume -> this.isPVCNameMatch(volume, pvcName));
+    }
+
+    private boolean noVolumeWithPVC() {
+      return getSpec().getAdditionalVolumes().stream().noneMatch(this::nonNullPVCName);
+    }
+
+    private boolean isPVCNameMatch(V1Volume volume, String pvcName) {
+      return Objects.equals(pvcName, getVolumePVCName(volume));
+    }
+
+    private boolean nonNullPVCName(V1Volume volume) {
+      return getVolumePVCName(volume) != null;
+    }
+
+    private String getVolumePVCName(V1Volume volume) {
+      return Optional.ofNullable(volume)
+          .map(V1Volume::getPersistentVolumeClaim)
+          .map(V1PersistentVolumeClaimVolumeSource::getClaimName)
+          .orElse(null);
+    }
+
+    private void verifyDomainHomeWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV() && noMatchingVolumeMount()) {
+        failures.add(DomainValidationMessages.domainHomeNotMounted(getDomainHome()));
+      }
+    }
+
+    private void verifyDomainTypeWLSAndCreateIfNotExistsWhenInitDomainOnPVDefined() {
+      if (isInitializeDomainOnPV()
+          && isDomainTypeWLS()
+          && isCreateIfNotExistsDomainAndRCU()) {
+        failures.add(DomainValidationMessages.mismatchDomainTypeAndCreateIfNoeExists());
+      }
+    }
+
+    private boolean isCreateIfNotExistsDomainAndRCU() {
+      return getCreateIfNotExists() == CreateIfNotExists.DOMAIN_AND_RCU;
+    }
+
+    private boolean isDomainTypeWLS() {
+      return spec.getInitializeDomainOnPVDomainType() == WLS;
+    }
+
+    private CreateIfNotExists getCreateIfNotExists() {
+      return spec.getInitializeDomainOnPV().getDomain().getCreateIfNotExists();
+    }
+
+    private boolean noMatchingVolumeMount() {
+      return getSpec().getAdditionalVolumeMounts().stream()
+      .map(V1VolumeMount::getMountPath)
+      .noneMatch(this::mapsDomainHome);
+    }
+
+    private boolean mapsDomainHome(String mountPath) {
+      return getDomainHome().startsWith(separatorTerminated(mountPath));
+    }
+
   }
 
 }

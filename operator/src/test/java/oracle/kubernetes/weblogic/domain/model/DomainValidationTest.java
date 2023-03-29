@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainOnPVType.JRF;
 import static oracle.kubernetes.operator.DomainOnPVType.WLS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -1041,8 +1041,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   void whenDomainCreationConfigMapExists_InitPvDomain_dontReportError() {
     resourceLookup.defineResource("domain-creation-cm", V1ConfigMap.class, NS);
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
 
@@ -1052,8 +1051,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainCreationConfigMapSpecifiedButDoesNotExist_initPvDomain_reportError() {
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
 
@@ -1065,9 +1063,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletFileSecretSpecifiedButDoesNotExist_initPvDomain_domainTypeWLS_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
-        .withInitializeDomainOnPVType(DomainOnPVType.WLS)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPVType(WLS)
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1076,8 +1073,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletFileSecretSpecifiedButDoesNotExist_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
@@ -1089,32 +1085,13 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletFileSecretExists_initPvDomain_domainTypeWLS_dontReportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVType(WLS)
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
-  }
-
-  private InitializeDomainOnPV getInitPvDomainWithWalletPasswordSecret() {
-    return new InitializeDomainOnPV().domain(
-        new DomainOnPV().domainType(DomainOnPVType.WLS)
-            .opss(new Opss().withWalletPasswordSecret("wpSecret")));
-  }
-
-  private InitializeDomainOnPV getInitPvDomainJRFWithWalletPasswordSecret() {
-    return new InitializeDomainOnPV().domain(
-        new DomainOnPV().domainType(DomainOnPVType.JRF)
-            .opss(new Opss().withWalletPasswordSecret("wpSecret")));
-  }
-
-  private InitializeDomainOnPV getInitPvDomainWithWalletFileSecret() {
-    return new InitializeDomainOnPV().domain(
-        new DomainOnPV().domainType(DomainOnPVType.WLS)
-            .opss(new Opss().withWalletFileSecret("wfSecret")));
   }
 
   @Test
@@ -1129,8 +1106,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletPasswordSecretExists_initPvDomain_dontReportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
@@ -1140,8 +1116,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletPasswordSecretNotSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(new DomainOnPV()));
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1152,17 +1127,15 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenWalletPasswordSecretNotSpecified_initPvDomain_domainTypeWLS_dontReportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
-        .withInitializeDomainOnPVType(DomainOnPVType.WLS);
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPVType(WLS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
   void whenBothMiiOpssAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletPasswordSecret("wpWallet")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
@@ -1177,8 +1150,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenBothMiiOpssWalletFileAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletFileSecret("wfWallet")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
@@ -1193,8 +1165,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenBothMiiOpssWalletFileAndInitPvDomainOpssWalletFilePasswordSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletFileSecret("wfWallet")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
@@ -1210,8 +1181,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenBothMiiOpssWalletFilePasswordAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletFileSecret("wfWallet")
         .withOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
@@ -1227,8 +1197,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenBothMiiOpssWalletFilePasswordAndInitPvDomainOpssWalletFilePasswordSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletFileSecret("wfWallet")
         .withOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
@@ -1245,8 +1214,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenModelSpecified_initPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS())
         .withModel(new Model());
 
@@ -1263,8 +1231,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenModelNotSpecified_initPvDomain_dontReportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPV(getInitPvDomainWithDomainTypeWLS());
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -1272,8 +1239,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeNameNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(new PersistentVolume()));
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1284,8 +1250,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeCapacityNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
             new PersistentVolume().metadata(new V1ObjectMeta().name("Test"))
                 .spec(new PersistentVolumeSpec().storageClassName("SC"))));
@@ -1297,8 +1262,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeStorageClassNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(
             new PersistentVolume().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeSpec()
                 .capacity(Collections.singletonMap("storage", new Quantity("50Gi"))))));
@@ -1310,8 +1274,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeClaimNameNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(new PersistentVolumeClaim()));
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1322,8 +1285,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeClaimResourcesNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test"))
                 .spec(new PersistentVolumeClaimSpec().storageClassName("SC"))));
@@ -1335,8 +1297,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenPersistentVolumeClaimStorageClassNotSpecifiedUnderInitPvDomain_reportError() {
-    configureDomain(domain).withLogHomeEnabled(false)
-        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
             new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
                 .resources(createResources()))));
@@ -1346,8 +1307,161 @@ public class DomainValidationTest extends DomainValidationTestBase {
             "is invalid", "spec.storageClass", "must be specified")));
   }
 
+  @Test
+  void whenMultipleVolumeMountHaveOverlappingMountPath_initPvDomain_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withAdditionalVolumeMount("volume1", "/domain-path1")
+        .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
+  }
+
+  @Test
+  void whenMultipleVolumeMountHaveSameMountPath_initPvDomain_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV())
+        .withAdditionalVolumeMount("volume1", "/domain-path1/dir1")
+        .withAdditionalVolumeMount("volume2", "/domain-path1/dir1");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("The mount path", "/domain-path1", "in entry",
+            "volume", "and the mount path", "in entry", "volume", "are", "overlapping.")));
+  }
+
+  private DomainConfigurator configuredDomainWithInitializeDomainOnPV() {
+    return configureDomain(domain).withLogHomeEnabled(false)
+        .withDomainHomeSourceType(PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV())
+        .withAdditionalVolumeMount("sharedDomains", "/shared/domains");
+  }
+
+
+  private DomainConfigurator configuredDomainWithInitializeDomainOnPVWithPVCVolume() {
+    return configuredDomainWithInitializeDomainOnPV()
+        .withAdditionalPvClaimVolume("pvcVolume", "Test");
+  }
+
+  @Test
+  void whenMultipleVolumeMountHaveNoOverlappingMountPath_initPvDomain_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withAdditionalVolumeMount("volume2", "/domain-path2");
+
+    assertThat(domain.getValidationFailures(resourceLookup),empty());
+  }
+
   public static V1ResourceRequirements createResources() {
     return new V1ResourceRequirements().requests(Collections.singletonMap("storage", new Quantity("5Gi")));
+  }
+
+  @Test
+  void whenVolumeMountHasDomainHomeDirectory_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withDomainHome("/shared/domains/mydomain");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenNoVolumeMountHasSpecifiedDomainHomeDirectory_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withDomainHome("/private/domains/mydomain");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("domain home", "/private/domains/mydomain")));
+  }
+
+  @Test
+  void whenDomainTypeJRFAndCreateIfNotExistsDomainAndRCU_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN_AND_RCU)))
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenDomainTypeJRFAndCreateIfNotExistsDomain_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN)))
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenDomainTypeWLSAndCreateIfNotExistsDomainAndRCU_initDomainOnPV_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
+            new DomainOnPV().domainType(WLS).createMode(CreateIfNotExists.DOMAIN_AND_RCU)));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV.domain.createIfNotExists",
+            "domainAndRCU", "WLS")));
+  }
+
+  @Test
+  void whenServerPodHasNoVolumesForPVCWhenInitPVCSpecified_initDomainOnPV_reportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
+            new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
+                .resources(createResources()).storageClassName("mystoreage"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
+            "spec.configuration.initializeDomainOnPV.persistentVolumeClaim")));
+  }
+
+  @Test
+  void whenServerPodHasNoVolumesForPVC_initDomainOnPV_reportError() {
+    configuredDomainWithInitializeDomainOnPV();
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
+            "PersistentVolumeClaim")));
+  }
+
+  @Test
+  void whenServerPodHasNoMatchVolumesForPVC_initDomainOnPV_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withAdditionalVolume("sharedDomains", "/shared/domains")
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
+            new PersistentVolumeClaim()
+                .metadata(new V1ObjectMeta().name("TestPVC")).spec(new PersistentVolumeClaimSpec()
+                .resources(createResources()).storageClassName("mystoreage"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
+            "spec.configuration.initializeDomainOnPV.persistentVolumeClaim", "TestPVC")));
+  }
+
+  @Test
+  void whenServerPodHasMatchVolumesForPVC_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPV()
+        .withAdditionalPvClaimVolume("sharedDomains", "Test")
+        .withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(
+            new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("Test")).spec(new PersistentVolumeClaimSpec()
+                .resources(createResources()).storageClassName("mystoreage"))));
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenServerPodHasPVCVolumesWhenPVCNotSpecified_initDomainOnPV_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume();
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @SafeVarargs
