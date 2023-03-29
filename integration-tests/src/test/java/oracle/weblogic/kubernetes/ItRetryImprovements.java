@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.configMapExist;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusMessageContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainResourceForDomainInImage;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createMiiDomainResourceWithConfigMap;
@@ -357,14 +358,12 @@ class ItRetryImprovements {
     DomainResource domain = createDomainResourceForRetryTest(failureRetryLimitMinutes, replicaCount,false);
     createDomainForRetryTest(domain);
 
-    String retryDoneMsgRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*")
-        .append(failureRetryLimitMinutes.toString())
-        .append("\\s*minutes.*Please\\s*resolve.*update\\s*domain.spec.introspectVersion\\s*")
-        .append(".*to\\s*force\\s*another\\s*retry.*").toString();
-
-    // verify that the operator stops retry after failure retry limit minutes expired
-    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryDoneMsgRegex),
-        logger, "The operator stops retry after failure retry limit minutes expired");
+    String retryDoneMsgRegex = "The operator failed after retrying for "
+        + failureRetryLimitMinutes
+        + " minutes. This time limit may be specified in spec.failureRetryLimitMinutes. "
+        + "Please resolve the error and then update domain.spec.introspectVersion to force another retry.";
+    // verify that retryDoneMsgRegex message found in domain status message
+    checkDomainStatusMessageContainsExpectedMsg(domainUid, domainNamespace, retryDoneMsgRegex);
   }
 
   /**
@@ -382,23 +381,23 @@ class ItRetryImprovements {
     String badModelFileCm = "bad-model-in-cm";
     String badModelFileName = "bad-model-file.yaml";
     Path badModelFile = Paths.get(MODEL_DIR, badModelFileName);
+    String domainUid = "retrydomain2";
 
     logger.info("Creating a domain resource with bad model file from configmap");
     DomainResource domain =
         createDomainResourceForRetryTestWithConfigMap(failureRetryLimitMinutes,
-        replicaCount, badModelFile, badModelFileCm);
+        replicaCount, badModelFile, badModelFileCm, domainUid);
     createDomainAndVerify(domain, domainNamespace);
 
     String createDomainFailedMsgRegex = new StringBuffer(".*SEVERE.*createDomain\\s*was\\s*unable\\s*to\\s*load.*")
         .append(badModelFileName).toString();
-    String retryDoneMsgRegex = new StringBuffer(".*operator\\s*failed\\s*after\\s*retrying\\s*for\\s*")
-        .append(failureRetryLimitMinutes.toString())
-        .append("\\s*minutes.*Please\\s*resolve.*update\\s*domain.spec.introspectVersion\\s*")
-        .append(".*to\\s*force\\s*another\\s*retry.*").toString();
 
+    String retryDoneMsgRegex = "The operator failed after retrying for "
+        + failureRetryLimitMinutes
+        + " minutes. This time limit may be specified in spec.failureRetryLimitMinutes. "
+        + "Please resolve the error and then update domain.spec.introspectVersion to force another retry.";
     // verify that retryDoneMsgRegex message found in domain status message
-    testUntil(() -> findStringInDomainStatusMessage(domainNamespace, domainUid, retryDoneMsgRegex),
-        logger, "{0} is found in domain status message", retryDoneMsgRegex);
+    checkDomainStatusMessageContainsExpectedMsg(domainUid, domainNamespace, retryDoneMsgRegex);
 
     // verify that SEVERE and createDomainFailedMsgRegex message found in Operator log
     testUntil(() -> checkPodLogContainsRegex(createDomainFailedMsgRegex, operatorPodName, opNamespace),
@@ -417,6 +416,10 @@ class ItRetryImprovements {
 
     if (configMapExist.call().booleanValue()) {
       deleteConfigMap(badModelFileCm, domainNamespace);
+    }
+    deleteClusterCustomResource(domainUid + "-" + clusterName, domainNamespace);
+    if (domainExists(domainUid, DOMAIN_VERSION, domainNamespace).call().booleanValue()) {
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -485,7 +488,8 @@ class ItRetryImprovements {
   private static DomainResource createDomainResourceForRetryTestWithConfigMap(Long failureRetryLimitMinutes,
                                                                               int replicaCount,
                                                                               Path modelFile,
-                                                                              String configmapName) {
+                                                                              String configmapName,
+                                                                              String domainUid) {
     final List<Path> modelList = Collections.singletonList(modelFile);
     String imageName = MII_BASIC_IMAGE_NAME;
     String imageTag = "empty-domain-image";
