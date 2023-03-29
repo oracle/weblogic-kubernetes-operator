@@ -212,9 +212,6 @@ createDomainFromWDTModel() {
     # wrong url is useless to retry) and there is no easy way to determine the kind of failure is recoverable
     #
 
-    # TODO:  Waiting on WDT enhancement to detect RCU connectivity test for possible retry - may not be feasible
-
-    #if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] && [ "$INIT_DOMAIN_ON_PV" != "domainAndRCU" ] ; then
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
       trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
     else
