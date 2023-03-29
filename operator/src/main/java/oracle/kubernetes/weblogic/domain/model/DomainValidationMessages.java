@@ -56,6 +56,17 @@ public class DomainValidationMessages {
   }
 
   /**
+   * Returns a validation message indicating that a specified volume mount's path overlaps with another volume.
+   * @param mount1 the problematic volume mount
+   * @param mount2 the problematic volume mount
+   * @return the localized message
+   */
+  static String overlappingVolumeMountPath(@Nonnull V1VolumeMount mount1, @Nonnull V1VolumeMount mount2) {
+    return getMessage(MessageKeys.OVERLAPPING_VOLUME_MOUNT_PATH,
+        mount1.getMountPath(), mount1.getName(), mount2.getMountPath(), mount2.getName());
+  }
+
+  /**
    * Returns a validation message indicating that none of the additional volume mounts contains a path which
    * includes the log home.
    * @param logHome the log home to be used
@@ -212,5 +223,31 @@ public class DomainValidationMessages {
 
   public static String conflictModelConfiguration(String model, String initializeDomainOnPV) {
     return getMessage(MessageKeys.CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV, model, initializeDomainOnPV);
+  }
+
+  /**
+   * Returns a validation message indicating that none of the volume mounts contains a path which includes
+   * the domain home.
+   * @param domainHome the domain home to be used
+   * @return the localized message
+   */
+  static String domainHomeNotMounted(@Nonnull String domainHome) {
+    return getMessage(MessageKeys.DOMAIN_HOME_NOT_MOUNTED, domainHome);
+  }
+
+  /**
+   * Returns a validation message indicating that the domainOnPVType and createIfNotExists settings are incompatible.
+   * @return the localized message
+   */
+  static String mismatchDomainTypeAndCreateIfNoeExists() {
+    return getMessage(MessageKeys.MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS);
+  }
+
+  static String noMatchVolumeWithPVC(String pvcName) {
+    return getMessage(MessageKeys.NO_MATCH_VOLUME_WITH_PVC, pvcName);
+  }
+
+  static String noVolumeWithPVC() {
+    return getMessage(MessageKeys.NO_VOLUME_WITH_PVC);
   }
 }
