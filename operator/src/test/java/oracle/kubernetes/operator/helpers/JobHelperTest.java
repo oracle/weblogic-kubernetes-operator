@@ -45,8 +45,8 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -1098,7 +1098,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
                 .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                     .withWalletPasswordSecret("wallet-secret-password"))
             ));
@@ -1124,7 +1124,7 @@ class JobHelperTest extends DomainValidationTestBase {
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
-                .domainType(DomainType.JRF)
+                .domainType(DomainOnPVType.JRF)
                 .domainCreationConfigMap("wdt-config-map")));
 
     V1JobSpec jobSpec = createJobSpec();
@@ -1149,7 +1149,7 @@ class JobHelperTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume1Mount", VOLUME_MOUNT_PATH_1)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
-                .domainType(DomainType.JRF)
+                .domainType(DomainOnPVType.JRF)
                 .domainCreationConfigMap("wdt-config-map")));
 
     V1JobSpec jobSpec = createJobSpec();
@@ -1173,7 +1173,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainType.JRF)
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
                 .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                     .withWalletPasswordSecret("wallet-secret-password"))
             ));

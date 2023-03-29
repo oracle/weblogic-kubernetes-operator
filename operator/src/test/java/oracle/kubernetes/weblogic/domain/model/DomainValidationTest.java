@@ -18,7 +18,6 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
-import oracle.kubernetes.operator.DomainType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -29,6 +28,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainOnPVType.JRF;
+import static oracle.kubernetes.operator.DomainOnPVType.WLS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestCluster;
@@ -37,8 +38,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.setupCluster;
 import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
-import static oracle.kubernetes.operator.DomainType.JRF;
-import static oracle.kubernetes.operator.DomainType.WLS;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -1065,7 +1064,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletFileSecretSpecifiedButDoesNotExist_initPvDomain_domainTypeWLS_reportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
-        .withInitializeDomainOnPVType(DomainType.WLS)
+        .withInitializeDomainOnPVType(WLS)
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1129,7 +1128,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenWalletPasswordSecretNotSpecified_initPvDomain_domainTypeWLS_dontReportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
-        .withInitializeDomainOnPVType(DomainType.WLS);
+        .withInitializeDomainOnPVType(WLS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }

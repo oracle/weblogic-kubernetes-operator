@@ -286,7 +286,7 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  String getWdtDomainType() {
+  String getWdtDomainTypeValue() {
     boolean hasNoInitPvDomain = Optional.ofNullable(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV)
@@ -774,7 +774,7 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_KEY_SECRET_NAME, getOpssWalletPasswordSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.OPSS_WALLETFILE_SECRET_NAME, getOpssWalletFileSecretName());
     addEnvVar(vars, IntrospectorJobEnvVars.RUNTIME_ENCRYPTION_SECRET_NAME, getRuntimeEncryptionSecretName());
-    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainType());
+    addEnvVar(vars, IntrospectorJobEnvVars.WDT_DOMAIN_TYPE, getWdtDomainTypeValue());
     addEnvVar(vars, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
     addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
