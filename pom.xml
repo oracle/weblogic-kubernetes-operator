@@ -660,7 +660,7 @@
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>18.0.0</client-java-version>
-    <kotlin-stdlib-version>1.8.10</kotlin-stdlib-version>
+    <kotlin-stdlib-version>1.8.20</kotlin-stdlib-version>
     <okhttp-version>4.10.0</okhttp-version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
