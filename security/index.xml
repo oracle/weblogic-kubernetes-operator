@@ -59,8 +59,7 @@ The introspection job also creates a boot.properties file that is made available
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>Security requirements to run WebLogic in OpenShift WebLogic Kubernetes Operator images starting with version 3.1 and WebLogic Server or Fusion Middleware Infrastructure images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
-Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:</description>
+      <description>Set the Helm chart property kubernetesPlatform to OpenShift Beginning with operator version 3.3.2, set the operator kubernetesPlatform Helm chart property to OpenShift. This property accommodates OpenShift security requirements. Specifically, the operator&amp;rsquo;s deployment and any pods created by the operator for WebLogic Server instances will not contain runAsUser: 1000 in the configuration of the securityContext. This is to accommodate OpenShift&amp;rsquo;s default restricted security context constraint. For more information, see Operator Helm configuration values.</description>
     </item>
     
   </channel>
