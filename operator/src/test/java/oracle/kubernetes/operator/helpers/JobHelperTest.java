@@ -89,6 +89,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -941,6 +943,38 @@ class JobHelperTest extends DomainValidationTestBase {
 
     assertThat(getPodSpecActiveDeadlineSeconds(jobSpec), is(expectedActiveDeadlineSeconds));
     assertThat(jobSpec.getActiveDeadlineSeconds(), is(expectedActiveDeadlineSeconds));
+  }
+
+  @Test
+  void verify_introspectorPodWithInitializeJRFDomainOnPVSpec_activeDeadlineSeconds_default_values() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getPodSpecActiveDeadlineSeconds(jobSpec),
+        is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+  }
+
+  @Test
+  void verify_introspectorPodWithInitializeWLSDomainOnPVSpec_activeDeadlineSeconds_default_values() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().domainType(DomainOnPVType.WLS).createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getPodSpecActiveDeadlineSeconds(jobSpec),
+        is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   @Test
