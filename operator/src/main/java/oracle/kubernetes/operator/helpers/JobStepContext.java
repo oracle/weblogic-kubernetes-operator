@@ -381,7 +381,12 @@ public class JobStepContext extends BasePodStepContext {
 
   private long getIntrospectorJobActiveDeadlineSeconds() {
     return Optional.ofNullable(getDomain().getIntrospectorJobActiveDeadlineSeconds())
-        .orElse(TuningParameters.getInstance().getActiveJobInitialDeadlineSeconds());
+        .orElse(getDefaultIntrospectorJobInitialDeadlineSeconds());
+  }
+
+  private long getDefaultIntrospectorJobInitialDeadlineSeconds() {
+    return TuningParameters.getInstance().getActiveJobInitialDeadlineSeconds(isInitializeDomainOnPV(),
+        getDomain().getInitializeDomainOnPVDomainType());
   }
 
   @Nonnull
