@@ -183,6 +183,7 @@ public interface TestConstants {
   public static final String TRAEFIK_CHART_NAME = "traefik";
   public static final String TRAEFIK_INGRESS_IMAGE_NAME = "weblogick8s/test-images/traefik-ingress/traefik";
   public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
+
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
 
   // Voyager constants
