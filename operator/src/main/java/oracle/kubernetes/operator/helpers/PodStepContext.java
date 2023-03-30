@@ -1350,6 +1350,12 @@ public abstract class PodStepContext extends BasePodStepContext {
               container.setSecurityContext(null);
             }
           }));
+      Optional.ofNullable(recipe.getSpec().getInitContainers())
+          .ifPresent(initContainers -> initContainers.forEach(initContainer -> {
+            if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(initContainer.getSecurityContext())) {
+              initContainer.setSecurityContext(null);
+            }
+          }));
     }
 
     private boolean canAdjustRecentOperatorMajorVersion3HashToMatch(V1Pod currentPod, String requiredHash) {
