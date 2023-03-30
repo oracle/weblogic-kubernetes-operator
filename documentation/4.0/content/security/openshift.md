@@ -5,6 +5,40 @@ weight: 7
 description: "OpenShift information for the operator."
 ---
 
+#### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
+
+Beginning with operator version 3.3.2,
+set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.
+This property accommodates OpenShift security requirements. Specifically, the operator's deployment and any pods created
+by the operator for WebLogic Server instances will not contain `runAsUser: 1000` in the configuration of the `securityContext`. This is to
+accommodate OpenShift's default `restricted` security context constraint.
+For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
+
+#### Use a dedicated namespace
+
+When the user that installs an individual instance of the operator
+does _not_ have the required privileges to create resources at the Kubernetes cluster level,
+they can use a `Dedicated` namespace selection strategy for the operator instance to limit
+it to managing domain resources in its local namespace only
+(see [Operator namespace management]({{< relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
+and they may need to manually install the Domain Custom Resource (CRD)
+(see [Prepare for installation]({{< relref "/managing-operators/preparation/#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}})).
+
+#### With WIT, set the `target` parameter to `OpenShift`
+
+When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
+`create`, `rebase`, or `update` command, to create a
+[Domain in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home,
+[Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) image,
+or [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) auxiliary image,
+you can specify the `--target` parameter for the target Kubernetes environment.
+Its value can be either `Default` or `OpenShift`.
+The `OpenShift` option changes the domain directory files such that the group permissions
+for those files will be the same as the user permissions (group writable, in most cases).
+If you do not supply the OS group and user setting with `--chown`,
+then the `Default` setting for this option is changed from `oracle:oracle` to `oracle:root`
+to be in line with the expectations of an OpenShift environment.
+
 #### Security requirements to run WebLogic in OpenShift
 
 WebLogic Kubernetes Operator images starting with version 3.1 and
@@ -49,6 +83,10 @@ Security Context Constraint, because it provides more permissions
 than are needed, and is therefore less secure.
 
 #### Create a custom Security Context Constraint
+
+For most use cases, customers should use OpenShift's default `restricted` security context constraint. If you do need to
+create and use a custom security context constraint, this section describes the settings necessary to be compatible with
+the operator and pods for WebLogic Server instances.
 
 To create a custom security context constraint, create a YAML file with the following
 content.  This example assumes that your OpenShift project is called `weblogic` and
@@ -113,34 +151,3 @@ For additional information about OpenShift requirements and the operator,
 see [OpenShift]({{<relref  "/introduction/platforms/environments#openshift">}}).
 {{% /notice %}}
 
-#### Use a dedicated namespace
-
-When the user that installs an individual instance of the operator
-does _not_ have the required privileges to create resources at the Kubernetes cluster level,
-they can use a `Dedicated` namespace selection strategy for the operator instance to limit
-it to managing domain resources in its local namespace only
-(see [Operator namespace management]({{< relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
-and they may need to manually install the Domain Custom Resource (CRD)
-(see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})).
-
-#### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
-
-Beginning with operator version 3.3.2,
-set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.
-This property accommodates OpenShift security requirements.
-For more information, see [Operator Helm configuration values]({{<relref "/managing-operators/using-helm#operator-helm-configuration-values">}}).
-
-#### With WIT, set the `target` parameter to `OpenShift`
-
-When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
-`create`, `rebase`, or `update` command, to create a
-[Domain in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home,
-[Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) image,
-or [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) auxiliary image,
-you can specify the `--target` parameter for the target Kubernetes environment.
-Its value can be either `Default` or `OpenShift`.
-The `OpenShift` option changes the domain directory files such that the group permissions
-for those files will be the same as the user permissions (group writable, in most cases).
-If you do not supply the OS group and user setting with `--chown`,
-then the `Default` setting for this option is changed from `oracle:oracle` to `oracle:root`
-to be in line with the expectations of an OpenShift environment.
