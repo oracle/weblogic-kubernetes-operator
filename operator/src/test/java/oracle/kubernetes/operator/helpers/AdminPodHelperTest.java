@@ -168,6 +168,11 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getReferenceMiiAuxImagePodYaml_4_0() {
+    return ReferenceObjects.ADMIN_MII_AUX_IMAGE_POD_4_0;
+  }
+
+  @Override
   String getReferenceIstioMonitoringExporterTcpProtocol() {
     return ReferenceObjects.ADMIN_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL;
   }
