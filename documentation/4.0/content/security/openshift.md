@@ -22,7 +22,7 @@ they can use a `Dedicated` namespace selection strategy for the operator instanc
 it to managing domain resources in its local namespace only
 (see [Operator namespace management]({{< relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
 and they may need to manually install the Domain Custom Resource (CRD)
-(see [Prepare for installation]({{< relref "/managing-operators/preparation.md" >}})).
+(see [Prepare for installation]({{< relref "/managing-operators/preparation/#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}})).
 
 #### With WIT, set the `target` parameter to `OpenShift`
 
