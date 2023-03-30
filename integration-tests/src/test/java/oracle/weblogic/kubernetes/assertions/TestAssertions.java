@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions;
@@ -616,6 +616,33 @@ public class TestAssertions {
           logger.info("domain status is null");
         } else {
           logger.info("domain status conditions is empty");
+        }
+        return false;
+      }
+    };
+  }
+
+  /**
+   * Check the status message of the domain contains the expected message.
+   * @param domainUid  domain uid
+   * @param namespace namespace in which the domain resource exists
+   * @param statusMsg the expected status message of the domain
+   * @return true if the status message contains the expected message, false otherwise
+   */
+  public static Callable<Boolean> domainStatusMessageContainsExpectedMsg(String domainUid, String namespace,
+                                                                         String statusMsg) {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      DomainResource domain = getDomainCustomResource(domainUid, namespace);
+      if (domain != null && domain.getStatus() != null && domain.getStatus().getMessage() != null) {
+        return domain.getStatus().getMessage().equalsIgnoreCase(statusMsg);
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else if (domain.getStatus() == null) {
+          logger.info("domain status is null");
+        } else if (domain.getStatus().getMessage() == null) {
+          logger.info("domain status message is null");
         }
         return false;
       }
