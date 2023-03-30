@@ -105,6 +105,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusMessageContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusServerStatusHasExpectedPodStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
@@ -242,10 +243,30 @@ public class DomainUtils {
     LoggingFacade logger = getLogger();
     testUntil(assertDoesNotThrow(() -> domainStatusReasonMatches(domainUid, namespace, statusReason)),
         logger,
-        "the status reason of the domain {0} in namespace {1}",
+        "the status reason of the domain {0} in namespace {1} matches {2}",
         domainUid,
         namespace,
         statusReason);
+  }
+
+  /**
+   * Check the status message of the domainUid contains the expected msg.
+   *
+   * @param domainUid  domain uid
+   * @param namespace the namespace in which the domainUid exists
+   * @param statusMsg the expected status msg of the domainUid
+   */
+  public static void checkDomainStatusMessageContainsExpectedMsg(String domainUid,
+                                                                 String namespace,
+                                                                 String statusMsg) {
+    LoggingFacade logger = getLogger();
+    testUntil(withLongRetryPolicy,
+        assertDoesNotThrow(() -> domainStatusMessageContainsExpectedMsg(domainUid, namespace, statusMsg)),
+        logger,
+        "the status msg of the domain {0} in namespace {1} contains {2}",
+        domainUid,
+        namespace,
+        statusMsg);
   }
 
   /**
