@@ -27,11 +27,12 @@ create_success_file_and_exit() {
 }
 
 create_directory_path_and_set_permission() {
-
-  if [ ! -z $1 ] ; then
+  DIR_NAME="$1"
+  trace "Creating directory and set path for  ${DIR_NAME}"
+  if [ ! -z "${DIR_NAME}" ] ; then
     IFS='/'
     # domain home is tokenized by '/' now
-    read -a dir_array <<< $1
+    read -a dir_array <<< "${DIR_NAME}"
     IFS=$OLDIFS
 
     number_of_tokens=${#dir_array[@]}
@@ -90,7 +91,7 @@ fi
 
 trace "Creating path for domain home $DOMAIN_HOME" >> "$output_file"
 
-create_directory_path_and_set_permission $DOMAIN_HOME
+create_directory_path_and_set_permission "${DOMAIN_HOME}"
 if [ $? -ne 0 ] ; then
   trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
   failure_exit
@@ -98,7 +99,7 @@ fi
 
 if [ ! -z $LOG_HOME ] ; then
   trace "Creating path for log home $LOG_HOME" >> "$output_file"
-  create_directory_path_and_set_permission $LOG_HOME
+  create_directory_path_and_set_permission "${LOG_HOME}"
   if [ $? -ne 0 ] ; then
     trace SEVERE "Error: Unable initialize log home: 'domain.spec.logHome' $LOG_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
     failure_exit
