@@ -807,6 +807,9 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   // Returns the YAML for a 3.3 Mii pod with aux image.
   abstract String getReferenceMiiAuxImagePodYaml_3_3();
 
+  // Returns the YAML for a 4.0 Mii pod with aux image.
+  abstract String getReferenceMiiAuxImagePodYaml_4_0();
+
   // Returns the YAML for a 3.4 Mii pod with converted aux image.
   abstract String getReferenceMiiConvertedAuxImagePodYaml_3_4();
 
@@ -891,6 +894,20 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
     useProductionHash();
     initializeExistingPod(loadPodModel(getReferenceMiiConvertedAuxImagePodYaml_3_4_1()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  void afterUpgradingMiiDomainWith4_0_AuxImages_patchIt() {
+    configureDomain().withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
+
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferenceMiiAuxImagePodYaml_4_0()));
 
     verifyPodPatched();
 
