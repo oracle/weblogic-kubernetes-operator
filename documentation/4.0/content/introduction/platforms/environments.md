@@ -170,7 +170,11 @@ OpenShift can be a cloud platform or can be deployed on premises.
   - OpenShift Container Platform 4.9.50 with Kubernetes 1.22, RedHat OpenShift Mesh 2.3, and Istio 1.14.
   - OpenShift Container Platform 4.10.20 with Kubernetes 1.23, RedHat OpenShift Mesh 2.2.1, and Istio 1.14.
   - OpenShift Container Platform 4.11.6 with Kubernetes 1.24, RedHat OpenShift Mesh 2.2.3, and Istio 1.12.9.
-  - 
+
+- Operator v4.0.4 is certified for use on:
+  - OpenShift Container Platform 4.11.30 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3, and Istio 1.14.3.
+  - OpenShift Container Platform 4.12.2 with Kubernetes 1.25, RedHat OpenShift Mesh 2.3, and Istio 1.14.3.
+
 - Operator v4.0.5 is certified for use on:
   - OpenShift Container Platform 4.11.30 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
   - OpenShift Container Platform 4.12.2 with Kubernetes 1.25, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
