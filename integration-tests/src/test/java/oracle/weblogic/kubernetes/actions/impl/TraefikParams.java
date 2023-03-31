@@ -29,8 +29,7 @@ public class TraefikParams {
   private static final String TRAEFIK_IMAGE = "image.repository";
   private static final String TRAEFIK_IMAGE_REGISTRY = "image.registry";
   private static final String TRAEFIK_IMAGE_TAG = "image.tag";
-  private static final String TRAEFIK_IMAGE_REGISTRY = "image.registry";
-
+  
   public TraefikParams nodePortsHttp(int nodePortsHttp) {
     this.nodePortsHttp = nodePortsHttp;
     return this;
