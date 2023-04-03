@@ -211,9 +211,11 @@ class OfflineWlstEnv(object):
             trace("SEVERE","No jps-config.xml found, the domain is not a JRF domain, make sure the domain created is a JRF domain first")
             dumpStack()
             sys.exit(1)
-
+      except (IOError), err:
+        trace("SEVERE","Error in exporting OPSS key: " + str(err) + ". Make sure the `walletPasswordSecret' secret used has the key 'walletPassword'.")
+        sys.exit(1)
       except:
-        trace("SEVERE","Error in exporting OPSS key ")
+        trace("SEVERE","Error in exporting OPSS key")
         dumpStack()
         sys.exit(1)
 
