@@ -88,8 +88,12 @@ public class PersistentVolumeClaimHelper {
     }
 
     Step readAndCreatePersistentVolumeClaimStep(Step next) {
+      Step nextStep = next;
+      if (info.getDomain().getInitializeDomainOnPV().getWaitForPvcToBind()) {
+        nextStep = waitForPvcToBind(getPersistentVolumeClaimName(), next);
+      }
       return new CallBuilder().readPersistentVolumeClaimAsync(getPersistentVolumeClaimName(), info.getNamespace(),
-              new ReadResponseStep(waitForPvcToBind(getPersistentVolumeClaimName(), next)));
+              new ReadResponseStep(nextStep));
     }
 
     private String getPersistentVolumeClaimName() {
