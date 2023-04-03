@@ -40,7 +40,7 @@ else
 fi
 
 echo "Building documentation for current version and for selected archived versions..."
-hugo -s 4.0 -d "${outdir}" -b https://oracle.github.io/weblogic-kubernetes-operator
+hugo -s site -d "${outdir}" -b https://oracle.github.io/weblogic-kubernetes-operator
 
 echo "Copying static files into place..."
 cp -R charts domains "${outdir}"
