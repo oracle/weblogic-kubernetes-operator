@@ -213,9 +213,9 @@ createDomainFromWDTModel() {
     #
 
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
-      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create Domain Failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
+      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create domain failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
     else
-      trace SEVERE "Domain On PV: WDT Create Domain Failed, return code ${ret}."
+      trace SEVERE "Domain On PV: WDT Create domain failed, return code ${ret}."
     fi
     cat ${WDT_OUTPUT}
 
