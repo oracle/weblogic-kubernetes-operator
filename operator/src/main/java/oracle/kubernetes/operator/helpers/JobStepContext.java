@@ -32,6 +32,7 @@ import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -51,6 +52,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.CreateIfNotExists;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
 import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
@@ -292,7 +294,8 @@ public class JobStepContext extends BasePodStepContext {
     if (getInitializeDomainOnPV().isEmpty()) {
       return getDomain().getWdtDomainType().toString();
     } else {
-      return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType).toString();
+      return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType).map(
+          DomainOnPVType::toString).get();
     }
   }
 
@@ -820,7 +823,8 @@ public class JobStepContext extends BasePodStepContext {
 
     getInitializeDomainOnPV().ifPresent(initializeDomainOnPV ->
         addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV, getInitializeDomainOnPV()
-            .map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getCreateIfNotExists).toString()));
+            .map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getCreateIfNotExists)
+            .map(CreateIfNotExists::toString).get()));
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
