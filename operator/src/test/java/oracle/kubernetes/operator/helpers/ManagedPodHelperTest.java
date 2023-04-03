@@ -1330,6 +1330,11 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getReferenceMiiAuxImagePodYaml_4_0() {
+    return ReferenceObjects.MANAGED_MII_AUX_IMAGE_POD_4_0;
+  }
+
+  @Override
   String getReferenceMiiConvertedAuxImagePodYaml_3_4() {
     return ReferenceObjects.MANAGED_MII_CONVERTED_AUX_IMAGE_POD_3_4;
   }
