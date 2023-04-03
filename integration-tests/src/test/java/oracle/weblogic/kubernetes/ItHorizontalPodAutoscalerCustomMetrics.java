@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
@@ -314,19 +315,22 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
 
     try {
       checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
       //check if different server was scaled down
-      try {
-        if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 1)) {
+      assertDoesNotThrow(() -> {
+        logger.info("Checking if HPA scaled down managed server 1 or managed server 2");
+        if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 1)
+            || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 1)) {
           logger.info("HPA scaled down managed server 1");
-        } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 2)) {
+        } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 2)
+            || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 2)) {
           logger.info("HPA scaled down managed server 2");
-        } else {
-          checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+        } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 3)
+            || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 2)) {
+          logger.info("HPA scaled down managed server 3");
         }
-      } catch (Exception ex1) {
-        throw ex;
-      }
+        assertTrue(checkClusterReplicaCountMatches(clusterResName, domainNamespace, 2));
+      });
     }
   }
 
