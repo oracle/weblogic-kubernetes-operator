@@ -212,7 +212,7 @@ class OfflineWlstEnv(object):
             dumpStack()
             sys.exit(1)
       except (IOError), err:
-        trace("SEVERE","Error in exporting OPSS key: " + str(err) + ". Make sure the `walletPasswordSecret' secret used has the key 'walletPassword'.")
+        trace("SEVERE","Error in exporting OPSS key: " + str(err) + ". Make sure the `spec.configuration.opss.walletPasswordSecret' secret used has the key 'walletPassword'.")
         sys.exit(1)
       except:
         trace("SEVERE","Error in exporting OPSS key")
