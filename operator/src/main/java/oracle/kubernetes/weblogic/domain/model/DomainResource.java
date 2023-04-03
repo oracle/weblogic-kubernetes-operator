@@ -543,6 +543,15 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
   }
 
   /**
+   * Returns the waitForPvcToBind value when initializeDomainOnPV is specified.
+   * @return waitForPvcToBind value
+   */
+  public Boolean getInitPvDomainWaitForPvcToBind() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getWaitForPvcToBind).orElse(true);
+  }
+
+  /**
    * Returns the initialize domain on PV configuration details when initializeDomainOnPV is specified.
    * @return initialize domain on PV configuration details
    */
