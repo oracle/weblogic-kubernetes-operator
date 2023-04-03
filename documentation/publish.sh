@@ -40,7 +40,7 @@ else
 fi
 
 echo "Building documentation for current version and for selected archived versions..."
-hugo -s 3.4 -d "${outdir}/3.4" -b https://oracle.github.io/weblogic-kubernetes-operator/3.4
+hugo -s site -d "${outdir}/3.4" -b https://oracle.github.io/weblogic-kubernetes-operator/3.4
 
 echo "Successfully generated documentation in ${outdir}..."
 
