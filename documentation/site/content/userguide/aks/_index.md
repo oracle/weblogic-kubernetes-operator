@@ -15,6 +15,8 @@ description: "Deploying WebLogic Server on Azure Kubernetes Service."
 - [DNS Configuration](#dns-configuration)
 - [Database](#database)
 - [Review + create](#review--create)
+- [Template outputs](#template-outputs)
+- [Useful resources](#useful-resources)
 
 
 #### Introduction
@@ -50,9 +52,8 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Username for WebLogic Administrator | Enter a user name to access the WebLogic Server Administration Console which is started automatically after the provisioning. For more information about the WebLogic Server Administration Console, see [Overview of Administration Consoles](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/wlazu&id=INTRO-GUID-CC01963A-6073-4ABD-BC5F-5C509CA1EA90) in _Understanding Oracle WebLogic Server_. |
 | Password for WebLogic Administrator | Enter a password to access the WebLogic Server Administration Console. |
 | Confirm password | Re-enter the value of the preceding field. |
-| Password for WebLogic Deploy Tooling runtime encryption | The deployment uses the WebLogic Kubernetes Operator encryption feature, including the capability to encrypt the domain. This password is used for that encryption. For more information, see [Encryption]({{< relref "/security/encryption.md" >}}).|
+| Password for WebLogic Model encryption | Model in Image requires a runtime encryption secret with a secure password key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. For more information, see [Required runtime encryption secret]({{< relref "/userguide/managing-domains/model-in-image/usage#required-runtime-encryption-secret" >}}).|
 | Confirm password | Re-enter the value of the preceding field. |
-| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
 ##### Optional Basic Configuration
 
@@ -119,7 +120,7 @@ Select **Yes** or **No** for the option **Configure WebLogic Server Administrati
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
-##### TLS/SSL configuration settings
+##### Upload existing KeyStores
 
 | Field | Description |
 |-------|-------------|
@@ -133,7 +134,24 @@ If you want to upload existing keystores, select **Upload existing KeyStores** f
 | Trust KeyStore Data file(.jks,.p12) | Upload a custom trust keystore data file by doing the following: {{< line_break >}} 1. Click on the file icon. {{< line_break >}} 2. Navigate to the folder where the identity keystore file resides, and select the file. {{< line_break >}} 3. Click Open. |
 | Password | Enter the password for the custom trust keystore. |
 | Confirm password | Re-enter the value of the preceding field. |
-| The Identity KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
+| The Trust KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
+
+If you want to use keystores that are stored in Azure Key Vault, select **Use KeyStores stored in Azure Key Vault** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
+
+##### Use KeyStores stored in Azure Key Vault
+
+| Field | Description |
+|-------|-------------|
+| Resource group name in current subscription containing the Key Vault | Enter the name of the Resource Group containing the Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
+| Name of the Azure Key Vault containing secrets for the TLS/SSL certificate | Enter the name of the Azure Key Vault that stores the SSL certificate and the data required for WebLogic SSL termination. |
+| The name of the secret in the specified Key Vault whose value is the Identity KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the identity keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Identity KeyStore |  Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the identity keystore. |
+| The Identity KeyStore type (JKS,PKCS12) | Select the type of custom identity keystore. The supported values are JKS and PKCS12. |
+| The name of the secret in the specified Key Vault whose value is the Private Key Alias | Enter the name of the Azure Key Vault secret that holds the value of the private key alias. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Private Key | Enter the name of the Azure Key Vault secret that holds the value of the passphrase for the private key. |
+| The name of the secret in the specified Key Vault whose value is the Trust KeyStore Data | Enter the name of the Azure Key Vault secret that holds the value of the trust keystore data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the passphrase for the Trust KeyStore | Enter the name of the Azure Key Vault secret that holds the value of the the passphrase for the trust keystore. |
+| The Trust KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
 
 When you are satisfied with your selections, select **Next : Networking**.
 
@@ -163,6 +181,16 @@ In this section, you can create an Azure Application Gateway instance as the ing
 
 Select **Yes** or **No** for the option **Connect to Azure Application Gateway?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : DNS Configuration >**. If you select **Yes**, you must specify the details required for the Application Gateway integration by entering the values for the fields as described next.
 
+You can specify a virtual network for the application gateway. To do this, enter the values for the fields listed in the following tables.
+
+**Configure virtual networks**
+
+| Field | Description |
+|-------|-------------|
+| Virtual network | Select a virtual network in which to place the application gateway. Make sure your virtual network meets the requirements in [Application Gateway virtual network and dedicated subnet](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet). |
+| Subnet | An application gateway is a dedicated deployment in your virtual network. Within your virtual network, a dedicated subnet is required for the application gateway. See [Application Gateway virtual network and dedicated subnet](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-infrastructure#virtual-network-and-dedicated-subnet). |
+| Configure frontend IP with private IP address | If set to **Yes**, the Azure Marketplace offer will pick one of the available IP addresses from the application gateway subnet to be the private front-end IP address. For more information, see [Application Gateway front-end IP address configuration](https://docs.microsoft.com/en-us/azure/application-gateway/configuration-front-end-ip). |
+
 You must select one of the following three options, each described in turn.
 
 * Upload a TLS/SSL certificate: Upload the pre-signed certificate now.
@@ -177,7 +205,6 @@ You must select one of the following three options, each described in turn.
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -185,16 +212,15 @@ You must select one of the following three options, each described in turn.
 |-------|-------------|
 | Resource group name in current subscription containing the KeyVault | Enter the name of the Resource Group containing the Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
-| The name of the secret in the specified KeyVault whose value is the SSL Certificate Data | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate data. |
-| The name of the secret in the specified KeyVault whose value is the password for the SSL Certificate | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate password. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| The name of the secret in the specified Key Vault whose value is the front-end TLS/SSL certificate data | Enter the name of the Azure Key Vault secret that holds the value of the Application Gateway front-end SSL certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
+| The name of the secret in the specified Key Vault whose value is the password for the front-end TLS/SSL certificate | Enter the name of the Azure Key Vault secret that holds the value of the password for the application gateway front-end SSL certificate. |
+| The name of the secret in the specified Key Vault whose value is the trusted root certificate data | A trusted root certificate is required to allow back-end instances in the application gateway. Enter the name of the Azure Key Vault secret that holds the value of the application gateway trusted root certificate data. Follow [Store the TLS/SSL certificate in the Key Vault](#store-the-tlsssl-certificate-in-the-key-vault) to upload the certificate to Azure Key Vault. |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
@@ -245,13 +271,15 @@ Use the Database blade to configure Oracle WebLogic Server to connect to an exis
 
 | Field | Description |
 |-------|-------------|
-| Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • Other |
+| Choose database type | From the drop-down menu, select an existing database to which you want Oracle WebLogic Server to connect. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL (with support for passwordless connection) {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL (with support for passwordless connection) {{< line_break >}} • MySQL (with support for passwordless connection) {{< line_break >}} • Other |
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
 | DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
 | Global transactions protocol | Determines the transaction protocol (global transaction processing behavior) for the data source. For more information, see [JDBC Data Source Transaction Options](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jdbca/transactions.html#GUID-4C929E67-5FD7-477B-A749-1EA0F4FD25D4). **IMPORTANT: The correct value for this parameter depends on the selected database type. For PostgreSQL, select EmulateTwoPhaseCommit**. |
+| Use passwordless datasource connection | If you select a database type that supports passwordless connection, then this check box will appear. If selected, configure passwordless connections to the data source. For more information, see [Passwordless connections for Azure services](https://learn.microsoft.com/azure/developer/intro/passwordless-overview). |
 | Database Username	| Enter the user name of your database. |
 | Database Password	| Enter the password for the database user. |
 | Confirm password | Re-enter the value of the preceding field. |
+| User assigned managed identity | Select a user assigned identity that is able to connect to your database. {{< line_break >}} For how to create a database user for your managed identity, see https://aka.ms/javaee-db-identity.|
 
 If you select **Other** as the database type, there are some additional values you must provide. WebLogic Server provides support for application data access to any database using a JDBC-compliant driver. Refer to the [documentation for driver requirements](https://aka.ms/wls-aks-dbdriver).
 
@@ -270,3 +298,53 @@ In the **Review + create blade**, review the details you provided for deploying 
 If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
+
+#### Template outputs
+
+After clicking **Create** to create this offer, you will go to the **Deployment is in progress** page. When the deployment is completed, the page shows **Your deployment is complete**. In the left panel, select **Outputs**. These are the outputs from the deployment.  The following table is a reference guide to the deployment outputs.
+
+| Field | Description |
+|-------|-------------|
+| `aksClusterName` | Name of your AKS cluster that is running the WLS cluster. {{< line_break >}}Sample value: `wlsonaksiyiql2i2o2u2i`. |
+| `adminConsoleInternalUrl` | The fully qualified, private link to the Administration Console portal. You can access it only inside the AKS cluster. {{< line_break >}}Sample value: `http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7001/console`. |
+| `adminConsoleExternalUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}} {{< line_break >}}This is a fully qualified, public link to the Administration Console portal. You can access it from the public Internet. {{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/console`. |
+| `adminConsoleExternalSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}2. You must configure a custom DNS name by filling out [DNS Configuration](#dns-configuration).{{< line_break >}}3. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, secure, public link to the Administration Console portal. You can access it from the public Internet. {{< line_break >}}Sample value: `https://contoso.com/console`. |
+| `adminRemoteConsoleUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the [WebLogic Server Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}). You can access it from the public Internet.{{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/remoteconsole`. |
+| `adminRemoteConsoleSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the Administration Console.{{< line_break >}}2. You must configure a custom DNS name following [DNS Configuration](#dns-configuration).{{< line_break >}}3. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the [WebLogic Server Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}). You can access it from the public Internet.{{< line_break >}}Sample value: `https://contoso.com/remoteconsole`.|
+| `adminServerT3InternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}} 2. You must enable custom T3 channel by setting `enableAdminT3Tunneling=true`.{{< line_break >}}{{< line_break >}}This is a fully qualified, private link to custom T3 channel of the Administration Server.{{< line_break >}}Sample value: `http://sample-domain1-admin-server.sample-domain1-ns.svc.cluster.local:7005/console`.|
+| `adminServerT3ExternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableAdminT3Tunneling=true`.{{< line_break >}}3. You must configure [Networking](#networking) to enable the Azure Load Balancer service for the Administration Server.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to custom T3 channel of the Administration Server.{{< line_break >}}Sample value: `http://20.4.56.3:7005/console/` |
+| `clusterInternalUrl` | The fully qualified, private link to the WLS cluster. You are able to access your application with `${clusterInternalUrl}<your-app-path>` inside AKS cluster.{{< line_break >}}Sample value: `http://sample-domain1-cluster-cluster-1.sample-domain1-ns.svc.cluster.local:8001/`. |
+| `clusterExternalUrl` | This output is not always present:{{< line_break >}}You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the WLS cluster. You can access your application with `${clusterExternalUrl}<your-app-path>` from the public Internet.{{< line_break >}}Sample value: `http://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/`. |
+| `clusterExternalSecuredUrl` | This output is not always present:{{< line_break >}}1. You must configure [Networking](#networking) to enable the Azure Load Balancer service or Azure Application Gateway Ingress Controller for the WLS cluster.{{< line_break >}}2. The TLS/SSL certificate used is configured by filling out [TLS/SSL configuration](#tlsssl-configuration).{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to the WLS cluster. You can access your application with `${clusterExternalUrl}<your-app-path>` from the public Internet.{{< line_break >}}Sample value: `https://wlsgw202208-wlsd-aks-2793762585-337-domain1.eastus.cloudapp.azure.com/`. |
+| `clusterT3InternalUrl` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableClusterT3Tunneling=true`.{{< line_break >}}{{< line_break >}}This is a fully qualified, private link to custom T3 channel of the WLS cluster. |
+| `clusterT3ExternalEndpoint` | This output is not always present:{{< line_break >}}1. You must [create/update the WLS cluster with advanced configuration](https://oracle.github.io/weblogic-azure/aks/).{{< line_break >}}2. You must enable custom T3 channel by setting `enableClusterT3Tunneling=true`.{{< line_break >}}3. You must configure [Networking](#networking) to enable the Azure Load Balancer service for the WLS cluster.{{< line_break >}}{{< line_break >}}This is a fully qualified, public link to custom T3 channel of the WLS cluster.{{< line_break >}}Sample value:`http://20.4.56.3:8005/` |
+| `shellCmdtoConnectAks` | AZ CLI command to connect to the AKS cluster. This enables you to use `kubectl` to interact with the cluster. {{< line_break >}}Sample value: {{< line_break >}}`az account set --subscription xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxx; az aks get-credentials --resource-group contoso-rg --name contosoakscluster`|
+| `shellCmdtoOutputWlsDomainYaml` | Shell command to display the base64 encoded string of the WLS domain resource definition.{{< line_break >}}Sample value: {{< line_break >}}`echo -e YXBpV...mVCg== \| base64 -d > domain.yaml` |
+| `shellCmdtoOutputWlsImageModelYaml` | Shell command to display the base64 encoded string of the WLS [image model]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).{{< line_break >}}Sample value:{{< line_break >}}`echo -e IyBDb...3EnC \| base64 -d > model.yaml`|
+| `shellCmdtoOutputWlsImageProperties`|Shell command to display the base64 encoded string of the model properties.{{< line_break >}}Sample value:{{< line_break >}}`echo -e IyBDF...PTUK \| base64 -d > model.properties` |
+| `shellCmdtoOutputWlsVersionsandPatches` | Shell command to display the base64 encoded string of the WLS version and patches.{{< line_break >}}Sample value:{{< line_break >}}`echo -e CldlY...gMS4= \| base64 -d > version.info`|
+
+#### Useful resources
+
+Review the following useful resources.
+
+##### Store the TLS/SSL certificate in the Key Vault 
+
+1. Base 64 encode the certifcate file; omit the `-w0` for macOS: 
+
+    ```bash
+    base64 myIdentity.jks -w0 >mycert.txt
+    # base64 myIdentity.p12 -w0 >mycert.txt
+    # base64 myTrust.jks -w0 >mycert.txt
+    # base64 myTrust.p12 -w0 >mycert.txt
+    # base64 root.cert -w0 >mycert.txt
+    # base64 gatewayCert.pfx -w0 >mycert.txt
+    ```
+
+2. From the Azure portal, open your Key Vault.
+3. In the Settings section, select Secrets.
+4. Select Generate/Import.
+5. Under Upload options, leave the default value.
+6. Under Name, enter `myIdentityCertData`, or whatever name you like.
+7. Under Value, enter the content of the mycert.txt file. 
+8. Leave the remaining values at their defaults and select Create.
