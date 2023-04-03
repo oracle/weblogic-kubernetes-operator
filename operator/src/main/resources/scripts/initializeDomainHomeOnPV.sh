@@ -51,7 +51,7 @@ create_directory_path_and_set_permission() {
            trace "Found base mount path at $test_dir" >> "$output_file"
            SHARE_ROOT=$test_dir
 
-           trace "Creating directory path and setting the permission from share root $SHARE_ROOT" >> "$output_file"
+           trace "Creating directory path and setting the permission from shared root $SHARE_ROOT" >> "$output_file"
            if ! errmsg=$(mkdir -p "$1" 2>&1)
              then
                trace SEVERE "Could not create directory $1 specified in 'domain.spec.domainHome'.  Error: ${errmsg}" >> "$output_file"
@@ -81,19 +81,19 @@ trace "Running the script as "`id` >> "$output_file"
 
 if [ -f "$DOMAIN_HOME" ]; then
   if [ -f "$DOMAIN_HOME/config/config.xml" ] ; then
-    trace INFO "Domain Home $DOMAIN_HOME already exists, no operation. Exiting with 0 return code" >> "$output_file"
+    trace INFO "Domain Home '$DOMAIN_HOME' already exists, no operation. Exiting with 0 return code" >> "$output_file"
     create_success_file_and_exit
   else
-    trace SEVERE "Domain Home $DOMAIN_HOME is not empty and does not contain any WebLogic Domain. Please specify an empty directory in n 'domain.spec.domainHome'." >> "$output_file"
+    trace SEVERE "Domain Home '$DOMAIN_HOME' is not empty and does not contain any WebLogic Domain. Please specify an empty directory in n 'domain.spec.domainHome'." >> "$output_file"
     failure_exit
   fi
 fi
 
-trace "Creating path for domain home $DOMAIN_HOME" >> "$output_file"
+trace "Creating path for domain home '$DOMAIN_HOME'" >> "$output_file"
 
 create_directory_path_and_set_permission "${DOMAIN_HOME}"
 if [ $? -ne 0 ] ; then
-  trace SEVERE "Error: Unable initialize domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
+  trace SEVERE "Error: Unable to initialize domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
   failure_exit
 fi
 
@@ -101,7 +101,7 @@ if [ ! -z $LOG_HOME ] ; then
   trace "Creating path for log home $LOG_HOME" >> "$output_file"
   create_directory_path_and_set_permission "${LOG_HOME}"
   if [ $? -ne 0 ] ; then
-    trace SEVERE "Error: Unable initialize log home: 'domain.spec.logHome' $LOG_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
+    trace SEVERE "Error: Unable to initialize log home directory: 'domain.spec.logHome' $LOG_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
     failure_exit
   fi
 fi

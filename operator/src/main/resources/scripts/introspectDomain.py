@@ -208,12 +208,14 @@ class OfflineWlstEnv(object):
             exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
                                 keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
           else:
-            trace("SEVERE","No jps-config.xml found, the domain is not a JRF domain, make sure the domain created is a JRF domain first")
+            trace("SEVERE","No jps-config.xml found, the domain is not a JRF domain, make sure the domain created is a JRF domain.)
             dumpStack()
             sys.exit(1)
-
+      except (IOError), err:
+        trace("SEVERE","Error in exporting OPSS key: " + str(err) + ". Make sure the `spec.configuration.opss.walletPasswordSecret' secret used has the key 'walletPassword'.")
+        sys.exit(1)
       except:
-        trace("SEVERE","Error in exporting OPSS key ")
+        trace("SEVERE","Error in exporting OPSS key")
         dumpStack()
         sys.exit(1)
 
