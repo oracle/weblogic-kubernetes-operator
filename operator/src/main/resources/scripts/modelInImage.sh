@@ -226,7 +226,7 @@ buildWDTParams_MD5() {
     trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
        "is 'FromModel' and the 'spec.configuration.model.domainType' is 'JRF';" \
        "this combination requires specifying a" \
-       "'spec.configuration.model.walletPasswordSecret' in your domain" \
+       "'spec.configuration.opss.walletPasswordSecret' in your domain" \
        "resource and deploying this secret with a 'walletPassword' key," \
        "but the secret does not have this key."
     exitOrLoop
