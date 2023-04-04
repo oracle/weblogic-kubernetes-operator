@@ -326,14 +326,12 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       //check if different server was scaled down
       assertDoesNotThrow(() -> {
         logger.info("Checking if HPA scaled down managed server 1 or managed server 2");
-        String kubectlCmd =
-            String.format("kubectl get pods -n"  + domainNamespace);
+        String kubectlCmd = KUBERNETES_CLI + " get pods -n"  + domainNamespace;
 
         logger.info("Executing kubectl command " + kubectlCmd);
         ExecResult result = ExecCommand.exec(kubectlCmd);
         logger.info(" Result output: " + result.stdout());
-        kubectlCmd =
-            String.format("kubectl describe pod " + managedServerPrefix + 3 + " -n"  + domainNamespace);
+        kubectlCmd = KUBERNETES_CLI + " describe pod " + managedServerPrefix + 3 + " -n"  + domainNamespace;
 
         logger.info("Executing kubectl command " + kubectlCmd);
         result = ExecCommand.exec(kubectlCmd);
