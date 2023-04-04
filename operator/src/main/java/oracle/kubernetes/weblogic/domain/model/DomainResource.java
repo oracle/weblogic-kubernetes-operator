@@ -1551,7 +1551,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private String getConfigurationElements() {
-      if (isInitializeDomainOnPV() && getInitializeDomainOnPVOpssWalletPasswordSecret() != null) {
+      if (getInitializeDomainOnPVOpssWalletPasswordSecret() != null) {
         return "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret";
       } else {
         return "spec.configuration.opss.walletPasswordSecret";
@@ -1565,7 +1565,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private V1Secret findSecret(List<V1Secret> secrets, String name, String namespace) {
-      Optional<V1Secret> secret = secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findAny();
+      Optional<V1Secret> secret = secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findFirst();
       return secret.isPresent() ? secret.get() : null;
     }
 

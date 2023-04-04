@@ -236,7 +236,7 @@ public class MessageKeys {
   public static final String MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS = "WLSDO-0062";
   public static final String NO_MATCH_VOLUME_WITH_PVC = "WLSDO-0063";
   public static final String NO_VOLUME_WITH_PVC = "WLSDO-0064";
-  public static final String WALLET_PWD_NOT_FOUND = "WLSDO-0065";
+  public static final String WALLET_KEY_NOT_FOUND = "WLSDO-0065";
 
 
   // domain event messages
