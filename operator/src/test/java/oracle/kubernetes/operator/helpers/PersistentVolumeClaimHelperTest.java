@@ -177,6 +177,7 @@ class PersistentVolumeClaimHelperTest {
 
   @Test
   void onRunWithNoPersistentVolumeClaim_createIt() {
+    domainPresenceInfo.getDomain().getInitializeDomainOnPV().waitForPvcToBind(false);
     consoleHandlerMemento.ignoreMessage(getPvcCreateLogMessage());
 
     runPersistentVolumeClaimHelper();
