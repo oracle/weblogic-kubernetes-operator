@@ -326,15 +326,15 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       //check if different server was scaled down
       assertDoesNotThrow(() -> {
         logger.info("Checking if HPA scaled down managed server 1 or managed server 2");
-        String kubectlCmd = KUBERNETES_CLI + " get pods -n"  + domainNamespace;
+        String command = KUBERNETES_CLI + " get pods -n"  + domainNamespace;
 
-        logger.info("Executing kubectl command " + kubectlCmd);
-        ExecResult result = ExecCommand.exec(kubectlCmd);
+        logger.info("Executing command " + command);
+        ExecResult result = ExecCommand.exec(command);
         logger.info(" Result output: " + result.stdout());
-        kubectlCmd = KUBERNETES_CLI + " describe pod " + managedServerPrefix + 3 + " -n"  + domainNamespace;
+        command = KUBERNETES_CLI + " describe pod " + managedServerPrefix + 3 + " -n"  + domainNamespace;
 
-        logger.info("Executing kubectl command " + kubectlCmd);
-        result = ExecCommand.exec(kubectlCmd);
+        logger.info("Executing command " + command);
+        result = ExecCommand.exec(command);
         logger.info(" Result output: " + result.stdout());
         List<CoreV1Event> events = getEvents(domainNamespace,timestamp);
         for (CoreV1Event event : events) {
