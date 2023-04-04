@@ -74,8 +74,8 @@ public class DomainValidationTestBase extends DomainTestUtils {
     }
 
     @Override
-    public boolean isSecretExists(String name, String namespace) {
-      return isResourceExists(name, V1Secret.class, namespace);
+    public List<V1Secret> getSecrets() {
+      return getResourceList(V1Secret.class);
     }
 
     @Override

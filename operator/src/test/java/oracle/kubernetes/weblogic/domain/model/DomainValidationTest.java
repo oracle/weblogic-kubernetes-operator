@@ -3,9 +3,13 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
@@ -786,9 +790,52 @@ public class DomainValidationTest extends DomainValidationTestBase {
           .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
           .withOpssWalletPasswordSecret("wallet-password-secret-good");
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
-    resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void whenWalletPasswordSecretExistsButWalletPasswordKeyMissing_fromModel_reportError() {
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("OPSS wallet password secret",
+            "configuration.opss.walletPasswordSecret", "wallet-password-secret-good")));
+  }
+
+  @Test
+  void whenWalletPasswordSecretExistsButWalletPasswordKeyPresent_fromModel_dontReportError() {
+    configureDomain(domain).withDomainHomeSourceType(FROM_MODEL)
+        .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
+        .withOpssWalletPasswordSecret("wallet-password-secret-good");
+    resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
+
+    assertThat(domain.getValidationFailures(resourceLookup),empty());
+  }
+
+  private void defineWalletPasswordSecretWithRequiredData(String s2) {
+    resourceLookup.defineResource(s2, V1Secret.class, NS);
+    V1Secret secret = resourceLookup.getSecrets().stream()
+        .filter(s -> isSpecifiedSecret(s, s2, NS)).findFirst().get();
+    Map<String, byte[]> data = new HashMap<>();
+    data.put("walletPassword", "123456".getBytes(StandardCharsets.UTF_8));
+    secret.setData(data);
+  }
+
+  boolean isSpecifiedSecret(V1Secret secret, String name, String namespace) {
+    return hasMatchingMetadata(secret.getMetadata(), name, namespace);
+  }
+
+  private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
+    return metadata != null
+        && Objects.equals(name, metadata.getName())
+        && Objects.equals(namespace, metadata.getNamespace());
   }
 
   @Test
@@ -822,7 +869,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
 
     resourceLookup.defineResource("runtime-encryption-secret-good", V1Secret.class, NS);
-    resourceLookup.defineResource("wallet-password-secret-good", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wallet-password-secret-good");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -1040,7 +1087,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
   @Test
   void whenDomainCreationConfigMapExists_InitPvDomain_dontReportError() {
     resourceLookup.defineResource("domain-creation-cm", V1ConfigMap.class, NS);
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
@@ -1050,7 +1097,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
   @Test
   void whenDomainCreationConfigMapSpecifiedButDoesNotExist_initPvDomain_reportError() {
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withDomainCreationConfigMap("domain-creation-cm");
@@ -1077,7 +1124,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("secret", "wfSecret", "not found", NS)));
@@ -1109,7 +1156,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
@@ -1134,12 +1181,34 @@ public class DomainValidationTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenWalletPasswordSecretExistsButWalletPasswordKeyMissing_initPvDomain_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
+
+    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("OPSS wallet password secret",
+            "configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret", "wpSecret")));
+  }
+
+  @Test
+  void whenWalletPasswordSecretExistsButWalletPasswordKeyPresent_initPvDomain_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
+
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   void whenBothMiiOpssAndInitPvDomainOpssWalletPasswordSpecified_initPvDomain_reportError() {
     configuredDomainWithInitializeDomainOnPVWithPVCVolume()
         .withOpssWalletPasswordSecret("wpWallet")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1154,7 +1223,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withOpssWalletFileSecret("wfWallet")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1170,7 +1239,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1186,7 +1255,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1203,7 +1272,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
         .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -1378,9 +1447,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
             new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN_AND_RCU)))
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
-        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
-
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+        .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
@@ -1392,9 +1460,9 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPv(new InitializeDomainOnPV().domain(
             new DomainOnPV().domainType(JRF).createMode(CreateIfNotExists.DOMAIN)))
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret")
-        .withInitializeDomainOnPVOpssWalletPasswordSecret("wfSecret");
+        .withInitializeDomainOnPVOpssWalletFileSecret("wfSecret");
 
-    resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
+    defineWalletPasswordSecretWithRequiredData("wpSecret");
     resourceLookup.defineResource("wfSecret", V1Secret.class, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
