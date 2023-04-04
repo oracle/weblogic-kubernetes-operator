@@ -8,14 +8,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerPod;
@@ -56,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
@@ -70,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvents;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
@@ -86,6 +91,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -297,6 +303,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
     //reboot server1 and server2 to kill open sessions
     assertDoesNotThrow(() -> deletePod(managedServerPrefix + 1, domainNamespace));
     assertDoesNotThrow(() -> deletePod(managedServerPrefix + 2, domainNamespace));
+    OffsetDateTime timestamp = now();
     // wait until reboot
     for (int i = 1; i < 3; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
@@ -319,17 +326,38 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
       //check if different server was scaled down
       assertDoesNotThrow(() -> {
         logger.info("Checking if HPA scaled down managed server 1 or managed server 2");
+        String kubectlCmd =
+            String.format("kubectl get pods -n"  + domainNamespace);
+
+        logger.info("Executing kubectl command " + kubectlCmd);
+        ExecResult result = ExecCommand.exec(kubectlCmd);
+        logger.info(" Result output: " + result.stdout());
+        kubectlCmd =
+            String.format("kubectl describe pod " + managedServerPrefix + 3 + " -n"  + domainNamespace);
+
+        logger.info("Executing kubectl command " + kubectlCmd);
+        result = ExecCommand.exec(kubectlCmd);
+        logger.info(" Result output: " + result.stdout());
+        List<CoreV1Event> events = getEvents(domainNamespace,timestamp);
+        for (CoreV1Event event : events) {
+          logger.info("Generated events after HPA scaling " + Yaml.dump(event));
+        }
+        int numberOfManagedSvs = 3;
         if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 1)
             || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 1)) {
           logger.info("HPA scaled down managed server 1");
+          --numberOfManagedSvs;
         } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 2)
             || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 2)) {
           logger.info("HPA scaled down managed server 2");
+          --numberOfManagedSvs;
         } else if (!Kubernetes.doesPodExist(domainNamespace, domainUid, managedServerPrefix + 3)
             || Kubernetes.isPodTerminating(domainNamespace, domainUid, managedServerPrefix + 2)) {
           logger.info("HPA scaled down managed server 3");
+          --numberOfManagedSvs;
         }
         assertTrue(checkClusterReplicaCountMatches(clusterResName, domainNamespace, 2));
+        assertEquals(2, numberOfManagedSvs);
       });
     }
   }
