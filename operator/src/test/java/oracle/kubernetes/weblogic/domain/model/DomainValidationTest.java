@@ -1186,9 +1186,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
         .withInitializeDomainOnPVType(JRF)
         .withInitializeDomainOnPVOpssWalletPasswordSecret("wpSecret");
     resourceLookup.defineResource("wpSecret", V1Secret.class, NS);
-    V1Secret secret = resourceLookup.getSecrets().stream()
-        .filter(s -> isSpecifiedSecret(s, "wpSecret", NS)).findFirst().get();
-    secret.setMetadata(null);
+    resourceLookup.getSecrets().stream()
+        .filter(s -> isSpecifiedSecret(s, "wpSecret", NS)).findFirst().ifPresent(s -> s.setMetadata(null));
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("OpssWalletPassword secret", "wpSecret", "not found", NS)));
