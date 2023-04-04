@@ -252,7 +252,7 @@ public class DomainValidationMessages {
   }
 
   public static String noWalletPasswordInSecret(String configuration, String secretName) {
-    return getMessage(MessageKeys.WALLET_PASSWORD_NOT_FOUND, configuration, secretName);
+    return getMessage(MessageKeys.WALLET_PWD_NOT_FOUND, configuration, secretName);
   }
 
 }
