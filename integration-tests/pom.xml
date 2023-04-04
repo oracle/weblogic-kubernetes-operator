@@ -500,6 +500,53 @@
         </profile>
 
         <profile>
+            <id>wko-okd-wls-mrg1</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItOperatorRestart,
+                  **/ItMiiClusterResource
+                </includes-failsafe>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>wko-okd-wls-mrg2</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples
+                </includes-failsafe>
+            </properties>
+        </profile>
+
+        <profile>
             <id>wko-okd-wls-mrg</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -531,7 +578,8 @@
                   **/ItSystemResOverrides,
                   **/ItMonitoringExporterWebApp,
                   **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples
+                  **/ItMonitoringExporterSamples,
+                  **/ItMiiClusterResource
                 </includes-failsafe>
             </properties>
         </profile>
