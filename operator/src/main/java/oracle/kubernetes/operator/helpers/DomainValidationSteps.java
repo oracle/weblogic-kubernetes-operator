@@ -240,12 +240,8 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public boolean isSecretExists(String name, String namespace) {
-      return getSecrets(packet).stream().anyMatch(s -> isSpecifiedSecret(s, name, namespace));
-    }
-
-    boolean isSpecifiedSecret(V1Secret secret, String name, String namespace) {
-      return hasMatchingMetadata(secret.getMetadata(), name, namespace);
+    public List<V1Secret> getSecrets() {
+      return getSecrets(packet);
     }
 
     @SuppressWarnings("unchecked")
