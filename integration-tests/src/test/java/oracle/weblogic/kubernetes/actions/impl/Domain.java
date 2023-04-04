@@ -625,7 +625,9 @@ public class Domain {
     }
 
     logger.info("Creating WLDF policy rule and action");
-    String command = new StringBuffer("/u01/callpyscript.sh /u01/wldf.py ")
+    String command = new StringBuffer("echo ${DOMAIN_HOME}")
+        .append(" && export DOMAIN_HOME=" + domainHomeLocation)
+        .append(" && /u01/callpyscript.sh /u01/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)
