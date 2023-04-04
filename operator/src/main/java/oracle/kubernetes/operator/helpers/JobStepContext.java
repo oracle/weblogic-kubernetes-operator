@@ -295,7 +295,7 @@ public class JobStepContext extends BasePodStepContext {
       return getDomain().getWdtDomainType().toString();
     } else {
       return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType).map(
-          DomainOnPVType::toString).get();
+          DomainOnPVType::toString).orElse(null);
     }
   }
 
@@ -824,7 +824,7 @@ public class JobStepContext extends BasePodStepContext {
     getInitializeDomainOnPV().ifPresent(initializeDomainOnPV ->
         addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV, getInitializeDomainOnPV()
             .map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getCreateIfNotExists)
-            .map(CreateIfNotExists::toString).get()));
+            .map(CreateIfNotExists::toString).orElse(null)));
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
