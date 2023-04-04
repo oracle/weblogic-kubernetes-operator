@@ -1520,8 +1520,8 @@ public class DomainValidationTest extends DomainValidationTestBase {
     configuredDomainWithInitializeDomainOnPV();
 
     assertThat(domain.getValidationFailures(resourceLookup),
-        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "there is no volume",
-            "PersistentVolumeClaim")));
+        contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV", "at least one of the volumes",
+            "PVC")));
   }
 
   @Test
