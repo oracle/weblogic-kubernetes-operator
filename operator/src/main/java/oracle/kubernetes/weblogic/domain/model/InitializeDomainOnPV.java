@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.Optional;
+
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -11,7 +13,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class InitializeDomainOnPV {
 
-  @Description("Describes the configuration to create a PersistentVolume for `Domain on PV`"
+  @Description("An optional field that describes the configuration to create a PersistentVolume for `Domain on PV`"
       + " domain. Omit this section if you have manually created a persistent volume. The operator will"
       + " perform this one-time create operation only if the persistent volume does not already exist. The operator"
       + " will not recreate or update the PersistentVolume when it exists. More info:"
@@ -31,6 +33,11 @@ public class InitializeDomainOnPV {
       + " (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.")
   @SerializedName("domain")
   DomainOnPV domain;
+
+  /** Whether to wait for PVC to be bound before proceeding to create the domain. Default is true. */
+  @Description("Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before proceeding"
+      + " with the domain creation. Defaults to true.")
+  Boolean waitForPvcToBind;
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
@@ -59,13 +66,23 @@ public class InitializeDomainOnPV {
     return this;
   }
 
+  public Boolean getWaitForPvcToBind() {
+    return Optional.ofNullable(waitForPvcToBind).orElse(true);
+  }
+
+  public InitializeDomainOnPV waitForPvcToBind(Boolean waitForPvcToBind) {
+    this.waitForPvcToBind = waitForPvcToBind;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("persistentVolume", persistentVolume)
             .append("persistentVolumeClaim", persistentVolumeClaim)
-            .append("domain", domain);
+            .append("domain", domain)
+            .append("waitForPvcToBind", waitForPvcToBind);
 
     return builder.toString();
   }
@@ -75,7 +92,8 @@ public class InitializeDomainOnPV {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(persistentVolume)
         .append(persistentVolumeClaim)
-        .append(domain);
+        .append(domain)
+        .append(waitForPvcToBind);
 
     return builder.toHashCode();
   }
@@ -93,7 +111,8 @@ public class InitializeDomainOnPV {
         new EqualsBuilder()
             .append(persistentVolume, rhs.persistentVolume)
             .append(persistentVolumeClaim, rhs.persistentVolumeClaim)
-            .append(domain, rhs.domain);
+            .append(domain, rhs.domain)
+            .append(waitForPvcToBind, rhs.waitForPvcToBind);
 
     return builder.isEquals();
   }

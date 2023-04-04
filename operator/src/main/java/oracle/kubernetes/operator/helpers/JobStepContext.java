@@ -32,6 +32,7 @@ import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -51,10 +52,13 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.CreateIfNotExists;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
 import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
+import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
@@ -287,17 +291,12 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   String getWdtDomainTypeValue() {
-    boolean hasNoInitPvDomain = Optional.ofNullable(getDomain().getSpec())
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getInitializeDomainOnPV)
-        .isEmpty();
-
-    if (hasNoInitPvDomain) {
+    if (getInitializeDomainOnPV().isEmpty()) {
       return getDomain().getWdtDomainType().toString();
     } else {
-      return getDomain().getSpec().getConfiguration().getInitializeDomainOnPV().getDomain().getDomainType().toString();
+      return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType).map(
+          DomainOnPVType::toString).orElse(null);
     }
-
   }
 
   DomainSourceType getDomainHomeSourceType() {
@@ -444,10 +443,7 @@ public class JobStepContext extends BasePodStepContext {
 
   protected void addInitContainers(V1PodSpec podSpec) {
     List<V1Container> initContainers = new ArrayList<>();
-    Optional.ofNullable(getDomain().getSpec())
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
+    getInitializeDomainOnPV().ifPresent(initializeDomainOnPV -> addInitDomainOnPVInitContainer(initContainers));
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> addInitContainers(initContainers, auxImages));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
@@ -459,7 +455,13 @@ public class JobStepContext extends BasePodStepContext {
 
   private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-            initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+        initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+  }
+
+  private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {
+    return Optional.ofNullable(getDomain().getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV);
   }
 
   private void addInitDomainOnPVInitContainer(List<V1Container> initContainers) {
@@ -819,13 +821,10 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
 
-    Optional.ofNullable(getDomain().getSpec())
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getInitializeDomainOnPV)
-        .ifPresent(initializeDomainOnPV -> addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV,
-            getDomain().getSpec().getConfiguration()
-                .getInitializeDomainOnPV().getDomain().getCreateIfNotExists().toString()
-            ));
+    getInitializeDomainOnPV().ifPresent(initializeDomainOnPV ->
+        addEnvVar(vars, IntrospectorJobEnvVars.INIT_DOMAIN_ON_PV, getInitializeDomainOnPV()
+            .map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getCreateIfNotExists)
+            .map(CreateIfNotExists::toString).orElse(null)));
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));

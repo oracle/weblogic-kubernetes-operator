@@ -1796,6 +1796,15 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenInitializeDomainOnPvWithWaitForPvcToBindConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
+    initializeDomainOnPv.waitForPvcToBind(false);
+    configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
+
+    assertThat(domain.getSpec().getInitializeDomainOnPV().getWaitForPvcToBind(), is(false));
+  }
+
+  @Test
   void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_pvcNameAndSpecsAreSet() throws IOException {
     List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
     DomainResource domain = (DomainResource) resources.get(0);
@@ -1827,6 +1836,7 @@ class DomainV2Test extends DomainTestBase {
         is(new Opss().withWalletFileSecret("domain-opss-wallet").withWalletPasswordSecret("weblogic")));
     assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
     assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
+    assertThat(domain.getSpec().getInitializeDomainOnPV().getWaitForPvcToBind(), is(true));
   }
 
   @Test
