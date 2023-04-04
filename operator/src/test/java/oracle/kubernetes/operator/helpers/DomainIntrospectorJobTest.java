@@ -1317,9 +1317,8 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobLogContainsSevereError_logJobInfosOnDelete() {
-    testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
+  void whenJobStatusHasFailedCondition_logJobInfosOnDelete() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(null));
