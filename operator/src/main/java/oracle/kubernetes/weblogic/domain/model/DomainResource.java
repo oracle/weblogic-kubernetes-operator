@@ -1559,13 +1559,14 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private boolean isOpssWalletPasswordFound(List<V1Secret> secrets, String name, String namespace) {
-      return Optional.ofNullable(findSecret(secrets, name, namespace).getData()).orElse(Collections.EMPTY_MAP)
+      return Optional.ofNullable(findSecret(secrets, name, namespace))
+          .map(V1Secret::getData).orElse(Collections.emptyMap())
           .get("walletPassword") != null;
     }
 
-    @javax.annotation.Nonnull
     private V1Secret findSecret(List<V1Secret> secrets, String name, String namespace) {
-      return secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findFirst().get();
+      Optional<V1Secret> secret = secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findAny();
+      return secret.isPresent() ? secret.get() : null;
     }
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {
