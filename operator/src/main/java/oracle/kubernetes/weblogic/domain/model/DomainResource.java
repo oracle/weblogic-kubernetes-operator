@@ -31,6 +31,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
@@ -1030,7 +1031,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private void addCrossReferenceValidationFailures(KubernetesResourceLookup kubernetesResources) {
-      addMissingSecrets(kubernetesResources);
+      addMissingOrInvalidSecrets(kubernetesResources);
       addMissingModelConfigMap(kubernetesResources);
       addDuplicateNamesClusters(kubernetesResources);
       addInvalidMountPathsClusters(kubernetesResources);
@@ -1478,7 +1479,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
       new EnvironmentVariableCheck(IntrospectorJobEnvVars::isReserved).checkEnvironmentVariables(configuration, prefix);
     }
 
-    private void addMissingSecrets(KubernetesResourceLookup resourceLookup) {
+    private void addMissingOrInvalidSecrets(KubernetesResourceLookup resourceLookup) {
       verifySecretExists(resourceLookup, getWebLogicCredentialsSecretName(), SecretType.WEBLOGIC_CREDENTIALS);
       for (String secretName : getConfigOverrideSecrets()) {
         verifySecretExists(resourceLookup, secretName, SecretType.CONFIG_OVERRIDE);
@@ -1486,6 +1487,8 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
       verifySecretExists(resourceLookup, getOpssWalletPasswordSecret(), SecretType.OPSS_WALLET_PASSWORD);
       verifySecretExists(resourceLookup, getOpssWalletFileSecret(), SecretType.OPSS_WALLET_FILE);
+
+      verifyOpssWalletPasswordSecret(resourceLookup, getOpssWalletPasswordSecret());
 
       if (getDomainHomeSourceType() == DomainSourceType.FROM_MODEL) {
         if (getRuntimeEncryptionSecret() == null) {
@@ -1529,9 +1532,50 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
 
     @SuppressWarnings("SameParameterValue")
     private void verifySecretExists(KubernetesResourceLookup resources, String secretName, SecretType type) {
-      if (secretName != null && !resources.isSecretExists(secretName, getNamespace())) {
+      if (secretName != null && !isSecretExists(resources.getSecrets(), secretName, getNamespace())) {
         failures.add(DomainValidationMessages.noSuchSecret(secretName, getNamespace(), type));
       }
+    }
+
+    private boolean isSecretExists(List<V1Secret> secrets, String name, String namespace) {
+      return secrets.stream().anyMatch(s -> isSpecifiedSecret(s, name, namespace));
+    }
+
+    boolean isSpecifiedSecret(V1Secret secret, String name, String namespace) {
+      return hasMatchingMetadata(secret.getMetadata(), name, namespace);
+    }
+
+    private boolean hasMatchingMetadata(V1ObjectMeta metadata, String name, String namespace) {
+      return metadata != null
+          && Objects.equals(name, metadata.getName())
+          && Objects.equals(namespace, metadata.getNamespace());
+    }
+
+    private void verifyOpssWalletPasswordSecret(KubernetesResourceLookup resources, String secretName) {
+      if (secretName != null
+          && isSecretExists(resources.getSecrets(), secretName, getNamespace())
+          && !isOpssWalletPasswordFound(resources.getSecrets(), secretName, getNamespace())) {
+        failures.add(DomainValidationMessages.noWalletPasswordInSecret(getConfigurationElements(), secretName));
+      }
+    }
+
+    private String getConfigurationElements() {
+      if (getInitializeDomainOnPVOpssWalletPasswordSecret() != null) {
+        return "spec.configuration.initializeDomainOnPV.domain.opss.walletPasswordSecret";
+      } else {
+        return "spec.configuration.opss.walletPasswordSecret";
+      }
+    }
+
+    private boolean isOpssWalletPasswordFound(List<V1Secret> secrets, String name, String namespace) {
+      return Optional.ofNullable(findSecret(secrets, name, namespace))
+          .map(V1Secret::getData).orElse(Collections.emptyMap())
+          .get("walletPassword") != null;
+    }
+
+    private V1Secret findSecret(List<V1Secret> secrets, String name, String namespace) {
+      Optional<V1Secret> secret = secrets.stream().filter(s -> isSpecifiedSecret(s, name, namespace)).findFirst();
+      return secret.isPresent() ? secret.get() : null;
     }
 
     private void addMissingModelConfigMap(KubernetesResourceLookup resourceLookup) {

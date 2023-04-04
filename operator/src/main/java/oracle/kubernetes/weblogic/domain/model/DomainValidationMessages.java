@@ -250,4 +250,9 @@ public class DomainValidationMessages {
   static String noVolumeWithPVC() {
     return getMessage(MessageKeys.NO_VOLUME_WITH_PVC);
   }
+
+  public static String noWalletPasswordInSecret(String configuration, String secretName) {
+    return getMessage(MessageKeys.WALLET_KEY_NOT_FOUND, configuration, secretName);
+  }
+
 }
