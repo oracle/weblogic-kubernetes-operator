@@ -320,9 +320,8 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         logger,
         "Checking if replica switched to 2");
 
-    try {
-      assertTrue(isPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace));
-    } catch (Throwable ex) {
+    if (!isPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace)) {
+
       //check if different server was scaled down
       assertDoesNotThrow(() -> {
         logger.info("Checking if HPA scaled down managed server 1 or managed server 2");
