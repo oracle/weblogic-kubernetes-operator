@@ -221,7 +221,7 @@ createDomainFromWDTModel() {
 
     if [ -d "$LOG_HOME" ] ; then
       cp "$WDT_CREATE_DOMAIN_LOG" "$LOG_HOME"
-      if ls /aux/weblogic-deploy/logs/*.out &> /dev/null ; then (cp /aux/weblogic-deploy/logs/*.out $LOG_HOME) ; fi
+      if ls $WDT_ROOT/logs/*.out &> /dev/null ; then (cp $WDT_ROOT/logs/*.out $LOG_HOME) ; fi
       trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files can be found under '$LOG_HOME/rculogdir'"
     fi
 
