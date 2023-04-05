@@ -884,7 +884,7 @@ public class JobHelper {
 
     packet.remove(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     if (domainIntrospectorJob != null
-        && !JobWatcher.isComplete(domainIntrospectorJob) && hasStatusAndCondition(domainIntrospectorJob)) {
+        && hasStatusAndCondition(domainIntrospectorJob) && !JobWatcher.isComplete(domainIntrospectorJob)) {
       logIntrospectorFailure(packet, domainIntrospectorJob);
     }
     packet.remove(ProcessingConstants.JOB_POD_NAME);
