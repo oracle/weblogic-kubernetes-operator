@@ -508,7 +508,7 @@ class TopologyGenerator(Generator):
   def validateNonDynamicClusterNotReferencedByAnyServerTemplates(self, cluster):
     for template in self.env.getDomain().getServerTemplates():
       if self.env.getClusterOrNone(template) is cluster:
-        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ", the operator does not support 'mixed clusters' that host both dynamic (templated) servers and configured servers.")
+        self.addError("The WebLogic configured cluster " + self.name(cluster) + " is referenced by the server template " + self.name(template) + ", the operator does not support configured clusters referenced by a server template.")
 
   LISTEN_PORT = 'listen port'
   LISTEN_PORT_ENABLED = 'listen port enabled'

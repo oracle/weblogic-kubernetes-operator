@@ -181,8 +181,9 @@ public interface TestConstants {
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_CHART_NAME = "traefik";
-  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_REPO 
-           + "/weblogick8s/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_NAME = "weblogick8s/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
+
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
 
   // Voyager constants
@@ -279,7 +280,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.2");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.3");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -347,6 +348,10 @@ public interface TestConstants {
   //OKD constants
   public static final boolean OKD =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.okd.cluster", "false"));
+
+  // OCNE constants
+  public static final boolean OCNE =
+      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.ocne.cluster", "false"));
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";

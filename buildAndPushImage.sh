@@ -67,28 +67,8 @@ echo "Building image '$name' ..."
 
 # BUILD AND PUSH THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/amd64 --tag $name-amd64 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
-  echo "There was an error building the amd64 image."
-  exit 1
-}
-${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-amd64 || {
-  echo "There was an error pushing the amd64 image."
-  exit 1
-}
-${WLSIMG_BUILDER:-docker} build $PROXY_SETTINGS --pull --platform linux/arm64 --tag $name-arm64v8 -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
-  echo "There was an error building the arm64v8 image."
-  exit 1
-}
-${WLSIMG_BUILDER:-docker} push $PROXY_SETTINGS $name-arm64v8 || {
-  echo "There was an error pushing the arm64v8 image."
-  exit 1
-}
-${WLSIMG_BUILDER:-docker} manifest create $PROXY_SETTINGS $name --amend $name-amd64 --amend $name-arm64v8 || {
-  echo "There was an error building the manifest."
-  exit 1
-}
-${WLSIMG_BUILDER:-docker} manifest push $PROXY_SETTINGS $name || {
-  echo "There was an error pushing the manifest."
+${WLSIMG_BUILDER:-docker} buildx build $PROXY_SETTINGS --pull --push --platform linux/amd64,linux/arm64 --tag $IMAGE_NAME -f $SCRIPTPATH/Dockerfile $SCRIPTPATH || {
+  echo "There was an error building and pushing the image."
   exit 1
 }
 BUILD_END=$(date '+%s')
