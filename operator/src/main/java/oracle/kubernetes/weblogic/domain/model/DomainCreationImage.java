@@ -14,8 +14,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class DomainCreationImage implements DeploymentImage {
 
-  public static final String DOMAIN_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
-  public static final String DOMAIN_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
+  public static final String DOMAIN_CREATION_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
+  public static final String DOMAIN_CREATION_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
+  public static final String DOMAIN_CREATION_IMAGE_MOUNT_PATH = "/auxiliary";
 
   /**
    * The domain image.
@@ -75,7 +76,7 @@ public class DomainCreationImage implements DeploymentImage {
 
   public String getSourceWDTInstallHomeOrDefault() {
     return Optional.ofNullable(sourceWDTInstallHome)
-            .orElse(DOMAIN_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
+            .orElse(DOMAIN_CREATION_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
   }
 
   public DomainCreationImage sourceWDTInstallHome(String sourceWDTInstallHome) {
@@ -85,7 +86,7 @@ public class DomainCreationImage implements DeploymentImage {
 
   public String getSourceModelHome() {
     return Optional.ofNullable(sourceModelHome)
-            .orElse(DOMAIN_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
+            .orElse(DOMAIN_CREATION_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
   public void setSourceModelHome(String sourceModelHome) {

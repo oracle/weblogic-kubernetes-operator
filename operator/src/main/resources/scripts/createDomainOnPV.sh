@@ -12,11 +12,11 @@ source ${SCRIPTPATH}/wdt_common.sh
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
-IMG_MODELS_HOME="/aux/models"
+IMG_MODELS_HOME="/auxiliary/models"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_ROOT="/aux/weblogic-deploy"
+WDT_ROOT="/auxiliary/weblogic-deploy"
 WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
 WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
 WDT_CREATE_DOMAIN_LOG=${WDT_ROOT}/logs/createDomain.log
@@ -221,8 +221,6 @@ createDomainFromWDTModel() {
 
     if [ -d "$LOG_HOME" ] ; then
       cp "$WDT_CREATE_DOMAIN_LOG" "$LOG_HOME"
-      if ls $WDT_ROOT/logs/*.out &> /dev/null ; then (cp $WDT_ROOT/logs/*.out $LOG_HOME) ; fi
-      trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files can be found under '$LOG_HOME/rculogdir'"
     fi
 
     exitOrLoop

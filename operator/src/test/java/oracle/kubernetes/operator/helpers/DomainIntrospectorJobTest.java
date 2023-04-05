@@ -145,6 +145,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainCreationImage.DOMAIN_CREATION_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
@@ -756,7 +757,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
         hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-            .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
+            .mountPath(DOMAIN_CREATION_IMAGE_MOUNT_PATH)));
   }
 
   @Test
@@ -1468,9 +1469,21 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobLogContainsSevereError_logJobInfosOnDelete() {
+  void whenJobStatusContainsNoConditions_dontLogJobFailedAndInfosOnDelete() {
     testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(null));
+
+    assertThat(logRecords, not(containsInfo(getJobFailedMessageKey())));
+    assertThat(logRecords, not(containsFine(getJobFailedDetailMessageKey())));
+    assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
+  }
+
+  @Test
+  void whenJobStatusHasFailedCondition_logJobInfosOnDelete() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(null));

@@ -73,6 +73,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFai
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.DomainCreationImage.DOMAIN_CREATION_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -587,9 +588,9 @@ public class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
-    if (auxiliaryOrDomainCreationImagesConfigured()) {
-      addVolumeMountIfMissing(container);
-    }
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(ai -> addVolumeMountIfMissing(container));
+    Optional.ofNullable(getDomainCreationImages()).ifPresent(dci -> addVolumeMountIfMissing(container,
+        DOMAIN_CREATION_IMAGE_MOUNT_PATH));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
@@ -827,13 +828,19 @@ public class JobStepContext extends BasePodStepContext {
             .map(CreateIfNotExists::toString).orElse(null)));
 
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
-    Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars));
+    Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars,
+        DOMAIN_CREATION_IMAGE_MOUNT_PATH));
     return vars;
   }
 
   private void addAuxImagePathEnv(List<? extends DeploymentImage> auxiliaryImages, List<V1EnvVar> vars) {
+    addAuxImagePathEnv(auxiliaryImages, vars, getDomain().getAuxiliaryImageVolumeMountPath());
+  }
+
+  private void addAuxImagePathEnv(List<? extends DeploymentImage> auxiliaryImages, List<V1EnvVar> vars,
+                                  String mountPath) {
     if (!auxiliaryImages.isEmpty()) {
-      addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
+      addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, mountPath);
     }
   }
 

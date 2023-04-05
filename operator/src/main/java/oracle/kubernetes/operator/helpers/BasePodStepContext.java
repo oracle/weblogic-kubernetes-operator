@@ -74,11 +74,15 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected void addVolumeMountIfMissing(V1Container container) {
+    addVolumeMountIfMissing(container, getPrimaryContainerMountPath());
+  }
+
+  protected void addVolumeMountIfMissing(V1Container container, String mountPath) {
     if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
         this::hasMatchingVolumeName)).orElse(true)) {
       container.addVolumeMountsItem(
               new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-                      .mountPath(getPrimaryContainerMountPath()));
+                      .mountPath(mountPath));
     }
   }
 
