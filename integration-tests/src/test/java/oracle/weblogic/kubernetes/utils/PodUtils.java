@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntilNoException;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -337,6 +338,25 @@ public class PodUtils {
         assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
           String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
             podName, domNamespace)),
+        logger,
+        "pod {0} to be deleted in namespace {1}",
+        podName,
+        domNamespace);
+  }
+
+  /**
+   * Check if the pods are deleted.
+   * @param podName pod name
+   * @param domainUid unique id of the domain
+   * @param domNamespace namespace where domain exists
+   * @return true if pod is deleted
+   */
+  public static boolean isPodDeleted(String podName, String domainUid, String domNamespace) {
+    final LoggingFacade logger = getLogger();
+    return testUntilNoException(withLongRetryPolicy,
+        assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
+            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
+                podName, domNamespace)),
         logger,
         "pod {0} to be deleted in namespace {1}",
         podName,

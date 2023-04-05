@@ -86,7 +86,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.PodUtils.isPodDeleted;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -321,7 +321,7 @@ public class ItHorizontalPodAutoscalerCustomMetrics {
         "Checking if replica switched to 2");
 
     try {
-      checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+      assertTrue(isPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace));
     } catch (Throwable ex) {
       //check if different server was scaled down
       assertDoesNotThrow(() -> {

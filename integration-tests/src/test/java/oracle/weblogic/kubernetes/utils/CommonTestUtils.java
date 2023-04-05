@@ -189,6 +189,27 @@ public class CommonTestUtils {
     }
   }
 
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   * @return false if timeout, true for success
+   */
+  public static boolean testUntilNoException(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+      return true;
+    } catch (ConditionTimeoutException timeout) {
+      return false;
+    }
+  }
+
   private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
       LoggingFacade logger, String msg, Object... params) {
     return new ConditionEvaluationListener<T>() {
