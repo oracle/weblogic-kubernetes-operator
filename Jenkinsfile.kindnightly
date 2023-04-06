@@ -181,7 +181,7 @@ pipeline {
                     // The first item in the list is the default value...
                     '1.25.8',
                     '1.26',
-                    '1.26.3'
+                    '1.26.3',
                     '1.25',
                     '1.25.3',
                     '1.25.2',
