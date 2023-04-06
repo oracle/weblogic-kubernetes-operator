@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -186,6 +186,27 @@ public class CommonTestUtils {
           .until(conditionEvaluator);
     } catch (ConditionTimeoutException timeout) {
       throw new TimeoutException(MessageFormat.format("Timed out waiting for: " + msg, params), timeout);
+    }
+  }
+
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   * @return false if timeout, true for success
+   */
+  public static boolean testUntilNoException(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+      return true;
+    } catch (ConditionTimeoutException timeout) {
+      return false;
     }
   }
 
