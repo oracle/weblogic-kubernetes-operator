@@ -70,6 +70,19 @@ createDomainOnPVWLDomain() {
   # create domain again
   if  [ -f ${DOMAIN_HOME}/config/config.xml ]; then
     trace "Domain already exists: no operation needed"
+    if [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
+      local curl_wl_ver="`getWebLogicVersion`"
+      local curl_domain_ver="`getDomainVersion`"
+      local wl_major_ver="`getMajorVersion ${curl_wl_ver}`"
+      local domain_major_ver="`getMajorVersion ${curl_domain_ver}`"
+  
+      trace INFO "WebLogic najor version='$wl_major_ver'. Domain major version='${domain_major_ver}'."
+      if ! versionEQ "$wl_major_ver" "${domain_major_ver}" ; then
+        trace SEVERE "WebLogic version '${curl_wl_ver}' is newer than the initialized domain version '${curl_domain_ver}'. Once an initializeDomainOnPV domain is created, the major version of the WebLogic Server in the base image cannot be changed."
+        exitOrLoop
+      fi
+    fi
+
   else
     createDomainFromWDTModel
   fi
