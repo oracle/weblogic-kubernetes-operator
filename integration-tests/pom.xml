@@ -547,44 +547,6 @@
         </profile>
 
         <profile>
-            <id>wko-okd-wls-mrg</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                  **/ItCoherenceTests,
-                  **/ItConfigDistributionStrategy,
-                  **/ItDedicatedMode,
-                  **/ItExternalLbTunneling,
-                  **/ItExternalNodePortService,
-                  **/ItInitContainers,
-                  **/ItIntrospectVersion,
-                  **/ItLiftAndShiftFromOnPremDomain,
-                  **/ItLivenessProbeCustomization,
-                  **/ItManagedCoherence,
-                  **/ItMiiDynamicUpdate*,
-                  **/ItMiiCustomSslStore,
-                  **/ItMiiSampleWlsAux,
-                  **/ItMiiSampleWlsMain,
-                  **/ItOperatorRestart,
-                  **/ItPodsShutdownOption,
-                  **/ItPodTemplates,
-                  **/ItProductionSecureMode,
-                  **/ItRemoteConsole,
-                  **/ItServerStartPolicy,
-                  **/ItServiceStartPolicyDynamicCluster,
-                  **/ItServerStartPolicyConfigCluster,
-                  **/ItSessionMigration,
-                  **/ItStickySession,
-                  **/ItSystemResOverrides,
-                  **/ItMonitoringExporterWebApp,
-                  **/ItMonitoringExporterSideCar,
-                  **/ItMonitoringExporterSamples,
-                  **/ItMiiClusterResource
-                </includes-failsafe>
-            </properties>
-        </profile>
-
-        <profile>
             <id>wko-okd-fmw-cert</id>
             <properties>
                 <skipITs>false</skipITs>
