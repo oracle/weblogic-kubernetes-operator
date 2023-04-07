@@ -52,9 +52,13 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainProcessorTest.getInitContainerStatusWithImagePullError;
+import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_DELETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static org.hamcrest.Matchers.anEmptyMap;
@@ -87,6 +91,8 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   final DomainResource domain = createDomain(UID1, NS);
   final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
+  private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -231,7 +237,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     for (String clusterName : List.of(CLUSTER_1, CLUSTER_2, CLUSTER_3)) {
       testSupport.defineResources(createClusterResource(NS, clusterName));
       domain.getSpec().getClusters().add(new V1LocalObjectReference().name(clusterName));
-      clusterPresenceInfoMap.put(clusterName, new ClusterPresenceInfo(NS, createClusterResource(NS, clusterName)));
+      clusterPresenceInfoMap.put(clusterName, new ClusterPresenceInfo(createClusterResource(NS, clusterName)));
     }
     dp.clusters.put(NS, clusterPresenceInfoMap);
     testSupport.defineResources(domain);
@@ -246,6 +252,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_1), notNullValue());
     MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_2), nullValue());
     MatcherAssert.assertThat(getClusterPresenceInfo(dp, CLUSTER_3), notNullValue());
+    assertThat(testSupport, not(hasEvent(CLUSTER_DELETED.getReason())));
   }
 
   @Test
@@ -345,6 +352,45 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
     assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
+  }
+
+  @Test
+  void whenNewDomainAdded_generateDomainCreatedEvent() {
+    processor.getDomainPresenceInfoMap().clear();
+    addDomainResource(UID1, NS);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
+  }
+
+  @Test
+  void whenDomainChanged_generateDomainChangedEvent() {
+    DomainResource domain1 = createDomain(UID1, NS);
+    domain1.getMetadata().setGeneration(1234L);
+    processor.getDomainPresenceInfoMap()
+        .computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, new DomainPresenceInfo(domain1));
+    DomainResource domain2 = createDomain(UID1, NS);
+    domain2.getMetadata().setGeneration(2345L);
+    testSupport.defineResources(domain2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(DOMAIN_CHANGED.getReason()));
+  }
+
+
+  @Test
+  void whenDomainStatusBecameNull_generateDomainCreatedEvent() {
+    DomainResource domain1 = createDomain(UID1, NS);
+    processor.getDomainPresenceInfoMap()
+        .computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, new DomainPresenceInfo(domain1));
+    domain1.setStatus(null);
+    testSupport.defineResources(domain1);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
   }
 
   @Test
@@ -524,9 +570,9 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     private final Map<String, DomainPresenceInfo> dpis = new ConcurrentHashMap<>();
     private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
     private final List<MakeRightClusterOperationStub> clusterOperationStubs = new ArrayList<>();
-    Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
-    Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
-    Map<String, FiberGate> makeRightFiberGates = createMakeRightFiberGateMap();
+    private final Map<String, Map<String, DomainPresenceInfo>> domains = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, ClusterPresenceInfo>> clusters = new ConcurrentHashMap<>();
+    private final Map<String, FiberGate> makeRightFiberGates = createMakeRightFiberGateMap();
     private boolean statusUpdated = false;
 
     @NotNull
@@ -599,7 +645,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     @Override
     public MakeRightClusterOperation createMakeRightOperationForClusterEvent(
         EventHelper.EventItem item, ClusterResource cluster, String domainUid) {
-      ClusterPresenceInfo info = new ClusterPresenceInfo(NS, cluster);
+      ClusterPresenceInfo info = new ClusterPresenceInfo(cluster);
       final MakeRightClusterOperationStub stub =
           createStrictStub(MakeRightClusterOperationStub.class, info, item, clusters.get(NS));
       clusterOperationStubs.add(stub);
@@ -677,6 +723,11 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
+      public MakeRightDomainOperation interrupt() {
+        return this;
+      }
+
+      @Override
       public MakeRightDomainOperation forDeletion() {
         deleting = true;
         return this;
@@ -706,23 +757,43 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   abstract static class MakeRightClusterOperationStub implements MakeRightClusterOperation {
     private final ClusterPresenceInfo info;
-    private final EventHelper.EventItem eventItem;
+    private EventHelper.ClusterResourceEventData eventData;
     private final Map<String, ClusterPresenceInfo> clusterResourceInfos;
 
     MakeRightClusterOperationStub(ClusterPresenceInfo info, EventHelper.EventItem eventItem,
                                   Map<String, ClusterPresenceInfo> clusterResourceInfos) {
       this.info = info;
-      this.eventItem = eventItem;
+      this.eventData = EventHelper.createClusterResourceEventData(eventItem, info.getCluster(), null);
       this.clusterResourceInfos = clusterResourceInfos;
     }
 
     @Override
+    public MakeRightClusterOperation interrupt() {
+      return this;
+    }
+
+    @Override
+    public MakeRightClusterOperation withExplicitRecheck() {
+      return this;
+    }
+
+    @Override
+    public MakeRightClusterOperation withEventData(EventHelper.ClusterResourceEventData eventData) {
+      this.eventData = eventData;
+      return this;
+    }
+
+    @Override
     public void execute() {
-      if (eventItem == EventHelper.EventItem.CLUSTER_DELETED) {
+      if (getItem() == EventHelper.EventItem.CLUSTER_DELETED) {
         clusterResourceInfos.remove(info.getResourceName());
       } else {
         clusterResourceInfos.put(info.getResourceName(), info);
       }
+    }
+
+    private EventHelper.EventItem getItem() {
+      return Optional.ofNullable(eventData).map(EventHelper.ClusterResourceEventData::getItem).orElse(null);
     }
   }
 }

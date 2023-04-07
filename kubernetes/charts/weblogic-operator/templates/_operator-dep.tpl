@@ -34,9 +34,11 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
+      {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -262,9 +264,11 @@ spec:
           {{- end }}
         spec:
           serviceAccountName: {{ .serviceAccount | quote }}
+          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
           securityContext:
             seccompProfile:
               type: RuntimeDefault
+          {{- end }}
           {{- with .nodeSelector }}
           nodeSelector:
             {{- toYaml . | nindent 12 }}

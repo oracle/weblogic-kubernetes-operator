@@ -1317,9 +1317,21 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   @Test
-  void whenJobLogContainsSevereError_logJobInfosOnDelete() {
+  void whenJobStatusContainsNoConditions_dontLogJobFailedAndInfosOnDelete() {
     testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, SEVERE_MESSAGE);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(null));
+
+    assertThat(logRecords, not(containsInfo(getJobFailedMessageKey())));
+    assertThat(logRecords, not(containsFine(getJobFailedDetailMessageKey())));
+    assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
+  }
+
+  @Test
+  void whenJobStatusHasFailedCondition_logJobInfosOnDelete() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(null));

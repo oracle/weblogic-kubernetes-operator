@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
@@ -49,8 +50,6 @@ public interface TestConstants {
       "../kubernetes/charts/weblogic-operator";
   public static final String IMAGE_NAME_OPERATOR =
       getNonEmptySystemProperty("wko.it.image.name.operator", "oracle/weblogic-kubernetes-operator");
-  public static final String OPERATOR_IMAGE_BUILD_SCRIPT =
-      "../buildDockerImage.sh";
   public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
   public static final String OPERATOR_GITHUB_CHART_REPO_URL =
       "https://oracle.github.io/weblogic-kubernetes-operator/charts";
@@ -182,8 +181,9 @@ public interface TestConstants {
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_CHART_NAME = "traefik";
-  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_REPO 
-           + "/weblogick8s/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_NAME = "weblogick8s/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
+
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
 
   // Voyager constants
@@ -238,9 +238,6 @@ public interface TestConstants {
             + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
-  public static final String WLS_LOGGING_EXPORTER_YAML_FILE_NAME = "WebLogicLoggingExporter.yaml";
-  public static final String COPY_WLS_LOGGING_EXPORTER_FILE_NAME = "copy-logging-files-cmds.txt";
-
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
@@ -283,7 +280,7 @@ public interface TestConstants {
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION =
-      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.2");
+      getNonEmptySystemProperty("wko.it.monitoring.exporter.webapp.version", "2.1.3");
   public static final String MONITORING_EXPORTER_BRANCH =
       getNonEmptySystemProperty("wko.it.monitoring.exporter.branch", "main");
   public static final String PROMETHEUS_CHART_VERSION =
@@ -293,8 +290,31 @@ public interface TestConstants {
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
 
+  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/prometheus";
+  public static final String PROMETHEUS_IMAGE_TAG = "v2.39.1";
+
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/alertmanager";
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_TAG = "v0.24.0";
+
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/jimmidyson/configmap-reload";
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG = "v0.5.0";
+
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/pushgateway";
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
+
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/prometheus/node-exporter";
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_TAG = "v1.3.1";
+
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
+  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_REPO
+      + "/weblogick8s/test-images/grafana/grafana";
+  public static final String GRAFANA_IMAGE_TAG = "9.3.0";
 
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
@@ -328,6 +348,10 @@ public interface TestConstants {
   //OKD constants
   public static final boolean OKD =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.okd.cluster", "false"));
+
+  // OCNE constants
+  public static final boolean OCNE =
+      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.ocne.cluster", "false"));
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
@@ -405,4 +429,12 @@ public interface TestConstants {
   // metrics server constants
   public static final String METRICS_SERVER_YAML =
       "https://github.com/kubernetes-sigs/metrics-server/releases/download/metrics-server-helm-chart-3.8.2/components.yaml";
+  
+  // verrazzano related constants
+  public static final String VZ_INGRESS_NS = "ingress-nginx";
+  public static final String VZ_SYSTEM_NS = "verrazzano-system";
+  public static final String VZ_ISTIO_NS = "istio-system";
+  public static final boolean VZ_ENV = assertDoesNotThrow(() -> listNamespaces().stream()
+        .anyMatch(ns -> ns.equals(VZ_SYSTEM_NS)));
+  
 }

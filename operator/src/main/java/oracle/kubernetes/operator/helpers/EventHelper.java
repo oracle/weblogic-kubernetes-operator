@@ -1280,7 +1280,7 @@ public class EventHelper {
 
   public static ClusterResourceEventData createClusterResourceEventData(
       EventItem clusterEvent, ClusterResource cluster, String domainUid) {
-    return new ClusterResourceEventData(clusterEvent, cluster, domainUid);
+    return clusterEvent == null ? null : new ClusterResourceEventData(clusterEvent, cluster, domainUid);
   }
 
   public static class ClusterResourceEventData extends EventData {

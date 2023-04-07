@@ -13,11 +13,13 @@ In addition to any local registry, public container registries include
 [Oracle Cloud Infrastructure Registry](https://cloud.oracle.com/containers/registry) (OCIR).
 {{% /notice %}}
 
-The WebLogic domain home that is part of a Domain in Image image contains sensitive
+The WebLogic domain home that is part of a Domain in Image  image contains sensitive
 information about the domain including keys and credentials that are used to
 access external resources (for example, the data source password). In addition, the image
 may be used to create a running server that further exposes the WebLogic domain
 outside of the Kubernetes cluster.
+
+**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 
 For information about setting up Kubernetes to access a private registry, see
 [Set up Kubernetes to access domain images]({{< relref "/base-images/access-images.md" >}}).

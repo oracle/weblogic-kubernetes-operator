@@ -22,6 +22,9 @@ You can locate a WebLogic domain either in a persistent volume (Domain in PV), i
 For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
 
+{{% notice note %}}The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
+{{% /notice %}}
+
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource
 manually to deploy your domain.  This process is documented in [this
@@ -29,7 +32,7 @@ sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
 
 **Note:** Once you are familiar with the basics, it is recommended to review
 [important considerations]({{< relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" >}})
-and 
+and
 [resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
 
 ### Modifying domain configurations
@@ -172,4 +175,3 @@ The following features are **not** certified or supported in this release:
 * Mixed clusters (configured servers targeted to a dynamic cluster)
 
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
-
