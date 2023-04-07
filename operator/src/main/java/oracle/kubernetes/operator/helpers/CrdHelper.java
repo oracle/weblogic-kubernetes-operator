@@ -216,7 +216,7 @@ public class CrdHelper {
     private static org.yaml.snakeyaml.Yaml getSnakeYaml() {
       LoaderOptions loaderOptions = new LoaderOptions();
       loaderOptions.setEnumCaseSensitive(false);
-      return new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
+      return new org.yaml.snakeyaml.Yaml(new SafeConstructor(loaderOptions), new Yaml.CustomRepresenter());
     }
 
     static V1CustomResourceSubresources createSubresources() {
