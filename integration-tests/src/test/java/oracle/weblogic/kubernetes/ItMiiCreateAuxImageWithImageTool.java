@@ -401,8 +401,7 @@ class ItMiiCreateAuxImageWithImageTool {
         .modelFiles(Collections.singletonList(MODEL_DIR + "/model.update.wm.yaml"));
 
     ExecResult result = createAuxImageUsingWITAndReturnResult(witParams);
-    String exepectedErrorMsg = "Invalid value for option '--packageManager': expected one of "
-        + "[OS_DEFAULT, NONE, YUM, DNF, MICRODNF, APTGET, APK, ZYPPER] (case-insensitive) but was 'pkm'";
+    String exepectedErrorMsg = "Invalid value for option '--packageManager':";
     assertTrue(result.exitValue() != 0 && result.stderr().contains(exepectedErrorMsg));
   }
 

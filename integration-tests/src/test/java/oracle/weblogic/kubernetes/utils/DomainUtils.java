@@ -16,11 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -103,6 +105,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusMessageContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusServerStatusHasExpectedPodStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
@@ -187,25 +190,46 @@ public class DomainUtils {
   public static void createDomainAndVerify(String domainUid, DomainResource domain,
                                            String domainNamespace, String adminServerPodName,
                                            String managedServerPodNamePrefix, int replicaCount) {
+    createDomainAndVerify(domainUid, domain, domainNamespace, adminServerPodName, managedServerPodNamePrefix,
+        replicaCount, true);
+  }
+
+  /**
+   * Create a domain in the specified namespace, wait up to five minutes until the domain exists and
+   * verify the servers are running.
+   *
+   * @param domainUid domain
+   * @param domain the oracle.weblogic.domain.DomainResource object to create domain custom resource
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName admin server pod name
+   * @param managedServerPodNamePrefix managed server pod prefix
+   * @param replicaCount replica count
+   * @param verifyServerPods whether to verify server pods of the domain
+   */
+  public static void createDomainAndVerify(String domainUid, DomainResource domain,
+                                           String domainNamespace, String adminServerPodName,
+                                           String managedServerPodNamePrefix, int replicaCount,
+                                           boolean verifyServerPods) {
     LoggingFacade logger = getLogger();
 
     // create domain and verify
     createDomainAndVerify(domain, domainNamespace);
 
-    // check that admin service/pod exists in the domain namespace
-    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    if (verifyServerPods) {
+      // check that admin service/pod exists in the domain namespace
+      logger.info("Checking that admin service/pod {0} exists in namespace {1}",
+          adminServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPodNamePrefix + i;
+      for (int i = 1; i <= replicaCount; i++) {
+        String managedServerPodName = managedServerPodNamePrefix + i;
 
-      // check that ms service/pod exists in the domain namespace
-      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+        // check that ms service/pod exists in the domain namespace
+        logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+            managedServerPodName, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
     }
-
   }
 
   /**
@@ -219,10 +243,30 @@ public class DomainUtils {
     LoggingFacade logger = getLogger();
     testUntil(assertDoesNotThrow(() -> domainStatusReasonMatches(domainUid, namespace, statusReason)),
         logger,
-        "the status reason of the domain {0} in namespace {1}",
+        "the status reason of the domain {0} in namespace {1} matches {2}",
         domainUid,
         namespace,
         statusReason);
+  }
+
+  /**
+   * Check the status message of the domainUid contains the expected msg.
+   *
+   * @param domainUid  domain uid
+   * @param namespace the namespace in which the domainUid exists
+   * @param statusMsg the expected status msg of the domainUid
+   */
+  public static void checkDomainStatusMessageContainsExpectedMsg(String domainUid,
+                                                                 String namespace,
+                                                                 String statusMsg) {
+    LoggingFacade logger = getLogger();
+    testUntil(withLongRetryPolicy,
+        assertDoesNotThrow(() -> domainStatusMessageContainsExpectedMsg(domainUid, namespace, statusMsg)),
+        logger,
+        "the status msg of the domain {0} in namespace {1} contains {2}",
+        domainUid,
+        namespace,
+        statusMsg);
   }
 
   /**
@@ -407,6 +451,45 @@ public class DomainUtils {
         domainNS);
   }
 
+  /**
+   * Remove cluster reference from domain resource.
+   *
+   * @param clusterName name of the cluster to be removed from domain resource
+   * @param domainUid name of the domain resource
+   * @param namespace namespace in which domain resource exists
+   * @throws ApiException throws when cluster interaction fails
+   */
+  public static void removeClusterInDomainResource(String clusterName, String domainUid, String namespace)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+    logger.info("Removing the cluster {0} from domain resource {1}", clusterName, domainUid);
+    DomainResource domainCustomResource = getDomainCustomResource(domainUid, namespace);
+    Optional<V1LocalObjectReference> cluster = domainCustomResource.getSpec()
+        .getClusters().stream().filter(o -> o.getName().equals(clusterName)).findAny();
+    int clusterIndex = -1;
+    if (cluster.isPresent()) {
+      clusterIndex = domainCustomResource.getSpec().getClusters().indexOf(cluster.get());
+      logger.info("Cluster index is {0}", clusterIndex);
+    } else {
+      logger.warning("Cluster {0} not found in domain resource {1} in namespace {2}", 
+          clusterName, domainUid, namespace);
+    }
+    if (clusterIndex != -1) {
+      String patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/" + clusterIndex + "\"}]";
+      logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+      Callable<Boolean> clusterNotFound = () -> !getDomainCustomResource(domainUid, namespace).getSpec()
+          .getClusters().stream().anyMatch(c -> c.getName().equals(clusterName));
+      testUntil(clusterNotFound, logger, "cluster {0} to be removed from domain resource in namespace {1}",
+          clusterName, namespace);
+    } else {
+      logger.warning("Cluster {0} not found in domain resource {1} in namespace {2}", 
+          clusterName, domainUid, namespace);
+    }
+  }
+  
   /**
    * Patch a domain with auxiliary image and verify pods are rolling restarted.
    * @param oldImageName old auxiliary image name
@@ -640,6 +723,109 @@ public class DomainUtils {
     createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
         domainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
 
+    return domain;
+  }
+
+  /**
+   * Create a domain in PV using WDT.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace in which the domain will be created
+   * @param wlSecretName WLS secret name
+   * @param clusterName WLS domain cluster name
+   * @param replicaCount domain replica count
+   * @param testClassName the test class name calling this method
+   * @param wdtModelFile WDT model file to create the domain
+   * @param verifyServerPods whether to verify the server pods
+   * @return oracle.weblogic.domain.Domain objects
+   */
+  public static DomainResource createDomainOnPvUsingWdt(String domainUid,
+                                                        String domainNamespace,
+                                                        String wlSecretName,
+                                                        String clusterName,
+                                                        int replicaCount,
+                                                        String testClassName,
+                                                        String wdtModelFile,
+                                                        boolean verifyServerPods) {
+
+    int t3ChannelPort = getNextFreePort();
+
+    final String pvName = getUniqueName(domainUid + "-pv-"); // name of the persistent volume
+    final String pvcName = getUniqueName(domainUid + "-pvc-"); // name of the persistent volume claim
+
+    // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(domainNamespace);
+
+    // create WebLogic domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create persistent volume and persistent volume claim for domain
+    // these resources should be labeled with domainUid for cleanup after testing
+
+    createPV(pvName, domainUid, testClassName);
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
+
+    String labelSelector = String.format("weblogic.domainUid in (%s)", domainUid);
+    LoggingFacade logger = getLogger();
+    // check the persistent volume and persistent volume claim exist
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+            String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
+
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                pvcName, domainNamespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        domainNamespace);
+
+
+    // create a temporary WebLogic domain property file as a input for WDT model file
+    File domainPropertiesFile = assertDoesNotThrow(() -> createTempFile("domainonpv" + domainUid, "properties"),
+        "Failed to create domain properties file");
+
+    Properties p = new Properties();
+    p.setProperty("adminUsername", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("adminPassword", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("domainName", domainUid);
+    p.setProperty("adminServerName", ADMIN_SERVER_NAME_BASE);
+    p.setProperty("productionModeEnabled", "true");
+    p.setProperty("clusterName", clusterName);
+    p.setProperty("configuredManagedServerCount", "4");
+    p.setProperty("managedServerNameBase", MANAGED_SERVER_NAME_BASE);
+    p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
+    p.setProperty("t3PublicAddress", K8S_NODEPORT_HOST);
+    p.setProperty("managedServerPort", "8001");
+    p.setProperty("adminServerSslPort", "7002");
+    assertDoesNotThrow(() ->
+            p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
+        "Failed to write domain properties file");
+
+    // shell script to download WDT and run the WDT createDomain script
+    Path wdtScript = get(RESOURCE_DIR, "bash-scripts", "setup_wdt.sh");
+
+    // create configmap and domain in persistent volume using WDT
+    runCreateDomainOnPVJobUsingWdt(wdtScript, get(RESOURCE_DIR, "wdt-models", wdtModelFile),
+        domainPropertiesFile.toPath(),
+        domainUid, pvName, pvcName, domainNamespace, testClassName);
+
+    DomainResource domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+        clusterName, replicaCount);
+
+    // Verify the domain custom resource is created.
+    // Also verify the admin server pod and managed server pods are up and running.
+    if (verifyServerPods) {
+      createDomainAndVerify(domainUid, domain, domainNamespace, domainUid + "-" + ADMIN_SERVER_NAME_BASE,
+          domainUid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount);
+    } else {
+      createDomainAndVerify(domain, domainNamespace);
+    }
     return domain;
   }
 
@@ -962,6 +1148,57 @@ public class DomainUtils {
 
     return createDomainInImageAndVerify(domainUid, domainNamespace, domainInImageWithWDTImage, wlSecretName,
         clusterName, replicaCount);
+  }
+
+  /**
+   * Create a WebLogic domain in image using WDT.
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace namespace in which the domain to be created
+   * @param wdtModelFileForDomainInImage WDT model file used to create domain image
+   * @param appSrcDirList list of the app src in WDT model file
+   * @param propertyFiles list of property files
+   * @param wlSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param replicaCount replica count of the cluster
+   * @return oracle.weblogic.domain.DomainResource object
+   */
+  public static DomainResource createDomainInImageUsingWdt(String domainUid,
+                                                           String domainNamespace,
+                                                           String wdtModelFileForDomainInImage,
+                                                           List<String> appSrcDirList,
+                                                           List<String> propertyFiles,
+                                                           String wlSecretName,
+                                                           String clusterName,
+                                                           int replicaCount) {
+
+    // create secret for admin credentials
+    getLogger().info("Create secret for admin credentials");
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create image with model files
+    getLogger().info("Creating image with model file and verify");
+    String domainInImageWithWDTImage = createImageAndVerify("domaininimage-wdtimage",
+        Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForDomainInImage), appSrcDirList,
+        propertyFiles,
+        WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false,
+        domainUid, false);
+
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(domainInImageWithWDTImage);
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(domainNamespace);
+
+    // create the domain custom resource
+    DomainResource domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, domainInImageWithWDTImage,
+        wlSecretName, clusterName, replicaCount);
+
+    // create domain and verify
+    createDomainAndVerify(domain, domainNamespace);
+
+    return domain;
   }
 
   /**

@@ -1,18 +1,25 @@
 # Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-# HOW TO BUILD THIS IMAGE
+# HOW TO BUILD AND PUSH THIS IMAGE
 # -----------------------
 # Run:
-#      $ ./buildDockerImage.sh [-t <image-name>]
+#      $ ./buildAndPushImage.sh -t <image-name>
 #
 # -------------------------
 FROM ghcr.io/oracle/oraclelinux:9-slim AS jre-build
 
-ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.2/fdb695a9d9064ad6b064dc6df578380c/7/GPL/openjdk-19.0.2_linux-x64_bin.tar.gz"
+ENV JAVA_URL_X64="https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-x64_bin.tar.gz"
+ENV JAVA_URL_AARCH64="https://download.java.net/java/GA/jdk20/bdc68b4b9cbc4ebcb30745c85038d91d/36/GPL/openjdk-20_linux-aarch64_bin.tar.gz"
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
+    MACHINE_TYPE=`uname -m`; \
+    if [ ${MACHINE_TYPE} == 'x86_64' ]; then \
+      JAVA_URL=$JAVA_URL_X64; \
+    else \
+      JAVA_URL=$JAVA_URL_AARCH64; \
+    fi; \
     curl -fL -o /jdk.tar.gz "$JAVA_URL"; \
     mkdir -p /jdk; \
     tar --extract --file /jdk.tar.gz --directory /jdk --strip-components 1; \

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -9,16 +9,17 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR_FOR_JENKINS;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_IMAGE_BUILD_SCRIPT;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getContainerImage;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.patchDeployment;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageBuilderExtraArgs;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
@@ -94,11 +95,7 @@ public class Operator {
    * @return true on success
    */
   public static boolean buildImage(String image) {
-    String command = String.format("%s -t %s", OPERATOR_IMAGE_BUILD_SCRIPT, image);
-    return Command
-        .withParams(new CommandParams()
-            .command(command))
-        .execute();
+    return Image.createImage("..", image, getImageBuilderExtraArgs());
   }
 
   /**
