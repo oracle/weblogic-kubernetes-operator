@@ -12,20 +12,20 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1680910839" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1680910839" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1680965366" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1680965366" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1680910839"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1680965366"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1680910839"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1680910839"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1680965366"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1680965366"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1680910839"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1680965366"></script>
 
     
   </div>
@@ -3603,6 +3603,7 @@
     <li><a href="#releases">Releases</a></li>
     <li><a href="#change-log">Change log</a>
       <ul>
+        <li><a href="#operator-406">Operator 4.0.6</a></li>
         <li><a href="#operator-347">Operator 3.4.7</a></li>
         <li><a href="#operator-405">Operator 4.0.5</a></li>
         <li><a href="#operator-346">Operator 3.4.6</a></li>
@@ -3687,6 +3688,7 @@
     <li><a href="#releases">Releases</a></li>
     <li><a href="#change-log">Change log</a>
       <ul>
+        <li><a href="#operator-406">Operator 4.0.6</a></li>
         <li><a href="#operator-347">Operator 3.4.7</a></li>
         <li><a href="#operator-405">Operator 4.0.5</a></li>
         <li><a href="#operator-346">Operator 3.4.6</a></li>
@@ -3753,6 +3755,11 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>April 8, 2023</td>
+<td>v4.0.6</td>
+<td>Resolved several issues related to delayed watch notifications, security context, and server URLs. Image is now multi-platform. Update SnakeYAML dependency to 2.0. Added support for new zip structure in WDT archive for database wallets.</td>
+</tr>
 <tr>
 <td>April 7, 2023</td>
 <td>v3.4.7</td>
@@ -4026,6 +4033,23 @@
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-406">Operator 4.0.6</h4>
+<ul>
+<li>Resolved several issues related to delayed watch notifications:
+<ul>
+<li>Resolved an issue where an introspection Failed domain status message is generated.</li>
+<li>Resolved an issue where a DOMAIN_CHANGED event was not generated.</li>
+<li>Resolved an issue where a Cluster was marked as Failed.</li>
+</ul>
+</li>
+<li>Resolved an issue where the WDT model has a Server named &ldquo;adminserver&rdquo;, but does not explicitly specify that this server is the Administration Server using the AdminServerName.</li>
+<li>Update the SnakeYAML dependency to version 2.0.</li>
+<li>Added support for new zip structure in WDT archive for database wallets.</li>
+<li>Container image is now multi-platform, including support for AMD64 and ARM64.</li>
+<li>Resolved an issue where the operator would generate invalid URLs for WebLogic Server instances if the namespace name started with a numeric character.</li>
+<li>Resolved an upgrade issue related to security contexts on init containers.</li>
+<li>Resolved an issue related to <code>seccompProfile</code> security context entry on OpenShift.</li>
+</ul>
 <h4 id="operator-347">Operator 3.4.7</h4>
 <ul>
 <li>Resolved an issue related to WDT models that do not contain AdminServerName.</li>
@@ -6940,19 +6964,19 @@ These have been replaced with <code>.spec.domainHomeSourceType</code>, <code>.sp
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1680910839"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1680965366"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1680910839"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1680910839"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1680965366"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1680965366"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1680910839"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1680965366"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
