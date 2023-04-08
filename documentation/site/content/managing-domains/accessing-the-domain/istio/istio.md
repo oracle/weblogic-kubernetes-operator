@@ -106,11 +106,11 @@ create the namespace in which you want to run the domain
 and label it for automatic injection before deploying your domain.
 
 ```shell
-$ kubectl create namespace domain1
+$ kubectl create namespace sample-domain1
 ```
 
 ```shell
-$ kubectl label namespace domain1 istio-injection=enabled
+$ kubectl label namespace sample-domain1 istio-injection=enabled
 ```
 
 ##### Configuring the domain resource
@@ -149,7 +149,7 @@ istio-ingressgateway-5c7d8d7b5d-tjgtd.istio-system                 SYNCED     SY
 sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-managed-server1.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-managed-server2.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
-weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
+weblogic-operator-7d86fffbdd-5dxzt.weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 ```
 
 #### Exposing applications in Istio-enabled domains
@@ -169,7 +169,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
   name: domain1-gateway
-  namespace: domain1
+  namespace: sample-domain1
 spec:
   selector:
     istio: ingressgateway
@@ -185,7 +185,7 @@ apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
   name: domain1-virtualservice
-  namespace: domain1
+  namespace: sample-domain1
 spec:
   gateways:
     - domain1-gateway
@@ -358,7 +358,7 @@ apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
   name: privaccess
-  namespace: domain1-ns
+  namespace: sample-domain1-ns
 spec:
   action: ALLOW
   rules:
@@ -453,17 +453,17 @@ spec:
       hosts:
       - 'regular-domain.org'
 ```
- 
-If you are accessing the WebLogic Console through a secure gateway with SSL termination at the gateway level, enable 
+
+If you are accessing the WebLogic Console through a secure gateway with SSL termination at the gateway level, enable
  `WeblogicPluginEnabled` in the WebLogic domain and add the appropriate request headers.  For example,
- 
+
 If you are using WDT, add the `resources` section in the model YAML file.
- 
+
 ```text
       resources:
          WebAppContainer:
             WeblogicPluginEnabled: true
-``` 
+```
 
 If you are using WLST, set the `WeblogicPluginEnabled` for each server and cluster
 
