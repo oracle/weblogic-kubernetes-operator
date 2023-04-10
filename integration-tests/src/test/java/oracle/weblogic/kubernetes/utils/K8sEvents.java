@@ -509,6 +509,30 @@ public class K8sEvents {
     return events;
   }
 
+  /**
+   * Get matching event objects after specific timestamp.
+   * @param namespace namespace in which the event is logged
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
+  public static List<CoreV1Event> getEvents(String namespace,
+                                            OffsetDateTime timestamp) {
+
+    List<CoreV1Event> events = new ArrayList<>();
+
+    try {
+      List<CoreV1Event> allEvents = Kubernetes.listNamespacedEvents(namespace);
+      for (CoreV1Event event : allEvents) {
+        if ((isEqualOrAfter(timestamp, event))) {
+          events.add(event);
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return events;
+  }
+
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
     return event.getLastTimestamp().isEqual(timestamp)
             || event.getLastTimestamp().isAfter(timestamp);
