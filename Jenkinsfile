@@ -132,7 +132,7 @@ def printLatestChanges() {
 }
 
 pipeline {
-    agent { label 'VM.Standard2.8' }
+    agent any
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
