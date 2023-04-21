@@ -111,26 +111,6 @@ def kind_k8s_map = [
 ]
 def _kind_image = null
 
-def printLatestChanges() {
-    // Show the latest changes for toolkit projects to help with troubleshooting build failures
-    def projectMap = [ 'WIT': 'https://api.github.com/repos/oracle/weblogic-image-tool/commits',
-                       'WDT': 'https://api.github.com/repos/oracle/weblogic-deploy-tooling/commits']
-    def result = new StringBuilder().append("Project changes in last 2 days:")
-    def since = Instant.now().minus(2, ChronoUnit.DAYS).toString()
-    for ( def project in projectMap.entrySet() ) {
-        def projectCommitsResp = httpRequest project.value + '?since=' + since
-        if(projectCommitsResp.getStatus() == 200) {
-            def projectCommits = new JsonSlurper().parseText( projectCommitsResp.getContent() )
-            projectCommits.each{
-                result.append('\n').append(project.key).append(' : ').append(it.commit.message)
-            }
-        } else {
-            result.append('\n').append(project.key).append(' : HTTP ERROR, failed to get commits')
-        }
-    }
-    print result
-}
-
 pipeline {
     agent { label 'large' }
     options {
@@ -364,7 +344,6 @@ pipeline {
                             ulimit -a
                             ulimit -aH
                         '''
-                        printLatestChanges()
                         script {
                             def knd = params.KIND_VERSION
                             def k8s = params.KUBE_VERSION
