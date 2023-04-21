@@ -27,12 +27,9 @@ rules:
   resources: ["customresourcedefinitions"]
   verbs: ["get", "list", "watch", "create", "update", "patch"]
 {{- end }}
-<<<<<<< HEAD
 - apiGroups: [""]
   resources: ["persistentvolumes"]
   verbs: ["get", "list", "create"]
-=======
->>>>>>> origin/main
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains", "clusters", "domains/status", "clusters/status"]
   verbs: ["get", "create", "list", "watch", "update", "patch"]

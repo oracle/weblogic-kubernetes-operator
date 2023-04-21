@@ -222,12 +222,9 @@ spec:
       namespace: {{ .Release.Namespace | quote }}
     data:
       serviceaccount: {{ .serviceAccount | quote }}
-<<<<<<< HEAD
       {{- if .featureGates }}
       featureGates: {{ .featureGates | quote }}
       {{- end }}
-=======
->>>>>>> origin/main
 ---
     # webhook does not exist or chart version is newer, create a new webhook
     apiVersion: "apps/v1"
