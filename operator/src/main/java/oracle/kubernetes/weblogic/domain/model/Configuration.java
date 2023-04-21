@@ -185,7 +185,6 @@ public class Configuration {
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
             .append(initializeDomainOnPV, rhs.initializeDomainOnPV);
-
     return builder.isEquals();
   }
 

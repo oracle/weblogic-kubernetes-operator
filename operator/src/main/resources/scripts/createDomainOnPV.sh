@@ -24,11 +24,10 @@ WDT_BINDIR="${WDT_ROOT}/bin"
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 
-FATAL_JRF_INTROSPECTOR_ERROR_MSG="Domain On PV JRF domain creation and schema initialization encountered an unrecoverable error.
- If it is a database credential related error such as wrong password, schema prefix, or database connect
- string, then correct the error and patch the domain resource 'domain.spec.introspectVersion' with a new
- value. If the error is not related to a database credential, then you must also drop and recreate the
- JRF schemas before patching the domain resource. Introspection Error: "
+FATAL_JRF_INTROSPECTOR_ERROR_MSG="Domain On PV domain creation encountered an unrecoverable error.
+ Please correct the errors and patch the domain resource 'domain.spec.introspectVersion' with a new
+ value and try again. If the domain type is JRF and you are not setting 'domainAndRCU' in 'domain.spec.configuration.initializeDomainOnPV.domain.createIfNotExists'
+ then you may have to drop and recreate the RCU schema before retry. Introspection Error: "
 
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
@@ -196,6 +195,12 @@ createDomainFromWDTModel() {
   wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
   wdtArgs+=" ${OPSS_FLAGS}"
 
+  if [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
+    export WDT_CUSTOM_CONFIG=/tmp/model_filters
+    mkdir -p "${WDT_CUSTOM_CONFIG}" || exitOrLoop
+    cp /weblogic-operator/scripts/dopv-filters.json "${WDT_CUSTOM_CONFIG}/model_filters.json" || exitOrLoop
+  fi
+
   if [ -z "${OPSS_FLAGS}" ]; then
 
     # Determine run rcu or not
@@ -220,22 +225,16 @@ createDomainFromWDTModel() {
     # Important:
     # The "FatalIntrospectorError" keyword is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
-    # We need to prevent retries with a "FatalIntrospectorError" because JRF failure involves database tables and
-    # schemas, the kind of failure may not be advisable for retry (e.g. wrong password can lead to account lock up,
-    # wrong url is useless to retry) and there is no easy way to determine the kind of failure is recoverable
+    # We need to prevent retries with a "FatalIntrospectorError".  We are not retrying create domain for now.
     #
+    trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create domain failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
 
-    if [ "JRF" == "$WDT_DOMAIN_TYPE" ] ; then
-      trace SEVERE "Domain On PV: FatalIntrospectorError: WDT Create domain failed, return code ${ret}. ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}"
-    else
-      trace SEVERE "Domain On PV: WDT Create domain failed, return code ${ret}."
-    fi
     cat ${WDT_OUTPUT}
 
     if [ -d "$LOG_HOME" ] ; then
       cp "$WDT_CREATE_DOMAIN_LOG" "$LOG_HOME"
       if ls $WDT_ROOT/logs/*.out &> /dev/null ; then (cp $WDT_ROOT/logs/*.out $LOG_HOME) ; fi
-      trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files can be found under '$LOG_HOME/rculogdir'"
+      trace "WDT log files have been copied to '$LOG_HOME'.  Additional RCU log files if any can be found under '$LOG_HOME/rculogdir'"
     fi
 
     exitOrLoop

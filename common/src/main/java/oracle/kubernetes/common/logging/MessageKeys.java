@@ -176,7 +176,6 @@ public class MessageKeys {
   public static final String WAITING_FOR_PVC_TO_BIND = "WLSKO-0238";
   public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
 
-
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -237,7 +236,6 @@ public class MessageKeys {
   public static final String NO_MATCH_VOLUME_WITH_PVC = "WLSDO-0063";
   public static final String NO_VOLUME_WITH_PVC = "WLSDO-0064";
   public static final String WALLET_KEY_NOT_FOUND = "WLSDO-0065";
-
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";

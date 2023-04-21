@@ -655,7 +655,6 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return LOGGER.formatMessage(PVC_NOT_BOUND_ERROR, pvc.getMetadata().getName(), getPhase(pvc));
   }
 
-
   /* Recently, we've seen a number of intermittent bugs where K8s reports
    * outdated watch events.  There seem to be two main cases: 1) a DELETED
    * event for a resource that was deleted, but has since been recreated, and 2)

@@ -348,14 +348,12 @@ public class JobStepContext extends BasePodStepContext {
     return emptyToNull(getDomain().getConfigOverrides());
   }
 
-  // ---------------------- model methods ------------------------------
+  private ResponseStep<V1Job> newCreateResponse() {
+    return new CreateResponseStep(null);
+  }
 
   private String getWdtConfigMap() {
     return emptyToNull(getDomain().getWdtConfigMap());
-  }
-
-  private ResponseStep<V1Job> newCreateResponse() {
-    return new CreateResponseStep(null);
   }
 
   private V1Job createJobModel() {
