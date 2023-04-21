@@ -17,8 +17,11 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.BOUND;
 import static oracle.kubernetes.operator.ProcessingConstants.PENDING;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.PERSISTENT_VOLUME_CLAIM;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -88,7 +92,7 @@ class PvcWatcherTest {
   }
 
   protected PvcWatcher createWatcher() {
-    return new PvcWatcher(new DomainProcessorImpl(null));
+    return new PvcWatcher(new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport)));
   }
 
   @Test
@@ -160,13 +164,30 @@ class PvcWatcherTest {
 
   @Test
   void whenPvcBoundOnFirstRead_performNextStep() {
+    testSupport.defineResources(createDomain());
     startWaitForReadyThenReadPvc(this::markPvcBound);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
+  void whenPvcBoundErrorResolved_performNextStep() {
+    DomainResource failedDomain = createFailedDomain();
+    testSupport.defineResources(failedDomain);
+    domainPresenceInfo.setDomain(failedDomain);
+    startWaitForReadyThenReadPvc(this::markPvcBound);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  private DomainResource createFailedDomain() {
+    return createDomain().withStatus(new DomainStatus().addCondition(new DomainCondition(
+        DomainConditionType.FAILED).withReason(PERSISTENT_VOLUME_CLAIM)));
+  }
+
+  @Test
   void whenPvcUnboundOnFirstRead_dontPerformNextStep() {
+    testSupport.defineResources(createDomain());
     startWaitForReadyThenReadPvc(this::dontChangePvc);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -174,6 +195,7 @@ class PvcWatcherTest {
 
   @Test
   void whenPvcPendingOnFirstRead_dontPerformNextStep() {
+    testSupport.defineResources(createDomain());
     startWaitForReadyThenReadPvc(this::markPvcPending);
 
     assertThat(terminalStep.wasRun(), is(false));

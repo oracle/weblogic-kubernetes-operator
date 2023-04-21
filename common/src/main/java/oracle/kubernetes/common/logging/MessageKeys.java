@@ -277,6 +277,7 @@ public class MessageKeys {
   public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_ERROR = "WLSEO-0038";
   public static final String PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION = "WLSEO-0039";
+  public static final String PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN = "WLSEO-0040";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";
