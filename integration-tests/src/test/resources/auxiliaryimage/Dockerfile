@@ -16,7 +16,8 @@
 #   Default '/auxiliary'.
 #
 
-FROM phx.ocir.io/weblogick8s/test-images/docker/busybox:1.34.1
+# FIXME - remove hard-coded host and tenancy names
+FROM phx.ocir.io/devweblogic/test-images/docker/busybox:1.34.1
 ARG AUXILIARY_IMAGE_PATH=/auxiliary
 ARG USER=oracle
 ARG USERID=1000

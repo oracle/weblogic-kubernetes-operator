@@ -212,7 +212,7 @@ class ItIstioDomainInPV  {
     // Add the LANG environment variable to ja_JP.utf8
     String imageLocation = null;
     if (KIND_REPO != null) {
-      imageLocation = KIND_REPO + "weblogick8s/test-images/weblogic:" + LOCALE_IMAGE_TAG;
+      imageLocation = KIND_REPO + "test-images/weblogic:" + LOCALE_IMAGE_TAG;
     } else {
       imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
     }

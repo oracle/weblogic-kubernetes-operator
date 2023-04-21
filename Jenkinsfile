@@ -1,10 +1,6 @@
 // Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 //
-import groovy.json.JsonSlurper
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 def kind_k8s_map = [
     '0.11.1': [
         '1.23.3':  'kindest/node:v1.23.3@sha256:0cb1a35ccd539118ce38d29a97823bae8fcef22fc94e9e33c0f4fadcdf9d4059',
@@ -123,15 +119,10 @@ pipeline {
     }
 
     environment {
-        github_url = "${env.GIT_URL}"
-        github_creds = 'ecnj_github'
-        ocr_username_creds = 'OCR username'
-        ocr_password_creds = 'OCR Password'
-        ocir_registry_creds = 'ocir-server'
-        ocir_email_creds = 'ocir-email'
-        ocir_username_creds = 'ocir-username'
-        ocir_password_creds = 'ocir-token'
-        image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
+        ocir_host = "${env.WKT_OCIR_HOST}"
+        wko_tenancy = "${env.WKT_TENANCY}"
+        ocir_url = "${ocir_host}/${wko_tenancy}/"
+        ocir_creds = 'wkt-ocir-creds'
 
         sonar_project_key = 'oracle_weblogic-kubernetes-operator'
         sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
@@ -261,15 +252,15 @@ pipeline {
         )
         string(name: 'TEST_IMAGES_REPO',
                description: '',
-               defaultValue: 'phx.ocir.io'
+               defaultValue: "${ocir_url}"
         )
         choice(name: 'BASE_IMAGES_REPO',
-               choices: ['phx.ocir.io', 'container-registry.oracle.com'],
+               choices: ["${ocir_url}", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
-               defaultValue: 'weblogick8s/test-images/weblogic'
+               defaultValue: "${wko_tenancy}/test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
                description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
@@ -277,7 +268,7 @@ pipeline {
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: 'weblogick8s/test-images/fmw-infrastructure'
+               defaultValue: "${wko_tenancy}/test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
                description: 'FWM Infra image tag',
@@ -285,7 +276,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
-               defaultValue: 'weblogick8s/test-images/database/enterprise'
+               defaultValue: "${wko_tenancy}/test-images/database/enterprise"
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
@@ -366,27 +357,14 @@ pipeline {
                     }
                 }
 
-                // Use explicit checkout so that we can clean up the workspace.
-                // Cannot use skipDefaultCheckout option since we want to use
-                // the GIT_COMMIT environment variable to make sure that we are
-                // checking out the exactly commit that triggered the build.
-                //
-                stage('GitHub Checkout') {
-                    steps {
-                        sh "sudo rm -rf ${WORKSPACE}/*"
-                        checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [], submoduleCfg: [],
-                                  userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
-                    }
-                }
-
                 stage('Build WebLogic Kubernetes Operator') {
                     steps {
-                        sh "mvn -DtrimStackTrace=false clean install"
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh "mvn -DtrimStackTrace=false clean install"
+                        }
                     }
                 }
-
+                /*
                 stage('Run Sonar Analysis') {
                     steps {
                         sh '''
@@ -414,15 +392,15 @@ pipeline {
                     }
                 }
 
-                 stage('Verify Sonar Quality Gate') {
+                stage('Verify Sonar Quality Gate') {
                     steps {
                         timeout(time: 10, unit: 'MINUTES') {
                             // Set abortPipeline to true to stop the build if the Quality Gate is not met.
                             waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
                         }
                     }
-                 }
-
+                }
+                */
                 stage('Make Workspace bin directory') {
                     steps {
                         sh "mkdir -m777 -p ${WORKSPACE}/bin"
@@ -436,7 +414,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "helm.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/helm%2Fhelm-v${HELM_VERSION}.tar.gz"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=helm/helm-v${HELM_VERSION}.tar.gz --file=helm.tar.gz \
+                                --config-file=/dev/null --auth=instance_principal
                             tar zxf helm.tar.gz
                             mv linux-amd64/helm ${WORKSPACE}/bin/helm
                             rm -rf linux-amd64
@@ -450,10 +430,9 @@ pipeline {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
                     }
                     steps {
-                        sh '''
-                            export PATH=${runtime_path}
-                            mvn -pl kubernetes -P helm-installation-test verify
-                        '''
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh 'export PATH=${runtime_path} && mvn -pl kubernetes -P helm-installation-test verify'
+                        }
                     }
                 }
 
@@ -464,7 +443,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=kubectl/kubectl-v${KUBECTL_VERSION} --file=${WORKSPACE}/bin/kubectl \
+                                --config-file=/dev/null --auth=instance_principal
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
@@ -478,7 +459,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=kind/kind-v${KIND_VERSION} --file=${WORKSPACE}/bin/kind \
+                                --config-file=/dev/null --auth=instance_principal
                             chmod +x "${WORKSPACE}/bin/kind"
                             kind version
                         '''
@@ -508,7 +491,8 @@ pipeline {
                               docker rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" phx.ocir.io/weblogick8s/test-images/docker/registry:2
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }
@@ -584,47 +568,34 @@ EOF
                 stage('Run integration tests') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
-                        IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
-                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
-                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
-                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
-                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
-                     script {
-                      def res = 0
-                      res = sh ( script: '''
-                        echo "Maven Profile [${MAVEN_PROFILE_NAME}]"
-                        echo "Selected IT Tests [${IT_TEST}]"
-                        if [ "x${IT_TEST}" == 'x' ] && [ "${MAVEN_PROFILE_NAME}" == "integration-tests" ]; then
-                           echo 'ERROR: All tests cannot be run with integration-tests profile'
-                           exit 1 
-                        else 
-                           echo 'Profile/ItTests Validation Passed'
-                           exit 0
-                         fi;
-                        ''' ,returnStatus:true)
-                       if (res != 0) {
-                          currentBuild.result = 'ABORTED'
-                          error('Profile/ItTests Validation Failed')
-                       }
-                     }
-                     sh '''
+                        script {
+                            def res = 0
+                            res = sh(script: '''
+                                    if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
+                                       echo 'ERROR: All tests cannot be run with integration-tests profile'
+                                       exit 1
+                                    fi
+                                ''', returnStatus: true)
+                            if (res != 0 ) {
+                                currentBuild.result = 'ABORTED'
+                                error('Profile/ItTests Validation Failed')
+                            }
+                        }
+
+                        sh '''
                             export PATH=${runtime_path}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
                             export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
-                            export NO_PROXY="${K8S_NODEPORT_HOST}"
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
-                               PARALLEL_RUN='false'
-                            elif [ ! -z "${IT_TEST}" ]; then
-                               echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                PARALLEL_RUN='false'
+                            elif [ -n "${IT_TEST}" ]; then
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                 MAVEN_PROFILE_NAME="integration-tests"
-                               echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
@@ -636,7 +607,7 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
@@ -653,33 +624,25 @@ EOF
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-
-                            export BASE_IMAGES_REPO_USERNAME=${BASE_IMAGES_REPO_USERNAME}
-                            export BASE_IMAGES_REPO_PASSWORD=${BASE_IMAGES_REPO_PASSWORD}
-                            export BASE_IMAGES_REPO_EMAIL=${BASE_IMAGES_REPO_EMAIL}
-
-                            if [ ! -z "${http_proxy}" ]; then
-                                export http_proxy
-                            elif [ ! -z "${HTTP_PROXY}" ]; then
-                                export HTTP_PROXY
-                            fi
-
-                            if [ ! -z "${https_proxy}" ]; then
-                                export https_proxy
-                            elif [ ! -z "${HTTPS_PROXY}" ]; then
-                                export HTTPS_PROXY
-                            fi
-
-                            if [ ! -z "${no_proxy}" ]; then
-                                export no_proxy
-                            elif [ ! -z "${NO_PROXY}" ]; then
-                                export NO_PROXY
-                            fi
-
-                            if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
-                                echo "integration-tests failed"
-                            fi
                         '''
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            withCredentials([
+                                usernamePassword(credentialsId: 'ocir_creds', usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
+                            ]) {
+                                sh '''
+                                    export BASE_IMAGES_REPO="${ocir_url}"
+                                    export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export TEST_IMAGES_REPO_EMAIL"noreply@oracle.com"
+                                    if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
+                                        echo "integration-tests failed"
+                                    fi
+                                '''
+                            }
+                        }
                     }
                     post {
                         always {
