@@ -1693,5 +1693,4 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
   }
-
 }

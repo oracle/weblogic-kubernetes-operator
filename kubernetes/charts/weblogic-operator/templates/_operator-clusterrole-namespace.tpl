@@ -36,8 +36,15 @@ rules:
   verbs: ["get", "create"]
 - apiGroups: ["batch"]
   resources: ["jobs"]
+<<<<<<< HEAD
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: ["policy"]
   resources: ["poddisruptionbudgets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+=======
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+- apiGroups: ["policy"]
+  resources: ["poddisruptionbudgets"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+>>>>>>> origin/main
 {{- end }}

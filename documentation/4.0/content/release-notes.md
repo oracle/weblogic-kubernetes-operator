@@ -10,6 +10,11 @@ draft: false
 
 | Date               | Version  | Change - See also, [Change log](#change-log).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 |--------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+<<<<<<< HEAD
+=======
+| April 8, 2023      | v4.0.6   | Resolved several issues related to delayed watch notifications, security context, and server URLs. Image is now multi-platform. Update SnakeYAML dependency to 2.0. Added support for new zip structure in WDT archive for database wallets.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| April 7, 2023      | v3.4.7   | Resolved and issue related to WDT models that do not include AdminServerName and an update to prevent use of the SnakeYAML empty-arguments SafeConstructor constructor.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+>>>>>>> origin/main
 | February 21, 2023  | v4.0.5   | Resolved several issues related to security, upgrade, performance, WDT models for Model in Image, and updates including the WebLogic Monitoring Exporter version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | February 17, 2023  | v3.4.6   | Resolved several issues related to WDT models for Model in Image, resolved an issue related to an exception while correcting container port names, and updates including the WebLogic Monitoring Exporter version.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | January 24, 2023   | v3.4.5   | Resolved an issue related to decorating the name of the ConfigMap created for Fluentd integration and dependency updates including WebLogic Monitoring Exporter, Jackson Databind, and the Oracle Linux base image.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -66,6 +71,28 @@ draft: false
 
 ### Change log
 
+<<<<<<< HEAD
+=======
+#### Operator 4.0.6
+
+* Resolved several issues related to delayed watch notifications:
+  * Resolved an issue where an introspection Failed domain status message is generated.
+  * Resolved an issue where a DOMAIN_CHANGED event was not generated.
+  * Resolved an issue where a Cluster was marked as Failed.
+* Resolved an issue where the WDT model has a Server named "adminserver", but does not explicitly specify that this server is the Administration Server using the AdminServerName.
+* Update the SnakeYAML dependency to version 2.0.
+* Added support for new zip structure in WDT archive for database wallets.
+* Container image is now multi-platform, including support for AMD64 and ARM64.
+* Resolved an issue where the operator would generate invalid URLs for WebLogic Server instances if the namespace name started with a numeric character.
+* Resolved an upgrade issue related to security contexts on init containers.
+* Resolved an issue related to `seccompProfile` security context entry on OpenShift.
+
+#### Operator 3.4.7
+
+* Resolved an issue related to WDT models that do not contain AdminServerName.
+* Updated usage of the SnakeYAML SafeConstructor to avoid usage of the empty-arguments constructor.
+
+>>>>>>> origin/main
 #### Operator 4.0.5
 
 * Updated the Fluentd integration to make the Elasticsearch credentials optional and to allow the specification of the container command and arguments.
