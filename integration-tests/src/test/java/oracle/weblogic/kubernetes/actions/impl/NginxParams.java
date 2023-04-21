@@ -11,7 +11,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_DIGEST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_NGINX_IMAGE_NAME;
 
 /**
@@ -38,7 +38,7 @@ public class NginxParams {
   private boolean webhooksEnabled = false;
   private HelmParams helmParams;
   private String ingressClassName;
-  private String imageRegistry = TEST_IMAGES_REPO_DEFAULT;
+  private String imageRegistry = TEST_IMAGES_REPO;
   private String nginxImage = TEST_NGINX_IMAGE_NAME;
   private String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
   private String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
