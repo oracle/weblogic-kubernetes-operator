@@ -1427,7 +1427,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
     return configureDomain(domain).withLogHomeEnabled(false)
         .withDomainHomeSourceType(PERSISTENT_VOLUME)
         .withInitializeDomainOnPv(new InitializeDomainOnPV())
-        .withAdditionalVolumeMount("sharedDomains", "/shared/domains");
+        .withAdditionalVolumeMount("sharedDomains", "/shared");
   }
 
 
@@ -1463,6 +1463,25 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("domain home", "/private/domains/mydomain")));
+  }
+
+  @Test
+  void whenVolumeMountHasNoValidDomainHomeDirectoryParentDir_reportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withAdditionalVolumeMount("volume2", "/private")
+        .withDomainHome("/private/mydomain");
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+        contains(stringContainsInOrder("domain home", "/private/mydomain")));
+  }
+
+  @Test
+  void whenVolumeMountHasValidDomainHomeDirectoryParentDir_dontReportError() {
+    configuredDomainWithInitializeDomainOnPVWithPVCVolume()
+        .withAdditionalVolumeMount("volume2", "/private")
+        .withDomainHome("/private/wls/domains/mydomain");
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test

@@ -1685,13 +1685,21 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private boolean noMatchingVolumeMount() {
       return getSpec().getAdditionalVolumeMounts().stream()
       .map(V1VolumeMount::getMountPath)
-      .noneMatch(this::mapsDomainHome);
+      .noneMatch(this::mapsDomainHomeGrandparent);
     }
 
-    private boolean mapsDomainHome(String mountPath) {
-      return getDomainHome().startsWith(separatorTerminated(mountPath));
+    private boolean mapsDomainHomeGrandparent(String mountPath) {
+      return getGrandparentDir(getDomainHome()).startsWith(separatorTerminated(mountPath));
     }
 
+    private String getGrandparentDir(String domainHome) {
+      return separatorTerminated(getParentDir(getParentDir(domainHome)));
+    }
+
+    private String getParentDir(String path) {
+      int index = path.lastIndexOf(File.separator);
+      return index == -1 ? "" : path.substring(0, index);
+    }
   }
 
 }
