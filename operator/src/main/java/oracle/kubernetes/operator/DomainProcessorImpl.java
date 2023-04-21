@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
@@ -75,6 +76,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_C
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.PERSISTENT_VOLUME_CLAIM_BOUND;
 import static oracle.kubernetes.operator.helpers.EventHelper.createClusterResourceEventData;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
@@ -639,7 +641,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
               .createPersistentVolumeClaimFailureSteps(getMessage(pvc)), null);
     } else {
       delegate.runSteps(new Packet().with(info), DomainStatusUpdater
-          .createRemoveSelectedFailuresStep(null, PERSISTENT_VOLUME_CLAIM), null);
+          .createRemoveSelectedFailuresStep(EventHelper.createEventStep(
+              new EventData(PERSISTENT_VOLUME_CLAIM_BOUND)), PERSISTENT_VOLUME_CLAIM), null);
     }
   }
 

@@ -71,7 +71,7 @@ public interface ProcessingConstants {
   String AUTHORIZATION_SOURCE = "AuthorizationSource";
   String PENDING = "Pending";
   String BOUND = "Bound";
-  int PVC_WAIT_STATUS_UPDATE_COUNT = 10;
+  int PVC_WAIT_STATUS_UPDATE_COUNT = 6;
   long DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 900L;
   long DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 300L;
 }
