@@ -132,7 +132,7 @@ def printLatestChanges() {
 }
 
 pipeline {
-    agent any
+    agent { label 'large' }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
@@ -339,8 +339,7 @@ pipeline {
                 anyOf {
                     changeRequest()
                     branch 'main'
-                    branch 'release/3.3'
-                    branch 'release/3.4'
+                    branch 'release/*'
                 }
             }
             stages {
@@ -747,6 +746,21 @@ EOF
                         fi
                     '''
                 }
+            }
+        }
+        stage ('Sync') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'release/*'
+                }
+                anyOf {
+                    not { triggeredBy 'TimerTrigger' }
+                    tag 'v*'
+                }
+            }
+            steps {
+                build job: "wkt-sync", parameters: [ string(name: 'REPOSITORY', value: 'weblogic-kubernetes-operator') ]
             }
         }
     }

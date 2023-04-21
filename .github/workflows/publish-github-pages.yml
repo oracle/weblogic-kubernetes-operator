@@ -8,9 +8,12 @@ name: "PublishGitHubPages"
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+    paths:
+      - 'documentation/**'
   schedule:
-    - cron: '15 3 * * 1'
+    - cron: '15 3 * * *'
 
 defaults:
   run:
@@ -36,19 +39,7 @@ jobs:
           path: gh-pages
           token: ${{ secrets.PUBLISH_SECRET }}
 
-      - name: Verify changes to documentation present
-        id: change-check
-        run: |
-          cd $GITHUB_WORKSPACE/main
-          X=`git diff HEAD~1 --name-only | { grep "^documentation" || test $? = 1; } | wc -l`
-          if [ $X == "0" ]; then
-            echo 'No changes to the documenation'
-          else
-            echo '::set-output name=DOCUMENTATION_CHANGED::true'
-          fi
-
       - name: Build and publish site
-        if: ${{ steps.change-check.outputs.DOCUMENTATION_CHANGED == 'true' }}
         run: |
           curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.108.0/hugo_0.108.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
