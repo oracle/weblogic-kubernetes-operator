@@ -74,13 +74,6 @@ pipeline {
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-<<<<<<< HEAD
-               defaultValue: '3.10.2'
-        )
-        string(name: 'ISTIO_VERSION',
-               description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
-               defaultValue: '1.16.1'
-=======
                defaultValue: '3.11.2'
         )
         choice(name: 'ISTIO_VERSION',
@@ -94,7 +87,6 @@ pipeline {
                    '1.10.4',
                    '1.9.9'
                ]
->>>>>>> origin/main
         )
 
         string(name: 'NUMBER_OF_THREADS',
