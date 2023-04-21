@@ -252,15 +252,15 @@ pipeline {
         )
         string(name: 'TEST_IMAGES_REPO',
                description: '',
-               defaultValue: "${ocir_url}"
+               defaultValue: "${env.WKT_OCIR_HOST}/${env.WKT_TENANCY}/"
         )
         choice(name: 'BASE_IMAGES_REPO',
-               choices: ["${ocir_url}", 'container-registry.oracle.com'],
+               choices: ["${env.WKT_OCIR_HOST}/${env.WKT_TENANCY}/", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
-               defaultValue: "${wko_tenancy}/test-images/weblogic"
+               defaultValue: "${env.WKT_TENANCY}/test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
                description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
@@ -268,7 +268,7 @@ pipeline {
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: "${wko_tenancy}/test-images/fmw-infrastructure"
+               defaultValue: "${env.WKT_TENANCY}/test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
                description: 'FWM Infra image tag',
@@ -276,7 +276,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
-               defaultValue: "${wko_tenancy}/test-images/database/enterprise"
+               defaultValue: "${env.WKT_TENANCY}/test-images/database/enterprise"
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
