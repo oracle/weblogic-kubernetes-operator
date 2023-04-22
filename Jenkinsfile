@@ -602,6 +602,7 @@ EOF
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
+                                        exit 1
                                     fi
                                 '''
                             }
