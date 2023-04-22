@@ -667,7 +667,7 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                             '''
                             archiveArtifacts(artifacts: "logdir/**/*")
-                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml')
+                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }
                 }
