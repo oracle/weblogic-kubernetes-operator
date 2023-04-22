@@ -9,6 +9,7 @@ import java.util.Optional;
 import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoImageForSpec;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -136,15 +137,13 @@ public interface TestConstants {
   // localhost:5000/middleware/weblogic:12.2.1.4 in kind and 
   // in non-kind cluster it will be used as is.
   public static final String DB_19C_IMAGE_TAG = "19.3.0.0";
-  public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
-      + (WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-      : WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG;
-  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
-      + (FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-      : FMWINFRA_IMAGE_NAME + ":" + FMWINFRA_IMAGE_TAG;
-  public static final String DB_IMAGE_TO_USE_IN_SPEC = KIND_REPO != null ? KIND_REPO
-      + (DB_IMAGE_NAME + ":" + DB_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-      : DB_IMAGE_NAME + ":" + DB_IMAGE_TAG;
+  public static final int BASE_IMAGES_REPO_PREFIX_LENGTH = BASE_IMAGES_REPO.length() + BASE_IMAGES_TENANCY.length() + 2;
+  public static final String WEBLOGIC_IMAGE_TO_USE_IN_SPEC =
+      getKindRepoImageForSpec(KIND_REPO, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
+  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC =
+      getKindRepoImageForSpec(KIND_REPO, FMWINFRA_IMAGE_NAME, FMWINFRA_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
+  public static final String DB_IMAGE_TO_USE_IN_SPEC =
+      getKindRepoImageForSpec(KIND_REPO, DB_IMAGE_NAME, DB_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
 
   // jenkins constants
   public static final String BUILD_ID = System.getProperty("wko.it.jenkins.build.id", "");
