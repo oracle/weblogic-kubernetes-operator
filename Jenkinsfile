@@ -376,7 +376,7 @@ pipeline {
                             export PATH=${runtime_path}
                             oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
                                 --name=helm/helm-v${HELM_VERSION}.tar.gz --file=helm.tar.gz \
-                                --config-file=/dev/null --auth=instance_principal
+                                --auth=instance_principal
                             tar zxf helm.tar.gz
                             mv linux-amd64/helm ${WORKSPACE}/bin/helm
                             rm -rf linux-amd64
@@ -405,7 +405,7 @@ pipeline {
                             export PATH=${runtime_path}
                             oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
                                 --name=kubectl/kubectl-v${KUBECTL_VERSION} --file=${WORKSPACE}/bin/kubectl \
-                                --config-file=/dev/null --auth=instance_principal
+                                --auth=instance_principal
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
@@ -421,7 +421,7 @@ pipeline {
                             export PATH=${runtime_path}
                             oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
                                 --name=kind/kind-v${KIND_VERSION} --file=${WORKSPACE}/bin/kind \
-                                --config-file=/dev/null --auth=instance_principal
+                                --auth=instance_principal
                             chmod +x "${WORKSPACE}/bin/kind"
                             kind version
                         '''
