@@ -134,18 +134,18 @@
                         <configuration>
                             <skip>${skipITs}</skip>
                             <rules>
-                                <requiresProperty>
+                                <requireProperty>
                                     <property>wko.it.base.images.repo</property>
                                     <message>Set the wko.it.base.images.repo property to specify the repo for pulling base weblogic/fmw images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
                                     <regexMessage>The wko.it.base.images.repo must start with an alphanumeric character</regexMessage>
-                                </requiresProperty>
-                                <requiresProperty>
+                                </requireProperty>
+                                <requireProperty>
                                     <property>wko.it.base.images.tenancy</property>
                                     <message>Set the wko.it.base.images.tenancy property to specify the tenancy to use to pull base weblogic/fmw images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
                                     <regexMessage>The wko.it.base.images.repo must start with an alphanumeric character</regexMessage>
-                                </requiresProperty>
+                                </requireProperty>
                                 <requireEnvironmentVariable>
                                     <message>Set the BASE_IMAGES_REPO_USERNAME environment variable to create pull secret for BASE_IMAGES_REPO.</message>
                                     <variableName>BASE_IMAGES_REPO_USERNAME</variableName>
@@ -158,18 +158,18 @@
                                     <message>Set the BASE_IMAGES_REPO_EMAIL environment variable to create pull secret for BASE_IMAGES_REPO.</message>
                                     <variableName>BASE_IMAGES_REPO_EMAIL</variableName>
                                 </requireEnvironmentVariable>
-                                <requiresProperty>
+                                <requireProperty>
                                     <property>wko.it.test.images.repo</property>
                                     <message>Set the wko.it.test.images.repo property to specify the repo for pulling local infra images and domain images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
                                     <regexMessage>The wko.it.test.images.repo must start with an alphanumeric character</regexMessage>
-                                </requiresProperty>
-                                <requiresProperty>
+                                </requireProperty>
+                                <requireProperty>
                                     <property>wko.it.test.images.tenancy</property>
                                     <message>Set the wko.it.test.images.tenancy property to specify the tenancy to use to pull local infra images and domain images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
                                     <regexMessage>The wko.it.test.images.repo must start with an alphanumeric character</regexMessage>
-                                </requiresProperty>
+                                </requireProperty>
                                 <requireEnvironmentVariable>
                                     <message>Set the TEST_IMAGES_REPO_USERNAME environment variable to create pull secret for TEST_IMAGES_REPO.</message>
                                     <variableName>TEST_IMAGES_REPO_USERNAME</variableName>
