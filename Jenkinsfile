@@ -636,7 +636,7 @@ EOF
                                     export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
-                                    export TEST_IMAGES_REPO_EMAIL"noreply@oracle.com"
+                                    export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
                                     fi
