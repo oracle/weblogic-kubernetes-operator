@@ -627,7 +627,7 @@ EOF
                         '''
                         withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
                             withCredentials([
-                                usernamePassword(credentialsId: 'ocir_creds', usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
+                                usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
                                     export BASE_IMAGES_REPO="${ocir_url}"
