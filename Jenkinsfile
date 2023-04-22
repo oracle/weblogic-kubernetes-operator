@@ -451,7 +451,7 @@ pipeline {
                               docker rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}" --name "${registry_name}" \
                                 ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
                             echo "Registry Host: ${registry_host}"
                         '''
