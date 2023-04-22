@@ -272,7 +272,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
-               defaultValue: "${env.WKT_TENANCY}/test-images/database/enterprise"
+               defaultValue: "test-images/database/enterprise"
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
