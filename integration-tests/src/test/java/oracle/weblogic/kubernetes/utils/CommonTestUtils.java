@@ -32,7 +32,6 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -1669,6 +1668,15 @@ public class CommonTestUtils {
     return propertyValue;
   }
 
+  /**
+   * Returns the image name.
+   *
+   * @param kindRepo      the kind repo value
+   * @param imageName     the image name
+   * @param imageTag      the image tag
+   * @param prefixLength  the prefix length of the image name
+   * @return the image name and tag
+   */
   public static String getKindRepoImageForSpec(String kindRepo, String imageName, String imageTag, int prefixLength) {
     String result = imageName + "/" + imageTag;
     if (kindRepo != null && kindRepo.length() > 0) {
@@ -1676,7 +1684,7 @@ public class CommonTestUtils {
       if (kindRepo.endsWith("/")) {
         kindRepo = kindRepo.substring(0, kindRepo.length() - 1);
       }
-      result = kindRepo + "/" + imageNoPrefix; 
+      result = kindRepo + "/" + imageNoPrefix;
     }
     return result;
   }
