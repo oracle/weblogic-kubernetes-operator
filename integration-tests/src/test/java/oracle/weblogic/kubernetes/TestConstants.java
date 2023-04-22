@@ -99,7 +99,9 @@ public interface TestConstants {
           ? getNonEmptySystemProperty("wko.it.test.images.repo") : "");
 
   public static final String DOMAIN_IMAGES_PREFIX = DOMAIN_IMAGES_REPO.length() > 0
-      ? DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : "";
+      ? (DOMAIN_IMAGES_REPO.endsWith(".ocir.io")
+      ? DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : DOMAIN_IMAGES_REPO + "/"
+      ) : "";
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
