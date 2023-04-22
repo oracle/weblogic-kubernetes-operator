@@ -98,21 +98,21 @@ public interface TestConstants {
       .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
           ? getNonEmptySystemProperty("wko.it.test.images.repo") : "");
 
-  public static final String DOMAIN_IMAGES_PREFIX = DOMAIN_IMAGES_REPO.length() > 0 ?
-      DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : "";
+  public static final String DOMAIN_IMAGES_PREFIX = DOMAIN_IMAGES_REPO.length() > 0
+      ? DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : "";
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
   //
-  public static final String WEBLOGIC_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
-      getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
+  public static final String WEBLOGIC_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+      + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
   public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
-  public static final String FMWINFRA_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
-      getNonEmptySystemProperty("wko.it.fmwinfra.image.name",  FMWINFRA_IMAGE_NAME_DEFAULT);
+  public static final String FMWINFRA_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+      + getNonEmptySystemProperty("wko.it.fmwinfra.image.name",  FMWINFRA_IMAGE_NAME_DEFAULT);
   public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag", 
         FMWINFRA_IMAGE_TAG_DEFAULT);
 
@@ -199,8 +199,8 @@ public interface TestConstants {
   public static final String APACHE_IMAGE_TAG_DEFAULT = "12.2.1.4";
 
   // Get APACHE_IMAGE_NAME/APACHE_IMAGE_TAG from env var, if it is not provided use OCIR default image values
-  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
-      getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
+  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+      + getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
   public static final String APACHE_IMAGE_TAG =
       getNonEmptySystemProperty("wko.it.apache.image.tag", APACHE_IMAGE_TAG_DEFAULT);
   public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_TAG;
@@ -209,8 +209,8 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
-      "/test-images/docker/elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5");
@@ -227,14 +227,14 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
-      "/test-images/docker/kibana";
+  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/docker/kibana";
   public static final String KIBANA_IMAGE = KIBANA_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
-  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
-      "/test-images/docker/logstash";
+  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/docker/logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
             + "/test-images/docker/fluentd-kubernetes-daemonset:"
@@ -247,7 +247,8 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-ai-image";
   public static final boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
-  public static final String BUSYBOX_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/test-images/docker/busybox";
+  public static final String BUSYBOX_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/docker/busybox";
   public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
