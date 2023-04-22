@@ -124,10 +124,6 @@ pipeline {
         ocir_url = "${ocir_host}/${wko_tenancy}/"
         ocir_creds = 'wkt-ocir-creds'
 
-        sonar_project_key = 'oracle_weblogic-kubernetes-operator'
-        sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
-        sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
-
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root = "${outdir}/k8s-pvroot"
@@ -252,15 +248,15 @@ pipeline {
         )
         string(name: 'TEST_IMAGES_REPO',
                description: '',
-               defaultValue: "${env.WKT_OCIR_HOST}/${env.WKT_TENANCY}/"
+               defaultValue: "${env.WKT_OCIR_HOST}"
         )
         choice(name: 'BASE_IMAGES_REPO',
-               choices: ["${env.WKT_OCIR_HOST}/${env.WKT_TENANCY}/", 'container-registry.oracle.com'],
+               choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
                description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
-               defaultValue: "${env.WKT_TENANCY}/test-images/weblogic"
+               defaultValue: "test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
                description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
@@ -268,7 +264,7 @@ pipeline {
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: "${env.WKT_TENANCY}/test-images/fmw-infrastructure"
+               defaultValue: "test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
                description: 'FWM Infra image tag',
@@ -364,43 +360,7 @@ pipeline {
                         }
                     }
                 }
-                /*
-                stage('Run Sonar Analysis') {
-                    steps {
-                        sh '''
-                            rm -rf ${WORKSPACE}/.mvn/maven.config
-                            mkdir -p ${WORKSPACE}/.mvn
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            if [ -z "${CHANGE_ID}" ]; then
-                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                            else
-                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                        '''
-                        withSonarQubeEnv('SonarCloud') {
-                            // For whatever reason, defining this property in the maven.config file is not working...
-                            //
-                            sh "mvn sonar:sonar"
-                        }
-                    }
-                }
 
-                stage('Verify Sonar Quality Gate') {
-                    steps {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                        }
-                    }
-                }
-                */
                 stage('Make Workspace bin directory') {
                     steps {
                         sh "mkdir -m777 -p ${WORKSPACE}/bin"
@@ -585,10 +545,8 @@ EOF
                         }
 
                         sh '''
-                            export PATH=${runtime_path}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
-                            export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                             if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                 PARALLEL_RUN='false'
@@ -607,8 +565,10 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
@@ -630,15 +590,14 @@ EOF
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
-                                    export BASE_IMAGES_REPO="${ocir_url}"
+                                    export PATH=${runtime_path}
+                                    export KUBECONFIG=${kubeconfig_file}
                                     export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
-                                    export KUBECONFIG=${kubeconfig_file}
-                                    export K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
                                     fi

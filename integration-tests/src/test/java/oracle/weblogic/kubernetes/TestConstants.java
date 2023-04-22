@@ -59,11 +59,10 @@ public interface TestConstants {
 
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
-  // Default for BASE_IMAGES_REPO is phx.ocir.io
-  public static final String BASE_IMAGES_REPO_DEFAULT = "phx.ocir.io";
-  public static final String BASE_IMAGES_REPO =
-      getNonEmptySystemProperty("wko.it.base.images.repo", BASE_IMAGES_REPO_DEFAULT);
-  // public static final String BASE_IMAGES_REPO = System.getenv("BASE_IMAGES_REPO");
+  //
+  public static final String BASE_IMAGES_REPO = System.getProperty("wko.it.base.images.repo");
+  public static final String BASE_IMAGES_TENANCY = System.getProperty("wko.it.base.images.tenancy");
+
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
   public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
   public static final String BASE_IMAGES_REPO_EMAIL = System.getenv("BASE_IMAGES_REPO_EMAIL");
@@ -72,9 +71,10 @@ public interface TestConstants {
   // TEST_IMAGES_REPO represents the repository (a) which contains few external
   // images such as nginx,elasticsearch,Oracle DB operator (b) all test domain 
   // images to be pushed into it.
-  // Default for TEST_IMAGES_REPO is phx.ocir.io
-  public static final String TEST_IMAGES_REPO =
-       getNonEmptySystemProperty("wko.it.test.images.repo", "fix-me");
+  //
+  public static final String TEST_IMAGES_REPO = System.getProperty("wko.it.test.images.repo");
+  public static final String TEST_IMAGES_TENANCY = System.getProperty("wko.it.test.images.tenancy");
+
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
   public static final String TEST_IMAGES_REPO_EMAIL = System.getenv("TEST_IMAGES_REPO_EMAIL");
@@ -98,30 +98,32 @@ public interface TestConstants {
       .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
           ? getNonEmptySystemProperty("wko.it.test.images.repo") : "");
 
+  public static final String DOMAIN_IMAGES_PREFIX = DOMAIN_IMAGES_REPO.length() > 0 ?
+      DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : "";
+
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
-  public static final String WEBLOGIC_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
+  //
+  public static final String WEBLOGIC_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
+      getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
   public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
-  public static final String FMWINFRA_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.fmwinfra.image.name", 
-        FMWINFRA_IMAGE_NAME_DEFAULT);
+  public static final String FMWINFRA_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
+      getNonEmptySystemProperty("wko.it.fmwinfra.image.name",  FMWINFRA_IMAGE_NAME_DEFAULT);
   public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag", 
         FMWINFRA_IMAGE_TAG_DEFAULT);
 
   // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
   // if base images repo is OCIR use OCIR default image values
-  public static final String DB_IMAGE_NAME =
-      BASE_IMAGES_REPO + "/" + getNonEmptySystemProperty("wko.it.db.image.name",
-      DB_IMAGE_NAME_DEFAULT);
+  public static final String DB_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
+      getNonEmptySystemProperty("wko.it.db.image.name", DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
   // WebLogic Base Image with Japanese Locale
-  public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_REPO + "test-images/weblogic";
+  public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/test-images/weblogic";
   public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
 
   // For kind, replace repo name in image name with KIND_REPO, 
@@ -180,7 +182,7 @@ public interface TestConstants {
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_CHART_NAME = "traefik";
-  public static final String TRAEFIK_INGRESS_IMAGE_NAME = "test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/traefik-ingress/traefik";
   public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
 
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
@@ -197,8 +199,8 @@ public interface TestConstants {
   public static final String APACHE_IMAGE_TAG_DEFAULT = "12.2.1.4";
 
   // Get APACHE_IMAGE_NAME/APACHE_IMAGE_TAG from env var, if it is not provided use OCIR default image values
-  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/"
-      + getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
+  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/" +
+      getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
   public static final String APACHE_IMAGE_TAG =
       getNonEmptySystemProperty("wko.it.apache.image.tag", APACHE_IMAGE_TAG_DEFAULT);
   public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_TAG;
@@ -207,8 +209,8 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO
-         +  "test-images/docker/elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
+      "/test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5");
@@ -225,25 +227,27 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "test-images/docker/kibana";
+  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
+      "/test-images/docker/kibana";
   public static final String KIBANA_IMAGE = KIBANA_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
-  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "test-images/docker/logstash";
+  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY +
+      "/test-images/docker/logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
-  public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO
-            + "test-images/docker/fluentd-kubernetes-daemonset:"
+  public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+            + "/test-images/docker/fluentd-kubernetes-daemonset:"
             + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
   // MII image constants
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
-  public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
-  public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
+  public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-basic-image";
+  public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-ai-image";
   public static final boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
-  public static final String BUSYBOX_IMAGE = TEST_IMAGES_REPO + "test-images/docker/busybox";
+  public static final String BUSYBOX_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/test-images/docker/busybox";
   public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
@@ -263,7 +267,7 @@ public interface TestConstants {
   // WDT domain-in-image constants
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
-  public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
+  public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "wdt-basic-image";
   // Skip the mii/wdt basic image build locally if needed
   public static final String WDT_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
@@ -289,30 +293,30 @@ public interface TestConstants {
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
 
-  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/prometheus/prometheus";
+  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/prometheus/prometheus";
   public static final String PROMETHEUS_IMAGE_TAG = "v2.39.1";
 
-  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/prometheus/alertmanager";
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/prometheus/alertmanager";
   public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_TAG = "v0.24.0";
 
-  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/jimmidyson/configmap-reload";
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/jimmidyson/configmap-reload";
   public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG = "v0.5.0";
 
-  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/prometheus/pushgateway";
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/prometheus/pushgateway";
   public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
 
-  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/prometheus/node-exporter";
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/prometheus/node-exporter";
   public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_TAG = "v1.3.1";
 
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
-  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_REPO
-      + "test-images/grafana/grafana";
+  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
+      + "/test-images/grafana/grafana";
   public static final String GRAFANA_IMAGE_TAG = "9.3.0";
 
   // credentials
@@ -395,7 +399,8 @@ public interface TestConstants {
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
-  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "test-images/database/operator:0.2.0";
+  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY
+      + "/test-images/database/operator:0.2.0";
   public static final String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
