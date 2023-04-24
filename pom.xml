@@ -630,7 +630,7 @@
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
     <kotlin-stdlib-version>1.8.20</kotlin-stdlib-version>
-    <okhttp-version>4.10.0</okhttp-version>
+    <okhttp-version>4.11.0</okhttp-version>
     <junit.jupiter.version>5.9.2</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
