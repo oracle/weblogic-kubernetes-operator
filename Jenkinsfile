@@ -121,7 +121,6 @@ pipeline {
     environment {
         ocir_host = "${env.WKT_OCIR_HOST}"
         wko_tenancy = "${env.WKT_TENANCY}"
-        ocir_url = "${ocir_host}/${wko_tenancy}/"
         ocir_creds = 'wkt-ocir-creds'
 
         outdir = "${WORKSPACE}/staging"
