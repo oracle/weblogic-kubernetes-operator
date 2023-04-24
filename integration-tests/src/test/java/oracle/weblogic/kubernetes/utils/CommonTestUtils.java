@@ -1669,6 +1669,32 @@ public class CommonTestUtils {
   }
 
   /**
+   * Given a repo and tenancy name, determine the prefix length.  For example,
+   * phx.ocir.io/foobar/test-images/myimage will treat phx.ocir.io/foobar/ as
+   * the prefix so the length is 19.
+   *
+   * @param baseRepo    base repo name
+   * @param baseTenancy base tenancy name
+   * @return prefix length to strip when converting to internal repository name
+   */
+  public static int getBaseImagesPrefixLength(String baseRepo, String baseTenancy) {
+    int result = 0;
+
+    if (baseRepo != null && baseRepo.length() > 0) {
+      // +1 for the trailing slash
+      result += baseRepo.length() + 1;
+
+      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")) {
+        if (baseTenancy != null && baseTenancy.length() > 0) {
+          // +1 for the trailing slash
+          result += baseTenancy.length() + 1;
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
    * Returns the image name.
    *
    * @param kindRepo      the kind repo value
