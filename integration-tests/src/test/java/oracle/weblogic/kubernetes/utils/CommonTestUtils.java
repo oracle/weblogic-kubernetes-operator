@@ -1704,9 +1704,9 @@ public class CommonTestUtils {
    * @return the image name and tag
    */
   public static String getKindRepoImageForSpec(String kindRepo, String imageName, String imageTag, int prefixLength) {
-    String result = imageName + "/" + imageTag;
+    String result = imageName + ":" + imageTag;
     if (kindRepo != null && kindRepo.length() > 0) {
-      String imageNoPrefix = result.substring(prefixLength + 1);
+      String imageNoPrefix = result.substring(prefixLength);
       if (kindRepo.endsWith("/")) {
         kindRepo = kindRepo.substring(0, kindRepo.length() - 1);
       }
