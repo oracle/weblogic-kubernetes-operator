@@ -1690,6 +1690,28 @@ public class CommonTestUtils {
   }
 
   /**
+   * Another helper method to deal with the complexities of initializing test constants.
+   *
+   * @param repo    the domain repo
+   * @param tenancy the test tenancy
+   * @return the domain prefix
+   */
+  public static String getDomainImagePrefix(String repo, String tenancy) {
+    if (repo != null && repo.length() > 0) {
+      if (repo.endsWith("/")) {
+        repo = repo.substring(0, repo.length() - 1);
+      }
+
+      if (repo.endsWith(".com")) {
+        repo += "/";
+      } else {
+        repo += "/" + tenancy + "/";
+      }
+    }
+    return repo;
+  }
+
+  /**
    * Get a unique name.
    * @param prefix prefix of the name
    * @param suffix suffix of the name

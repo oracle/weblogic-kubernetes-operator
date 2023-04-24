@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listNamespaces;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDomainImagePrefix;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoImageForSpec;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
@@ -99,10 +100,7 @@ public interface TestConstants {
       .orElse(getNonEmptySystemProperty("wko.it.test.images.repo") != null
           ? getNonEmptySystemProperty("wko.it.test.images.repo") : "");
 
-  public static final String DOMAIN_IMAGES_PREFIX = DOMAIN_IMAGES_REPO.length() > 0
-      ? (DOMAIN_IMAGES_REPO.endsWith(".ocir.io")
-      ? DOMAIN_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/" : DOMAIN_IMAGES_REPO + "/"
-      ) : "";
+  public static final String DOMAIN_IMAGES_PREFIX = getDomainImagePrefix(DOMAIN_IMAGES_REPO, TEST_IMAGES_TENANCY);
 
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
