@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainOnPVType;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -485,6 +486,16 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
     getOrCreateConfiguration().setInitializeDomainOnPV(initializeDomainOnPV);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withConfigurationForInitializeDomainOnPV(
+      InitializeDomainOnPV initializeDomainOnPV, String volumeName, String pvcName, String mountPath) {
+    getOrCreateConfiguration().setInitializeDomainOnPV(initializeDomainOnPV);
+    this.withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    this.withAdditionalVolumeMount(volumeName, mountPath);
+    this.withAdditionalPvClaimVolume(volumeName, pvcName);
     return this;
   }
 

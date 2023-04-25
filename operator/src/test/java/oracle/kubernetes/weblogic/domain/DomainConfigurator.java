@@ -663,6 +663,9 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initPvDomain);
 
+  public abstract DomainConfigurator withConfigurationForInitializeDomainOnPV(
+      InitializeDomainOnPV initializeDomainOnPV, String volumeName, String pvcName, String mountPath);
+
   /**
    * Add OPSS wallet password secret for the domain resource's initializeDomainOnPV.
    *
