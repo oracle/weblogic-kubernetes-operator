@@ -36,6 +36,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILA
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ROLLING;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -146,6 +147,10 @@ public class DomainStatus {
     return conditions;
   }
 
+  public DomainStatus addCondition(DomainCondition newCondition) {
+    return addCondition(newCondition, false);
+  }
+
   /**
    * Adds a condition to the status, replacing any existing conditions with the same type, and removing other
    * conditions according to the domain rules. Any existing matching condition will be preserved and unmarked.
@@ -153,10 +158,10 @@ public class DomainStatus {
    * @param newCondition the condition to add.
    * @return this object.
    */
-  public DomainStatus addCondition(DomainCondition newCondition) {
+  public DomainStatus addCondition(DomainCondition newCondition, boolean isInitDomainOnPV) {
     if (newCondition.isNotValid()) {
       throw new IllegalArgumentException("May not add condition " + newCondition);
-    } else if (newCondition.isRetriableFailure()) {
+    } else if (isRetryableFailure(newCondition, isInitDomainOnPV)) {
       lastFailureTime = newCondition.getLastTransitionTime();
     }
 
@@ -175,6 +180,15 @@ public class DomainStatus {
     Collections.sort(conditions);
     setStatusSummary();
     return this;
+  }
+
+  private boolean isRetryableFailure(DomainCondition newCondition, boolean isInitDomainOnPV) {
+    return newCondition.isRetriableFailure()
+        && !initDomainOnPVIntropsectionFailure(getReason(newCondition), isInitDomainOnPV);
+  }
+
+  private boolean initDomainOnPVIntropsectionFailure(DomainFailureReason reason, boolean isInitDomainOnPV) {
+    return isInitDomainOnPV && reason.equals(INTROSPECTION);
   }
 
   private void unmarkMatchingCondition(DomainCondition newCondition) {
@@ -329,6 +343,10 @@ public class DomainStatus {
    */
   public String getReason() {
     return reason;
+  }
+
+  private DomainFailureReason getReason(DomainCondition newCondition) {
+    return newCondition.getReason();
   }
 
   /**
@@ -704,10 +722,12 @@ public class DomainStatus {
    * @param reason the underlying reason
    * @param message the underlying message
    */
-  public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message) {
+  public DomainCondition createAdjustedFailedCondition(DomainFailureReason reason, String message,
+                                                       boolean isInitDomainOnPV) {
     DomainFailureReason effectiveReason = reason;
     String effectiveMessage = message;
-    if (hasJustGotFatalIntrospectorError(effectiveMessage)) {
+    if (hasJustGotFatalIntrospectorError(effectiveMessage)
+        || initDomainOnPVIntropsectionFailure(reason, isInitDomainOnPV)) {
       effectiveReason = ABORTED;
       effectiveMessage = FATAL_INTROSPECTOR_ERROR_MSG + effectiveMessage;
     }
