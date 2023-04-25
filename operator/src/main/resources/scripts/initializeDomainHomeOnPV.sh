@@ -7,21 +7,21 @@ if [ "${debug}" == "true" ]; then set -x; fi;
 . ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
 checkEnv DOMAIN_HOME AUXILIARY_IMAGE_TARGET_PATH || exit 1
-
+default_ugid=${DEFAULT_UGID:-1000:0}
 mkdir -m 750 -p "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/" || exit 1
-chown -R 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}"
+chown -R ${default_ugid} "${AUXILIARY_IMAGE_TARGET_PATH}"
 output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.out"
 
 failure_exit() {
-  chown 1000:0 $output_file
+  chown ${default_ugid} $output_file
   cat $output_file
   exit 1
 }
 
 create_success_file_and_exit() {
   echo "0" > "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
-  chown 1000:0 "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
-  chown 1000:0 $output_file 2>&1
+  chown ${default_ugid} "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.suc"
+  chown ${default_ugid} $output_file 2>&1
   cat $output_file
   exit
 }
@@ -60,7 +60,7 @@ create_directory_path_and_set_permission() {
            next_level_dir=${dir_array[@]:0:i+1}
            next_level_dir="/${next_level_dir// //}"
            trace "Changing ownership of ${next_level_dir}" >> "$output_file"
-           if ! errmsg=$(chown -R 1000:0 "${next_level_dir}" 2>&1)
+           if ! errmsg=$(chown -R ${default_ugid} "${next_level_dir}" 2>&1)
              then
                trace SEVERE "Failed to change directory permission at ${next_level_dir} Error: $errmsg" >> "$output_file"
                failure_exit
@@ -88,7 +88,7 @@ adjust_domain_home_parent_dir_ownership() {
   parent_dir=${dir_array[@]:0:${number_of_tokens}-1}
   parent_dir="/${parent_dir// //}"
   trace "Changing ownership of ${parent_dir}" >> "$output_file"
-  if ! errmsg=$(chown -R 1000:0 "${parent_dir}" 2>&1)
+  if ! errmsg=$(chown -R ${default_ugid} "${parent_dir}" 2>&1)
     then
       trace SEVERE "Failed to adjust directory ownership at ${parent_dir} Error: $errmsg" >> "$output_file"
       failure_exit
