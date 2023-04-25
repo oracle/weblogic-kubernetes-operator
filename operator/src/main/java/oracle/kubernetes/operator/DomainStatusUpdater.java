@@ -1577,10 +1577,14 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        addFailure(status, status.createAdjustedFailedCondition(reason, message));
-        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+        addFailure(status, status.createAdjustedFailedCondition(reason, message, isInitializeDomainOnPV()));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false), isInitializeDomainOnPV());
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
+      }
+
+      private boolean isInitializeDomainOnPV() {
+        return getDomain().isInitializeDomainOnPV();
       }
 
     }
