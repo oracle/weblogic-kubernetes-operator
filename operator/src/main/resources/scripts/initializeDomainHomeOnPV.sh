@@ -28,7 +28,7 @@ create_success_file_and_exit() {
 
 create_directory_path_and_set_permission() {
   DIR_NAME="$1"
-  trace "Creating directory and set path for  ${DIR_NAME}"
+  trace "Creating directory and set path for  ${DIR_NAME}" >> "$output_file"
   if [ ! -z "${DIR_NAME}" ] ; then
     IFS='/'
     # domain home is tokenized by '/' now
@@ -59,6 +59,7 @@ create_directory_path_and_set_permission() {
            fi
            next_level_dir=${dir_array[@]:0:i+1}
            next_level_dir="/${next_level_dir// //}"
+           trace "Changing ownership of ${next_level_dir}" >> "$output_file"
            if ! errmsg=$(chown -R 1000:0 "${next_level_dir}" 2>&1)
              then
                trace SEVERE "Failed to change directory permission at ${next_level_dir} Error: $errmsg" >> "$output_file"
@@ -74,6 +75,27 @@ create_directory_path_and_set_permission() {
   fi
 }
 
+adjust_domain_home_parent_dir_ownership() {
+  DOMAIN_HOME_DIR="$1"
+  trace "Adjusting ownership of the parent of domain home ${DOMAIN_HOME_DIR}" >> "$output_file"
+  IFS='/'
+  # domain home is tokenized by '/' now
+  read -a dir_array <<< "${DOMAIN_HOME_DIR}"
+  IFS=$OLDIFS
+
+  number_of_tokens=${#dir_array[@]}
+  trace "Number of tokens in domain home $number_of_tokens"  >> "$output_file"
+  parent_dir=${dir_array[@]:0:${number_of_tokens}-1}
+  parent_dir="/${parent_dir// //}"
+  trace "Changing ownership of ${parent_dir}" >> "$output_file"
+  if ! errmsg=$(chown -R 1000:0 "${parent_dir}" 2>&1)
+    then
+      trace SEVERE "Failed to adjust directory ownership at ${parent_dir} Error: $errmsg" >> "$output_file"
+      failure_exit
+  fi
+
+  trace "Adjusting directory ownership completed" >> "$output_file"
+}
 
 ORIGIFS=$IFS
 trace "DOMAIN HOME is $DOMAIN_HOME" > "$output_file"
@@ -94,6 +116,12 @@ trace "Creating path for domain home '$DOMAIN_HOME'" >> "$output_file"
 create_directory_path_and_set_permission "${DOMAIN_HOME}"
 if [ $? -ne 0 ] ; then
   trace SEVERE "Error: Unable to initialize domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME is not under mountPath in any of the 'domain.spec.serverPod.volumeMounts'" >> "$output_file"
+  failure_exit
+fi
+
+adjust_domain_home_parent_dir_ownership "${DOMAIN_HOME}"
+if [ $? -ne 0 ] ; then
+  trace SEVERE "Error: Unable to adjust ownership of parent directory of domain home directory: 'domain.spec.domainHome' $DOMAIN_HOME" >> "$output_file"
   failure_exit
 fi
 
