@@ -18,6 +18,19 @@ You can also install the Traefik operator with a custom `values.yaml` file. For 
 $ helm install traefik-operator traefik/traefik --namespace traefik --values values.yaml
 ```
 
+After the installation is complete, you can check the Traefik ingress status:
+
+```shell
+$ kubectl -n traefik get services
+```
+
+```
+NAME               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)                      AGE
+traefik-operator   LoadBalancer   10.96.x.y    129.x.y.z   80:30518/TCP,443:30144/TCP   4m49s
+```
+
+If the `EXTERNAL-IP` column shows `<pending>`, you can access the Traefik ingress through your Kubernetes cluster address and nodeports `30518/30144`.  For example, `http://<k8s cluster address>:30518/myappurl` or `https://<k8s cluster address>:30144/myappurl`.  If the `EXTERNAL-IP` column shows a real IP address, then you can also access the ingress through the IP address that is the external load balancer address without specifying the port value. For example,  `http://129.x.y.z/myappurl` or `https://129.x.y.z/myappurl`.
+
 ## Configure Traefik as a load balancer for WebLogic domains
 This section describes how to use Traefik to handle traffic to backend WebLogic domains.
 
@@ -42,7 +55,10 @@ ingressroute.traefik.containo.us/traefik-hostrouting-2 created
 ```
 Now you can send requests to different WebLogic domains with the unique Traefik entry point of different host names as defined in the route section of the `host-routing.yaml` file.
 ```shell
-# Get the ingress controller web port
+# Get the ingress controller service nodeport values
+# HOSTNAME is your Kubernetes cluster address
+# See installation section for how to access the ingress
+
 $ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/

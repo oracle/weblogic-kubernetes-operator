@@ -45,6 +45,22 @@ $ kubectl exec -it $POD_NAME -n nginx -- /nginx-ingress-controller --version
 ```
 > **NOTE**: All the generated Kubernetes resources of the NGINX operator have names controlled by the NGINX Helm chart. In our case, we use `releaseName` of `nginx-operator`.
 
+After the installation is complete, you can check the NGINX ingress status:
+
+```shell
+$ kubectl -n nginx get services
+```
+
+```
+pod/nginx-operator-ingress-nginx-controller-84fbd64787-v4p4c   1/1     Running   0          11m
+NAME                                                        TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                      AGE
+service/nginx-operator-ingress-nginx-controller             LoadBalancer   10.107.159.96   <pending>     80:31470/TCP,443:32465/TCP   11m
+service/nginx-operator-ingress-nginx-controller-admission   ClusterIP      10.109.12.133   <none>        443/TCP                      11m
+```
+
+If the `EXTERNAL-IP` column shows `<pending>`, you can access the NGINX ingress through your Kubernetes cluster address and nodeports `31470/32465`.  For example, `http://<k8s cluster address>:31470/myappurl` or `https://<k8s cluster address>:32465/myappurl`.  If the `EXTERNAL-IP` column shows a real IP address, then you can also access the ingress through the IP address that is the external load balancer address without specifying the port value. For example,  `http://<ip address>/myappurl` or `https://<ip address>/myappurl`.
+
+
 ## Configure NGINX as a load balancer for WebLogic domains
 We'll demonstrate how to use NGINX to handle traffic to backend WebLogic domains.
 
@@ -69,7 +85,9 @@ ingress.networking.k8s.io/domain2-ingress-host created
 ```
 Now you can send requests to different WebLogic domains with the unique NGINX entry point of different host names as defined in the route section of the `host-routing.yaml` file.
 ```shell
-# Get the ingress controller web port
+# Get the ingress controller service nodeport values
+# HOSTNAME is your Kubernetes cluster address
+# See installation section for how to access the ingress
 $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
