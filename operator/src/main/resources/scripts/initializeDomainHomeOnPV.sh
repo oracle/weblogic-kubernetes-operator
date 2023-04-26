@@ -7,7 +7,7 @@ if [ "${debug}" == "true" ]; then set -x; fi;
 . ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
 checkEnv DOMAIN_HOME AUXILIARY_IMAGE_TARGET_PATH || exit 1
-default_ugid=${DEFAULT_UGID:-1000:0}
+default_ugid=${DOMAIN_HOME_ON_PV_DEFAULT_UGID:-1000:0}
 mkdir -m 750 -p "${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/" || exit 1
 chown -R ${default_ugid} "${AUXILIARY_IMAGE_TARGET_PATH}"
 output_file="${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/initializeDomainHomeOnPV.out"

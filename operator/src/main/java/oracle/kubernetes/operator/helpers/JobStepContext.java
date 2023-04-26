@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -474,11 +475,34 @@ public class JobStepContext extends BasePodStepContext {
         .env(getDomain().getAdminServerSpec().getEnvironmentVariables())
         .addEnvItem(new V1EnvVar().name(DOMAIN_HOME).value(getDomainHome()))
         .addEnvItem(new V1EnvVar().name(ServerEnvVars.LOG_HOME).value(getEffectiveLogHome()))
+        .addEnvItem(new V1EnvVar().name(ServerEnvVars.DOMAIN_HOME_ON_PV_DEFAULT_UGID)
+                .value(getDomainHomeOnPVHomeOwnership()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
         .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
         .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
     );
+  }
+
+  private String getDomainHomeOnPVHomeOwnership() {
+    Long uid = Optional.ofNullable(getDomain().getAdminServerSpec())
+                    .map(EffectiveServerSpec::getPodSecurityContext)
+                            .map(V1PodSecurityContext::getRunAsUser)
+                                    .orElse(-1L);
+    Long gid = Optional.ofNullable(getDomain().getAdminServerSpec())
+            .map(EffectiveServerSpec::getPodSecurityContext)
+            .map(V1PodSecurityContext::getRunAsGroup)
+            .orElse(-1L);
+
+    if ("OpenShift".equals(getKubernetesPlatform())) {
+      uid = (uid == -1L) ? 1000L : uid;
+      gid = (gid == -1L) ? 0L : gid;
+    } else {
+      uid = (uid == -1L) ? 1000L : uid;
+      gid = (gid == -1L) ? 1000L : gid;
+    }
+
+    return uid + ":" + gid;
   }
 
   @Override
