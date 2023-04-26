@@ -305,7 +305,8 @@ pipeline {
                 anyOf {
                     changeRequest()
                     branch 'main'
-                    branch 'release/*'
+                    branch 'release/4.0'
+                    branch 'release/3.4'
                 }
             }
             stages {
@@ -657,7 +658,8 @@ EOF
             when {
                 anyOf {
                     branch 'main'
-                    branch 'release/*'
+                    branch 'release/4.0'
+                    branch 'release/3.4'
                 }
                 anyOf {
                     not { triggeredBy 'TimerTrigger' }
