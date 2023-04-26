@@ -1669,6 +1669,75 @@ public class CommonTestUtils {
   }
 
   /**
+   * Given a repo and tenancy name, determine the prefix length.  For example,
+   * phx.ocir.io/foobar/test-images/myimage will treat phx.ocir.io/foobar/ as
+   * the prefix so the length is 19.
+   *
+   * @param baseRepo    base repo name
+   * @param baseTenancy base tenancy name
+   * @return prefix length to strip when converting to internal repository name
+   */
+  public static int getBaseImagesPrefixLength(String baseRepo, String baseTenancy) {
+    int result = 0;
+
+    if (baseRepo != null && baseRepo.length() > 0) {
+      // +1 for the trailing slash
+      result += baseRepo.length() + 1;
+
+      if (!baseRepo.equalsIgnoreCase("container-registry.oracle.com")) {
+        if (baseTenancy != null && baseTenancy.length() > 0) {
+          // +1 for the trailing slash
+          result += baseTenancy.length() + 1;
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Returns the image name.
+   *
+   * @param kindRepo      the kind repo value
+   * @param imageName     the image name
+   * @param imageTag      the image tag
+   * @param prefixLength  the prefix length of the image name
+   * @return the image name and tag
+   */
+  public static String getKindRepoImageForSpec(String kindRepo, String imageName, String imageTag, int prefixLength) {
+    String result = imageName + ":" + imageTag;
+    if (kindRepo != null && kindRepo.length() > 0) {
+      String imageNoPrefix = result.substring(prefixLength);
+      if (kindRepo.endsWith("/")) {
+        kindRepo = kindRepo.substring(0, kindRepo.length() - 1);
+      }
+      result = kindRepo + "/" + imageNoPrefix;
+    }
+    return result;
+  }
+
+  /**
+   * Another helper method to deal with the complexities of initializing test constants.
+   *
+   * @param repo    the domain repo
+   * @param tenancy the test tenancy
+   * @return the domain prefix
+   */
+  public static String getDomainImagePrefix(String repo, String tenancy) {
+    if (repo != null && repo.length() > 0) {
+      if (repo.endsWith("/")) {
+        repo = repo.substring(0, repo.length() - 1);
+      }
+
+      if (repo.endsWith(".com")) {
+        repo += "/";
+      } else {
+        repo += "/" + tenancy + "/";
+      }
+    }
+    return repo;
+  }
+
+  /**
    * Get a unique name.
    * @param prefix prefix of the name
    * @param suffix suffix of the name
