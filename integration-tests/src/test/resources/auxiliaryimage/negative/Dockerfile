@@ -1,4 +1,4 @@
-# Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This is a sample Dockerfile for supplying Model in Image model files
@@ -16,7 +16,8 @@
 #   Default '/auxiliary'.
 #
 
-FROM phx.ocir.io/weblogick8s/test-images/docker/busybox:1.34.1
+ARG TENANCY=devwebogic
+FROM phx.ocir.io/${TENANCY}/test-images/docker/busybox:1.34.1
 ARG AUXILIARY_IMAGE_PATH=/auxiliary
 ARG USER=tester
 ARG USERID=1001

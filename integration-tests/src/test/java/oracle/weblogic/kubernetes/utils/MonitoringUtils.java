@@ -960,7 +960,7 @@ public class MonitoringUtils {
     logger.info("Create model in image domain {0} in namespace {1} using image {2}",
         domainUid, namespace, miiImage);
     if (monexpConfig != null) {
-      //String monexpImage = "phx.ocir.io/weblogick8s/exporter:beta";
+      //String monexpImage = "${OCIR_HOST}/${WKT_TENANCY}/exporter:beta";
       logger.info("yaml config file path : " + monexpConfig);
       String contents = null;
       try {

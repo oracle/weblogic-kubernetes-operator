@@ -49,13 +49,18 @@ public class TraefikParams {
     return helmParams;
   }
 
+  public TraefikParams traefikImage(String traefikImage) {
+    this.traefikImage = traefikImage;
+    return this;
+  }
+
   public TraefikParams traefikRegistry(String traefikRegistry) {
     this.traefikRegistry = traefikRegistry;
     return this;
   }
 
-  public TraefikParams traefikImage(String traefikImage) {
-    this.traefikImage = traefikImage;
+  public TraefikParams traefikImageTag(String traefikImageTag) {
+    this.traefikImageTag = traefikImageTag;
     return this;
   }
 
@@ -77,7 +82,7 @@ public class TraefikParams {
     values.put(TRAEFIK_IMAGE, traefikImage);
     values.put(TRAEFIK_IMAGE_REGISTRY, traefikRegistry);
     values.put(TRAEFIK_IMAGE_TAG, traefikImageTag);
-    values.put(TRAEFIK_IMAGE_REGISTRY, traefikRegistry);
+
     values.values().removeIf(Objects::isNull);
     return values;
   }

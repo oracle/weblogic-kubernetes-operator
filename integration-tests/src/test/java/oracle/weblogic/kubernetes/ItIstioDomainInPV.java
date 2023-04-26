@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -212,7 +212,7 @@ class ItIstioDomainInPV  {
     // Add the LANG environment variable to ja_JP.utf8
     String imageLocation = null;
     if (KIND_REPO != null) {
-      imageLocation = KIND_REPO + "weblogick8s/test-images/weblogic:" + LOCALE_IMAGE_TAG;
+      imageLocation = KIND_REPO + "test-images/weblogic:" + LOCALE_IMAGE_TAG;
     } else {
       imageLocation = LOCALE_IMAGE_NAME + ":" + LOCALE_IMAGE_TAG;
     }
