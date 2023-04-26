@@ -23,6 +23,9 @@ public class ServerEnvVars {
   /** The path to the domain home, either in a PV or image. */
   public static final String DOMAIN_HOME = "DOMAIN_HOME";
 
+  /** Default uid:gid for the domain home ownership when creating domain on pv. */
+  public static final String DOMAIN_HOME_ON_PV_DEFAULT_UGID = "DOMAIN_HOME_ON_PV_DEFAULT_UGID";
+
   /** The path to the node manager home, either in a PV or image. */
   public static final String NODEMGR_HOME = "NODEMGR_HOME";
 
@@ -75,7 +78,7 @@ public class ServerEnvVars {
         DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, NODEMGR_HOME, SERVER_NAME, SERVICE_NAME,
         ADMIN_NAME, AS_SERVICE_NAME, ADMIN_PORT, ADMIN_PORT_SECURE, ADMIN_SERVER_PORT_SECURE,
         LOG_HOME, SERVER_OUT_IN_POD_LOG, DATA_HOME, ACCESS_LOG_IN_LOG_HOME, DYNAMIC_CONFIG_OVERRIDE,
-        KUBERNETES_PLATFORM);
+          DOMAIN_HOME_ON_PV_DEFAULT_UGID, KUBERNETES_PLATFORM);
 
   static boolean isReserved(String name) {
     return RESERVED_NAMES.contains(name);
