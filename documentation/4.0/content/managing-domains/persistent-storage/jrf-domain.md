@@ -64,7 +64,7 @@ The password must be at least 8 alphanumeric characters with one special charact
 Once the domain is created, the Operator will automatically export the `OPSS wallet` and 
 stored it in an introspector configmap, the name of the configmap follows the pattern `<domain uid>-weblogic-domain-introspect-cm` 
 with key `ewallet.p12`.  You can export this file and save it in a safe place, we provide a utility 
-(TODO: link here) for extracting this file and store it in a Kubernetes secret `walletFileSecret`.
+ [OPSS wallet utility](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh)for extracting this file and store it in a Kubernetes secret `walletFileSecret`.
 
 For disaster recovery, in case you need to recreate the domain and reconnect with existing `RCU schema`:
 

@@ -183,7 +183,8 @@ kubectl -n <domain namespace> get domain <domain uid>
 ```
 2. Clean up domain home.  If you need to delete the domain home to recover from an error or recreate the domain home, you can delete the `PVC` 
 if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC` or attach a pod
-to the shared volume and the access the pod to remove the contents.  There is a sample script here (LINK) if you are not familiar with the process.
+to the shared volume and the access the pod to remove the contents.  There is a sample script 
+[Domain on PV helper shell script](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh) if you are not familiar with the process.
 3. Check the operator log.  Additional error messages may be available in the Operator log.
 ```
 kubectl -n <operator namespace> logs <operator pod name>
