@@ -19,6 +19,8 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
+import oracle.kubernetes.operator.DomainOnPVType;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -421,6 +423,11 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withModel(Model model) {
+    getOrCreateConfiguration().withModel(model);
+    return this;
+  }
 
   @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
@@ -431,6 +438,30 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withOpssWalletFileSecret(String secret) {
     getOrCreateOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitializeDomainOnPVOpssWalletPasswordSecret(String secret) {
+    getOrCreateInitializeDomainOnPVOpss().withWalletPasswordSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitializeDomainOnPVOpssWalletFileSecret(String secret) {
+    getOrCreateInitializeDomainOnPVOpss().withWalletFileSecret(secret);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitializeDomainOnPVType(DomainOnPVType type) {
+    getOrCreateInitializeDomainOnPVDomain().domainType(type);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withDomainCreationConfigMap(String cm) {
+    getOrCreateInitializeDomainOnPVDomain().domainCreationConfigMap(cm);
     return this;
   }
 
@@ -449,6 +480,22 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withFailureRetryLimitMinutes(long limitMinutes) {
     getDomainSpec().setFailureRetryLimitMinutes(limitMinutes);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    getOrCreateConfiguration().setInitializeDomainOnPV(initializeDomainOnPV);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withConfigurationForInitializeDomainOnPV(
+      InitializeDomainOnPV initializeDomainOnPV, String volumeName, String pvcName, String mountPath) {
+    getOrCreateConfiguration().setInitializeDomainOnPV(initializeDomainOnPV);
+    this.withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME);
+    this.withAdditionalVolumeMount(volumeName, mountPath);
+    this.withAdditionalPvClaimVolume(volumeName, pvcName);
     return this;
   }
 
@@ -474,6 +521,30 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       configuration.setOpss(new Opss());
     }
     return configuration.getOpss();   
+  }
+
+  private InitializeDomainOnPV getOrCreateInitializeDomainOnPV() {
+    Configuration configuration = getOrCreateConfiguration();
+    if (configuration.getInitializeDomainOnPV() == null) {
+      configuration.setInitializeDomainOnPV(new InitializeDomainOnPV());
+    }
+    return configuration.getInitializeDomainOnPV();
+  }
+
+  private DomainOnPV getOrCreateInitializeDomainOnPVDomain() {
+    InitializeDomainOnPV initializeDomainOnPV = getOrCreateInitializeDomainOnPV();
+    if (initializeDomainOnPV.getDomain() == null) {
+      initializeDomainOnPV.domain(new DomainOnPV());
+    }
+    return initializeDomainOnPV.getDomain();
+  }
+
+  private Opss getOrCreateInitializeDomainOnPVOpss() {
+    DomainOnPV domain = getOrCreateInitializeDomainOnPVDomain();
+    if (domain.getOpss() == null) {
+      domain.opss(new Opss());
+    }
+    return domain.getOpss();
   }
 
   @Override

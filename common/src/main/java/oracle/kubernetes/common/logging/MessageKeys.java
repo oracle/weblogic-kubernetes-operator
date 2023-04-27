@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -168,6 +168,13 @@ public class MessageKeys {
   public static final String CLUSTER_STATUS = "WLSKO-0230";
   public static final String DOMAIN_INTROSPECTION_INCOMPLETE = "WLSKO-0231";
   public static final String WATCH_CLUSTER_WITHOUT_DOMAIN = "WLSKO-0232";
+  public static final String PV_CREATED = "WLSKO-0233";
+  public static final String PVC_CREATED = "WLSKO-0234";
+  public static final String PV_EXISTS = "WLSKO-0235";
+  public static final String PVC_EXISTS = "WLSKO-0236";
+  public static final String PVC_IS_BOUND = "WLSKO-0237";
+  public static final String WAITING_FOR_PVC_TO_BIND = "WLSKO-0238";
+  public static final String PVC_NOT_BOUND_ERROR = "WLSKO-0239";
 
   // domain status messages
   public static final String MAKE_RIGHT_WILL_RETRY = "WLSDO-0000";
@@ -213,6 +220,22 @@ public class MessageKeys {
   public static final String NON_CLUSTERED_SERVERS_NOT_READY = "WLSDO-0047";
   public static final String CLUSTER_NOT_READY = "WLSDO-0048";
   public static final String CLUSTER_RESOURCE_NOT_FOUND = "WLSDO-0049";
+  public static final String MORE_THAN_ONE_DOMAIN_CREATION_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0050";
+  public static final String INIT_PV_DOMAIN_OPSS_SECRET_NOT_SPECIFIED = "WLSDO-0051";
+  public static final String INIT_PV_DOMAIN_PV_NAME_NOT_SPECIFIED = "WLSDO-0052";
+  public static final String INIT_PV_DOMAIN_PV_CAPACITY_NOT_SPECIFIED = "WLSDO-0053";
+  public static final String INIT_PV_DOMAIN_PV_STORAGE_CLASS_NOT_SPECIFIED = "WLSDO-0054";
+  public static final String INIT_PV_DOMAIN_PVC_NAME_NOT_SPECIFIED = "WLSDO-0055";
+  public static final String INIT_PV_DOMAIN_PVC_RESOURCES_NOT_SPECIFIED = "WLSDO-0056";
+  public static final String INIT_PV_DOMAIN_PVC_STORAGE_CLASS_NOT_SPECIFIED = "WLSDO-0057";
+  public static final String CONFLICT_OPSS_SECRETS = "WLSDO-0058";
+  public static final String CONFLICT_MODEL_INITIALIZE_DOMAIN_ON_PV = "WLSDO-0059";
+  public static final String OVERLAPPING_VOLUME_MOUNT_PATH = "WLSDO-0060";
+  public static final String DOMAIN_HOME_NOT_MOUNTED = "WLSDO-0061";
+  public static final String MISMATCH_DOMAIN_TYPE_CREATE_IF_NOT_EXISTS = "WLSDO-0062";
+  public static final String NO_MATCH_VOLUME_WITH_PVC = "WLSDO-0063";
+  public static final String NO_VOLUME_WITH_PVC = "WLSDO-0064";
+  public static final String WALLET_KEY_NOT_FOUND = "WLSDO-0065";
 
   // domain event messages
   public static final String DOMAIN_AVAILABLE_EVENT_PATTERN = "WLSEO-0001";
@@ -252,6 +275,9 @@ public class MessageKeys {
   public static final String CLUSTER_COMPLETED_EVENT_PATTERN = "WLSEO-0035";
   public static final String CLUSTER_UNAVAILABLE_EVENT_PATTERN = "WLSEO-0036";
   public static final String CLUSTER_INCOMPLETE_EVENT_PATTERN = "WLSEO-0037";
+  public static final String PERSISTENT_VOLUME_CLAIM_EVENT_ERROR = "WLSEO-0038";
+  public static final String PERSISTENT_VOLUME_CLAIM_EVENT_SUGGESTION = "WLSEO-0039";
+  public static final String PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN = "WLSEO-0040";
 
   // Webhook messages
   public static final String WEBHOOK_STARTED = "WLSWH-0001";

@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -138,6 +139,8 @@ public interface DomainProcessor {
   DomainPresenceInfo getExistingDomainPresenceInfo(String namespace, String domainUid);
 
   void updateDomainStatus(V1Pod pod, DomainPresenceInfo info);
+
+  void updateDomainStatus(V1PersistentVolumeClaim pvc, DomainPresenceInfo info);
 
   default List<DomainPresenceInfo> getExistingDomainPresenceInfoForCluster(String namespace, String clusterName) {
     return Collections.emptyList();

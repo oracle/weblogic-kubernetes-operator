@@ -39,6 +39,8 @@ import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1PodDisruptionBudgetList;
@@ -124,6 +126,9 @@ class CallBuilderTest {
   private static final String VALIDATING_WEBHOOK_CONFIGURATION_RESOURCE
       = "/apis/admissionregistration.k8s.io/v1/validatingwebhookconfigurations";
   private static final String NAMESPACE_RESOURCE = "/api/v1/namespaces";
+  private static final String PVC_RESOURCE = String.format(
+      "/api/v1/namespaces/%s/persistentvolumeclaims", NAMESPACE);
+  private static final String PV_RESOURCE = "/api/v1/persistentvolumes";
 
   private static final ApiClient apiClient = new ApiClient();
   private final List<Memento> mementos = new ArrayList<>();
@@ -1393,6 +1398,68 @@ class CallBuilderTest {
     V1Status received = responseStep.waitForAndGetCallResponse().getResult();
 
     assertThat(received, equalTo(response));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readPersistentVolumeClaim_returnsResource() throws InterruptedException {
+    V1PersistentVolumeClaim resource = new V1PersistentVolumeClaim().metadata(createMetadata());
+    defineHttpGetResponse(PVC_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1PersistentVolumeClaim> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readPersistentVolumeClaimAsync(UID, NAMESPACE, responseStep));
+
+    V1PersistentVolumeClaim received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createPersistentVolumeClaim_returnsNewResource() throws InterruptedException {
+    V1PersistentVolumeClaim resource = new V1PersistentVolumeClaim().metadata(createMetadata());
+    defineHttpPostResponse(
+        PVC_RESOURCE, resource, (json) -> fromJson(json, V1PersistentVolumeClaim.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1PersistentVolumeClaim> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createPersistentVolumeClaimAsync(NAMESPACE, resource, responseStep));
+
+    V1PersistentVolumeClaim received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void readPersistentVolume_returnsResource() throws InterruptedException {
+    V1PersistentVolume resource = new V1PersistentVolume().metadata(createMetadata());
+    defineHttpGetResponse(PV_RESOURCE, UID, resource);
+
+    KubernetesTestSupportTest.TestResponseStep<V1PersistentVolume> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().readPersistentVolumeAsync(UID, responseStep));
+
+    V1PersistentVolume received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
+  }
+
+  @Test
+  @ResourceLock(value = "server")
+  void createPersistentVolume_returnsNewResource() throws InterruptedException {
+    V1PersistentVolume resource = new V1PersistentVolume().metadata(createMetadata());
+    defineHttpPostResponse(
+        PV_RESOURCE, resource, (json) -> fromJson(json, V1PersistentVolumeClaim.class));
+
+    KubernetesTestSupportTest.TestResponseStep<V1PersistentVolume> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().createPersistentVolumeAsync(resource, responseStep));
+
+    V1PersistentVolume received = responseStep.waitForAndGetCallResponse().getResult();
+
+    assertThat(received, equalTo(resource));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {

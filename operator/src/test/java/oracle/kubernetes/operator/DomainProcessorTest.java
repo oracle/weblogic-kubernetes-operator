@@ -95,6 +95,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.hamcrest.MatcherAssert;
@@ -1618,6 +1619,22 @@ class DomainProcessorTest {
 
   private void executeScheduledRetry() {
     testSupport.setTime(domain.getFailureRetryIntervalSeconds(), TimeUnit.SECONDS);
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOutForInitDomainOnPV_activeDeadlineNotIncreased() throws Exception {
+    TuningParametersStub.setParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, "180");
+    initializeDomainOnPV();
+    runMakeRight_withIntrospectionTimeout();
+
+    executeScheduledRetry();
+
+    assertThat(getRecordedJob().getSpec().getActiveDeadlineSeconds(), is(180L));
+  }
+
+  private void initializeDomainOnPV() {
+    domainConfigurator.withConfigurationForInitializeDomainOnPV(
+        new InitializeDomainOnPV(), "test-volume", "test-pvc", "/shared");
   }
 
   @Test

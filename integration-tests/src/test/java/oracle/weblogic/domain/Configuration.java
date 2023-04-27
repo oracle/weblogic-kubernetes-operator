@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -48,6 +48,14 @@ public class Configuration {
   @ApiModelProperty("Rollback the changes if the update require domain restart.")
   private Boolean rollBackIfRestartRequired = false;
 
+  @ApiModelProperty("Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize"
+      + " related resources such as a persistent volume and a persistent volume claim. If specified, the operator will"
+      + " perform these one-time initialization steps only if the domain and resources do not already exist."
+      + " The operator will not recreate or update the domain and resources when they already exist. "
+      + " For more information, see"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ")
+  private InitializeDomainOnPV initializeDomainOnPV;
 
   public Configuration model(Model model) {
     this.model = model;
@@ -205,6 +213,23 @@ public class Configuration {
     this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
   }
 
+  public Configuration initializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+    return this;
+  }
+
+  public InitializeDomainOnPV initializeDomainOnPV() {
+    return this.initializeDomainOnPV;
+  }
+
+  public InitializeDomainOnPV getInitializeDomainOnPV() {
+    return this.initializeDomainOnPV;
+  }
+
+  public void setInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -215,7 +240,8 @@ public class Configuration {
             .append("overridesConfigMap", overridesConfigMap)
             .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
             .append("useOnlineUpdate", useOnlineUpdate)
-            .append("rollBackIfRestartRequired", rollBackIfRestartRequired);
+            .append("rollBackIfRestartRequired", rollBackIfRestartRequired)
+            .append("initializeDomainOnPV", initializeDomainOnPV);
 
     return builder.toString();
   }
@@ -230,7 +256,8 @@ public class Configuration {
             .append(overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds)
             .append(useOnlineUpdate)
-            .append(rollBackIfRestartRequired);
+            .append(rollBackIfRestartRequired)
+            .append(initializeDomainOnPV);
 
     return builder.toHashCode();
   }
@@ -253,7 +280,8 @@ public class Configuration {
             .append(overridesConfigMap, rhs.overridesConfigMap)
             .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
             .append(useOnlineUpdate, rhs.useOnlineUpdate)
-            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired);
+            .append(rollBackIfRestartRequired, rhs.rollBackIfRestartRequired)
+            .append(initializeDomainOnPV, rhs.initializeDomainOnPV);
 
     return builder.isEquals();
   }

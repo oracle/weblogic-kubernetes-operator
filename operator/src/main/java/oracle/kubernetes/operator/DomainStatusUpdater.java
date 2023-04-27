@@ -103,6 +103,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTERNAL;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.PERSISTENT_VOLUME_CLAIM;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.TOPOLOGY_MISMATCH;
@@ -264,6 +265,15 @@ public class DomainStatusUpdater {
    */
   public static Step createServerPodFailureSteps(String message) {
     return new FailureStep(SERVER_POD, message);
+  }
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate PERSISTENT_VOLUME_CLAIM error event.
+   *
+   * @param message a fuller description of the problem
+   */
+  public static Step createPersistentVolumeClaimFailureSteps(String message) {
+    return new FailureStep(PERSISTENT_VOLUME_CLAIM, message);
   }
 
   /**
@@ -1567,10 +1577,14 @@ public class DomainStatusUpdater {
       @Override
       void modifyStatus(DomainStatus status) {
         removingReasons.forEach(status::markFailuresForRemoval);
-        addFailure(status, status.createAdjustedFailedCondition(reason, message));
-        status.addCondition(new DomainCondition(COMPLETED).withStatus(false));
+        addFailure(status, status.createAdjustedFailedCondition(reason, message, isInitializeDomainOnPV()));
+        status.addCondition(new DomainCondition(COMPLETED).withStatus(false), isInitializeDomainOnPV());
         Optional.ofNullable(jobUid).ifPresent(status::setFailedIntrospectionUid);
         status.removeMarkedFailures();
+      }
+
+      private boolean isInitializeDomainOnPV() {
+        return getDomain().isInitializeDomainOnPV();
       }
 
     }

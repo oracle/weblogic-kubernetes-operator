@@ -128,7 +128,6 @@ public class DbUtils {
    * @param dbUrl URL of DB
    * @throws Exception if any error occurs when setting up RCU database
    */
-
   public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
        String dbNamespace, int dbPort, String dbUrl, int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
