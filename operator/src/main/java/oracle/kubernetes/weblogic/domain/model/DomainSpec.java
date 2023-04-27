@@ -23,6 +23,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
@@ -42,6 +43,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -887,8 +889,26 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   String getOpssWalletPasswordSecret() {
+    return isInitializeDomainOnPV()
+        ? getInitializeDomainOnPVOpssWalletPasswordSecret()
+        : getModelOpssWalletPasswordSecret();
+  }
+
+  String getModelOpssWalletPasswordSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
+        .map(Opss::getWalletPasswordSecret)
+        .orElse(null);
+  }
+
+  boolean isInitializeDomainOnPV() {
+    return DomainSourceType.PERSISTENT_VOLUME == (getDomainHomeSourceType()) && getInitializeDomainOnPV() != null;
+  }
+
+  String getInitializeDomainOnPVOpssWalletPasswordSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getOpss)
         .map(Opss::getWalletPasswordSecret)
         .orElse(null);
   }
@@ -898,9 +918,28 @@ public class DomainSpec extends BaseConfiguration {
    * @return wallet file secret
    */
   public String getOpssWalletFileSecret() {
+    return isInitializeDomainOnPV() ? getInitializeDomainOnPVOpssWalletFileSecret() : getModelOpssWalletFileSecret();
+  }
+
+  private String getModelOpssWalletFileSecret() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getOpss)
         .map(Opss::getWalletFileSecret)
+        .orElse(null);
+  }
+
+  private String getInitializeDomainOnPVOpssWalletFileSecret() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getOpss)
+        .map(Opss::getWalletFileSecret)
+        .orElse(null);
+  }
+
+  DomainOnPVType getInitializeDomainOnPVDomainType() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getDomainType)
         .orElse(null);
   }
 
@@ -916,10 +955,18 @@ public class DomainSpec extends BaseConfiguration {
    * @return config map name
    */
   public String getWdtConfigMap() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getConfigMap)
-        .orElse(null);
+    if (isInitializeDomainOnPV()) {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getInitializeDomainOnPV)
+          .map(InitializeDomainOnPV::getDomain)
+          .map(DomainOnPV::getDomainCreationConfigMap)
+          .orElse(null);
+    } else {
+      return Optional.ofNullable(configuration)
+          .map(Configuration::getModel)
+          .map(Model::getConfigMap)
+          .orElse(null);
+    }
   }
 
   /**
@@ -978,9 +1025,27 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
   }
 
+  InitializeDomainOnPV getInitializeDomainOnPV() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getInitializeDomainOnPV).orElse(null);
+  }
+
+  List<DomainCreationImage> getPVDomainCreationImages() {
+    return Optional.ofNullable(getInitializeDomainOnPV()).map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getDomainCreationImages).orElse(null);
+  }
+
+  String getDomainCreationConfigMap() {
+    return Optional.ofNullable(getInitializeDomainOnPV())
+        .map(InitializeDomainOnPV::getDomain)
+        .map(DomainOnPV::getDomainCreationConfigMap)
+        .orElse(null);
+  }
+
   String getAuxiliaryImageVolumeMountPath() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
+        .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath)
+        .orElse(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   String getAuxiliaryImageVolumeMedium() {
@@ -1163,6 +1228,14 @@ public class DomainSpec extends BaseConfiguration {
 
   long getFailureRetryLimitMinutes() {
     return Optional.ofNullable(failureRetryLimitMinutes).orElse(DEFAULT_RETRY_LIMIT_MINUTES);
+  }
+
+  public boolean hasMiiOpssConfigured() {
+    return getModelOpssWalletPasswordSecret() != null || getModelOpssWalletFileSecret() != null;
+  }
+  
+  public boolean isModelConfigured() {
+    return Optional.ofNullable(configuration).map(Configuration::getModel).orElse(null) != null;
   }
 
   class CommonEffectiveConfigurationFactory implements EffectiveConfigurationFactory {

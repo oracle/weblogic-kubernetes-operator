@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -43,7 +43,16 @@ public abstract class Validator {
   void addClusterInvalidMountPaths(ClusterResource cluster) {
     ClusterSpec spec = cluster.getSpec();
     Optional.of(spec).map(ClusterSpec::getAdditionalVolumeMounts)
-        .ifPresent(mounts -> mounts.forEach(mount -> checkValidMountPath(mount, getEnvNames(spec))));
+        .ifPresent(mounts -> mounts.forEach(mount ->
+            checkValidMountPath(mount, getEnvNames(spec), getRemainingVolumeMounts(mounts, mount))));
+  }
+
+  List<V1VolumeMount> getRemainingVolumeMounts(List<V1VolumeMount> list, V1VolumeMount mount) {
+    List<V1VolumeMount> ret = new ArrayList<>();
+    for (int i = list.indexOf(mount) + 1; i < list.size(); i++) {
+      ret.add(list.get(i));
+    }
+    return ret;
   }
 
   @Nonnull
@@ -54,7 +63,7 @@ public abstract class Validator {
         .collect(toSet());
   }
 
-  void checkValidMountPath(V1VolumeMount mount, Set<String> envNames) {
+  void checkValidMountPath(V1VolumeMount mount, Set<String> envNames, List<V1VolumeMount> mounts) {
     if (skipValidation(mount.getMountPath(), envNames)) {
       return;
     }
@@ -62,6 +71,26 @@ public abstract class Validator {
     if (!new File(mount.getMountPath()).isAbsolute()) {
       failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
+
+    mounts.stream().forEach(m -> checkOverlappingMountPaths(mount, m));
+  }
+
+  private void checkOverlappingMountPaths(V1VolumeMount mount1, V1VolumeMount mount2) {
+    List<String> list1 = getTokensWithCollection(mount1.getMountPath());
+    List<String> list2 = getTokensWithCollection(mount2.getMountPath());
+    for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
+      if (!list1.get(i).equals(list2.get(i))) {
+        return;
+      }
+    }
+
+    failures.add(DomainValidationMessages.overlappingVolumeMountPath(mount1, mount2));
+  }
+
+  private List<String> getTokensWithCollection(String str) {
+    return Collections.list(new StringTokenizer(str, "/")).stream()
+        .map(String.class::cast)
+        .collect(Collectors.toList());
   }
 
   boolean skipValidation(String mountPath, Set<String> envNames) {

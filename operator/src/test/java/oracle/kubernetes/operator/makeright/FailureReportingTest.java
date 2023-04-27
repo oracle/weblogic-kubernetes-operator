@@ -50,6 +50,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationMessages;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,9 +65,11 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventMatcher.hasEvent;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.INTROSPECTION;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.REPLICAS_TOO_HIGH;
@@ -166,11 +169,16 @@ class FailureReportingTest {
     executeMakeRight();
   }
 
-  private void executeMakeRight() {
+  private void executeMakeRight(String testCase) {
     copyFrom(testSupport.getPacket(), makeRight.createPacket());
-    IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, introspectionString);
-
+    if (!TestCase.INITIALIZE_DOMAIN_ON_PV_INTROSPECTION_FAILURE.toString().equals(testCase)) {
+      IntrospectionTestUtils.defineIntrospectionPodLog(testSupport, introspectionString);
+    }
     testSupport.runSteps(steps, terminalStep);
+  }
+
+  private void executeMakeRight() {
+    executeMakeRight((String) null);
   }
 
   private void removeCredentialsSecret() {
@@ -187,6 +195,13 @@ class FailureReportingTest {
     introspectionString = SEVERE_INTROSPECTION_ENTRY;
   }
 
+  private void defineSevereIntrospectionFailureForInitDomainOnPV() {
+    DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
+    commonConfigurator.withConfigurationForInitializeDomainOnPV(
+        new InitializeDomainOnPV(), "test-volume", "test-pvc", "/shared");
+    introspectionString = SEVERE_INTROSPECTION_ENTRY;
+  }
+
   @ParameterizedTest
   @EnumSource(TestCase.class)
   void whenMakeWithExistingFailureFails_failuresDoNotFlicker(TestCase testCase) throws NoSuchFieldException {
@@ -196,7 +211,7 @@ class FailureReportingTest {
     mementos.add(detector.install());
     testCase.getMutator().accept(this);
 
-    executeMakeRight();
+    executeMakeRight(testCase.toString());
 
     detector.assertNotFlickered(testSupport.getPacket());
   }
@@ -355,6 +370,33 @@ class FailureReportingTest {
       @Nonnull
       String getExpectedMessage() {
         return LOGGER.formatMessage(NO_MANAGED_SERVER_IN_DOMAIN, "No-such-server");
+      }
+    },
+    INITIALIZE_DOMAIN_ON_PV_INTROSPECTION_FAILURE {
+      @Override
+      Consumer<FailureReportingTest> getMutator() {
+        return FailureReportingTest::defineSevereIntrospectionFailureForInitDomainOnPV;
+      }
+
+      @Override
+      DomainFailureReason getReason() {
+        return ABORTED;
+      }
+
+      @Override
+      String getStepToAvoid() {
+        return "BeforeAdminServiceStep";
+      }
+
+      @Override
+      @Nonnull
+      String getExpectedMessage() {
+        return FATAL_INTROSPECTOR_ERROR_MSG + SEVERE_MESSAGE;
+      }
+
+      @Override
+      boolean isRetriable() {
+        return false;
       }
     };
 

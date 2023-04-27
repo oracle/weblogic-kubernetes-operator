@@ -53,6 +53,7 @@ import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_UNAVAILABLE_EV
 import static oracle.kubernetes.common.logging.MessageKeys.EXCEPTION;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STARTED_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.NAMESPACE_WATCHING_STOPPED_EVENT_PATTERN;
+import static oracle.kubernetes.common.logging.MessageKeys.PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.POD_CYCLE_STARTING_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_EVENT_PATTERN;
 import static oracle.kubernetes.common.logging.MessageKeys.START_MANAGING_NAMESPACE_FAILED_EVENT_PATTERN;
@@ -81,6 +82,7 @@ import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
+import static oracle.kubernetes.operator.EventConstants.PERSISTENT_VOUME_CLAIM_BOUND_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
@@ -847,6 +849,17 @@ public class EventHelper {
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return createInvolvedObjectForWebhook();
+      }
+    },
+    PERSISTENT_VOLUME_CLAIM_BOUND {
+      @Override
+      public String getReason() {
+        return PERSISTENT_VOUME_CLAIM_BOUND_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return PERSISTENT_VOUME_CLAIM_BOUND_EVENT_PATTERN;
       }
     };
 

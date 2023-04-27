@@ -31,7 +31,7 @@ import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
@@ -74,11 +74,15 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected void addVolumeMountIfMissing(V1Container container) {
+    addVolumeMountIfMissing(container, getPrimaryContainerMountPath());
+  }
+
+  protected void addVolumeMountIfMissing(V1Container container, String mountPath) {
     if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
         this::hasMatchingVolumeName)).orElse(true)) {
       container.addVolumeMountsItem(
               new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
-                      .mountPath(getPrimaryContainerMountPath()));
+                      .mountPath(mountPath));
     }
   }
 
@@ -139,7 +143,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
   }
 
-  protected V1Container createInitContainerForAuxiliaryImage(AuxiliaryImage auxiliaryImage, int index) {
+  protected V1Container createInitContainerForAuxiliaryImage(DeploymentImage auxiliaryImage, int index) {
     return new V1Container().name(getName(index))
         .image(auxiliaryImage.getImage())
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
@@ -157,7 +161,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage, String name) {
+  protected List<V1EnvVar> createEnv(DeploymentImage auxiliaryImage, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME,

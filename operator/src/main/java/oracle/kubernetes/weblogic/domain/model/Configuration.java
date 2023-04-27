@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -7,6 +7,7 @@ import java.util.List;
 
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -31,7 +32,6 @@ public class Configuration {
   @Description("The introspector job timeout value in seconds. If this field is specified, "
           + "then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. "
           + "Defaults to 120 seconds.")
-  @Default(intDefault = 120)
   private Long introspectorJobActiveDeadlineSeconds;
 
   @Description(
@@ -45,6 +45,16 @@ public class Configuration {
       + "`domains.spec.introspectVersion`. Defaults to `Dynamic`.")
   @Default(strDefault = "Dynamic")
   private OverrideDistributionStrategy overrideDistributionStrategy;
+
+  @Feature("DomainOnPvSimplification")
+  @Description("Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize"
+      + " related resources such as a persistent volume and a persistent volume claim. If specified, the operator will"
+      + " perform these one-time initialization steps only if the domain and resources do not already exist."
+      + " The operator will not recreate or update the domain and resources when they already exist. "
+      + " For more information, see"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and"
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ")
+  private InitializeDomainOnPV initializeDomainOnPV;
 
   public Model getModel() {
     return model;
@@ -109,6 +119,25 @@ public class Configuration {
     return overrideDistributionStrategy;
   }
 
+  public InitializeDomainOnPV getInitializeDomainOnPV() {
+    return initializeDomainOnPV;
+  }
+
+  public void setInitializeDomainOnPV(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+  }
+
+  /**
+   * Adds configuration for initializing domain on PV configuration to the DomainSpec.
+   *
+   * @param initializeDomainOnPV The configuration for initializing domain on PV to be added to this DomainSpec
+   * @return this object
+   */
+  public Configuration withInitializeDomainOnPv(InitializeDomainOnPV initializeDomainOnPV) {
+    this.initializeDomainOnPV = initializeDomainOnPV;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -118,7 +147,8 @@ public class Configuration {
             .append("secrets", secrets)
             .append("distributionStrategy", overrideDistributionStrategy)
             .append("overridesConfigMap", overridesConfigMap)
-            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds);
+            .append("introspectorJobActiveDeadlineSeconds", introspectorJobActiveDeadlineSeconds)
+            .append("initializeDomainOnPV", initializeDomainOnPV);
 
     return builder.toString();
   }
@@ -131,7 +161,8 @@ public class Configuration {
           .append(secrets)
           .append(overrideDistributionStrategy)
           .append(overridesConfigMap)
-          .append(introspectorJobActiveDeadlineSeconds);
+          .append(introspectorJobActiveDeadlineSeconds)
+          .append(initializeDomainOnPV);
 
     return builder.toHashCode();
   }
@@ -152,8 +183,8 @@ public class Configuration {
             .append(secrets, rhs.secrets)
             .append(overrideDistributionStrategy, rhs.overrideDistributionStrategy)
             .append(overridesConfigMap, rhs.overridesConfigMap)
-            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds);
-
+            .append(introspectorJobActiveDeadlineSeconds, rhs.introspectorJobActiveDeadlineSeconds)
+            .append(initializeDomainOnPV, rhs.initializeDomainOnPV);
     return builder.isEquals();
   }
 

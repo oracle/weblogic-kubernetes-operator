@@ -32,6 +32,13 @@ public interface DomainProcessorDelegate extends CoreDelegate {
   JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace);
 
   /**
+   * Returns a factory that creates a step to wait for a pvc in the specified namespace to be bound.
+   *
+   * @return a step-creating factory
+   */
+  PvcAwaiterStepFactory getPvcAwaiterStepFactory();
+
+  /**
    * Returns true if the namespace is running.
    *
    * @param namespace the namespace to check

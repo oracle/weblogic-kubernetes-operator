@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -33,6 +33,7 @@ public abstract class DomainTestBase {
   static final String DOMAIN_V2_SAMPLE_YAML_3 = "domain-sample-3.yaml";
   static final String DOMAIN_V2_SAMPLE_YAML_4 = "domain-sample-4.yaml";
   static final String DOMAIN_V2_SAMPLE_YAML_5 = "domain-sample-5.yaml";
+  static final String DOMAIN_V2_SAMPLE_YAML_6 = "domain-sample-6.yaml";
   static final String SECRET_NAME = "secret";
   static final String NS = "test-namespace";
   static final String DOMAIN_UID = "uid1";

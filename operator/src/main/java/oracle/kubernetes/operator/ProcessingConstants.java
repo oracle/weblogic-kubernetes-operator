@@ -11,6 +11,7 @@ public interface ProcessingConstants {
   String DOMAIN_COMPONENT_NAME = "domain";
   String PODWATCHER_COMPONENT_NAME = "podWatcher";
   String JOBWATCHER_COMPONENT_NAME = "jobWatcher";
+  String PVCWATCHER_COMPONENT_NAME = "pvcWatcher";
 
   /** key to an object of type WlsServerConfig. */
   String SERVER_SCAN = "serverScan";
@@ -55,7 +56,7 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
-  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
+  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - Fatal Error: ";
 
   String FATAL_DOMAIN_INVALID_ERROR = "FatalDomainInvalidError";
 
@@ -68,4 +69,9 @@ public interface ProcessingConstants {
   String SKIP_STATUS_UPDATE = "skipStatusUpdate";
   String END_OF_PROCESSING = "lastStatusUpdate";
   String AUTHORIZATION_SOURCE = "AuthorizationSource";
+  String PENDING = "Pending";
+  String BOUND = "Bound";
+  int PVC_WAIT_STATUS_UPDATE_COUNT = 6;
+  long DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 1800L;
+  long DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 600L;
 }

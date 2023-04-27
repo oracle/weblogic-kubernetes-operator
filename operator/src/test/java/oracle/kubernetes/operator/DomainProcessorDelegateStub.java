@@ -9,6 +9,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -83,6 +84,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
     return new TestJobAwaiterStepFactory();
+  }
+
+  @Override
+  public PvcAwaiterStepFactory getPvcAwaiterStepFactory() {
+    return new TestPvcAwaiterStepFactory();
   }
 
   @Override
@@ -184,6 +190,13 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
         waitedForIntrospection = true;
         return null;
       }
+    }
+  }
+
+  public static class TestPvcAwaiterStepFactory implements PvcAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1PersistentVolumeClaim job, Step next) {
+      return next;
     }
   }
 }

@@ -1,0 +1,35 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: pvhelper
+  name: pvhelper
+  namespace: %NAMESPACE%
+spec:
+  containers:
+  - args:
+    - sleep
+    - infinity
+    image: ghcr.io/oracle/oraclelinux:8-slim
+    imagePullPolicy: %WEBLOGIC_IMAGE_PULL_POLICY%
+    name: pvhelper
+    volumeMounts:
+    - name: pv-volume
+      mountPath: %VOLUME_MOUNT_PATH%
+    %RUN_AS_ROOT_PREFIX%securityContext:
+    %RUN_AS_ROOT_PREFIX%  allowPrivilegeEscalation: false
+    %RUN_AS_ROOT_PREFIX%  capabilities:
+    %RUN_AS_ROOT_PREFIX%    drop:
+    %RUN_AS_ROOT_PREFIX%    - ALL
+    %RUN_AS_ROOT_PREFIX%  privileged: false
+    %RUN_AS_ROOT_PREFIX%  runAsNonRoot: true
+    %RUN_AS_ROOT_PREFIX%  runAsUser: 1000
+  volumes:
+  - name: pv-volume
+    persistentVolumeClaim:
+      claimName: %CLAIM_NAME%
+  %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets:
+  %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%- name: %WEBLOGIC_IMAGE_PULL_SECRET_NAME%
