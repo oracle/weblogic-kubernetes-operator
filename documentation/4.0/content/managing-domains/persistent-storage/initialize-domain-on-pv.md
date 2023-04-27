@@ -10,22 +10,23 @@ description = "Initialize domain on PV."
 
 ### Introduction
 
-Domain on persistent volume required creating a domain home on a persistent volume,  this can be done manually or automated by specifying a section `domain.spec.configuration.initializeDomainOnPV` in the domain resource specification.
+Domain on persistent volume require the domain home exists on a persistent volume,  this can be done either manually 
+or automated by specifying a section `domain.spec.configuration.initializeDomainOnPV` in the domain resource specification.
+
 **The `domain.spec.configuration.initializeDomainOnPV` section provides a one time only domain home initialization,  the Operator will create the domain when the domain resource is first deployed, once the domain is created, this section will be ignored, subsequent domain updates should be controlled by
 WebLogic console, WLST or other mechanism.**  
 
 The `initializeDomainOnPv` provides the following functionalities:
 
 - Create the `PersistentVolume` and/or `PersistenVolumeClaim` if requested.
-- Create JRF RCU schemas if requested.
-- Create the domain home on the persistent volume based on provided WDT models.  (TODO: link needed)
-
-### References
-
+- Create `JRF RCU schema` if requested.
+- Create the domain home based on provided WDT models on the persistent volume.  (TODO: link needed)
 
 ### Configuration
 
 Beginning with operator version 4.1.0, you can provide a section `domain.spec.configuraiton.initializeDomainOnPV` to initialize a WebLogic Domain on persistent volume when it is first deployed.
+This is a **one time** only initialization, once the domain is created, subsequent updates to the domain resource YAML will not re-create or update the 
+WebLogic domain.
 
 In order to use this feature, provide the following information:
 
