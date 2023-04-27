@@ -1,9 +1,9 @@
 +++
-title = "Initialize Domain On PV"
+title = "Creating domain on persistent volume"
 date = 2023-04-26T16:45:16-05:00
 weight = 25
 pre = "<b> </b>"
-description = "Initialize domain on PV."
+description = "Creating domain on PV."
 +++
 
 {{< table_of_contents >}}
@@ -37,13 +37,13 @@ In order to use this feature, provide the following information:
 
 
 - For details about each field, see the
-[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#auxiliary-image).
+[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
 #### WebLogic base image
 
-Since the domain will be created on a persistent volume.  The main image will not have any domain created in it.  
+Since the domain will be created on a persistent volume.  The main image should only contains the WebLogic product binary and `JDK`.  
 
 ```
 spec:
@@ -51,18 +51,25 @@ spec:
 ```
 
 You can specify your own image, reference a patched image in `container-registry.oracle.com`, or create and patch
-a image using `WebLogic Image Tool`
+a image using [WebLogic Image tool](https://github.com/oracle/weblogic-image-tool)
 
 
 #### Persistent Volume and Persistent Volume Claim
 
-The `Persistent Volume` and `Persistent Volume Claim` is used by Kubernetes to mount shared persistent storage.
-Specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML.  For example,
+The Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) is used by Kubernetes to access
+persistent storage in the Kubernetes environment. You can either use an existing (PV/PVC) or request Operator to create them 
+for you.
 
-The operator will creates the `PV` and `PVC` and mount the persistent volume to `/share`
+The specifications of `PersistentVolume` and `PersistentVolumeClaim` is environment specific and often requires information 
+from your Kubernetes cluster administrator to provide the information. See [PV and PVC in different environments](#references)
+
+For example, specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML.  
+
+The operator will create the `PV` and `PVC` and mount the persistent volume to the `/share` directory.
 
 ```
 spec:
+  domainHome: /share/domains/domain1
   serverPod:
     volumes:
     - name: weblogic-domain-storage-volume
@@ -94,10 +101,15 @@ spec:
                     storage: 10Gi
 ```
 
-The operator will use existing `PV` and `PVC` and mount the persistent volume to `/share`
+For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
+See [supported fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
+
+If the `PV` and `PVC` already existed your environment, you do not need
+to specify any `persistentVolume` or `persistentVolumeClaim`  under `intializedDomainOnPV` section.
 
 ```
 spec:
+  domainHome: /share/domains/domain1
   serverPod:
     volumes:
     - name: weblogic-domain-storage-volume
@@ -111,8 +123,16 @@ spec:
     initializeDomainOnPV:
      ....
 ```
+#### References
+
+[Oracle Kubernetes Engine Persistent Storage](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm)
+[Azure Kubernetes Service Persistent Storage](https://learn.microsoft.com/en-us/azure/aks/concepts-storage)
+[Amazon Kubernetes Service Persistent Storage](https://aws.amazon.com/blogs/storage/persistent-storage-for-kubernetes/)
+[OpenShift Persistent Storage](https://docs.openshift.com/container-platform/4.12/storage/understanding-persistent-storage.html)
 
 #### Domain information
+
+For `JRF` based domain, before proceeding, please be sure to visit [JRF domain]({{< relref "/managing-domains/persistent-storage/initial-domain-on-pv" >}}).
 
 This is the section describing the WebLogic Domain. For example,
 
@@ -136,11 +156,24 @@ spec:
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
 
-`domainType`:  specify this is a JRF domain
-`createIfNotExists`:  specify for Operator to create RCU schema first before creating the `JRF` domain.  If you specify `domain` then it will not just use existing RCU schema and will not create it.
-`domainCreationImages` specify the image containing the WDT binaries and WDT artifacts describing the domain configuration.
-`domainCreationConfigMap` specify an optional configmap containing extra WDT models, they can be used to add/modify models that are in the `domainCreationImages`.
-`opss` specify a secret password for extracting `OPSS` wallet encryption key for `JRF` domain.  See (link for details)
+| Field                     | Notes                                                                                | Values                                          | Required                                                            |
+|---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------|---------------------------------------------------------------------|
+| domainType                | Type of the domain creating                                                          | JRF or WLS                                      | N (default WLS)                                                     |
+| createIfNotExists         | Specify whether the Operator to create `RCU schema` first before creating the domain | domain or domainAndRCU (create RCU first)       | N (default domain)                                                  |
+| domainCreationImages      | WDT domain images                                                                    | Array of image                                  | Y                                                                   |
+| domainCreationConfigMap   | Optional configmap containing extra WDT models                                       | Kubernetes ConfigMap name                       | N                                                                   |
+| osss.walletPasswordSecret | Password for extracting `OPSS` wallet encryption key for `JRF` domain.               | Kuberntes secret name with key `walletPassword` | Y                                                                   |
+| osss.walletFileSecret     | Extracted `OPSS wallet` file.                                                        | Kuberntes secret name with key `walletFile`     | N (Only needed when recreating the domain during disaster recovery) |
+
+
+### WebLogic Deploy Tooling models
+
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
+configuration scripts and templates.
+They compactly define a WebLogic domain using YAML files and support including
+application archives in a ZIP file. The WDT model format is fully described in the open source,
+[WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
+
 
 ### Configuration examples
 
@@ -166,6 +199,8 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false -Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust -Dweblogic.debug.DebugManagementServicesResource=true"
     - name: USER_MEM_ARGS
       value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+    # set up pod to use persistent storage using pvc
+    # domain home must be under the mountPath  
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:
