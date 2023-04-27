@@ -181,18 +181,28 @@ application archives in a ZIP file. The WDT model format is fully described in t
 ```
 kubectl -n <domain namespace> get domain <domain uid>
 ```
-2. Clean up domain home.  If you need to delete the domain home to recover from an error or recreate the domain home, you can delete the `PVC` 
-if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC` or attach a pod
-to the shared volume and the access the pod to remove the contents.  There is a sample script 
-[Domain on PV helper shell script](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh) if you are not familiar with the process.
-3. Check the operator log.  Additional error messages may be available in the Operator log.
+2. Check the operator log.  Additional error messages may be available in the Operator log.
 ```
 kubectl -n <operator namespace> logs <operator pod name>
 ```
-4. Updated the WDT models but changes are not applied to the domain in update.  This is expected behavior. The WDT domains specified in the domain image or configmap
-is a **one time** only operation,  they are only used for creating the initial domain, they are not designed to participate in the lifecycle operations. You should use
-WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and 
-also the application directory for JRF domain (`application` under the parent of the domain home directory) first.
+3. Updated the WDT models but changes are not reflected in the domain  This is the expected behavior. The WDT domain models specified in the domain image or configmap
+is a **one time** only operation, they are only used for creating the initial domain, after the domain is created, they are not designed to participate in the lifecycle operations. 
+You should use WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and 
+also the applications directory for JRF domain (`applications/<domain uid>` under the parent of the domain home directory) before trying to create the domain again.
+
+### Clean up
+
+If you need to delete the domain home to recover from an error or recreate the domain home, you can either:
+
+1. Delete the `PVC` if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC`
+2. Attach a pod to the shared volume and the access the pod to remove the contents.  There is a sample script
+[Domain on PV helper shell script](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernete
+
+Then finally delete the domain resource.
+
+```
+kubectl -n <namespace> delete -f <domain resource YAML> 
+```
 
 ### Configuration examples
 
