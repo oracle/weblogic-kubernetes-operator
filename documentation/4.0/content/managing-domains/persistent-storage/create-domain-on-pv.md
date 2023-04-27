@@ -174,6 +174,24 @@ They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
+### Diagnostics
+
+1. Error in introspector job.  You can check the domain status of the domain 
+
+```
+kubectl -n <domain namespace> get domain <domain uid>
+```
+2. Clean up domain home.  If you need to delete the domain home to recover from an error or recreate the domain home, you can delete the `PVC` 
+if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC` or attach a pod
+to the shared volume and the access the pod to remove the contents.  There is a sample script here (LINK) if you are not familiar with the process.
+3. Check the operator log.  Additional error messages may be available in the Operator log.
+```
+kubectl -n <operator namespace> logs <operator pod name>
+```
+4. Updated the WDT models but changes are not applied to the domain in update.  This is expected behavior. The WDT domains specified in the domain image or configmap
+is a **one time** only operation,  they are only used for creating the initial domain, they are not designed to participate in the lifecycle operations. You should use
+WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and 
+also the application directory for JRF domain (`application` under the parent of the domain home directory) first.
 
 ### Configuration examples
 
