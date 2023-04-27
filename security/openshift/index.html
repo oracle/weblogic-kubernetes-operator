@@ -12,20 +12,20 @@
     <title>OpenShift :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1682600958" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1682600958" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1682628701" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1682628701" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1682600958"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1682628701"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1682600958"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1682600958"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1682628701"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1682628701"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1682600958"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1682628701"></script>
 
     
   </div>
@@ -3612,7 +3612,6 @@
         <li><a href="#use-a-dedicated-namespace">Use a dedicated namespace</a></li>
         <li><a href="#with-wit-set-the-target-parameter-to-openshift">With WIT, set the <code>target</code> parameter to <code>OpenShift</code></a></li>
         <li><a href="#security-requirements-to-run-weblogic-in-openshift">Security requirements to run WebLogic in OpenShift</a></li>
-        <li><a href="#create-a-custom-security-context-constraint">Create a custom Security Context Constraint</a></li>
       </ul>
     </li>
   </ul>
@@ -3695,66 +3694,6 @@ group, and that the group read, write and execute permissions are set (enabled):
 <li>For WebLogic Server and Fusion Middleware Infrastructure images, <code>/u01</code> (or the ultimate parent directory of your
 Oracle Home and domain if you put them in different locations).</li>
 </ul>
-<p>If your OpenShift environment has a different default security context constraint,
-you may need to configure OpenShift to allow use of UID 1000 by creating
-a security context constraint.  Oracle recommends that you define
-a custom security context constraint that has just the permissions that are required
-and apply that to WebLogic pods.  Oracle does not recommend using the built-in <code>anyuid</code>
-Security Context Constraint, because it provides more permissions
-than are needed, and is therefore less secure.</p>
-<h4 id="create-a-custom-security-context-constraint">Create a custom Security Context Constraint</h4>
-<p>For most use cases, customers should use OpenShift&rsquo;s default <code>restricted</code> security context constraint. If you do need to
-create and use a custom security context constraint, this section describes the settings necessary to be compatible with
-the operator and pods for WebLogic Server instances.</p>
-<p>To create a custom security context constraint, create a YAML file with the following
-content.  This example assumes that your OpenShift project is called <code>weblogic</code> and
-that the service account you will use to run the operator and domains
-is called <code>weblogic-operator</code>.  You should change these
-in the <code>groups</code> and <code>users</code> sections to match your environment.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">SecurityContextConstraints</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">uid1000</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowHostDirVolumePlugin</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowHostIPC</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowHostNetwork</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowHostPID</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowHostPorts</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowPrivilegeEscalation</span>: <span style="color:#66d9ef">true</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">allowPrivilegedContainer</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">fsGroup</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">groups</span>:
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">system:serviceaccounts:weblogic</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">readOnlyRootFilesystem</span>: <span style="color:#66d9ef">false</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">requiredDropCapabilities</span>:
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">KILL</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">MKNOD</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">SETUID</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">SETGID</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">runAsUser</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">uid</span>: <span style="color:#ae81ff">1000</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">seLinuxContext</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">supplementalGroups</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">RunAsAny</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">users</span>:
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">system:serviceaccount:weblogic:weblogic-operator</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">volumes</span>:
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">configMap</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">downwardAPI</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">emptyDir</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">persistentVolumeClaim</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">projected</span>
-</span></span><span style="display:flex;"><span>- <span style="color:#ae81ff">secret</span>
-</span></span></code></pre></div><p>Assuming you called that file <code>uid1000.yaml</code>, you can create the security context constraint
-using the following command:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ oc create -f uid1000.yaml
-</span></span></code></pre></div><p>After you have created the security context constraint, you can install the WebLogic Kubernetes Operator.
-Make sure you use the same service account to which you granted permission in the security
-context constraint (<code>weblogic-operator</code> in the preceding example).  The operator will then run
-with UID 1000, and any WebLogic domain it creates will also run with UID 1000.</p>
 
 <div class="notices note" ><p>For additional information about OpenShift requirements and the operator,
 see <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/#openshift">OpenShift</a>.</p>
@@ -6173,19 +6112,19 @@ see <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1682600958"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1682628701"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1682600958"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1682600958"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1682628701"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1682628701"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1682600958"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1682628701"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
