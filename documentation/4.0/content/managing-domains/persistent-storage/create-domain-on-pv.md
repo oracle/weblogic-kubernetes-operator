@@ -12,15 +12,30 @@ description = "Creating domain on PV."
 
 Domain on persistent volume require the domain home exists on a persistent volume,  this can be done either manually 
 or automated by specifying a section `domain.spec.configuration.initializeDomainOnPV` in the domain resource specification.
+The initial domain topology and resources are described using `Weblogic Deploy Tooling (WDT)` models.
 
-**The `domain.spec.configuration.initializeDomainOnPV` section provides a one time only domain home initialization,  the Operator will create the domain when the domain resource is first deployed, once the domain is created, this section will be ignored, subsequent domain updates should be controlled by
-WebLogic console, WLST or other mechanism.**  
+**The `domain.spec.configuration.initializeDomainOnPV` section provides a one time only domain home initialization,
+the Operator will create the domain when the domain resource is first deployed, once the domain is created,
+this section will be ignored, subsequent domain lifecycle updates should be controlled by
+WebLogic console, WLST or other mechanisms.**  See [High level use case](#high-level-use-case).
 
 The `initializeDomainOnPv` provides the following functionalities:
 
 - Create the `PersistentVolume` and/or `PersistenVolumeClaim` if requested.
 - Create `JRF RCU schema` if requested.
 - Create the domain home based on provided WDT models on the persistent volume.  (TODO: link needed)
+
+### High level use case
+
+The typical use case for using domain home on persistent volume is if your application lifecycle requires persisting changes to disk.
+
+For example, you use frameworks like `Meta data service (MDS)`, `Oracle Application Development Framework (ADF)`, `Oracle Service Bus (OSB)`. 
+These frameworks require a running domain and the normal lifecycle operations are persisted to disks. Typically,
+after the initial empty domain is created, you use tools like `Fusion Middleware Controls`, product specific `WLST` functions, 
+`WebLogic Console`, `Service Bus Console` for normal lifecycle operations, the changes are managed by
+these tools, not any part of the standard `WebLogic Server configuration`, and these operations
+cannot be described in the `WDT` models.
+
 
 ### Configuration
 
