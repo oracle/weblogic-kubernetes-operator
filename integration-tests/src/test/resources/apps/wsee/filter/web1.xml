@@ -1,0 +1,42 @@
+<?xml version = "1.0" encoding='UTF-8'?>
+<!-- Copyright (c) 2023, Oracle and/or its affiliates.
+Licensed under the Universal Permissive License v 1.0 as shown at
+https://oss.oracle.com/licenses/upl. -->
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+<display-name>Service</display-name>
+  <!-- Define the filters within the Web Application -->
+  <filter>
+    <filter-name>
+      SAML Filter
+    </filter-name>
+    <filter-class>
+      saml.sendervouches.filter.SoapMsgFilter
+    </filter-class>
+  </filter>
+
+  <!-- Map the filter to a Servlet or URL -->
+  <filter-mapping>
+    <filter-name>
+      SAML Filter
+    </filter-name>
+    <url-pattern>
+      /EchoService
+    </url-pattern>
+  </filter-mapping>
+
+<!-- Define the Servlets within the Web Application -->
+   <servlet>
+    <servlet-name>EchoJavaComponentServlethttp</servlet-name>
+    <servlet-class>saml.sendervouches.service.EchoService</servlet-class>
+    <load-on-startup>0</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>EchoJavaComponentServlethttp</servlet-name>
+    <url-pattern>/EchoService</url-pattern>
+  </servlet-mapping>
+
+</web-app>
+
+
