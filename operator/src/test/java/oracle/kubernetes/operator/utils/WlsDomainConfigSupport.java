@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
@@ -58,6 +59,11 @@ public class WlsDomainConfigSupport {
 
   public void setAdminServerName(String adminServerName) {
     this.adminServerName = adminServerName;
+  }
+
+
+  public WlsServerConfig getAdminServer() {
+    return wlsServers.get(adminServerName);
   }
 
   /**
@@ -210,10 +216,16 @@ public class WlsDomainConfigSupport {
   static class ServerConfigBuilder {
     private final String name;
     private final Integer listenPort;
+    private List<NetworkAccessPoint> naps;
 
     ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
       this.listenPort = listenPort;
+    }
+
+    public ServerConfigBuilder withNetworkAccessPoints(List<NetworkAccessPoint> naps) {
+      this.naps = naps;
+      return this;
     }
 
     WlsServerConfig build() {

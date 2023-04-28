@@ -2882,7 +2882,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     void mutate(V1Pod pod);
   }
 
-  protected static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
+  public static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
       return next;
