@@ -1,0 +1,43 @@
+<!-- Copyright (c) 2023, Oracle and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+          https://oss.oracle.com/licenses/upl. -->
+
+<?xml version = "1.0" encoding='UTF-8'?>
+
+<web-app xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+<display-name>ServiceRef</display-name>
+  <!-- Define the filters within the Web Application -->
+  <filter>
+    <filter-name>
+      SAML Filter
+    </filter-name>
+    <filter-class>
+      saml.sendervouches.filter.SoapMsgFilter
+    </filter-class>
+  </filter>
+
+  <!-- Map the filter to a Servlet or URL -->
+  <filter-mapping>
+    <filter-name>
+      SAML Filter
+    </filter-name>
+    <url-pattern>
+      /Echo
+    </url-pattern>
+  </filter-mapping>
+
+  <!-- Define the Servlets within the Web Application -->
+   <servlet>
+    <servlet-name>EchoServiceRefServlethttp</servlet-name>
+    <servlet-class>saml.sendervouches.serviceref.EchoServiceRef</servlet-class>
+    <load-on-startup>0</load-on-startup>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>EchoServiceRefServlethttp</servlet-name>
+    <url-pattern>/Echo</url-pattern>
+  </servlet-mapping>
+</web-app>
+
+

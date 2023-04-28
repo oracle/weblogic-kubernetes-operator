@@ -1,0 +1,148 @@
+<!-- Copyright (c) 2023, Oracle and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+          https://oss.oracle.com/licenses/upl.-->
+
+<project name="wsee.app" default="build">
+    <description>
+        ant script to build an application to test cross domain sso via webservices
+    </description>
+
+    <dirname file="${ant.file.wsee.app}"
+             property="wsee.app.dir"/>
+
+    <property environment="env"/>
+    <property name="tempdir" location="temp"/>
+    <property name="builddir" location="build"/>
+    <property name="distdir" location="dist"/>
+
+    <path id="build.classpath">
+        <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+        <pathelement path="${builddir}"/>
+    </path>
+    <echo message="ORACLE_HOME=${env.ORACLE_HOME}"/>
+    <taskdef name="jwsc" classname="weblogic.wsee.tools.anttasks.JwscTask"/>
+    <taskdef name="clientgen"
+             classname="weblogic.wsee.tools.anttasks.ClientGenTask"/>
+
+    <!-- Following application needs to be built one after the another -->
+    <target name="build" depends="buildservice,buildref">
+        <delete dir="${distdir}" quiet="true"/>
+        <mkdir dir="${distdir}"/>
+        <copy file="${builddir}/EchoServiceSV/EchoService.war" tofile="${distdir}/EchoService.war"/>
+        <copy file="${builddir}/EchoServiceRefSV/EchoServiceRef.war" tofile="${distdir}/EchoServiceRef.war"/>
+        <copy file="${builddir}/EchoServiceRefStubs.jar" tofile="${distdir}/EchoServiceRefStubs.jar"/>
+        <delete dir="${builddir}" quiet="true"/>
+        <sleep seconds="2"/>
+        <mkdir dir="${builddir}"/>
+        <delete dir="${tempdir}" quiet="true"/>
+        <mkdir dir="${tempdir}"/>
+    </target>
+    <target name="buildservice">
+        <mkdir dir="${builddir}/EchoServiceSV"/>
+        <antcall target="jwsc">
+            <param name="srcdir" value="${wsee.app.dir}/service"/>
+            <param name="service-name" value="EchoService"/>
+            <param name="destdir"
+                   value="${builddir}/EchoServiceSV"/>
+        </antcall>
+        <clientgen wsdl="jar:file:${builddir}/EchoServiceSV/EchoService.war!/WEB-INF/EchoJavaComponent.wsdl"
+                   destDir="${builddir}"
+                   generatePolicyMethods="true"
+                   packageName="saml.sendervouches.client.EchoService"/>
+        <javac srcdir="${builddir}"
+               debug="on"
+               destdir="${builddir}">
+            <include name="saml/**/*.java"/>
+            <include name="EchoServiceSV/**/*.java"/>
+            <classpath refid="build.classpath"/>
+        </javac>
+        <mkdir dir="${builddir}/EchoServiceSV/temp"/>
+        <mkdir dir="${builddir}/EchoServiceSV/temp/WEB-INF/classes"/>
+        <unwar src="${builddir}/EchoServiceSV/EchoService.war"
+               dest="${builddir}/EchoServiceSV/temp"/>
+        <filter token="test_results_dir" value="/u01/"/>
+        <copy todir="${builddir}/EchoServiceSV/temp/WEB-INF/classes"
+              overwrite="true"
+              filtering="true">
+            <fileset dir="${wsee.app.dir}/filter">
+                <include name="RawXML.properties"/>
+            </fileset>
+        </copy>
+        <copy tofile="${builddir}/EchoServiceSV/temp/WEB-INF/web.xml"
+              file="${wsee.app.dir}/filter/web1.xml"
+              overwrite="true"/>
+        <javac srcdir="${wsee.app.dir}/filter"
+               debug="on"
+               destdir="${builddir}/EchoServiceSV/temp/WEB-INF/classes"
+               includes="*.java">
+        </javac>
+        <war destfile="${builddir}/EchoServiceSV/EchoService.war"
+             basedir="${builddir}/EchoServiceSV/temp"/>
+    </target>
+    <target name="buildref">
+        <delete dir="${tempdir}" quiet="true"/>
+        <mkdir dir="${tempdir}"/>
+        <mkdir dir="${builddir}/EchoServiceRefSV"/>
+        <antcall target="jwsc">
+            <param name="srcdir" value="${wsee.app.dir}/serviceref"/>
+            <param name="service-name" value="EchoServiceRef"/>
+            <param name="destdir"
+                   value="${builddir}/EchoServiceRefSV"/>
+        </antcall>
+        <mkdir dir="${tempdir}/WEB-INF/classes/saml/sendervouches/client/EchoService"/>
+        <copy todir="${tempdir}/WEB-INF/classes/saml/sendervouches/client/EchoService">
+            <fileset dir="${builddir}/saml/sendervouches/client/EchoService"/>
+        </copy>
+        <jar update="true"
+             destfile="${builddir}/EchoServiceRefSV/EchoServiceRef.war"
+             basedir="${tempdir}"
+             includes="WEB-INF/**"/>
+        <clientgen wsdl="jar:file:${builddir}/EchoServiceRefSV/EchoServiceRef.war!/WEB-INF/EchoServiceRef.wsdl"
+                   destDir="${builddir}"
+                   generatePolicyMethods="true"
+                   packageName="saml.sendervouches.client.EchoServiceRef"/>
+        <javac srcdir="${builddir}"
+               debug="on"
+               destdir="${builddir}"
+               includes="saml/sendervouches/client/EchoServiceRef/**/*.java">
+            <classpath refid="build.classpath"/>
+        </javac>
+        <jar destfile="${builddir}/EchoServiceRefStubs.jar"
+             basedir="${builddir}"
+             includes="saml/sendervouches/client/EchoServiceRef/**"/>
+        <mkdir dir="${builddir}/EchoServiceRefSV/temp"/>
+        <mkdir dir="${builddir}/EchoServiceRefSV/temp/WEB-INF/classes"/>
+        <unwar src="${builddir}/EchoServiceRefSV/EchoServiceRef.war"
+               dest="${builddir}/EchoServiceRefSV/temp"/>
+        <filter token="test_results_dir" value="/u01/"/>
+        <copy todir="${builddir}/EchoServiceRefSV/temp/WEB-INF/classes"
+              overwrite="true"
+              filtering="true">
+            <fileset dir="${wsee.app.dir}/filter">
+                <include name="RawXML.properties"/>
+            </fileset>
+        </copy>
+
+        <copy tofile="${builddir}/EchoServiceRefSV/temp/WEB-INF/web.xml"
+              file="${wsee.app.dir}/filter/web.xml"
+              overwrite="true"/>
+        <javac srcdir="${wsee.app.dir}/filter"
+               debug="on"
+               destdir="${builddir}/EchoServiceRefSV/temp/WEB-INF/classes"
+               includes="*.java">
+        </javac>
+        <war destfile="${builddir}/EchoServiceRefSV/EchoServiceRef.war"
+             basedir="${builddir}/EchoServiceRefSV/temp"/>
+    </target>
+    <target name="jwsc">
+        <mkdir dir="${destdir}"/>
+        <jwsc srcdir="${srcdir}/"
+              keepTempFiles="true"
+              tempdir="${tempdir}"
+              destdir="${destdir}"
+              classpathref="build.classpath">
+            <jws file="${service-name}.java"/>
+        </jwsc>
+        <mkdir dir="${tempdir}/WEB-INF/policies"/>
+    </target>
+</project>

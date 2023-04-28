@@ -827,6 +827,37 @@ public class CommonTestUtils {
   }
 
   /**
+   * Compile java class inside the pod.
+   * @param podName name of the pod
+   * @param namespace name of namespace
+   * @param destLocation location of java class
+   * @param extraclasspath location of java class
+   */
+  public static void runJavacInsidePod(String podName, String namespace, String destLocation, String extraclasspath) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
+    javacCmd.append(namespace);
+    javacCmd.append(" -it ");
+    javacCmd.append(podName);
+    javacCmd.append(" -- /bin/bash -c \"");
+    javacCmd.append("javac -cp ");
+    javacCmd.append(jarLocation);
+    javacCmd.append(":");
+    javacCmd.append(extraclasspath);
+    javacCmd.append(" ");
+    javacCmd.append(destLocation);
+    javacCmd.append(" \"");
+    logger.info("javac command {0}", javacCmd.toString());
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(javacCmd), true));
+    logger.info("javac returned {0}", result.toString());
+    logger.info("javac returned EXIT value {0}", result.exitValue());
+    assertEquals(0, result.exitValue(), "Client compilation fails");
+  }
+
+  /**
    * Run java client inside the pod using weblogic.jar.
    *
    * @param podName    name of the pod
@@ -864,6 +895,52 @@ public class CommonTestUtils {
       logger.info("java returned {0}", result.toString());
       logger.info("java returned EXIT value {0}", result.exitValue());
       return ((result.exitValue() == 0));
+    });
+  }
+
+  /**
+   * Run java client inside the pod using weblogic.jar.
+   *
+   * @param podName    name of the pod
+   * @param namespace  name of the namespace
+   * @param javaClientLocation location(path) of java class
+   * @param javaClientClass java class name
+   * @param expectedResult expected result
+   * @param args       arguments to the java command
+   * @return true if the client ran successfully
+   */
+  public static Callable<Boolean> runClientInsidePodVerifyResult(String podName,
+                                                                 String namespace,
+                                                                 String javaClientLocation,
+                                                                 String javaClientClass,
+                                                                 String expectedResult,
+                                                                 String... args) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
+    javapCmd.append(namespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(podName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":");
+    javapCmd.append(javaClientLocation);
+    javapCmd.append(" ");
+    javapCmd.append(javaClientClass);
+    javapCmd.append(" ");
+    for (String arg:args) {
+      javapCmd.append(arg).append(" ");
+    }
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    return (() -> {
+      ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
+      logger.info("java returned {0}", result.toString());
+      logger.info("java returned EXIT value {0}", result.exitValue());
+      return ((result.exitValue() == 0 && result.stdout().contains(expectedResult)));
     });
   }
 
