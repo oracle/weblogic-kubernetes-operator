@@ -1,5 +1,5 @@
 +++
-title = "Model files"
+title = "Working with WDT Model files in Operator"
 date = 2020-03-11T16:45:16-05:00
 weight = 30
 pre = "<b> </b>"
@@ -10,48 +10,53 @@ description = "Model file requirements, macros, and loading order."
 
 ### Introduction
 
-This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
+This document describes working with `WDT` artifacts in Operator. 
+For additional information, see the [WebLogic Deploy Tooling (WDT)](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
 {{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
 {{% /notice %}}
 
-### Sample model file
+### Sample model file with macros
 
-Here's an example of a model YAML file that defines a WebLogic Server Administration Server and dynamic cluster.
+Here's an example of a model YAML file describing a domain.
 
 ```yaml
 domainInfo:
   AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
   AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-  ServerStartMode: 'prod'
-
+  RCUDbInfo:
+      rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+      rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+      rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'  
 topology:
   Name: '@@ENV:DOMAIN_UID@@'
   AdminServerName: "admin-server"
   Cluster:
     "cluster-1":
-      DynamicServers:
-        ServerTemplate:  "cluster-1-template"
-        ServerNamePrefix: "managed-server"
-        DynamicClusterSize: 5
-        MaxDynamicClusterSize: 5
-        CalculatedListenPorts: false
-  Server:
-    "admin-server":
-      ListenPort: 7001
-  ServerTemplate:
-    "cluster-1-template":
-      Cluster: "cluster-1"
-      ListenPort: 8001
+      ...
+resources:
+  ...
+appDeployments:
+  Application:
+    myear:
+      SourcePath: wlsdeploy/applications/sample_app.ear
+      ModuleType: ear
+      Target: 'cluster-1'
 ```
 
-This sample model file:
- - Includes a WebLogic credentials stanza that is required by Model in Image.
- - Derives its domain name from the predefined environment variable `DOMAIN_UID`, but note that this is not required.
+This sample model file has four sections:
 
+| Section    | Purpose                                                    |
+|------------|------------------------------------------------------------|
+| domainInfo | Describe the domain level information                      |
+| topology   | Describe the topology of the domain                        |
+| resources  | Describe the J2EE resources used in the domain             |
+| appDeployments  | Describe the applications and libraries used in the domain |
+
+You will notice the value pattern with `@@...@@`.  These are macros that will be substituted in runtime by the `WDT` in the Operator environment.
 For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
 
-### Important notes about Model in Image model files
+### Important notes about WDT model files
 
   - Using model file macros
 
@@ -64,16 +69,6 @@ For a description of model file macro references to secrets and environment vari
     - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your Domain YAML file, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
 
     - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
-
-- A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@SECRET` macro with the reserved secret name `__weblogic-credentials__` to reference your Domain YAML file's WebLogic credentials secret for this purpose. For example:
-
-    ```yaml
-    domainInfo:
-      AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-      AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ```
-
-- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza; see [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
@@ -91,6 +86,8 @@ The loading order within each of these locations is first determined using the c
    * The number can be any integer greater than or equal to zero.
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
  * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
+
+TODO: refactor this paragraph:d
 
 **Note**: If `configuration.models.modelHome` files are supplied by combining multiple
 [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}),
@@ -143,7 +140,6 @@ Any secrets that are referenced by an `@@SECRET` macro must be deployed to the s
 Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
 
   ```yaml
-  ...
   spec:
     webLogicCredentialsSecret:
       name: my-weblogic-credentials-secret

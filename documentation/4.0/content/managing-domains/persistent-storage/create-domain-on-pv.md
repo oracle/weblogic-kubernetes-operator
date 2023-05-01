@@ -8,33 +8,32 @@ description = "Creating domain on PV."
 
 {{< table_of_contents >}}
 
-### Introduction
+### Overview
 
-Domain on persistent volume require the domain home exists on a persistent volume,  this can be done either manually 
-or automated by specifying a section `domain.spec.configuration.initializeDomainOnPV` in the domain resource specification.
-The initial domain topology and resources are described using `Weblogic Deploy Tooling (WDT)` models.
+Domain on persistent volume require the domain home exists on a persistent volume,  the domain home can be created either manually 
+or automated by specifying the section `domain.spec.configuration.initializeDomainOnPV` in the domain resource YAML file.
+The initial domain topology and resources are described using `Weblogic Deploy Tooling (WDT)` models - (LINK to the new models page).
 
 **The `domain.spec.configuration.initializeDomainOnPV` section provides a one time only domain home initialization,
 the Operator will create the domain when the domain resource is first deployed, once the domain is created,
 this section will be ignored, subsequent domain lifecycle updates should be controlled by
 WebLogic console, WLST or other mechanisms.**  See [High level use case](#high-level-use-case).
 
-The `initializeDomainOnPv` provides the following functionalities:
+The `initializeDomainOnPv` provides the following functions:
 
-- Create the `PersistentVolume` and/or `PersistenVolumeClaim` if requested.
-- Create `JRF RCU schema` if requested.
+- Create the `PersistentVolume` and/or `PersistenVolumeClaim` if needed.
+- Create `JRF RCU schema` if needed.
 - Create the domain home based on provided WDT models on the persistent volume.  (TODO: link needed)
 
 ### High level use case
 
-The typical use case for using domain home on persistent volume is if your application lifecycle requires persisting changes to disk.
+The typical use case for using domain home on persistent volume is for application lifecycle that required persisting changes to the permanent file system.
 
 For example, you use frameworks like `Meta data service (MDS)`, `Oracle Application Development Framework (ADF)`, `Oracle Service Bus (OSB)`. 
-These frameworks require a running domain and the normal lifecycle operations are persisted to disks. Typically,
-after the initial empty domain is created, you use tools like `Fusion Middleware Controls`, product specific `WLST` functions, 
-`WebLogic Console`, `Service Bus Console` for normal lifecycle operations, the changes are managed by
-these tools, not any part of the standard `WebLogic Server configuration`, and these operations
-cannot be described in the `WDT` models.
+These frameworks require a running domain and the normal lifecycle operations are persisted to the file systems. Typically,
+after the initial domain is created, you use tools like `Fusion Middleware Controls`, product specific `WLST` functions, 
+`WebLogic Console`, `Service Bus Console`, `JDeveloper` for normal lifecycle operations, the changes are managed by
+these tools, and the data and operation cannot be described using `WDT` models.
 
 
 ### Configuration
@@ -47,7 +46,8 @@ In order to use this feature, provide the following information:
 
 - WebLogic base image.  This is the WebLogic product to be used.
 - `PersistentVolume` and `PersistentVolumeClaim`.   This is environment specific and usually require assistance from your administrator to provide the underlying details such as `storageClass` or any permissions.
-- Domain information.  This describes the domain type, whether the Operator should create the RCU schema, and the domain image providing WDT binaries and WDT artifacts describing the domain.
+- Domain information.  This describes the domain type, whether the Operator should create the RCU schema. 
+- Domain WDT models.  This is where the WDT binaries and WDT artifacts reside.
 - Domain resource YAML.  This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
@@ -58,16 +58,58 @@ In order to use this feature, provide the following information:
 
 #### WebLogic base image
 
-Since the domain will be created on a persistent volume.  The main image should only contains the WebLogic product binary and `JDK`.  
+Since the domain will be created on a persistent volume.  The base image should only contains the WebLogic product binary and `JDK`.  
 
 ```
 spec:
   image: "container-registry.oracle.com/middleware/fmw-infrastructure_cpu:12.2.1.4-jdk8-ol8-221014"
 ```
 
-You can specify your own image, reference a patched image in `container-registry.oracle.com`, or create and patch
-a image using [WebLogic Image tool](https://github.com/oracle/weblogic-image-tool)
+You can specify your own image, use a patched image from `container-registry.oracle.com`, or create and patch using
+[WebLogic Image tool](https://github.com/oracle/weblogic-image-tool)
 
+#### Domain creation image directory structures
+
+You can specify an image that describe the domain topology, resources, and applications in the domain resource YAML.
+
+```
+     domain:
+          domainCreationImages:
+            - image: 'myaux-domain:v1'
+```
+
+In this image(s), you provide the [WebLogic Depoy Tooling Binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
+and also the `WDT` artifacts.  The Operator will use the tool and the `WDT` artifacts to create the initial domain.
+
+The image layout must follow this directory structures:
+
+```
+/auxiliary/weblogic-delpoy - unzipped WebLogic Deploy Tooling release file
+/auxiliary/models -  All WDT artifacts such as model YAML, model properties, model archives
+```
+
+You can create your own image using your familiar method or use [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
+
+For example, using `WebLogic Image Tool`,  since the file structure is very close to `Auxiliary Image` in `Model in image`, you can 
+use the same command `createAuxImage`, except in this case, you should not set `--wdtModelHome` and `--wdtHome` 
+to change the default values for them.
+
+```
+imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
+   --wdtVersion latest \
+   --wdtModel /home/acme/myapp/wdt/model1.yaml \
+   --wdtVariables /home/acme/myapp/wdt/model1.properties \
+   --tag mydomain-image:v1   
+```
+
+#### Optional WDT artifacts config map
+
+You can optionally provide a Kubernetes `ConfigMap` with additional `WDT` artifacts as supplements or overrides to
+those in the image's `/auxiliary/models` directory.
+
+```
+kubectl -n <ns> create configmap wdt-model-configmap --from-file=/home/acme/myapp/wdt/extramodels
+```
 
 #### Persistent Volume and Persistent Volume Claim
 
@@ -78,9 +120,8 @@ for you.
 The specifications of `PersistentVolume` and `PersistentVolumeClaim` is environment specific and often requires information 
 from your Kubernetes cluster administrator to provide the information. See [PV and PVC in different environments](#references)
 
-For example, specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML.  
-
-The operator will create the `PV` and `PVC` and mount the persistent volume to the `/share` directory.
+For example, specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML,  
+the Operator will create the `PV` and `PVC` and mount the persistent volume to the `/share` directory.
 
 ```
 spec:
@@ -116,7 +157,7 @@ spec:
                     storage: 10Gi
 ```
 
-For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
+Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
 See [supported fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
 
 If the `PV` and `PVC` already existed your environment, you do not need
@@ -138,6 +179,7 @@ spec:
     initializeDomainOnPV:
      ....
 ```
+
 #### References
 
 [Oracle Kubernetes Engine Persistent Storage](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm)
@@ -183,6 +225,7 @@ spec:
 
 ### WebLogic Deploy Tooling models
 
+Should point to the new model page (TODO)
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
 configuration scripts and templates.
 They compactly define a WebLogic domain using YAML files and support including
@@ -196,11 +239,36 @@ application archives in a ZIP file. The WDT model format is fully described in t
 ```
 kubectl -n <domain namespace> get domain <domain uid>
 ```
-2. Check the operator log.  Additional error messages may be available in the Operator log.
+
+2. Check the log files in `logHome`
+
+By default, the Operator persists the log files for the introspector job, RCU logs, and Weblogic servers logs in `domain.spec.logHome`
+(default: /share/logs/<domain uid>).
+
+If there are errors, the related output files can be found in the `logHome` directory.  For example:
+
+```
+admin-server.log                  
+introspector_script.out
+createDomain.log
+wdt_output.log             
+admin-server.out
+...                 
+rculogdir/**
+```
+
+3. Check the Operator log.  Additional error messages may be available in the Operator log.
 ```
 kubectl -n <operator namespace> logs <operator pod name>
 ```
-3. Updated the WDT models but changes are not reflected in the domain  This is the expected behavior. The WDT domain models specified in the domain image or configmap
+
+4. Check the Kubernetes events.
+
+```
+kubectl -n <domain namespace> get events
+```
+
+5. Updated the WDT models but changes are not reflected in the domain  This is the expected behavior. The WDT domain models specified in the domain image or configmap
 is a **one time** only operation, they are only used for creating the initial domain, after the domain is created, they are not designed to participate in the lifecycle operations. 
 You should use WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and 
 also the applications directory for JRF domain (`applications/<domain uid>` under the parent of the domain home directory) before trying to create the domain again.
