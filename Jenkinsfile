@@ -47,35 +47,81 @@ def kind_k8s_map = [
         '1.21':    'kindest/node:v1.21.12@sha256:f316b33dd88f8196379f38feb80545ef3ed44d9197dca1bfd48bcb1583210207',
         '1.20.15': 'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248',
         '1.20':    'kindest/node:v1.20.15@sha256:6f2d011dffe182bad80b85f6c00e8ca9d86b5b8922cdf433d53575c4c5212248'
+    ],
+    '0.15.0': [
+        '1.25.0':  'kindest/node:v1.25.0@sha256:428aaa17ec82ccde0131cb2d1ca6547d13cf5fdabcc0bbecf749baa935387cbf',
+        '1.25':    'kindest/node:v1.25.0@sha256:428aaa17ec82ccde0131cb2d1ca6547d13cf5fdabcc0bbecf749baa935387cbf',
+        '1.24.4':  'kindest/node:v1.24.4@sha256:adfaebada924a26c2c9308edd53c6e33b3d4e453782c0063dc0028bdebaddf98',
+        '1.24':    'kindest/node:v1.24.4@sha256:adfaebada924a26c2c9308edd53c6e33b3d4e453782c0063dc0028bdebaddf98',
+        '1.23.10': 'kindest/node:v1.23.10@sha256:f047448af6a656fae7bc909e2fab360c18c487ef3edc93f06d78cdfd864b2d12',
+        '1.23':    'kindest/node:v1.23.10@sha256:f047448af6a656fae7bc909e2fab360c18c487ef3edc93f06d78cdfd864b2d12',
+        '1.22.13': 'kindest/node:v1.22.13@sha256:4904eda4d6e64b402169797805b8ec01f50133960ad6c19af45173a27eadf959',
+        '1.22':    'kindest/node:v1.22.13@sha256:4904eda4d6e64b402169797805b8ec01f50133960ad6c19af45173a27eadf959',
+        '1.21.14': 'kindest/node:v1.21.14@sha256:f9b4d3d1112f24a7254d2ee296f177f628f9b4c1b32f0006567af11b91c1f301',
+        '1.21':    'kindest/node:v1.21.14@sha256:f9b4d3d1112f24a7254d2ee296f177f628f9b4c1b32f0006567af11b91c1f301',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:d67de8f84143adebe80a07672f370365ec7d23f93dc86866f0e29fa29ce026fe',
+        '1.20':    'kindest/node:v1.20.15@sha256:d67de8f84143adebe80a07672f370365ec7d23f93dc86866f0e29fa29ce026fe'
+    ],
+    '0.16.0': [
+        '1.25.2':  'kindest/node:v1.25.2@sha256:9be91e9e9cdf116809841fc77ebdb8845443c4c72fe5218f3ae9eb57fdb4bace',
+        '1.25':    'kindest/node:v1.25.2@sha256:9be91e9e9cdf116809841fc77ebdb8845443c4c72fe5218f3ae9eb57fdb4bace',
+        '1.24.6':  'kindest/node:v1.24.6@sha256:97e8d00bc37a7598a0b32d1fabd155a96355c49fa0d4d4790aab0f161bf31be1',
+        '1.24':    'kindest/node:v1.24.6@sha256:97e8d00bc37a7598a0b32d1fabd155a96355c49fa0d4d4790aab0f161bf31be1',
+        '1.23.12': 'kindest/node:v1.23.12@sha256:9402cf1330bbd3a0d097d2033fa489b2abe40d479cc5ef47d0b6a6960613148a',
+        '1.23':    'kindest/node:v1.23.12@sha256:9402cf1330bbd3a0d097d2033fa489b2abe40d479cc5ef47d0b6a6960613148a',
+        '1.22.15': 'kindest/node:v1.22.15@sha256:bfd5eaae36849bfb3c1e3b9442f3da17d730718248939d9d547e86bbac5da586',
+        '1.22':    'kindest/node:v1.22.15@sha256:bfd5eaae36849bfb3c1e3b9442f3da17d730718248939d9d547e86bbac5da586',
+        '1.21.14': 'kindest/node:v1.21.14@sha256:ad5b7446dd8332439f22a1efdac73670f0da158c00f0a70b45716e7ef3fae20b',
+        '1.21':    'kindest/node:v1.21.14@sha256:ad5b7446dd8332439f22a1efdac73670f0da158c00f0a70b45716e7ef3fae20b',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:45d0194a8069c46483a0e509088ab9249302af561ebee76a1281a1f08ecb4ed3',
+        '1.20':    'kindest/node:v1.20.15@sha256:45d0194a8069c46483a0e509088ab9249302af561ebee76a1281a1f08ecb4ed3'
+    ],
+    '0.17.0': [
+        '1.25.3':  'kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1',
+        '1.25':    'kindest/node:v1.25.3@sha256:f52781bc0d7a19fb6c405c2af83abfeb311f130707a0e219175677e366cc45d1',
+        '1.24.7':  'kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315',
+        '1.24':    'kindest/node:v1.24.7@sha256:577c630ce8e509131eab1aea12c022190978dd2f745aac5eb1fe65c0807eb315',
+        '1.23.13': 'kindest/node:v1.23.13@sha256:ef453bb7c79f0e3caba88d2067d4196f427794086a7d0df8df4f019d5e336b61',
+        '1.23':    'kindest/node:v1.23.13@sha256:ef453bb7c79f0e3caba88d2067d4196f427794086a7d0df8df4f019d5e336b61',
+        '1.22.15': 'kindest/node:v1.22.15@sha256:7d9708c4b0873f0fe2e171e2b1b7f45ae89482617778c1c875f1053d4cef2e41',
+        '1.22':    'kindest/node:v1.22.15@sha256:7d9708c4b0873f0fe2e171e2b1b7f45ae89482617778c1c875f1053d4cef2e41',
+        '1.21.14': 'kindest/node:v1.21.14@sha256:9d9eb5fb26b4fbc0c6d95fa8c790414f9750dd583f5d7cee45d92e8c26670aa1',
+        '1.21':    'kindest/node:v1.21.14@sha256:9d9eb5fb26b4fbc0c6d95fa8c790414f9750dd583f5d7cee45d92e8c26670aa1',
+        '1.20.15': 'kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394',
+        '1.20':    'kindest/node:v1.20.15@sha256:a32bf55309294120616886b5338f95dd98a2f7231519c7dedcec32ba29699394'
+    ],
+    '0.18.0': [
+        '1.26.3':  'kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f',
+        '1.26':    'kindest/node:v1.26.3@sha256:61b92f38dff6ccc29969e7aa154d34e38b89443af1a2c14e6cfbd2df6419c66f',
+        '1.25.8':  'kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f',
+        '1.25':    'kindest/node:v1.25.8@sha256:00d3f5314cc35327706776e95b2f8e504198ce59ac545d0200a89e69fce10b7f',
+        '1.24.12': 'kindest/node:v1.24.12@sha256:1e12918b8bc3d4253bc08f640a231bb0d3b2c5a9b28aa3f2ca1aee93e1e8db16',
+        '1.24':    'kindest/node:v1.24.12@sha256:1e12918b8bc3d4253bc08f640a231bb0d3b2c5a9b28aa3f2ca1aee93e1e8db16',
+        '1.23.17': 'kindest/node:v1.23.17@sha256:e5fd1d9cd7a9a50939f9c005684df5a6d145e8d695e78463637b79464292e66c',
+        '1.23':    'kindest/node:v1.23.17@sha256:e5fd1d9cd7a9a50939f9c005684df5a6d145e8d695e78463637b79464292e66c',
+        '1.22.17': 'kindest/node:v1.22.17@sha256:c8a828709a53c25cbdc0790c8afe12f25538617c7be879083248981945c38693',
+        '1.22':    'kindest/node:v1.22.17@sha256:c8a828709a53c25cbdc0790c8afe12f25538617c7be879083248981945c38693',
+        '1.21.14': 'kindest/node:v1.21.14@sha256:27ef72ea623ee879a25fe6f9982690a3e370c68286f4356bf643467c552a3888',
+        '1.21':    'kindest/node:v1.21.14@sha256:27ef72ea623ee879a25fe6f9982690a3e370c68286f4356bf643467c552a3888'
     ]
 ]
 def _kind_image = null
 
 pipeline {
-    agent { label 'VM.Standard2.8' }
+    agent { label 'large' }
     options {
         timeout(time: 800, unit: 'MINUTES')
     }
 
     tools {
-        maven 'maven-3.8.5'
-        jdk 'OpenJDK 17.0.2'
+        maven 'maven-3.8.7'
+        jdk 'jdk17'
     }
 
     environment {
-        github_url = "${env.GIT_URL}"
-        github_creds = 'ecnj_github'
-        ocr_username_creds = 'OCR username'
-        ocr_password_creds = 'OCR Password'
-        ocir_registry_creds = 'ocir-server'
-        ocir_email_creds = 'ocir-email'
-        ocir_username_creds = 'ocir-username'
-        ocir_password_creds = 'ocir-token'
-        image_pull_secret_weblogic_creds = 'image-pull-secret-weblogic'
-
-        sonar_project_key = 'oracle_weblogic-kubernetes-operator'
-        sonar_github_repo = 'oracle/weblogic-kubernetes-operator'
-        sonar_webhook_secret_creds = 'SonarCloud WebHook Secret'
+        ocir_host = "${env.WKT_OCIR_HOST}"
+        wko_tenancy = "${env.WKT_TENANCY}"
+        ocir_creds = 'wkt-ocir-creds'
 
         outdir = "${WORKSPACE}/staging"
         result_root = "${outdir}/wl_k8s_test_results"
@@ -109,6 +155,10 @@ pipeline {
         choice(name: 'KIND_VERSION',
                description: 'Kind version.',
                choices: [
+                   '0.18.0',
+                   '0.17.0',
+                   '0.16.0',
+                   '0.15.0',
                    '0.14.0',
                    '0.13.0',
                    '0.12.0',
@@ -116,20 +166,39 @@ pipeline {
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.21.12',
+                    '1.21.14',
+                    '1.26',
+                    '1.26.3',
+                    '1.25',
+                    '1.25.8',
+                    '1.25.3',
+                    '1.25.2',
+                    '1.25.0',
                     '1.24',
+                    '1.24.12',
+                    '1.24.7',
+                    '1.24.6',
+                    '1.24.4',
                     '1.24.0',
+                    '1.23.17',
+                    '1.23.13',
+                    '1.23.12',
+                    '1.23.10',
                     '1.23.6',
                     '1.23.4',
                     '1.23.3',
                     '1.23',
+                    '1.22.17',
+                    '1.22.15',
+                    '1.22.13',
                     '1.22.9',
                     '1.22.7',
                     '1.22.5',
                     '1.22',
+                    '1.21.12',
                     '1.21.10',
                     '1.21.1',
                     '1.21',
@@ -146,11 +215,19 @@ pipeline {
         )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
-               defaultValue: '3.10.2'
+               defaultValue: '3.11.2'
         )
-        string(name: 'ISTIO_VERSION',
-               description: 'Other Possible Values 1.7.3, 1.8.1, 1.7.6',
-               defaultValue: '1.10.4'
+        choice(name: 'ISTIO_VERSION',
+               description: 'Istio version',
+               choices: [
+                   '1.10.4',
+                   '1.17.2',
+                   '1.16.1',
+                   '1.13.2',
+                   '1.12.6',
+                   '1.11.1',
+                   '1.9.9'
+               ]
         )
         booleanParam(name: 'PARALLEL_RUN',
                      description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
@@ -168,37 +245,33 @@ pipeline {
                description: 'URL to download WIT.',
                defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
         )
-        string(name: 'REPO_REGISTRY',
-               description: '',
-               defaultValue: 'phx.ocir.io'
-        )
-        choice(name: 'BASE_IMAGES_REPO',
-               choices: ['phx.ocir.io', 'container-registry.oracle.com'],
-               description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
-        )
         string(name: 'TEST_IMAGES_REPO',
                description: '',
-               defaultValue: 'phx.ocir.io'
+               defaultValue: "${env.WKT_OCIR_HOST}"
+        )
+        choice(name: 'BASE_IMAGES_REPO',
+               choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
+               description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
         )
         string(name: 'WEBLOGIC_IMAGE_NAME',
-               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
-               defaultValue: 'weblogick8s/test-images/weblogic'
+               description: 'WebLogic base image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/weblogic for OCR.',
+               defaultValue: "test-images/weblogic"
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
                description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
                defaultValue: '12.2.1.4'
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
-               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: 'weblogick8s/test-images/fmw-infrastructure'
+               description: 'FWM Infra image name. Default is the image name in BASE_IMAGES_REPO. Use middleware/fmw-infrastructure for OCR.',
+               defaultValue: "test-images/fmw-infrastructure"
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
                description: 'FWM Infra image tag',
                defaultValue: '12.2.1.4'
         )
         string(name: 'DB_IMAGE_NAME',
-               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
-               defaultValue: 'weblogick8s/test-images/database/enterprise'
+               description: 'Oracle DB image name. Default is the image name in BASE_IMAGES_REPO, use database/enterprise for OCR.',
+               defaultValue: "test-images/database/enterprise"
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
@@ -210,7 +283,15 @@ pipeline {
         )
         string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
                description: '',
-               defaultValue: '2.1.0'
+               defaultValue: '2.0.7'
+        )
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '15.2.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.38.6'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
@@ -224,7 +305,7 @@ pipeline {
                 anyOf {
                     changeRequest()
                     branch 'main'
-                    branch 'release/3.3'
+                    branch 'release/4.0'
                     branch 'release/3.4'
                 }
             }
@@ -272,60 +353,13 @@ pipeline {
                     }
                 }
 
-                // Use explicit checkout so that we can clean up the workspace.
-                // Cannot use skipDefaultCheckout option since we want to use
-                // the GIT_COMMIT environment variable to make sure that we are
-                // checking out the exactly commit that triggered the build.
-                //
-                stage('GitHub Checkout') {
-                    steps {
-                        sh "sudo rm -rf ${WORKSPACE}/*"
-                        checkout([$class: 'GitSCM', branches: [[name: "${GIT_COMMIT}"]],
-                                  doGenerateSubmoduleConfigurations: false,
-                                  extensions: [], submoduleCfg: [],
-                                  userRemoteConfigs: [[credentialsId: "${github_creds}", url: "${github_url}"]]])
-                    }
-                }
-
                 stage('Build WebLogic Kubernetes Operator') {
                     steps {
-                        sh "mvn -DtrimStackTrace=false clean install"
-                    }
-                }
-
-                stage('Run Sonar Analysis') {
-                    steps {
-                        sh '''
-                            rm -rf ${WORKSPACE}/.mvn/maven.config
-                            mkdir -p ${WORKSPACE}/.mvn
-                            touch ${WORKSPACE}/.mvn/maven.config
-                            echo "-Dsonar.projectKey=${sonar_project_key}"                        >> ${WORKSPACE}/.mvn/maven.config
-                            if [ -z "${CHANGE_ID}" ]; then
-                                echo "-Dsonar.branch.name=${BRANCH_NAME}"                         >> ${WORKSPACE}/.mvn/maven.config
-                            else
-                                echo "-Dsonar.pullrequest.provider=GitHub"                        >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.github.repository=${sonar_github_repo}" >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.key=${CHANGE_ID}"                       >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.branch=${CHANGE_BRANCH}"                >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dsonar.pullrequest.base=${CHANGE_TARGET}"                  >> ${WORKSPACE}/.mvn/maven.config
-                            fi
-                            echo "${WORKSPACE}/.mvn/maven.config contents:"
-                            cat "${WORKSPACE}/.mvn/maven.config"
-                        '''
-                        withSonarQubeEnv('SonarCloud') {
-                            sh "mvn sonar:sonar"
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh "mvn -DtrimStackTrace=false clean install"
                         }
                     }
                 }
-
-                 stage('Verify Sonar Quality Gate') {
-                    steps {
-                        timeout(time: 10, unit: 'MINUTES') {
-                            // Set abortPipeline to true to stop the build if the Quality Gate is not met.
-                            waitForQualityGate(abortPipeline: false, webhookSecretId: "${sonar_webhook_secret_creds}")
-                        }
-                    }
-                 }
 
                 stage('Make Workspace bin directory') {
                     steps {
@@ -340,7 +374,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "helm.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/helm%2Fhelm-v${HELM_VERSION}.tar.gz"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=helm/helm-v${HELM_VERSION}.tar.gz --file=helm.tar.gz \
+                                --auth=instance_principal
                             tar zxf helm.tar.gz
                             mv linux-amd64/helm ${WORKSPACE}/bin/helm
                             rm -rf linux-amd64
@@ -356,7 +392,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kubectl" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kubectl%2Fkubectl-v${KUBECTL_VERSION}"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=kubectl/kubectl-v${KUBECTL_VERSION} --file=${WORKSPACE}/bin/kubectl \
+                                --auth=instance_principal
                             chmod +x ${WORKSPACE}/bin/kubectl
                             kubectl version --client=true
                         '''
@@ -370,7 +408,9 @@ pipeline {
                     steps {
                         sh '''
                             export PATH=${runtime_path}
-                            curl -Lo "${WORKSPACE}/bin/kind" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/kind%2Fkind-v${KIND_VERSION}"
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=kind/kind-v${KIND_VERSION} --file=${WORKSPACE}/bin/kind \
+                                --auth=instance_principal
                             chmod +x "${WORKSPACE}/bin/kind"
                             kind version
                         '''
@@ -400,7 +440,8 @@ pipeline {
                               docker rm --force "${registry_name}"
                             fi
         
-                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" phx.ocir.io/weblogick8s/test-images/docker/registry:2
+                            docker run -d --restart=always -p "127.0.0.1:${registry_port}:5000" --name "${registry_name}" \
+                                ${ocir_host}/${wko_tenancy}/test-images/docker/registry:2
                             echo "Registry Host: ${registry_host}"
                         '''
                     }
@@ -476,29 +517,33 @@ EOF
                 stage('Run integration tests') {
                     environment {
                         runtime_path = "${WORKSPACE}/bin:${PATH}"
-                        IMAGE_PULL_SECRET_WEBLOGIC = credentials("${image_pull_secret_weblogic_creds}")
-                        BASE_IMAGES_REPO = credentials("${ocir_registry_creds}")
-                        BASE_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
-                        BASE_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        BASE_IMAGES_REPO_EMAIL = credentials("${ocir_username_creds}")
-                        TEST_IMAGES_REPO = credentials("${ocir_registry_creds}")
-                        TEST_IMAGES_REPO_USERNAME = credentials("${ocir_username_creds}")
-                        TEST_IMAGES_REPO_PASSWORD = credentials("${ocir_password_creds}")
-                        TEST_IMAGES_REPO_EMAIL = credentials("${ocir_email_creds}")
                     }
                     steps {
+                        script {
+                            def res = 0
+                            res = sh(script: '''
+                                    if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
+                                       echo 'ERROR: All tests cannot be run with integration-tests profile'
+                                       exit 1
+                                    fi
+                                ''', returnStatus: true)
+                            if (res != 0 ) {
+                                currentBuild.result = 'ABORTED'
+                                error('Profile/ItTests Validation Failed')
+                            }
+                        }
+
                         sh '''
                             export PATH=${runtime_path}
+                            export KUBECONFIG=${kubeconfig_file}
                             mkdir -m777 -p "${WORKSPACE}/.mvn"
                             touch ${WORKSPACE}/.mvn/maven.config
-
-                            export KUBECONFIG=${kubeconfig_file}
                             K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
-                            export NO_PROXY="${K8S_NODEPORT_HOST}"
-
-                            if [ "${IT_TEST}" = '**/It*' ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
-                                echo "-Dit.test=\"!ItOperatorWlsUpgrade,!ItAuxV8DomainImplicitUpgrade,!ItFmwDomainInPVUsingWDT,!ItFmwDynamicDomainInPV,!ItDedicatedMode,!ItT3Channel,!ItOperatorFmwUpgrade,!ItOCILoadBalancer,!ItMiiSampleFmwMain,!ItIstioCrossClusters*,!ItMultiDomainModels\"" >> ${WORKSPACE}/.mvn/maven.config
-                            elif [ ! -z "${IT_TEST}" ]; then
+                            if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
+                                PARALLEL_RUN='false'
+                            elif [ -n "${IT_TEST}" ]; then
+                                echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                MAVEN_PROFILE_NAME="integration-tests"
                                 echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                             fi
                             echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
@@ -511,9 +556,10 @@ EOF
                             echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                                                                      >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
@@ -522,41 +568,34 @@ EOF
                             echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"
                             cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
-
-                            export OCR_USERNAME=${OCR_USERNAME}
-                            export OCR_PASSWORD=${OCR_PASSWORD}
-                            export OCR_EMAIL=${OCR_EMAIL}
-                            export OCIR_USERNAME=${OCIR_USERNAME}
-                            export OCIR_PASSWORD=${OCIR_PASSWORD}
-                            export OCIR_EMAIL=$OCIR_EMAIL}
-
-                            if [ ! -z "${http_proxy}" ]; then
-                                export http_proxy
-                            elif [ ! -z "${HTTP_PROXY}" ]; then
-                                export HTTP_PROXY
-                            fi
-
-                            if [ ! -z "${https_proxy}" ]; then
-                                export https_proxy
-                            elif [ ! -z "${HTTPS_PROXY}" ]; then
-                                export HTTPS_PROXY
-                            fi
-
-                            if [ ! -z "${no_proxy}" ]; then
-                                export no_proxy
-                            elif [ ! -z "${NO_PROXY}" ]; then
-                                export NO_PROXY
-                            fi
-
-                            if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
-                                echo "integration-tests failed"
-                            fi
                         '''
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            withCredentials([
+                                usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
+                            ]) {
+                                sh '''
+                                    export PATH=${runtime_path}
+                                    export KUBECONFIG=${kubeconfig_file}
+                                    export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
+                                        echo "integration-tests failed"
+                                        exit 1
+                                    fi
+                                '''
+                            }
+                        }
                     }
                     post {
                         always {
@@ -602,6 +641,22 @@ EOF
                         fi
                     '''
                 }
+            }
+        }
+        stage ('Sync') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'release/4.0'
+                    branch 'release/3.4'
+                }
+                anyOf {
+                    not { triggeredBy 'TimerTrigger' }
+                    tag 'v*'
+                }
+            }
+            steps {
+                build job: "wkt-sync", parameters: [ string(name: 'REPOSITORY', value: 'weblogic-kubernetes-operator') ]
             }
         }
     }
