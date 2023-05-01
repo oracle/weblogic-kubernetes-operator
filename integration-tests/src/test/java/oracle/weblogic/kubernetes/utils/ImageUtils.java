@@ -28,6 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO;
@@ -319,7 +320,7 @@ public class ImageUtils {
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = DOMAIN_IMAGES_REPO + imageNameBase;
+    final String imageName = DOMAIN_IMAGES_PREFIX + imageNameBase;
     final String image = imageName + ":" + imageTag;
 
     List<String> archiveList = new ArrayList<>();
