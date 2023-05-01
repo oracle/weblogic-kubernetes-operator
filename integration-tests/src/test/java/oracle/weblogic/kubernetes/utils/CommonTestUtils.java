@@ -1917,4 +1917,21 @@ public class CommonTestUtils {
         return "";
     }
   }
+
+  /**
+   * Get the image repo from an image name.
+   * @param imageName the image name
+   * @return image repo
+   */
+  public static String getImageRepoFromImageName(String imageName) {
+    String imageRepo = null;
+    if (imageName != null && imageName.contains("/")) {
+      getLogger().info("Getting image repo from imageName {0}", imageName);
+      int indexOfSlash = imageName.indexOf("/");
+      imageRepo = imageName.substring(0, indexOfSlash);
+    } else {
+      getLogger().info("Can not get the image repo from imageName {0}", imageName);
+    }
+    return imageRepo;
+  }
 }
