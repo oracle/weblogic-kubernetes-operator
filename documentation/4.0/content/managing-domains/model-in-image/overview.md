@@ -23,12 +23,14 @@ It enables:
  - Optionally, supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models.
    For example, a secret can be used to supply a database credential.
- - Updating WDT model files at runtime. For example, you can add a data source
+ - Updating WDT model files and artifacts at runtime. The WDT artifacts are considered the source of truth and matches the domain configuration at all time.  For example, you can add a data source
    to a running domain. See [Runtime updates](#runtime-updates) for details.
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a 
+domain when a domain is started for the first time, supplying an database password, and obtaining an database 
+wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 ### WebLogic Deploy Tooling models
 
@@ -38,7 +40,7 @@ They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. For a description of the model format
 and its integration with Model in Image,
 see [Usage]({{< relref "/managing-domains/model-in-image/usage.md" >}})
-and [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
+and [Model files (TODO: fixed link)]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
