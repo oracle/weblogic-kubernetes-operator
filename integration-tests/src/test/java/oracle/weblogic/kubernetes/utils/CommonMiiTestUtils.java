@@ -1243,7 +1243,7 @@ public class CommonMiiTestUtils {
 
     logger.info("Introspector pod log START");
     String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPodName,
-        domainNamespace, null, null, null, true), "Could not get introspector pod log");
+        domainNamespace, domainUid + "-introspector", null, null, true), "Could not get introspector pod log");
     logger.info(introspectorLog);
     logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectorPodName, domainUid, domainNamespace);
