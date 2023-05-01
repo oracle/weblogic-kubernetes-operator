@@ -344,8 +344,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   // pre-conditions: DomainPresenceInfo SPI
   // "principal"
-  public static Step bringAdminServerUp(DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
-    return bringAdminServerUpSteps(info, podAwaiterStepFactory);
+  public static Step bringAdminServerUp(PodAwaiterStepFactory podAwaiterStepFactory) {
+    return bringAdminServerUpSteps(podAwaiterStepFactory);
   }
 
   @Override
@@ -503,14 +503,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
   }
 
-  private static Step bringAdminServerUpSteps(DomainPresenceInfo info, PodAwaiterStepFactory podAwaiterStepFactory) {
+  private static Step bringAdminServerUpSteps(PodAwaiterStepFactory podAwaiterStepFactory) {
     List<Step> steps = new ArrayList<>();
     steps.add(new BeforeAdminServiceStep(null));
     steps.add(PodHelper.createAdminPodStep(null));
-
-    if (info.getDomain().isExternalServiceConfigured()) {
-      steps.add(ServiceHelper.createForExternalServiceStep(null));
-    }
+    steps.add(ServiceHelper.createForExternalServiceStep(null));
     steps.add(ServiceHelper.createForServerStep(null));
     steps.add(new WatchPodReadyAdminStep(podAwaiterStepFactory, null));
     return Step.chain(steps.toArray(new Step[0]));
