@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -22,6 +22,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -394,6 +395,7 @@ class ItWlsSamples {
   @Order(7)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
+  @Disabled("Needs to generate valid image")
   void testTraefikIngressController() {
     setupSample();
     Path scriptBase = get(tempSamplePath.toString(), "charts/util");
@@ -407,6 +409,7 @@ class ItWlsSamples {
   @Order(8)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
+  @Disabled("Needs to generate valid image")
   void testNginxIngressController() {
     setupSample();
     Map<String, String> templateMap  = new HashMap<>();
