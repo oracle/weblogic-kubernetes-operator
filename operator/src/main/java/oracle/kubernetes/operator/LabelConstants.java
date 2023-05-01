@@ -27,6 +27,7 @@ public interface LabelConstants {
   String TO_BE_ROLLED_LABEL = "weblogic.awaitingPodRoll";
   String DOMAIN_OBSERVED_GENERATION_LABEL = "weblogic.domainObservedGeneration";
   String CLUSTER_OBSERVED_GENERATION_LABEL = "weblogic.clusterObservedGeneration";
+  String SERVICE_TYPE_LABEL = "serviceType";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);
@@ -34,5 +35,9 @@ public interface LabelConstants {
 
   static String getCreatedByOperatorSelector() {
     return String.format("%s=%s", CREATEDBYOPERATOR_LABEL, "true");
+  }
+
+  static String getServiceTypeSelector(String type) {
+    return String.format("%s=%s", SERVICE_TYPE_LABEL, type);
   }
 }

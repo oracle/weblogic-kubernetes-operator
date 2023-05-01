@@ -676,7 +676,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return getSko(serverName).getExternalService().get();
   }
 
-  void setExternalService(String serverName, V1Service service) {
+  public void setExternalService(String serverName, V1Service service) {
     getSko(serverName).getExternalService().set(service);
   }
 
