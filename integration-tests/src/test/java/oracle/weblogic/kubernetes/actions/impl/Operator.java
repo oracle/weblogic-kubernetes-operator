@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 
 import static oracle.weblogic.kubernetes.TestConstants.BUILD_ID;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_TAG_OPERATOR;
@@ -67,7 +68,7 @@ public class Operator {
     String imageTag = "";
     // use branch name and build id for Jenkins runs in image tag
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      imageName = DOMAIN_IMAGES_REPO + imageName;
+      imageName = DOMAIN_IMAGES_PREFIX + imageName;
     }
     String branchName = "";
     if (!BUILD_ID.isEmpty()) {
