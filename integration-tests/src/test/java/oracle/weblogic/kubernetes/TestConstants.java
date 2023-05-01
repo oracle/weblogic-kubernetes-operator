@@ -11,6 +11,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getBaseImagesPref
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDomainImagePrefix;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageRepoFromImageName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoImageForSpec;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
@@ -60,10 +61,14 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
+  // crio pipeline constants
+  public static final String CRIO_PIPELINE_IMAGE = System.getProperty("wko.it.crio.pipeline.image");
+
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
-  //
-  public static final String BASE_IMAGES_REPO = System.getProperty("wko.it.base.images.repo");
+  public static final String BASE_IMAGES_REPO = Optional.ofNullable(getImageRepoFromImageName(CRIO_PIPELINE_IMAGE))
+      .orElse(System.getProperty("wko.it.base.images.repo"));
+
   public static final String BASE_IMAGES_TENANCY = System.getProperty("wko.it.base.images.tenancy");
 
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
