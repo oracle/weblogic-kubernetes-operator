@@ -259,13 +259,13 @@ application archives in a ZIP file. The WDT model format is fully described in t
 
 ### Diagnostics
 
-1. Error in introspector job.  You can check the domain status of the domain 
+1. Error in introspector job.  You can check the domain status of the domain.
 
 ```
 kubectl -n <domain namespace> get domain <domain uid>
 ```
 
-2. Check the log files in `logHome`
+2. Check the log files in `logHome`.
 
 By default, the Operator persists the log files for the introspector job, RCU logs, and Weblogic servers logs in `domain.spec.logHome`
 (default: /share/logs/<domain uid>).
