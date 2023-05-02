@@ -40,7 +40,7 @@ They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. For a description of the model format
 and its integration with Model in Image,
 see [Usage]({{< relref "/managing-domains/model-in-image/usage.md" >}})
-and [Model files (TODO: fixed link)]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
+and [Model files (TODO: fixed link)]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
