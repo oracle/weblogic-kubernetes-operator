@@ -45,6 +45,7 @@ WebLogic domain.
 In order to use this feature, provide the following information:
 
 - WebLogic base image.  This is the WebLogic product to be used.
+- Volumes and VolumeMounts information.  This follows the standard Kubernetes pod requirements for mounting persistent storage.
 - `PersistentVolume` and `PersistentVolumeClaim`.   This is environment specific and usually require assistance from your administrator to provide the underlying details such as `storageClass` or any permissions.
 - Domain information.  This describes the domain type, whether the Operator should create the RCU schema. 
 - Domain WDT models.  This is where the WDT binaries and WDT artifacts reside.
@@ -75,7 +76,7 @@ You can specify an image that describe the domain topology, resources, and appli
 ```
      domain:
           domainCreationImages:
-            - image: 'myaux-domain:v1'
+            - image: 'mymodel-domain:v1'
 ```
 
 In this image(s), you provide the [WebLogic Depoy Tooling Binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
@@ -91,8 +92,7 @@ The image layout must follow this directory structures:
 You can create your own image using your familiar method or use [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
 For example, using `WebLogic Image Tool`,  since the file structure is very close to `Auxiliary Image` in `Model in image`, you can 
-use the same command `createAuxImage`, except in this case, you should not set `--wdtModelHome` and `--wdtHome` 
-to change the default values for them.
+use the same command `createAuxImage`.
 
 ```
 imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
@@ -108,7 +108,35 @@ You can optionally provide a Kubernetes `ConfigMap` with additional `WDT` artifa
 those in the image's `/auxiliary/models` directory.
 
 ```
+     domain:
+          domainCreationImages:
+            - image: 'mymodel-domain:v1'
+          domainCreationConfigMap: mymodle-domain-configmap 
+```
+
+For example, create a configmap that holds all the files from a directory:
+
+```
 kubectl -n <ns> create configmap wdt-model-configmap --from-file=/home/acme/myapp/wdt/extramodels
+```
+#### Volumes and VolumeMounts information
+
+You must provide the `volumes` and `volumeMounts` information in `domain.spec.serverPod`, this allows the pod to mount the persistent
+storage in runtime.  The `mountPath` needs to be part of the domain home and log home,  `persistentVolumeClaim.claimName` needs to 
+be a valid `PVC` name whether it is a pre-existing `PVC` or one to be created by the operator.  See [Creating PVC by ther operator](#persistent-volume-and-persistent-volume-claim)
+
+```yaml
+spec:
+  domainHome: /share/domains/domain1
+  logHome: /share/logs/domain1
+  serverPod:
+    volumes:
+      - name: weblogic-domain-storage-volume
+        persistentVolumeClaim:
+          claimName: sample-domain1-pvc-rwm1
+    volumeMounts:
+      - mountPath: /share
+        name: weblogic-domain-storage-volume
 ```
 
 #### Persistent Volume and Persistent Volume Claim
@@ -160,7 +188,7 @@ spec:
 Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
 See [supported fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
 
-If the `PV` and `PVC` already existed your environment, you do not need
+If the `PV` and `PVC` already existed in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under `intializedDomainOnPV` section.
 
 ```
