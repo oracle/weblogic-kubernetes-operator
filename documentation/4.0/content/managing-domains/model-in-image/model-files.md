@@ -18,7 +18,7 @@ For additional information, see the [WebLogic Deploy Tooling (WDT)](https://orac
 
 ### Sample model file with macros
 
-Here's an example of a model YAML file describing a domain.
+Here's an example of a model YAML file describing a domain.  See [Metadata model](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/)
 
 ```yaml
 domainInfo:
@@ -72,18 +72,17 @@ For a description of model file macro references to secrets and environment vari
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
-### Model file naming and loading order
+### WDT artifacts source location and loading order
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
 During domain home creation, model and property files are first loaded from the models image first and then from the optional
 WDT ConfigMap.
 
-| Domain deployment model | Models image specification                                                                   | Optional WDT ConfigMap  specification     |
-|-------------------------|----------------------------------------------------------------------------------------------|-------------------------------------------|
-| Model in image          | domain.spec.configuration.model.modelHome or domain.spec.configuration.model.auxiliaryImages | domain.spec.configuration.model.configMap |
-| Domain on PV            | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap                |                  | Domain on PV            | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages                   |                                           |
-
+| Domain deployment model | Models image source specification                                            | Optional WDT ConfigMap specification                                       |
+|-------------------------|-------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| Model in image          | domain.spec.image<br/>domain.spec.configuration.model.auxiliaryImages<br/>    | domain.spec.configuration.model.configMap                                  |
+| Domain on PV            | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages |
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
@@ -94,7 +93,17 @@ The loading order within each of these locations is first determined using the c
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
  * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
 
-TODO: refactor this paragraph:d
+After all the models are sorted, the operator will create a comma separated list and this is passed to the `WDT` create domain command:
+
+```
+  /u01/wdt/models/model1.yaml,/u01/wdt/models/model2.yaml,/weblogic-operator/wdt-config-map/modela.yaml,/weblogic-operator/wdt-config-maap/mdoelb.yaml
+```
+
+`WDT` create command internally will first merge all the model files into a single model file and resolve all macros before processing the model
+to create the domain.  The final merged model must be valid in order both syntactically and semantically.  The merged model is saved internally if 
+the deployment model is `Model in image`.
+
+TODO: refactor this paragraph
 
 **Note**: If `configuration.models.modelHome` files are supplied by combining multiple
 [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}),
@@ -157,7 +166,8 @@ Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentials
 
 #### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file using `domain.spec.serverPod.env` or `domain.spec.adminServer.serverPod.env`, or the built-in `DOMAIN_UID` environment variable.
+You can reference operator environment variables in model files. This includes any that you define yourself in your 
+Domain YAML file using `domain.spec.serverPod.env` or `domain.spec.adminServer.serverPod.env`, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 

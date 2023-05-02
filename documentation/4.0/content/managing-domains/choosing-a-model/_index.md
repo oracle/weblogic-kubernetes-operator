@@ -84,4 +84,3 @@ There are advantages for each domain home source type where Model in Image is th
   * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
   * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
   * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
-  * [Domain images]({{< relref "/managing-domains/persistent-storage/domain-images.md" >}})

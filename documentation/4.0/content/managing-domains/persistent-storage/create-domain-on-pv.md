@@ -45,6 +45,7 @@ WebLogic domain.
 In order to use this feature, provide the following information:
 
 - WebLogic base image.  This is the WebLogic product to be used.
+- Volumes and VolumeMounts information.  This follows the standard Kubernetes pod requirements for mounting persistent storage.
 - `PersistentVolume` and `PersistentVolumeClaim`.   This is environment specific and usually require assistance from your administrator to provide the underlying details such as `storageClass` or any permissions.
 - Domain information.  This describes the domain type, whether the Operator should create the RCU schema. 
 - Domain WDT models.  This is where the WDT binaries and WDT artifacts reside.
@@ -52,7 +53,7 @@ In order to use this feature, provide the following information:
 
 
 - For details about each field, see the
-[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
+[schema TODO LINK].
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
@@ -75,7 +76,7 @@ You can specify an image that describe the domain topology, resources, and appli
 ```
      domain:
           domainCreationImages:
-            - image: 'myaux-domain:v1'
+            - image: 'mymodel-domain:v1'
 ```
 
 In this image(s), you provide the [WebLogic Depoy Tooling Binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
@@ -91,8 +92,7 @@ The image layout must follow this directory structures:
 You can create your own image using your familiar method or use [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 
 For example, using `WebLogic Image Tool`,  since the file structure is very close to `Auxiliary Image` in `Model in image`, you can 
-use the same command `createAuxImage`, except in this case, you should not set `--wdtModelHome` and `--wdtHome` 
-to change the default values for them.
+use the same command `createAuxImage`.
 
 ```
 imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
@@ -108,7 +108,32 @@ You can optionally provide a Kubernetes `ConfigMap` with additional `WDT` artifa
 those in the image's `/auxiliary/models` directory.
 
 ```
-kubectl -n <ns> create configmap wdt-model-configmap --from-file=/home/acme/myapp/wdt/extramodels
+     domain:
+          domainCreationImages:
+            - image: 'mymodel-domain:v1'
+          domainCreationConfigMap: mymodle-domain-configmap 
+```
+
+The files inside the ConfigMap must have file extensions `.yaml`, `.properties`, or `.zip`.
+
+#### Volumes and VolumeMounts information
+
+You must provide the `volumes` and `volumeMounts` information in `domain.spec.serverPod`, this allows the pod to mount the persistent
+storage in runtime.  The `mountPath` needs to be part of the domain home and log home,  `persistentVolumeClaim.claimName` needs to 
+be a valid `PVC` name whether it is a pre-existing `PVC` or one to be created by the operator.  See [Creating PVC by ther operator](#persistent-volume-and-persistent-volume-claim)
+
+```yaml
+spec:
+  domainHome: /share/domains/domain1
+  logHome: /share/logs/domain1
+  serverPod:
+    volumes:
+      - name: weblogic-domain-storage-volume
+        persistentVolumeClaim:
+          claimName: sample-domain1-pvc-rwm1
+    volumeMounts:
+      - mountPath: /share
+        name: weblogic-domain-storage-volume
 ```
 
 #### Persistent Volume and Persistent Volume Claim
@@ -158,9 +183,9 @@ spec:
 ```
 
 Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
-See [supported fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
+See [supported fields TODO LINK].
 
-If the `PV` and `PVC` already existed your environment, you do not need
+If the `PV` and `PVC` already existed in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under `intializedDomainOnPV` section.
 
 ```
@@ -189,7 +214,7 @@ spec:
 
 #### Domain information
 
-For `JRF` based domain, before proceeding, please be sure to visit [JRF domain]({{< relref "/managing-domains/persistent-storage/initial-domain-on-pv" >}}).
+For `JRF` based domain, before proceeding, please be sure to visit [JRF domain].
 
 This is the section describing the WebLogic Domain. For example,
 
@@ -234,13 +259,13 @@ application archives in a ZIP file. The WDT model format is fully described in t
 
 ### Diagnostics
 
-1. Error in introspector job.  You can check the domain status of the domain 
+1. Error in introspector job.  You can check the domain status of the domain.
 
 ```
 kubectl -n <domain namespace> get domain <domain uid>
 ```
 
-2. Check the log files in `logHome`
+2. Check the log files in `logHome`.
 
 By default, the Operator persists the log files for the introspector job, RCU logs, and Weblogic servers logs in `domain.spec.logHome`
 (default: /share/logs/<domain uid>).
@@ -279,7 +304,7 @@ If you need to delete the domain home to recover from an error or recreate the d
 
 1. Delete the `PVC` if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC`
 2. Attach a pod to the shared volume and the access the pod to remove the contents.  There is a sample script
-[Domain on PV helper shell script](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernete
+[Domain on PV helper shell script TODO LINK]
 
 Then finally delete the domain resource.
 
