@@ -53,7 +53,7 @@ In order to use this feature, provide the following information:
 
 
 - For details about each field, see the
-[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
+[schema TODO LINK].
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
@@ -183,7 +183,7 @@ spec:
 ```
 
 Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. (TODO: fix the link) 
-See [supported fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md#initialize-domain-on-pv).
+See [supported fields TODO LINK].
 
 If the `PV` and `PVC` already existed in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under `intializedDomainOnPV` section.
@@ -214,7 +214,7 @@ spec:
 
 #### Domain information
 
-For `JRF` based domain, before proceeding, please be sure to visit [JRF domain]({{< relref "/managing-domains/persistent-storage/initial-domain-on-pv" >}}).
+For `JRF` based domain, before proceeding, please be sure to visit [JRF domain].
 
 This is the section describing the WebLogic Domain. For example,
 
@@ -304,7 +304,7 @@ If you need to delete the domain home to recover from an error or recreate the d
 
 1. Delete the `PVC` if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC`
 2. Attach a pod to the shared volume and the access the pod to remove the contents.  There is a sample script
-[Domain on PV helper shell script](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernete
+[Domain on PV helper shell script TODO LINK]
 
 Then finally delete the domain resource.
 
