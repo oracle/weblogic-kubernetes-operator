@@ -122,19 +122,21 @@ spec:
     1. Change `domain.spec.introspectVersion` to a different value. For examples, see
        [change the domain `spec.introspectVersion`](#changing-a-domain-restartversion-or-introspectversion).
 
-After you've completed these steps, the operator will trigger an introspector Job which:
+After you've completed these steps, the operator will trigger an introspector job which:
 
 - Creates a new domain using `WDT` create domain.
 - Generates a new merged model.
 - Compares the newly merged model to the previously deployed model.
-- If the differences between the model are incompatible for online update, an error is generated and no changes will be persisted.
-- Uses the differences in the models to perform an online update using `WDT` online update domain command.  
-- If no restart is necessary, that is all the changes are dynamic, then no further actions are needed and the chagnes are 
-available immediately.
-- If a restart is necessary, that is there are non dynamic changes, then depending on how you have configured 
+- Uses the differences in the models to perform an online update using `WDT` online update domain command.
+
+You can monitor the introspector job status and the domain status when the job is completed:
+
+- If no restart is necessary, then no further actions are needed and the changes are effective immediately.
+- If a restart is necessary, then depending on how you have configured 
    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to `CommitUpdateOnly` (default, manually restart the domain), or
-   `CommitUpdateAndRoll` (automatically restart the domain).   You can check the domain and pod status to confirm whether restart is needed.  
-   For details, see [Online update requiring manual restart](#online-update-requiring-manual-restart)
+   `CommitUpdateAndRoll` (automatically restart the domain).
+
+You can check the domain and pod status to confirm whether restart is needed. See [Online update requiring manual restart](#online-update-requiring-manual-restart)
 
 **When updating a domain with non-dynamic MBean changes with
 `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly` (the default),
