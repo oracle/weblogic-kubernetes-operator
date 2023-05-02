@@ -23,7 +23,7 @@ There are two approaches of updating a running domain:
  - _Online updates_: [online update](#online-updates) A new domain configuration is created, and then the differences between the previously deployed model and the new model 
 is used update the existing domain using `WDT` online update.  If model changes are only involving fully dynamic configuration MBean attributes,
    then all the changes are immediately available and the domain continue to be in operation. 
-   If an online update involves any non-dynamic configuration MBean attributes, then you can control whether the operator will automatically restart the domain or manually restarting the domain
+   If an online update involves any non-dynamic configuration MBean attributes, then you can control whether the operator automatically restart the domain or manually restarting the domain
    at your convenience.  _The primary use case for online updates is to make small additions,
    undeploy of single resources or MBeans that have no dependencies,
    or changes to non-dynamic MBean attributes, for complex changes, use offline updates instead_.
@@ -124,7 +124,7 @@ spec:
 
 After you've completed these steps, the operator will trigger an introspector Job which:
 
-- Create a new domain using `WDT` create domain.
+- Creates a new domain using `WDT` create domain.
 - Generates a new merged model.
 - Compares the newly merged model to the previously deployed model.
 - If the differences between the model are incompatible for online update, an error is generated and no changes will be persisted.
@@ -135,6 +135,13 @@ available immediately.
    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to `CommitUpdateOnly` (default, manually restart the domain), or
    `CommitUpdateAndRoll` (automatically restart the domain).   You can check the domain and pod status to confirm whether restart is needed.  
    For details, see [Online update requiring manual restart](#online-update-requiring-manual-restart)
+
+**When updating a domain with non-dynamic MBean changes with
+`domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly` (the default),
+the non-dynamic changes are not effective on a WebLogic pod until the pod is restarted.
+However, if you scale up a cluster or otherwise start any new servers in the domain,
+then the new servers will start with the new non-dynamic changes
+and the domain will then be running in an inconsistent state until its older servers are restarted.**
 
 If the introspector job reports a failure or any other failure occurs, then
 see [Debugging]({{< relref "/managing-domains/debugging.md" >}}) for advice.
