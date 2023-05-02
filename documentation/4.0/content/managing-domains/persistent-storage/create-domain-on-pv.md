@@ -114,11 +114,8 @@ those in the image's `/auxiliary/models` directory.
           domainCreationConfigMap: mymodle-domain-configmap 
 ```
 
-For example, create a configmap that holds all the files from a directory:
+The files inside the ConfigMap must have file extensions `.yaml`, `.properties`, or `.zip`.
 
-```
-kubectl -n <ns> create configmap wdt-model-configmap --from-file=/home/acme/myapp/wdt/extramodels
-```
 #### Volumes and VolumeMounts information
 
 You must provide the `volumes` and `volumeMounts` information in `domain.spec.serverPod`, this allows the pod to mount the persistent
