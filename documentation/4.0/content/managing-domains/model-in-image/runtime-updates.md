@@ -57,8 +57,7 @@ Since all the models are merged into a single model before processing in all cas
 - Update any Kubernetes secrets or environment variables.
 
 Although `WDT` supports deleting an mbean from the model [Deleting mbean](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete), 
-this is rarely needed.  You can simply remove the entry from the model instead of using the delete notation.
-
+this is rarely needed.  You should simply remove the entry from the existing model instead of using the delete notation.
 
 After your artifacts are updated, you can instruct the operator to propagate the changed model
 to a running domain by following the steps in [Offline updates](#offline-updates)
@@ -84,31 +83,55 @@ for advice.
 
 ### Online updates
 
+It is important to understand the online updates is designed to make simple dynamic incremental changes to a domain, such as
+changing targets of an application, adding resources, changing attribute of an MBean.  For changes that require 
+restart of the domain (non-dynamic changes), it is better to use offline updates instead.  This feature is not designed
+for a full-fledged configuration of a running domain.  
+
 Use the following steps to initiate an online configuration update to your model:
 
  1. Modify your domain resource YAML file:
     1. Update any newly referenced image(s), environment variables, and Kubernetes secrets.
-    1. Set `domain.spec.configuration.model.onlineUpdate.enabled` to `true` (default is `false`).
-    1. Set `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to one of
-       `CommitUpdateOnly` (default), and `CommitUpdateAndRoll`.
-    1. Optionally, tune the WDT timeouts in `domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
-       - This is only necessary in the rare case when an introspector job's WDT online update command timeout
-         results in an error in the introspector job log or operator log.
-       - All timeouts are specified in milliseconds and default to two or three minutes.
-       - For a full list of timeouts, you can call
-         `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
+    1. Set the following fields in the following domain resource YAML section:
+    
+```yaml
+spec:
+  configuration:
+     model:
+       onlineUpdate:
+         enabled: true
+         onNonDynamicChanges: CommitUpdateAndRoll
+         # Optionally tune the timeouts if necessary (rarely needed)
+         wdtTimeouts:  
+            <individual timeout fields>
+```
+
+| Field                             | Values                                              | Required |
+|-----------------------------------|-----------------------------------------------------|----------|
+| enabled                           | true                                                | Y        |
+| onNonDynamicChanges               | CommitUpdateOnly (default)<br/> CommitUpdateAndRoll | N        |
+| wdtTimeouts.activateTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.connectTimeoutMillis | 120000 (default in milliseconds)                    | N|
+| wdtTimeouts.deployTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.redeployTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.setServerGroupsTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.startApplicationTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.stopApplicationTimeoutMillis | 180000 (default in milliseconds)                    | N|
+| wdtTimeouts.undeployTimeoutMillis | 180000 (default in milliseconds)                    | N|
+
     1. Change `domain.spec.introspectVersion` to a different value. For examples, see
        [change the domain `spec.introspectVersion`](#changing-a-domain-restartversion-or-introspectversion).
 
-After you've completed these steps, the operator will trigger an introspector Job which
-generates a new merged model, create a new domain, compares the newly merged model to the previously deployed model,
-and using the differences to perform an online update using `WDT` online update domain command.  If the differences between
-the models involving cross mbean dependencies, the online update will fail during the online update.  For example,
-in the new model, a JDBC store cannot find the referenced data source.
+After you've completed these steps, the operator will trigger an introspector Job which:
 
- - If no restart is necessary, that is all the changes are dynamic, then no further actions are needed and the chagnes are 
+- Create a new domain using `WDT` create domain.
+- Generates a new merged model.
+- Compares the newly merged model to the previously deployed model.
+- If the differences between the model are incompatible for online update, an error is generated and no changes will be persisted.
+- Uses the differences in the models to perform an online update using `WDT` online update domain command.  
+- If no restart is necessary, that is all the changes are dynamic, then no further actions are needed and the chagnes are 
 available immediately.
- - If a restart is necessary, that is there are non dynamic changes, then depending on how you have configured 
+- If a restart is necessary, that is there are non dynamic changes, then depending on how you have configured 
    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to `CommitUpdateOnly` (default, manually restart the domain), or
    `CommitUpdateAndRoll` (automatically restart the domain).   You can check the domain and pod status to confirm whether restart is needed.  
    For details, see [Online update requiring manual restart](#online-update-requiring-manual-restart)
@@ -154,50 +177,8 @@ documented as [unsupported](#unsupported-updates):
  - You can add new MBeans or resources by specifying their corresponding model YAML file snippet
    along with their parent bean hierarchy. For example, you can add a data source.
 
- - You can change or add MBean attributes by specifying a YAML file snippet
-   along with its parent bean hierarchy that references an existing MBean and the attribute.
-   For example, to add or alter the maximum capacity of a data source named `mynewdatasource`:
-
-   ```yaml
-   resources:
-     JDBCSystemResource:
-       mynewdatasource:
-         JdbcResource:
-           JDBCConnectionPoolParams:
-             MaxCapacity: 5
-   ```
-
-   For more information, see [Using Multiple Models](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models) in the WebLogic Deploy Tooling documentation.
-
- - You can change or add secrets that your model macros reference
-   (macros that use the `@@SECRET:secretname:secretkey@@` syntax).
-   For example, you can change a database password secret.
-
- - For offline updates only, you can change or add environment variables
-   that your model macros reference
-   (macros that use the `@@ENV:myenvvar@@` syntax).
-
  - You can remove an MBean, application deployment, or resource by omitting any
    reference to it in your image model files and WDT config map.
-   You can also remove a named MBean, application deployment, or resource
-   by specifying an additional model file with an exclamation point (`!`)
-   just before its name plus ensuring the new model file is loaded _after_
-   the original model file that contains the original named configuration.
-   For example, if you have a data source named `mynewdatasource` defined
-   in your model, then it can be removed by specifying a small model file that
-   loads after the model file that defines the data source, where the
-   small model file looks like this:
-
-   ```yaml
-   resources:
-     JDBCSystemResource:
-       !mynewdatasource:
-   ```
-   There are [some exceptions for online updates](#online-update-handling-of-deletes).
-
-   For more information, see
-   [Declaring Named MBeans to Delete](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete)
-   in the WebLogic Deploying Tooling documentation.
 
 #### Unsupported updates
 
@@ -220,12 +201,6 @@ The following summarizes the types of runtime update configuration that are _not
        - Note that it is permitted to override network access point `public` or `external` addresses and ports.
        External access to JMX (MBean) or online WLST requires that the network access point internal port
        and external port match (external T3 or HTTP tunneling access to JMS, RMI, or EJBs don't require port matching).
-
- {{% notice warning %}}
- Due to security considerations, we strongly recommend that T3 or any RMI protocol should not be exposed outside the cluster.
- {{% /notice %}}
-
-
   - Node Manager related configuration.
   - Log related settings. This applies to changing, adding, or removing server and domain log related settings in an MBean at runtime
     when the domain resource is configured to override the same MBeans using the `spec.logHome`,
