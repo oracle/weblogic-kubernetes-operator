@@ -79,10 +79,10 @@ Refer to this section if you need to control the order in which your model files
 During domain home creation, model and property files are first loaded from the models image first and then from the optional
 WDT ConfigMap.
 
-| Domain deployment model | Models image source specification                                            | Optional WDT ConfigMap specification                                       |
-|-------------------------|-------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Model in image          | domain.spec.image<br/>domain.spec.configuration.model.auxiliaryImages<br/>    | domain.spec.configuration.model.configMap                                  |
-| Domain on PV            | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages |
+| Domain deployment model | Models image source specification                                           | Optional WDT ConfigMap specification                                      |
+|-------------------------|------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| Model in image          | domain.spec.image<br/>domain.spec.configuration.model.auxiliaryImages<br/>   | domain.spec.configuration.model.configMap                                 |
+| Domain on PV            | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages  | domain.spec.configuration.initializeDomainOnPV.domain.domainCreationConfigMap|
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
