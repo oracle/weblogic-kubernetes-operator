@@ -21,11 +21,11 @@ the database components are created using `Repository Creation Utility (RCU)`.  
 
 ### Importance of domain home directory backup.
 
-A `JRF` domain has a one to one relationship with the `RCU schema`,  once a domain is created using a particular `RCU schema`,  
+A `JRF` domain has a one-to-one relationship with the `RCU schema`,  once a domain is created using a particular `RCU schema`,  
 that particular schema cannot be reused by another domain and the same schema cannot be shared across different domain.  Any attempts to
 create a new domain using the schema that had already been used will result in an error.
 
-Since after the domain is created, and the existing schema cannot be reused, it is critical to backup the domain home directory and database.
+Since after the domain is created, and the existing schema cannot be reused, it is critical to back up the domain home directory and database.
 If the domain home is not properly backed up, and is corrupted or deleted, then you may have to drop the existing `RCU schema` 
 and recreating a new `RCU schema` before creating the domain again, this applies potentially losing all existing data.  Backing up the existing domain home therefore should be
 the highest priority in your Kubernetes environment.   
@@ -74,7 +74,7 @@ For disaster recovery, in case you need to recreate the domain and reconnect wit
 - update the `introspectVersion` in the domain resource.
 
 The Operator will create a new domain but connecting back to the original `RCU schema`. This will not create a domain 
-with all the updates made after the initial deployment but you will be able to connect back to the original `RCU schema` database without
+with all the updates made after the initial deployment, but you will be able to connect back to the original `RCU schema` database without
 losing all its data.
 
 

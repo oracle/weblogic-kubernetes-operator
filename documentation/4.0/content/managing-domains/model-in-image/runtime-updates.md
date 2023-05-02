@@ -45,8 +45,8 @@ _It is the administrator's responsibility to make the necessary changes to a dom
 
 ### Updating WDT artifacts
 
-You can update any `WDT` artifacts in their source locations [WDT artifacts locations (TODO fix link)]({{< relref "/managing-domains/model-in-image/model-files#wdt-artifacts-source-location-and-loading-order">}}), you 
-may also need to update any referenced macros [Model file macros](({{< relref "/managing-domains/model-in-image/model-files#model-file-macros">}})
+You can update any `WDT` artifacts in their source locations [WDT artifacts locations]({{< relref "/managing-domains/working-with-wdt-models/model-files#wdt-artifacts-source-location-and-loading-order">}}), you 
+may also need to update any referenced macros [Model file macros](({{< relref "/managing-domains/working-with-wdt-models/model-files#model-file-macros">}})
 
 Since all the models are merged into a single model before processing in all cases. You can, for example:
 
@@ -244,12 +244,10 @@ The following summarizes the types of runtime update configuration that are _not
    - Instead, you can delete the specific MBean by omitting the MBean itself while leaving its `SelfTuning`
    parent in place or by specifying an additional model using the `!` syntax in combination
    with the name of the specific MBean.
-   - For details, see [Online update handling of deletes](#online-update-handling-of-deletes).
  - Deleting multiple resources that have cross-references in combination with online updates:
     - For example, concurrently deleting a persistent store and a data source referenced by the persistent store.
     - For this type of failure, the introspection job will fail and log an error describing
     the failed reference, and the job will automatically retry up to its maximum retries.
-    - For details, see [Online update handling of deletes](#online-update-handling-of-deletes).
  - Security related changes in combination with online updates:
     - Such changes included security changes in `domainInfo.Admin*`,
    `domainInfo.RCUDbinfo.*`, `topology.Security.*`, and `topology.SecurityConfiguration.*`.
