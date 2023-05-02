@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+<!-- Copyright (c) 2017, 2023, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>3.4.7</version>
+  <version>3.4.8-SNAPSHOT</version>
 
   <modules>
     <module>operator</module>
@@ -59,6 +59,7 @@
             <release>11</release>
             <compilerArgs>
               <arg>-Xpkginfo:always</arg>
+              <arg>-Xlint:all</arg>
             </compilerArgs>
           </configuration>
         </plugin>
@@ -113,7 +114,15 @@
                   <requireJavaVersion>
                     <version>${java.version.range}</version>
                   </requireJavaVersion>
-                  <requirePluginVersions></requirePluginVersions>
+                  <requireReleaseDeps>
+                    <excludes>
+                      <exclude>oracle.kubernetes:*</exclude>
+                    </excludes>
+                  </requireReleaseDeps>
+                  <requirePluginVersions>
+                    <banSnapshots>true</banSnapshots>
+                    <unCheckedPluginList>oracle.kubernetes:operator-build-maven-plugin</unCheckedPluginList>
+                  </requirePluginVersions>
                 </rules>
               </configuration>
             </execution>
@@ -204,7 +213,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
-
       <plugin>
         <groupId>org.commonjava.maven.plugins</groupId>
         <artifactId>directory-maven-plugin</artifactId>
@@ -379,7 +387,6 @@
               </execution>
             </executions>
           </plugin>
-
         </plugins>
       </build>
     </profile>
@@ -600,7 +607,7 @@
     <maven-resources-plugin-version>3.3.1</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
     <maven-surefire-plugin-version>3.0.0</maven-surefire-plugin-version>
-    <maven-checkstyle-plugin-version>3.2.1</maven-checkstyle-plugin-version>
+    <maven-checkstyle-plugin-version>3.2.2</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.0</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.5.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0</maven-failsafe-plugin-version>
@@ -608,7 +615,7 @@
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.7.3.4</spotbugs-maven-plugin-version>
     <spotbugs-version>4.7.3</spotbugs-version>
-    <checkstyle-version>10.9.3</checkstyle-version>
+    <checkstyle-version>10.10.0</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>3.0.1</maven-gpg-plugin-version>
@@ -617,7 +624,7 @@
     <jakarta-json-version>2.0.1</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
-    <networknt-jsonschmema-validator-version>1.0.79</networknt-jsonschmema-validator-version>
+    <networknt-jsonschmema-validator-version>1.0.81</networknt-jsonschmema-validator-version>
     <commons-exec-version>1.3</commons-exec-version>
     <commons-codec-version>1.15</commons-codec-version>
     <httpunit-version>1.7.3</httpunit-version>
@@ -629,24 +636,24 @@
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>16.0.3</client-java-version>
-    <kotlin-stdlib-version>1.8.20</kotlin-stdlib-version>
-    <okhttp-version>4.10.0</okhttp-version>
-    <junit.jupiter.version>5.9.2</junit.jupiter.version>
+    <kotlin-stdlib-version>1.8.21</kotlin-stdlib-version>
+    <okhttp-version>4.11.0</okhttp-version>
+    <junit.jupiter.version>5.9.3</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>3.1.1</jersey-version>
-    <jackson-version>2.14.2</jackson-version>
+    <jackson-version>2.15.0</jackson-version>
     <snakeyaml-version>1.33</snakeyaml-version>
-    <jackson-databind-version>2.14.2</jackson-databind-version>
+    <jackson-databind-version>2.15.0</jackson-databind-version>
     <dependency-check-version>8.2.1</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
     <skip.dependency-check>false</skip.dependency-check>
-    <jacoco.version>0.8.9</jacoco.version>
+    <jacoco.version>0.8.10</jacoco.version>
     <git-commit-id-plugin-version>4.9.10</git-commit-id-plugin-version>
     <htmlunit-version>2.70.0</htmlunit-version>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
