@@ -1,36 +1,30 @@
 ---
-title: "Image creation"
+title: "WDT Image creation"
 date: 2019-02-23T17:32:31-05:00
-weight: 2
+weight: 1
 ---
 
 ### Contents
-  - [Image creation - Introduction](#image-creation---introduction)
+  - [WDT image creation - Introduction](#wdt-image-creation---introduction)
   - [Understanding your first archive](#understanding-your-first-archive)
   - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
   - [Staging model files](#staging-model-files)
   - [Creating the image with WIT](#creating-the-image-with-wit)
 
-#### Image creation - Introduction
+#### WDT image creation - Introduction
 
-This section describes how to create a Model in Image auxiliary image or Domain on PV domain creation image using the WebLogic Image Tool. Based on the deployment model, the image will be named either `model-in-image:WLS-AI-v1` or `domain-on-pv:WLS-v1`. The image will be created from files that you will stage to either `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/` for Model in Image or `/tmp/dpv-sample/domain-on-pv/domain-on-pv-image__WLS-v1/` for Domain home on PV. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+The goal of the ‘WDT image creation’ step is to demonstrate using the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-images/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
-| Domain deployment model | Created image name         | Folder to stage the files                                      |
-|-------------------------|------------------------------------------------------------------------------|--------------------------------------------------------------------------|
-| Model in image          | model-in-image:WLS-AI-v1   | /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/                                 |
-| Domain on PV            | domain-on-pv:WLS-v1        | /tmp/dpv-sample/domain-on-pv/domain-on-pv-image__WLS-v1/ |
-
-
-A Model in Image domain typically supplies one or more auxiliary images with:
+The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s)` contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
-If you do not specify a WDT model YAML file in an auxiliary image,
+If you do not specify a WDT model YAML file in an image,
 then the model YAML file alternately can be supplied dynamically using a Kubernetes ConfigMap
-that is referenced by your Domain `spec.model.configMap` field.
+that is referenced by your Domain field.
 We provide an example of using a model ConfigMap later in this sample.
 
-Here are the steps for creating the image `model-in-image:WLS-AI-v1`:
+Here are the steps for creating the image:
 
 - [Understanding your first archive](#understanding-your-first-archive)
 - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
@@ -39,7 +33,7 @@ Here are the steps for creating the image `model-in-image:WLS-AI-v1`:
 
 #### Understanding your first archive
 
-The sample includes a predefined archive directory in `/tmp/mii-sample/archives/archive-v1` that you will use to create an archive ZIP file for the image.
+The sample includes a predefined archive directory in `/tmp/sample/wdt-artifacts/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
@@ -49,7 +43,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 {{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 
 ```java
-<%-- Copyright (c) 2019, 2021, Oracle and/or its affiliates. --%>
+<%-- Copyright (c) 2019, 2023, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
 <%@ page import="javax.naming.InitialContext" %>
 <%@ page import="javax.management.*" %>
@@ -146,7 +140,7 @@ The application displays important details about the WebLogic Server instance th
 
 #### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -154,24 +148,24 @@ Run the following commands to create your application archive ZIP file and put i
 # Delete existing archive.zip in case we have an old leftover version
 ```
 ```shell
-$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip
+$ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip 
 ```
 ```
 # Move to the directory which contains the source files for our archive
 ```
 ```shell
-$ cd /tmp/mii-sample/archives/archive-v1
+$ cd /tmp/sample/wdt-artifacts/archives/archive-v1
 ```
 ```
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
 ```
 ```shell
-$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip wlsdeploy
+$ zip -r /tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip wlsdeploy
 ```
 
 #### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
+In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
 ```
 CLUSTER_SIZE=5
@@ -305,37 +299,37 @@ The model files:
     - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
     - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the Model in Image user documentation.
+An image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
 
 #### Creating the image with WIT
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
-At this point, you have staged all of the files needed for image `model-in-image:WLS-AI-v1`; they include:
+At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v1`; they include:
 
-  - `/tmp/mii-sample/model-images/weblogic-deploy.zip`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.yaml`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.properties`
-  - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip`
+  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/weblogic-deploy.zip`
+  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.yaml`
+  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.properties`
+  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip`
 
-If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}).
 
-Now, you use the Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1`. You've already set up this tool during the prerequisite steps.
+Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You've already set up this tool during the prerequisite steps.
 
 Run the following commands to create the image and verify that it worked:
 
   ```shell
-  $ cd /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1
+  $ cd /tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1
   ```
   ```shell
-  $ /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh createAuxImage \
-    --tag model-in-image:WLS-AI-v1 \
+  $ /tmp/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
+    --tag wdt-domain-image:WLS-v1 \
     --wdtModel ./model.10.yaml \
     --wdtVariables ./model.10.properties \
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
@@ -346,12 +340,11 @@ This command runs the WebLogic Image Tool in its Model in Image mode, and does t
   - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
 
 When the command succeeds, it should end with output like the following:
-
 ```
-[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-AI-v1
+[INFO   ] Build successful. Build time=36s. Image tag=wdt-domain-image:WLS-v1
 ```
 
-Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-AI-v1`.
+Also, if you run the `docker images` command, then you will see an image named `wdt-domain-image:WLS-v1`.
 
 After the image is created, it should have the WDT executables in
 `/auxiliary/weblogic-deploy`, and WDT model, property, and archive
@@ -359,18 +352,18 @@ files in `/auxiliary/models`. You can run `ls` in the Docker
 image to verify this:
 
 ```shell
-$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary
+$ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary
   total 8
   drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
   drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
 
-$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/models
+$ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/models
   total 16
   -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
   -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
   -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
 
-$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/weblogic-deploy
+$ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
   total 28
   -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
   -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt

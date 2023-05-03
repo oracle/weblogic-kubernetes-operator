@@ -1,10 +1,10 @@
 ---
-title: "Prerequisites"
+title: "Image creation prerequisites"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
 ---
 
-### Prerequisites for all domain types
+### WDT image creation prerequisites
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 

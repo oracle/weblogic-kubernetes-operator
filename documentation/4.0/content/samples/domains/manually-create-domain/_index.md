@@ -1,7 +1,7 @@
 ---
 title: "Manually"
 date: 2019-02-23T17:32:31-05:00
-weight: 1
+weight: 2
 description: "Sample for creating the domain custom resource manually."
 ---
 
