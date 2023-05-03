@@ -66,10 +66,16 @@ When you deploy a Domain on persistent volume domain resource YAML file:
 
 Any runtime updates to the WebLogic domain configuration is controlled by the user using tools such as `Fusion Middleware Controls`, product specific `WLST` functions,
 `WebLogic Console`, `Service Bus Console`, or `JDeveloper`.  After the initial domain is created, subsequent updates to the 
-source of the `WDT` artifacts or referenced Kubernetes secrets will be ignored.  
+source of the `WDT` artifacts or any referenced macros will be ignored.  
 
-Some changes may require triggering an introspector job.  For example, after you made the change to the WeLogic domain credential, you need to:
+Some changes may require triggering an introspector job.  For example:
 
-- update the credentials specified in `domain.spec.webLogicCredentialsSecret` of the domain resource YAML. 
-- update the `domai.spec.introspectVersion` of the domain resource YAML.
+After you changed to the WeLogic domain credential in the `WebLogic Console`, you need to:
 
+- update the credentials of `domain.spec.webLogicCredentialsSecret` in the domain resource YAML. 
+- update the value of `domain.spec.introspectVersion` in the domain resource YAML.
+
+If you changed any WebLogic domain topology, such as adding cluster or server in the `WebLogic Console`:
+
+- update the value of `domain.spec.introspectVersion` in the domain resource YAML.
+- optionally update the domain resource YAML to add new cluster or server if you want to fine tune their lifecycle or replica counts.
