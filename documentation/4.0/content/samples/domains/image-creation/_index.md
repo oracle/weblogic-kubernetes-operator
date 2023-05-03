@@ -24,7 +24,7 @@ The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s
 If you do not specify a WDT model YAML file in an image,
 then the model YAML file alternately can be supplied dynamically using a Kubernetes ConfigMap
 that is referenced by your Domain field.
-We provide an example of using a model ConfigMap later in this sample.
+
 
 Here are the steps for creating the image:
 
@@ -309,12 +309,9 @@ An image can contain multiple properties files, archive ZIP files, and YAML file
 
 At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v1`; they include:
 
-  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/weblogic-deploy.zip`
   - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.yaml`
   - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.properties`
   - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip`
-
-If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}).
 
 Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You've already set up this tool during the prerequisite steps.
 
