@@ -24,7 +24,7 @@ WebLogic domain.
 In order to use this feature, provide the following information:
 
 - [WebLogic base image](#weblogic-base-image).  This is the WebLogic product to be used.
-- [Volumes and VolumeMounts information](Volumes and VolumeMounts information).  This follows the standard Kubernetes pod requirements for mounting persistent storage.
+- [Volumes and VolumeMounts information](#volumes-and-volumemounts-information).  This follows the standard Kubernetes pod requirements for mounting persistent storage.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim).   This is environment specific and usually require assistance from your administrator to provide the underlying details such as `storageClass` or any permissions.
 - [Domain information](#domain-information).  This describes the domain type, whether the Operator should create the RCU schema. 
 - Domain WDT models.  This is where the WDT binaries and WDT artifacts reside.
@@ -58,10 +58,10 @@ You can specify an image that describe the domain topology, resources, and appli
             - image: 'mymodel-domain:v1'
 ```
 
-In this image(s), you provide the [WebLogic Depoy Tooling Binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
+In this image(s), you provide the [WebLogic Deploy Tooling Binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
 and also the `WDT` artifacts.  The Operator will use the tool and the `WDT` artifacts to create the initial domain.
 
-The image layout follows this directory structures:
+The image layout follows this directory structure:
 
 ```
 /auxiliary/weblogic-delpoy - unzipped WebLogic Deploy Tooling release file
@@ -99,7 +99,7 @@ The files inside this ConfigMap must have file extensions `.yaml`, `.properties`
 
 You must provide the `volumes` and `volumeMounts` information in `domain.spec.serverPod`, this allows the pod to mount the persistent
 storage in runtime.  The `mountPath` needs to be part of the domain home and log home,  `persistentVolumeClaim.claimName` needs to 
-be a valid `PVC` name whether it is a pre-existing `PVC` or one to be created by the operator.  See [Creating PVC by ther operator](#persistent-volume-and-persistent-volume-claim)
+be a valid `PVC` name whether it is a pre-existing `PVC` or one to be created by the operator.  See [Creating PVC by the operator](#persistent-volume-and-persistent-volume-claim)
 
 ```yaml
 spec:
@@ -217,14 +217,14 @@ spec:
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
 
-| Field                     | Notes                                                                                | Values                                          | Required                                                            |
-|---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------|---------------------------------------------------------------------|
-| domainType                | Type of the domain creating                                                          | JRF or WLS                                      | N (default WLS)                                                     |
-| createIfNotExists         | Specify whether the Operator to create `RCU schema` first before creating the domain | domain or domainAndRCU (create RCU first)       | N (default domain)                                                  |
-| domainCreationImages      | WDT domain images                                                                    | Array of image                                  | Y                                                                   |
-| domainCreationConfigMap   | Optional configmap containing extra WDT models                                       | Kubernetes ConfigMap name                       | N                                                                   |
-| osss.walletPasswordSecret | Password for extracting `OPSS` wallet encryption key for `JRF` domain.               | Kuberntes secret name with key `walletPassword` | Y                                                                   |
-| osss.walletFileSecret     | Extracted `OPSS wallet` file.                                                        | Kuberntes secret name with key `walletFile`     | N (Only needed when recreating the domain during disaster recovery) |
+| Field                     | Notes                                                                                | Values                                           | Required                                                            |
+|---------------------------|--------------------------------------------------------------------------------------|--------------------------------------------------|---------------------------------------------------------------------|
+| domainType                | Type of the domain creating                                                          | JRF or WLS                                       | N (default WLS)                                                     |
+| createIfNotExists         | Specify whether the Operator to create `RCU schema` first before creating the domain | domain or domainAndRCU (create RCU first)        | N (default domain)                                                  |
+| domainCreationImages      | WDT domain images                                                                    | Array of image                                   | Y                                                                   |
+| domainCreationConfigMap   | Optional configmap containing extra WDT models                                       | Kubernetes ConfigMap name                        | N                                                                   |
+| osss.walletPasswordSecret | Password for extracting `OPSS` wallet encryption key for `JRF` domain.               | Kubernetes secret name with key `walletPassword` | Y                                                                   |
+| osss.walletFileSecret     | Extracted `OPSS wallet` file.                                                        | Kubernetes secret name with key `walletFile`     | N (Only needed when recreating the domain during disaster recovery) |
 
 
 ### WebLogic Deploy Tooling models
@@ -247,7 +247,7 @@ kubectl -n <domain namespace> get domain <domain uid>
 
 1. Check the log files in `logHome`.
 
-By default, the Operator persists the log files for the introspector job, RCU logs, and Weblogic servers logs in `domain.spec.logHome`
+By default, the Operator persists the log files for the introspector job, RCU logs, and WebLogic servers logs in `domain.spec.logHome`
 (default: /share/logs/<domain uid>).
 
 If there are errors, the related output files can be found in the `logHome` directory.  For example:
