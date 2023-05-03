@@ -35,6 +35,7 @@ In order to use this feature, provide the following information:
 - For details about each field, see the
 [schema TODO LINK].
 
+  
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
 #### WebLogic base image
@@ -142,6 +143,7 @@ spec:
 
   configuration:
     initializeDomainOnPV:
+      waitForPvcToBind: true
       persistentVolume:
         metadata:
             name: sample-domain1-pv-rwm1
@@ -162,7 +164,14 @@ spec:
                     storage: 10Gi
 ```
 
-Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For ths list of supported fields in `persistentVolume` and `persistentVolumeClaim`. 
+| Field                 | Notes                                                                                                                                                                                                                            | Values                                                                      | Required                                                 |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|----------------------------------------------------------|
+| waitForPvcToBind      | Specify whether operator will wait for the `PVC` to `bound` state when it is creating it. In some cloud environment, the `PVC` is in `pending` state until it is actually used in a running pod, set it to `false` if necessary. | boolean                                                                     | N (deault true)                                          |
+| persistentVolume      | Specification of the persistent volume if operator is creating it                                                                                                                                                                | specification of persistent volume if you want operator to create it)       | N  (operator will not create any persistent volume)      |
+| persistentVolumeClaim | Specification of the persistent volume claim if operator is creating it                                                                                                                                                          | specification of persistent volume claim if you want operator to create it) | N (operator will not create any persistent volume claim) |
+
+
+Not all the fields in standard Kubernetes `PV` and `PVC` are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`. 
 See [supported fields TODO LINK].
 
 If the `PV` and `PVC` already existed in your environment, you do not need
