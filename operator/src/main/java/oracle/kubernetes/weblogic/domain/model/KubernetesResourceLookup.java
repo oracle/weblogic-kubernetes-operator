@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1Secret;
 
 /**
  * An object to check the presence of required Kubernetes resources.
@@ -13,13 +14,11 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 public interface KubernetesResourceLookup {
 
   /**
-   * Returns true if the Kubernetes cluster to which this domain is deployed has a secret with the specified
-   * name and namespace.
-   * @param name the name of the secret
-   * @param namespace the containing namespace
-   * @return true if such a secret exists
+   * Returns all the secrets.
+
+   * @return list of secrets
    */
-  boolean isSecretExists(String name, String namespace);
+  List<V1Secret> getSecrets();
 
   /**
    * Returns true if the Kubernetes cluster to which this domain is deployed has a config map with the specified

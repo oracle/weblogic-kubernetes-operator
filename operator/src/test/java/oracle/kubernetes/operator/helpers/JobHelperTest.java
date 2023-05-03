@@ -45,6 +45,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
@@ -61,11 +62,15 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.CreateIfNotExists;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
+import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
+import oracle.kubernetes.weblogic.domain.model.Opss;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterEach;
@@ -74,6 +79,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
+import static oracle.kubernetes.common.CommonConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_CREATED;
 import static oracle.kubernetes.common.logging.MessageKeys.FLUENTD_CONFIGMAP_REPLACED;
@@ -83,6 +89,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -103,6 +111,10 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createTolerat
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIGMAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONFIG_DATA_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.FLUENTD_CONTAINER_NAME;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.INIT_DOMAIN_ON_PV_CONTAINER;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_KEY_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.OPSS_WALLETFILE_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.WDTCONFIGMAP_MOUNT_PATH;
 import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
@@ -934,6 +946,38 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void verify_introspectorPodWithInitializeJRFDomainOnPVSpec_activeDeadlineSeconds_default_values() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getPodSpecActiveDeadlineSeconds(jobSpec),
+        is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+  }
+
+  @Test
+  void verify_introspectorPodWithInitializeWLSDomainOnPVSpec_activeDeadlineSeconds_default_values() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().domainType(DomainOnPVType.WLS).createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getPodSpecActiveDeadlineSeconds(jobSpec),
+        is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+    assertThat(
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+  }
+
+  @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
     configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
 
@@ -1061,6 +1105,251 @@ class JobHelperTest extends DomainValidationTestBase {
         getInitContainerResources(podSpec),
         is(new V1ResourceRequirements().requests(Collections.singletonMap("cpu", new Quantity("512m")))
             .limits(Collections.singletonMap("memory", new Quantity("1Gi")))));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVHasCreateDHInitContainer() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+    boolean hasContainer = podSpec.getInitContainers().stream().anyMatch(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER));
+    assertThat(
+        hasContainer,
+        is(true)
+    );
+  }
+
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasEnvSet() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+            .map(V1EnvVar::getName)
+            .collect(Collectors.toList()),
+        hasItems("INIT_DOMAIN_ON_PV", "DOMAIN_HOME", "OPSS_KEY_SECRET_NAME", "OPSS_WALLETFILE_SECRET_NAME"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVPodSecurityContainerHasEnvSet() {
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+            .withPodSecurityContext(new V1PodSecurityContext().runAsUser(2000L).runAsGroup(0L))
+            .withInitializeDomainOnPV(new InitializeDomainOnPV()
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                            .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                                    .withWalletPasswordSecret("wallet-secret-password"))
+                    ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getInitContainers()
+                    .stream()
+                    .findFirst()
+                    .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+                    .map(V1EnvVar::getName)
+                    .collect(Collectors.toList()),
+            hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
+
+    assertThat(podSpec.getInitContainers().get(0).getEnv(),
+            hasEnvVar("DOMAIN_HOME_ON_PV_DEFAULT_UGID", "2000:0"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVNoPodSecurityContainerHasEnvSet() {
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+            .withInitializeDomainOnPV(new InitializeDomainOnPV()
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                            .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                                    .withWalletPasswordSecret("wallet-secret-password"))
+                    ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getInitContainers()
+                    .stream()
+                    .findFirst()
+                    .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+                    .map(V1EnvVar::getName)
+                    .collect(Collectors.toList()),
+            hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
+
+    assertThat(podSpec.getInitContainers().get(0).getEnv(),
+            hasEnvVar("DOMAIN_HOME_ON_PV_DEFAULT_UGID", "1000:1000"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVOpenShiftHasEnvSet() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "OpenShift");
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+            .withInitializeDomainOnPV(new InitializeDomainOnPV()
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                            .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                                    .withWalletPasswordSecret("wallet-secret-password"))
+                    ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getInitContainers()
+                    .stream()
+                    .findFirst()
+                    .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+                    .map(V1EnvVar::getName)
+                    .collect(Collectors.toList()),
+            hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
+
+    assertThat(podSpec.getInitContainers().get(0).getEnv(),
+            hasEnvVar("DOMAIN_HOME_ON_PV_DEFAULT_UGID", "1000:0"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVOpenShiftPodSecurityContextHasEnvSet() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "OpenShift");
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+            .withPodSecurityContext(new V1PodSecurityContext().runAsUser(2000L).runAsGroup(0L))
+            .withInitializeDomainOnPV(new InitializeDomainOnPV()
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                            .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                                    .withWalletPasswordSecret("wallet-secret-password"))
+                    ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getInitContainers()
+                    .stream()
+                    .findFirst()
+                    .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+                    .map(V1EnvVar::getName)
+                    .collect(Collectors.toList()),
+            hasItems("DOMAIN_HOME", "DOMAIN_HOME_ON_PV_DEFAULT_UGID"));
+
+    assertThat(podSpec.getInitContainers().get(0).getEnv(),
+            hasEnvVar("DOMAIN_HOME_ON_PV_DEFAULT_UGID", "2000:0"));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVHasConfigMapMounted() {
+
+    configureDomain()
+        .withLogHome("/share/logs/domain1")
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                .domainType(DomainOnPVType.JRF)
+                .domainCreationConfigMap("wdt-config-map")));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals(WDTCONFIGMAP_MOUNT_PATH)),
+        is(true));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVInitContainerHasCorrectVolumeMounts() {
+
+    configureDomain()
+        .withLogHome("/share/logs/domain1")
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1Mount", VOLUME_MOUNT_PATH_1)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                .domainType(DomainOnPVType.JRF)
+                .domainCreationConfigMap("wdt-config-map")));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(
+        podSpec.getInitContainers()
+            .stream()
+            .filter(f -> f.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER))
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .map(V1VolumeMount::getMountPath)
+            .collect(Collectors.toList()),
+          hasItems(SCRIPTS_MOUNTS_PATH, "/tmpAuxiliaryImage", VOLUME_MOUNT_PATH_1));
+
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithInitDomainOnPVContainerHasWalletSecretsMount() {
+
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPV(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                .opss(new Opss().withWalletFileSecret("wallet-secret-file")
+                    .withWalletPasswordSecret("wallet-secret-password"))
+            ));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals(OPSS_KEY_MOUNT_PATH)),
+        is(true));
+
+    assertThat(podSpec.getContainers()
+            .stream()
+            .findFirst()
+            .map(V1Container::getVolumeMounts).orElse(Collections.emptyList()).stream()
+            .anyMatch(p -> p.getMountPath().equals(OPSS_WALLETFILE_MOUNT_PATH)),
+        is(true));
+  }
+
+  @Test
+  void introspectorPodSpec_createdWithOutInitDomainOnPVContainerNotSetEnv() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
+
+    runCreateJob();
+
+    assertThat(getEnvNames(job), not(hasItems("INIT_DOMAIN_ON_PV")));
   }
 
   private V1ResourceRequirements getInitContainerResources(V1PodSpec podSpec) {
@@ -1420,11 +1709,11 @@ class JobHelperTest extends DomainValidationTestBase {
 
   @Test
   void whenOperatorHasKubernetesPlatformConfigured_introspectorPodSpecHasKubernetesPlatformEnvVariable() {
-    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "Openshift");
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "OpenShift");
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+          hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "OpenShift")
     );
   }
 
@@ -1433,7 +1722,7 @@ class JobHelperTest extends DomainValidationTestBase {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-          not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
+          not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "OpenShift"))
     );
   }
 

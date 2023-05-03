@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -240,12 +240,8 @@ public class DomainValidationSteps {
     }
 
     @Override
-    public boolean isSecretExists(String name, String namespace) {
-      return getSecrets(packet).stream().anyMatch(s -> isSpecifiedSecret(s, name, namespace));
-    }
-
-    boolean isSpecifiedSecret(V1Secret secret, String name, String namespace) {
-      return hasMatchingMetadata(secret.getMetadata(), name, namespace);
+    public List<V1Secret> getSecrets() {
+      return getSecrets(packet);
     }
 
     @SuppressWarnings("unchecked")

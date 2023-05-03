@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -505,6 +505,27 @@ getWebLogicVersion()
   echo ${wlver:-"9999.9999.9999.9999"}
 }
 
+# getDomainVersion
+#   parse wl domain version from config.xml
+getDomainVersion()
+{
+  local config_file=$DOMAIN_HOME/config/config.xml
+
+  [ ! -f $config_file ] && echo "9999.9999.9999.9999" && return
+
+  local domainver="`grep 'domain-version' $config_file \
+               | sed -ne '/domain-version/{s/.*<domain-version>\(.*\)<\/domain-version>.*/\1/p;q;}'`"
+
+  echo ${domainver:-"9999.9999.9999.9999"}
+}
+
+# getMajorVersion
+#   parse wl major version from a full version number
+getMajorVersion()
+{
+  local major_ver="`echo ${1} | sed  's/\([0-9]*\.[0-9]*\).*$/\1/'`"
+  echo ${major_ver}
+}
 
 # checkWebLogicVersion
 #   check if the WL version is supported by the Operator

@@ -1,9 +1,10 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -13,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SELinuxOptions;
@@ -20,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Sysctl;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
@@ -37,6 +40,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
+import static oracle.kubernetes.weblogic.domain.model.CreateIfNotExists.DOMAIN;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -44,7 +48,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -1696,5 +1702,153 @@ class DomainV2Test extends DomainTestBase {
     
     assertThrows(AssertionError.class,
         () -> domainConfigurator.withMonitoringExporterResources(resourceRequirements));
+  }
+
+  @Test
+  void whenPersistentVolumeConfigured_useConfiguredValues() {
+    configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(createPv()));
+
+    assertThat(getPersistentVolume(domain), equalTo(createPv()));
+    assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getPersistentVolume(domain).getSpec().getCapacity(), notNullValue());
+    assertThat(getPersistentVolume(domain).getSpec().getHostPath().getPath(), equalTo("/shared"));
+  }
+
+  private PersistentVolume createPv() {
+    return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
+        .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
+            .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
+            .hostPath(new V1HostPathVolumeSource().path("/shared"))
+            .volumeMode("Block"));
+  }
+
+  @Test
+  void whenPersistentVolumeClaimConfigured_useConfiguredValues() {
+    configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolumeClaim(createPvc()));
+
+    assertThat(getPersistentVolumeClaim(domain), equalTo(createPvc()));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("test-pv"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeMode(), equalTo("Block"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getResources(), notNullValue());
+  }
+
+  private PersistentVolumeClaim createPvc() {
+    return new PersistentVolumeClaim().metadata(new V1ObjectMeta().name("test-pvc"))
+        .spec(new PersistentVolumeClaimSpec()
+            .volumeName("test-pv")
+            .storageClassName("oke-pv")
+            .volumeMode("Block")
+            .resources(new V1ResourceRequirements()
+                .requests(Collections.singletonMap("storage", new Quantity("50Gi")))));
+  }
+
+  @Test
+  void whenInitializeDomainOnPvWithDomainConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
+    initializeDomainOnPv.domain(createDomainOnPV());
+    configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
+
+    assertThat(getDomain(domain), equalTo(createDomainOnPV()));
+    assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(CreateIfNotExists.DOMAIN_AND_RCU));
+    assertThat(getDomain(domain).getDomainType(), equalTo(DomainOnPVType.WLS));
+    assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("wdf-config-map"));
+    assertThat(getDomain(domain).getDomainCreationImages(), hasItems(new DomainCreationImage().image("image:v1")));
+    assertThat(getDomain(domain).getOpss(),
+        is(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic")));
+  }
+
+  private DomainOnPV createDomainOnPV() {
+    return new DomainOnPV().domainType(DomainOnPVType.WLS)
+        .createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainCreationConfigMap("wdf-config-map")
+        .domainCreationImages(Collections.singletonList(new DomainCreationImage().image("image:v1")))
+        .opss(new Opss().withWalletFileSecret("wallet-file-secret").withWalletPasswordSecret("weblogic"));
+  }
+
+  private PersistentVolume getPersistentVolume(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getPersistentVolume();
+  }
+
+  private PersistentVolumeClaim getPersistentVolumeClaim(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getPersistentVolumeClaim();
+  }
+
+  private DomainOnPV getDomain(DomainResource domain) {
+    return domain.getSpec().getInitializeDomainOnPV().getDomain();
+  }
+
+  @Test
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_pvNameandSpecsAreSet() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getPvName(domain), not(nullValue()));
+    assertThat(getStorageClass(domain), not(nullValue()));
+
+  }
+
+  private String getPvName(DomainResource domain) {
+    return getPersistentVolume(domain).getMetadata().getName();
+  }
+
+  private String getStorageClass(DomainResource domain) {
+    return getPersistentVolume(domain).getSpec().getStorageClassName();
+  }
+
+  @Test
+  void whenInitializeDomainOnPvWithWaitForPvcToBindConfigured_useConfiguredValues() {
+    InitializeDomainOnPV initializeDomainOnPv = new InitializeDomainOnPV();
+    initializeDomainOnPv.waitForPvcToBind(false);
+    configureDomain(domain).withInitializeDomainOnPv(initializeDomainOnPv);
+
+    assertThat(domain.getSpec().getInitializeDomainOnPV().getWaitForPvcToBind(), is(false));
+  }
+
+  @Test
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_pvcNameAndSpecsAreSet() throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getPvcName(domain), not(nullValue()));
+    assertThat(getPvcVolumeName(domain), not(nullValue()));
+  }
+
+  private String getPvcName(DomainResource domain) {
+    return getPersistentVolumeClaim(domain).getMetadata().getName();
+  }
+
+  private String getPvcVolumeName(DomainResource domain) {
+    return getPersistentVolumeClaim(domain).getSpec().getVolumeName();
+  }
+
+  @Test
+  void whenDomainWithInitializeDomainOnPvSpecReadFromYaml_domainSpecsHaveCorrectDefaultsAndValues()
+      throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain = (DomainResource) resources.get(0);
+
+    assertThat(getDomain(domain).getCreateIfNotExists(), equalTo(DOMAIN));
+    assertThat(getDomain(domain).getDomainType(), equalTo(DomainOnPVType.JRF));
+    assertThat(getDomain(domain).getDomainCreationConfigMap(), equalTo("domain-on-pv-cm"));
+    assertThat(getDomain(domain).getDomainCreationImages(),
+        hasItems(new DomainCreationImage().image("domain-on-pv-image:v1")));
+    assertThat(getDomain(domain).getOpss(),
+        is(new Opss().withWalletFileSecret("domain-opss-wallet").withWalletPasswordSecret("weblogic")));
+    assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("domain-on-pv-storage-class"));
+    assertThat(getPersistentVolumeClaim(domain).getSpec().getVolumeName(), equalTo("pvDomainVolume"));
+    assertThat(domain.getSpec().getInitializeDomainOnPV().getWaitForPvcToBind(), is(true));
+  }
+
+  @Test
+  void whenDomainWithInitializeDomainOnPvReadFromYamlTwice_matchingIntrospectionVersionValuesLeaveDomainsEqual()
+      throws IOException {
+    List<KubernetesObject> resources = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain1 = (DomainResource) resources.get(0);
+    List<KubernetesObject> resources2 = readFromYaml(DOMAIN_V2_SAMPLE_YAML_6);
+    DomainResource domain2 = (DomainResource) resources2.get(0);
+
+    domain1.getSpec().setIntrospectVersion("123");
+    domain2.getSpec().setIntrospectVersion("123");
+    assertThat(domain1, equalTo(domain2));
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.tuning;
@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import oracle.kubernetes.operator.DomainOnPVType;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WatchTuning;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -208,8 +210,17 @@ public class TuningParameters {
     return getParameter(RESTART_EVICTED_PODS, true);
   }
 
-  public long getActiveJobInitialDeadlineSeconds() {
-    return getParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, 120L);
+  /**
+   * Returns the value of introspector job active deadline seconds with default value depending on the context.
+   */
+  public long getActiveJobInitialDeadlineSeconds(boolean isInitializeDomainOnPV, DomainOnPVType type) {
+    long defaultValue = 120L;
+    if (isInitializeDomainOnPV && DomainOnPVType.JRF.equals(type)) {
+      defaultValue = ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+    } else if (isInitializeDomainOnPV) {
+      defaultValue = ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+    }
+    return getParameter(INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS, defaultValue);
   }
 
   public long getActiveDeadlineIncrementSeconds() {

@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>4.0.5</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -73,6 +73,7 @@
         <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
         <wko.it.image.name.operator>${env.IMAGE_NAME_OPERATOR}</wko.it.image.name.operator>
         <wko.it.image.tag.operator>${env.IMAGE_TAG_OPERATOR}</wko.it.image.tag.operator>
+        <wko.it.crio.pipeline.image>${env.DOCKER_IMAGE}</wko.it.crio.pipeline.image>
         <includes-failsafe>**/It*</includes-failsafe>
     </properties>
 
@@ -268,6 +269,9 @@
                                 <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
                                 <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
+                                <wko.it.base.images.tenancy>${wko.it.base.images.tenancy}</wko.it.base.images.tenancy>
+                                <wko.it.test.images.tenancy>${wko.it.test.images.tenancy}</wko.it.test.images.tenancy>
+                                <wko.it.crio.pipeline.image>${wko.it.crio.pipeline.image}</wko.it.crio.pipeline.image>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>

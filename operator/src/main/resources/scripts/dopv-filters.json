@@ -1,0 +1,5 @@
+{
+  "create": [
+    { "name": "jrf_appdir_filter", "path": "/weblogic-operator/scripts/dopv-create-filter.py" }
+  ]
+}

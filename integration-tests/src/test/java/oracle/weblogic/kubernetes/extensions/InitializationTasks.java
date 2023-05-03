@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -290,7 +290,7 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         }
         
         //install webhook to prevent every operator installation trying to update crd
-        installWebHookOnlyOperator();
+        installWebHookOnlyOperator("DomainOnPvSimplification=true");
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
@@ -594,6 +594,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
   String webhookNamespace = "ns-webhook";
 
   private OperatorParams installWebHookOnlyOperator() {
+    return installWebHookOnlyOperator(null);
+  }
+
+  private OperatorParams installWebHookOnlyOperator(String featureGates) {
     // recreate WebHook namespace
     deleteNamespace(webhookNamespace);
     assertDoesNotThrow(() -> new Namespace().name(webhookNamespace).create());
@@ -616,8 +620,10 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         null, // domainspaceSelector
         true, // enableClusterRolebinding
         "INFO", // webhook pod log level
+        featureGates, // the name of featureGates
         true, // webhookOnly
         "null" // domainNamespace
     );
   }
+
 }

@@ -116,6 +116,7 @@ class OfflineWlstEnv(object):
     self.LOG_HOME_LAYOUT          = self.getEnvOrDef('LOG_HOME_LAYOUT', 'ByServers')
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
+    self.INIT_DOMAIN_ON_PV        = self.getEnvOrDef('INIT_DOMAIN_ON_PV', None)
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
@@ -151,6 +152,7 @@ class OfflineWlstEnv(object):
     self.MII_WDT_CONFIGMAP_PATH       = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
                                                     '/weblogic-operator/wdt-config-map')
     self.DOMAIN_SOURCE_TYPE           = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+    self.WDT_DOMAIN_TYPE              = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -189,23 +191,31 @@ class OfflineWlstEnv(object):
     self.DOMAIN_NAME = self.getDomain().getName()
 
     # this should only be done for model in image case
-    if self.DOMAIN_SOURCE_TYPE == "FromModel":
-      self.handle_ModelInImageDomain()
+    if self.DOMAIN_SOURCE_TYPE == "FromModel" or self.INIT_DOMAIN_ON_PV is not None:
+      self.handle_JRFOPSSWallet()
 
-  def handle_ModelInImageDomain(self):
-    self.WDT_DOMAIN_TYPE = self.getEnvOrDef('WDT_DOMAIN_TYPE', 'WLS')
+  def handle_JRFOPSSWallet(self):
 
     if self.WDT_DOMAIN_TYPE == 'JRF':
       try:
         # Only export if it is not there already (i.e. have not been copied from the secrets
         if not os.path.exists('/tmp/opsswallet/ewallet.p12'):
-          opss_passphrase_file = self.getEnv('OPSS_KEY_PASSPHRASE')
-          opss_passphrase = self.readFile(opss_passphrase_file).strip()
-          os.mkdir('/tmp/opsswallet')
-          exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
-                              keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+          jps_config_file = self.getDomainHome() + '/config/fmwconfig/jps-config.xml'
+          if os.path.exists(jps_config_file):
+            opss_passphrase_file = self.getEnv('OPSS_KEY_PASSPHRASE')
+            opss_passphrase = self.readFile(opss_passphrase_file).strip()
+            os.mkdir('/tmp/opsswallet')
+            exportEncryptionKey(jpsConfigFile=self.getDomainHome() + '/config/fmwconfig/jps-config.xml', \
+                                keyFilePath='/tmp/opsswallet', keyFilePassword=opss_passphrase)
+          else:
+            trace("SEVERE","No jps-config.xml found, the domain is not a JRF domain, make sure the domain created is a JRF domain.")
+            dumpStack()
+            sys.exit(1)
+      except (IOError), err:
+        trace("SEVERE","Error in exporting OPSS key: " + str(err) + ". Make sure the `spec.configuration.opss.walletPasswordSecret' secret used has the key 'walletPassword'.")
+        sys.exit(1)
       except:
-        trace("SEVERE","Error in exporting OPSS key ")
+        trace("SEVERE","Error in exporting OPSS key")
         dumpStack()
         sys.exit(1)
 
@@ -1122,7 +1132,7 @@ class MII_DomainConfigGenerator(Generator):
     trace('done zipping up domain ')
 
 
-class MII_OpssWalletFileGenerator(Generator):
+class JRFOpssWalletFileGenerator(Generator):
 
   def __init__(self, env):
     Generator.__init__(self, env, env.MII_JRF_EWALLET)
@@ -1933,9 +1943,9 @@ class DomainIntrospector(SecretManager):
         # Must be called after MII_PrimordialDomainGenerator
         MII_IntrospectCMFileGenerator(self.env, self.env.MII_DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
 
-        if self.env.WDT_DOMAIN_TYPE == 'JRF':
-          trace("cfgmap write JRF wallet")
-          MII_OpssWalletFileGenerator(self.env).generate()
+      if self.isFromModelAndJRFDomain() or self.isInitializeDomainJRFOnPV():
+        trace("cfgmap write JRF wallet")
+        JRFOpssWalletFileGenerator(self.env).generate()
 
 
     CustomSitConfigIntrospector(self.env).generateAndValidate()
@@ -1945,6 +1955,18 @@ class DomainIntrospector(SecretManager):
     # instead of a topology.
   
     tg.generate()
+
+  def isInitializeDomainJRFOnPV(self):
+    if self.env.WDT_DOMAIN_TYPE == 'JRF' and self.env.INIT_DOMAIN_ON_PV is not None:
+      return True
+    else:
+      return False
+
+  def isFromModelAndJRFDomain(self):
+    if self.env.DOMAIN_SOURCE_TYPE == 'FromModel' and self.env.WDT_DOMAIN_TYPE == 'JRF':
+      return True
+    else:
+      return False
 
 def getRealSSLListenPort(server, sslport):
   """

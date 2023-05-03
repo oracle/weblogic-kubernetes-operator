@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -655,6 +655,54 @@ public class CommonMiiTestUtils {
           String dbSecretName,
           boolean onlineUpdateEnabled,
           boolean setDataHome) {
+    return createDomainResourceWithLogHome(domainResourceName,
+        domNamespace,
+        imageName,
+        adminSecretName,
+        repoSecretName,
+        encryptionSecretName,
+        pvName,
+        pvcName,
+        configMapName,
+        dbSecretName,
+        "-Dweblogic.security.SSL.ignoreHostnameVerification=true",
+    onlineUpdateEnabled,
+    setDataHome);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param pvName Name of persistent volume
+   * @param pvcName Name of persistent volume claim
+   * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
+   * @param dbSecretName name of the Secret for WebLogic configuration overrides
+   * @param javaOpt sting of all java options to be set
+   * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
+   * @param setDataHome whether to set data home at domain resource
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResourceWithLogHome(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      String pvName,
+      String pvcName,
+      String configMapName,
+      String dbSecretName,
+      String javaOpt,
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -679,7 +727,7 @@ public class CommonMiiTestUtils {
         .serverPod(new ServerPod()
             .addEnvItem(new V1EnvVar()
                 .name("JAVA_OPTIONS")
-                .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .value(javaOpt))
             .addEnvItem(new V1EnvVar()
                 .name("USER_MEM_ARGS")
                 .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -1243,7 +1291,7 @@ public class CommonMiiTestUtils {
 
     logger.info("Introspector pod log START");
     String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPodName,
-        domainNamespace, null, null, null, true), "Could not get introspector pod log");
+        domainNamespace, domainUid + "-introspector", null, null, true), "Could not get introspector pod log");
     logger.info(introspectorLog);
     logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectorPodName, domainUid, domainNamespace);

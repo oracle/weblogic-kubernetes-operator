@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>4.0.5</version>
+    <version>4.1.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -79,7 +79,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <skipTests>${skip.unit.tests}</skipTests>
+          <skip>${skip.unit.tests}</skip>
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>

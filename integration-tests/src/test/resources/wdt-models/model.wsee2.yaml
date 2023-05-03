@@ -1,0 +1,127 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+domainInfo:
+  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+  ServerStartMode: 'prod'
+
+topology:
+  Name: "saml-domain-receiver"
+  AdminServerName: "admin-server"
+
+  Security:
+    Group:
+      AppMonitors:
+        Description: Application Monitors
+    User:
+      user_d1:
+        Password: password1
+        GroupMemberOf: [ AppMonitors, Administrators ]
+
+  WebserviceSecurity:
+    'default_wss':
+      WebserviceTokenHandler:
+        'default_ut_handler':
+          ClassName: weblogic.xml.crypto.wss.UsernameTokenHandler
+          HandlingOrder: 1
+          TokenType: ut
+          ConfigurationProperty:
+            'UsePasswordDigest':
+              Value: false
+        'default_x509_handler':
+          ClassName: weblogic.xml.crypto.wss.BinarySecurityTokenHandler
+          HandlingOrder: 1
+          TokenType: x509
+          ConfigurationProperty:
+            'UseX509ForIdentity':
+              Value: true
+      WebserviceCredentialProvider:
+        'default_ut_cp':
+          ClassName: weblogic.xml.crypto.wss.UNTCredentialProvider
+          TokenType: ut
+        'default_x509_cp':
+          ClassName: weblogic.wsee.security.bst.ServerBSTCredentialProvider
+          TokenType: x509
+          ConfigurationProperty:
+            'ConfidentialityKeyStore':
+              Value: '/shared/Identity2KeyStore.jks'
+            'ConfidentialityKeyStorePassword':
+              Value: 'changeit'
+              EncryptValueRequired: false
+              EncryptedValueEncrypted: 'changeit'
+            'ConfidentialityKeyAlias':
+              Value: 'mykeyrec'
+            'ConfidentialityKeyPassword':
+              Value: 'changeit'
+              EncryptValueRequired: false
+              EncryptedValueEncrypted: 'changeit'
+            'IntegrityKeyStore':
+              Value: '/shared/Identity2KeyStore.jks'
+            'IntegrityKeyStorePassword':
+              Value: 'changeit'
+              EncryptValueRequired: false
+              EncryptedValueEncrypted: 'changeit'
+            'IntegrityKeyAlias' :
+              Value: 'mykeyrec'
+            'IntegrityKeyPassword':
+              Value: 'changeit'
+              EncryptValueRequired: false
+              EncryptedValueEncrypted: 'changeit'
+
+  SecurityConfiguration:
+    Realm:
+      myrealm:
+        Adjudicator:
+          DefaultAdjudicator:
+            DefaultAdjudicator:
+        AuthenticationProvider:
+          'DefaultIdentityAsserter':
+            DefaultIdentityAsserter:
+              ActiveType:                              ['AuthenticatedUser', 'X.509']
+              DefaultUserNameMapperAttributeDelimiter: ""
+              DefaultUserNameMapperAttributeType:      CN
+              UseDefaultUserNameMapper:                true
+          'Saml2IdentityAsserter':
+            SAML2IdentityAsserter:
+          'SamlAuthenticationProvider':
+            SAMLAuthenticator:
+          'DefaultAuthenticator':
+            DefaultAuthenticator:
+              ControlFlag:  'SUFFICIENT'
+              MinimumPasswordLength: 4
+
+        Authorizer:
+          XACMLAuthorizer:
+            XACMLAuthorizer:
+        CertPathProvider:
+          WebLogicCertPathProvider:
+            WebLogicCertPathProvider:
+        CredentialMapper:
+          DefaultCredentialMapper:
+            DefaultCredentialMapper:
+        PasswordValidator:
+          SystemPasswordValidator:
+            SystemPasswordValidator:
+        RoleMapper:
+          XACMLRoleMapper:
+            XACMLRoleMapper:
+
+  ServerTemplate:
+    "cluster-1-template":
+      Cluster: "cluster-1"
+      KeyStores: 'CustomIdentityAndCustomTrust'
+      CustomTrustKeyStorePassPhraseEncrypted: 'changeit'
+      CustomIdentityKeyStorePassPhraseEncrypted: 'changeit'
+      CustomIdentityKeyStoreFileName: '/shared/Identity2KeyStore.jks'
+      CustomTrustKeyStoreFileName: '/shared/TrustKeyStore.jks'
+      SSL:
+        Enabled: true
+        ServerPrivateKeyAlias: 'mykeyrec'
+        ServerPrivateKeyPassPhraseEncrypted: 'changeit'
+        HostnameVerificationIgnored: true
+        ClientCertificateEnforced: false
+        ListenPort: 8100
+        TwoWaySSLEnabled: true
+        UseServerCerts: true
+        IdentityAndTrustLocations: KeyStores
+

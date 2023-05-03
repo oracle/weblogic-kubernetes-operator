@@ -27,6 +27,7 @@ public interface EventConstants {
   String DOMAIN_UNAVAILABLE_EVENT = "Unavailable";
   String DOMAIN_INCOMPLETE_EVENT = "Incomplete";
   String DOMAIN_FAILURE_RESOLVED_EVENT = "FailureResolved";
+  String PERSISTENT_VOUME_CLAIM_BOUND_EVENT = "PersistentVolumeClaimBound";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";

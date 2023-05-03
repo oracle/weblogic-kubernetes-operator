@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f9d602e9832c79cc4b9ae676c4681e3c6ccd0301a76f8f46a5d2e6cea7c9bf4d
+    weblogic.sha256: cc06d9039691742206f1c1203f1941d0ba7af1bf2ae32f9056ce03c7d3a334eb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -113,7 +113,7 @@ spec:
                     properties:
                       walletFileSecret:
                         description: Name of a Secret containing the OPSS key wallet
-                          file, which must be in a field named `walletFile`. Use this
+                          file, which must be in a key named `walletFile`. Use this
                           to allow a JRF domain to reuse its entries in the RCU database.
                           This allows you to specify a wallet file that was obtained
                           from the domain home after the domain was booted for the
@@ -121,9 +121,11 @@ spec:
                         type: string
                       walletPasswordSecret:
                         description: Name of a Secret containing the OPSS key passphrase,
-                          which must be in a field named `walletPassword`. Used to
-                          encrypt and decrypt the wallet that is used for accessing
-                          the domain's entries in its RCU database.
+                          which must be in a key named `walletPassword`. Used to encrypt
+                          and decrypt the wallet that is used for accessing the domain's
+                          entries in its RCU database.The password must have a minimum
+                          length of eight characters and contain alphabetic characters
+                          combined with numbers or special characters.
                         type: string
                     type: object
                   model:
@@ -319,7 +321,6 @@ spec:
                       overrides.
                     type: string
                   introspectorJobActiveDeadlineSeconds:
-                    default: 120
                     description: The introspector job timeout value in seconds. If
                       this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds`
                       value is ignored. Defaults to 120 seconds.
@@ -9454,6 +9455,7 @@ spec:
                       - Introspection
                       - Kubernetes
                       - ServerPod
+                      - PersistentVolumeClaim
                       - ReplicasTooHigh
                       - TopologyMismatch
                       - Internal

@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.Processors;
+import oracle.kubernetes.operator.PvcAwaiterStepFactory;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -36,6 +37,8 @@ import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.PersistentVolumeClaimHelper;
+import oracle.kubernetes.operator.helpers.PersistentVolumeHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -193,7 +196,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             ProcessingConstants.DOMAIN_COMPONENT_NAME,
             Component.createFor(delegate.getKubernetesVersion(),
                 PodAwaiterStepFactory.class, delegate.getPodAwaiterStepFactory(getNamespace()),
-                JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace())));
+                JobAwaiterStepFactory.class, delegate.getJobAwaiterStepFactory(getNamespace()),
+                PvcAwaiterStepFactory.class, delegate.getPvcAwaiterStepFactory()));
     return packet;
   }
 
@@ -296,8 +300,12 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
             ConfigMapHelper.createOrReplaceFluentdConfigMapStep(),
             domainIntrospectionSteps(),
             new DomainStatusStep(),
-            DomainProcessorImpl.bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
+            DomainProcessorImpl.bringAdminServerUp(delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
+
+    if (info.getDomain().getInitializeDomainOnPV() != null) {
+      domainUpStrategy = Step.chain(initializePvPvcStep(), domainUpStrategy);
+    }
 
     Step introspectionAndDomainPresenceSteps = Step.chain(ConfigMapHelper.readExistingIntrospectorConfigMap(),
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
@@ -310,6 +318,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         ConfigMapHelper.readIntrospectionVersionStep(),
         new IntrospectionRequestStep(),
         JobHelper.createIntrospectionStartStep());
+  }
+
+  static Step initializePvPvcStep() {
+    return Step.chain(PersistentVolumeHelper.createPersistentVolumeStep(null),
+        PersistentVolumeClaimHelper.createPersistentVolumeClaimStep(null));
   }
 
   /**

@@ -205,7 +205,6 @@
           "type": "string"
         },
         "introspectorJobActiveDeadlineSeconds": {
-          "default": 120,
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
           "type": "integer"
         }
@@ -235,6 +234,7 @@
             "Introspection",
             "Kubernetes",
             "ServerPod",
+            "PersistentVolumeClaim",
             "ReplicasTooHigh",
             "TopologyMismatch",
             "Internal",
@@ -738,11 +738,11 @@
       "type": "object",
       "properties": {
         "walletFileSecret": {
-          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
+          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a key named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
           "type": "string"
         },
         "walletPasswordSecret": {
-          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.",
+          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.The password must have a minimum length of eight characters and contain alphabetic characters combined with numbers or special characters.",
           "type": "string"
         }
       }
