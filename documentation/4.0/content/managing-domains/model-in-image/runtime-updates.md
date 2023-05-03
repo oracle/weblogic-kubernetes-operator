@@ -45,8 +45,8 @@ _It is the administrator's responsibility to make the necessary changes to a dom
 
 ### Updating WDT artifacts
 
-You can update any `WDT` artifacts in their source locations [WDT artifacts locations](({{< relref "/managing-domains/working-with-wdt-models/model-files.md#wdt-artifacts-source-location-and-loading-order">}})), you 
-may also need to update any referenced macros [Model file macros](({{< relref "/managing-domains/working-with-wdt-models/model-files.md#model-file-macros">}})).
+You can update any `WDT` artifacts in their source locations or any macros [WDT artifacts locations]({{< relref "/managing-domains/working-with-wdt-models/model-files#wdt-artifacts-source-location-and-loading-order">}}), you 
+may also need to update any referenced macros [Model file macros]({{< relref "/managing-domains/working-with-wdt-models/model-files#model-file-macros">}}).
 
 Since all the models are merged into a single model before processing in all cases. You can, for example:
 
