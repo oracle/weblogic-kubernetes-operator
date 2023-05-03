@@ -29,7 +29,7 @@ It enables:
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
 For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a 
-domain when a domain is started for the first time, supplying an database password, and obtaining an database 
+domain when a domain is started for the first time, supplying a database password, and obtaining a database 
 wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
 ### WebLogic Deploy Tooling models

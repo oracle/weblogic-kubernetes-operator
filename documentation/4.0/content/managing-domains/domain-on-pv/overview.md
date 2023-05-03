@@ -24,8 +24,8 @@ WebLogic console, WLST or other mechanisms.**  See [High level use case](#high-l
 The `initializeDomainOnPv` provides the following functions:
 
 - Create the `PersistentVolume` and/or `PersistenVolumeClaim` if needed.
-- Create `JRF RCU schema` if needed.
-- Create the domain home based on provided WDT models on the persistent volume. 
+- Create the `JRF schema` if needed.
+- Create the WebLogic domain home based on provided WDT models on the persistent volume. 
 
 ### High level use case
 
