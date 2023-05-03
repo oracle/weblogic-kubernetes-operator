@@ -22,7 +22,7 @@ The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s
 If you do not specify a WDT model YAML file in an image,
 then the model YAML file alternately can be supplied dynamically using a Kubernetes ConfigMap
 that is referenced by your Domain field.
-We provide an example of using a model ConfigMap later in this sample.
+
 
 Here are the steps for creating the image:
 
