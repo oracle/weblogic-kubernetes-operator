@@ -1,19 +1,21 @@
 ---
-title: "WDT Image creation"
+title: "WDT image creation"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
+description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 
 ### Contents
-  - [WDT image creation - Introduction](#wdt-image-creation---introduction)
+
+  - [Overview](#overview)
   - [Understanding your first archive](#understanding-your-first-archive)
   - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
   - [Staging model files](#staging-model-files)
   - [Creating the image with WIT](#creating-the-image-with-wit)
 
-#### WDT image creation - Introduction
+#### Overview
 
-The goal of the ‘WDT image creation’ step is to demonstrate using the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-images/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+WDT image creation uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-images/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
 The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s)` contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
@@ -148,7 +150,7 @@ Run the following commands to create your application archive ZIP file and put i
 # Delete existing archive.zip in case we have an old leftover version
 ```
 ```shell
-$ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip 
+$ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
 ```
 ```
 # Move to the directory which contains the source files for our archive
@@ -374,4 +376,3 @@ $ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
 ```
 
 **NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
-

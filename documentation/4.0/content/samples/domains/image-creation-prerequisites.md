@@ -2,9 +2,10 @@
 title: "Image creation prerequisites"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
+description: "Prepare for WebLogic image creation with these steps."
 ---
 
-### WDT image creation prerequisites
+Complete the following steps before [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
