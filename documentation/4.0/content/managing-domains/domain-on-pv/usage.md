@@ -227,14 +227,14 @@ spec:
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
 
-| Field                     | Notes                                                                                | Values                                           | Required                                                            |
-|---------------------------|--------------------------------------------------------------------------------------|--------------------------------------------------|---------------------------------------------------------------------|
-| domainType                | Type of the domain creating                                                          | JRF or WLS                                       | N (default WLS)                                                     |
-| createIfNotExists         | Specify whether the Operator to create `RCU schema` first before creating the domain | domain or domainAndRCU (create RCU first)        | N (default domain)                                                  |
-| domainCreationImages      | WDT domain images                                                                    | Array of image                                   | Y                                                                   |
-| domainCreationConfigMap   | Optional configmap containing extra WDT models                                       | Kubernetes ConfigMap name                        | N                                                                   |
-| osss.walletPasswordSecret | Password for extracting `OPSS` wallet encryption key for `JRF` domain.               | Kubernetes secret name with key `walletPassword` | Y                                                                   |
-| osss.walletFileSecret     | Extracted `OPSS wallet` file.                                                        | Kubernetes secret name with key `walletFile`     | N (Only needed when recreating the domain during disaster recovery) |
+| Field                     | Notes                                                                                | Values                                                                  | Required                                                            |
+|---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
+| domainType                | Type of the domain creating                                                          | JRF or WLS                                                              | N (default WLS)                                                     |
+| createIfNotExists         | Specify whether the Operator to create `RCU schema` first before creating the domain | domain or domainAndRCU (drop existing RCU schema and create RCU schema) | N (default domain)                                                  |
+| domainCreationImages      | WDT domain images                                                                    | Array of image                                                          | Y                                                                   |
+| domainCreationConfigMap   | Optional configmap containing extra WDT models                                       | Kubernetes ConfigMap name                                               | N                                                                   |
+| osss.walletPasswordSecret | Password for extracting `OPSS` wallet encryption key for `JRF` domain.               | Kubernetes secret name with key `walletPassword`                        | Y                                                                   |
+| osss.walletFileSecret     | Extracted `OPSS wallet` file.                                                        | Kubernetes secret name with key `walletFile`                            | N (Only needed when recreating the domain during disaster recovery) |
 
 
 ### WebLogic Deploy Tooling models
