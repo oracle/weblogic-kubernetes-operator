@@ -27,8 +27,9 @@ In order to use this feature, provide the following information:
 - [Volumes and VolumeMounts information](#volumes-and-volumemounts-information).  This follows the standard Kubernetes pod requirements for mounting persistent storage.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim).   This is environment specific and usually require assistance from your administrator to provide the underlying details such as `storageClass` or any permissions.
 - [Domain information](#domain-information).  This describes the domain type, whether the Operator should create the RCU schema. 
-- Domain WDT models.  This is where the WDT binaries and WDT artifacts reside.
-- Domain resource YAML.  This is for deploying the domain in WebLogic Kubernetes Operator.
+- [Domain WDT artifacts](#domain-creation-wdt-artifacts).  This is where the WDT binaries and WDT artifacts reside.
+- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-config-map).  Optional WDT artifacts.
+- [Domain resource YAML]({{< relref "/reference/domain-resource.md">}}).  This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
 - For details about each field, see the
@@ -48,7 +49,7 @@ spec:
 You can specify your own image, use a patched image from `container-registry.oracle.com`, or create and patch using
 [WebLogic Image tool](https://github.com/oracle/weblogic-image-tool)
 
-#### Domain creation image directory structures
+#### Domain creation WDT artifacts
 
 You can specify an image that describe the domain topology, resources, and applications in the domain resource YAML.
 

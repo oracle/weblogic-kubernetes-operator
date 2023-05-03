@@ -43,9 +43,9 @@ WDT models are a convenient and simple alternative to WebLogic Scripting Tool (W
 configuration scripts and templates.
 They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. For a description of the model format
-and its integration with Model in Image,
-see [Usage]({{< relref "/managing-domains/model-in-image/usage.md" >}})
-and [Model files (TODO: fixed link)]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and its integration,
+see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
+and [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
@@ -65,5 +65,11 @@ When you deploy a Domain on persistent volume domain resource YAML file:
 ### Runtime updates
 
 Any runtime updates to the WebLogic domain configuration is controlled by the user using tools such as `Fusion Middleware Controls`, product specific `WLST` functions,
-`WebLogic Console`, `Service Bus Console`, or `JDeveloper`.  Update to the source of the `WDT` artifacts will be ignored.  
+`WebLogic Console`, `Service Bus Console`, or `JDeveloper`.  After the initial domain is created, subsequent updates to the 
+source of the `WDT` artifacts or referenced Kubernetes secrets will be ignored.  
+
+Some changes may require triggering an introspector job.  For example, after you made the change to the WeLogic domain credential, you need to:
+
+- update the credentials specified in `domain.spec.webLogicCredentialsSecret` of the domain resource YAML. 
+- update the `domai.spec.introspectVersion` of the domain resource YAML.
 
