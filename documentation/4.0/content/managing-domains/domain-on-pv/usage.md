@@ -193,7 +193,7 @@ spec:
 
 #### Domain information
 
-For `JRF` based domain, before proceeding, please be sure to visit [JRF domain]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md">}}).
+For `JRF` based domain, before proceeding, please be sure to read this first [JRF domain]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md">}}).
 
 This is the section describing the WebLogic Domain. For example,
 
