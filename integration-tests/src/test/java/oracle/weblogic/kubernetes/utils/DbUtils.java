@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -238,24 +238,26 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
-    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
-        String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
-            dbNamespace));
-    logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
     testUntil(
-        assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
+        assertDoesNotThrow(() -> checkDBPodReady(dbNamespace, dbPodNamePrefix),
           "oracleDBService podReady failed with ApiException"),
         logger,
-        "Oracle DB to be ready in namespace {0}",
+        "Oracle DB pod {0} to be ready in namespace {1}",
+        getPodNameOfDb(dbNamespace, dbPodNamePrefix),
         dbNamespace);
 
     // check if DB is ready to be used by searching pod log
-    logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
-        dbPodName, dbNamespace);
-    String msg = "The database is ready for use";
-    checkDbReady(msg, dbPodName, dbNamespace);
+    String dbPodName = getPodNameOfDb(dbNamespace, dbPodNamePrefix);
+    if (dbPodName != null) {
+      logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
+          dbPodName, dbNamespace);
+      String msg = "The database is ready for use";
+      checkDbReady(msg, dbPodName, dbNamespace);
 
-    dbMap.put(dbNamespace, dbPodName);
+      dbMap.put(dbNamespace, dbPodName);
+    } else {
+      logger.info("db pod name is null");
+    }
   }
 
   /**
@@ -721,4 +723,10 @@ public class DbUtils {
 
   }
 
+  private static Callable<Boolean> checkDBPodReady(String dbNamespace, String dbPodNamePrefix) {
+    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace, dbPodNamePrefix),
+        String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
+            dbNamespace));
+    return () -> dbPodName != null && isPodReady(dbNamespace, "app=database", dbPodName);
+  }
 }
