@@ -247,7 +247,7 @@ application archives in a ZIP file. The WDT model format is fully described in t
 
 See [Working with WDT models in operator]({{< relref "/managing-domains/working-with-wdt-models/model-files.md">}}).
 
-### Diagnostics
+### Trouble shootings
 
 1. Error in introspector job.  You can check the domain status of the domain.
 
@@ -255,7 +255,7 @@ See [Working with WDT models in operator]({{< relref "/managing-domains/working-
 kubectl -n <domain namespace> get domain <domain uid>
 ```
 
-1. Check the log files in `logHome`.
+1. Check the domain log files in `logHome`.
 
 By default, the Operator persists the log files for the introspector job, RCU logs, and WebLogic servers logs in `domain.spec.logHome`
 (default: /share/logs/<domain uid>).
@@ -290,13 +290,14 @@ also the applications directory for JRF domain (`applications/<domain uid>` unde
 
 ### Clean up
 
-If you need to delete the domain home to recover from an error or recreate the domain home, you can either:
+If you need to delete the domain home and the application directory for JRF domain to recover from an error or there is a need to recreate the domain home, the domain home is
+in the directory specified in `domain.spec.domainHome`, and the application directory for JRF domain (if not specified in your WDT model) is in 
+`<parent directory of domain home>/applications/<domain uid>`, you can:
 
 1. Delete the `PVC` if the underlying storage volume is dynamically allocated and with `ReclaimPolcy: delete` and recreate the `PVC`
 2. Attach a pod to the shared volume and the access the pod to remove the contents.  There is a sample script
 [Domain on PV helper script(https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh)
-
-Then finally delete the domain resource.
+3. Delete the domain resource.
 
 ```
 kubectl -n <namespace> delete -f <domain resource YAML> 
