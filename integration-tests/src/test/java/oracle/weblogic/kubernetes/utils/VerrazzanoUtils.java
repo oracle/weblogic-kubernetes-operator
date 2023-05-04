@@ -3,22 +3,32 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.Yaml;
+import oracle.verrazzano.weblogic.Component;
+import oracle.verrazzano.weblogic.ComponentSpec;
+import oracle.verrazzano.weblogic.Workload;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createComponent;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteComponent;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.replaceNamespace;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A utility class for verrazzano tests.
@@ -100,4 +110,82 @@ public class VerrazzanoUtils {
     return result.stdout().contains(message);
   }
 
+  /**
+   * Create a configmap component in verrazzano.
+   *
+   * @param componentName name of the component referred in verrazzano application configuration
+   * @param configmapName name of the configmap referred inside the WebLogic workload
+   * @param namespace namespace in which to create the verrazzano component
+   * @param domainUid Uid of the WebLogic domain referring this configmap
+   * @param modelFiles list of model files for the configmap
+   */
+  public static void createVzConfigmapComponent(String componentName, String configmapName,
+      String namespace, String domainUid, List<String> modelFiles) {
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUID", domainUid);
+    assertNotNull(componentName, "ConfigMap component name cannot be null");
+    logger.info("Create ConfigMap component {0} that contains model files {1}",
+        componentName, modelFiles);
+    Map<String, String> data = new HashMap<>();
+    for (String modelFile : modelFiles) {
+      ConfigMapUtils.addModelFile(data, modelFile);
+    }
+
+    Component component = new Component()
+        .apiVersion("core.oam.dev/v1alpha2")
+        .kind("Component")
+        .metadata(new V1ObjectMeta()
+            .name(componentName)
+            .namespace(namespace))
+        .spec(new ComponentSpec()
+            .workLoad(new Workload()
+                .apiVersion("v1")
+                .kind("ConfigMap")
+                .metadata(new V1ObjectMeta()
+                    .labels(labels)
+                    .name(configmapName))
+                .data(data)));
+    logger.info("Deploying configmap component");
+    logger.info(Yaml.dump(component));
+    assertDoesNotThrow(() -> createComponent(component));
+
+    testUntil(() -> {
+      try {
+        return Kubernetes.listComponents(namespace).getItems().stream()
+            .anyMatch(comp -> comp.getMetadata().getName().equals(componentName));
+      } catch (ApiException ex) {
+        logger.warning(ex.getResponseBody());
+      }
+      return false;
+    },
+        logger,
+        "Checking for " + configmapName + " in namespace " + namespace + " exists");
+    assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.listComponents(namespace))));
+  }
+
+  /**
+   * Delete a configmap component in verrazzano.
+   *
+   * @param componentName name of the component referred in verrazzano application configuration
+   * @param namespace namespace in which to create the verrazzano component
+   * @throws ApiException throws when delete fails
+   */
+  public static void deleteVzConfigmapComponent(String componentName, String namespace) throws ApiException {
+    assertTrue(deleteComponent(componentName, namespace));
+    // check configuration for JMS
+    testUntil(() -> {
+      try {
+        return !Kubernetes.listComponents(namespace).getItems().stream()
+            .anyMatch(component -> component.getMetadata().getName().equals(componentName));
+      } catch (ApiException ex) {
+        logger.warning(ex.getResponseBody());
+      }
+      return false;
+    },
+        logger,
+        "Checking for " + componentName + " in namespace " + namespace + " exists");
+    logger.info("Component " + componentName + " deleted");
+  }
+  
 }
