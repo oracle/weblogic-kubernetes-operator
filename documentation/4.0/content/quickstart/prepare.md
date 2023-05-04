@@ -24,8 +24,8 @@ weight: 2
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}"
     ```
 
-    {{% notice note %}} If you have reached this point while following the "Model in Image" sample, please
-    stop here and return to the [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}).
+    {{% notice note %}} If you have reached this point while following the [prerequisites]({{< relref "/samples/domains/prerequisites.md" >}}) in the domain samples, please
+    stop here and return to the [sample instructions]({{< relref "/samples/domains/prerequisites#resume" >}}).
     {{% /notice %}}
 
 1. Accept the license agreement for WebLogic Server images.
