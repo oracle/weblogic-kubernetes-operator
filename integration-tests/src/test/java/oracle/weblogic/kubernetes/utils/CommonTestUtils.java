@@ -811,6 +811,7 @@ public class CommonTestUtils {
     StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(namespace);
     javacCmd.append(" -it ");
+    javacCmd.append(" -c weblogic-server ");
     javacCmd.append(podName);
     javacCmd.append(" -- /bin/bash -c \"");
     javacCmd.append("javac -cp ");
@@ -840,6 +841,7 @@ public class CommonTestUtils {
     StringBuffer javacCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javacCmd.append(namespace);
     javacCmd.append(" -it ");
+    javacCmd.append(" -c weblogic-server ");
     javacCmd.append(podName);
     javacCmd.append(" -- /bin/bash -c \"");
     javacCmd.append("javac -cp ");
@@ -875,6 +877,7 @@ public class CommonTestUtils {
     StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javapCmd.append(namespace);
     javapCmd.append(" -it ");
+    javapCmd.append(" -c weblogic-server ");
     javapCmd.append(podName);
     javapCmd.append(" -- /bin/bash -c \"");
     javapCmd.append("java -cp ");
@@ -921,6 +924,7 @@ public class CommonTestUtils {
     StringBuffer javapCmd = new StringBuffer(KUBERNETES_CLI + " exec -n ");
     javapCmd.append(namespace);
     javapCmd.append(" -it ");
+    javapCmd.append(" -c weblogic-server ");
     javapCmd.append(podName);
     javapCmd.append(" -- /bin/bash -c \"");
     javapCmd.append("java -cp ");

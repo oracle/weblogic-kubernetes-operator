@@ -1370,6 +1370,32 @@ public class Kubernetes {
   }
 
   /**
+   * Delete Component Custom Resources from a given namespace.
+   *
+   * @param name of the component to delete
+   * @param namespace namespace name
+   * @return true if the resource exists and deleted
+   * @throws io.kubernetes.client.openapi.ApiException when list fails
+   */
+  public static boolean deleteComponent(String name, String namespace)
+      throws ApiException {
+    KubernetesApiResponse<Component> response = null;
+    try {
+      response = vzComCrdClient.delete(namespace, name);
+    } catch (Exception ex) {
+      getLogger().warning(ex.getMessage());
+      throw ex;
+    }
+
+    if (!response.isSuccess()) {
+      getLogger().warning("Failed to delete config map '" + name + "' from namespace: "
+          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+      return false;
+    }
+    return response.isSuccess();
+  }
+  
+  /**
    * List Component Custom Resources from a given namespace.
    *
    * @param namespace namespace name

@@ -96,6 +96,7 @@ public interface TestConstants {
   public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure";
   public static final String FMWINFRA_IMAGE_TAG_DEFAULT = "12.2.1.4";
   public static final String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
+  public static final String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
   public static final String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
 
   // repository to push the domain images created during test execution
@@ -127,7 +128,10 @@ public interface TestConstants {
   // if base images repo is OCIR use OCIR default image values
   public static final String DB_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
       + getNonEmptySystemProperty("wko.it.db.image.name", DB_IMAGE_NAME_DEFAULT);
+  public static final String DB_PREBUILT_IMAGE_NAME = BASE_IMAGES_REPO + BASE_IMAGES_TENANCY + "/" 
+      + getNonEmptySystemProperty("wko.it.db.prebuilt.image.name", DB_PREBUILT_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
+  public static final String DB_IMAGE_PREBUILT_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", "18.4.0-xe");
 
   // WebLogic Base Image with Japanese Locale
   public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/test-images/weblogic";
@@ -404,11 +408,11 @@ public interface TestConstants {
   public static final String ORACLE_DB_SECRET_NAME = "oracle-db-secret";
 
   // Oracle database operator constants
-  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
+  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.1";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
   public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY
-      + "/test-images/database/operator:0.2.0";
+      + "/test-images/database/operator:0.2.1";
   public static final String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
