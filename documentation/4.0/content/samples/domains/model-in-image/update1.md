@@ -212,7 +212,7 @@ Here are the steps:
    Send a web application request to the ingress controller:
 
    ```shell
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 

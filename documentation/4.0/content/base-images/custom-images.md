@@ -534,7 +534,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    auxiliary images, instead of the alternative approach, which is used in this example.
 
 1. Follow the prerequisite steps in the
-   [Model in Image Sample]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}})
+   [Model in Image Sample]({{< relref "/samples/domains/prerequisites.md" >}})
    that describe how to:
 
    - Download the operator source and its Model in Image sample

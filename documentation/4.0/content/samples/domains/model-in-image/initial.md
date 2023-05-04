@@ -32,7 +32,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
+Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/prerequisites.md" >}}) before performing the steps in this use case.  
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-AI-v1 model YAML file differs from the WLS-AI-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
@@ -337,7 +337,7 @@ At this point, you have staged all of the files needed for image `model-in-image
   - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.properties`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip`
 
-If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/prerequisites.md" >}}).
 
 Now, you use the Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1`. You've already set up this tool during the prerequisite steps.
 
@@ -354,7 +354,7 @@ Run the following commands to create the image and verify that it worked:
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
@@ -475,7 +475,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
   that you chose in the prequisite steps when
-  [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+  [setting up JRF]({{< relref "/samples/domains/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
 
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
@@ -925,7 +925,7 @@ Now that all the initial use case resources have been deployed, you can invoke t
 Send a web application request to the load balancer:
 
    ```shell
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 Or, if Traefik is unavailable and your Administration Server pod is running, you can use `kubectl exec`:

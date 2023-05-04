@@ -9,40 +9,15 @@ weight: 1
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
    - The first time you try this sample, we recommend that you choose `WLS` even if you're familiar with `JRF`.
-   - This is because `WLS` is simpler and will more easily familiarize you with Model in Image concepts.
+   - This is because `WLS` is simpler and will more easily familiarize you with either `Model in Image` or `Domain on PV` concepts.
    - We recommend choosing `JRF` only if you are already familiar with `JRF`, you have already tried the `WLS` path through this sample, and you have a definite use case where you need to use `JRF`.
 
-1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
+1. Complete steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to prepare for building either a Model in Image `auxiliary image` or Domain on PV `domain creation image`.
 
-1. Get the operator source and put it in `/tmp/weblogic-kubernetes-operator`.
+   __Note__: If you are going to skip the step for WDT image creation, you still need to complete step 3 and step 4 in the [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to get the operator source, put it in `/tmp/weblogic-kubernetes-operator` and copy the sample to a new directory; for example, use directory `/tmp/sample`.
 
-   For example:
+1. Build either a Model in Image `auxiliary image` or Domain on PV `domain creation image` by completing steps in [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
 
-   ```shell
-   $ cd /tmp
-   ```
-   ```shell
-   $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
-   ```
-
-   **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
-
-   For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
-
-1. Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`.
-
-
-   ```shell
-   $ mkdir /tmp/mii-sample
-   ```
-   ```shell
-   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
-   ```
-
-   **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
-   {{< rawhtml >}}
-   <a name="resume"></a>
-   {{< /rawhtml >}}
 1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
@@ -53,7 +28,7 @@ weight: 1
 
 1. Set up ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
 
-    - Option 1: To create the ingresses, use the following YAML file to create a file called `/tmp/mii-sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml`:
+    - Option 1: To create the ingresses, use the following YAML file to create a file called `/tmp/sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/sample/ingresses/myingresses.yaml`:
 
        ```yaml
        apiVersion: traefik.containo.us/v1alpha1
@@ -86,7 +61,7 @@ weight: 1
        spec:
          routes:
          - kind: Rule
-           match: Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)
+           match: Host(`sample-domain1-cluster-cluster-1.sample.org`)
            services:
            - kind: Service
              name: sample-domain1-cluster-cluster-1
@@ -104,17 +79,17 @@ weight: 1
        spec:
          routes:
          - kind: Rule
-           match: Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)
+           match: Host(`sample-domain2-cluster-cluster-1.sample.org`)
            services:
            - kind: Service
              name: sample-domain2-cluster-cluster-1
              port: 8001
        ```
 
-   - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/mii-sample/ingresses` directory:
+   - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/sample/ingresses` directory:
 
        ```
-       $ cd /tmp/mii-sample/ingresses
+       $ cd /tmp/sample/ingresses
        $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
        $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
        $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
@@ -140,51 +115,6 @@ weight: 1
    The example base images are General Availability (GA) images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
 
      {{% /notice %}}
-
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
-
-   ```shell
-   $ cd /tmp/mii-sample/model-images
-   ```
-   ```shell
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
-     -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-   ```
-   ```shell
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
-     -o /tmp/mii-sample/model-images/imagetool.zip
-   ```
-
-1. To set up the WebLogic Image Tool, run the following commands:
-
-   ```shell
-   $ cd /tmp/mii-sample/model-images
-   ```
-   ```shell
-   $ unzip imagetool.zip
-   ```
-   ```shell
-   $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
-   ```
-   ```shell
-   $ ./imagetool/bin/imagetool.sh cache addInstaller \
-     --type wdt \
-     --version latest \
-     --path /tmp/mii-sample/model-images/weblogic-deploy.zip
-   ```
-
-   Note that the WebLogic Image Tool `cache deleteEntry` command does nothing
-   if the `wdt_latest` key doesn't have a corresponding cache entry. It is included
-   because the WIT cache lookup information is stored in the `$HOME/cache/.metadata`
-   file by default, and if the cache already
-   has a version of WDT in its `--type wdt --version latest` location, then the
-   `cache addInstaller` command would fail.
-   For more information about the WIT cache, see the
-   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
-
-   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory,
-   plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
-   You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
 ### Additional prerequisites for JRF domains
 
@@ -304,13 +234,13 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
 ##### Increase introspection job timeout
 
-The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/mii-sample/domain-resources` already set this value.
+The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/sample/domain-resources` already set this value.
 
 ##### Important considerations for RCU model attributes, Domain fields, and secrets
 
-To allow Model in Image to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your Domain before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
+To allow the operator to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your Domain before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
-The sample includes examples of JRF models and Domain YAML files in the `/tmp/mii-sample/model-images` and `/tmp/mii-sample/domain-resources` directories, and instructions in the following sections will describe setting up the RCU and OPSS secrets.
+The sample includes examples of JRF models and Domain YAML files in the `/tmp/sample/model-images` and `/tmp/sample/domain-resources` directories, and instructions in the following sections will describe setting up the RCU and OPSS secrets.
 
 When you follow the instructions in the samples, avoid instructions that are `WLS` only, and substitute `JRF` for `WLS` in the corresponding model image tags and Domain YAML file names.
 
@@ -344,10 +274,10 @@ To save the wallet file, assuming that your namespace is `sample-domain1-ns` and
 Alternatively, you can save the file using the sample's wallet utility:
 
 ```shell
-  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
+  $ /tmp/sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
 ```
 ```
-  # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
+  # For help: /tmp/sample/utils/opss-wallet.sh -?
 ```
 
 __Important! Back up your wallet file to a safe location that can be retrieved later.__
@@ -367,10 +297,10 @@ To reuse the wallet file in subsequent redeployments or to share the domain's OP
 
 Alternatively, use the sample's wallet utility:
 ```shell
-  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
+  $ /tmp/sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
 ```
 ```
-  # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
+  # For help: /tmp/sample/utils/opss-wallet.sh -?
 ```
 
 2. Modify your Domain JRF YAML files to provide the wallet file secret name, for example:
@@ -383,4 +313,4 @@ Alternatively, use the sample's wallet utility:
       # Name of secret with walletFile containing base64 encoded opss wallet
       walletFileSecret: sample-domain1-opss-walletfile-secret
 ```
-**NOTE**: The sample JRF Domain YAML files included in `/tmp/mii-sample/domain-resources` already have the previous YAML file stanza.
+**NOTE**: The sample JRF Domain YAML files included in `/tmp/sample/domain-resources` already have the previous YAML file stanza.
