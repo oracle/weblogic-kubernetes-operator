@@ -3,6 +3,9 @@
 
 package oracle.verrazzano.weblogic;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.swagger.annotations.ApiModel;
@@ -25,9 +28,12 @@ public class Workload implements KubernetesObject {
   @ApiModelProperty("The Workload meta-data. Must include the name and namespace.")
   private V1ObjectMeta metadata = new V1ObjectMeta();
 
+  @ApiModelProperty("Configmap data of the Workload.")
+  Map<String, String> data = new HashMap<>();
+  
   @ApiModelProperty("The specification of the Workload. Required.")
   private WorkloadSpec spec = new WorkloadSpec();
-
+  
   public Workload apiVersion(String apiVersion) {
     this.apiVersion = apiVersion;
     return this;
@@ -94,7 +100,24 @@ public class Workload implements KubernetesObject {
 
   public void setSpec(WorkloadSpec spec) {
     this.spec = spec;
-  }  
+  }
+  
+  public Workload data(Map<String, String> data) {
+    this.data = data;
+    return this;
+  }
+
+  public Map<String, String> data() {
+    return data;
+  }
+
+  public Map<String, String> getData() {
+    return data;
+  }
+
+  public void setData(Map<String, String> data) {
+    this.data = data;
+  }    
   
   @Override
   public String toString() {
@@ -103,6 +126,7 @@ public class Workload implements KubernetesObject {
         .append("kind", kind)
         .append("metadata", metadata)
         .append("spec", spec)
+        .append("data", data)
         .toString();
   }
 
@@ -113,6 +137,7 @@ public class Workload implements KubernetesObject {
         .append(apiVersion)
         .append(kind)
         .append(spec)
+        .append(data)
         .toHashCode();
   }
 
@@ -131,6 +156,7 @@ public class Workload implements KubernetesObject {
         .append(apiVersion, rhs.apiVersion)
         .append(kind, rhs.kind)
         .append(spec, rhs.spec)
+        .append(data, rhs.data)
         .isEquals();
   }
 

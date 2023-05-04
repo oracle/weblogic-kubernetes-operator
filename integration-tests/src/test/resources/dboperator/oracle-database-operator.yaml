@@ -619,9 +619,9 @@ spec:
       jsonPath: .spec.dbPort
       name: DB Port
       type: integer
-    - description: SCAN Name
-      jsonPath: .spec.scanName
-      name: SCAN Name
+    - description: ' string of the tnsalias'
+      jsonPath: .spec.dbTnsurl
+      name: TNS STRING
       type: string
     - description: Replicas
       jsonPath: .spec.replicas
@@ -688,11 +688,45 @@ spec:
               cdbName:
                 description: Name of the CDB
                 type: string
+              cdbTlsCrt:
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              cdbTlsKey:
+                properties:
+                  secret:
+                    description: CDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
               dbPort:
                 description: DB server port
                 type: integer
               dbServer:
                 description: Name of the DB server
+                type: string
+              dbTnsurl:
                 type: string
               nodeSelector:
                 additionalProperties:
@@ -734,9 +768,6 @@ spec:
               replicas:
                 description: Number of ORDS Containers to create
                 type: integer
-              scanName:
-                description: SCAN Name
-                type: string
               serviceName:
                 description: Name of the CDB Service
                 type: string
@@ -1282,7 +1313,7 @@ spec:
   - additionalPrinterColumns:
     - description: The connect string to be used
       jsonPath: .status.connString
-      name: Connect String
+      name: Connect_String
       type: string
     - description: Name of the CDB
       jsonPath: .spec.cdbName
@@ -1416,6 +1447,54 @@ spec:
                 - OPEN
                 - CLOSE
                 type: string
+              pdbTlsCat:
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              pdbTlsCrt:
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
+              pdbTlsKey:
+                properties:
+                  secret:
+                    description: PDBSecret defines the secretName
+                    properties:
+                      key:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - key
+                    - secretName
+                    type: object
+                required:
+                - secret
+                type: object
               reuseTempFile:
                 description: Whether to reuse temp file
                 type: boolean
@@ -1949,8 +2028,15 @@ spec:
     - jsonPath: .status.connectString
       name: Connect Str
       type: string
+    - jsonPath: .status.tcpsConnectString
+      name: TCPS Connect Str
+      type: string
     - jsonPath: .status.pdbConnectString
       name: Pdb Connect Str
+      priority: 1
+      type: string
+    - jsonPath: .status.tcpsPdbConnectString
+      name: TCPS Pdb Connect Str
       priority: 1
       type: string
     - jsonPath: .status.oemExpressUrl
@@ -1997,6 +2083,8 @@ spec:
                 - enterprise
                 - express
                 type: string
+              enableTCPS:
+                type: boolean
               flashBack:
                 type: boolean
               forceLog:
@@ -2027,6 +2115,8 @@ spec:
                   sgaTarget:
                     type: integer
                 type: object
+              listenerPort:
+                type: integer
               loadBalancer:
                 type: boolean
               nodeSelector:
@@ -2067,6 +2157,10 @@ spec:
                 maxLength: 12
                 pattern: ^[a-zA-Z0-9]+$
                 type: string
+              tcpsCertRenewInterval:
+                type: string
+              tcpsListenerPort:
+                type: integer
             required:
             - image
             type: object
@@ -2077,7 +2171,13 @@ spec:
                 type: boolean
               archiveLog:
                 type: string
+              certCreationTimestamp:
+                type: string
+              certRenewInterval:
+                type: string
               charset:
+                type: string
+              clientWalletLoc:
                 type: string
               cloneFrom:
                 type: string
@@ -2159,6 +2259,9 @@ spec:
                 type: integer
               initSgaSize:
                 type: integer
+              isTcpsEnabled:
+                default: false
+                type: boolean
               nodes:
                 items:
                   type: string
@@ -2204,7 +2307,12 @@ spec:
                 type: object
               status:
                 type: string
+              tcpsConnectString:
+                type: string
+              tcpsPdbConnectString:
+                type: string
             required:
+            - isTcpsEnabled
             - persistence
             type: object
         type: object
@@ -3116,7 +3224,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: container-registry.oracle.com/database/operator:0.2.0
+        image: container-registry.oracle.com/database/operator:0.2.1
         imagePullPolicy: Always
         name: manager
         ports:
