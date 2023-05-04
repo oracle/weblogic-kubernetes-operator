@@ -17,15 +17,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
@@ -273,10 +271,10 @@ public class ItMiiSampleHelper {
     envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v1");
 
     if (domainType.equals(DomainType.JRF)) {
-      String dbImageName = (KIND_REPO != null
-          ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-      String jrfBaseImageName = (KIND_REPO != null
-          ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
+      String dbImageName = DB_IMAGE_TO_USE_IN_SPEC
+          .substring(0, DB_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":"));
+      String jrfBaseImageName = FMWINFRA_IMAGE_TO_USE_IN_SPEC
+          .substring(0, FMWINFRA_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":"));
       String dbNamespace = envMap.get("dbNamespace");
 
       envMap.put("DB_IMAGE_NAME", dbImageName);
@@ -288,6 +286,11 @@ public class ItMiiSampleHelper {
       envMap.put("DB_NAMESPACE", dbNamespace);
       envMap.put("DB_IMAGE_PULL_SECRET", TestConstants.BASE_IMAGES_REPO_SECRET_NAME); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
+
+      logger.info("dbImageName used for JRF domain is: {0}, imageTag is: {1}", dbImageName, DB_IMAGE_TAG);
+      logger.info("jrfBaseImageName used for JRF domain is: {0}, imageTag is: {1}",
+          jrfBaseImageName, FMWINFRA_IMAGE_TAG);
+
       if (OKE_CLUSTER) {
         String output = inspectImage(jrfBaseImageName, FMWINFRA_IMAGE_TAG);
         assertNotNull(output, String.format("Can't inspect image %s:%s", jrfBaseImageName, FMWINFRA_IMAGE_TAG));
