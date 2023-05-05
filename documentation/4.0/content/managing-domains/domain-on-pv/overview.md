@@ -15,7 +15,7 @@ Domain on PV requires that the domain home exists on a persistent volume. The do
 or automatically by specifying the section, `domain.spec.configuration.initializeDomainOnPV`, in the domain resource YAML file.
 The initial domain topology and resources are described using [WebLogic Deploy Tooling (WDT) models](#weblogic-deploy-tooling-models).
 
-**NOTE**: The `initializeDomainOnPV` section provides a one-time-only domain home initialization.
+**NOTE**: The `initializeDomainOnPV` section provides a **one-time-only** domain home initialization.
 The operator creates the domain when the domain resource is first deployed. After the domain is created,
 this section is ignored. Subsequent domain life cycle updates must be controlled by
 the WebLogic Server Administration Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
@@ -30,7 +30,7 @@ The `initializeDomainOnPv` section provides the following functions:
 
 The typical Domain on PV use case is for an application life cycle that requires persisting changes to the permanent file system.
 
-For example, you might use frameworks like Meta data service (MDS), Oracle Application Development Framework (ADF), or Oracle Service Bus (OSB).
+For example, you might use frameworks like Meta Data Service (MDS), Oracle Application Development Framework (ADF), or Oracle Service Bus (OSB).
 These frameworks require a running domain and the lifecycle operations are persisted to the file system. Typically,
 after the initial domain is created, you use tools like Fusion Middleware Control, product-specific WLST functions,
 the WebLogic Server Administration Console, the Service Bus Console, or JDeveloper for lifecycle operations. The changes are managed by

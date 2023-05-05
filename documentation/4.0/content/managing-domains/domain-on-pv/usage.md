@@ -18,13 +18,13 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 ### Configuration
 
 Beginning with operator version 4.1.0, you can provide a section, `domain.spec.configuraiton.initializeDomainOnPV`, to initialize a WebLogic domain on a persistent volume when it is first deployed.
-This is a _one time only_ initialization. After the domain is created, subsequent updates to the domain resource YAML file will not recreate or update the
+This is a _one time only_ initialization. After the domain is created, subsequent updates to this section in the domain resource YAML file will not recreate or update the
 WebLogic domain.
 
 To use this feature, provide the following information:
 
 - [WebLogic base image](#weblogic-base-image) - This is the WebLogic product to be used.
-- [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent storage.
+- [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
 - [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries and WDT artifacts reside.
@@ -57,11 +57,21 @@ Specify an image that describes the domain topology, resources, and applications
 ```
      domain:
           domainCreationImages:
-            - image: 'mymodel-domain:v1'
+            - image: 'myrepo/domain-images:v1'
 ```
 
-In this image or images, you provide the WDT [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
-and also the WDT artifacts.  The operator will use the tool and the WDT artifacts to create the initial domain.
+| Field                     | Notes                                                                                | Values                                                                  | Required                                                            |
+|---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
+
+In this image or images, you must provide the required WDT [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
+and also the WDT artifacts.  The operator will use the tool and the WDT artifacts to create the initial domain.  
+
+For additional options in `domainCreationImages`, use the follow command to obtain the details.
+
+```
+kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages
+```
 
 The image layout follows this directory structure:
 
@@ -80,7 +90,7 @@ $ imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
    --wdtVersion latest \
    --wdtModel /home/acme/myapp/wdt/model1.yaml \
    --wdtVariables /home/acme/myapp/wdt/model1.properties \
-   --tag mydomain-image:v1   
+   --tag myrepo/domain-images:v1   
 ```
 
 #### Optional WDT artifacts ConfigMap
@@ -90,10 +100,15 @@ those in `domainCreationImages`.
 
 ```
      domain:
+          ...
           domainCreationImages:
-            - image: 'mymodel-domain:v1'
-          domainCreationConfigMap: mymodle-domain-configmap
+              ...
+          domainCreationConfigMap: mymodel-domain-configmap
 ```
+
+| Field                     | Notes                                | Values                             | Required |
+|---------------------------|--------------------------------------|------------------------------------|----------|
+| `domainCreationConfigMap`      | Optional WDT artifacts in ConfigMap. | ConfigMap name. | N        |
 
 The files inside this ConfigMap must have file extensions, `.yaml`, `.properties`, or `.zip`.
 
@@ -219,7 +234,7 @@ spec:
           # domain |  domainAndRCU
           createIfNotExists: domainAndRCU
           domainCreationImages:
-            - image: 'myaux:v1'
+            - image: 'myrepo/domain-images:v1'
           domainType: JRF
           domainCreationConfigMap: sample-domain1-wdt-config-map
           opss:
@@ -228,10 +243,10 @@ spec:
 
 | Field                     | Notes                                                                                | Values                                                                  | Required                                                            |
 |---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
-| `domainType`                | Type of domain being created.                                                          | `JRF` or `WLS`                                                              | N (default `WLS`)                                                     |
-| `createIfNotExists`         | Specifies whether the operator should create the RCU schema first, before creating the domain. | `domain` or `domainAndRCU` (drop existing RCU schema and create new RCU schema) | N (default `domain`)                                                  |
-| `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                                                   |
-| `domainCreationConfigMap`   | Optional ConfigMap containing extra WDT models.                                       | Kubernetes ConfigMap name.                                               | N                                                                   |
+| `domainType`                | Type of domain being created.                                                          | `JRF` or `WLS`                                                              | N (default `WLS`)                                           |
+| `createIfNotExists`         | Specifies whether the operator should create the RCU schema first, before creating the domain. | `domain` or `domainAndRCU` (drop existing RCU schema and create new RCU schema) | N (default `domain`) |
+| `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
+| `domainCreationConfigMap`   | Optional ConfigMap containing extra WDT models.                                       | Kubernetes ConfigMap name.                                               | N                                                  |
 | `osss.walletPasswordSecret` | Password for extracting OPSS wallet encryption key for JRF domain.               | Kubernetes secret name with key `walletPassword`.                       | Y                                                                   |
 | `osss.walletFileSecret`     | Extracted OPSS wallet file.                                                        | Kubernetes secret name with key `walletFile`.                            | N (Only needed when recreating the domain during disaster recovery) |
 
@@ -318,6 +333,8 @@ spec:
   domainHomeSourceType: PersistentVolume
   image: "container-registry.oracle.com/middleware/fmw-infrastructure_cpu:12.2.1.4-jdk8-ol8-221014"
   imagePullPolicy: "IfNotPresent"
+  imagePullSecrets:
+  - name: ocir-credentials
   webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
   logHomeEnabled: true
@@ -366,7 +383,7 @@ spec:
           # domain |  domainAndRCU
           createIfNotExists: domainAndRCU
           domainCreationImages:
-            - image: 'myaux:v1'
+            - image: 'myrepo/domain-images:v1'
           domainType: JRF
           domainCreationConfigMap: sample-domain1-wdt-config-map
           opss:
@@ -374,17 +391,3 @@ spec:
 ```
 
 
-#### Example 2: Multiple images
-
-This example is the same as Example 1, except it configures multiple domain creation images and sets the `sourceWDTInstallHome`
-for the second image to `None`.
-In this case, the source location of the WebLogic Deploy Tooling installation from the second image `new-model-in-image:v1` will be ignored.
-
-```
-spec:
-  configuration:
-    initializeDomainOnPV:        
-      domainCreationImages:
-      - image: domain-images:v1
-      - image: domain-addtional-images:v1
-```
