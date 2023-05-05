@@ -19,6 +19,24 @@ Typically, a JRF domain is used by Fusion Middleware products. The JRF domain ha
 The database components are created using Repository Creation Utility (RCU); a new RCU schema is created before creating a
 JRF-based domain.
 
+### Sample WDT model for JRF domain
+
+For operator creating a JRF domain, your WDT model must have a `RCUDbInfo` section in `domainInfo`.  This is a sample model 
+snippet of a typical JRF domain
+
+```yaml
+domainInfo:
+    RCUDbInfo:
+        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+        # DBA credentials: required if operator is running the rcu in Domain On PV
+        rcu_db_user: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:dba_user@@'
+        rcu_admin_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:dba_password@@'
+```
+
+Refer to [WebLogic Deploy Tooling Connect to a database](https://oracle.github.io/weblogic-deploy-tooling/userguide/database/connect-db/) for more information.
+
 ### Importance of domain home directory backup
 
 A JRF domain has a one-to-one relationship with the RCU schema.  After a domain is created using a particular RCU schema,
