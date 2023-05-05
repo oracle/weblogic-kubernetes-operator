@@ -73,6 +73,7 @@
         <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
         <wko.it.image.name.operator>${env.IMAGE_NAME_OPERATOR}</wko.it.image.name.operator>
         <wko.it.image.tag.operator>${env.IMAGE_TAG_OPERATOR}</wko.it.image.tag.operator>
+        <wko.it.crio.pipeline.image>${env.DOCKER_IMAGE}</wko.it.crio.pipeline.image>
         <includes-failsafe>**/It*</includes-failsafe>
     </properties>
 
@@ -144,7 +145,7 @@
                                     <property>wko.it.base.images.tenancy</property>
                                     <message>Set the wko.it.base.images.tenancy property to specify the tenancy to use to pull base weblogic/fmw images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
-                                    <regexMessage>The wko.it.base.images.repo must start with an alphanumeric character</regexMessage>
+                                    <regexMessage>The wko.it.base.images.tenancy must start with an alphanumeric character</regexMessage>
                                 </requireProperty>
                                 <requireEnvironmentVariable>
                                     <message>Set the BASE_IMAGES_REPO_USERNAME environment variable to create pull secret for BASE_IMAGES_REPO.</message>
@@ -168,7 +169,7 @@
                                     <property>wko.it.test.images.tenancy</property>
                                     <message>Set the wko.it.test.images.tenancy property to specify the tenancy to use to pull local infra images and domain images.</message>
                                     <regex>^[a-zA-Z0-9_]+.*$</regex>
-                                    <regexMessage>The wko.it.test.images.repo must start with an alphanumeric character</regexMessage>
+                                    <regexMessage>The wko.it.test.images.tenancy must start with an alphanumeric character</regexMessage>
                                 </requireProperty>
                                 <requireEnvironmentVariable>
                                     <message>Set the TEST_IMAGES_REPO_USERNAME environment variable to create pull secret for TEST_IMAGES_REPO.</message>
@@ -270,6 +271,7 @@
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
                                 <wko.it.base.images.tenancy>${wko.it.base.images.tenancy}</wko.it.base.images.tenancy>
                                 <wko.it.test.images.tenancy>${wko.it.test.images.tenancy}</wko.it.test.images.tenancy>
+                                <wko.it.crio.pipeline.image>${wko.it.crio.pipeline.image}</wko.it.crio.pipeline.image>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>

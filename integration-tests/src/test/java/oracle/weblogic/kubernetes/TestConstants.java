@@ -11,6 +11,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getBaseImagesPref
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDomainImagePrefix;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getEnvironmentProperty;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getImageRepoFromImageName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoImageForSpec;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoValue;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
@@ -60,11 +61,15 @@ public interface TestConstants {
   // kind constants
   public static final String KIND_REPO = getKindRepoValue("wko.it.kind.repo");
 
+  // crio pipeline constants
+  public static final String CRIO_PIPELINE_IMAGE = System.getProperty("wko.it.crio.pipeline.image");
+
   // BASE_IMAGES_REPO represents the repository from where all the base WebLogic
   // and InfraStructure images are pulled
-  //
-  public static final String BASE_IMAGES_REPO = System.getProperty("wko.it.base.images.repo");
+  public static final String BASE_IMAGES_REPO = Optional.ofNullable(getImageRepoFromImageName(CRIO_PIPELINE_IMAGE))
+      .orElse(System.getProperty("wko.it.base.images.repo"));
   public static final String BASE_IMAGES_TENANCY = System.getProperty("wko.it.base.images.tenancy");
+  public static final String BASE_IMAGES_PREFIX = getDomainImagePrefix(BASE_IMAGES_REPO, BASE_IMAGES_TENANCY);
 
   public static final String BASE_IMAGES_REPO_USERNAME = System.getenv("BASE_IMAGES_REPO_USERNAME");
   public static final String BASE_IMAGES_REPO_PASSWORD = System.getenv("BASE_IMAGES_REPO_PASSWORD");
@@ -75,7 +80,8 @@ public interface TestConstants {
   // images such as nginx,elasticsearch,Oracle DB operator (b) all test domain 
   // images to be pushed into it.
   //
-  public static final String TEST_IMAGES_REPO = System.getProperty("wko.it.test.images.repo");
+  public static final String TEST_IMAGES_REPO = Optional.ofNullable(getImageRepoFromImageName(CRIO_PIPELINE_IMAGE))
+      .orElse(System.getProperty("wko.it.test.images.repo"));
   public static final String TEST_IMAGES_TENANCY = System.getProperty("wko.it.test.images.tenancy");
 
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
@@ -106,21 +112,21 @@ public interface TestConstants {
   // Get WEBLOGIC_IMAGE_NAME/WEBLOGIC_IMAGE_TAG from env var, 
   // if its not provided use OCIR default image values
   //
-  public static final String WEBLOGIC_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+  public static final String WEBLOGIC_IMAGE_NAME = BASE_IMAGES_PREFIX
       + getNonEmptySystemProperty("wko.it.weblogic.image.name", WEBLOGIC_IMAGE_NAME_DEFAULT);
   public static final String WEBLOGIC_IMAGE_TAG = getNonEmptySystemProperty("wko.it.weblogic.image.tag", 
        WEBLOGIC_IMAGE_TAG_DEFAULT);
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not 
   // provided and if base images repo is OCIR use OCIR default image values
-  public static final String FMWINFRA_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+  public static final String FMWINFRA_IMAGE_NAME = BASE_IMAGES_PREFIX
       + getNonEmptySystemProperty("wko.it.fmwinfra.image.name",  FMWINFRA_IMAGE_NAME_DEFAULT);
   public static final String FMWINFRA_IMAGE_TAG = getNonEmptySystemProperty("wko.it.fmwinfra.image.tag", 
         FMWINFRA_IMAGE_TAG_DEFAULT);
 
   // Get DB_IMAGE_NAME/DB_IMAGE_TAG from env var, if its not provided and
   // if base images repo is OCIR use OCIR default image values
-  public static final String DB_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+  public static final String DB_IMAGE_NAME = BASE_IMAGES_PREFIX
       + getNonEmptySystemProperty("wko.it.db.image.name", DB_IMAGE_NAME_DEFAULT);
   public static final String DB_IMAGE_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", DB_IMAGE_TAG_DEFAULT);
 
@@ -201,7 +207,7 @@ public interface TestConstants {
   public static final String APACHE_IMAGE_TAG_DEFAULT = "12.2.1.4";
 
   // Get APACHE_IMAGE_NAME/APACHE_IMAGE_TAG from env var, if it is not provided use OCIR default image values
-  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY + "/"
+  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_PREFIX
       + getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
   public static final String APACHE_IMAGE_TAG =
       getNonEmptySystemProperty("wko.it.apache.image.tag", APACHE_IMAGE_TAG_DEFAULT);
@@ -402,8 +408,7 @@ public interface TestConstants {
   public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.2.0";
   public static final String ORACLE_DB_OPERATOR_RELEASE =
       getNonEmptySystemProperty("wko.it.oracle.db.operator.release", ORACLE_DB_OPERATOR_RELEASE_LATEST);
-  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_REPO + "/" + BASE_IMAGES_TENANCY
-      + "/test-images/database/operator:0.2.0";
+  public static final String DB_OPERATOR_IMAGE = BASE_IMAGES_PREFIX + "test-images/database/operator:0.2.0";
   public static final String CERT_MANAGER
       = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
   public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
