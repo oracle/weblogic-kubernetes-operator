@@ -457,7 +457,7 @@ Now that all the sample resources have been deployed, you can invoke the sample 
 
 ### Delete the generated domain home
 
-Follow the cleanup instructions [here](#https://oracle.github.io/weblogic-kubernetes-operator/quickstart/cleanup/) to delete the domain resource and associated resources.
+Follow the cleanup instructions [here]({{< relref "quickstart/cleanup/_index.md" >}}) to delete the domain resource and associated resources.
 
 Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV that is generated using this sample.
 You can either delete the PVC and PV created by the operator to delete the contents on PV or use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
@@ -497,6 +497,7 @@ sample-domain1
 applications
 ```
 
-Once you get a shell to the running pod container, you can recursively delete the contents of the domain home directory and applications dir using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 {{% /expand %}}
+
+Once you get a shell to the running pod container, you can recursively delete the contents of the domain home directory and applications dir using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 
