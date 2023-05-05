@@ -1,7 +1,7 @@
 ---
 title: "Domain home on a PV"
 date: 2019-02-23T17:32:31-05:00
-weight: 2
+weight: 3
 description: "Sample for creating a WebLogic domain home on an PV or PVC for deploying the generated WebLogic domain."
 ---
 
@@ -17,7 +17,7 @@ description: "Sample for creating a WebLogic domain home on an PV or PVC for dep
 
 #### Overview
 
-The sample demonstrate the setting up of a WebLogic domain with domain home on an Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). This involves:
+The sample demonstrate the setting up of a WebLogic domain with domain home on an Kubernetes PersistentVolume (PV). This involves:
 
   - Building a [domain creation image](#domain-creation-image) with:
     - A WDT model that describes your WebLogic domain configuration.
@@ -34,6 +34,7 @@ The sample demonstrate the setting up of a WebLogic domain with domain home on a
 Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/prerequisites.md" >}}) before performing the steps in this sample.
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
+
 
 __PV and PVC Notes:__
 - The specifications of PersistentVolume and PersistentVolumeClaim defined in `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML are environment specific and often requires information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim](http://phx32822d1.subnet1ad3phx.devweblogicphx.oraclevcn.com:39999/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/#persistent-volume-and-persistent-volume-claim) in user documentation for more details.
@@ -52,7 +53,7 @@ The sample uses a `domain creation image` with name `wdt-domain-image:WLS-v1` th
 
 #### Deploy resources - Introduction
 
-In this section, you will define the PV and PVC configuration and use the `domain creation image` created earlier in the domain resource YAML. You will then deploy the domain resource YAML to namespace `sample-domain1-ns`, including the following steps:
+In this section, you will define the PV and PVC configuration and reference the `domain creation image` created earlier in the domain resource YAML. You will then deploy the domain resource YAML to namespace `sample-domain1-ns`, including the following steps:
 
   - Create a Secret containing your WebLogic administrator user name and password.
   - If your domain type is `JRF`, create secrets containing your RCU access URL, credentials, and prefix.
@@ -62,7 +63,7 @@ In this section, you will define the PV and PVC configuration and use the `domai
 
 #### Secrets
 
-First, create the secrets needed by both `WLS` and `JRF` type model domains. In this case, you have two secrets.
+First, create the secrets needed by both `WLS` and `JRF` type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in WDT model file. Please see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}) for more details about using macros in the WDT model files.
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -142,14 +143,12 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
 
-  **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, [ensure all nodes in your Kubernetes cluster can access `domain-creation-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
   Run the following command to apply the two sample resources.
   ```shell
   $ kubectl apply -f /tmp/sample/domain-resource.yaml
   ```
-
-  **NOTE**: If you are choosing _not_ to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the previous command. Previously, we suggested naming it `/tmp/sample/domain-resource.yaml`.
 
    The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample "domain creation image", which contains traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
 
@@ -413,57 +412,57 @@ sample-domain1-managed-server2     ClusterIP   None             <none>        80
 ```
 
 #### Invoke the web application
-
 Now that all the sample resources have been deployed, you can invoke the sample web application through the Traefik ingress controller's NodePort.
 
-**Note**: The web application will display a list of any data sources it finds, but at this point, we don't expect it to find any because the model doesn't contain any.
+- Send a web application request to the load balancer URL for the "app", as shown in the following example.
 
-Send a web application request to the load balancer:
+    {{< tabs groupId="config" >}}
+    {{% tab name="Request from local machine" %}}
+        $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' http://localhost:30305/myapp_war/index.jsp
 
-   ```shell
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' \
-      http://localhost:30305/myapp_war/index.jsp
-   ```
-Or, if Traefik is unavailable and your Administration Server pod is running, you can use `kubectl exec`:
+    {{% /tab %}}
+    {{% tab name="Request from remote machine" %}}
+        
+        $ K8S_CLUSTER_ADDRESS=$(kubectl cluster-info | grep DNS | sed 's/^.*https:\/\///g' | sed 's/:.*$//g')
 
-   ```shell
-   $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
-     "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
-   ```
+        $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' http://${K8S_CLUSTER_ADDRESS}:30305/myapp_war/index.jsp
 
-You will see output like the following:
+    {{% /tab %}}
+    {{< /tabs >}}
 
-   ```html
-   <html><body><pre>
-   *****************************************************************
+- You will see output like the following:
+  ```html
+     <html><body><pre>
+     *****************************************************************
+  
+     Hello World! This is version 'v1' of the sample JSP web-app.
+  
+     Welcome to WebLogic Server 'managed-server2'!
+  
+       domain UID  = 'sample-domain1'
+       domain name = 'domain1'
+  
+     Found 1 local cluster runtime:
+       Cluster 'cluster-1'
+  
+     Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+  
+     Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+  
+     Found 0 local data sources:
+  
+     *****************************************************************
+     </pre></body></html>
+    ```
 
-   Hello World! This is version 'v1' of the mii-sample JSP web-app.
+### Delete the generated domain home
 
-   Welcome to WebLogic Server 'managed-server2'!
+Follow the cleanup instructions [here](#https://oracle.github.io/weblogic-kubernetes-operator/quickstart/cleanup/) to delete the domain resource and associated resources.
 
-     domain UID  = 'sample-domain1'
-     domain name = 'domain1'
-
-   Found 1 local cluster runtime:
-     Cluster 'cluster-1'
-
-   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
-
-   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
-
-   Found 0 local data sources:
-
-   *****************************************************************
-   </pre></body></html>
-   ```
-
- **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
-
-#### Delete the generated domain home
-Sometimes in production, but most likely in testing environments, you might want to remove the domain home that is generated using this sample.
-You can use the `domain-on-pv-helper.sh` helper script for this.
+Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV that is generated using this sample.
+You can either delete the PVC and PV created by the operator to delete the contents on PV or use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
 The script launches a a Kubernetes pod named as 'pvhelper' using the provided persistent volume claim name and the mount path.
-You can run the '${KUBERNETES_CLI} exec' to get a shell to the running pod container and run commands to examine or clean up the 
+You can run the 'kubectl exec' to get a shell to the running pod container and run commands to examine or clean up the 
 contents of shared directories on persistent volume.
 For example:
 ```shell
@@ -492,9 +491,12 @@ drwxr-xr-x 4 1000 root 43 Apr 26 19:41 logs
 ```
 ```
 $ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
-sh-4.4$ cd /shared/domains
+sh-4.4$ cd /shared
 sh-4.4$ ls
 sample-domain1
+applications
 ```
+
+Once you get a shell to the running pod container, you can recursively delete the contents of the domain home directory and applications dir using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 {{% /expand %}}
 

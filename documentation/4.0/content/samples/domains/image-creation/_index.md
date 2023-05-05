@@ -1,7 +1,7 @@
 ---
 title: "WDT image creation"
 date: 2019-02-23T17:32:31-05:00
-weight: 1
+weight: 1.25
 description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 

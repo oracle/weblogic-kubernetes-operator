@@ -1,20 +1,14 @@
 ---
 title: "Prerequisites"
 date: 2019-02-23T17:32:31-05:00
-weight: 1
+weight: 2
 ---
 
 ### Prerequisites for all domain types
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
-   - The first time you try this sample, we recommend that you choose `WLS` even if you're familiar with `JRF`.
-   - This is because `WLS` is simpler and will more easily familiarize you with either `Model in Image` or `Domain on PV` concepts.
-   - We recommend choosing `JRF` only if you are already familiar with `JRF`, you have already tried the `WLS` path through this sample, and you have a definite use case where you need to use `JRF`.
-
 1. Complete steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to prepare for building either a Model in Image `auxiliary image` or Domain on PV `domain creation image`.
-
-   __Note__: If you are going to skip the step for WDT image creation, you still need to complete step 3 and step 4 in the [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to get the operator source, put it in `/tmp/weblogic-kubernetes-operator` and copy the sample to a new directory; for example, use directory `/tmp/sample`.
 
 1. Build either a Model in Image `auxiliary image` or Domain on PV `domain creation image` by completing steps in [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
 
@@ -27,79 +21,19 @@ weight: 1
    {{% /notice %}}
 
 1. Set up ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
-
-    - Option 1: To create the ingresses, use the following YAML file to create a file called `/tmp/sample/ingresses/myingresses.yaml` and then call `kubectl apply -f /tmp/sample/ingresses/myingresses.yaml`:
-
-       ```yaml
-       apiVersion: traefik.containo.us/v1alpha1
-       kind: IngressRoute
-       metadata:
-         name: traefik-ingress-sample-domain1-admin-server
-         namespace: sample-domain1-ns
-         labels:
-           weblogic.domainUID: sample-domain1
-         annotations:
-           kubernetes.io/ingress.class: traefik
-       spec:
-         routes:
-         - kind: Rule
-           match: PathPrefix(`/console`)
-           services:
-           - kind: Service
-             name: sample-domain1-admin-server
-             port: 7001
-       ---
-       apiVersion: traefik.containo.us/v1alpha1
-       kind: IngressRoute
-       metadata:
-         name: traefik-ingress-sample-domain1-cluster-cluster-1
-         namespace: sample-domain1-ns
-         labels:
-           weblogic.domainUID: sample-domain1
-         annotations:
-           kubernetes.io/ingress.class: traefik
-       spec:
-         routes:
-         - kind: Rule
-           match: Host(`sample-domain1-cluster-cluster-1.sample.org`)
-           services:
-           - kind: Service
-             name: sample-domain1-cluster-cluster-1
-             port: 8001
-       ---
-       apiVersion: traefik.containo.us/v1alpha1
-       kind: IngressRoute
-       metadata:
-         name: traefik-ingress-sample-domain2-cluster-cluster-1
-         namespace: sample-domain1-ns
-         labels:
-           weblogic.domainUID: sample-domain2
-         annotations:
-           kubernetes.io/ingress.class: traefik
-       spec:
-         routes:
-         - kind: Rule
-           match: Host(`sample-domain2-cluster-cluster-1.sample.org`)
-           services:
-           - kind: Service
-             name: sample-domain2-cluster-cluster-1
-             port: 8001
-       ```
-
-   - Option 2: Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source `/tmp/sample/ingresses` directory:
+   - Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source directory:
 
        ```
-       $ cd /tmp/sample/ingresses
-       $ kubectl apply -f traefik-ingress-sample-domain1-admin-server.yaml
-       $ kubectl apply -f traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-       $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain1-admin-server.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain1-cluster-cluster-1.yaml
+       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain2-cluster-cluster-1.yaml
        ```
 
    **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
 
    For more information on ingresses and load balancers, see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 
-1. Obtain the WebLogic 12.2.1.4 image that is required to create the sample's model images.
+1. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
 
    a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
 
