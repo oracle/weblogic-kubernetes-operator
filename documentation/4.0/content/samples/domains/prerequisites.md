@@ -2,25 +2,26 @@
 title: "Prerequisites"
 date: 2019-02-23T17:32:31-05:00
 weight: 2
+description: "Follow these prerequisite steps for all domain types."
 ---
 
 ### Prerequisites for all domain types
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
-1. Complete steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to prepare for building either a Model in Image `auxiliary image` or Domain on PV `domain creation image`.
+1. Complete steps in the [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to prepare for building either a Model in Image `auxiliary image` or Domain on PV `domain creation image`.
 
-1. Build either a Model in Image `auxiliary image` or Domain on PV `domain creation image` by completing steps in [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
+1. Build either a Model in Image `auxiliary image` or Domain on PV `domain creation image` by completing the steps in [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
 
-1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
+1. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
-   {{% notice info %}}
+   {{% notice note %}}
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
-1. Set up ingresses that will redirect HTTP from Traefik port 30305 to the clusters in this sample's WebLogic domains.
+1. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
    - Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source directory:
 
        ```
@@ -35,7 +36,7 @@ weight: 2
 
 1. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
 
-   a. Use a browser to access [Oracle Container Registry](http://container-registry.oracle.com).
+   a. Use a browser to access the [Oracle Container Registry](http://container-registry.oracle.com).
 
    b. Choose an image location: for `JRF` domains, select `Middleware`, then `fmw-infrastructure`; for `WLS` domains, select `Middleware`, then `weblogic`.
 
@@ -52,9 +53,9 @@ weight: 2
 
 ### Additional prerequisites for JRF domains
 
-> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}).
+**NOTE**: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}).
 
-#### JRF Prerequisites Contents
+#### JRF prerequisites
 
  - [Introduction to JRF setups](#introduction-to-jrf-setups)
  - [Set up and initialize an infrastructure database](#set-up-and-initialize-an-infrastructure-database)
@@ -63,7 +64,7 @@ weight: 2
 
 ##### Introduction to JRF setups
 
-> __NOTE__: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
+**NOTE**: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
 A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. You must perform all these steps _before_ you create your domain.
 
@@ -184,4 +185,4 @@ For example, in this sample:
 
   - JRF image models have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
-Refer to [JRF domain]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}) for important information for JRF domain.
+For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}).
