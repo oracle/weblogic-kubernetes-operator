@@ -202,7 +202,7 @@ spec:
 
 #### Domain information
 
-For JRF-based domains, before proceeding, please be sure to read this document, [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md">}}).
+For JRF-based domains, before proceeding, please be sure to read this document, [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md">}}).
 
 This is the section describing the WebLogic domain. For example,
 

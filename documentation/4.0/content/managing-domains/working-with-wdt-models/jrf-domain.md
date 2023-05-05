@@ -45,14 +45,29 @@ back up this encryption key for disaster recovery.
 When a JRF domain on persistent volume is created, the operator stores the `OPSS wallet` in a ConfigMap.
 You can extract and back it up in a safe location after the domain is created.
 
-In the domain resource YAML file, you can provide two secrets in the `opss` section:
+For Domain on PV deployment, in the domain resource YAML file, you can provide two secrets in the `opss` section:
 
 ```
-     domain:
-          createIfNotExists: domain
-          domainType: JRF
-          ...
-          opss:
+     ...
+     configuration:
+        initializeDomainOnPV:
+        ...
+           domain:
+              createIfNotExists: domain
+              domainType: JRF
+              ...
+              opss:
+               walletFileSecret: jrf-wallet-file-secret
+               walletPasswordSecret: sample-domain1-opss-wallet-password-secret
+```
+
+For Model in image deployment, in the domain resource YAML file, you can provide two secrets in the `opss` section:
+
+```
+     configuration:
+        model:
+           ...
+        opss:
            walletFileSecret: jrf-wallet-file-secret
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
