@@ -191,22 +191,6 @@ Not all the fields in the standard Kubernetes PV and PVC are supported.  For the
 If the PV and PVC already exist in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intializedDomainOnPV` section.
 
-```
-spec:
-  domainHome: /share/domains/domain1
-  serverPod:
-    volumes:
-    - name: weblogic-domain-storage-volume
-      persistentVolumeClaim:
-         claimName: sample-domain1-pvc-rwm1
-    volumeMounts:
-    - mountPath: /share
-      name: weblogic-domain-storage-volume
-
-  configuration:
-    initializeDomainOnPV:
-     ....
-```
 
 #### References
 
@@ -303,6 +287,8 @@ This is the expected behavior. The WDT domain models specified in the domain ima
 is a **one time** only operation. They are used only for creating the initial domain. After the domain is created, they do not participate in the lifecycle operations.
 You should use the WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and
 also the applications directory for the JRF domain (`applications/<domain uid>` under the parent of the domain home directory) before trying to create the domain again.
+
+If you see any other error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}})
 
 ### Clean up
 
