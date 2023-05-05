@@ -2,20 +2,12 @@
 title: "Domain home on PV"
 date: 2019-02-23T17:32:31-05:00
 weight: 3
-description: "Sample for creating a WebLogic domain home on a PV or PVC for deploying the generated WebLogic domain."
+description: "Sample for creating a WebLogic domain home on a PV for deploying the generated WebLogic domain."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
- - [Overview](#overview)
- - [Prerequisites](#prerequisites)
- - [Domain creation image](#domain-creation-image)
- - Deploy resources
-    - [Deploy resources - Introduction](#deploy-resources---introduction)
-    - [Secrets](#secrets)
-    - [Domain resource](#domain-resource)
-
-#### Overview
+### Overview
 
 The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain home on PV). This involves:
 
@@ -37,21 +29,22 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 
 __PV and PVC Notes:__
-- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML are environment specific and often requires information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim](http://phx32822d1.subnet1ad3phx.devweblogicphx.oraclevcn.com:39999/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/#persistent-volume-and-persistent-volume-claim) in user documentation for more details.
+- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML are environment specific and often requires information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in user documentation for more details.
 - You must use a storage provider that supports the `ReadWriteMany` option.
 - This sample will automatically set the owner of all files in the domain home on the persistent
-volume to `uid 1000`. If you want to use a different user, configure the desired `uid` and
-`gid` in the security context under the `spec.serverPod.securityContext` section of the Domain YAML file.
+volume to `uid 1000`. If you want to use a different user, configure the desired `runAsUser` and
+`runAsGroup` in the security context under the `spec.serverPod.podSecurityContext` section of the Domain YAML file.
+The operator will use these values when setting the owner for files in the domain home directory.
 
 After the Domain is deployed, the operator creates the PV and PVC (if they are configured and do not already exist) and starts an 'introspector job' that converts your models included in the `domain creation image` and `config map` into a WebLogic configuration to initialize the Domain home on PV.
 
-#### Domain creation image
+### Domain creation image
 
 The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}) step (after meeting the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}})). The WDT model files in this image define the initial WebLogic domain home on PV configuration. The image contains:
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
-#### Deploy resources - Introduction
+### Deploy resources - Introduction
 
 In this section, you will define the PV and PVC configuration and reference the `domain creation image` created earlier in the domain resource YAML file. You will then deploy the domain resource YAML file to the namespace `sample-domain1-ns`, including the following steps:
 
@@ -152,11 +145,11 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
    The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
 
-#### Verify the PV, PVC, and domain
+### Verify the PV, PVC, and domain
 
 To confirm that the PV, PVC, and domain were created, use the following instructions.
 
-##### Verify the persistent volume
+#### Verify the persistent volume
 If the `spec.configuration.initializeDomainOnPV.persistentVolume` is configured for the operator to create the PV, then verify that a PV with the given name is created and is in `Bound` status. If the PV already exists, then ensure that the existing PV is in `Bound` status.
 
 ```shell
@@ -169,7 +162,7 @@ NAME                                CAPACITY   ACCESS MODES   RECLAIM POLICY   S
 sample-domain1-weblogic-sample-pv   5Gi        RWX            Retain           Bound    sample-domain1-ns/sample-domain1-weblogic-sample-pvc   manual                  14m
 ```
 
-##### Verify the persistent volume claim
+#### Verify the persistent volume claim
 If the `spec.configuration.initializeDomainOnPV.persistentVolumeClaim` is configured for the operator to create the PVC, then verify that the PVC with the given name is created and is in `Bound` status. If the PVC already exists, then ensure that the existing PVC is in `Bound` status.
 ```shell
 $ kubectl get pvc -n sample-domain1-ns
@@ -181,7 +174,7 @@ NAME                                 STATUS   VOLUME                            
 sample-domain1-weblogic-sample-pvc   Bound    sample-domain1-weblogic-sample-pv   5Gi        RWX            manual         11m
 ```
 
-##### Verify the domain
+#### Verify the domain
 Run the following `kubectl describe domain` command to check the status and events for the created domain.
 
 ```shell
@@ -352,7 +345,7 @@ Events:
 
 In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
-#### Verify the pods
+### Verify the pods
 
 If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:
   {{%expand "Click here to expand." %}}
@@ -395,7 +388,7 @@ $ ./waitForDomain.sh -n sample-domain1-ns -d sample-domain1 -p Completed
 If you see an error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}}).
 
 
-#### Verify the services
+### Verify the services
 
 Use the following command to see the services for the domain:
 
@@ -411,7 +404,7 @@ sample-domain1-managed-server1     ClusterIP   None             <none>        80
 sample-domain1-managed-server2     ClusterIP   None             <none>        8001/TCP   9m43s
 ```
 
-#### Invoke the web application
+### Invoke the web application
 Now that all the sample resources have been deployed, you can invoke the sample web application through the Traefik ingress controller's NodePort.
 
 - Send a web application request to the load balancer URL for the application, as shown in the following example.
@@ -455,12 +448,12 @@ Now that all the sample resources have been deployed, you can invoke the sample 
      </pre></body></html>
     ```
 
-### Delete the generated domain home
+### Cleanup resources and remove the generated domain home
 
-Follow the cleanup instructions [here]({{< relref "quickstart/cleanup/_index.md" >}}) to delete the domain resource and associated resources.
+Follow the cleanup instructions [here]({{< relref "quickstart/cleanup/_index.md" >}}) to remove the domain, cluster and other associated resources.
 
 Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV that is generated using this sample.
-You can either delete the PVC and PV created by the operator to delete the contents on the PV or use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
+You can either delete the PVC and PV created by the operator to delete the domain home on the PV or use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
 The script launches a Kubernetes pod named 'pvhelper' using the provided persistent volume claim name and the mount path.
 You can run 'kubectl exec' to get a shell to the running pod container and run commands to examine or clean up the
 contents of shared directories on the persistent volume.
@@ -469,9 +462,8 @@ For example:
 $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/domain-lifecycle
 $ ./domain-on-pv-helper.sh -n sample-domain1-ns -c sample-domain1-weblogic-sample-pvc -m /shared
 ```
-{{%expand "Click here to expand." %}}
+{{%expand "Click here to see the output." %}}
 ```
-$ ./domain-on-pv-helper.sh -n sample-domain1-ns -c sample-domain1-weblogic-sample-pvc -m /shared
 [2023-04-28T21:02:42.851294126Z][INFO] Creating pod 'pvhelper' using image 'ghcr.io/oracle/oraclelinux:8-slim', persistent volume claim 'sample-domain1-weblogic-sample-pvc' and mount path '/shared'.
 pod/pvhelper created
 [pvhelper] already initialized ..
@@ -499,4 +491,4 @@ applications
 
 {{% /expand %}}
 
-After you get a shell to the running pod container, you can recursively delete the contents of the domain home directory and applications `dir` using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
+After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.

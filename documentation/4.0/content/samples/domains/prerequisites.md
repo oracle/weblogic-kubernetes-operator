@@ -53,20 +53,19 @@ description: "Follow these prerequisite steps for all domain types."
 
 ### Additional prerequisites for JRF domains
 
-**NOTE**: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}).
+**NOTE**: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}) for Model in Image sample and [here]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) for Domain on PV sample.
 
 #### JRF prerequisites
 
  - [Introduction to JRF setups](#introduction-to-jrf-setups)
  - [Set up and initialize an infrastructure database](#set-up-and-initialize-an-infrastructure-database)
- - [Increase introspection job timeout](#increase-introspection-job-timeout)
  - [Important considerations for RCU model attributes, Domain fields, and secrets](#important-considerations-for-rcu-model-attributes-domain-fields-and-secrets)
 
 ##### Introduction to JRF setups
 
 **NOTE**: The requirements in this section are in addition to [Prerequisites for all domain types](#prerequisites-for-all-domain-types).
 
-A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. You must perform all these steps _before_ you create your domain.
+A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}) in user documentation. You must perform all these steps _before_ you create your domain.
 
 ##### Set up and initialize an infrastructure database
 
@@ -166,10 +165,6 @@ A JRF domain requires an infrastructure database and requires initializing this 
      The drop command implicitly uses the same `rcu` pod and the same database credentials `oracle-rcu-secret` secret that
      you set up when you created the RCU schema.
 
-
-##### Increase introspection job timeout
-
-The JRF domain home creation can take more time than the introspection job's default timeout. You should increase the timeout for the introspection job. Use the `configuration.introspectorJobActiveDeadlineSeconds` in your Domain to override the default with a value of at least 300 seconds (the default is 120 seconds). Note that the `JRF` versions of the Domain YAML files that are provided in `/tmp/sample/domain-resources` already set this value.
 
 ##### Important considerations for RCU model attributes, Domain fields, and secrets
 
