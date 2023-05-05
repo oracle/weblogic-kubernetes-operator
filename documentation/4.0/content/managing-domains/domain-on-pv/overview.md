@@ -3,57 +3,56 @@ title = "Overview"
 date = 2023-04-26T16:45:16-05:00
 weight = 1
 pre = "<b> </b>"
-description = "Creating domain on PV."
+description = "Learn how to create a domain on a persistent volume."
 +++
 
 {{< table_of_contents >}}
 
 ### Overview
 
-Domain on persistent volume is one of the operator's types. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
+Domain on persistent volume (Domain on PV) is one of the operator's [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) choices.
+Domain on PV requires that the domain home exists on a persistent volume. The domain home can be created either manually
+or automatically by specifying the section, `domain.spec.configuration.initializeDomainOnPV`, in the domain resource YAML file.
+The initial domain topology and resources are described using [WebLogic Deploy Tooling (WDT) models](#weblogic-deploy-tooling-models).
 
-Domain on persistent volume require the domain home exists on a persistent volume,  the domain home can be created either manually 
-or automated by specifying the section `domain.spec.configuration.initializeDomainOnPV` in the domain resource YAML file.
-The initial domain topology and resources are described using [Weblogic Deploy Tooling (WDT)](#weblogic-deploy-tooling-models).
+**NOTE**: The `initializeDomainOnPV` section provides a **one-time-only** domain home initialization.
+The operator creates the domain when the domain resource is first deployed. After the domain is created,
+this section is ignored. Subsequent domain life cycle updates must be controlled by
+the WebLogic Server Administration Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
 
-**The `initializeDomainOnPV` section provides a one time only domain home initialization,
-the Operator will create the domain when the domain resource is first deployed, once the domain is created,
-this section will be ignored, subsequent domain lifecycle updates should be controlled by
-WebLogic console, WLST or other mechanisms.**  See [High level use case](#high-level-use-case).
+The `initializeDomainOnPv` section provides the following functions:
 
-The `initializeDomainOnPv` provides the following functions:
-
-- Create the `PersistentVolume` and/or `PersistenVolumeClaim` if needed.
-- Create the `JRF schema` if needed.
-- Create the WebLogic domain home based on provided WDT models on the persistent volume. 
+- Creates the PersistentVolume (PV) and/or PersistenVolumeClaim (PVC), if needed.
+- Creates the JRF schema, if needed.
+- Creates the WebLogic domain home, based on the provided WDT models on the persistent volume.
 
 ### High level use case
 
-The typical use case for using domain home on persistent volume is for application lifecycle that required persisting changes to the permanent file system.
+The typical Domain on PV use case is for an application life cycle that requires persisting changes to the permanent file system.
 
-For example, you use frameworks like `Meta data service (MDS)`, `Oracle Application Development Framework (ADF)`, `Oracle Service Bus (OSB)`. 
-These frameworks require a running domain and the normal lifecycle operations are persisted to the file systems. Typically,
-after the initial domain is created, you use tools like `Fusion Middleware Controls`, product specific `WLST` functions, 
-`WebLogic Console`, `Service Bus Console`, `JDeveloper` for normal lifecycle operations, the changes are managed by
-these tools, and the data and operation cannot be described using `WDT` models.
+For example, you might use frameworks like Meta Data Service (MDS), Oracle Application Development Framework (ADF), or Oracle Service Bus (OSB).
+These frameworks require a running domain and the lifecycle operations are persisted to the file system. Typically,
+after the initial domain is created, you use tools like Fusion Middleware Control, product-specific WLST functions,
+the WebLogic Server Administration Console, the Service Bus Console, or JDeveloper for lifecycle operations. The changes are managed by
+these tools. However, the data and operations _cannot_ be described using WDT models.
 
 ### WebLogic Deploy Tooling models
 
-WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
+WDT models are a convenient and simple alternative to WLST
 configuration scripts and templates.
 They compactly define a WebLogic domain using YAML files and support including
-application archives in a ZIP file. For a description of the model format
+application archives in a ZIP file. For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
-and [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and [Working with WDT Model files in Operator]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
 ### Runtime behavior
 
-When you deploy a Domain on persistent volume domain resource YAML file:
+When you deploy a Domain on PV domain resource YAML file:
 
-- The operator will run a Kubernetes Job called the 'introspector job' that:
+- The operator will run a Kubernetes Job, called an introspector job, that:
     - Merges your WDT artifacts.
     - Runs WDT tooling to generate a domain home.
 
@@ -64,18 +63,18 @@ When you deploy a Domain on persistent volume domain resource YAML file:
 
 ### Runtime updates
 
-Any runtime updates to the WebLogic domain configuration is controlled by the user using tools such as `Fusion Middleware Controls`, product specific `WLST` functions,
-`WebLogic Console`, `Service Bus Console`, or `JDeveloper`.  After the initial domain is created, subsequent updates to the 
-source of the `WDT` artifacts or any referenced macros will be ignored.  
+You control runtime updates to the WebLogic domain configuration using tools, such as Fusion Middleware Control, product-specific WLST functions,
+the WebLogic Server Administration Console, the Service Bus Console, or JDeveloper.  After the initial domain is created, subsequent updates to the
+source of the WDT artifacts or any referenced macros _will be ignored_.  
 
 Some changes may require triggering an introspector job.  For example:
 
-After you changed to the WeLogic domain credential in the `WebLogic Console`, you need to:
+- After you change the WebLogic domain credential in the WebLogic Server Administration Console, in the domain resource YAML file, you must:
 
-- update the credentials of `domain.spec.webLogicCredentialsSecret` in the domain resource YAML. 
-- update the value of `domain.spec.introspectVersion` in the domain resource YAML.
+  - Update the credentials in `domain.spec.webLogicCredentialsSecret`.
+  - Update the value of `domain.spec.introspectVersion`.
 
-If you changed any WebLogic domain topology, such as adding cluster or server in the `WebLogic Console`:
+- If you change any WebLogic domain topology, such as using the WebLogic Server Administration Console to add clusters or servers, you must:
 
-- update the value of `domain.spec.introspectVersion` in the domain resource YAML.
-- optionally update the domain resource YAML to add new cluster or server if you want to fine tune their lifecycle or replica counts.
+  - Update the value of `domain.spec.introspectVersion` in the domain resource YAML file.
+  - Optionally, if you want to fine tune their life cycle or replica counts, then update the domain resource YAML file to add the new clusters or servers.

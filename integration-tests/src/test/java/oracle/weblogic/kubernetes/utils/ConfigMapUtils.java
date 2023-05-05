@@ -269,7 +269,7 @@ public class ConfigMapUtils {
   /**
    * Read the content of a model file as a String and add it to a map.
    */
-  private static void addModelFile(Map<String, String> data, String modelFile) {
+  public static void addModelFile(Map<String, String> data, String modelFile) {
     LoggingFacade logger = getLogger();
     logger.info("Add model file {0}", modelFile);
 
