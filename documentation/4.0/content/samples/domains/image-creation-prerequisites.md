@@ -33,9 +33,9 @@ Complete the following steps **before** [WDT image creation]({{< relref "/sample
    $ mkdir /tmp/sample
    ```
    ```shell
-   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample
+   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts /tmp/sample
    ```
-
+ 
    **Note**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.
    {{< rawhtml >}}
    <a name="resume"></a>

@@ -15,7 +15,7 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 #### Overview
 
-WDT image creation uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-images/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
+WDT image creation uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-files/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
 
 The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s)` contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
@@ -25,6 +25,9 @@ If you do not specify a WDT model YAML file in an image,
 then alternatively, the model YAML file can be supplied dynamically using a Kubernetes ConfigMap
 that is referenced by your Domain field.
 
+{{% notice note %}}
+Perform the steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) before performing the steps for creating the image.
+{{% /notice %}}
 
 Here are the steps for creating the image:
 
@@ -162,12 +165,12 @@ $ cd /tmp/sample/wdt-artifacts/archives/archive-v1
 Using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
 
 ```shell
-$ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip -source=wlsdeploy
+$ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip -source=wlsdeploy
 ```
 
 #### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
+In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
 ```
 CLUSTER_SIZE=5
@@ -309,16 +312,16 @@ An image can contain multiple properties files, archive ZIP files, and YAML file
 
 At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v1`; they include:
 
-  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.yaml`
-  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/model.10.properties`
-  - `/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
+  - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip`
 
 Now, you use the Image Tool to create an image named `wdt-domain-image:WLS-v1`. You've already set up this tool during the prerequisite steps.
 
 Run the following commands to create the image and verify that it worked:
 
   ```shell
-  $ cd /tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1
+  $ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1
   ```
   ```shell
   $ /tmp/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
@@ -372,4 +375,20 @@ $ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
   drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
 ```
 
-**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+
+### Ensuring your Kubernetes cluster can access images
+
+If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
+
+For example, if you have permission to put the image in a container registry that the cluster can also access, then:
+  - After you've created an image:
+    - `docker tag` the image with a target image name (including the registry host name, port, repository name, and the tag, if needed).
+    - `docker push` the tagged image to the target repository.
+  - Before you deploy a Domain:
+    - Modify the Domain YAML file's `image:` value to match the image tag for the image in the repository.
+    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the Domain will use, and modify the Domain YAML file's `imagePullSecrets:` to reference this secret.
+
+Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
+
+For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).

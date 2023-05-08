@@ -136,7 +136,7 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
 
-  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/image-creation#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
   Run the following command to apply the two sample resources.
   ```shell
@@ -493,18 +493,3 @@ applications
 
 After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 
-### Ensuring your Kubernetes cluster can access images
-
-If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
-
-For example, if you have permission to put the image in a container registry that the cluster can also access, then:
-  - After you've created an image:
-    - `docker tag` the image with a target image name (including the registry host name, port, repository name, and the tag, if needed).
-    - `docker push` the tagged image to the target repository.
-  - Before you deploy a Domain:
-    - Modify the Domain YAML file's `image:` value to match the image tag for the image in the repository.
-    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the Domain will use, and modify the Domain YAML file's `imagePullSecrets:` to reference this secret.
-
-Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
-
-For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
