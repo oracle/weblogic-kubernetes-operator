@@ -84,3 +84,9 @@ Complete the following steps before [WDT image creation]({{< relref "/samples/do
    These steps will install WIT to the `/tmp/sample/wdt-artifacts/imagetool` directory,
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
+
+1. To set up the WebLogic Deploy Tooling that we will use later for the archive helper, run the following command:
+
+   ```shell
+   $ unzip /tmp/sample/wdt-artifacts/weblogic-deploy.zip
+   ```

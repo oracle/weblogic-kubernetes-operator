@@ -158,11 +158,11 @@ $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
 ```shell
 $ cd /tmp/sample/wdt-artifacts/archives/archive-v1
 ```
-```
-# Zip the archive to the location will later use when we run the WebLogic Image Tool
-```
+
+Create the archive using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/) to the location that we will use later when we run the WebLogic Image Tool.
+
 ```shell
-$ zip -r /tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip wlsdeploy
+$ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip -source=wlsdeploy
 ```
 
 #### Staging model files
