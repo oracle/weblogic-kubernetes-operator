@@ -35,14 +35,14 @@ Here are the steps for this use case:
 
    ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
-     --from-file=/tmp/mii-sample/model-configmaps/datasource
+     --from-file=/tmp/sample/model-configmaps/datasource
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
      weblogic.domainUID=sample-domain2
    ```
 
-   If you've created your own data source file in the Update 1 use case, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier). Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
+   If you've created your own data source file in the Update 1 use case, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/sample/mydatasource.yaml` earlier). Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
    Observations:
      - We are leaving the namespace `sample-domain1-ns` unchanged for the ConfigMap because you will deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
@@ -163,12 +163,12 @@ Here are the steps for this use case:
 
     - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
-        - We suggest copying this Domain YAML file and naming the copy `/tmp/mii-sample/mii-update2.yaml` before making any changes.
+      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
+        - We suggest copying this Domain YAML file and naming the copy `/tmp/sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file name and `weblogic.domainUID` label to `sample-domain2`.
+      - Change the `/tmp/sample/mii-update2.yaml` Domain YAML file name and `weblogic.domainUID` label to `sample-domain2`.
 
         The final result will look something like this:
 
@@ -184,7 +184,7 @@ Here are the steps for this use case:
 
         > __NOTE__: We are leaving the namespace `sample-domain1-ns` unchanged because you will be deploying domain `sample-domain2` to the same namespace as `sample-domain1`.
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
+      - Change the `/tmp/sample/mii-update2.yaml` Domain YAML file's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
 
         The model file in the image uses macro `@@ENV:CUSTOM_DOMAIN_NAME@@` to reference this environment variable when setting its domain name.
 
@@ -202,7 +202,7 @@ Here are the steps for this use case:
           ...
         ```
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file's `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML file stanza will look something like this:
+      - Change the `/tmp/sample/mii-update2.yaml` Domain YAML file's `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML file stanza will look something like this:
 
         ```yaml
         ...
@@ -214,7 +214,7 @@ Here are the steps for this use case:
 
         (This change is not strictly needed, but it is a helpful convention to decorate a WebLogic domain's home directory with its domain name or domain UID.)
 
-      - Change the `/tmp/mii-sample/mii-update2.yaml` secret references in the `spec.webLogicCredentialsSecret` and `spec.configuration.secrets` stanzas to reference this use case's secrets. Specifically, change:
+      - Change the `/tmp/sample/mii-update2.yaml` secret references in the `spec.webLogicCredentialsSecret` and `spec.configuration.secrets` stanzas to reference this use case's secrets. Specifically, change:
 
           ```yaml
           spec:
@@ -267,7 +267,7 @@ Here are the steps for this use case:
       - Now, compare your original and changed Domain YAML files to double check your changes.
 
           ```shell
-          $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
+          $ diff /tmp/sample/mii-update1.yaml /tmp/sample/mii-update2.yaml
           ```
           ```
           9c9
@@ -330,18 +330,18 @@ Here are the steps for this use case:
 
       - Apply your changed Domain YAML file:
 
-          **NOTE**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
           ```shell
-          $ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
+          $ kubectl apply -f /tmp/sample/mii-update2.yaml
           ```
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        **NOTE**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-update2-d2-WLS-AI-v1-ds.yaml
+        $ kubectl apply -f /tmp/sample/domain-resources/WLS-AI/mii-update2-d2-WLS-AI-v1-ds.yaml
         ```
 
 1. Wait for `sample-domain2` to start.
@@ -417,7 +417,7 @@ Here are the steps for this use case:
     <html><body><pre>
     *****************************************************************
 
-    Hello World! This is version 'v1' of the mii-sample JSP web-app.
+    Hello World! This is version 'v1' of the sample JSP web-app.
 
     Welcome to WebLogic Server 'managed-server1'!
 
