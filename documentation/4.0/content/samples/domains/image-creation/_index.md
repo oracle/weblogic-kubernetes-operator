@@ -22,7 +22,7 @@ The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
 If you do not specify a WDT model YAML file in an image,
-then the model YAML file alternately can be supplied dynamically using a Kubernetes ConfigMap
+then alternatively, the model YAML file can be supplied dynamically using a Kubernetes ConfigMap
 that is referenced by your Domain field.
 
 
@@ -159,7 +159,7 @@ $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
 $ cd /tmp/sample/wdt-artifacts/archives/archive-v1
 ```
 
-Create the archive using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/) to the location that we will use later when we run the WebLogic Image Tool.
+Using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
 
 ```shell
 $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-images/WLS-v1/archive.zip -source=wlsdeploy
@@ -292,7 +292,7 @@ The model files:
   - A `cluster-1` targeted `ear` application that's located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
   - A Work Manager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
 
-- Leverage macros to inject external values:
+- Use macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
   - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
     - You set this environment variable later in this sample using an `env` field in its Domain.
