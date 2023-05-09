@@ -32,8 +32,11 @@ To use this feature, provide the following information:
 - [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
-- For details about each field, see the
-[schema TODO LINK].
+- For details about each field,
+  - See the `initializeDomainOnPV` section
+    in the domain resource
+    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
+
 
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
@@ -186,7 +189,12 @@ spec:
 | `persistentVolumeClaim` | Specification of the persistent volume claim if the operator is creating it.                                                                                                                                                          | Specification of the persistent volume claim if you want operator to create it. | N (operator will not create any persistent volume claim) |
 
 
-Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see [supported fields TODO LINK].
+Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see 
+- See the `initializeDomainOnPV.peristentVolume` and `initializeDomainOnPV.peristentVolumeClaim` section
+  in the domain resource
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
+
+[supported fields TODO LINK].
 
 If the PV and PVC already exist in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intializedDomainOnPV` section.
