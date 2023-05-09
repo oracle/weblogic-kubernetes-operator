@@ -102,11 +102,10 @@ Internally, the WDT `create` command will first merge all the model files into a
 to create the domain.  The final merged model must be valid, both syntactically and semantically.  If
 the deployment model is Model in Image, then the merged model is saved internally.
 
-TODO: refactor this paragraph
 
 **Note**: If the WDT model files in the image source are supplied by combining multiple images ,
 then the files in this directory are populated according to their
-[Auxiliary image merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-auxiliary-images" >}})
+[Merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-auxiliary-images" >}})
 before the loading order is determined.
 
 For example, if you have these files in the model home directory:
