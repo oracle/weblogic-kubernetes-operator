@@ -13,7 +13,7 @@ description = "WDT artifacts images are used to supply the WDT artifacts for Mod
 Domain WDT artifacts images are the recommended best approach for supplying,
 application archive files, and WebLogic Deploy Tooling installation files for operator managed domains.
 
-You will use:
+You will:
 - Use or patch a WebLogic installation image.
 - Share one WebLogic installation image with multiple different model
   configurations that are supplied in specific images.
@@ -180,7 +180,6 @@ spec:
 For Domain on PV:
 ```
 spec:
-  configuration:
   configuration:
     initializeDomainOnPV:
       domainCreationImages:

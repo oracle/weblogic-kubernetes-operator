@@ -35,9 +35,8 @@ To use this feature, provide the following information:
 - For details about each field,
   - See the `initializeDomainOnPV` section
     in the domain resource
-    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
-
-
+    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md),
+    or use the command `kubectl explain domain.spec.configuration.initializeDomainOnPV` 
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
@@ -192,10 +191,12 @@ spec:
 Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see 
 - See the `initializeDomainOnPV.peristentVolume` and `initializeDomainOnPV.peristentVolumeClaim` section
   in the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
-
-[supported fields TODO LINK].
-
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md), or use the commands 
+  ```
+   kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolume
+   kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolumeClaim
+  ```
+  
 If the PV and PVC already exist in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intializedDomainOnPV` section.
 
