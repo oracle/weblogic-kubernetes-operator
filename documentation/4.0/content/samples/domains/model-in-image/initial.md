@@ -4,16 +4,9 @@ date: 2019-02-23T17:32:31-05:00
 weight: 2
 ---
 
-### Contents
+{{< table_of_contents >}}
 
- - [Overview](#overview)
- - [Auxiliary Image](#auxiliary-image)
- - Deploy resources
-    - [Deploy resources - Introduction](#deploy-resources---introduction)
-    - [Secrets](#secrets)
-    - [Domain resource](#domain-resource)
-
-#### Overview
+### Overview
 
 In this use case, you set up an initial WebLogic domain. This involves:
 
@@ -37,7 +30,7 @@ The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` tha
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
-#### Deploy resources - Introduction
+### Deploy resources - Introduction
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
 
@@ -52,7 +45,7 @@ In this section, you will deploy the new image to namespace `sample-domain1-ns`,
 
 #### Secrets
 
-First, create the secrets needed by both `WLS` and `JRF` type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
+First, create the secrets needed by both `WLS` and `JRF` type model domains. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -87,7 +80,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   - The WebLogic credentials secret is required and must contain `username` and `password` fields. You reference it in `spec.webLogicCredentialsSecret` field of Domain YAML and macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields your model YAML file.
   - The Model WDT runtime secret is a special secret required by Model in Image. It must contain a `password` field and must be referenced using the `spec.model.runtimeEncryptionSecret` field in its Domain. It is used to encrypt data as it's internally passed using log files from the domain's introspector job and on to its WebLogic Server pods. It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.
-  - Delete a secret before creating it, otherwise the create command will fail if the secret already exists..
+  - Delete a secret before creating it, otherwise the create command will fail if the secret already exists.
   - Name and label the secrets using their associated domain UID to clarify which secrets belong to which domains and make it easier to clean up a domain.
   Some important details about these secrets:
 
