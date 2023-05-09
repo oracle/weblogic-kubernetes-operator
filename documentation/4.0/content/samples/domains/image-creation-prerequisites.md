@@ -30,10 +30,10 @@ Complete the following steps **before** [WDT image creation]({{< relref "/sample
 
 
    ```shell
-   $ mkdir /tmp/sample
+   $ mkdir -p /tmp/sample/wdt-artifacts
    ```
    ```shell
-   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts /tmp/sample
+   $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample/wdt-artifacts
    ```
  
    **Note**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.

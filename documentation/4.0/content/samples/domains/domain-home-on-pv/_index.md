@@ -450,10 +450,10 @@ Now that all the sample resources have been deployed, you can invoke the sample 
 
 ### Cleanup resources and remove the generated domain home
 
-Follow the cleanup instructions [here]({{< relref "quickstart/cleanup/_index.md" >}}) to remove the domain, cluster and other associated resources.
+Follow the cleanup instructions [here]({{< relref "samples/domains/domain-home-on-pv/cleanup.md" >}}) to remove the domain, cluster and other associated resources.
 
-Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV that is generated using this sample.
-You can either delete the PVC and PV created by the operator to delete the domain home on the PV or use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
+Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV contents that is generated using this sample.
+You can use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
 The script launches a Kubernetes pod named 'pvhelper' using the provided persistent volume claim name and the mount path.
 You can run 'kubectl exec' to get a shell to the running pod container and run commands to examine or clean up the
 contents of shared directories on the persistent volume.
@@ -485,11 +485,11 @@ drwxr-xr-x 4 1000 root 43 Apr 26 19:41 logs
 $ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
 sh-4.4$ cd /shared
 sh-4.4$ ls
-sample-domain1
+domains
 applications
 ```
 
 {{% /expand %}}
 
-After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
+After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/domains/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 
