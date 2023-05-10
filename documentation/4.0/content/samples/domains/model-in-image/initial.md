@@ -26,7 +26,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 ### Auxiliary image
 
-The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [WDT image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) step. The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
+The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) step. The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
