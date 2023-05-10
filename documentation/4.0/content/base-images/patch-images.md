@@ -71,7 +71,7 @@ and then edit the Domain Resource `image` field with the new image name (for exa
 To apply patched images to a running domain of this type,
 follow the same steps that you used to create your original auxiliary image
 and alter your domain resource to reference the new image
-(see [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})).
+(see [Auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}})).
 The operator will then perform a [rolling restart]({{< relref "/managing-domains/domain-lifecycle/restarting#overview" >}})
 of the WebLogic domain to update the Oracle Home of the servers.
 

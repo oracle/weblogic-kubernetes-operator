@@ -10,54 +10,51 @@ description = "WDT artifacts images are used to supply the WDT artifacts for Mod
 
 ### Introduction
 
-Domain WDT artifacts images are the recommended best approach for supplying,
-application archive files, and WebLogic Deploy Tooling installation files for operator managed domains.
+Domain WDT artifacts images are the recommended best approach for supplying model files, variable files,
+application archive files, and WebLogic Deploy Tooling (WDT) installation files when deploying a domain using
+Model in image or Domain on PV model.  You will distribute model files, application archives, and the
+WebLogic Deploy Tooling executable using these images.  Operator will use the WDT tool and artifacts to 
+manage the domain according the the domain source type `Model in image` or `Domain on PV` (operator version 4.10 or newer).  
 
-You will:
-- Use or patch a WebLogic installation image.
-- Share one WebLogic installation image with multiple different model
-  configurations that are supplied in specific images.
-- Distribute or update model files, application archives, and the
-  WebLogic Deploy Tooling executable using specific images
-  that do not contain a WebLogic installation.
-
-
-### References
-
-- For Model in image, run the `kubectl explain domain.spec.configuration.model.auxiliaryImages` command.
-
-  - See the `model.auxiliaryImages` section
-    in the domain resource
-    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
-
-- For Domain on PV, run the ` kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages` command.
-
-  - See the `initializeDomainOnPV.domain.domainCreationImages` section
-    in the domain resource
-    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
+**Note:**  These image(s) are managed differently in each deployment model.  For `Model in image` it is used throughout the domain life-cycle,
+for `Domain on PV`, they are  _only_ used for creating the domain, and will not be used to update the domain.
 
 ### Configuration
 
-Beginning with operator version 4.10, you can configure one or more WDT artifacts images in a domain resource.
+You can configure one or more WDT artifacts images in a domain resource.
 
-Each array entry must define an `image` which is the name of an auxiliary image.
 Optionally, you can set the `imagePullPolicy`,
 which defaults to `Always` if the `image` ends in `:latest` and `IfNotPresent`,
 otherwise.
-If image pull secrets are required for pulling auxiliary images, then the secrets must be referenced using `domain.spec.imagePullSecrets`.
+If image pull secrets are required for pulling the images, then the secrets must be referenced using `domain.spec.imagePullSecrets`.
 
 Also, optionally, you can configure the [source locations](#source-locations) of the WebLogic Deploy Tooling model
-and installation files in the auxiliary image using the `sourceModelHome` and `sourceWDTInstallHome` fields, described in the following
+and installation files in the image using the `sourceModelHome` and `sourceWDTInstallHome` fields, described in the following
 [section](#source-locations).  
 
 - For details about each field, see the [References](#references)
 
 - For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
 
+### References
+
+- For Model in image, run the `kubectl explain domain.spec.configuration.model.auxiliaryImages` command or.
+
+  - See the `model.auxiliaryImages` section
+    in the domain resource
+    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
+
+- For Domain on PV (operator version 4.10 or newer), run the ` kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages` command or
+
+  - See the `initializeDomainOnPV.domain.domainCreationImages` section
+    in the domain resource
+    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md).
+
+
 #### Source locations
 
-Use the optional attributes `... sourceModelHome` and
-`... .sourceWdtInstallHome` to specify non-default locations of
+Use the optional attributes `sourceModelHome` and
+`sourceWdtInstallHome` to specify non-default locations of
 WebLogic Deploy Tooling model and installation files in your image(s).
 Allowed values for `sourceModelHome` and `sourceWdtInstallHome`:
 - Unset - Defaults to `/auxiliary/models` and `/auxiliary/weblogic-deploy`, respectively.
@@ -76,7 +73,7 @@ and `/aux/weblogic-deploy` directories of the WebLogic Server container in all p
 
 For example source locations, see [Configuration example 2](#example-2-source-locations).
 
-#### Multiple auxiliary images
+#### Multiple  images
 
 If specifying multiple images with model files in their respective `sourceModelHome`
 directories, then model files are merged.
@@ -92,17 +89,18 @@ Set `sourceWDTInstallHome` to `None`, or make sure there are no files in `/auxil
 for all but one of your specified auxililary images.
 {{% /notice %}}
 
-For an example of configuring multiple auxiliary images for Model in image, see [Configuration example 3](#example-3-multiple-images).
+For an example of configuring multiple images, see [Configuration example 3](#example-3-multiple-images).
 
 #### Model and WDT installation homes
 
-If you are using auxiliary images in Model in image, typically, it should not be necessary to set `domain.spec.configuration.models.modelHome` and
-`domain.spec.configuration.models.wdtInstallHome`. The model and WDT install files you supply in the auxiliary image
-(see [source locations](#source-locations)) are always placed in the `/aux/models` and `/aux/weblogic-deploy` directories,
-respectively, in all WebLogic Server pods. When auxiliary image(s) are configured, the operator automatically changes
-the default for `modelHome` and `wdtInstallHome` to match.
+For Model in image:
 
-{{% notice warning %}}
+- It should not be necessary to set `domain.spec.configuration.models.modelHome` and
+`domain.spec.configuration.models.wdtInstallHome`. The model and WDT install files you supply in the image
+(see [source locations](#source-locations)) are always placed in the `/aux/models` and `/aux/weblogic-deploy` directories,
+respectively, in all WebLogic Server pods. The operator automatically changes the default for `modelHome` and `wdtInstallHome` to match.
+
+- {{% notice warning %}}
 If you set `modelHome` and `wdtInstallHome` to a non-default value,
 then the domain will ignore the WDT model and installation files in its auxiliary image(s).
 {{% /notice %}}
@@ -113,7 +111,7 @@ The following configuration examples illustrate each of the previously described
 
 #### Example 1: Basic configuration
 
-This example specifies the required image parameter for the auxiliary image(s); all other fields are at default values.
+This example specifies the image location; all other fields are at default values.
 
 For Model in image:
 ```
@@ -121,7 +119,7 @@ spec:
   configuration:
     model:
       auxiliaryImages:
-      - image: wdt-model-images:v1
+      - image: wdt-model-image:v1
 ```
 
 For Domain on PV:
@@ -130,7 +128,7 @@ spec:
   configuration:
     initializeDomainOnPV:
       domainCreationImages:
-      - image: wdt-model-images:v1
+      - image: wdt-model-image:v1
 ```
 
 #### Example 2: Source locations
@@ -143,7 +141,7 @@ spec:
   configuration:
     model:
       auxiliaryImages:
-      - image: wdt-model-images:v1
+      - image: wdt-model-image:v1
         sourceModelHome: /foo/models
         sourceWDTInstallHome: /bar/weblogic-deploy
 ```
@@ -155,16 +153,16 @@ spec:
   configuration:
     initializeDomainOnPV:
       domainCreationImages:
-      - image: wdt-model-images:v1
+      - image: wdt-model-image:v1
         sourceModelHome: /foo/models
         sourceWDTInstallHome: /bar/weblogic-deploy
 ```
 
 #### Example 3: Multiple images
 
-This example is the same as Example 1, except it configures multiple auxiliary images and sets the `sourceWDTInstallHome`
+This example is the same as Example 1, except it configures multiple images and sets the `sourceWDTInstallHome`
 for the second image to `None`.
-In this case, the source location of the WebLogic Deploy Tooling installation from the second image `new-model-in-image:v1` will be ignored.
+In this case, the source location of the WebLogic Deploy Tooling installation from the second image `wdt-model-image2:v1` will be ignored.
 
 For Model in image:
 ```
@@ -172,8 +170,8 @@ spec:
   configuration:
     model:
       auxiliaryImages:
-      - image: wdt-model-images:v1
-      - image: wdt-model-images2:v1
+      - image: wdt-model-image:v1
+      - image: wdt-model-image2:v1
         sourceWDTInstallHome: None
 ```
 
@@ -183,8 +181,8 @@ spec:
   configuration:
     initializeDomainOnPV:
       domainCreationImages:
-      - image: wdt-model-images:v1
-      - image: wdt-model-images2:v1
+      - image: wdt-model-image:v1
+      - image: wdt-model-image2:v1
         sourceWDTInstallHome: None
 ```
 
