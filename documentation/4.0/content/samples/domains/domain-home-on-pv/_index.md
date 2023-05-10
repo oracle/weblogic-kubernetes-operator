@@ -11,14 +11,14 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 This sample demonstrates deploying a Domain on PV
 [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
- with Domain creation images [TODO - put a link here].
-Domain on PV sample uses WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. See model files documentation [TODO].
+ with [Domain creation images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}}).
+Domain on PV sample uses WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. See [Worknig with model files]({{<relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in user documentation.
 
 #### Domain on PV domain types (WLS, and JRF)
 
 There are two types of domains supported by Domain on PV: a standard `WLS` domain, and an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain. This sample demonstrates the `WLS` and `JRF` types.
 
-The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
+The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. 
 
 #### Ensuring your Kubernetes cluster can access images
 
