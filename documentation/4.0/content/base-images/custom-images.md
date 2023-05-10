@@ -100,7 +100,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
        solely contain WebLogic Deploy Tooling files for the Model in Image use case
        and are used in addition to the
        domain resource image that contains your WebLogic and Java installations.
-     - For more information, see [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+     - For more information, see [Auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}}).
 
   - WIT [`inspect`](https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/) command:
 
@@ -510,7 +510,7 @@ to create the domain home in Domain in Image.
 {{% notice tip %}}
 This section describes an option for layering Model in Image model files on a WebLogic image.
 The preferred approach for supplying Model in Image files
-is to use [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) instead.
+is to use [Auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}}) instead.
 {{% /notice %}}
 
 {{% notice warning %}}

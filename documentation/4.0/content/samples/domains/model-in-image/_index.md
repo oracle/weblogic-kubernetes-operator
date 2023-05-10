@@ -11,7 +11,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 This sample demonstrates deploying a Model in Image
 [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
- with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+ with [Auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}}).
 Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create
 your WebLogic domain home prior to deploying your Domain YAML file.
 Instead, Model in Image uses a
