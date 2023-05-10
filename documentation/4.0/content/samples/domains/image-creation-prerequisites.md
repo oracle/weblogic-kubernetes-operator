@@ -5,7 +5,7 @@ weight: 1
 description: "Prepare for WebLogic image creation with these steps."
 ---
 
-Complete the following steps **before** [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
+Complete the following steps **before** [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}) step.
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 

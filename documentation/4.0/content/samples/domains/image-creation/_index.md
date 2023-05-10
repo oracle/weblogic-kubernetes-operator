@@ -15,15 +15,9 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 #### Overview
 
-WDT image creation uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image` named `wdt-domain-image:WLS-v1` from files that you will stage to `/tmp/sample/wdt-artifacts/wdt-model-files/wdt-domain-image__WLS-v1/`. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`.
-
-The Model in Image `auxiliary image(s)` or Domain on PV `domain creation image(s)` contains:
+WDT image creation step uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
-
-If you do not specify a WDT model YAML file in an image,
-then alternatively, the model YAML file can be supplied dynamically using a Kubernetes ConfigMap
-that is referenced by your Domain field.
 
 {{% notice note %}}
 Perform the steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) before performing the steps for creating the image.
@@ -310,7 +304,7 @@ An image can contain multiple properties files, archive ZIP files, and YAML file
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
-At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v1`; they include:
+At this point, you have all of the files needed for image `wdt-domain-image:WLS-v1` staged; they include:
 
   - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.yaml`
   - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/model.10.properties`
@@ -333,7 +327,7 @@ Run the following commands to create the image and verify that it worked:
 
 If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}).
 
-This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
+This command runs the WebLogic Image Tool to create the image and does the following:
 
   - Builds the final container image as a layer on a small `busybox` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
