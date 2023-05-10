@@ -161,7 +161,7 @@ draft: false
 
 * Auxiliary Image simplification:
   * The usage of Model in Image
-    [auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}})
+    [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
     has been substantially simplified.
   * In most cases, customers now need only specify the name of the auxiliary image.
 
