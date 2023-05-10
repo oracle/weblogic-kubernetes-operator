@@ -88,7 +88,7 @@ Here are the steps:
     - If you are taking the `JRF` path through the sample, then the database will already be running.
 
     - If you are taking the `WLS` path through the sample, then you can deploy the database by:
-      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/domains/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
+      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
       - You can skip the remaining steps (they are only needed for `JRF`).
 
 1. Update your Domain YAML file to enable `onlineUpdate`.

@@ -1,13 +1,15 @@
 ---
-title: "WDT image creation"
+title: "Auxiliary image creation"
 date: 2019-02-23T17:32:31-05:00
-weight: 1.5
+weight: 1
 description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 
 ### Contents
 
   - [Overview](#overview)
+  - [Prerequisites](#prerequisites)
+  - [Auxiliary image creation](#auxiliary-image-creation)
   - [Understanding your first archive](#understanding-your-first-archive)
   - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
   - [Staging model files](#staging-model-files)
@@ -15,14 +17,15 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 #### Overview
 
-WDT image creation step uses the WebLogic Image Tool to create a Model in Image `auxiliary image` or Domain on PV `domain creation image`.  This image contains:
+Auxiliary image creation step uses the WebLogic Image Tool to create a Model in Image `auxiliary image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
-{{% notice note %}}
-Perform the steps in [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) before performing the steps for creating the image.
-{{% /notice %}}
+#### Prerequisites
+Complete the following steps **before** [Auxiliary image creation]({{< relref "#auxiliary-image-creation" >}}) steps.
+{{< readfile file="/samples/domains/includes/image-creation-prerequisites.txt" >}}
 
+### Auxiliary image creation
 Here are the steps for creating the image:
 
 - [Understanding your first archive](#understanding-your-first-archive)
@@ -325,7 +328,7 @@ Run the following commands to create the image and verify that it worked:
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "#prerequisites" >}}).
 
 This command runs the WebLogic Image Tool to create the image and does the following:
 
@@ -369,20 +372,5 @@ $ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
   drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
 ```
 
-**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-### Ensuring your Kubernetes cluster can access images
-
-If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
-
-For example, if you have permission to put the image in a container registry that the cluster can also access, then:
-  - After you've created an image:
-    - `docker tag` the image with a target image name (including the registry host name, port, repository name, and the tag, if needed).
-    - `docker push` the tagged image to the target repository.
-  - Before you deploy a Domain:
-    - Modify the Domain YAML file's `image:` value to match the image tag for the image in the repository.
-    - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the Domain will use, and modify the Domain YAML file's `imagePullSecrets:` to reference this secret.
-
-Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
-
-For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).

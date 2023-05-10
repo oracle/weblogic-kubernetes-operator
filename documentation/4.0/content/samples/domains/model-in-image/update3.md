@@ -96,7 +96,7 @@ Here are the steps for this use case:
      - `/tmp/sample/model-images/model-in-image__WLS-AI-v2/model.10.properties`
      - `/tmp/sample/model-images/model-in-image__WLS-AI-v2/archive.zip`
 
-     If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/prerequisites.md" >}}).
+     If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
      Now, you use the Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v2`. You've already set up this tool during the prerequisite steps.
 
@@ -113,7 +113,7 @@ Here are the steps for this use case:
        --wdtArchive ./archive.zip
      ```
 
-     If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/prerequisites.md" >}}).
+     If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
      This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
      - Builds the final auxiliary image as a layer on a small `busybox` base image.

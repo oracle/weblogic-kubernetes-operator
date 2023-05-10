@@ -1,19 +1,4 @@
----
-title: "Prerequisites"
-date: 2019-02-23T17:32:31-05:00
-weight: 2
-description: "Follow these prerequisite steps for all domain types."
----
-
-### Prerequisites for all domain types
-
-1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
-
-1. Complete steps in the [Image creation prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}}) to prepare for building either a Model in Image `auxiliary image` or Domain on PV `domain creation image`.
-
-1. Build either a Model in Image `auxiliary image` or Domain on PV `domain creation image` by completing the steps in [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}).
-
-1. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
+3. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
@@ -21,7 +6,7 @@ description: "Follow these prerequisite steps for all domain types."
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
-1. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
+3. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
    - Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source directory:
 
        ```
@@ -34,7 +19,7 @@ description: "Follow these prerequisite steps for all domain types."
 
    For more information on ingresses and load balancers, see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 
-1. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
+3. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
 
    a. Use a browser to access the [Oracle Container Registry](http://container-registry.oracle.com).
 
@@ -82,7 +67,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
 
-1. Ensure that you have access to the database image, and then create a deployment using it:
+3. Ensure that you have access to the database image, and then create a deployment using it:
 
    - Use a browser to log in to `https://container-registry.oracle.com`, select `Database -> enterprise` and accept the license agreement.
 

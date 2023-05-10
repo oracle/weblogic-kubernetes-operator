@@ -123,7 +123,7 @@ Here are the steps for this use case:
 
    __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
    that you chose in the prequisite steps when
-   [setting up JRF]({{< relref "/samples/domains/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+   [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
 
    ```shell
    $ kubectl -n sample-domain1-ns create secret generic \

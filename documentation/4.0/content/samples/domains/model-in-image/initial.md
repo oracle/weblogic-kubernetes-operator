@@ -20,13 +20,13 @@ In this use case, you set up an initial WebLogic domain. This involves:
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/prerequisites.md" >}}) before performing the steps in this use case.  
+Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-AI-v1 model YAML file differs from the WLS-AI-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
 ### Auxiliary image
 
-The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [WDT image creation]({{< relref "/samples/domains/image-creation/_index.md" >}}) step (after meeting the [prerequisites]({{< relref "/samples/domains/image-creation-prerequisites.md" >}})). The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
+The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` that you created in the [WDT image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) step. The WDT model files in this auxiliary image define the WebLogic domain configuration. The image contains:
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
@@ -90,7 +90,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
   that you chose in the prequisite steps when
-  [setting up JRF]({{< relref "/samples/domains/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
+  [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
 
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \

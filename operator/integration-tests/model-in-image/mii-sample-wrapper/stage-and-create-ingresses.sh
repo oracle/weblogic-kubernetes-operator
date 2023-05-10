@@ -54,7 +54,7 @@ get_kube_address() {
 
 get_sample_host() {
   # $1 is service name
-  tr [A-Z_] [a-z-] <<< $1.sample.org
+  tr [A-Z_] [a-z-] <<< $1.mii-sample.org
 }
 
 get_curl_command() {
