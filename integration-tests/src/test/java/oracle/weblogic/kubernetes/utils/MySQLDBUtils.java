@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+import static oracle.weblogic.kubernetes.TestConstants.MYSQL_IMAGE;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,7 +75,7 @@ public class MySQLDBUtils {
         .spec(new V1PodSpec()
             .terminationGracePeriodSeconds(5L)
             .containers(Arrays.asList(new V1Container()
-                .image("mysql:".concat(mySQLVImageVersion))
+                .image(MYSQL_IMAGE + ":" + mySQLVImageVersion)
                 .name("mysql")
                 .addEnvItem(new V1EnvVar()
                     .name("MYSQL_ROOT_PASSWORD")
