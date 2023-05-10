@@ -25,7 +25,7 @@ When using the operator to start WebLogic Server instances from a domain, you ha
      - As WDT model YAML file in a Kubernetes ConfigMap.
    - Supply WebLogic applications in one of two ways:
      - In auxiliary images.
-     - Layered on the installation image.
+     - Layered on the installation image (Legacy approach).
    - Mutate the WebLogic configuration by supplying a new image and rolling,
      or [model updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}})
      supplied in a Kubernetes ConfigMap.
@@ -73,10 +73,7 @@ There are advantages for each domain home source type where Model in Image is th
   * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
   * [Auxiliary images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}})
 
-* Model in Image domains that _do not_ use auxiliary images:
-  * [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}})
-
-* Domain n Image domains:
+* Domain in Image domains (Legacy approach):
   * [Create a custom image with your domain inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" >}})
 
 * Domain on Persistent Volume (PV) domains:
@@ -84,3 +81,5 @@ There are advantages for each domain home source type where Model in Image is th
   * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
   * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
   * [Create a domain creation images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}})
+  * [Domain creation images]({{< relref "/managing-domains/working-with-wdt-models/auxiliary-images.md" >}})
+ 
