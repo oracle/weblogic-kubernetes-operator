@@ -82,7 +82,7 @@ The image layout follows this directory structure:
 /auxiliary/models -  All WDT artifacts, such as model YAML files, model properties, model archives.
 ```
 
-You can create your own image using your familiar method or use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
+You can create your own image using your familiar method or use the [WebLogic Image Tool (WIT)](https://github.com/oracle/weblogic-image-tool).
 
 For example, using WIT, because the file structure is the same as an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) that's used in the Model in Image domain home type, you can
 use the same command `createAuxImage`.
