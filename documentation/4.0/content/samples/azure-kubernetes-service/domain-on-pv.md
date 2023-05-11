@@ -216,7 +216,7 @@ You need to set up the domain configuration for the WebLogic domain.
 
 1. Enable the operator to monitor the namespace
 
-   For more details of namespace management, see [Configure or dynamically change the namespaces that a running operator manages]({{< relref "/managing-operators/namespace-management" >}}).
+   For more details of namespace management, see [Namespace management]({{< relref "/managing-operators/namespace-management" >}}).
 
    The domain will be created in `default` namespace. Run the following command to enable the operator to monitor `default` namespace.
 
