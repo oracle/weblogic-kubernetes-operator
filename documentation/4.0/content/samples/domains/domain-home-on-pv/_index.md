@@ -12,7 +12,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 This sample demonstrates deploying a Domain on PV
 [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
  with [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}}).
-Domain on PV sample uses WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. See [Worknig with model files]({{<relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in user documentation.
+Domain on PV sample uses WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. See [Working with model files]({{<relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in user documentation.
 
 #### Domain on PV domain types (WLS, and JRF)
 

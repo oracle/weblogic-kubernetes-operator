@@ -17,7 +17,7 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 #### Overview
 
-You use the WebLogic Image Tool to build the `Domain creation image`.  This image contains:
+Build domain creation image step uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
@@ -372,5 +372,5 @@ $ docker run -it --rm wdt-domain-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
   drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
 ```
 
-**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+**NOTE**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
