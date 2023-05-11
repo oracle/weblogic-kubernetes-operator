@@ -31,7 +31,7 @@
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images`.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images.
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts

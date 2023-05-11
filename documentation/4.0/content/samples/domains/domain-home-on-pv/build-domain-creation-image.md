@@ -5,35 +5,27 @@ weight: 1
 description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 
-### Contents
+{{< table_of_contents >}}
 
-  - [Overview](#overview)
-  - [Prerequisites](#prerequisites)
-  - [Building the domain creation image](#building-the-domain-creation-image)
-  - [Understanding your first archive](#understanding-your-first-archive)
-  - [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-  - [Staging model files](#staging-model-files)
-  - [Creating the image with WIT](#creating-the-image-with-wit)
+### Overview
 
-#### Overview
-
-The build domain creation image process uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
+The image build process uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
-#### Prerequisites
-Complete the following steps **before** the [Building domain creation image]({{< relref "#building-the-domain-creation-image" >}}) steps.
+### Prerequisites
+First, complete the following steps.
 {{< readfile file="/samples/domains/includes/image-creation-prerequisites.txt" >}}
 
-#### Building the domain creation image
+### Build the domain creation image
 Here are the steps for creating the image:
 
-- [Understanding your first archive](#understanding-your-first-archive)
-- [Staging a ZIP file of the archive](#staging-a-zip-file-of-the-archive)
-- [Staging model files](#staging-model-files)
-- [Creating the image with WIT](#creating-the-image-with-wit)
+- [Understand your first archive](#understand-your-first-archive)
+- [Stage a ZIP file of the archive](#stage-a-zip-file-of-the-archive)
+- [Stage the model files](#stage-the-model-files)
+- [Create the image with WIT](#create-the-image-with-wit)
 
-#### Understanding your first archive
+#### Understand your first archive
 
 The sample includes a predefined archive directory in `/tmp/sample/wdt-artifacts/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
@@ -140,7 +132,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`; you will update this to `v2` in a later use case that demonstrates upgrading the application.
 
-#### Staging a ZIP file of the archive
+#### Stage a ZIP file of the archive
 
 When you create the image, you will use the files in the staging directory, `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
@@ -165,7 +157,7 @@ Using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-too
 $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip -source=wlsdeploy/applications/myapp-v1
 ```
 
-#### Staging model files
+#### Stage the model files
 
 In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
@@ -303,7 +295,7 @@ The model files:
 
 An image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
 
-#### Creating the image with WIT
+#### Create the image with WIT
 
 **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
