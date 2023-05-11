@@ -40,7 +40,7 @@ After the Domain is deployed, the operator creates the PV and PVC (if they are c
 
 ### Domain creation image
 
-The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Building the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/domain-creation-image.md" >}}) step. The WDT model files in this image define the initial WebLogic domain home on PV configuration. The image contains:
+The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Building the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}) step. The WDT model files in this image define the initial WebLogic domain home on PV configuration. The image contains:
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
@@ -136,7 +136,7 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
 
-  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv/domain-creation-image#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
   Run the following command to apply the two sample resources.
   ```shell

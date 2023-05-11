@@ -1,5 +1,5 @@
 ---
-title: "Domain home on PV"
+title: "Domain on PV"
 date: 2019-02-23T17:32:31-05:00
 weight: 4
 description: "Sample for creating a WebLogic domain home on a PV for deploying the generated WebLogic domain."
