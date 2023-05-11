@@ -5,11 +5,10 @@ weight: 2
 description: "Follow these prerequisite steps for all domain types."
 ---
 
-### Prerequisites for all domain types
+### Prerequisites for WLS and JRF domain types
 
 1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
 
 1. Build a Domain on PV `domain creation image` by completing the steps in [Building the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}).
 
 {{< readfile file="/samples/domains/includes/prerequisites.txt" >}}
-

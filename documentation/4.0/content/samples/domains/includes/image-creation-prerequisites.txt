@@ -26,12 +26,12 @@
    ```shell
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample/wdt-artifacts
    ```
- 
+
    **Note**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your Model in Image `auxiliary images` or Domain on PV `domain creation images`.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images`.
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts
