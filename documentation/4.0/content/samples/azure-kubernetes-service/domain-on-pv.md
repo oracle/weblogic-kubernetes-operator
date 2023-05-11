@@ -100,8 +100,9 @@ Verify the operator with the following command; the `STATUS` must be `Running`. 
 $ kubectl get pods -w
 ```
 ```
-NAME                                              READY   STATUS      RESTARTS   AGE
-weblogic-operator-56654bcdb7-qww7f                1/1     Running     0          25m
+NAME                                         READY   STATUS    RESTARTS   AGE
+weblogic-operator-69794f8df7-bmvj9           1/1     Running   0          86s
+weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
 ```
 
 {{% notice tip %}} You will have to press Ctrl-C to exit this command due to the `-w` flag.
@@ -150,8 +151,8 @@ $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
 ```
 ```
-secret/regcred created
-The secret regcred has been successfully created in the default namespace.
+secret/wlsregcred created
+The secret wlsregcred has been successfully created in the default namespace.
 ```
 
 Verify secrets with the following command:
@@ -160,15 +161,15 @@ Verify secrets with the following command:
 $ kubectl get secret
 ```
 ```
-NAME                                      TYPE                                  DATA   AGE
-regcred                                   kubernetes.io/dockerconfigjson        1      2m25s
-default-token-csdvd                       kubernetes.io/service-account-token   3      25m
-domain1-weblogic-credentials              Opaque                                2      3m42s
-sh.helm.release.v1.weblogic-operator.v1   helm.sh/release.v1                    1      5m41s
-weblogic-operator-secrets                 Opaque                                1      5m41s
+NAME                                      TYPE                             DATA   AGE
+domain1-weblogic-credentials              Opaque                           2      2m32s
+sh.helm.release.v1.weblogic-operator.v1   helm.sh/release.v1               1      5m32s
+weblogic-operator-secrets                 Opaque                           1      5m31s
+weblogic-webhook-secrets                  Opaque                           2      5m31s
+wlsregcred                                kubernetes.io/dockerconfigjson   1      38s
 ```
 
-**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them. 
 
 ##### Create WebLogic Domain
 You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume you created previously.
@@ -204,16 +205,26 @@ You need to set up the domain configuration for the WebLogic domain.
    ```text
    PASS
    You can create your domain with the following resources ready:
-     Azure resource group: wlsresourcegroup1612795811
-     Azure Kubenetes Service instacne: wlsaks1612795811
-     Azure storage account: wlsstorage1612795811
-     Azure file share: wls-weblogic-1612795811
-     Kubenetes secret for Docker Account: regcred
-     Kubenetes secret for Weblogic domain: domain1-weblogic-credentials
-     Persistent Volume Claim: wls-azurefile-1612795811
+     Azure resource group: wlsresourcegroup1683786842
+     Azure Kubernetes Service instance: wlsaks1683786842
+     Azure storage account: wlsstorage1683786842
+     Azure file share: wls-weblogic-1683786842
+     Kubernetes secret for Container Registry Account: wlsregcred
+     Kubernetes secret for WebLogic domain: domain1-weblogic-credentials
+     Persistent Volume Claim: wls-azurefile-1683786842
    ```
 
-2. Now let's ask the operator to create a WebLogic Server domain within the AKS cluster.
+1. Enable the operator to monitor the namespace
+
+   For more details of namespace management, see [Configure or dynamically change the namespaces that a running operator manages]({{< relref "/managing-operators/namespace-management" >}}).
+
+   The domain will be created in `default` namespace. Run the following command to enable the operator to monitor `default` namespace.
+
+   ```shell
+   $ kubectl label namespace default weblogic-operator=enabled
+   ```
+
+1. Now let's ask the operator to create a WebLogic Server domain within the AKS cluster.
 
    For complete details on domain creation, see [Domain home on a PV - Use the script to create a domain]({{< relref "/samples/domains/domain-home-on-pv#use-the-script-to-create-a-domain" >}}).  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the `create-domain.sh` script as shown next.
 
@@ -262,9 +273,9 @@ You need to set up the domain configuration for the WebLogic domain.
    export initialManagedServerReplicas="2"
    export managedServerNameBase="managed-server"
    export managedServerPort="8001"
-   export image="store/oracle/weblogic:12.2.1.4"
+   export image="container-registry.oracle.com/middleware/weblogic:12.2.1.4"
    export imagePullPolicy="IfNotPresent"
-   export imagePullSecretName="regcred"
+   export imagePullSecretName="wlsregcred"
    export productionModeEnabled="true"
    export weblogicCredentialsSecretName="domain1-weblogic-credentials"
    export includeServerOutInPodLog="true"
@@ -275,43 +286,42 @@ You need to set up the domain configuration for the WebLogic domain.
    export adminNodePort="30701"
    export exposeAdminNodePort="true"
    export namespace="default"
-   javaOptions=-Dweblogic.StdoutDebugEnabled=false
-   export persistentVolumeClaimName="wls-azurefile"
+   javaOptions=-Dweblogic.StdoutDebugEnabled=false -XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
+   export persistentVolumeClaimName="wls-azurefile-1683777168"
    export domainPVMountPath="/shared"
    export createDomainScriptsMountPath="/u01/weblogic"
    export createDomainScriptName="create-domain-job.sh"
    export createDomainFilesDir="wlst"
-   export serverPodMemoryRequest="768Mi"
+   export serverPodMemoryRequest="1.5Gi"
    export serverPodCpuRequest="250m"
-   export istioEnabled="false"
-   export istioReadinessPort="8888"
 
+   validateWlsDomainName called with domain1
+   createFiles - valuesInputFile is /home/username/azure/weblogic-on-aks/domain1.yaml
+   createDomainScriptName is create-domain-job.sh
    Generating /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
    Generating /home/username/azure/weblogic-domains/domain1/delete-domain-job.yaml
    Generating /home/username/azure/weblogic-domains/domain1/domain.yaml
    Checking to see if the secret domain1-weblogic-credentials exists in namespace default
-   Checking if the persistent volume claim wls-azurefile in NameSpace default exists
-   The persistent volume claim wls-azurefile already exists in NameSpace default
+   Checking if the persistent volume claim wls-azurefile-1683777168 in NameSpace default exists
+   The persistent volume claim wls-azurefile-1683777168 already exists in NameSpace default
    configmap/domain1-create-weblogic-sample-domain-job-cm created
    Checking the configmap domain1-create-weblogic-sample-domain-job-cm was created
    configmap/domain1-create-weblogic-sample-domain-job-cm labeled
    Checking if object type job with name domain1-create-weblogic-sample-domain-job exists
    No resources found in default namespace.
-   Creating the domain by creating the job /home/weblogic/azure/weblogic-domains/domain1/create-domain-job.yaml
+   Creating the domain by creating the job /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
    job.batch/domain1-create-weblogic-sample-domain-job created
    Waiting for the job to complete...
-   Error from server (BadRequest): container "create-weblogic-sample-domain-job" in pod "domain1-create-weblogic-sample-domain-job-4l767" is waiting to start: PodInitializing
-   status on iteration 1 of 20
-   pod domain1-create-weblogic-sample-domain-job-4l767 status is Init:0/1
-   status on iteration 2 of 20
-   pod domain1-create-weblogic-sample-domain-job-4l767 status is Running
-   status on iteration 3 of 20
-   pod domain1-create-weblogic-sample-domain-job-4l767 status is Completed
+   status on iteration 1 of 30
+   pod domain1-create-weblogic-sample-domain-job-v9hp6 status is Init:0/1
+   status on iteration 2 of 30
+   pod domain1-create-weblogic-sample-domain-job-v9hp6 status is Completed
    domain.weblogic.oracle/domain1 created
+   cluster.weblogic.oracle/domain1-cluster-1 created
 
    Domain domain1 was created and will be started by the WebLogic Kubernetes Operator
 
-   Administration console access is available at http://wlswls1596-wlsresourcegrou-685ba0-7434b4f5.hcp.eastus.azmk8s.io:30701/console
+   Administration console access is available at http://wlsaks1683-wlsresourcegroup-260524-3dtnmx4n.hcp.eastus.azmk8s.io:30701/console
    The following files were generated:
      /home/username/azure/weblogic-domains/domain1/create-domain-inputs.yaml
      /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
@@ -345,7 +355,7 @@ You need to set up the domain configuration for the WebLogic domain.
 
     The complete set of values that can be configured in this way is described in [configuration parameters]({{< relref "/samples/domains/domain-home-on-pv/#configuration-parameters" >}}).   If you want further advanced domain configuration, then run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit the `domain.yaml` file and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
 
-4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
+1. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
    Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
 
@@ -427,11 +437,12 @@ You need to set up the domain configuration for the WebLogic domain.
    ```
    ```
    NAME                                              READY   STATUS      RESTARTS   AGE
-   domain1-admin-server                              1/1     Running     0          11m
-   domain1-create-weblogic-sample-domain-job-4l767   0/1     Completed   0          13m
-   domain1-managed-server1                           1/1     Running     0          3m56s
-   domain1-managed-server2                           1/1     Running     0          3m56s
-   weblogic-operator-56654bcdb7-qww7f                1/1     Running     0          25m
+   domain1-admin-server                              1/1     Running     0          6m34s
+   domain1-create-weblogic-sample-domain-job-v9hp6   0/1     Completed   0          9m21s
+   domain1-managed-server1                           1/1     Running     0          3m30s
+   domain1-managed-server2                           1/1     Running     0          3m30s
+   weblogic-operator-69794f8df7-bmvj9                1/1     Running     0          20m
+   weblogic-operator-webhook-868db5875b-55v7r        1/1     Running     0          20m
    ```
 
    {{% notice tip %}} If Kubernetes advertises the WebLogic pod as `Running` you can be assured the WebLogic Server actually is running because the operator ensures that the Kubernetes health checks are actually polling the WebLogic health check mechanism.
@@ -449,16 +460,16 @@ You need to set up the domain configuration for the WebLogic domain.
    $ kubectl get svc --watch
    ```
    ```
-   NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
-   domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
-   domain1-admin-server-ext           NodePort       10.0.182.50   <none>           7001:30701/TCP       2d20h
-   domain1-admin-server-external-lb   LoadBalancer   10.0.67.79    52.188.176.103   7001:32227/TCP       2d20h
-   domain1-cluster-1-lb               LoadBalancer   10.0.112.43   104.45.176.215   8001:30874/TCP       2d17h
-   domain1-cluster-cluster-1          ClusterIP      10.0.162.19   <none>           8001/TCP             2d20h
-   domain1-managed-server1            ClusterIP      None          <none>           8001/TCP             2d20h
-   domain1-managed-server2            ClusterIP      None          <none>           8001/TCP             2d20h
-   internal-weblogic-operator-svc     ClusterIP      10.0.192.13   <none>           8082/TCP             2d22h
-   kubernetes                         ClusterIP      10.0.0.1      <none>           443/TCP              2d22h
+   NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP    PORT(S)              AGE
+   domain1-admin-server               ClusterIP      None          <none>         30012/TCP,7001/TCP   7m51s
+   domain1-admin-server-ext           NodePort       10.0.25.1     <none>         7001:30701/TCP       7m51s
+   domain1-admin-server-external-lb   LoadBalancer   10.0.103.99   20.253.86.5    7001:32596/TCP       7m37s
+   domain1-cluster-1-external-lb      LoadBalancer   10.0.95.193   20.253.86.73   8001:32595/TCP       7m22s
+   domain1-cluster-cluster-1          ClusterIP      10.0.97.134   <none>         8001/TCP             4m47s
+   domain1-managed-server1            ClusterIP      None          <none>         8001/TCP             4m47s
+   domain1-managed-server2            ClusterIP      None          <none>         8001/TCP             4m47s
+   kubernetes                         ClusterIP      10.0.0.1      <none>         443/TCP              100m
+   weblogic-operator-webhook-svc      ClusterIP      10.0.188.9    <none>         8083/TCP,8084/TCP    21m
    ```
 
    In the example, the URL to access the Administration Server is: `http://52.188.176.103:7001/console`.

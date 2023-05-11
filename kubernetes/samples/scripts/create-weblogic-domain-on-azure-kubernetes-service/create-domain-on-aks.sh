@@ -358,9 +358,11 @@ configureStorageAccountNetwork() {
   local aksObjectId=$(az aks show --name ${aksClusterName} --resource-group ${azureResourceGroupName} --query "identity.principalId" -o tsv)
   local storageAccountId=$(az storage account show --name ${storageAccountName} --resource-group ${azureResourceGroupName} --query "id" -o tsv)
 
-  az role assignment create --assignee "${aksObjectId}" \
-    --role "Contributor" \
-    --scope "${storageAccountId}"
+  az role assignment create \
+      --assignee-object-id "${aksObjectId}" \
+      --assignee-principal-type "ServicePrincipal" \
+      --role "Contributor" \
+      --scope "${storageAccountId}"
 
   if [ $? != 0 ]; then
     fail "Failed to grant the AKS cluster with Contibutor role to access the storage account."
@@ -408,6 +410,9 @@ installWebLogicOperator() {
 }
 
 createWebLogicDomain() {
+  # Enable the operator to monitor the namespace
+  kubectl label namespace default weblogic-operator=enabled
+
   # Create WebLogic Server Domain Credentials.
   echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
   bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
