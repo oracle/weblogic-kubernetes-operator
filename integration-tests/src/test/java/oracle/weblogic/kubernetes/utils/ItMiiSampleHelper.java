@@ -29,6 +29,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
@@ -40,6 +41,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.upgradeAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -119,6 +121,7 @@ public class ItMiiSampleHelper {
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
+    envMap.put("TRAEFIK_NAME", TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3));
     envMap.put("WORKDIR", miiSampleWorkDir);
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
@@ -145,6 +148,8 @@ public class ItMiiSampleHelper {
 
     // install traefik using the mii sample script
     execTestScriptAndAssertSuccess(DomainType.WLS, "-traefik", "Traefik deployment failure");
+    //Helm upgrade traefik and verify traefik pod is ready
+    upgradeAndVerifyTraefik(traefikNamespace);
 
     logger.info("Setting up image registry secrets");
     // Create the repo secret to pull the domain image

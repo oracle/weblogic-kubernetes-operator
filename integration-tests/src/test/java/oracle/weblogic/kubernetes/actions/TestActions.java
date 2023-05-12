@@ -575,6 +575,17 @@ public class TestActions {
   }
 
   /**
+   * Upgrade Traefik ingress controller.
+   *
+   * @param params the parameters to upgrade command, such as image.repository, image.registry,
+   *               and image.tag
+   * @return true on success, false otherwise
+   */
+  public static boolean upgradeTraefikImage(TraefikParams params) {
+    return Traefik.upgradeTraefikImage(params);
+  }
+
+  /**
    * Install Apache ingress controller.
    *
    * @param params the parameters to Helm install command, such as release name, namespace, repo url,
