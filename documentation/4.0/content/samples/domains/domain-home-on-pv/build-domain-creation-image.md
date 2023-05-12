@@ -1,7 +1,7 @@
 ---
 title: "Build domain creation image"
 date: 2019-02-23T17:32:31-05:00
-weight: 1
+weight: 2
 description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 
@@ -14,8 +14,7 @@ The image build process uses the WebLogic Image Tool to create a Domain on PV `d
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
 ### Prerequisites
-First, complete the following steps.
-{{< readfile file="/samples/domains/includes/image-creation-prerequisites.txt" >}}
+First, complete the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
 
 ### Build the domain creation image
 Here are the steps for creating the image:

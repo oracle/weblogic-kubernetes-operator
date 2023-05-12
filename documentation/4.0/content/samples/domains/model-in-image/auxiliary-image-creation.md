@@ -1,7 +1,7 @@
 ---
 title: "Auxiliary image creation"
 date: 2019-02-23T17:32:31-05:00
-weight: 1
+weight: 2
 description: "Create WebLogic images using the WebLogic Image Tool and WebLogic Deploy Tooling."
 ---
 
@@ -22,8 +22,7 @@ Auxiliary image creation step uses the WebLogic Image Tool to create a Model in 
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
 #### Prerequisites
-Complete the following steps **before** [Auxiliary image creation]({{< relref "#auxiliary-image-creation" >}}) steps.
-{{< readfile file="/samples/domains/includes/image-creation-prerequisites.txt" >}}
+First, complete the steps in [Prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 ### Auxiliary image creation
 Here are the steps for creating the image:

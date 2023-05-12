@@ -23,7 +23,7 @@ The sample demonstrates setting up a WebLogic domain with a domain home on a Kub
 
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) before performing the steps in this sample.
+Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}) before performing the steps in this sample.
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
