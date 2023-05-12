@@ -68,7 +68,7 @@ public class DomainStatus {
   /**
    * The number of introspector job failures since the last success.
    *
-   * @deprecated
+   * @deprecated Introspection permanent failure is now controlled by time rather than failure count
    **/
   @SuppressWarnings("unused")
   @Description(
