@@ -206,7 +206,7 @@ public class Helm {
    * @param command the command to execute
    * @return true on success, false otherwise
    */
-  private static boolean exec(String command) {
+  public static boolean exec(String command) {
     getLogger().info("Running command - \n" + command);
     try {
       ExecResult result = ExecCommand.exec(command, true);
