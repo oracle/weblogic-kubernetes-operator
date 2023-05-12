@@ -20,7 +20,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) before performing the steps in this use case.  
+**Before you begin**: Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-AI-v1 model YAML file differs from the WLS-AI-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
