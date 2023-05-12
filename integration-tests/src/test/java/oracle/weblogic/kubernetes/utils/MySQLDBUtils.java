@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -29,6 +30,8 @@ import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
 import static oracle.weblogic.kubernetes.TestConstants.MYSQL_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -56,6 +59,7 @@ public class MySQLDBUtils {
     String secretName = name.concat("-secret-").concat(uniqueName);
     String serviceName = name.concat("-external-").concat(uniqueName);
 
+    createTestRepoSecret(namespace);
     createMySQLDBSecret(secretName, user, password, namespace);
     createMySQLDBService(serviceName, name, namespace, nodePort);
     startMySQLDB(name, secretName, namespace,
@@ -73,6 +77,7 @@ public class MySQLDBUtils {
             .namespace(namespace)
             .labels(labels))
         .spec(new V1PodSpec()
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference().name(TEST_IMAGES_REPO_SECRET_NAME)))
             .terminationGracePeriodSeconds(5L)
             .containers(Arrays.asList(new V1Container()
                 .image(MYSQL_IMAGE + ":" + mySQLVImageVersion)

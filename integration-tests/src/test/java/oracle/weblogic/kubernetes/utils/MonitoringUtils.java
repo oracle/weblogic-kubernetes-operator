@@ -54,6 +54,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
@@ -460,6 +462,7 @@ public class MonitoringUtils {
     }
     // install prometheus
     logger.info("Installing prometheus in namespace {0}", promNamespace);
+    assertDoesNotThrow(() -> logger.info(Files.readString(targetPromFile)));
     assertTrue(installPrometheus(prometheusParams),
         String.format("Failed to install prometheus in namespace %s", promNamespace));
     logger.info("Prometheus installed in namespace {0}", promNamespace);
@@ -575,6 +578,12 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "grafana_tag",
         GRAFANA_IMAGE_TAG),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "busybox_image",
+        BUSYBOX_IMAGE), "Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "busybox_tag",
+        BUSYBOX_TAG), "Failed to replace String ");   
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
               "enabled: false", "enabled: true"));
@@ -610,6 +619,7 @@ public class MonitoringUtils {
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
     int grafanaNodePort = getNextFreePort();
     logger.info("Installing grafana with node port {0}", grafanaNodePort);
+    assertDoesNotThrow(() -> logger.info(Files.readString(targetGrafanaFile)));
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
