@@ -9,7 +9,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 ### Overview
 
-The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain home on PV). This involves:
+The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain on PV). This involves:
 
   - Building a [domain creation image](#domain-creation-image) with:
     - A WDT model that describes your WebLogic domain configuration.
@@ -18,12 +18,12 @@ The sample demonstrates setting up a WebLogic domain with a domain home on a Kub
   - Creating secrets for the domain.
   - Creating a Domain resource YAML file for the domain that:
     - References your Secrets and a WebLogic image.
-    - References the `domain creation image` in the `spec.configuration.initializeDomainOnPV` section for the initial Domain home on PV configuration defined using WDT model YAML.
+    - References the `domain creation image` in the `spec.configuration.initializeDomainOnPV` section for the initial Domain on PV configuration defined using WDT model YAML.
     - Defines PV and PVC metadata and specifications in the `spec.configuration.initializeDomainOnPV` section to create a PV and PVC (optional).
 
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}) before performing the steps in this sample.
+**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and then build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}).
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
@@ -36,11 +36,11 @@ volume to `uid 1000`. If you want to use a different user, configure the desired
 `runAsGroup` in the security context under the `spec.serverPod.podSecurityContext` section of the Domain YAML file.
 The operator will use these values when setting the owner for files in the domain home directory.
 
-After the Domain is deployed, the operator creates the PV and PVC (if they are configured and do not already exist) and starts an 'introspector job' that converts your models included in the `domain creation image` and `config map` into a WebLogic configuration to initialize the Domain home on PV.
+After the Domain is deployed, the operator creates the PV and PVC (if they are configured and do not already exist) and starts an 'introspector job' that converts your models included in the `domain creation image` and `config map` into a WebLogic configuration to initialize the Domain on PV.
 
 ### Domain creation image
 
-The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Building the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}) step. The WDT model files in this image define the initial WebLogic domain home on PV configuration. The image contains:
+The sample uses a `domain creation image` with the name `wdt-domain-image:WLS-v1` that you created in the [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}) step. The WDT model files in this image define the initial WebLogic Domain on PV configuration. The image contains:
 - A WebLogic Deploy Tooling installation (expected in an image’s `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in the directory `/auxiliary/models` by default).
 
@@ -448,14 +448,14 @@ Now that all the sample resources have been deployed, you can invoke the sample 
      </pre></body></html>
     ```
 
-### Cleanup resources and remove the generated domain home
+### Clean up resources and remove the generated domain home
 
 Follow the cleanup instructions [here]({{< relref "samples/domains/domain-home-on-pv/cleanup.md" >}}) to remove the domain, cluster and other associated resources.
 
-Sometimes in production, but most likely in testing environments, you might want to also remove the domain home on PV contents that is generated using this sample.
+Sometimes in production, but most likely in testing environments, you might want to also remove the Domain on PV contents that is generated using this sample.
 You can use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
-The script launches a Kubernetes pod named 'pvhelper' using the provided persistent volume claim name and the mount path.
-You can run 'kubectl exec' to get a shell to the running pod container and run commands to examine or clean up the
+The script launches a Kubernetes pod named `pvhelper` using the provided persistent volume claim name and the mount path.
+You can run `kubectl exec` to get a shell to the running pod container and run commands to examine or clean up the
 contents of shared directories on the persistent volume.
 For example:
 ```shell
@@ -492,4 +492,3 @@ applications
 {{% /expand %}}
 
 After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/domains/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
-

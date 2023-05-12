@@ -7,22 +7,17 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 {{< table_of_contents >}}
 
+**Before you begin**: Complete the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
+
 ### Overview
 
 The image build process uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
 - WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
 
-### Prerequisites
-First, complete the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
-
 ### Build the domain creation image
-Here are the steps for creating the image:
 
-- [Understand your first archive](#understand-your-first-archive)
-- [Stage a ZIP file of the archive](#stage-a-zip-file-of-the-archive)
-- [Stage the model files](#stage-the-model-files)
-- [Create the image with WIT](#create-the-image-with-wit)
+Use the steps in the following sections for creating the domain creation image.
 
 #### Understand your first archive
 

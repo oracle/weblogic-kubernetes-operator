@@ -5,6 +5,12 @@ weight: 1
 description: "Follow these prerequisite steps for all domain types."
 ---
 
+### Contents
+
+- [Prerequisites for WLS and JRF domain types](#prerequisites-for-wls-and-jrf-domain-types)
+- [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
+
+
 ### Prerequisites for WLS and JRF domain types
 
 {{< readfile file="/samples/domains/includes/image-creation-prerequisites.txt" >}}
