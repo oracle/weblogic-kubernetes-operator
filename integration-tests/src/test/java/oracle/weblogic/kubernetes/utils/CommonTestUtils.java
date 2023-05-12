@@ -652,7 +652,7 @@ public class CommonTestUtils {
    * @param adminSvcExtHost admin server external host
    * @param resourceType resource type
    * @param resourceName resource name
-   * @param expectedValue
+   * @param expectedValue expected value
    *
    */
   public static void verifyConfiguredSystemResource(String domainNamespace, String adminServerPodName,
