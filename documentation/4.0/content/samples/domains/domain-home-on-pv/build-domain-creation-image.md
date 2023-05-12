@@ -17,7 +17,7 @@ The image build process uses the WebLogic Image Tool to create a Domain on PV `d
 
 ### Build the domain creation image
 
-Use the steps in the following sections for creating the domain creation image.
+Use the steps in the following sections to build the domain creation image.
 
 #### Understand your first archive
 
