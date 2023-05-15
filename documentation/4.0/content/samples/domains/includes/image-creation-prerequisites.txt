@@ -1,23 +1,4 @@
-1. Choose the type of domain you're going to use throughout the sample, `WLS` or `JRF`.
-
-1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
-
-1. Get the operator source and put it in `/tmp/weblogic-kubernetes-operator`.
-
-   For example:
-
-   ```shell
-   $ cd /tmp
-   ```
-   ```shell
-   $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
-   ```
-
-   **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
-
-   For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
-
-1. Copy the sample to a new directory; for example, use directory `/tmp/sample`.
+5. Copy the `wdt-artifacts` directory of the sample to a new directory; for example, use directory `/tmp/sample/wdt-artifacts`.
 
 
    ```shell
@@ -27,11 +8,7 @@
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample/wdt-artifacts
    ```
 
-   **Note**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.
-   {{< rawhtml >}}
-   <a name="resume"></a>
-   {{< /rawhtml >}}
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images.
+5. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images.
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts
@@ -45,7 +22,7 @@
      -o /tmp/sample/wdt-artifacts/imagetool.zip
    ```
 
-1. To set up the WebLogic Image Tool, run the following commands:
+5. To set up the WebLogic Image Tool, run the following commands:
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts
@@ -76,7 +53,7 @@
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
-1. To set up the WebLogic Deploy Tooling that we will use later for the archive helper, run the following command:
+5. To set up the WebLogic Deploy Tooling that we will use later for the archive helper, run the following command:
 
    ```shell
    $ unzip /tmp/sample/wdt-artifacts/weblogic-deploy.zip

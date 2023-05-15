@@ -1,11 +1,13 @@
-8. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
-To do this, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
+9. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
+
+   For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
+
 
    {{% notice note %}}
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
-8. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
+9. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
    - Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source directory:
 
        ```
@@ -18,7 +20,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
    For more information on ingresses and load balancers, see [Ingress]({{< relref "/managing-domains/accessing-the-domain/ingress/_index.md" >}}).
 
-8. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
+9. Obtain the WebLogic 12.2.1.4 image that is referenced by the sample's Domain resource YAML.
 
    a. Use a browser to access the [Oracle Container Registry](http://container-registry.oracle.com).
 
@@ -66,7 +68,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
 
-11. Ensure that you have access to the database image, and then create a deployment using it:
+12. Ensure that you have access to the database image, and then create a deployment using it:
 
    - Use a browser to log in to `https://container-registry.oracle.com`, select `Database -> enterprise` and accept the license agreement.
 
@@ -103,7 +105,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
      **WARNING:** The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
-12. Use the sample script `create-rcu-schema.sh` in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`) in the database.
+13. Use the sample script `create-rcu-schema.sh` in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`) in the database.
 
    This script starts a pod named `rcu` in the `default` namespace (the same namespace as the database)
    and executes RCU setup script `createRepository.sh`.
