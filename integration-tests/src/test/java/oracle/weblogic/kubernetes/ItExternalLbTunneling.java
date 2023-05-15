@@ -128,7 +128,7 @@ class ItExternalLbTunneling {
   private static Path tlsCertFile;
   private static Path tlsKeyFile;
   private static Path jksTrustFile;
-  private static String tlsSecretName = domainUid + "-voyager-tls-secret";
+  private static String tlsSecretName = domainUid + "-test-tls-secret";
   private String clusterSvcRouteHost = null;
 
   /**
