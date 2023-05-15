@@ -2,7 +2,7 @@
 title: "Prerequisites"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
-description: "Follow these prerequisite steps for all domain types."
+description: "Follow these prerequisite steps for WLS and JRF domain types."
 ---
 
 ### Contents
@@ -16,7 +16,7 @@ description: "Follow these prerequisite steps for all domain types."
 
 {{< readfile file="/samples/domains/includes/copy-samples-prerequisites.txt" >}}
 
-4. Copy the Domain on PV sample to a new directory; for example, use directory /tmp/sample.
+4. Copy the Domain on PV sample to a new directory; for example, use directory `/tmp/sample`.
    ```
    $ mkdir -p /tmp/sample
    ```

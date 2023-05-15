@@ -2,14 +2,14 @@
 title: "Prerequisites"
 date: 2019-02-23T17:32:31-05:00
 weight: 1
-description: "Follow these prerequisite steps for all domain types."
+description: "Follow these prerequisite steps for WLS and JRF domain types."
 ---
 ### Contents
 
 - [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
 - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
 
-### Prerequisites for all domain types
+### Prerequisites for WLS and JRF domain types
 
 {{< readfile file="/samples/domains/includes/copy-samples-prerequisites.txt" >}}
 
