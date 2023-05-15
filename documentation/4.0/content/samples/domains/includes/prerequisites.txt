@@ -1,6 +1,5 @@
 8. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
-
-   For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
+To do this, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
 
    {{% notice note %}}
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
@@ -23,13 +22,13 @@
 
    a. Use a browser to access the [Oracle Container Registry](http://container-registry.oracle.com).
 
-   b. Choose an image location: for `JRF` domains, select `Middleware`, then `fmw-infrastructure`; for `WLS` domains, select `Middleware`, then `weblogic`.
+   b. Choose an image location: for JRF domains, select `Middleware`, then `fmw-infrastructure`; for WLS domains, select `Middleware`, then `weblogic`.
 
    c. Select Sign In and accept the license agreement.
 
    d. Use your terminal to log in to the container registry: `docker login container-registry.oracle.com`.
 
-   e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the previous licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
+   e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the previous licensed images as specified in the tool's command line using the `--fromImage` parameter. For JRF, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for WLS, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
    {{% notice warning %}}
    The example base images are General Availability (GA) images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.
@@ -38,7 +37,7 @@
 
 ### Additional prerequisites for JRF domains
 
-**NOTE**: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}) for Model in Image sample and [here]({{< relref "/samples/domains/domain-home-on-pv/sample.md" >}}) for Domain on PV sample.
+**NOTE**: If you're using a WLS domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}) for Model in Image sample and [here]({{< relref "/samples/domains/domain-home-on-pv/sample.md" >}}) for Domain on PV sample.
 
 #### JRF prerequisites
 

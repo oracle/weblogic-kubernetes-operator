@@ -2,23 +2,23 @@
 title: "Domain on PV"
 date: 2019-02-23T17:32:31-05:00
 weight: 4
-description: "Sample for creating a WebLogic domain home on a PV for deploying the generated WebLogic domain."
+description: "Sample for creating a WebLogic domain home on a persistent volume (PV) for deploying the generated WebLogic domain."
 ---
 
 {{< table_of_contents >}}
 
 ### Introduction
 
-This sample demonstrates deploying a Domain on PV
-[domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
+This sample demonstrates deploying a
+[Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type
  with [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}}).
-The Domain on PV sample uses a WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. See [Working with model files]({{<relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
+The Domain on PV sample uses a WebLogic Deploy Tooling (WDT) model to specify your initial WebLogic configuration. For more information about WDT models, see [Working with model files]({{<relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
 
 #### Domain on PV domain types (WLS and JRF)
 
-Domain on PV is supported on two types of domains: a standard `WLS` domain and an Oracle Fusion Middleware Infrastructure, Java Required Files (`JRF`) domain. This sample demonstrates both `WLS` and `JRF` domain types.
+Domain on PV is supported on two types of domains: a standard WLS domain and an Oracle Fusion Middleware Infrastructure, Java Required Files (JRF) domain. This sample demonstrates both WLS and JRF domain types.
 
-The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB.
+The JRF domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. JRF domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB.
 
 #### Ensuring your Kubernetes cluster can access images
 
