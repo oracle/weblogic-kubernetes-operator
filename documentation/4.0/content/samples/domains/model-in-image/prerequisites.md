@@ -94,6 +94,9 @@ description: "Follow these prerequisite steps for WLS domain type."
    ```shell
    $ unzip /tmp/sample/wdt-artifacts/weblogic-deploy.zip
    ```
+   {{< rawhtml >}}
+   <a name="resume"></a>
+   {{< /rawhtml >}}
 
 1. Make sure an operator is set up to manage the namespace, `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port `30305`.
 To do this, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
@@ -102,9 +105,6 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
    {{% notice note %}}
    Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
-   {{< rawhtml >}}
-   <a name="resume"></a>
-   {{< /rawhtml >}}
 
 1. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
    - Run `kubectl apply -f` on each of the ingress YAML files that are already included in the sample source directory:
