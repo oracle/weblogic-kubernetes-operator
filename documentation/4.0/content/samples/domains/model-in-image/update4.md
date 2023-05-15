@@ -81,16 +81,6 @@ Here are the steps:
       weblogic.domainUID=sample-domain1
    ```
 
-1. Optionally, start the database.
-
-    - If the database is running, then the sample application that we will run at the end of this use case, will verify that your updates to the data source secret took effect.
-
-    - If you are taking the `JRF` path through the sample, then the database will already be running.
-
-    - If you are taking the `WLS` path through the sample, then you can deploy the database by:
-      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
-      - You can skip the remaining steps (they are only needed for `JRF`).
-
 1. Update your Domain YAML file to enable `onlineUpdate`.
 
    If `onlineUpdate` is enabled for your domain and the only model changes are to WebLogic Domain dynamic attributes, then the operator will attempt to update the running domains online without restarting the servers when you update the domain's `introspectVersion`.

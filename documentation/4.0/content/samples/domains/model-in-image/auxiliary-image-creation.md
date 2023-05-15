@@ -211,65 +211,6 @@ resources:
         MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 
-{{%expand "Click here to view the JRF `model.10.yaml`, and note the `RCUDbInfo` stanza and its references to a `DOMAIN_UID-rcu-access` secret." %}}
-
-```yaml
-domainInfo:
-    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
-    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
-    ServerStartMode: 'prod'
-    RCUDbInfo:
-        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
-        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
-        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
-
-topology:
-    AdminServerName: 'admin-server'
-    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
-    Cluster:
-        'cluster-1':
-    Server:
-        'admin-server':
-            ListenPort: 7001
-        'managed-server1-c1-':
-            Cluster: 'cluster-1'
-            ListenPort: 8001
-        'managed-server2-c1-':
-            Cluster: 'cluster-1'
-            ListenPort: 8001
-        'managed-server3-c1-':
-            Cluster: 'cluster-1'
-            ListenPort: 8001
-        'managed-server4-c1-':
-            Cluster: 'cluster-1'
-            ListenPort: 8001
-
-appDeployments:
-    Application:
-        myapp:
-            SourcePath: 'wlsdeploy/applications/myapp-v1'
-            ModuleType: ear
-            Target: 'cluster-1'
-
-resources:
-  SelfTuning:
-    MinThreadsConstraint:
-      SampleMinThreads:
-        Target: 'cluster-1'
-        Count: 1
-    MaxThreadsConstraint:
-      SampleMaxThreads:
-        Target: 'cluster-1'
-        Count: 10
-    WorkManager:
-      SampleWM:
-        Target: 'cluster-1'
-        MinThreadsConstraint: 'SampleMinThreads'
-        MaxThreadsConstraint: 'SampleMaxThreads'
-```
-{{% /expand %}}
-
-
 The model files:
 
 - Define a WebLogic domain with:
@@ -290,8 +231,6 @@ The model files:
 An image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
 
 #### Create the image with WIT
-
-**Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
 At this point, you have all of the files needed for image `wdt-domain-image:WLS-v1` staged; they include:
 

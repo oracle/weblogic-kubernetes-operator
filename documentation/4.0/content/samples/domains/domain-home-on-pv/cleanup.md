@@ -41,16 +41,7 @@ weight: 4
 
     ```shell
     $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
-    $ kubectl -n sample-domain1-ns delete secret sample-domain1-runtime-encryption-secret
     ```
-
-#### Remove the PVC and PV
-If the PVC and PV were created by the operator and you don't want to preserve them, then run below command to delete PVC and PV.
-```
-$ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
-$ kubectl delete PV sample-domain1-weblogic-sample-pv
-```
-
 
 #### Remove the domain namespace.
 1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace.

@@ -43,8 +43,6 @@ Here are the steps for this use case:
 
    - Stage a ZIP file of the WDT archive.
 
-     **NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following paths.
-
      When you create your updated image, you will use the files in the staging directory `/tmp/sample/model-in-image__WLS-AI-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
@@ -86,8 +84,6 @@ Here are the steps for this use case:
      If you would like to review the entire original model before this change, see [Staging model files]({{< relref "/samples/domains/model-in-image/initial#staging-model-files" >}})  in the Initial use case.
 
    - Create a new auxiliary image from your staged model files using WIT.
-
-     **Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line, plus substitute `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` for the `--fromImage` value.
 
      At this point, you have staged all of the files needed for image `model-in-image:WLS-AI-v2`; they include:
 
@@ -135,8 +131,6 @@ Here are the steps for this use case:
 #### Deploy resources - Introduction
 
 1. Set up and apply a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different image:
-
-   **NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the paths, files, and image names.
 
    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 

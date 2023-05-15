@@ -26,7 +26,7 @@ Here are the steps:
 
     Create a WDT model snippet for a data source (or use the example provided).  Make sure that its target is set to `cluster-1`, and that its initial capacity is set to `0`.
 
-   The reason for the latter is to prevent the data source from causing a WebLogic Server startup failure if it can't find the database, which would be likely to happen because you haven't deployed one (unless you're using the `JRF` path through the sample).
+   The reason for the latter is to prevent the data source from causing a WebLogic Server startup failure if it can't find the database, which would be likely to happen because you haven't deployed one.
 
    Here's an example data source model configuration that meets these criteria:
 

@@ -20,8 +20,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-**Before you begin**: Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
-If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-AI-v1 model YAML file differs from the WLS-AI-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
+**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
 {{% /notice %}}
 
 ### Auxiliary image
@@ -39,13 +38,12 @@ In this section, you will deploy the new image to namespace `sample-domain1-ns`,
     - All Model in Image domains must supply a runtime encryption Secret with a `password` value.
     - It is used to encrypt configuration that is passed around internally by the operator.
     - The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.
-  - If your domain type is `JRF`, create secrets containing your RCU access URL, credentials, and prefix.
   - Deploy a Domain YAML file that references the new image.
   - Wait for the domain's Pods to start and reach their ready state.
 
 #### Secrets
 
-First, create the secrets needed by both `WLS` and `JRF` type model domains. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
+First, create the secrets needed by the domain. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
@@ -84,59 +82,13 @@ Run the following `kubectl` commands to deploy the required secrets:
   - Name and label the secrets using their associated domain UID to clarify which secrets belong to which domains and make it easier to clean up a domain.
   Some important details about these secrets:
 
-  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation.
-
-  {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
-
-  __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
-  that you chose in the prequisite steps when
-  [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
-
-  ```shell
-  $ kubectl -n sample-domain1-ns create secret generic \
-    sample-domain1-rcu-access \
-     --from-literal=rcu_prefix=FMW1 \
-     --from-literal=rcu_schema_password=MY_RCU_SCHEMA_PASSWORD \
-     --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-  ```
-  ```shell
-  $ kubectl -n sample-domain1-ns label  secret \
-    sample-domain1-rcu-access \
-    weblogic.domainUID=sample-domain1
-  ```
-
-  __NOTES__:
-  - Replace `MY_OPSS_WALLET_PASSWORD` with a password of your choice.
-    The password can contain letters and digits.
-  - The domain's JRF RCU schema will be automatically initialized
-    plus generate a JRF OPSS wallet file upon first use.
-    If you plan to save and reuse this wallet file,
-    as is necessary for reusing RCU schema data after a migration or restart,
-    then it will also be necessary to use this same password again.
-
-  ```shell
-  $ kubectl -n sample-domain1-ns create secret generic \
-    sample-domain1-opss-wallet-password-secret \
-     --from-literal=walletPassword=MY_OPSS_WALLET_PASSWORD
-  ```
-  ```shell
-  $ kubectl -n sample-domain1-ns label  secret \
-    sample-domain1-opss-wallet-password-secret \
-    weblogic.domainUID=sample-domain1
-  ```
-
-  {{% /expand %}}
-
 #### Domain resource
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
-Copy the contents of [the WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file that is included in the sample source to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
+Copy the contents of [the domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
 
-Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) to view the WLS Domain YAML file.
-
-Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/JRF/mii-initial-d1-JRF-v1.yaml) to view the JRF Domain YAML file.
-
+Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) to view the Domain YAML file.
 
   **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 

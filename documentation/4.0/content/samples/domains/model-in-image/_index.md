@@ -24,12 +24,6 @@ in a small separate image separate from your WebLogic image.
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
-#### Model in Image domain types (WLS, JRF, and Restricted JRF)
-
-There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, and a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
-
-The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
-
 #### Use cases
 
 This sample demonstrates five Model in Image use cases:
@@ -96,16 +90,15 @@ The sample contains the following files and directories:
 
 Location | Description |
 ------------- | ----------- |
-`domain-resources` | JRF and WLS Domain YAML files. |
-`archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
-`model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
-`model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
-`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
-`ingresses` | Ingress resources. |
-`utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
-`utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
-`utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
-`utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources` | Domain YAML files. |
+`kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
+`kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/wdt-model-files` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
+`kubernetes/samples/scripts/create-weblogic-domain/ingresses` | Ingress resources. |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
+`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 
 In addition, this sample makes use of the `waitForDomain.sh` sample lifecycle script
 that is located in the operator source `kubernetes/samples/scripts/domain-lifecycle` directory.

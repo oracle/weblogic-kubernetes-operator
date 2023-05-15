@@ -117,48 +117,6 @@ Here are the steps for this use case:
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
      - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case.
 
-   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
-
-   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
-
-   __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
-   that you chose in the prequisite steps when
-   [setting up JRF]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
-
-   ```shell
-   $ kubectl -n sample-domain1-ns create secret generic \
-     sample-domain2-rcu-access \
-      --from-literal=rcu_prefix=FMW2 \
-      --from-literal=rcu_schema_password=MY_RCU_SCHEMA_PASSWORD \
-      --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-   ```
-   ```shell
-   $ kubectl -n sample-domain1-ns label  secret \
-     sample-domain2-rcu-access \
-     weblogic.domainUID=sample-domain2
-   ```
-
-   __NOTES__:
-   - Replace `MY_OPSS_WALLET_PASSWORD` with a password of your choice.
-     The password can contain letters and digits.
-   - The domain's JRF RCU schema will be automatically initialized
-     plus generate a JRF OPSS wallet file upon first use.
-     If you plan to save and reuse this wallet file,
-     as is necessary for reusing RCU schema data after a migration or restart,
-     then it will also be necessary to use this same password again.
-
-   ```shell
-   $ kubectl -n sample-domain1-ns create secret generic \
-     sample-domain2-opss-wallet-password-secret \
-      --from-literal=walletPassword=MY_OPSS_WALLET_PASSWORD
-   ```
-   ```shell
-   $ kubectl -n sample-domain1-ns label  secret \
-     sample-domain2-opss-wallet-password-secret \
-     weblogic.domainUID=sample-domain2
-   ```
-   {{% /expand %}}
-
 1. Set up a Domain YAML file that is similar to your Update 1 use case Domain YAML file but with a different domain UID, domain name, model update ConfigMap reference, and Secret references:
 
     - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
@@ -250,8 +208,6 @@ Here are the steps for this use case:
                 runtimeEncryptionSecret: sample-domain2-runtime-encryption-secret
           ```
 
-        > __NOTE__: If you are following the `JRF` path through the sample, similarly change your `spec.configuration.opss.walletPasswordSecret` and the RCU secret name referenced in `spec.configuration.secrets`.
-
 
       - Change the Domain YAML file's `spec.configuration.model.configMap` value from `sample-domain1-wdt-config-map` to `sample-domain2-wdt-config-map`. The corresponding YAML file stanza will look something like this:
          ```yaml
@@ -311,19 +267,6 @@ Here are the steps for this use case:
           ---
           >     - sample-domain2-datasource-secret
           ```
-
-        {{%expand "Click here to see additional 'diff' expected for the JRF path through the sample." %}}
-
-        ```
-        <       walletPasswordSecret: sample-domain1-opss-wallet-password-secret
-        ---
-        >       walletPasswordSecret: sample-domain2-opss-wallet-password-secret
-        130c130
-        <       #walletFileSecret: sample-domain1-opss-walletfile-secret
-        ---
-        >       #walletFileSecret: sample-domain2-opss-walletfile-secret
-        ```
-        {{% /expand %}}
 
         > __NOTE__: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
 

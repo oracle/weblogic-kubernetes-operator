@@ -492,3 +492,11 @@ applications
 {{% /expand %}}
 
 After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/domains/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
+
+#### Remove the PVC and PV
+If the PVC and PV were created by the operator and you don't want to preserve them, then run below command to delete PVC and PV.
+```
+$ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
+$ kubectl delete PV sample-domain1-weblogic-sample-pv
+```
+
