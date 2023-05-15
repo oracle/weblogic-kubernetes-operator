@@ -12,20 +12,20 @@
     <title>Model in Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684120790" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684120790" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684176273" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684176273" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684120790"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684176273"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684120790"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684120790"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684176273"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684176273"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684120790"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684176273"></script>
 
     
   </div>
@@ -3780,7 +3780,7 @@ sample-weblogic-operator-sa   1         9m5s
 <pre tabindex="0"><code>helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 </code></pre><pre tabindex="0"><code>$ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.2 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.6 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set &#34;enableClusterRoleBinding=true&#34; \
   --set &#34;domainNamespaceSelectionStrategy=LabelSelector&#34; \
@@ -3794,16 +3794,17 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 </code></pre>
-<div class="notices tip" ><p>If you wish to use a more recent version of the operator, replace the <code>3.4.2</code> in the preceding command with the other version number. To see the list of version numbers, visit the <a href="https://github.com/oracle/weblogic-kubernetes-operator/releases">GitHub releases page</a>.</p>
+<div class="notices tip" ><p>If you wish to use a more recent version of the operator, replace the <code>4.0.6</code> in the preceding command with the other version number. To see the list of version numbers, visit the <a href="https://github.com/oracle/weblogic-kubernetes-operator/releases">GitHub releases page</a>.</p>
 </div>
 
 <p>Verify the operator with the following commands; the status will be <code>Running</code>.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ helm list -A
-</span></span></code></pre></div><pre tabindex="0"><code>NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
-sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.0.6  4.0.6
 </code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods -n sample-weblogic-operator-ns
-</span></span></code></pre></div><pre tabindex="0"><code>NAME                                 READY   STATUS    RESTARTS   AGE
-weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
+</span></span></code></pre></div><pre tabindex="0"><code>NAME                                         READY   STATUS    RESTARTS   AGE
+weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
+weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 </code></pre>
 <div class="notices note" ><p>You can specify the operator image by changing value of <code>--set image</code>. If you run into failures, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/#weblogic-kubernetes-operator-installation-failure">Troubleshooting - WebLogic Kubernetes Operator installation failure</a>.</p>
 </div>
@@ -4113,6 +4114,7 @@ Remember what you specified. These credentials may be needed again later.</li>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/mii-sample/mii-initial.yaml
 </span></span></code></pre></div><p>Successful output will look like:</p>
 <pre tabindex="0"><code>domain.weblogic.oracle/sample-domain1 created
+cluster.weblogic.oracle/sample-domain1-cluster-1 created
 </code></pre><p>Verify the WebLogic Server pods are all running:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pods -n sample-domain1-ns --watch
 </span></span></code></pre></div><pre tabindex="0"><code>NAME                                READY   STATUS              RESTARTS   AGE
@@ -4140,15 +4142,21 @@ sample-domain1-managed-server1      1/1     Running             0          93s
 # The success deployment should be:
 </code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get all -n sample-domain1-ns
 </span></span></code></pre></div><pre tabindex="0"><code>NAME                                 READY   STATUS    RESTARTS   AGE
-pod/sample-domain1-admin-server      1/1     Running   0          16m
-pod/sample-domain1-managed-server1   1/1     Running   0          15m
-pod/sample-domain1-managed-server2   1/1     Running   0          15m
+pod/sample-domain1-admin-server      1/1     Running   0          4m30s
+pod/sample-domain1-managed-server1   1/1     Running   0          3m28s
+pod/sample-domain1-managed-server2   1/1     Running   0          3m28s
 
-NAME                                       TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
-service/sample-domain1-admin-server        ClusterIP   None          &lt;none&gt;        7001/TCP   16m
-service/sample-domain1-cluster-cluster-1   ClusterIP   10.0.188.60   &lt;none&gt;        8001/TCP   15m
-service/sample-domain1-managed-server1     ClusterIP   None          &lt;none&gt;        8001/TCP   15m
-service/sample-domain1-managed-server2     ClusterIP   None          &lt;none&gt;        8001/TCP   15m
+NAME                                              TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
+service/sample-domain1-admin-server               ClusterIP      None           &lt;none&gt;          7001/TCP         4m30s
+service/sample-domain1-cluster-cluster-1          ClusterIP      10.0.246.176   &lt;none&gt;          8001/TCP         3m29s
+service/sample-domain1-managed-server1            ClusterIP      None           &lt;none&gt;          8001/TCP         3m29s
+service/sample-domain1-managed-server2            ClusterIP      None           &lt;none&gt;          8001/TCP         3m29s
+
+NAME                                    AGE
+domain.weblogic.oracle/sample-domain1   6m15s
+
+NAME                                               AGE
+cluster.weblogic.oracle/sample-domain1-cluster-1   6m15s
 </code></pre><p>It may take you up to 10 minutes to deploy all pods, please wait and make sure everything is ready.</p>
 <h4 id="invoke-the-web-application">Invoke the web application</h4>
 <h5 id="create-azure-load-balancer">Create Azure load balancer</h5>
@@ -4376,7 +4384,8 @@ The expected username and password must match the values that you chose during t
 <p>Access the Administration Console using the admin load balancer IP address, <code>http://52.191.234.149:7001/console</code></p>
 <p>Access the sample application using the cluster load balancer IP address.</p>
 <pre tabindex="0"><code>## Access the sample application using the cluster load balancer IP (52.191.235.71)
-</code></pre><pre tabindex="0"><code>$ curl http://52.191.235.71:8001/myapp_war/index.jsp
+</code></pre><pre tabindex="0"><code>$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath=&#39;{.status.loadBalancer.ingress[0].ip}&#39;)
+$ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 </code></pre><pre tabindex="0"><code>&lt;html&gt;&lt;body&gt;&lt;pre&gt;
 *****************************************************************
 
@@ -6845,19 +6854,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684120790"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684176273"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684120790"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684120790"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684176273"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684176273"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684120790"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684176273"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
