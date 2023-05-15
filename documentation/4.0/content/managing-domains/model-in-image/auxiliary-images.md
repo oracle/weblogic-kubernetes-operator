@@ -180,7 +180,7 @@ to use Docker to build its auxiliary image:
 
 1. Download the Model in Image sample source and WebLogic Deploy Tooling by following
    the corresponding steps in the
-   [Model in Image Sample prerequisites (TODO broken link)].
+   [Model in Image Sample prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 1. Create a `/tmp/mystaging/models` directory as a staging directory and copy the model YAML file, properties, and archive into it:
    ```shell
@@ -202,7 +202,7 @@ to use Docker to build its auxiliary image:
    $ rm ./weblogic-deploy/bin/*.cmd
    ```
    If the `weblogic-deploy.zip` file is missing, then repeat the step to download the latest WebLogic Deploy Tooling (WDT)
-   in the Model in Image sample [prerequisites (TODO broken link)].
+   in the Model in Image sample [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 1. Run the `docker build` command using `/tmp/mii-sample/ai-docker-file/Dockerfile`.
 
