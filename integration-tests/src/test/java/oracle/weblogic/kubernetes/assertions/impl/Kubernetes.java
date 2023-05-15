@@ -39,7 +39,6 @@ import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
-import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
@@ -428,34 +427,6 @@ public class Kubernetes {
   public static boolean isNginxPodReady(String namespace) throws ApiException {
     String labelSelector = null;
     return isPodReady(namespace, labelSelector, "ingress-nginx-controller");
-  }
-
-  /**
-   * Checks if a Apache pod is running in the specified namespace.
-   * The method assumes the Apache pod name contains "APACHE_RELEAE_NAME-namespace.substring(3)-apache-webtier".
-   *
-   * @param namespace in which to check if the Apache pod is running
-   * @return true if the pod is running, otherwise false
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean isApachePodRunning(String namespace) throws ApiException {
-
-    return isPodRunning(namespace, null,
-        APACHE_RELEASE_NAME + "-" + namespace.substring(3) + "-apache-webtier");
-  }
-
-  /**
-   * Check whether the Apache pod is ready in the specified namespace.
-   * The method assumes the Apache pod name contains "APACHE_RELEASE_NAME-namespace.substring(3)-apache-webtier".
-   *
-   * @param namespace in which to check if the Apache pod is ready
-   * @return true if the pod is in the ready state, false otherwise
-   * @throws ApiException if Kubernetes client API call fails
-   */
-  public static boolean isApachePodReady(String namespace) throws ApiException {
-    String labelSelector = null;
-    return isPodReady(namespace, labelSelector,
-        APACHE_RELEASE_NAME + "-" + namespace.substring(3) + "-apache-webtier");
   }
 
   /**
