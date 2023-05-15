@@ -38,7 +38,8 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
 ### Additional prerequisites for JRF domains
 
-**NOTE**: If you're using a WLS domain type, skip this section and continue to [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}}) for the Domain on PV sample or [Create the auxiliary image]({{< relref "/samples/domains/model-in-image/initial.md" >}}) for the Model in Image sample.
+**NOTE**: If you're using a WLS domain type, skip this section and continue on to [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}})
+for the Domain on PV sample or to [Create the auxiliary image]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}) for the Model in Image sample.
 
 #### JRF prerequisites
 

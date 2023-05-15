@@ -24,8 +24,8 @@ weight: 2
         --set "kubernetes.namespaces={traefik,sample-domain1-ns}"
     ```
 
-    {{% notice note %}} If you have reached this point while following the [Model in Image prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) or [Domain home on PV prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) in the domain samples, please
-    stop here and return to the [Mode in Image sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}) or [Domain home on PV sample instructions]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#resume" >}}).
+    {{% notice note %}} If you have reached this point while following the [Model in Image prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) or [Domain home on PV prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) in the domain samples,
+    **stop here** and return to the Model in Image [sample instructions]({{< relref "/samples/domains/model-in-image/prerequisites#resume" >}}) or Domain on PV [sample instructions]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#resume" >}}).
     {{% /notice %}}
 
 1. Accept the license agreement for WebLogic Server images.

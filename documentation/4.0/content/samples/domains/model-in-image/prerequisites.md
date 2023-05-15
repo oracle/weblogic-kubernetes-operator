@@ -6,7 +6,7 @@ description: "Follow these prerequisite steps for WLS and JRF domain types."
 ---
 ### Contents
 
-- [Prerequisites for all domain types](#prerequisites-for-all-domain-types)
+- [Prerequisites for WLS and JRF domain types](##prerequisites-for-wls-and-jrf-domain-types)
 - [Additional prerequisites for JRF domains](#additional-prerequisites-for-jrf-domains)
 
 ### Prerequisites for WLS and JRF domain types
