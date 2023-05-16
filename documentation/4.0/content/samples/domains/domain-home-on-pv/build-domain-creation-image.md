@@ -314,7 +314,7 @@ Run the following commands to create the image and verify that it worked:
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "#prerequisites" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool to create the image and does the following:
 

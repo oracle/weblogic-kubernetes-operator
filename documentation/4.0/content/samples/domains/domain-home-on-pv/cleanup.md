@@ -6,7 +6,7 @@ weight: 4
 ---
 
 
-#### Remove the domain and cluster.
+#### Remove the domain and cluster
 
 1.	Remove the domain's ingress routes by using `kubectl`.
 
@@ -43,7 +43,7 @@ weight: 4
     $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
     ```
 
-#### Remove the domain namespace.
+#### Remove the domain namespace
 1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace.
 
     ```shell
@@ -59,7 +59,7 @@ weight: 4
     $ kubectl delete namespace sample-domain1-ns
     ```
 
-#### Remove the operator.
+#### Remove the operator
 
 1.	Remove the operator.
 
@@ -73,7 +73,7 @@ weight: 4
     $ kubectl delete namespace sample-weblogic-operator-ns
     ```
 
-#### Remove the ingress controller.
+#### Remove the ingress controller
 
 1.	Remove the Traefik ingress controller.
 

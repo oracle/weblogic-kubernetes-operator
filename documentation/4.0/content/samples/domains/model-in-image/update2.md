@@ -58,10 +58,10 @@ Here are the steps for this use case:
 
    Run the following commands:
 
-   __NOTE:__ Substitute a password of your choice for MY_WEBLOGIC_ADMIN_PASSWORD. This
+   __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
    password should contain at least seven letters plus one digit.
 
-   __NOTE:__ Substitute a password of your choice for MY_RUNTIME_PASSWORD. It should
+   __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
    be unique and different than the admin password, but this is not required.
 
    ```
@@ -268,7 +268,7 @@ Here are the steps for this use case:
           >     - sample-domain2-datasource-secret
           ```
 
-        > __NOTE__: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
+         __NOTE__: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
 
 
       - Apply your changed Domain YAML file:

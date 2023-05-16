@@ -52,7 +52,7 @@ description: "Follow these prerequisite steps for WLS and JRF domain types."
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample/wdt-artifacts
    ```
 
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create the images.
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts
@@ -111,7 +111,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
 
    {{% notice note %}}
-   Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
+   Make sure you **stop** when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
 1. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.

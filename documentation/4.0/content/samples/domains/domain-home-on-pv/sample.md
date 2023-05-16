@@ -29,7 +29,7 @@ If you are taking the `JRF` path through the sample, then substitute `JRF` for `
 
 
 __PV and PVC Notes:__
-- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML are environment specific and often requires information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in user documentation for more details.
+- The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file are environment specific and often require information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in user documentation for more details.
 - You must use a storage provider that supports the `ReadWriteMany` option.
 - This sample will automatically set the owner of all files in the domain home on the persistent
 volume to `uid 1000`. If you want to use a different user, configure the desired `runAsUser` and
@@ -56,14 +56,14 @@ In this section, you will define the PV and PVC configuration and reference the 
 
 #### Secrets
 
-First, create the secrets needed by both `WLS` and `JRF` type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
+First, create the secrets needed by both WLS and JRF type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  __NOTE:__ Substitute a password of your choice for MY_WEBLOGIC_ADMIN_PASSWORD. This
+  __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
-  __NOTE:__ Substitute a password of your choice for MY_RUNTIME_PASSWORD. It should
+  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
   be unique and different than the admin password, but this is not required.
 
   ```shell
@@ -79,11 +79,11 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   Some important details about these secrets:
 
-  - The WebLogic credentials secret is required and must contain `username` and `password` fields. You reference it in `spec.webLogicCredentialsSecret` field of Domain YAML and macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields your model YAML file.
+  - The WebLogic credentials secret is required and must contain `username` and `password` fields. You reference it in `spec.webLogicCredentialsSecret` field of Domain YAML file and macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields your model YAML file.
   - Delete a secret before creating it, otherwise the create command will fail if the secret already exists..
   - Name and label the secrets using their associated domain UID to clarify which secrets belong to which domains and make it easier to clean up a domain.
 
-  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Domain on PV]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) user documentation.
+  If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the JRF model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Domain on PV]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) user documentation.
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
@@ -130,7 +130,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-Copy the contents of [the WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) file that is included in the sample source to a file called `/tmp/sample/domain-resource.yaml` or similar.
+Copy the contents of the [WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) file that is included in the sample source to a file called `/tmp/sample/domain-resource.yaml` or similar.
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
 
@@ -452,8 +452,8 @@ Now that all the sample resources have been deployed, you can invoke the sample 
 
 Follow the cleanup instructions [here]({{< relref "samples/domains/domain-home-on-pv/cleanup.md" >}}) to remove the domain, cluster and other associated resources.
 
-Sometimes in production, but most likely in testing environments, you might want to also remove the Domain on PV contents that is generated using this sample.
-You can use the `domain-on-pv-helper.sh` helper script in domain lifecycle directory for this.
+Sometimes in production, but most likely in testing environments, you might also want to remove the Domain on PV contents that are generated using this sample.
+You can use the `domain-on-pv-helper.sh` helper script in the domain lifecycle directory for this.
 The script launches a Kubernetes pod named `pvhelper` using the provided persistent volume claim name and the mount path.
 You can run `kubectl exec` to get a shell to the running pod container and run commands to examine or clean up the
 contents of shared directories on the persistent volume.
@@ -494,9 +494,8 @@ applications
 After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications directories using `rm -rf /shared/domains/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Since these commands will actually delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
 
 #### Remove the PVC and PV
-If the PVC and PV were created by the operator and you don't want to preserve them, then run below command to delete PVC and PV.
+If the PVC and PV were created by the operator and you don't want to preserve them, then run following command to delete PVC and PV.
 ```
 $ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
 $ kubectl delete PV sample-domain1-weblogic-sample-pv
 ```
-

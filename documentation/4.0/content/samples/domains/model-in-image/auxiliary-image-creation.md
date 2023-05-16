@@ -133,13 +133,13 @@ When you create the image, you will use the files in the staging directory, `/tm
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
 ```
-# Delete existing archive.zip in case we have an old leftover version
+# Delete existing archive.zip in case you have an old leftover version
 ```
 ```shell
 $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/archive.zip
 ```
 ```
-# Move to the directory which contains the source files for our archive
+# Move to the directory which contains the source files for your archive
 ```
 ```shell
 $ cd /tmp/sample/wdt-artifacts/archives/archive-v1
@@ -253,7 +253,7 @@ Run the following commands to create the image and verify that it worked:
     --wdtArchive ./archive.zip
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "#prerequisites" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool to create the image and does the following:
 
