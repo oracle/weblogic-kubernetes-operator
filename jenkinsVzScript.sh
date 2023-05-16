@@ -5,7 +5,7 @@
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
 # APACHE_MAVEN_HOME
 # HELM_VERSION
-# KUBECTL_VERSION
+# KUBE_VERSION
 # KIND_VERSION
 # IT_TEST
 # WDT_DOWNLOAD_URL
@@ -58,7 +58,7 @@ echo "WORKSPACE ${WORKSPACE}"
 checkEnvVars  \
    APACHE_MAVEN_HOME  \
    HELM_VERSION  \
-   KUBECTL_VERSION \
+   KUBE_VERSION \
    KIND_VERSION  \
    IT_TEST  \
    WDT_DOWNLOAD_URL  \
@@ -90,7 +90,7 @@ helm version
 
 KCLI="kubectl" # this string has a deliberate exclusion in the 'validateCLI.sh' validation check for direct use of the k8s cli
 echo "Info: Set up ${KCLI}..."
-curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBECTL_VERSION}"
+curl -Lo "${WORKSPACE}/bin/${KCLI}" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/${KCLI}%2F${KCLI}-v${KUBE_VERSION}"
 chmod +x ${WORKSPACE}/bin/${KCLI}
 ${KCLI} version --client=true
 

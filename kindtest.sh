@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script provisions a Kubernetes cluster using Kind (https://kind.sigs.k8s.io/) and runs the new
@@ -72,7 +72,11 @@ captureLogs() {
   kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
 }
 
-k8s_version="1.21"
+k8s_version_string=$($KUBERNETES_CLI version --client -o json|jq -rj '.clientVersion|.gitVersion')
+# Remove the first character from version string e.g. v1.24.0
+k8s_version=${k8s_version_string#?}
+#k8s_version="1.21"
+
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
@@ -127,20 +131,8 @@ versionprop() {
 }
 
 kind_version=$(kind version)
-kind_series="0.11"
+#kind_series="0.18.0"
 case "${kind_version}" in
-  "kind v0.11.1"*)
-    kind_series="0.11.1"
-    ;;
-  "kind v0.12."*)
-    kind_series="0.12.0"
-    ;;
-  "kind v0.13."*)
-    kind_series="0.13.0"
-    ;;
-  "kind v0.14."*)
-    kind_series="0.14.0"
-    ;;
   "kind v0.15."*)
     kind_series="0.15.0"
     ;;
@@ -150,15 +142,25 @@ case "${kind_version}" in
   "kind v0.17."*)
     kind_series="0.17.0"
     ;;
+  "kind v0.18."*)
+    kind_series="0.18.0"
+    ;;
+  *)
+    echo "Unsupported Kind Version [${kind_version}]"
+    exit -1
 esac
 
 kind_image=$(versionprop "${kind_series}" "${k8s_version}")
+echo "Kind Image String [${kind_kind_image}]"
 if [ -z "${kind_image}" ]; then
-  echo "Unsupported Kubernetes version: ${k8s_version}"
+  kv=$(kind version -q)
+  echo "Unsupported Kubernetes/Kind Combination ${k8s_version}/${kv}"
   exit 1
 fi
 
-echo "Using Kubernetes version: ${k8s_version}"
+echo "Using KIND VERSION [${kind_version}]"
+echo "Using KUBERNETES VERSION [${k8s_version}]"
+echo "Using KIND IMAGE [${kind_image}]"
 
 disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
