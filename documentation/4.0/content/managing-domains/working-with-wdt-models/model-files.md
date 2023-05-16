@@ -47,17 +47,17 @@ This sample model file has four sections:
 
 | Section    | Purpose                                                    |
 |------------|------------------------------------------------------------|
-| domainInfo | Describes the domain level information.                     |
-| topology   | Describes the topology of the domain.                        |
-| resources  | Describes the J2EE resources used in the domain.             |
-| appDeployments  | Describes the applications and libraries used in the domain. |
+| `domainInfo` | Describes the domain level information.                     |
+| `topology`   | Describes the topology of the domain.                        |
+| `resources`  | Describes the J2EE resources used in the domain.             |
+| `appDeployments`  | Describes the applications and libraries used in the domain. |
 
 Notice this value pattern: `@@...@@`.  These are macros that will be resolved at runtime by WDT in the operator environment.
 For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
 
 ### Important notes about WDT model files
 
-  - Using model file macros
+  - Using model file macros:
 
     - You can use model macros to reference arbitrary secrets from model files. This is recommended for handling mutable values such as database user names, passwords, and URLs. See [Using secrets in model files](#using-secrets-in-model-files).
 
@@ -69,7 +69,7 @@ For a description of model file macro references to secrets and environment vari
 
     - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
-- You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
+- You can control the order that WDT uses to load your model files, see [WDT artifacts source location and loading order](#wdt-artifacts-source-location-and-loading-order).
 
 ### WDT artifacts source location and loading order
 

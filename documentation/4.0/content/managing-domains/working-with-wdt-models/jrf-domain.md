@@ -21,7 +21,7 @@ JRF-based domain.
 
 ### Sample WDT model for JRF domain
 
-For operator creating a JRF domain, your WDT model must have a `RCUDbInfo` section in `domainInfo`.  This is a sample model 
+For the operator to create a JRF domain, your WDT model must have a `RCUDbInfo` section in `domainInfo`.  This is a sample model 
 snippet of a typical JRF domain
 
 ```yaml

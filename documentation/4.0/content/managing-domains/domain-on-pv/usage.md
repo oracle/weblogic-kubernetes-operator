@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Instructions for using Domain on PV."
 +++
 
-This document describes what you need to do to create and deploy a typical Domain home on persistent volume (Domain on PV).
+This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).
 
 {{< table_of_contents >}}
 
@@ -28,7 +28,7 @@ To use this feature, provide the following information:
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
 - [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries and WDT artifacts reside.
-- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-config-map) - Optional, WDT artifacts.
+- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-configmap) - Optional, WDT artifacts.
 - [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
@@ -36,9 +36,9 @@ To use this feature, provide the following information:
   - See the `initializeDomainOnPV` section
     in the domain resource
     [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md),
-    or use the command `kubectl explain domain.spec.configuration.initializeDomainOnPV` 
+    or use the command `kubectl explain domain.spec.configuration.initializeDomainOnPV`
 
-- For a basic configuration example, see [Configuration example 1](#example-1-basic-configuration).
+- For a basic configuration example, see [Basic configuration](#basic-configuration).
 
 #### WebLogic base image
 
@@ -188,15 +188,15 @@ spec:
 | `persistentVolumeClaim` | Specification of the persistent volume claim if the operator is creating it.                                                                                                                                                          | Specification of the persistent volume claim if you want operator to create it. | N (operator will not create any persistent volume claim) |
 
 
-Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see 
+Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see
 - See the `initializeDomainOnPV.peristentVolume` and `initializeDomainOnPV.peristentVolumeClaim` section
   in the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md), or use the commands 
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md), or use the commands
   ```
    kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolume
    kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolumeClaim
   ```
-  
+
 If the PV and PVC already exist in your environment, you do not need
 to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intializedDomainOnPV` section.
 
@@ -244,16 +244,6 @@ spec:
 | `osss.walletFileSecret`     | Extracted OPSS wallet file.                                                        | Kubernetes secret name with key `walletFile`.                            | N (Only needed when recreating the domain during disaster recovery) |
 
 
-### WebLogic Deploy Tooling models
-
-WDT models are a convenient and simple alternative to WLST
-configuration scripts and templates.
-They compactly define a WebLogic domain using YAML files and support including
-application archives in a ZIP file. The WDT model format is fully described in the open source,
-[WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
-
-See [Working with WDT models in operator]({{< relref "/managing-domains/working-with-wdt-models/model-files.md">}}).
-
 ### Troubleshooting
 
 **Problem**: An error in the introspector job.
@@ -293,20 +283,20 @@ See [Working with WDT models in operator]({{< relref "/managing-domains/working-
 **Problem**: Updated the WDT models but changes are not reflected in the domain.  
 
 This is the expected behavior. The WDT domain models specified in the domain image or ConfigMap
-is a **one time** only operation. They are used only for creating the initial domain. After the domain is created, they do not participate in the lifecycle operations.
+is a **one time only** operation. They are used only for creating the initial domain. After the domain is created, they do not participate in the lifecycle operations.
 You should use the WebLogic console, WLST, or other means to update the domain.  In order to use the updated models to recreate the domain, you must delete the domain home directory and
 also the applications directory for the JRF domain (`applications/<domain uid>` under the parent of the domain home directory) before trying to create the domain again.
 
 If you see any other error, then consult [Debugging]({{< relref "/managing-domains/debugging.md" >}})
 
-### Clean up
+### Cleanup
 
 If you need to delete the domain home and the application directory for a JRF domain, to recover from an error or if there is a need to recreate the domain home, the domain home is
 in the directory specified in `domain.spec.domainHome`, and the application directory for JRF domains (if not specified in your WDT model) is in
 `<parent directory of domain home>/applications/<domain uid>`, you can:
 
-1. If the underlying storage volume is dynamically allocated, delete the PVC with `ReclaimPolcy: delete` and recreate the PVC.
-2. Attach a pod to the shared volume and then access the pod to remove the contents.  There is a sample script,
+1. If the underlying storage volume is dynamically allocated, then delete the PVC with `ReclaimPolcy: delete` and recreate the PVC.
+2. Attach a pod to the shared volume and then access the pod to remove the contents.  See the sample script,
 [Domain on PV helper script](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh).
 3. Delete the domain resource.
 
@@ -314,13 +304,13 @@ in the directory specified in `domain.spec.domainHome`, and the application dire
    $ kubectl -n <namespace> delete -f <domain resource YAML>
    ```
 
-### Configuration examples
+### Configuration example
 
-The following configuration examples illustrate each of the previously described sections.
+The following configuration example illustrates a basic configuration.
 
-#### Example 1: Basic configuration
+#### Basic configuration
 
-This example specifies the required image parameter for the auxiliary image(s); all other fields are at default values.
+This example specifies the required image parameter for the domain creation image(s); all other fields are at default values.
 
 ```
 spec:
@@ -384,5 +374,3 @@ spec:
           opss:
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
-
-

@@ -15,12 +15,12 @@ Domain on PV requires that the domain home exists on a persistent volume. The do
 or automatically by specifying the section, `domain.spec.configuration.initializeDomainOnPV`, in the domain resource YAML file.
 The initial domain topology and resources are described using [WebLogic Deploy Tooling (WDT) models](#weblogic-deploy-tooling-models).
 
-**NOTE**: The `initializeDomainOnPV` section provides a **one-time-only** domain home initialization.
+**NOTE**: The `initializeDomainOnPV` section provides a **one time only** domain home initialization.
 The operator creates the domain when the domain resource is first deployed. After the domain is created,
 this section is ignored. Subsequent domain life cycle updates must be controlled by
 the WebLogic Server Administration Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
 
-The `initializeDomainOnPv` section provides the following functions:
+The `initializeDomainOnPv` section:
 
 - Creates the PersistentVolume (PV) and/or PersistenVolumeClaim (PVC), if needed.
 - Creates the JRF schema, if needed.
@@ -34,7 +34,7 @@ For example, you might use frameworks like Meta Data Service (MDS), Oracle Appli
 These frameworks require a running domain and the lifecycle operations are persisted to the file system. Typically,
 after the initial domain is created, you use tools like Fusion Middleware Control, product-specific WLST functions,
 the WebLogic Server Administration Console, the Service Bus Console, or JDeveloper for lifecycle operations. The changes are managed by
-these tools. However, the data and operations _cannot_ be described using WDT models.
+these tools; the data and operations _cannot_ be described using WDT models.
 
 ### WebLogic Deploy Tooling models
 
@@ -44,7 +44,7 @@ They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
-and [Working with WDT Model files in Operator]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and [Working with WDT Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
