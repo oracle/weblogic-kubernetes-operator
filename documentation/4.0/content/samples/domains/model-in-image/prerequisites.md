@@ -5,7 +5,7 @@ weight: 1
 description: "Follow these prerequisite steps for WLS domain type."
 ---
 
-### Prerequisites 
+### Prerequisites
 
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 
@@ -44,7 +44,7 @@ description: "Follow these prerequisite steps for WLS domain type."
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/* /tmp/sample/wdt-artifacts
    ```
 
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create your images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/sample/wdt-artifacts` directory. Both WDT and WIT are required to create the images.
 
    ```shell
    $ cd /tmp/sample/wdt-artifacts
@@ -83,7 +83,7 @@ description: "Follow these prerequisite steps for WLS domain type."
    has a version of WDT in its `--type wdt --version latest` location, then the
    `cache addInstaller` command would fail.
    For more information about the WIT cache, see the
-   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
+   [WIT Cache](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/) documentation.
 
    These steps will install WIT to the `/tmp/sample/wdt-artifacts/imagetool` directory,
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
@@ -103,7 +103,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
 
    {{% notice note %}}
-   Make sure you stop when you complete the "Prepare for a domain" step and then resume following these instructions.
+   Make sure you **stop** when you complete the "Prepare for a domain" step and then resume following these instructions.
    {{% /notice %}}
 
 1. Set up ingresses that will redirect HTTP from the Traefik port `30305` to the clusters in this sample's WebLogic domains.
@@ -128,7 +128,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
    d. Use your terminal to log in to the container registry: `docker login container-registry.oracle.com`.
 
-   e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the previous licensed images as specified in the tool's command line using the `--fromImage` parameter. 
+   e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the previous licensed images as specified in the tool's command line using the `--fromImage` parameter.
 
    {{% notice warning %}}
    The example base images are General Availability (GA) images that are suitable for demonstration and development purposes _only_ where the environments are not available from the public Internet; they are **not acceptable for production use**. In production, you should always use CPU (patched) images from [OCR]({{< relref "/base-images/ocr-images.md" >}}) or create your images using the [WebLogic Image Tool]({{< relref "/base-images/custom-images#create-a-custom-base-image" >}}) (WIT) with the `--recommendedPatches` option. For more guidance, see [Apply the Latest Patches and Updates](https://www.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/14.1.1.0&id=LOCKD-GUID-2DA84185-46BA-4D7A-80D2-9D577A4E8DE2) in _Securing a Production Environment for Oracle WebLogic Server_.

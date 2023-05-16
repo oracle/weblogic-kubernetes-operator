@@ -9,20 +9,19 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 ### Introduction
 
-This sample demonstrates deploying a Model in Image
-[domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
- with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create
+This sample demonstrates deploying a [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type
+with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create
 your WebLogic domain home prior to deploying your Domain YAML file.
 Instead, Model in Image uses a
 WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
-Furthermore, the Model in Image auxiliary image option allows you to supply your WDT artifacts
+Furthermore, the Model in Image auxiliary image option lets you supply your WDT artifacts
 in a small separate image separate from your WebLogic image.
 
-For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+For more information on Model in Image, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide. For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 
 #### Use cases
 
@@ -119,7 +118,7 @@ For example, if you have permission to put the image in a container registry tha
 
 Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 
-For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+For more information, see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
 
 ### References
 
