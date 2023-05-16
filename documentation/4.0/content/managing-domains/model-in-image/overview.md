@@ -26,11 +26,9 @@ It enables:
  - Updating WDT model files and artifacts at runtime. The WDT artifacts are considered the source of truth and matches the domain configuration at all time.  For example, you can add a data source
    to a running domain. See [Runtime updates](#runtime-updates) for details.
 
-This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
+This feature is supported for standard WLS domains.
 
-For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a 
-domain when a domain is started for the first time, supplying a database password, and obtaining a database 
-wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+For JRF domains, use [Domain on PV]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
 
 ### WebLogic Deploy Tooling models
 

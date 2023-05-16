@@ -6,6 +6,7 @@ pre = "<b> </b>"
 description = "Updating a running Model in Image domain's images and model files."
 +++
 
+
 {{< table_of_contents >}}
 
 ### Overview
@@ -749,8 +750,6 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
    #      /tmp/diffed_model.yaml, and
    #      /tmp/compare_model_stdout
    ```
-
-**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the previous `discoverDomain.sh` commands.
 
 #### Changing a Domain `restartVersion` or `introspectVersion`
 
