@@ -39,7 +39,7 @@ Here are the steps for this use case:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
      - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the sample JSP web-app.");`.
 
-     For additional information about archives, see [Understanding your first archive]({{< relref "/samples/domains/model-in-image/initial#understanding-your-first-archive" >}}) in the Initial use case.
+     For additional information about archives, see [Understand your first archive]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation#understand-your-first-archive" >}}).
 
    - Stage a ZIP file of the WDT archive.
 

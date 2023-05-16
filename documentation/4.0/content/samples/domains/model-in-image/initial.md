@@ -47,10 +47,10 @@ First, create the secrets needed by the domain. You have to create the WebLogic 
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  __NOTE:__ Substitute a password of your choice for MY_WEBLOGIC_ADMIN_PASSWORD. This
+  __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
-  __NOTE:__ Substitute a password of your choice for MY_RUNTIME_PASSWORD. It should
+  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
   be unique and different than the admin password, but this is not required.
 
   ```shell
@@ -86,7 +86,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
-Copy the contents of [the domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
+Copy the contents of the [domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) to view the Domain YAML file.
 
