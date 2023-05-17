@@ -66,6 +66,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
 import static oracle.weblogic.kubernetes.actions.TestActions.installTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.installVoyager;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
+import static oracle.weblogic.kubernetes.actions.TestActions.upgradeTraefikImage;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
@@ -509,6 +510,41 @@ public class LoadBalancerUtils {
             TRAEFIK_RELEASE_NAME, traefikNamespace));
     logger.info("Traefik release {0} status is deployed in namespace {1}",
         TRAEFIK_RELEASE_NAME, traefikNamespace);
+
+    // wait until the Traefik pod is ready.
+    testUntil(
+        assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"),
+        logger,
+        "Traefik to be ready in namespace {0}",
+        traefikNamespace);
+
+    return traefikHelmParams;
+  }
+
+  /** Upgrade Traefik and wait for up to five minutes for the Traefik pod to be ready.
+   *
+   * @param traefikNamespace the namespace in which the Traefik ingress controller is installed
+   * @return the Traefik Helm upgrade parameters
+   */
+  public static HelmParams upgradeAndVerifyTraefik(String traefikNamespace) {
+    LoggingFacade logger = getLogger();
+    // Helm install parameters
+    HelmParams traefikHelmParams = new HelmParams()
+        .releaseName(TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3))
+        .namespace(traefikNamespace)
+        .repoUrl(TRAEFIK_REPO_URL)
+        .repoName(TRAEFIK_REPO_NAME)
+        .chartName(TRAEFIK_CHART_NAME);
+
+    // Traefik chart values to override
+    TraefikParams traefikParams = new TraefikParams()
+        .helmParams(traefikHelmParams);
+
+    // upgrade Traefik with new image infor
+    assertThat(upgradeTraefikImage(traefikParams))
+        .as("Test Traefik upgrade succeeds")
+        .withFailMessage("Traefik upgrade is failed")
+        .isTrue();
 
     // wait until the Traefik pod is ready.
     testUntil(
