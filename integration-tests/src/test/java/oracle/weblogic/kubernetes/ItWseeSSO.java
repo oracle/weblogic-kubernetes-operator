@@ -556,7 +556,7 @@ class ItWseeSSO {
     V1PodSpec podSpec = new V1PodSpec()
         .containers(Arrays.asList(
             new V1Container()
-                .name("weblogic-container")
+                .name("weblogic-server")
                 .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                 .imagePullPolicy(IMAGE_PULL_POLICY)
                 .addCommandItem("sleep")
