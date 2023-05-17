@@ -35,8 +35,6 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.Apache;
-import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.AppBuilder;
 import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Cluster;
@@ -66,8 +64,6 @@ import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
-import oracle.weblogic.kubernetes.actions.impl.Voyager;
-import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.WebLogicRemoteConsole;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -553,17 +549,6 @@ public class TestActions {
   }
 
   /**
-   * Install Voyager ingress controller.
-   *
-   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
-   *               repo name and chart name
-   * @return true on success, false otherwise
-   */
-  public static boolean installVoyager(VoyagerParams params) {
-    return Voyager.install(params);
-  }
-
-  /**
    * Install Traefik ingress controller.
    *
    * @param params the parameters to Helm install command, such as release name, namespace, repo url,
@@ -575,14 +560,14 @@ public class TestActions {
   }
 
   /**
-   * Install Apache ingress controller.
+   * Upgrade Traefik ingress controller.
    *
-   * @param params the parameters to Helm install command, such as release name, namespace, repo url,
-   *               repo name and chart name
+   * @param params the parameters to upgrade command, such as image.repository, image.registry,
+   *               and image.tag
    * @return true on success, false otherwise
    */
-  public static boolean installApache(ApacheParams params) {
-    return Apache.install(params);
+  public static boolean upgradeTraefikImage(TraefikParams params) {
+    return Traefik.upgradeTraefikImage(params);
   }
 
   /**
@@ -593,26 +578,6 @@ public class TestActions {
    */
   public static boolean upgradeNginx(NginxParams params) {
     return Nginx.upgrade(params);
-  }
-
-  /**
-   * Upgrade Voyager release.
-   *
-   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
-   * @return true on success, false otherwise
-   */
-  public static boolean upgradeVoyager(VoyagerParams params) {
-    return Voyager.upgrade(params);
-  }
-
-  /**
-   * Upgrade Apache release.
-   *
-   * @param params the parameters to Helm upgrade command, such as release name and http/https nodeport
-   * @return true on success, false otherwise
-   */
-  public static boolean upgradeApache(ApacheParams params) {
-    return Apache.upgrade(params);
   }
 
   /**
@@ -633,26 +598,6 @@ public class TestActions {
    */
   public static boolean uninstallTraefik(HelmParams params) {
     return Traefik.uninstall(params);
-  }
-
-  /**
-   * Uninstall the Voyager release.
-   *
-   * @param params the parameters to Helm uninstall command, such as release name and namespace
-   * @return true on success, false otherwise
-   */
-  public static boolean uninstallVoyager(HelmParams params) {
-    return Voyager.uninstall(params);
-  }
-
-  /**
-   * Uninstall the Apache release.
-   *
-   * @param params the parameters to Helm uninstall command, such as release name and namespace
-   * @return true on success, false otherwise
-   */
-  public static boolean uninstallApache(HelmParams params) {
-    return Apache.uninstall(params);
   }
 
   /**

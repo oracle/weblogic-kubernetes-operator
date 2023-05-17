@@ -79,7 +79,7 @@ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-ope
 ```
 $ helm install weblogic-operator weblogic-operator/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.4.2 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.6 \
   --set serviceAccount=sample-weblogic-operator-sa \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
@@ -98,7 +98,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.4.2` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `4.0.6` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
 {{% /notice %}}
 
 
@@ -108,15 +108,16 @@ Verify the operator with the following commands; the status will be `Running`.
 $ helm list -A
 ```
 ```
-NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
-sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
+NAME                    NAMESPACE                       REVISION        UPDATED                                 STATUS CHART                    APP VERSION
+weblogic-operator       sample-weblogic-operator-ns     1               2023-05-15 10:31:05.1890341 +0800 CST   deployeweblogic-operator-4.0.6  4.0.6
 ```
 ```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
 ```
 ```
-NAME                                 READY   STATUS    RESTARTS   AGE
-weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
+NAME                                         READY   STATUS    RESTARTS   AGE
+weblogic-operator-54b5c8df46-g4rcm           1/1     Running   0          86s
+weblogic-operator-webhook-6c5885f69f-pd8qw   1/1     Running   0          86s
 ```
 
 {{% notice note %}}
@@ -520,6 +521,7 @@ Successful output will look like:
 
 ```
 domain.weblogic.oracle/sample-domain1 created
+cluster.weblogic.oracle/sample-domain1-cluster-1 created
 ```
 
 Verify the WebLogic Server pods are all running:
@@ -557,15 +559,21 @@ $ kubectl get all -n sample-domain1-ns
 ```
 ```
 NAME                                 READY   STATUS    RESTARTS   AGE
-pod/sample-domain1-admin-server      1/1     Running   0          16m
-pod/sample-domain1-managed-server1   1/1     Running   0          15m
-pod/sample-domain1-managed-server2   1/1     Running   0          15m
+pod/sample-domain1-admin-server      1/1     Running   0          4m30s
+pod/sample-domain1-managed-server1   1/1     Running   0          3m28s
+pod/sample-domain1-managed-server2   1/1     Running   0          3m28s
 
-NAME                                       TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE
-service/sample-domain1-admin-server        ClusterIP   None          <none>        7001/TCP   16m
-service/sample-domain1-cluster-cluster-1   ClusterIP   10.0.188.60   <none>        8001/TCP   15m
-service/sample-domain1-managed-server1     ClusterIP   None          <none>        8001/TCP   15m
-service/sample-domain1-managed-server2     ClusterIP   None          <none>        8001/TCP   15m
+NAME                                              TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
+service/sample-domain1-admin-server               ClusterIP      None           <none>          7001/TCP         4m30s
+service/sample-domain1-cluster-cluster-1          ClusterIP      10.0.246.176   <none>          8001/TCP         3m29s
+service/sample-domain1-managed-server1            ClusterIP      None           <none>          8001/TCP         3m29s
+service/sample-domain1-managed-server2            ClusterIP      None           <none>          8001/TCP         3m29s
+
+NAME                                    AGE
+domain.weblogic.oracle/sample-domain1   6m15s
+
+NAME                                               AGE
+cluster.weblogic.oracle/sample-domain1-cluster-1   6m15s
 ```
 
 It may take you up to 10 minutes to deploy all pods, please wait and make sure everything is ready.
@@ -803,7 +811,8 @@ Access the sample application using the cluster load balancer IP address.
 ## Access the sample application using the cluster load balancer IP (52.191.235.71)
 ```
 ```
-$ curl http://52.191.235.71:8001/myapp_war/index.jsp
+$ CLUSTER_IP=$(kubectl -n sample-domain1-ns get svc sample-domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ curl http://${CLUSTER_IP}:8001/myapp_war/index.jsp
 ```
 ```
 <html><body><pre>
