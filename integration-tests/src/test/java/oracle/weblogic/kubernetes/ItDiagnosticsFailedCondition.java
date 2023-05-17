@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -229,7 +228,6 @@ class ItDiagnosticsFailedCondition {
    * type: Completed, status: false
    * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain status condition with replicas set to more than available in cluster")
   void testReplicasTooHigh() {
