@@ -211,9 +211,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
     result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    if (hasEventData()) {
-      result.add(createStatusInitializationStep());
-    }
+    result.add(createStatusInitializationStep(hasEventData()));
     if (deleting || domainHasDeletionTimestamp()) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
