@@ -169,6 +169,9 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.AVAILA
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.COMPLETED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.KUBERNETES;
+import static oracle.kubernetes.weblogic.domain.model.DomainStatusNoConditionMatcher.hasNoCondition;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -683,6 +686,22 @@ class DomainProcessorTest {
     triggerStatusUpdate();
 
     assertThat(testSupport.getResourceWithName(DOMAIN, UID), hasCondition(COMPLETED).withStatus("True"));
+  }
+
+  @Test
+  void afterServersUpdatedWhenFailedConditionExists_dontUpdateDomainStatus() {
+    domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+    processor.createMakeRightOperation(newInfo).execute();
+    newInfo.setWebLogicCredentialsSecret(createCredentialsSecret());
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    makePodsReady();
+    makePodsHealthy();
+
+    triggerStatusUpdate();
+
+    assertThat(((DomainResource)testSupport.getResourceWithName(DOMAIN, UID)).getStatus(),
+        hasNoCondition(COMPLETED).withStatus("True"));
   }
 
   @Test
@@ -1528,6 +1547,24 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(newInfo).execute();
 
     assertThat(newInfo.getDomain(), hasCondition(COMPLETED).withStatus("False"));
+  }
+
+  @Test
+  void runStatusInitializationStepWithKubernetesFailure_removeFailedCondition() {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(KUBERNETES).withStatus(true));
+    testSupport.addDomainPresenceInfo(newInfo);
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
+
+    assertThat(newInfo.getDomain().getStatus(), hasNoCondition(FAILED).withReason(KUBERNETES));
+  }
+
+  @Test
+  void runStatusInitializationStepWithNonKubernetesFailure_dontRemoveFailedCondition() throws JsonProcessingException {
+    newDomain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID).withStatus(true));
+    testSupport.addDomainPresenceInfo(newInfo);
+    testSupport.runSteps(DomainStatusUpdater.createStatusInitializationStep(false));
+
+    assertThat(newInfo.getDomain(), hasCondition(FAILED).withStatus("True"));
   }
 
   @Test
