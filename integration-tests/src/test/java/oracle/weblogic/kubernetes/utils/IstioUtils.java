@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -34,6 +34,10 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -286,6 +290,18 @@ public class IstioUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         oldPortValue,
         prometheusPort));
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_configmap_reload_image",
+        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME));
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_configmap_reload_tag",
+        PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG));
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_image",
+        PROMETHEUS_IMAGE_NAME));
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        "prometheus_tag",
+        PROMETHEUS_IMAGE_TAG));
     ExecResult result = null;
     StringBuffer deployIstioPrometheus = null;
     deployIstioPrometheus = new StringBuffer(KUBERNETES_CLI + " apply -f ");
