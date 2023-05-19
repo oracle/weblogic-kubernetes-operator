@@ -195,7 +195,7 @@ public class PersistentVolumeUtils {
     assertTrue(success, "PersistentVolume creation failed");
   }
 
-  private static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
+  public static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
     setVolumeSource(pvHostPath,v1pv, "weblogic-domain-storage-class");
   }
 

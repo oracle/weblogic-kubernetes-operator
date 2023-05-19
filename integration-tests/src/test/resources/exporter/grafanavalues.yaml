@@ -24,6 +24,11 @@ admin:
 
 initChownData:
   enabled: false
+  image:
+    repository: busybox_image
+    tag: "busybox_tag"
+    sha: ""
+    pullPolicy: IfNotPresent
   
 securityContext:
   fsGroup: 0
