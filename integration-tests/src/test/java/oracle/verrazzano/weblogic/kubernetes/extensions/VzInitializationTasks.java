@@ -37,6 +37,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -521,7 +522,7 @@ public class VzInitializationTasks implements BeforeAllCallback, ExtensionContex
 
   private Callable<Boolean> pullImageFromBaseRepoAndPushToKind(String image) {
     return (() -> {
-      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
+      String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + BASE_IMAGES_TENANCY.length() + 2);
       return imagePull(image) && imageTag(image, kindRepoImage) && imagePush(kindRepoImage);
     });
   }
