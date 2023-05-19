@@ -174,49 +174,49 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.4.3 to current.
+   * Operator upgrade from 3.4.5 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.3 to current")
+  @DisplayName("Upgrade Operator from 3.4.5 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom343ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom343ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.3", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom345ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom345ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.4.4 to current.
+   * Operator upgrade from 3.4.6 to current.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.4.4 to current")
+  @DisplayName("Upgrade Operator from 3.4.6 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom344ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom344ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.4.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom346ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom346ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.4.6", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.0.3 to current.
+   * Operator upgrade from 4.0.6 to current.
    */
   @Tag("oke-sequential")
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.3 to current")
+  @DisplayName("Upgrade Operator from 4.0.6 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom403ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom403ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.3", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom406ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom406ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.0.6", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.0.4 to current.
+   * Operator upgrade from 4.0.5 to current.
    */
   @Tag("oke-sequential")
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.4 to current")
+  @DisplayName("Upgrade Operator from 4.0.5 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom404ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom404ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom405ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom405ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.0.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
