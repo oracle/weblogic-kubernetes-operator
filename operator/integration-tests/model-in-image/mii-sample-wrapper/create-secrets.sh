@@ -35,7 +35,7 @@ fi
 #
 
 echo "@@ Info: Creating weblogic domain secret"
-$WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
+$WORKDIR/model-in-image/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
   -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
   -l username=weblogic \
   -l password=welcome1
@@ -48,7 +48,7 @@ $WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-credentials \
 #
 
 echo "@@ Info: Creating model runtime encryption secret"
-$WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
+$WORKDIR/model-in-image/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
   -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
   -l password=my_runtime_password
 
@@ -59,13 +59,13 @@ $WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-sec
 
 if [ "$WDT_DOMAIN_TYPE" = "JRF" ]; then
   echo "@@ Info: Creating rcu access secret (referenced by model yaml macros if domain type is JRF)"
-  $WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
+  $WORKDIR/model-in-image/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-rcu-access \
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
     -l rcu_prefix=FMW${CUSTOM_DOMAIN_NAME} \
     -l rcu_schema_password=Oradoc_db1 \
     -l rcu_db_conn_string=oracle-db.${DB_NAMESPACE}.svc.cluster.local:1521/devpdb.k8s
   echo "@@ Info: Creating OPSS wallet password secret (ignored unless domain type is JRF)"
-  $WORKDIR/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
+  $WORKDIR/model-in-image/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-opss-wallet-password-secret \
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
     -l walletPassword=welcome1
 fi
@@ -89,7 +89,7 @@ if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
     dspw=incorrect_password
     dscap=1
   fi
-  $WORKDIR/utils/create-secret.sh $DRY_RUN \
+  $WORKDIR/model-in-image/utils/create-secret.sh $DRY_RUN \
     -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
     -n ${DOMAIN_NAMESPACE} \
     -s ${DOMAIN_UID}-datasource-secret \

@@ -60,6 +60,8 @@ fi
 #mvn clean install -DskipTests -Dcheckstyle.skip
 mvn clean install
 ${WLSIMG_BUILDER:-docker} build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy --build-arg no_proxy=$no_proxy -t "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"  --build-arg VERSION=$OPER_JAR_VERSION --no-cache=true .
+${WLSIMG_BUILDER:-docker} tag "$OPER_IMAGE_NAME:$OPER_IMAGE_TAG" "phx.ocir.io/weblogick8s/$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"
+${WLSIMG_BUILDER:-docker} push "phx.ocir.io/weblogick8s/$OPER_IMAGE_NAME:$OPER_IMAGE_TAG"
 
 save_cksum
 

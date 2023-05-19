@@ -274,7 +274,8 @@ doCommand -c export WORKDIR=$WORKDIR
 doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 doCommand -c mkdir -p \$WORKDIR
-doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
+doCommand -c mkdir -p \$WORKDIR/model-in-image
+doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR/model-in-image
 doCommand -c export OKD=$OKD
 doCommand -c export OKE_CLUSTER=$OKE_CLUSTER
 
@@ -300,7 +301,7 @@ if [ "$DO_DB" = "true" ]; then
 
   echo "@@ Info: Creating db sys secret"
   # password must match the value specified in ./mii-sample-wrapper/create-secrets.sh
-  secCommand="\$WORKDIR/utils/create-secret.sh -s oracle-db-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
+  secCommand="\$WORKDIR/model-in-image/utils/create-secret.sh -s oracle-db-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
   secCommand+=" -l \"password=Oradoc_db1\""
   doCommand "$secCommand" | sed 's/word=\([^"]*\)/word=***/g'
 
@@ -317,7 +318,7 @@ if [ "$DO_RCU" = "true" ]; then
   doCommand -c "echo ====== DB RCU: Creating RCU setup secret"
 
   # sys_password and password must match the values specified in ./mii-sample-wrapper/create-secrets.sh
-  secCommand="\$WORKDIR/utils/create-secret.sh -s oracle-rcu-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
+  secCommand="\$WORKDIR/model-in-image/utils/create-secret.sh -s oracle-rcu-secret -d \$DOMAIN_UID1 -n \$DB_NAMESPACE"
   secCommand+=" -l \"sys_username=sys\""
   secCommand+=" -l \"sys_password=Oradoc_db1\""
   secCommand+=" -l \"password=Oradoc_db1\""
