@@ -1,0 +1,56 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+    RCUDbInfo:
+        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+
+topology:
+    AdminServerName: 'admin-server'
+    Name: '@@ENV:CUSTOM_DOMAIN_NAME@@'
+    Cluster:
+        'cluster-1':
+    Server:
+        'admin-server':
+            ListenPort: 7001
+        'managed-server1-c1':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+        'managed-server2-c1':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+        'managed-server3-c1':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+        'managed-server4-c1':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+           
+appDeployments:
+    Application:
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            ModuleType: ear
+            Target: 'cluster-1'           
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+
