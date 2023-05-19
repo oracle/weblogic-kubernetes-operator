@@ -25,4 +25,3 @@ While these samples may be useful and usable as is, it is intended that you woul
 
 * [Sample Traefik Helm chart](charts/traefik/README.md) for setting up a Traefik load balancer for WebLogic clusters.
 * [Sample Ingress Helm chart](charts/ingress-per-domain/README.md) for setting up a Kubernetes Ingress for each WebLogic cluster using a Traefik or NGINX load balancer.
-* [Sample Apache  Helm chart](charts/apache-webtier/README.md) and [Apache samples using the default or custom configurations](charts/apache-samples/README.md) for setting up a load balancer for WebLogic clusters using the Apache HTTP Server with WebLogic Server Plugins.
