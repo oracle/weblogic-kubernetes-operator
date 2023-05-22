@@ -465,10 +465,10 @@ if [ "$DO_UPDATE1" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand -c "\$WORKDIR/model-in-image/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-in-image/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand -c "${KUBERNETES_CLI:-kubectl} apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
-  doCommand    "\$WORKDIR/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/model-in-image/utils/patch-restart-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then
@@ -514,7 +514,7 @@ if [ "$DO_UPDATE2" = "true" ]; then
   if [ "$OKD" = "false" ]; then
     doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   fi
-  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand -c "\$WORKDIR/model-in-image/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-in-image/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand -c "${KUBERNETES_CLI:-kubectl} -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   waitForDomain 0
@@ -639,10 +639,10 @@ if [ "$DO_UPDATE4" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand -c "\$WORKDIR/model-in-image/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-in-image/model-configmaps/datasource -f \${WORKDIR}/model-in-image/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
-  doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
-  doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/model-in-image/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/model-in-image/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
   waitForDomain Completed
 
   if [ ! "$DRY_RUN" = "true" ]; then

@@ -193,7 +193,7 @@ for phase in initial update1 update2 update3 update4; do
     file_param=''
     for i in ${configmap//,/ }
       do
-       file_param="${file_param}-f ${WORKDIR}/model-configmaps/$i "
+       file_param="${file_param}-f ${WORKDIR}/model-in-image/model-configmaps/$i "
       done
 
     $WORKDIR/model-in-image/utils/create-configmap.sh \
