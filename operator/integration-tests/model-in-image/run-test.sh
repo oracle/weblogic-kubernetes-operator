@@ -275,7 +275,11 @@ doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 doCommand -c mkdir -p \$WORKDIR
 doCommand -c mkdir -p \$WORKDIR/model-in-image
+doCommand -c mkdir -p \$WORKDIR/wdt-artifacts
+doCommand -c mkdir -p \$WORKDIR/ingresses
 doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR/model-in-image
+doCommand -c cp -r \$MIISAMPLEDIR/../wdt-artifacts/* \$WORKDIR/wdt-artifacts
+doCommand -c cp -r \$MIISAMPLEDIR/../ingresses/* \$WORKDIR/ingresses
 doCommand -c export OKD=$OKD
 doCommand -c export OKE_CLUSTER=$OKE_CLUSTER
 
