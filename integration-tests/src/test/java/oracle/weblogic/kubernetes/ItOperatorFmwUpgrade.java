@@ -203,41 +203,41 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.4.3 to current with a FMW Domain.
+   * Operator upgrade from 3.4.5 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.4.3 to current")
-  void testOperatorFmwUpgradeFrom343ToCurrent() {
-    installAndUpgradeOperator("3.4.3", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 3.4.5 to current")
+  void testOperatorFmwUpgradeFrom345ToCurrent() {
+    installAndUpgradeOperator("3.4.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.4.4 to current with a FMW Domain.
+   * Operator upgrade from 3.4.6 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.4.4 to current")
-  void testOperatorFmwUpgradeFrom344ToCurrent() {
-    installAndUpgradeOperator("3.4.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 3.4.6 to current")
+  void testOperatorFmwUpgradeFrom346ToCurrent() {
+    installAndUpgradeOperator("3.4.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.0.3 to current with a FMW Domain.
+   * Operator upgrade from 4.0.5 to current with a FMW Domain.
    */
   @Tag("oke-sequential")
   @Test
-  @DisplayName("Upgrade Operator from 4.0.3 to current")
-  void testOperatorFmwUpgradeFrom403ToCurrent() {
-    installAndUpgradeOperator("4.0.3", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 4.0.5 to current")
+  void testOperatorFmwUpgradeFrom405ToCurrent() {
+    installAndUpgradeOperator("4.0.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 4.0.4 to current with a FMW Domain.
+   * Operator upgrade from 4.0.6 to current with a FMW Domain.
    */
   @Tag("oke-sequential")
   @Test
-  @DisplayName("Upgrade Operator from 4.0.4 to current")
-  void testOperatorFmwUpgradeFrom404ToCurrent() {
-    installAndUpgradeOperator("4.0.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 4.0.6 to current")
+  void testOperatorFmwUpgradeFrom406ToCurrent() {
+    installAndUpgradeOperator("4.0.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(

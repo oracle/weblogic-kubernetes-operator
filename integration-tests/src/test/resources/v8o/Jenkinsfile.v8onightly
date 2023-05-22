@@ -60,8 +60,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
-                   H 2 * * * % MAVEN_PROFILE_NAME=kind-sequential;KUBE_VERSION=1.24.12;KIND_VERSION=0.18.0'''
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=v8o'''
 
 
 pipeline {
@@ -71,7 +70,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-kind-main-nightly' ?
+        parameterizedCron(env.JOB_NAME == 'v8o-kind-main-nightly' ?
         CRON_SETTINGS : '')
     }
 
@@ -100,6 +99,8 @@ pipeline {
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
+        OPERATOR_URL="https://objectstorage.us-phoenix-1.oraclecloud.com/n/stevengreenberginc/b/verrazzano-builds/o/master/operator.yaml"
+        VZ_INSTALL_TIMEOUT="60"        
     }
 
     parameters {
@@ -107,14 +108,22 @@ pipeline {
                description: 'The branch to run the tests on',
                defaultValue: 'main'
         )
+        choice(name: 'BUCKET_NAME',
+                description: 'Verrazzano buildto use.',
+                choices: [
+                        'verrazzano-builds'
+                ]
+        )
+        choice(name: 'VZ_BRANCH',
+                description: 'Verrazzano branch to use.',
+                choices: [
+                        'master'
+                ]
+        )
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests.  Possible values are kind-sequential (the default), kind-parallel and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
-                        'kind-sequential',
-                        'kind-parallel',
-                        'integration-tests',
-                        'toolkits-srg',
-                        'wls-srg'
+                        'v8o'
                 ]
         )
         string(name: 'IT_TEST',
@@ -127,25 +136,13 @@ pipeline {
                    '0.18.0',
                    '0.17.0',
                    '0.16.0',
-                   '0.15.0',
-                   '0.14.0',
-                   '0.13.0',
-                   '0.12.0',
-                   '0.11.1'
+                   '0.15.0'
                ]
         )
         choice(name: 'KUBE_VERSION',
-               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15',
+               description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
-                    '1.26.3',
-                    '1.26',
-                    '1.25.8',
-                    '1.25',
-                    '1.25.3',
-                    '1.25.2',
-                    '1.25.0',
-                    '1.24',
                     '1.24.12',
                     '1.24.7',
                     '1.24.6',
@@ -180,21 +177,9 @@ pipeline {
                description: 'Helm version',
                defaultValue: '3.11.2'
         )
-        choice(name: 'ISTIO_VERSION',
-               description: 'Istio version',
-               choices: [
-                   '1.17.2',
-                   '1.16.1',
-                   '1.13.2',
-                   '1.12.6',
-                   '1.11.1',
-                   '1.10.4',
-                   '1.9.9'
-               ]
-        )
         booleanParam(name: 'PARALLEL_RUN',
-                     description: 'Runs tests in parallel. Default is true, test classes run in parallel.',
-                     defaultValue: true
+                     description: 'Runs tests in parallel. Default is false, test classes run in parallel.',
+                     defaultValue: false
         )
         string(name: 'NUMBER_OF_THREADS',
                description: 'Number of threads to run the classes in parallel, default is 3.',
@@ -436,8 +421,13 @@ containerdConfigPatches:
 nodes:
   - role: control-plane
     image: ${kind_image}
-  - role: worker
-    image: ${kind_image}
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            "service-account-issuer": "kubernetes.default.svc"
+            "service-account-signing-key-file": "/etc/kubernetes/pki/sa.key"
     extraMounts:
       - hostPath: ${pv_root}
         containerPath: ${pv_root}
@@ -445,6 +435,27 @@ EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
+                            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+                            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+                            kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+                            SUBNET=$(docker inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
+                            address_range="${SUBNET%.*}.230-${SUBNET%.*}.250"
+
+                            kubectl apply -f - <<-EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: my-ip-space
+      protocol: layer2
+      addresses:
+      - $address_range
+EOF
+
 
                             for node in $(kind get nodes --name "${kind_name}"); do
                                 kubectl annotate node ${node} tilt.dev/registry=localhost:${registry_port};
@@ -476,6 +487,67 @@ data:
     host: "localhost:${registry_port}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
+                        '''
+                    }
+                }
+
+                stage('Install verrazzano in kind cluster') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            export KUBECONFIG=${kubeconfig_file}
+                            kubectl apply -f ${OPERATOR_URL} || exit 1
+                            kubectl -n verrazzano-install rollout status deployment/verrazzano-platform-operator
+                            kubectl apply -f - <<EOF
+apiVersion: install.verrazzano.io/v1alpha1
+kind: Verrazzano
+metadata:
+  name: admin
+spec:
+  profile: dev
+  defaultVolumeSource:
+    persistentVolumeClaim:
+      claimName: vmi # set storage for the metrics stack
+  components:
+    keycloak:
+      mysql:
+        volumeSource:
+          persistentVolumeClaim:
+            claimName: mysql # set storage for keycloak's MySql instance
+  volumeClaimSpecTemplates:
+    - metadata:
+        name: mysql
+      spec:
+        resources:
+          requests:
+            storage: 2Gi
+    - metadata:
+        name: vmi
+      spec:
+        resources:
+          requests:
+            storage: 2Gi
+EOF
+                           done=1
+                           elapsed_time=0
+                           while [ $done -ne 0 ] && [ $elapsed_time -lt $VZ_INSTALL_TIMEOUT ]                           
+                           do
+                             install_status=$(kubectl wait --timeout=30m --for=condition=InstallComplete verrazzano/admin)
+                             echo $install_status
+                             if echo "$install_status" | grep -q 'condition met'; then
+                               echo "verrazzano installation complete"
+                               echo "It took $elapsed_time minutes to complete verrazzano installation"
+                               done=0
+                             else
+                               elapsed_time=$((elapsed_time + 30))
+                               echo "verrazzano installtion is not complete"
+                             fi
+                             kubectl get all -A
+                             kubectl get events -A --sort-by=.lastTimestamp
+                           done
                         '''
                     }
                 }
@@ -515,10 +587,7 @@ EOF
                                 export KUBECONFIG=${kubeconfig_file}
                                 mkdir -m777 -p "${WORKSPACE}/.mvn"
                                 touch ${WORKSPACE}/.mvn/maven.config
-                                K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
-                                if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
-                                    PARALLEL_RUN='false'
-                                fi
+                                K8S_NODEPORT_HOST=$(kubectl get node kind-control-plane -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
                                 if [ -n "${IT_TEST}" ]; then
                                     echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                     MAVEN_PROFILE_NAME="integration-tests"
@@ -529,7 +598,6 @@ EOF
                                 echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.kind.repo=\"localhost:${registry_port}\""                                     >> ${WORKSPACE}/.mvn/maven.config
-                                echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
@@ -584,9 +652,6 @@ EOF
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 if ! kind export logs "${result_root}/kubelogs" --name "${kind_name}" --verbosity 99; then
                                     echo "Failed to export kind logs for kind cluster ${kind_name}"
-                                fi
-                                if ! docker exec kind-worker journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-worker.out"; then
-                                    echo "Failed to run journalctl for kind worker"
                                 fi
                                 if ! docker exec kind-control-plane journalctl --utc --dmesg --system > "${result_root}/journalctl-kind-control-plane.out"; then
                                     echo "Failed to run journalctl for kind control plane"
