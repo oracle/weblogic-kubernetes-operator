@@ -72,7 +72,7 @@ download_zip() {
       LOCATION=https://github.com/oracle/weblogic-image-tool/releases/latest/download/
     fi
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
-    echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/model-in-image/$ZIPFILE'."
+    echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE'."
 
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
@@ -84,7 +84,7 @@ download_zip() {
     fi
   else
     echo "@@ Info: The location URL does not match regex 'https://github.com.*/latest$' "
-    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/model-in-image/$ZIPFILE' "
+    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE' "
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
       echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"
