@@ -278,6 +278,8 @@ public class LoggingExporter {
         execLoggingExpStatusCheck(opNamespace, esNamespace, labelSelector, "*" + index + "*");
     assertNotNull(statusLine);
 
+    logger.info("=== statusLine return by execLoggingExpStatusCheck: {0}!", statusLine);
+
     String [] parseString = statusLine.split("\\s+");
     assertTrue(parseString.length >= 3, index + " does not exist!");
     String healthStatus = parseString[0];
@@ -469,6 +471,7 @@ public class LoggingExporter {
   private static String execLoggingExpStatusCheck(String opNamespace, String esNamespace,
       String labelSelector, String indexRegex) {
     String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
+    logger.info("=== elasticSearchHost in execLoggingExpStatusCheck: {0}", elasticSearchHost);
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
         .append(elasticSearchHost)
@@ -476,20 +479,25 @@ public class LoggingExporter {
         .append(ELASTICSEARCH_HTTP_PORT)
         .append("/_cat/indices/")
         .append(indexRegex).toString();
-    logger.info("Command to get logging exporter status line {0}", cmd);
+    logger.info("=== Command to get logging exporter status line {0}", cmd);
 
     // get Operator pod name
     String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     assertTrue(operatorPodName != null && !operatorPodName.isEmpty(), "Failed to get Operator pad name");
+    logger.info("=== operatorPodName in execLoggingExpStatusCheck: {0}", operatorPodName);
 
     int i = 0;
     ExecResult statusLine = null;
     while (i < maxIterationsPod) {
+      logger.info("=== cmd to exec execLoggingExpStatusCheck: opNamespace: {0}, operatorPodName: {1}, cmd {2} {3}",
+          opNamespace, operatorPodName, "/bin/sh -c ", cmd);
       statusLine = assertDoesNotThrow(() -> execCommand(opNamespace, operatorPodName, null, true,
               "/bin/sh", "-c", cmd));
       assertNotNull(statusLine, "curl command returns null");
 
-      logger.info("Status {0} for index {1} ", statusLine.stdout(), indexRegex);
+      logger.info("Status.stdout(): ###{0}### for index ***{1}***", statusLine.stdout(), indexRegex);
+      logger.info("Status.stderr(): ###{0}###  for index ***{1}***", statusLine.stderr(), indexRegex);
+      logger.info("Status.toString(): ###{0}### for index ***{1}***", statusLine.toString(), indexRegex);
       if (null != statusLine.stdout() && !statusLine.stdout().isEmpty()) {
         break;
       }
