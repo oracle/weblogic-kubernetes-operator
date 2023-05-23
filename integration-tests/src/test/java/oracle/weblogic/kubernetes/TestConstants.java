@@ -351,8 +351,7 @@ public interface TestConstants {
       getNonEmptySystemProperty("wko.it.istio.version", "1.13.2");
 
   //MySQL database constants
-  public static final String MYSQL_IMAGE = BASE_IMAGES_PREFIX
-      + "/test-images/database/mysql";
+  public static final String MYSQL_IMAGE = BASE_IMAGES_PREFIX + "test-images/database/mysql";
   public static final String MYSQL_VERSION = "8.0.29";
 
   //OKE constants
