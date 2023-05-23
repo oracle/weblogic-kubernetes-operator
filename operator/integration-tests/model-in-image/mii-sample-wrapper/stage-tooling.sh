@@ -4,8 +4,8 @@
 
 #
 # This script downloads the latest version of the WebLogic Deploy Tooling
-# and of the WebLogic Image Tool to WORKDIR/model-in-image/model-images/weblogic-deploy-tooling.zip
-# and WORKDIR/model-in-image/model-images/weblogic-image-tool.zip by default.
+# and of the WebLogic Image Tool to WORKDIR/wdt-artifacts/wdt-model-files/weblogic-deploy-tooling.zip
+# and WORKDIR/wdt-artifacts/wdt-model-files/weblogic-image-tool.zip by default.
 #
 # Optional command line:
 #    -dry    Show, but don't perform, the final download command. (This
@@ -60,7 +60,7 @@ download_zip() {
     return
   fi
 
-  echo "@@ Info: Downloading $ZIPFILE from '$LOCATION' to '$WORKDIR/model-in-image/$ZIPFILE'."
+  echo "@@ Info: Downloading $ZIPFILE from '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE'."
 
   local iurl="$LOCATION"
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
