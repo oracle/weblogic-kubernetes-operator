@@ -99,7 +99,7 @@ dryrun:
 dryrun:set -eux
 dryrun:
 dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
-dryrun:cd $WORKDIR/wdt-artifacts/$ARCHIVE_SOURCEDIR
+dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
 dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
 dryrun:
 dryrun:cd "$WORKDIR"

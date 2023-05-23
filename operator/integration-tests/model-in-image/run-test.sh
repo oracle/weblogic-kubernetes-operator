@@ -566,7 +566,7 @@ if [ "$DO_UPDATE3_IMAGE" = "true" ]; then
   else
     doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
   fi
-  doCommand -c "export ARCHIVE_SOURCEDIR=archives/archive-v2"
+  doCommand -c "export ARCHIVE_SOURCEDIR=wdt-artifacts/archives/archive-v2"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
 fi
 
