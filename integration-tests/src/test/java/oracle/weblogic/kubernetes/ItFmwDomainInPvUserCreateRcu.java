@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,8 +21,11 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -39,23 +44,28 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceSimplifyJrfPv;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.saveAndRestoreOpssWalletfileSecret;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVHostPathDir;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test to create a FMW domain on PV with DomainOnPvSimplification feature when user pre-creates RCU.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
-@Tag("kind-sequential")
 @IntegrationTest
+@Tag("kind-sequential")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;
@@ -90,6 +100,11 @@ public class ItFmwDomainInPvUserCreateRcu {
 
   private final String fmwModelFilePrefix = "model-fmwdomainonpv-rcu-wdt";
   private final String fmwModelFile = fmwModelFilePrefix + ".yaml";
+  private String pvHostPath = null;
+  private Path hostPVPath = null;
+  private static String pvName = null;
+  private static String pvcName = null;
+  private static DomainCreationImage domainCreationImage = null;
 
   /**
    * Assigns unique namespaces for DB, operator and domain.
@@ -117,6 +132,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Assign a unique namespace for FMW domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
+
+    pvName = getUniqueName(domainUid + "-pv-");
+    pvcName = getUniqueName(domainUid + "-pvc-");
 
     DOMAINHOMEPREFIX = "/shared/" + domainNamespace + "/domains/";
     // start DB and create RCU schema
@@ -148,10 +166,10 @@ public class ItFmwDomainInPvUserCreateRcu {
    * Verify EM console is accessible.
    */
   @Test
+  @Order(1)
   @DisplayName("Create a FMW domain on PV when user per-creates RCU")
   void testFmwDomainOnPvUserCreatesRCU() {
-    final String pvName = getUniqueName(domainUid + "-pv-");
-    final String pvcName = getUniqueName(domainUid + "-pvc-");
+
     final int t3ChannelPort = getNextFreePort();
     // create a model property file
     File fmwModelPropFile = createWdtPropertyFile();
@@ -207,17 +225,19 @@ public class ItFmwDomainInPvUserCreateRcu {
             .modelFiles(modelList)
             .modelVariableFiles(modelProList);
     createAndPushAuxiliaryImage(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage1Tag, witParams);
-    DomainCreationImage domainCreationImage =
+    domainCreationImage =
         new DomainCreationImage().image(MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag);
 
     String clusterName = "cluster-1";
+    pvHostPath = getHostPath(pvName, this.getClass().getSimpleName());
 
     // create a domain custom resource configuration object
-    logger.info("Creating domain custom resource");
+    logger.info("Creating domain custom resource with pvName: {0}, hostPath: {1}", pvName, pvHostPath);
     DomainResource domain = createDomainResourceSimplifyJrfPv(
         domainUid, domainNamespace, adminSecretName,
-        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, rcuaccessSecretName,
-        opsswalletpassSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        pvHostPath, rcuaccessSecretName,
+        opsswalletpassSecretName, null,
         pvName, pvcName, Collections.singletonList(domainCreationImage));
 
     // create a domain custom resource and verify domain is created
@@ -225,6 +245,39 @@ public class ItFmwDomainInPvUserCreateRcu {
 
     // verify that all servers are ready and EM console is accessible
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+  }
+
+  /**
+   * Export the OPSS wallet file secret of Fmw domain from the previous run
+   * Use this OPSS wallet file secret to create Fmw domain on PV to connect to the same database
+   * Verify Pod is ready and service exists for both admin server and managed servers.
+   * Verify EM console is accessible.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Create a FMW domain on PV when user provide OPSS wallet file secret")
+  void testFmwDomainOnPvUserProvideOpss() {
+    saveAndRestoreOpssWalletfileSecret(domainNamespace, domainUid, opsswalletfileSecretName);
+    logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid);
+    deleteDomainResource(domainNamespace, domainUid);
+    try {
+      deleteDirectory(hostPVPath.toFile());
+    } catch (IOException ioe) {
+      logger.severe("Failed to cleanup the pv directory " + pvHostPath, ioe);
+    }
+    logger.info("Creating domain custom resource with pvName: {0}, hostPath: {1}", pvName, pvHostPath);
+    DomainResource domain = createDomainResourceSimplifyJrfPv(
+        domainUid, domainNamespace, adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
+        pvHostPath, rcuaccessSecretName,
+        opsswalletpassSecretName, opsswalletfileSecretName,
+        pvName, pvcName, Collections.singletonList(domainCreationImage));
+    // create a domain custom resource and verify domain is created
+    createDomainAndVerify(domain, domainNamespace);
+
+    // verify that all servers are ready and EM console is accessible
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+
   }
 
   private File createWdtPropertyFile() {
@@ -249,5 +302,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     return domainPropertiesFile;
   }
 
+  private String getHostPath(String pvName, String className) {
+    hostPVPath = createPVHostPathDir(pvName, className);
+    return hostPVPath.toString();
+  }
 
 }
