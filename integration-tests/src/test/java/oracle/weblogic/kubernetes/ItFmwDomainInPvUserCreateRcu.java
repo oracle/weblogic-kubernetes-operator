@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,6 @@ import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVHostPathDir;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -75,21 +75,12 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
-  private static final String RCUSYSUSERNAME = "sys";
-  private static final String RCUSYSPASSWORD = "Oradoc_db1";
-  private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
 
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
   private static String DOMAINHOMEPREFIX = null;
   private static final String domainUid = "domainonpv-userrcu";
-  private static final String clusterName = "cluster-1";
-  private static final String adminServerName = "admin-server";
-  private static final String managedServerNameBase = "managed-server";
-  private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-  private static final int managedServerPort = 8001;
   private static final String miiAuxiliaryImage1Tag = "jrf1" + MII_BASIC_IMAGE_TAG;
   private final String adminSecretName = domainUid + "-weblogic-credentials";
   private final String rcuaccessSecretName = domainUid + "-rcu-credentials";
@@ -170,7 +161,6 @@ public class ItFmwDomainInPvUserCreateRcu {
   @DisplayName("Create a FMW domain on PV when user per-creates RCU")
   void testFmwDomainOnPvUserCreatesRCU() {
 
-    final int t3ChannelPort = getNextFreePort();
     // create a model property file
     File fmwModelPropFile = createWdtPropertyFile();
 
@@ -228,15 +218,12 @@ public class ItFmwDomainInPvUserCreateRcu {
     domainCreationImage =
         new DomainCreationImage().image(MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage1Tag);
 
-    String clusterName = "cluster-1";
-    pvHostPath = getHostPath(pvName, this.getClass().getSimpleName());
-
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource with pvName: {0}, hostPath: {1}", pvName, pvHostPath);
     DomainResource domain = createDomainResourceSimplifyJrfPv(
         domainUid, domainNamespace, adminSecretName,
-        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        pvHostPath, rcuaccessSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME,
+        rcuaccessSecretName,
         opsswalletpassSecretName, null,
         pvName, pvcName, Collections.singletonList(domainCreationImage));
 
@@ -261,15 +248,15 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid);
     deleteDomainResource(domainNamespace, domainUid);
     try {
-      deleteDirectory(hostPVPath.toFile());
+      deleteDirectory(Paths.get("/share").toFile());
     } catch (IOException ioe) {
       logger.severe("Failed to cleanup the pv directory " + pvHostPath, ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}, hostPath: {1}", pvName, pvHostPath);
     DomainResource domain = createDomainResourceSimplifyJrfPv(
         domainUid, domainNamespace, adminSecretName,
-        TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName,
-        pvHostPath, rcuaccessSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME,
+        rcuaccessSecretName,
         opsswalletpassSecretName, opsswalletfileSecretName,
         pvName, pvcName, Collections.singletonList(domainCreationImage));
     // create a domain custom resource and verify domain is created
@@ -301,10 +288,5 @@ public class ItFmwDomainInPvUserCreateRcu {
 
     return domainPropertiesFile;
   }
-
-  private String getHostPath(String pvName, String className) {
-    hostPVPath = createPVHostPathDir(pvName, className);
-    return hostPVPath.toString();
-  }
-
+  
 }
