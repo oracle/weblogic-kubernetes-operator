@@ -350,8 +350,6 @@ public class FmwUtils {
    * @param domainNamespace  namespace where the domain exists
    * @param adminSecretName  name of admin secret
    * @param repoSecretName name of repository secret
-   * @param encryptionSecretName name of encryption secret
-   * @param hostPath persistent volume mount path
    * @param rcuAccessSecretName name of RCU access secret
    * @param opssWalletPasswordSecretName name of opss wallet password secret
    * @param opssWalletFileSecretName name of opss wallet file secret
@@ -362,8 +360,7 @@ public class FmwUtils {
    */
   public static DomainResource createDomainResourceSimplifyJrfPv(
       String domainUid, String domainNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, String hostPath,
-      String rcuAccessSecretName, String opssWalletPasswordSecretName,
+      String repoSecretName, String rcuAccessSecretName, String opssWalletPasswordSecretName,
       String opssWalletFileSecretName,
       String pvName, String pvcName,
       List<DomainCreationImage> domainCreationImages) {
@@ -433,7 +430,7 @@ public class FmwUtils {
                         .spec(new PersistentVolumeSpec()
                             .storageClassName("weblogic-domain-storage-class")
                             .hostPath(new V1HostPathVolumeSource()
-                                .path(hostPath))
+                                .path("/share"))
                             .capacity(capacity)))
                     .persistentVolumeClaim(new PersistentVolumeClaim()
                         .metadata(new V1ObjectMeta()
