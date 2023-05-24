@@ -12,20 +12,20 @@
     <title>Initial use case :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684898426" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684968695" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684968695"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684898426"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684898426"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684968695"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684968695"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684898426"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684968695"></script>
 
     
   </div>
@@ -4156,7 +4156,8 @@ then it will also be necessary to use this same password again.</li>
 </div>
 <h4 id="domain-resource">Domain resource</h4>
 <p>Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.</p>
-<p>Copy the following to a file called <code>/tmp/mii-sample/mii-initial.yaml</code> or similar, or use the file <code>/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml</code> that is included in the sample source.</p>
+<p>Copy the following to a file called <code>/tmp/mii-sample/mii-initial.yaml</code> or similar, or use the file <code>/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml</code> that is included in the sample source.
+This file contains both the domain resource and the referenced cluster resource definition.  See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/">Domain and Cluster resources</a>.</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -4207,10 +4208,10 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#imagePullSecrets:</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name: regsecret</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name: regsecret2</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials,</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># the secret must contain &#39;username&#39; and &#39;password&#39; fields.</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>: 
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-weblogic-credentials</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true</span>
@@ -4218,11 +4219,11 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to enable overriding your log file location, see also &#39;logHome&#39;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#logHomeEnabled: false</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#logHome: /shared/logs/sample-domain1</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Set which WebLogic Servers the Operator will start</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;Never&#34; will not start any server in the domain</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;AdminOnly&#34; will start up only the administration server (no managed servers will be started)</span>
@@ -4232,7 +4233,7 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Settings for all server pods in the domain including the introspector job pod</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#   to set the WebLogic domain name</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
@@ -4262,7 +4263,7 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#  channels:</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#  - channelName: default</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#    nodePort: 30701</span>
-</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
 </span></span><span style="display:flex;"><span>
@@ -4288,8 +4289,8 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Optional auxiliary image(s) containing WDT model, archives, and install.</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory</span>
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` </span>
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome`</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome`</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to &#34;None&#34; if you want skip such copies.</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e">#   `image`                - Image location</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e">#   `imagePullPolicy`      - Pull policy, default `IfNotPresent`</span>
@@ -4381,10 +4382,10 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#imagePullSecrets:</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name: regsecret</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#- name: regsecret2</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials,</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># the secret must contain &#39;username&#39; and &#39;password&#39; fields.</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>: 
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">webLogicCredentialsSecret</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-weblogic-credentials</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true</span>
@@ -4392,11 +4393,11 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Whether to enable overriding your log file location, see also &#39;logHome&#39;</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#logHomeEnabled: false</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e">#logHome: /shared/logs/sample-domain1</span>
-</span></span><span style="display:flex;"><span>  
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Set which WebLogic Servers the Operator will start</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;Never&#34; will not start any server in the domain</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># - &#34;AdminOnly&#34; will start up only the administration server (no managed servers will be started)</span>
@@ -4406,7 +4407,7 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># Settings for all server pods in the domain including the introspector job pod</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">serverPod</span>:
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file </span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#75715e">#   to set the WebLogic domain name</span>
 </span></span><span style="display:flex;"><span>    <span style="color:#f92672">env</span>:
 </span></span><span style="display:flex;"><span>    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
@@ -4441,7 +4442,7 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>      <span style="color:#f92672">env</span>:
 </span></span><span style="display:flex;"><span>      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
 </span></span><span style="display:flex;"><span>        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m &#34;</span>
-</span></span><span style="display:flex;"><span>   
+</span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
 </span></span><span style="display:flex;"><span>  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
 </span></span><span style="display:flex;"><span>
@@ -4467,8 +4468,8 @@ then it will also be necessary to use this same password again.</li>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Optional auxiliary image(s) containing WDT model, archives, and install.</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory</span>
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` </span>
-</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` </span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome`</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome`</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e"># to &#34;None&#34; if you want skip such copies.</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e">#   `image`                - Image location</span>
 </span></span><span style="display:flex;"><span>      <span style="color:#75715e">#   `imagePullPolicy`      - Pull policy, default `IfNotPresent`</span>
@@ -4523,7 +4524,7 @@ then it will also be necessary to use this same password again.</li>
     </div>
 </div>
 <p><strong>NOTE</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
-<p>Run the following command to create the domain custom resource:</p>
+<p>Run the following command to create the domain custom resource and the referenced cluster resource:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml
 </span></span></code></pre></div><p><strong>NOTE</strong>: If you are choosing <em>not</em> to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the previous command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
 <p>If you run <code>kubectl get pods -n sample-domain1-ns --watch</code>, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:</p>
@@ -7029,19 +7030,19 @@ For example:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684968695"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684968695"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684898426"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684968695"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

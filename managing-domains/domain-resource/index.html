@@ -12,20 +12,20 @@
     <title>Domain and Cluster resources :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684898426" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684898426" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1684968695" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1684968695" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1684968695"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684898426"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684898426"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1684968695"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1684968695"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684898426"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1684968695"></script>
 
     
   </div>
@@ -3665,7 +3665,13 @@
 <h3 id="overview">Overview</h3>
 <p>Domain resources reference WebLogic domain configuration, a WebLogic install,
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/">images</a>,
-and anything else necessary to run the domain. Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain configuration may optionally be associated with a Cluster resource in addition to a Domain resource. This Cluster resource makes it simpler to scale the number of running member servers using <code>kubectl scale</code>, the Kubernetes built-in Horizontal Pod Autoscaling, or similar tools. These Cluster resources are only active if referenced by a Domain resource.</p>
+and anything else necessary to run the domain. Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain
+configuration may optionally be associated with a Cluster resource in addition to a Domain resource. This Cluster resource makes it
+simpler to scale the number of running member servers using <code>kubectl scale</code>, the Kubernetes built-in Horizontal Pod Autoscaling,
+or similar tools. These Cluster resources are only active if referenced by a Domain resource. <strong>Note:</strong>  This Cluster resource is a new
+custom resource different from the Domain resource. In earlier operator versions, you specified the life cycle attributes of WebLogic clusters
+in the Domain resource cluster section. Beginning with operator 4.0, the Domain resource cluster section references only the name of the Cluster resources;
+all the life cycle attributes are specified in the new Cluster resource objects.</p>
 
 <div class="notices tip" ><p>Many of the samples accompanying the operator project include scripts to generate initial Domain and Cluster resources from a set of simplified inputs; however, these resources are the actual source of truth for how the operator will manage each WebLogic Server domain. You are encouraged to either start with the YAML files generated by the various samples, or create Domain and Cluster resources manually or by using other tools, based on the schema referenced here or in this documentation.</p>
 </div>
@@ -3686,6 +3692,7 @@ you may need to update the operator by running <code>helm upgrade</code> to be a
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-in-image/">Domain home in Image</a>, and <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/">Model in Image</a>.</p>
 <p>After you have written your YAML files, you use them to create your domain artifacts using the <code>kubectl apply -f</code> command.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f domain-resource.yaml
+</span></span><span style="display:flex;"><span>$ kubectl apply -f cluster-resource.yaml
 </span></span></code></pre></div><p>To confirm that the Domain and any Clusters were created, use this command:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get weblogic -n &lt;namespace&gt;
 </span></span></code></pre></div><p>To view all of the attributes of a running domain, including the domain&rsquo;s status, use this command:</p>
@@ -6391,19 +6398,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1684968695"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684898426"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684898426"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1684968695"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1684968695"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684898426"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1684968695"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
