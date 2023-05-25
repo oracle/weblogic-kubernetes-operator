@@ -193,6 +193,13 @@ public class PersistentVolumeUtils {
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
+
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, null),
+          String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
   }
 
   public static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
@@ -286,6 +293,16 @@ public class PersistentVolumeUtils {
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
+
+    // wait for PVC exists
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
+          String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+            pvcName, namespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        namespace);
   }
 
   /**
