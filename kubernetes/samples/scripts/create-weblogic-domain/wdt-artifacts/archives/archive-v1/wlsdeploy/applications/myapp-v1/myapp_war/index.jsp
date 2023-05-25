@@ -17,7 +17,7 @@
     out.println("<html><body><pre>");
     out.println("*****************************************************************");
     out.println();
-    out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");
+    out.println("Hello World! This is version 'v1' of the sample JSP web-app.");
     out.println();
     out.println("Welcome to WebLogic Server '" + srName + "'!");
     out.println();
