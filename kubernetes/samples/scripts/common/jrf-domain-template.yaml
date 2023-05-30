@@ -94,7 +94,7 @@ spec:
   # must describe a cluster that already exists in the WebLogic domain
   # configuration.
   clusters:
-  - name: %DOMAIN_UID%-%CLUSTER_NAME%
+  - name: %DOMAIN_UID%-%LEGAL_DNS_CLUSTER_NAME%
 
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
@@ -104,7 +104,7 @@ spec:
 apiVersion: weblogic.oracle/v1
 kind: Cluster
 metadata:
-  name: %DOMAIN_UID%-%CLUSTER_NAME%
+  name: %DOMAIN_UID%-%LEGAL_DNS_CLUSTER_NAME%
   namespace: %NAMESPACE%
 spec:
   clusterName: %CLUSTER_NAME%
