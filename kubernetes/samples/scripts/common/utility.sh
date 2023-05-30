@@ -167,6 +167,18 @@ toDNS1123Legal() {
 }
 
 #
+# Function to lowercase a value and make it a legal DNS1123 name
+# $1 - value to convert to lowercase
+# $2 - converted retrun value.
+convertToDNS1123Legal() {
+  local name=$1
+  local __result=$2
+  val=$(echo -n $name | tr -c '[:alnum:]._-' '-' | \
+      tr [:upper:] [:lower:] | tr '_' '-' | tr -s "-")
+  eval $__result="'$val'"
+}
+
+#
 # Check the state of a persistent volume.
 # $1 - name of volume
 # $2 - expected state of volume
@@ -431,6 +443,8 @@ createFiles() {
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput} from ${domainPropertiesInput}
 
+    # convert the cluster name to a legal DNS subdomain name.
+    convertToDNS1123Legal "${clusterName}" legalDNS1123ClusterName
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${domainPropertiesOutput}
@@ -442,6 +456,7 @@ createFiles() {
     sed -i -e "s:%MANAGED_SERVER_NAME_BASE%:${managedServerNameBase}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CONFIGURED_MANAGED_SERVER_COUNT%:${configuredManagedServerCount}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%LEGAL_DNS_CLUSTER_NAME%:${legalDNS1123ClusterName}:g" ${domainPropertiesOutput}
     sed -i -e "s:%SSL_ENABLED%:${sslEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
@@ -500,6 +515,8 @@ createFiles() {
     echo Generating ${createJobOutput}
 
     cp ${createJobInput} ${createJobOutput}
+    # convert the cluster name to a legal DNS subdomain name.
+    convertToDNS1123Legal "${clusterName}" legalDNS1123ClusterName
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
     sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
     sed -i -e "s:%WEBLOGIC_IMAGE%:${image}:g" ${createJobOutput}
@@ -523,6 +540,7 @@ createFiles() {
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${createJobOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${createJobOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${createJobOutput}
+    sed -i -e "s:%LEGAL_DNS_CLUSTER_NAME%:${legalDNS1123ClusterName}:g" ${createJobOutput}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${createJobOutput}
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${createJobOutput}
@@ -610,11 +628,14 @@ createFiles() {
       exposeAdminNodePortPrefix="${disabledPrefix}"
     fi
 
+    # convert the cluster name to a legal DNS subdomain name.
+    convertToDNS1123Legal "${clusterName}" legalDNS1123ClusterName
     sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${dcrOutput}
     sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${dcrOutput}
     sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${dcrOutput}
     sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${dcrOutput}
     sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${dcrOutput}
+    sed -i -e "s:%LEGAL_DNS_CLUSTER_NAME%:${legalDNS1123ClusterName}:g" ${dcrOutput}
     sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${dcrOutput}
     # MII settings are used for model-in-image integration testing
     sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${dcrOutput}
@@ -688,12 +709,17 @@ updateModelFile() {
       exposeAdminNodePortPrefix="${disabledPrefix}"
   fi
 
+  # convert the cluster name to a legal DNS subdomain name.
+  convertToDNS1123Legal "${clusterName}" legalDNS1123ClusterName
+  convertToDNS1123Legal "${clusterName2}" legalDNS1123ClusterName2
   sed -i -e "s:%EXPOSE_T3_CHANNEL_PREFIX%:${exposeAdminT3ChannelPrefix}:g" ${modelFile}
   sed -i -e "s:%EXPOSE_ANY_CHANNEL_PREFIX%:${exposeAnyChannelPrefix}:g" ${modelFile}
   sed -i -e "s:%EXPOSE_ADMIN_PORT_PREFIX%:${exposeAdminNodePortPrefix}:g" ${modelFile}
   sed -i -e "s:%ADMIN_NODE_PORT%:${adminNodePort}:g" ${modelFile}
   sed -i -e "s:%CLUSTER_NAME%:${clusterName}:g" ${modelFile}
+  sed -i -e "s:%LEGAL_DNS_CLUSTER_NAME%:${legalDNS1123ClusterName}:g" ${modelFile}
   sed -i -e "s:%CLUSTER_NAME2%:${clusterName2}:g" ${modelFile}
+  sed -i -e "s:%LEGAL_DNS_CLUSTER_NAME2%:${legalDNS1123ClusterName2}:g" ${modelFile}
   sed -i -e "s:%INITIAL_MANAGED_SERVER_REPLICAS%:${initialManagedServerReplicas}:g" ${modelFile}
   # MII settings are used for model-in-image integration testing
   sed -i -e "s:%MII_PREFIX%:${miiPrefix}:g" ${modelFile}
