@@ -185,7 +185,6 @@ class ItTwoDomainsManagedByTwoOperators {
     domain2Uid = domainUids.get(1);
 
     if (KIND_REPO != null) {
-      // The kind clusters can't pull Apache webtier image from OCIR using the image pull secret.
       // Try the following instead:
       //   1. WLSIMG_BUILDER login
       //   2. WLSIMG_BUILDER pull

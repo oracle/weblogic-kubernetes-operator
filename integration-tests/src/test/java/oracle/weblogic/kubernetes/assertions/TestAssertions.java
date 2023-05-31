@@ -21,7 +21,6 @@ import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.ServerStatus;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
-import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.Cluster;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
@@ -40,7 +39,6 @@ import oracle.weblogic.kubernetes.assertions.impl.Pod;
 import oracle.weblogic.kubernetes.assertions.impl.Prometheus;
 import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.Traefik;
-import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -100,16 +98,6 @@ public class TestAssertions {
   }
 
   /**
-   * Check if there are ready Apache pods in the specified namespace.
-   *
-   * @param namespace in which to check if Apache pods are in the ready state
-   * @return true if there are ready Apache pods in the specified namespace , false otherwise
-   */
-  public static Callable<Boolean> isApacheReady(String namespace) {
-    return Apache.isReady(namespace);
-  }
-
-  /**
    * Check traefik controller pod is ready in the specified namespace.
    *
    * @param namespace in which to check for traefik pod readiness
@@ -117,28 +105,6 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isTraefikReady(String namespace) {
     return Traefik.isReady(namespace);
-  }
-
-  /**
-   * Check if Voyager pod is running.
-   *
-   * @param namespace in which to check if Voyager pod is running
-   * @param podName name of Voyager ingress controller pod or ingress resource pod
-   * @return true if Voyager pod is running, false otherwise
-   */
-  public static Callable<Boolean> isVoyagerRunning(String namespace, String podName) {
-    return Voyager.isRunning(namespace, podName);
-  }
-
-  /**
-   * Check if Voyager pods is in the ready state in a given namespace.
-   *
-   * @param namespace in which to check if Voyager pod is in the ready state
-   * @param podName name of Voyager ingress controller pod or ingress resource pod
-   * @return true if Voyager pod is in the ready state, false otherwise
-   */
-  public static Callable<Boolean> isVoyagerReady(String namespace, String podName) {
-    return Voyager.isReady(namespace, podName);
   }
 
   /**

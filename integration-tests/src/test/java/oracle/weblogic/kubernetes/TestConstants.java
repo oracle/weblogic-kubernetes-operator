@@ -199,26 +199,6 @@ public interface TestConstants {
 
   public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
 
-  // Voyager constants
-  public static final String APPSCODE_REPO_URL = "https://charts.appscode.com/stable/";
-  public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
-  public static final String APPSCODE_REPO_NAME = "appscode";
-  public static final String VOYAGER_CHART_NAME = "voyager";
-  public static final String VOYAGER_CHART_VERSION = "12.0.0";
-
-  // Apache constants
-  public static final String APACHE_IMAGE_NAME_DEFAULT = "oracle/apache";
-  public static final String APACHE_IMAGE_TAG_DEFAULT = "12.2.1.4";
-
-  // Get APACHE_IMAGE_NAME/APACHE_IMAGE_TAG from env var, if it is not provided use OCIR default image values
-  public static final String APACHE_IMAGE_NAME = BASE_IMAGES_PREFIX
-      + getNonEmptySystemProperty("wko.it.apache.image.name", APACHE_IMAGE_NAME_DEFAULT);
-  public static final String APACHE_IMAGE_TAG =
-      getNonEmptySystemProperty("wko.it.apache.image.tag", APACHE_IMAGE_TAG_DEFAULT);
-  public static final String APACHE_IMAGE = APACHE_IMAGE_NAME + ":" + APACHE_IMAGE_TAG;
-  public static final String APACHE_RELEASE_NAME = "apache-release" + BUILD_ID;
-  public static final String APACHE_SAMPLE_CHART_DIR = "../kubernetes/samples/charts/apache-webtier";
-
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
