@@ -225,8 +225,7 @@ Completed
 
 To define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory.
 
-The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use value `${AKS_PERS_RESOURCE_GROUP}` as "resourceGroup", `${AKS_PERS_STORAGE_ACCOUNT_NAME}` as "storageAccount",
-`${AKS_PERS_SHARE_NAME}` as "shareName", and the Storage Class name is `azurefile-csi-nfs`.
+The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use the Storage Class name is `azurefile-csi-nfs`.
 
 This sample uses Azure Files Container Storage Interface (CSI) drivers to manage the NFS file share, provisioner is `file.csi.azure.com`, see the [Azure Files CSI drivers documentation](https://docs.microsoft.com/azure/aks/azure-files-csi).
 
@@ -237,14 +236,11 @@ kind: StorageClass
 metadata:
   name: azurefile-csi-nfs
 provisioner: file.csi.azure.com
+allowVolumeExpansion: true
 parameters:
   protocol: nfs
-  resourceGroup: ${AKS_PERS_RESOURCE_GROUP}
-  storageAccount: ${AKS_PERS_STORAGE_ACCOUNT_NAME}
-  shareName: ${AKS_PERS_SHARE_NAME}
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
+mountOptions:
+  - nconnect=4
 EOF
 ```
 
