@@ -90,10 +90,9 @@ fi
   
 echo  TARGET=${TARGET}
 
-if [[ ${DOMAIN_CREATION_IMAGE_TAG} == *"-DCI"* ]]; then
 cat << EOF
 dryrun:#!/bin/bash
-dryrun:# Use this script to build the auxiliary image '$DOMAIN_CREATION_IMAGE_NAME:$DOMAIN_CREATION_IMAGE_TAG'
+dryrun:# Use this script to build the domain creation image '$DOMAIN_CREATION_IMAGE_NAME:$DOMAIN_CREATION_IMAGE_TAG'
 dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
 dryrun:
 dryrun:set -eux
@@ -119,50 +118,6 @@ dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/domain-on-pv/$DOMAIN_CREATION
 dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
 dryrun:             --tag ${DOMAIN_CREATION_IMAGE_NAME}:${DOMAIN_CREATION_IMAGE_TAG}  .
 EOF
-else
-cat << EOF
-dryrun:#!/bin/bash
-dryrun:# Use this script to build image '$DOMAIN_CREATION_IMAGE_NAME:$DOMAIN_CREATION_IMAGE_TAG'
-dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
-dryrun:
-dryrun:set -eux
-dryrun:
-dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
-dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
-dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
-dryrun:
-dryrun:cd $WORKDIR/wdt-artifacts/wdt-model-files
-dryrun:unzip -o imagetool.zip
-dryrun:
-dryrun:mkdir -p $WORKDIR/wdt-artifacts/wdt-model-files/imagetool/cache
-dryrun:export WLSIMG_CACHEDIR=$WORKDIR/wdt-artifacts/wdt-model-files/imagetool/cache
-dryrun:
-dryrun:mkdir -p $WORKDIR/wdt-artifacts/wdt-model-files/imagetool/bld
-dryrun:export WLSIMG_BLDDIR=$WORKDIR/wdt-artifacts/wdt-model-files/imagetool/bld
-dryrun:
-dryrun:$IMGTOOL cache deleteEntry \\
-dryrun:  --key wdt_latest
-dryrun:
-dryrun:$IMGTOOL cache addInstaller \\
-dryrun:  --type wdt \\
-dryrun:  --version latest \\
-dryrun:  --path ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip
-dryrun:
-dryrun:$IMGTOOL update \\
-dryrun:  --tag $DOMAIN_CREATION_IMAGE \\
-dryrun:  --fromImage $BASE_IMAGE \\
-dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
-dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
-dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
-dryrun:  --wdtModelOnly \\
-dryrun:  ${CHOWN_ROOT:+${CHOWN_ROOT}} \\
-dryrun:   --target $TARGET \\
-dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
-dryrun:
-dryrun:echo "@@ Info: Success! Model image '$DOMAIN_CREATION_IMAGE' build complete. Seconds=\$SECONDS."
-
-EOF
-fi
 
 } # end of function output_dryrun()
 

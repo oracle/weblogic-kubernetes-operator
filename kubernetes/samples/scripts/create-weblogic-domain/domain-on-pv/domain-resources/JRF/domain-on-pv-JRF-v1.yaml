@@ -25,8 +25,8 @@ spec:
   # development purposes only where the environments are not available from the public Internet;
   # they are not acceptable for production use. In production, you should always use CPU (patched)
   # images from OCR or create your images using the WebLogic Image Tool.
-  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
-  # documentation for details.
+  # Please refer to the `OCR` and `Manage FMW infrastructure domains` pages in the WebLogic
+  # Kubernetes Operator documentation for details.
   image: "container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -51,7 +51,7 @@ spec:
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
-  #
+
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
@@ -140,7 +140,7 @@ spec:
         cpu: "500m"
         memory: "1280Mi"
 
-    # Volumes and mounts for hosting the domain home on PV and domain's logs. See also 'logHome'.
+    # Volumes and mounts for the domain's pods for hosting the domain home on PV and domain's logs. See also 'logHome'.
     volumes:
     - name: weblogic-domain-storage-volume
       persistentVolumeClaim:
@@ -150,12 +150,17 @@ spec:
       name: weblogic-domain-storage-volume
 
   # The desired behavior for starting the domain's administration server.
-  # adminServer:
+  adminServer:
     # Setup a Kubernetes node port for the administration server default channel
     #adminService:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
+    serverPod:
+      # Optional new or overridden environment variables for the admin pods
+      env:
+      - name: USER_MEM_ARGS
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1

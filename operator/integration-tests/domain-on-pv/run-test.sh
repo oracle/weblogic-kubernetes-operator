@@ -35,7 +35,6 @@ DO_TRAEFIK=false
 DO_CHECK_SAMPLE=false
 DO_INITIAL_IMAGE=false
 DO_INITIAL_MAIN=false
-DO_DCI=${DO_DCI:-false}
 WDT_DOMAIN_TYPE=WLS
 
 usage() {
@@ -63,7 +62,6 @@ usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
-    DO_DCI                 : false (run the tests in auxiliary image mode)
 
     (see test-env.sh for full list)
 
@@ -139,8 +137,7 @@ while [ ! -z "${1:-}" ]; do
     -rcu)            DO_RCU="true" ;;
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
-    -initial-main)   DO_INITIAL_MAIN="true"
-                     DO_DCI="true" ;;
+    -initial-main)   DO_INITIAL_MAIN="true" ;;
     -all)            DO_CHECK_SAMPLE="true" 
                      DO_INITIAL_IMAGE="true" 
                      DO_INITIAL_MAIN="true" 
@@ -320,7 +317,6 @@ fi
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER DEPLOY ======"
-  doCommand "export DO_DCI=$DO_DCI"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
@@ -344,10 +340,7 @@ fi
 if [ "$DO_INITIAL_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-IMAGE ======"
 
-  if [ "$DO_DCI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-DCI"
-  fi
+  doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}"
   doCommand -c "export OKD=${OKD}"
   doCommand    "\$DPVWRAPPERDIR/stage-tooling.sh"
   doCommand    "\$DPVWRAPPERDIR/build-model-image.sh"
@@ -356,10 +349,7 @@ fi
 if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-MAIN ======"
 
-  if [ "$DO_DCI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-DCI"
-  fi
+  doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}"
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/dpv-initial.yaml"
   doCommand -c "export INCLUDE_CONFIGMAP=false"

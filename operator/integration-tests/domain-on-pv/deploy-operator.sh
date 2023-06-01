@@ -67,6 +67,7 @@ helm install $OPER_NAME kubernetes/charts/weblogic-operator \
   --set       serviceAccount=$OPER_SA \
   --set       "domainNamespaces={$DOMAIN_NAMESPACE}" \
   --set       "javaLoggingLevel=INFO" \
+  --set       featureGates=DomainOnPvSimplification=true \
   --wait
 
 

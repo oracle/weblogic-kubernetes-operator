@@ -117,7 +117,7 @@ export IMAGE_PULL_SECRET_NAME=""
 # setup ingress yaml files
 $SCRIPTDIR/stage-and-create-ingresses.sh -dry
 
-for IMAGE_TYPE in WLS WLS-DCI JRF JRF-DCI; do
+for IMAGE_TYPE in WLS JRF; do
 
 export IMAGE_TYPE
 export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}

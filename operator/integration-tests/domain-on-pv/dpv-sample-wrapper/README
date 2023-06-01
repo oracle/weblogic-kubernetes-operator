@@ -63,14 +63,13 @@ IMAGE_PULL_SECRET_NAME ::: Image pull secret name.
   If not set or empty string, defaults the domain resource 
   to a commented out image pull stanza with 'regsecret'
 
-IMAGE_TYPE ::: WDT image type.
-  Defaults to $WDT_DOMAIN_TYPE for a standard WLS domain, 'RestrictedJRF', or 'JRF.
-  For the auxiliary image mode, this is set to $WDT_DOMAIN_TYPE-DCI.
+IMAGE_TYPE ::: Domain creation image type.
+  Defaults to $WDT_DOMAIN_TYPE for a standard WLS domain, or 'JRF'.
   This value is used when selecting the domain resource template, to create the value of
   the DOMAIN_CREATION_IMAGE_TAG environment variable and in generate-sample-doc.sh when setting up
   the domain resource path. See WDT_DOMAIN_TYPE for more info.
 
-DOMAIN_CREATION_IMAGE_TAG ::: Model image tag.
+DOMAIN_CREATION_IMAGE_TAG ::: Domain creation image tag.
   Defaults to 'IMAGE_TYPE-v1'. See IMAGE_TYPE and DOMAIN_CREATION_IMAGE_NAME for more info.
 
 MODEL_DIR ::: Location of staged model files for the model image relative to WORKDIR.

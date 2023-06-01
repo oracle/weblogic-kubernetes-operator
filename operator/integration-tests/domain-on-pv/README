@@ -41,8 +41,6 @@ then keep in mind that these are generated files. To modify them:
 # (1) modify the following as needed:
 #  ./dpv-sample-wrapper/dpv-domain.yaml.template-JRF
 #  ./dpv-sample-wrapper/dpv-domain.yaml.template-WLS
-#  ./dpv-sample-wrapper/dpv-domain.yaml.template-WLS-DCI
-#  ./dpv-sample-wrapper/dpv-domain.yaml.template-JRF-DCI
 #  ./dpv-sample-wrapper/stage-and-create-ingresses.sh
 
 # (2) generate the new git sample source
@@ -54,8 +52,6 @@ rm -fr /tmp/sample   # deletes default output location for the following command
 cp /tmp/sample/ingresses/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/ingresses
 cp /tmp/sample/domain-resources/JRF/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/JRF
 cp /tmp/sample/domain-resources/WLS/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS
-cp /tmp/sample/domain-resources/WLS-DCI/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS-DCI
-cp /tmp/sample/domain-resources/JRF-DCI/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/JRF-DCI
 
 # (4) verify the changes copied over correctly
 rm -fr /tmp/sample
