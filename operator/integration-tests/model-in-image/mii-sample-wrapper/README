@@ -154,4 +154,4 @@ WDT_INSTALL_HOME ::: The location of the WebLogic Deploy Tooling installation.
 
 AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR ::: Source dir for the docker file for the auxiliary image use case.
   Source dir for Dockerfile (relative to WORKDIR) for creating auxiliary image containing model
-  in image files and WDT installation. Defaults to 'dci-docker-file'.
+  in image files and WDT installation. Defaults to 'ai-docker-file'.

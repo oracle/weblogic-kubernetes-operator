@@ -37,7 +37,7 @@
 #      'wlsdeploy' directory.
 #
 #    DOMAIN_CREATION_IMAGE_NAME, DOMAIN_CREATION_IMAGE_TAG:
-#      Defaults to 'domain-on-pv' and 'WDT_DOMAIN_TYPE-v1'.
+#      Defaults to 'wdt-domain-image' and 'WDT_DOMAIN_TYPE-v1'.
 #
 #    WLSIMG_BUILDER
 #      Defaults to 'docker'.
@@ -46,7 +46,6 @@
 #      WORKDIR
 #      DOMAIN_CREATION_IMAGE_BUILD
 #      WDT_DOMAIN_TYPE
-#      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 
 #set -x
 set -eu
@@ -62,8 +61,6 @@ fi
 
 echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 echo @@ Info: MODEL_DIR=${MODEL_DIR}
-echo @@ Info: BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
-echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
 echo @@ Info: DOMAIN_CREATION_IMAGE_NAME=${DOMAIN_CREATION_IMAGE_NAME}
 echo @@ Info: DOMAIN_CREATION_IMAGE_TAG=${DOMAIN_CREATION_IMAGE_TAG}
 echo @@ Info: DOMAIN_CREATION_IMAGE_BUILD=${DOMAIN_CREATION_IMAGE_BUILD}

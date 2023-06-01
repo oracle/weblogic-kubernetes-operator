@@ -100,9 +100,9 @@ export DOMAIN_NAMESPACE=sample-domain1-ns
 export DOMAIN_UID=sample-domain$domain_num
 export ARCHIVE_SOURCEDIR="wdt-artifacts/archives/archive-$archive_version"
 if [ $configmap != "None" ]; then
-  export INCLUDE_MODEL_CONFIGMAP=true
+  export INCLUDE_DOMAIN_CREATION_CONFIGMAP=true
 else
-  export INCLUDE_MODEL_CONFIGMAP=false
+  export INCLUDE_DOMAIN_CREATION_CONFIGMAP=false
 fi
 if [ $corrected_datasource_secret = "true" ]; then
   export CORRECTED_DATASOURCE_SECRET=true
@@ -127,7 +127,7 @@ export MODEL_DIR=wdt-artifacts/wdt-model-files/${DOMAIN_CREATION_IMAGE_TAG}
 # setup image build scripts
 
 if [ -d $WORKDIR/$MODEL_DIR ]; then
-  $SCRIPTDIR/build-model-image.sh -dry \
+  $SCRIPTDIR/build-wdt-domain-image.sh -dry \
     | grep dryrun | sed 's/dryrun://' \
     > $WORKDIR/$MODEL_DIR/build-image.sh
    chmod +x $WORKDIR/$MODEL_DIR/build-image.sh

@@ -68,7 +68,7 @@ usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
-    DO_LEGACY             : false (run the tests in legacy mode)
+    DO_LEGACY             : false (run the tests in legacy single image mode)
 
     (see test-env.sh for full list)
 

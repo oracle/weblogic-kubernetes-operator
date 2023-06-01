@@ -13,7 +13,7 @@
 #   WORKDIR, CUSTOM_DOMAIN_NAME, DOMAIN_UID, DOMAIN_NAMESPACE
 #   DOMAIN_CREATION_IMAGE_NAME, DOMAIN_CREATION_IMAGE_TAG, IMAGE_PULL_SECRET_NAME
 #   WDT_DOMAIN_TYPE
-#   INCLUDE_MODEL_CONFIGMAP
+#   INCLUDE_DOMAIN_CREATION_CONFIGMAP
 #   DOMAIN_RESOURCE_FILENAME, DOMAIN_RESOURCE_TEMPLATE
 #
 
@@ -33,7 +33,7 @@ for var in DOMAIN_UID \
            DOMAIN_IMAGE_PULL_SECRET_NAME \
            DOMAIN_CREATION_IMAGE_NAME \
            DOMAIN_CREATION_IMAGE_TAG \
-           INCLUDE_MODEL_CONFIGMAP \
+           INCLUDE_DOMAIN_CREATION_CONFIGMAP \
            DOMAIN_RESOURCE_FILENAME \
            DOMAIN_RESOURCE_TEMPLATE \
            INTROSPECTOR_DEADLINE_SECONDS \
@@ -83,7 +83,7 @@ do
 done
 
 
-if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
+if [ "${INCLUDE_DOMAIN_CREATION_CONFIGMAP}" = "true" ]; then
   # we're going to deploy and use the model.configuration.configMap, and this
   # configmap depends on the datasource-secret.
   sed -i -e "s;\#\(configMap:\);\1;"           "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"

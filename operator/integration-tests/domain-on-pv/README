@@ -16,10 +16,10 @@ To run the test:
    Usage:
      ./run-test.sh -?
 
-   WLS mode - all 5 tests (initial, update1, update2, update3, update4):
-     ./run-test.sh -precleanup -oper -traefik -all
+   WLS mode - main test:
+     ./run-test.sh -precleanup -oper -traefik -initial-main
 
-   WLS mode 'init' step only:
+   WLS mode - main test with building image:
      ./run-test.sh -precleanup -oper -traefik -initial-image -initial-main
         -or-
      ./run-test.sh -precleanup
@@ -29,7 +29,7 @@ To run the test:
      ./run-test.sh -initial-main
 
    JRF mode:
-     ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -rcu -initial-main
+     ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -initial-main
 
 --------------------
 SAMPLE REGENERATION:
@@ -92,7 +92,7 @@ NOTES:
     to 0 that's fine, the test will dynamically find
     the actual nodeport.
 
-- Do not call '-rcu' if `createIfExists` mode is `domainAndRCU` or the database is already RCU initialized.
+- Call '-rcu' if `createIfExists` mode is other than `domainAndRCU` and the database is not already RCU initialized.
 
 - You can run the test in stages. For example:
   ./run-test.sh -precleanup 

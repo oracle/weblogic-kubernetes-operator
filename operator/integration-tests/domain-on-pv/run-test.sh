@@ -5,7 +5,7 @@
 #
 # This is a stand-alone test for testing the DPV sample.
 #
-# Note! This is called by integration test 'ItDomainOnPVSample.java'.
+# Note! This is called by integration test 'ItWlsSamples.java'.
 #
 # See "usage()" below for usage.
 #
@@ -44,24 +44,24 @@ usage() {
 
   Commonly tuned env vars and their defaults:
 
-    POD_WAIT_TIMEOUT_SECS : 1000 (max wait time for a domain to start)
-    INTROSPECTOR_DEADLINE_SECONDS: 600  (for JRF runs)
-    WORKDIR               : /tmp/\$USER/dpv-sample-work-dir
-    DOMAIN_NAMESPACE      : sample-domain1-ns
+    POD_WAIT_TIMEOUT_SECS           : 1000 (max wait time for a domain to start)
+    INTROSPECTOR_DEADLINE_SECONDS   : 600  (for JRF runs)
+    WORKDIR                         : /tmp/\$USER/dpv-sample-work-dir
+    DOMAIN_NAMESPACE                : sample-domain1-ns
     DOMAIN_CREATION_IMAGE_NAME      : wdt-domain-image
     DOMAIN_CREATION_IMAGE_TAG       : Defaults to JRF-v1, JRF-v2, WLS-v1, or WLS-v2 depending on use-case and domain type.
                             IMPORTANT: If setting this env var, do not run multiple use cases on the same command line,
                             as then all use cases will use the same image.
-    IMAGE_PULL_SECRET_NAME: (not set)
-    DOMAIN_IMAGE_PULL_SECRET_NAME: (not set)
-    DB_NAMESPACE          : default (used by -db and -rcu)
-    DB_IMAGE_PULL_SECRET  : repo secret (used by -db and -rcu)
-    TRAEFIK_NAMESPACE     : traefik-operator-ns (used by -traefik and by tests)
-    TRAEFIK_HTTP_NODEPORT : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
-    TRAEFIK_HTTPS_NODEPORT: 30433 (used by -traefik, can be 0 to dynamically choose)
-    OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
-    BASE_IMAGE_NAME       : Base WebLogic Image
-    BASE_IMAGE_TAG        : Base WebLogic Image Tag
+    IMAGE_PULL_SECRET_NAME          : (not set)
+    DOMAIN_IMAGE_PULL_SECRET_NAME   : (not set)
+    DB_NAMESPACE                    : default (used by -db and -rcu)
+    DB_IMAGE_PULL_SECRET            : repo secret (used by -db and -rcu)
+    TRAEFIK_NAMESPACE               : traefik-operator-ns (used by -traefik and by tests)
+    TRAEFIK_HTTP_NODEPORT           : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
+    TRAEFIK_HTTPS_NODEPORT          : 30433 (used by -traefik, can be 0 to dynamically choose)
+    OPER_NAMESPACE                  : sample-weblogic-operator-ns (used by -oper)
+    BASE_IMAGE_NAME                 : Base WebLogic Image
+    BASE_IMAGE_TAG                  : Base WebLogic Image Tag
 
     (see test-env.sh for full list)
 

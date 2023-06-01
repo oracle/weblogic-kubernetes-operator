@@ -15,7 +15,7 @@
 # Optional environment variables (see README for details):
 #
 #   WORKDIR, DOMAIN_UID, DOMAIN_NAMESPACE, WDT_DOMAIN_TYPE,
-#   DB_NAMESPACE, INCLUDE_MODEL_CONFIGMAP, CORRECTED_DATASOURCE_SECRET,
+#   DB_NAMESPACE, INCLUDE_DOMAIN_CREATION_CONFIGMAP, CORRECTED_DATASOURCE_SECRET,
 #   KUBERNETES_CLI
 
 set -eu
@@ -64,7 +64,7 @@ fi
 # with an '@@SECRET' macro that references this datasource secret.
 #
 
-if [ "${INCLUDE_MODEL_CONFIGMAP}" = "true" ]; then
+if [ "${INCLUDE_DOMAIN_CREATION_CONFIGMAP}" = "true" ]; then
   if [ "${CORRECTED_DATASOURCE_SECRET}" = "true" ]; then
     echo "@@ Info: Creating corrected datasource secret with correct password and updated max-capacity"
     dspw=Oradoc_db1

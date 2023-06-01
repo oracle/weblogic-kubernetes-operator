@@ -13,19 +13,14 @@ MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/m
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 IMAGE_TYPE=${IMAGE_TYPE:-$WDT_DOMAIN_TYPE}
 
-if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
-   && [ ! "$WDT_DOMAIN_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'."
+if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ]; then
+  echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS'."
   exit 1
 fi
 
 if    [ ! "$IMAGE_TYPE" = "WLS-LEGACY" ] \
-   && [ ! "$IMAGE_TYPE" = "WLS" ] \
-   && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF-LEGACY" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF" ]; then
-  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS-LEGACY', 'WLS', 'JRF-LEGACY', 'JRF' or 'RestrictedJRF'."
+   && [ ! "$IMAGE_TYPE" = "WLS" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS-LEGACY', or 'WLS'."
   exit 1
 fi
 
