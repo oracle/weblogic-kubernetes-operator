@@ -225,7 +225,7 @@ Completed
 
 To define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory.
 
-The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use the Storage Class name is `azurefile-csi-nfs`.
+The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`. The Storage Class name is `azurefile-csi-nfs`.
 
 This sample uses Azure Files Container Storage Interface (CSI) drivers to manage the NFS file share, provisioner is `file.csi.azure.com`, see the [Azure Files CSI drivers documentation](https://docs.microsoft.com/azure/aks/azure-files-csi).
 
