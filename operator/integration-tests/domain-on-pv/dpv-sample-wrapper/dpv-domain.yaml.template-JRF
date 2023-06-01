@@ -134,11 +134,11 @@ spec:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
     resources:
       requests:
-        cpu: "250m"
-        memory: "768Mi"
+        cpu: "500m"
+        memory: "1280Mi"
 
     # Volumes and mounts for hosting the domain home on PV and domain's logs. See also 'logHome'.
     volumes:

@@ -1,4 +1,4 @@
-Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+Copyright (c) 2023, Oracle and/or its affiliates.
 Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 Introduction
@@ -126,12 +126,12 @@ WIT_INSTALLER_URL ::: WIT installer URL
 DOMAIN_RESOURCE_TEMPLATE ::: Domain resource template
   Used by './stage-domain-resource.sh' as a template for generating a domain
   resource yaml files in WORKDIR. Relative to SCRIPTDIR. Defaults to 
-  'mii-domain.yaml.template-WDT_DOMAIN_TYPE'
+  'dpv-domain.yaml.template-WDT_DOMAIN_TYPE'
 
 DOMAIN_RESOURCE_FILENAME ::: Domain resource filename
   Used by './stage-domain-resource.sh' as a target for generating a domain
   resource yaml file in WORKDIR. Relative to WORKDIR. Defaults to 
-  'domain-resources/mii-DOMAIN_UID.yaml'
+  'domain-resources/dpv-DOMAIN_UID.yaml'
 
 INTROSPECTOR_DEADLINE_SECONDS ::: Introspector timeout for JRF runs
   Defaults to 300.
@@ -141,17 +141,9 @@ DB_NAMESPACE ::: Namespace for Oracle DB
 ?DB_NODEPORT ::: NodePort for Oracle DB
 
 AUXILIARY_IMAGE_PATH ::: The auxiliary image path
-  The path to copy the model in image files and WDT installation files in the auxiliary image
-  for the auxiliary use case. Defaults to '/auxiliary'.
+  The path to copy the Domain on PV model files and WDT installation files in the domain creation image.
+  Defaults to '/auxiliary'.
 
-WDT_MODEL_HOME ::: The Location of the WebLogic Deploy Tooling model home.
-  Maps to 'domain.spec.configuration.model.modelHome' field of the domain resource.
-  Defaults to '${AUXILIARY_IMAGE_PATH}/models'.
-
-WDT_INSTALL_HOME ::: The location of the WebLogic Deploy Tooling installation.
-  Maps to 'domain.spec.configuration.model.wdtInstallHome' field of the domain resource.
-  Defaults to '${AUXILIARY_IMAGE_PATH}/weblogic-deploy'.
-
-AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR ::: Source dir for the docker file for the auxiliary image use case.
-  Source dir for Dockerfile (relative to WORKDIR) for creating auxiliary image containing model
-  in image files and WDT installation. Defaults to 'dci-docker-file'.
+DOMAIN_CREATION_IMAGE_DOCKER_FILE_SOURCEDIR ::: Source dir for the docker file.
+  Source dir for Dockerfile (relative to WORKDIR) for creating domain creation image containing model
+  files and WDT installation. Defaults to 'dci-docker-file'.

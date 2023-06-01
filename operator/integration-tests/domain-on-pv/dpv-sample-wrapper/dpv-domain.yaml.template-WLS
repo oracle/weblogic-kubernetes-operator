@@ -156,8 +156,7 @@ spec:
   - name: @@DOMAIN_UID@@-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
-  # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic Server pods.
+  # to force a roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
   # Changes to this field cause the operator to repeat its introspection of the

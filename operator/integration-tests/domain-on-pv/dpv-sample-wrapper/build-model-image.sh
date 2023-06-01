@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # 
@@ -115,7 +115,7 @@ dryrun:unzip ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip -d .
 dryrun:rm ./weblogic-deploy/bin/*.cmd
 dryrun:
 dryrun:# see file $WORKDIR/dci-image/${DOMAIN_CREATION_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/domain-on-pv/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
+dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/domain-on-pv/$DOMAIN_CREATION_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
 dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
 dryrun:             --tag ${DOMAIN_CREATION_IMAGE_NAME}:${DOMAIN_CREATION_IMAGE_TAG}  .
 EOF

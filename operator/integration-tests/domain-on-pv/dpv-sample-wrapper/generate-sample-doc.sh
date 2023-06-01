@@ -1,4 +1,4 @@
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -9,11 +9,11 @@
 #   scripts, and files in the DPV sample to generate
 #   the following 'complete sample' in '$GENROOTDIR/sample':
 #
-#      - model image archives (applications)
-#      - model image files (wl config)
-#      - image build scripts for above model image archive/files
+#      - Domain creation image archives (applications)
+#      - Domain creation image files (wl config)
+#      - Domain creation image build scripts for above Domain creation image model and archive/files
 #      - tooling download script
-#      - model configmap creation script/source
+#      - Domain creation configmap creation script/source
 #      - domain resources
 #      - secret creation scripts for above model file, configmap, and domain resource
 #      - traefik ingress yaml
@@ -92,85 +92,84 @@ chmod +x $WORKDIR/wdt-artifacts/wdt-model-files/download-tooling.sh
 # Stage everything else
 #
 
-for phase in initial update1 update2 update3 update4; do
+phase=initial
 
-  phase_setup $phase
+phase_setup $phase
 
-  export DOMAIN_NAMESPACE=sample-domain1-ns
-  export DOMAIN_UID=sample-domain$domain_num
-  export ARCHIVE_SOURCEDIR="wdt-artifacts/archives/archive-$archive_version"
-  if [ $configmap != "None" ]; then
-    export INCLUDE_MODEL_CONFIGMAP=true
-  else
-    export INCLUDE_MODEL_CONFIGMAP=false
-  fi
-  if [ $corrected_datasource_secret = "true" ]; then
-    export CORRECTED_DATASOURCE_SECRET=true
-  else
-    export CORRECTED_DATASOURCE_SECRET=false
-  fi
-  export CUSTOM_DOMAIN_NAME=domain$domain_num
-  export DOMAIN_CREATION_IMAGE_NAME=wdt-domain-image
-  export INTROSPECTOR_DEADLINE_SECONDS=600
-  export IMAGE_PULL_SECRET_NAME=""
+export DOMAIN_NAMESPACE=sample-domain1-ns
+export DOMAIN_UID=sample-domain$domain_num
+export ARCHIVE_SOURCEDIR="wdt-artifacts/archives/archive-$archive_version"
+if [ $configmap != "None" ]; then
+  export INCLUDE_MODEL_CONFIGMAP=true
+else
+  export INCLUDE_MODEL_CONFIGMAP=false
+fi
+if [ $corrected_datasource_secret = "true" ]; then
+  export CORRECTED_DATASOURCE_SECRET=true
+else
+  export CORRECTED_DATASOURCE_SECRET=false
+fi
+export CUSTOM_DOMAIN_NAME=domain$domain_num
+export DOMAIN_CREATION_IMAGE_NAME=wdt-domain-image
+export INTROSPECTOR_DEADLINE_SECONDS=600
+export IMAGE_PULL_SECRET_NAME=""
 
-  # setup ingress yaml files
-  $SCRIPTDIR/stage-and-create-ingresses.sh -dry
+# setup ingress yaml files
+$SCRIPTDIR/stage-and-create-ingresses.sh -dry
 
-  for IMAGE_TYPE in WLS WLS-DCI JRF JRF-DCI; do
+for IMAGE_TYPE in WLS WLS-DCI JRF JRF-DCI; do
 
-  export IMAGE_TYPE
-  export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}
-  export DOMAIN_CREATION_IMAGE_TAG=$IMAGE_TYPE-$image_version
-  export MODEL_DIR=wdt-artifacts/wdt-model-files/${DOMAIN_CREATION_IMAGE_TAG}
+export IMAGE_TYPE
+export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}
+export DOMAIN_CREATION_IMAGE_TAG=$IMAGE_TYPE-$image_version
+export MODEL_DIR=wdt-artifacts/wdt-model-files/${DOMAIN_CREATION_IMAGE_TAG}
 
-  # setup image build scripts
+# setup image build scripts
 
-  if [ -d $WORKDIR/$MODEL_DIR ]; then
-    $SCRIPTDIR/build-model-image.sh -dry \
-      | grep dryrun | sed 's/dryrun://' \
-      > $WORKDIR/$MODEL_DIR/build-image.sh
-     chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
-  fi
-
-  # setup domain resource 
-
-  domain_path=domain-on-pv/domain-resources/$IMAGE_TYPE/domain-on-pv-$DOMAIN_CREATION_IMAGE_TAG
-  if [ "$configmap" != "None" ]; then
-    domain_path=$domain_path-ds
-  fi
-  export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
-  if [ "$setup_domain_resource" = "true" ]; then
-    $SCRIPTDIR/stage-domain-resource.sh
-  fi
-
-  # setup secret script for the domain resource
-
-  $SCRIPTDIR/create-secrets.sh -dry ${KUBERNETES_CLI:-kubectl} \
+if [ -d $WORKDIR/$MODEL_DIR ]; then
+  $SCRIPTDIR/build-model-image.sh -dry \
     | grep dryrun | sed 's/dryrun://' \
-    > $WORKDIR/$domain_path.secrets.sh
-  chmod +x $WORKDIR/$domain_path.secrets.sh
-   
-  # setup script for the configmap
+    > $WORKDIR/$MODEL_DIR/build-image.sh
+   chmod +x $WORKDIR/$MODEL_DIR/build-image.sh
+fi
 
-  if [ "$configmap" != "None" ]; then
-    file_param=''
-    for i in ${configmap//,/ }
-      do
-       file_param="${file_param}-f ${WORKDIR}/domain-on-pv/model-configmaps/$i "
-      done
+# setup domain resource 
 
-    $WORKDIR/domain-on-pv/utils/create-configmap.sh \
-      -c ${DOMAIN_UID}-wdt-config-map \
-      ${file_param} \
-      -d $DOMAIN_UID \
-      -n $DOMAIN_NAMESPACE \
-      -dry ${KUBERNETES_CLI:-kubectl} | grep dryrun | sed 's/dryrun://' \
-      > $WORKDIR/$domain_path.model-configmap.sh
-    chmod +x $WORKDIR/$domain_path.model-configmap.sh
-  fi
+domain_path=domain-on-pv/domain-resources/$IMAGE_TYPE/domain-on-pv-$DOMAIN_CREATION_IMAGE_TAG
+if [ "$configmap" != "None" ]; then
+  domain_path=$domain_path-ds
+fi
+export DOMAIN_RESOURCE_FILENAME=$domain_path.yaml
+if [ "$setup_domain_resource" = "true" ]; then
+  $SCRIPTDIR/stage-domain-resource.sh
+fi
 
-  done
+# setup secret script for the domain resource
+
+$SCRIPTDIR/create-secrets.sh -dry ${KUBERNETES_CLI:-kubectl} \
+  | grep dryrun | sed 's/dryrun://' \
+  > $WORKDIR/$domain_path.secrets.sh
+chmod +x $WORKDIR/$domain_path.secrets.sh
+ 
+# setup script for the configmap
+
+if [ "$configmap" != "None" ]; then
+  file_param=''
+  for i in ${configmap//,/ }
+    do
+     file_param="${file_param}-f ${WORKDIR}/domain-on-pv/model-configmaps/$i "
+    done
+
+  $WORKDIR/domain-on-pv/utils/create-configmap.sh \
+    -c ${DOMAIN_UID}-wdt-config-map \
+    ${file_param} \
+    -d $DOMAIN_UID \
+    -n $DOMAIN_NAMESPACE \
+    -dry ${KUBERNETES_CLI:-kubectl} | grep dryrun | sed 's/dryrun://' \
+    > $WORKDIR/$domain_path.model-configmap.sh
+  chmod +x $WORKDIR/$domain_path.model-configmap.sh
+fi
+
 done
 
 echo "@@"

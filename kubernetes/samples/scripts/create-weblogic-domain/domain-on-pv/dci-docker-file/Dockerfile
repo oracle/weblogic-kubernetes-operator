@@ -1,16 +1,14 @@
-# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-# This is a sample Dockerfile for supplying Model in Image model files
-# and a WDT installation in a small separate auxiliary image
-# image. This is an alternative to supplying the files directly
-# in the domain resource `domain.spec.image` image.
+# This is a sample Dockerfile for supplying Domain on PV model files
+# and a WDT installation in a small domain creation image.
 
 # AUXILIARY_IMAGE_PATH arg:
-#   Parent location for Model in Image model and WDT installation files.
+#   Parent location for Domain on PV model and WDT installation files.
 #   The default is '/auxiliary', which matches the parent directory in the default values for
-#   'domain.spec.configuration.model.auxiliaryImages.sourceModelHome' and
-#   'domain.spec.configuration.model.auxiliaryImages.sourceWDTInstallHome', respectively.
+#   'domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages.sourceModelHome' and
+#   'domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages.sourceWDTInstallHome', respectively.
 #
 
 FROM busybox

@@ -1,11 +1,11 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # This is a stand-alone test for testing the DPV sample.
 #
-# Note! This is called by integration test 'ItMiiSample.java'.
+# Note! This is called by integration test 'ItDomainOnPVSample.java'.
 #
 # See "usage()" below for usage.
 #
@@ -35,12 +35,7 @@ DO_TRAEFIK=false
 DO_CHECK_SAMPLE=false
 DO_INITIAL_IMAGE=false
 DO_INITIAL_MAIN=false
-DO_UPDATE1=false
-DO_UPDATE2=false
-DO_UPDATE3_IMAGE=false
-DO_UPDATE3_MAIN=false
-DO_UPDATE4=false
-DO_AI=${DO_AI:-false}
+DO_DCI=${DO_DCI:-false}
 WDT_DOMAIN_TYPE=WLS
 
 usage() {
@@ -68,7 +63,7 @@ usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
-    DO_AI                 : false (run the tests in auxiliary image mode)
+    DO_DCI                 : false (run the tests in auxiliary image mode)
 
     (see test-env.sh for full list)
 
@@ -145,15 +140,10 @@ while [ ! -z "${1:-}" ]; do
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
     -initial-main)   DO_INITIAL_MAIN="true"
-                     DO_AI="true" ;;
+                     DO_DCI="true" ;;
     -all)            DO_CHECK_SAMPLE="true" 
                      DO_INITIAL_IMAGE="true" 
                      DO_INITIAL_MAIN="true" 
-                     DO_UPDATE1="true" 
-                     DO_UPDATE2="true" 
-                     DO_UPDATE3_IMAGE="true" 
-                     DO_UPDATE3_MAIN="true" 
-                     DO_UPDATE4="true" 
                      ;;  
     -?)              usage; exit 0; ;;
     *)               trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
@@ -330,7 +320,7 @@ fi
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER DEPLOY ======"
-  doCommand "export DO_AI=$DO_AI"
+  doCommand "export DO_DCI=$DO_DCI"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
@@ -354,7 +344,7 @@ fi
 if [ "$DO_INITIAL_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-IMAGE ======"
 
-  if [ "$DO_AI" = "true" ]; then
+  if [ "$DO_DCI" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-DCI"
   fi
@@ -366,7 +356,7 @@ fi
 if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-MAIN ======"
 
-  if [ "$DO_AI" = "true" ]; then
+  if [ "$DO_DCI" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-DCI"
   fi

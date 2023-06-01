@@ -1,9 +1,9 @@
 #!/bin/bash
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
-# This script deploys secrets for the Model in Image sample,
+# This script deploys secrets for the Domain on PV sample,
 # including extra secretes for the JRF domain type or for
 # the datasource config map as needed.
 #
@@ -39,18 +39,6 @@ $WORKDIR/domain-on-pv/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-weblogic-
   -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
   -l username=weblogic \
   -l password=welcome1
-
-#
-# Model runtime encryption secret referenced by domain resource
-# field 'spec.configuration.model.runtimeEncryptionSecret'.
-# This secret can have any password but the password must remain
-# the same throughout the life of a running model domain.
-#
-
-echo "@@ Info: Creating model runtime encryption secret"
-$WORKDIR/domain-on-pv/utils/create-secret.sh $DRY_RUN -s ${DOMAIN_UID}-runtime-encryption-secret \
-  -d $DOMAIN_UID -n $DOMAIN_NAMESPACE \
-  -l password=my_runtime_password
 
 #
 # JRF Domain's RCU secret and wallet password secret. Only needed for JRF

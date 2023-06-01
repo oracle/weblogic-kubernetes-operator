@@ -1,4 +1,4 @@
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This file sets the defaults for the sample wrapper scripts, 
@@ -58,9 +58,7 @@ DOMAIN_CREATION_IMAGE="${DOMAIN_CREATION_IMAGE_NAME}:${DOMAIN_CREATION_IMAGE_TAG
 DOMAIN_CREATION_IMAGE_BUILD=${DOMAIN_CREATION_IMAGE_BUILD:-always}
 MODEL_DIR=${MODEL_DIR:-wdt-artifacts/wdt-model-files/${DOMAIN_CREATION_IMAGE_TAG}}
 AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH:-/auxiliary}
-WDT_MODEL_HOME=${WDT_MODEL_HOME:-${AUXILIARY_IMAGE_PATH}/models}
-WDT_INSTALL_HOME=${WDT_INSTALL_HOME:-${AUXILIARY_IMAGE_PATH}/weblogic-deploy}
-AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR=${AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR:-dci-docker-file}
+DOMAIN_CREATION_IMAGE_DOCKER_FILE_SOURCEDIR=${DOMAIN_CREATION_IMAGE_DOCKER_FILE_SOURCEDIR:-dci-docker-file}
 
 IMAGE_PULL_SECRET_NAME=${IMAGE_PULL_SECRET_NAME:-""}
 DOMAIN_IMAGE_PULL_SECRET_NAME=${DOMAIN_IMAGE_PULL_SECRET_NAME:-""}
