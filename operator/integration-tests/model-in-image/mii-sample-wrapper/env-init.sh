@@ -20,12 +20,12 @@ if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
   exit 1
 fi
 
-if    [ ! "$IMAGE_TYPE" = "WLS" ] \
-   && [ ! "$IMAGE_TYPE" = "WLS-AI" ] \
+if    [ ! "$IMAGE_TYPE" = "WLS-LEGACY" ] \
+   && [ ! "$IMAGE_TYPE" = "WLS" ] \
    && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF-AI" ]; then
-  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-AI', 'JRF', 'JRF-AI' or 'RestrictedJRF'."
+   && [ ! "$IMAGE_TYPE" = "JRF-LEGACY" ] \
+   && [ ! "$IMAGE_TYPE" = "JRF" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS-LEGACY', 'WLS', 'JRF-LEGACY', 'JRF' or 'RestrictedJRF'."
   exit 1
 fi
 
@@ -44,7 +44,7 @@ DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
-if [[ "$WDT_DOMAIN_TYPE" = "WLS" || "$WDT_DOMAIN_TYPE" = "WLS-AI" ]]; then
+if [[ "$WDT_DOMAIN_TYPE" = "WLS-LEGACY" || "$WDT_DOMAIN_TYPE" = "WLS" ]]; then
   defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
 else
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
@@ -54,7 +54,7 @@ BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
-MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
+MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-wdt-domain-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}

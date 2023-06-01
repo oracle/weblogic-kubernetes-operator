@@ -146,14 +146,14 @@ for phase in initial update1 update2 update3 update4; do
     export CORRECTED_DATASOURCE_SECRET=false
   fi
   export CUSTOM_DOMAIN_NAME=domain$domain_num
-  export MODEL_IMAGE_NAME=model-in-image
+  export MODEL_IMAGE_NAME=wdt-domain-image
   export INTROSPECTOR_DEADLINE_SECONDS=600
   export IMAGE_PULL_SECRET_NAME=""
 
   # setup ingress yaml files
   $SCRIPTDIR/stage-and-create-ingresses.sh -dry
 
-  for IMAGE_TYPE in WLS WLS-AI; do
+  for IMAGE_TYPE in WLS-LEGACY WLS; do
 
   export IMAGE_TYPE
   export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}

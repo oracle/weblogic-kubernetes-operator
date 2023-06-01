@@ -65,7 +65,7 @@ IMAGE_PULL_SECRET_NAME ::: Image pull secret name.
 
 IMAGE_TYPE ::: WDT image type.
   Defaults to $WDT_DOMAIN_TYPE for a standard WLS domain, 'RestrictedJRF', or 'JRF.
-  For the auxiliary image mode, this is set to $WDT_DOMAIN_TYPE-AI.
+  For the auxiliary image mode, this is set to $WDT_DOMAIN_TYPE.
   This value is used when selecting the domain resource template, to create the value of
   the MODEL_IMAGE_TAG environment variable and in generate-sample-doc.sh when setting up
   the domain resource path. See WDT_DOMAIN_TYPE for more info.

@@ -42,10 +42,10 @@ If you want to change the ingresses or domain resources in the sample,
 then keep in mind that these are generated files. To modify them:
 
 # (1) modify the following as needed:
-#  ./mii-sample-wrapper/mii-domain.yaml.template-JRF
+#  ./mii-sample-wrapper/mii-domain.yaml.template-JRF-LEGACY
+#  ./mii-sample-wrapper/mii-domain.yaml.template-WLS-LEGACY
 #  ./mii-sample-wrapper/mii-domain.yaml.template-WLS
-#  ./mii-sample-wrapper/mii-domain.yaml.template-WLS-AI
-#  ./mii-sample-wrapper/mii-domain.yaml.template-JRF-AI
+#  ./mii-sample-wrapper/mii-domain.yaml.template-JRF
 #  ./mii-sample-wrapper/stage-and-create-ingresses.sh
 
 # (2) generate the new git sample source
@@ -55,10 +55,10 @@ rm -fr /tmp/mii-sample   # deletes default output location for the following com
 
 # (3) copy over changes in generated files to the git sample source:
 cp /tmp/mii-sample/ingresses/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/ingresses
-cp /tmp/mii-sample/domain-resources/JRF/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/JRF
+cp /tmp/mii-sample/domain-resources/JRF-LEGACY/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/JRF-LEGACY
+cp /tmp/mii-sample/domain-resources/WLS-LEGACY/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-LEGACY
 cp /tmp/mii-sample/domain-resources/WLS/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS
-cp /tmp/mii-sample/domain-resources/WLS-AI/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS-AI
-cp /tmp/mii-sample/domain-resources/JRF-AI/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/JRF-AI
+cp /tmp/mii-sample/domain-resources/JRF/*.yaml ../../../../kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/JRF
 
 # (4) verify the changes copied over correctly
 rm -fr /tmp/mii-sample

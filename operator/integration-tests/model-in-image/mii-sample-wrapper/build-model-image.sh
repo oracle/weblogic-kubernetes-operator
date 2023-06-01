@@ -29,7 +29,7 @@
 #    MODEL_DIR:
 #      Location relative to WORKDIR of the model .zip, .properties,
 #      and .yaml files that will be copied to the model image.  Default is:
-#        'wdt-artifacts/wdt-model-files/model-in-image__$MODEL_IMAGE_TAG'.
+#        'wdt-artifacts/wdt-model-files/wdt-domain-image__$MODEL_IMAGE_TAG'.
 #
 #    ARCHIVE_SOURCEDIR:
 #      Location of archive source for MODEL_DIR/archive.zip relative to WORKDIR
@@ -37,7 +37,7 @@
 #      'wlsdeploy' directory.
 #
 #    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
-#      Defaults to 'model-in-image' and 'WDT_DOMAIN_TYPE-v1'.
+#      Defaults to 'wdt-domain-image' and 'WDT_DOMAIN_TYPE-v1'.
 #
 #    WLSIMG_BUILDER
 #      Defaults to 'docker'.
@@ -90,36 +90,7 @@ fi
   
 echo  TARGET=${TARGET}
 
-if [[ ${MODEL_IMAGE_TAG} == *"-AI"* ]]; then
-cat << EOF
-dryrun:#!/bin/bash
-dryrun:# Use this script to build the auxiliary image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
-dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
-dryrun:
-dryrun:set -eux
-dryrun:
-dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
-dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
-dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
-dryrun:
-dryrun:cd "$WORKDIR"
-dryrun:[ -d "ai-image/${MODEL_IMAGE_TAG}" ] && rm -rf ai-image/${MODEL_IMAGE_TAG}
-dryrun:
-dryrun:mkdir -p $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
-dryrun:cd $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
-dryrun:mkdir ./models
-dryrun:cp $MODEL_YAML_FILES ./models
-dryrun:cp $MODEL_VARIABLE_FILES ./models
-dryrun:cp $WORKDIR/$MODEL_DIR/archive.zip ./models
-dryrun:unzip ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip -d .
-dryrun:rm ./weblogic-deploy/bin/*.cmd
-dryrun:
-dryrun:# see file $WORKDIR/ai-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/model-in-image/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
-dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
-dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
-EOF
-else
+if [[ ${MODEL_IMAGE_TAG} == *"-LEGACY"* ]]; then
 cat << EOF
 dryrun:#!/bin/bash
 dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
@@ -160,7 +131,35 @@ dryrun:   --target $TARGET \\
 dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
 dryrun:
 dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
-
+EOF
+else
+cat << EOF
+dryrun:#!/bin/bash
+dryrun:# Use this script to build the auxiliary image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
+dryrun:
+dryrun:set -eux
+dryrun:
+dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
+dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
+dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
+dryrun:
+dryrun:cd "$WORKDIR"
+dryrun:[ -d "ai-image/${MODEL_IMAGE_TAG}" ] && rm -rf ai-image/${MODEL_IMAGE_TAG}
+dryrun:
+dryrun:mkdir -p $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
+dryrun:cd $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
+dryrun:mkdir ./models
+dryrun:cp $MODEL_YAML_FILES ./models
+dryrun:cp $MODEL_VARIABLE_FILES ./models
+dryrun:cp $WORKDIR/$MODEL_DIR/archive.zip ./models
+dryrun:unzip ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip -d .
+dryrun:rm ./weblogic-deploy/bin/*.cmd
+dryrun:
+dryrun:# see file $WORKDIR/ai-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
+dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/model-in-image/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
+dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
+dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
 fi
 
