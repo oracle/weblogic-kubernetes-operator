@@ -379,6 +379,7 @@ public class ItFmwDomainInPvUserCreateRcu {
 
   }
 
+
   /**
    * User creates RCU, Operate creates PV/PVC and FMW domain with additional WDT config map.
    * Verify Pod is ready and service exists for both admin server and managed servers.
@@ -491,7 +492,6 @@ public class ItFmwDomainInPvUserCreateRcu {
     return new DomainCreationImage().image(MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag);
 
   }
-
 
   private File createWdtPropertyFile(String domainUid, String rcuSchemaPrefix) {
 

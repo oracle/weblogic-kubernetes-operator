@@ -1918,6 +1918,11 @@ abstract class DomainStatusUpdateTestBase {
       }
 
       @Override
+      public MakeRightDomainOperation retryOnFailure() {
+        return null;
+      }
+
+      @Override
       public boolean hasEventData() {
         return false;
       }
@@ -1928,13 +1933,22 @@ abstract class DomainStatusUpdateTestBase {
       }
 
       @Override
+      public boolean isRetryOnFailure() {
+        return false;
+      }
+
+      @Override
       public boolean isExplicitRecheck() {
         return false;
       }
 
       @Override
       public void setInspectionRun() {
+      }
 
+      @Override
+      public EventHelper.EventData getEventData() {
+        return null;
       }
 
       @Override
