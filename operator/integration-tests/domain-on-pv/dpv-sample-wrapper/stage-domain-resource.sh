@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -39,9 +39,7 @@ for var in DOMAIN_UID \
            INTROSPECTOR_DEADLINE_SECONDS \
            BASE_IMAGE_NAME \
            BASE_IMAGE_TAG \
-           AUXILIARY_IMAGE_PATH \
-           WDT_MODEL_HOME \
-           WDT_INSTALL_HOME
+           AUXILIARY_IMAGE_PATH 
 do
   echo "@@ Info: ${var}=${!var}"
 done
@@ -79,9 +77,7 @@ for template_var in WDT_DOMAIN_TYPE \
                     INTROSPECTOR_DEADLINE_SECONDS \
                     BASE_IMAGE_NAME \
                     BASE_IMAGE_TAG \
-                    AUXILIARY_IMAGE_PATH \
-                    WDT_MODEL_HOME \
-                    WDT_INSTALL_HOME
+                    AUXILIARY_IMAGE_PATH 
 do
   sed -i -e "s;@@${template_var}@@;${!template_var};" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 done
