@@ -389,10 +389,10 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       return false;
     } else if (isDeleting(operation)) {
       return true;
-    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)
-        || hasRetriableFailureNonRetryingOperation(operation, liveInfo)) {
+    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
       return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
+    } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)
+        || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());
@@ -414,6 +414,11 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       cachedInfo.setCluster(liveInfo.getCluster());
       return false;
     }
+  }
+  
+  private boolean isExplicitRecheckWithoutRetriableFailure(
+      MakeRightDomainOperation operation, DomainPresenceInfo info) {
+    return operation.isExplicitRecheck() && !hasRetriableFailureNonRetryingOperation(operation, info);
   }
 
   private boolean hasRetriableFailureNonRetryingOperation(MakeRightDomainOperation operation, DomainPresenceInfo info) {
