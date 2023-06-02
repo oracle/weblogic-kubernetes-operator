@@ -16,7 +16,7 @@ The Domain on PV sample uses a WebLogic Deploy Tooling (WDT) model to specify yo
 
 #### Domain on PV domain types (WLS and JRF)
 
-Domain on PV is supported on two types of domains: a standard WLS domain and an Oracle Fusion Middleware Infrastructure, Java Required Files (JRF) domain. This sample demonstrates both WLS and JRF domain types.
+Domain on PV is supported on two types of domains: a standard Oracle WebLogic Server domain and an Oracle Fusion Middleware Infrastructure, Java Required Files (JRF) domain. This sample demonstrates both Oracle WebLogic Server and JRF domain types.
 
 The JRF domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting or importing an OPSS wallet file. JRF domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB.
 
