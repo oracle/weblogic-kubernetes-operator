@@ -424,7 +424,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainWithRetriableFailureButNotRetrying_dontContinueProcessing() {
+  void whenDomainSpecNotChangedWithRetriableFailureButNotRetrying_dontContinueProcessing() {
     originalInfo.setPopulated(true);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
@@ -432,6 +432,17 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
 
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainSpecChangedWithRetriableFailureButNotRetrying_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
 
   @Test
