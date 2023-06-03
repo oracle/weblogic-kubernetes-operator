@@ -71,7 +71,7 @@ For example source locations, see [Configuration example 2](#example-2-source-lo
 If specifying multiple images with model files in their respective `sourceModelHome`
 directories, then model files are merged.
 The operator will merge the model files from multiple images in the same order in which images appear under `model.auxiliaryImages` or `domain.domainCreationImages`.
-Files from later images in the merge overwrite same-named files from earlier images.
+Files from later images take precedence over files from earlier images.
 
 When specifying multiple images, ensure that only one of the images supplies a WDT installation location using
 `sourceWDTInstallHome`.

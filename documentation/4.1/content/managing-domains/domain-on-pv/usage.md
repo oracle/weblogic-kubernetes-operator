@@ -23,13 +23,13 @@ WebLogic domain.
 
 To use this feature, provide the following information:
 
-- [WebLogic base image](#weblogic-base-image) - This is the WebLogic product to be used.
+- [WebLogic base image](#weblogic-base-image) - This is the WebLogic product to be used. For example, WebLogic Server or Fusion Middleware Infrastructure.
 - [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
-- [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries and WDT artifacts reside.
-- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-configmap) - Optional, WDT artifacts.
-- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
+- [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries, WDT model, WDT archive, and WDT variables files reside.
+- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-configmap) - Optional, WDT model, WDT variables files.
+- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain with WebLogic Kubernetes Operator.
 
 
 - For details about each field,
@@ -79,7 +79,7 @@ The image layout follows this directory structure:
 
 ```
 /auxiliary/weblogic-delpoy - Unzipped WebLogic Deploy Tooling release file.
-/auxiliary/models -  All WDT artifacts, such as model YAML files, model properties, model archives.
+/auxiliary/models -  WDT model, WDT archive, and WDT variables files.
 ```
 
 You can create your own image using your familiar method or use the [WebLogic Image Tool (WIT)](https://github.com/oracle/weblogic-image-tool).
@@ -310,7 +310,6 @@ The following configuration example illustrates a basic configuration.
 
 #### Basic configuration
 
-This example specifies the required image parameter for the domain creation image(s); all other fields are at default values.
 
 ```
 spec:
