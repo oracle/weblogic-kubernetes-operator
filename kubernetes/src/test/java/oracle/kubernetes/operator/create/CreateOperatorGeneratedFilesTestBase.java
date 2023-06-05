@@ -262,7 +262,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_MAXSIZE")
-                                                .value("2e+07"))
+                                                .value("20000000"))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_COUNT")

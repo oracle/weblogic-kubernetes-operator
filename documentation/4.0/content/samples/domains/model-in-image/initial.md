@@ -92,7 +92,7 @@ Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operat
 
   **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-  Run the following command to create the domain custom resource:
+  Run the following command to create the domain custom resource and the referenced cluster resource:
 
   ```shell
   $ kubectl apply -f /tmp/sample/mii-initial-domain.yaml
