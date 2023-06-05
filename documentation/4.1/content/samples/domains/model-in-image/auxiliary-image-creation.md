@@ -13,7 +13,7 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 Auxiliary image creation step uses the WebLogic Image Tool to create a Model in Image `auxiliary image`.  This image contains:
 - A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
-- WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
+- WDT model YAML file (model), WDT variable (property), and WDT archive ZIP (archive) files (expected in directory `/auxiliary/models` by default).
 
 ### Auxiliary image creation
 

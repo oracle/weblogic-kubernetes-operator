@@ -43,16 +43,6 @@ weight: 4
     $ kubectl -n sample-domain1-ns delete secret sample-domain1-weblogic-credentials
     ```
 
-#### Remove the domain namespace
-1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace.
-
-    ```shell
-    $ helm upgrade traefik-operator traefik/traefik \
-        --namespace traefik \
-        --reuse-values \
-        --set "kubernetes.namespaces={traefik}"
-    ```
-
 #### Remove the operator
 
 1.	Remove the operator.

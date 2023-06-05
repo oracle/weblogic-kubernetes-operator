@@ -499,4 +499,6 @@ $ kubectl delete PV sample-domain1-weblogic-sample-pv
 
 #### Delete the domain namespace.
 
+```
 $ kubectl delete namespace sample-domain1-ns
+```
