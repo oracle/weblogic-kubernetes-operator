@@ -201,7 +201,7 @@ public class DomainStatusUpdater {
   /**
    * Creates an asynchronous step to initialize the domain status, if needed, to indicate that the operator has
    * seen the domain and is now working on it.
-   * @param hasEventData tue if the make right operation is associated with an event data
+   * @param hasEventData true if the make right operation is associated with an event.
    */
   public static Step createStatusInitializationStep(boolean hasEventData) {
     return new StatusInitializationStep(hasEventData);
@@ -603,7 +603,7 @@ public class DomainStatusUpdater {
   }
 
   public static class StatusInitializationStep extends DomainStatusUpdaterStep {
-    private boolean hasEventData;
+    private final boolean hasEventData;
 
     StatusInitializationStep(boolean hasEventData) {
       super();

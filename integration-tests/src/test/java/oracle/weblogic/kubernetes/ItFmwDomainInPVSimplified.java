@@ -98,7 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to create a FMW domain in persistent volume with new simplified feature")
 @IntegrationTest
-@Tag("kind-sequential")
+@Tag("kind-parallel")
 class ItFmwDomainInPVSimplified {
 
   private static String domainNamespace = null;

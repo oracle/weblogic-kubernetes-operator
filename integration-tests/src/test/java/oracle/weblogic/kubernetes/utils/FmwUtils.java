@@ -363,7 +363,8 @@ public class FmwUtils {
       String repoSecretName, String rcuAccessSecretName, String opssWalletPasswordSecretName,
       String opssWalletFileSecretName,
       String pvName, String pvcName,
-      List<DomainCreationImage> domainCreationImages) {
+      List<DomainCreationImage> domainCreationImages,
+      String domainCreationConfigMap) {
 
     Map<String, Quantity> capacity = new HashMap<>();
     capacity.put("storage", Quantity.fromString("10Gi"));
@@ -444,6 +445,7 @@ public class FmwUtils {
                         .createMode(CreateIfNotExists.DOMAIN)
                         .domainType(DomainOnPVType.JRF)
                         .domainCreationImages(domainCreationImages)
+                        .domainCreationConfigMap(domainCreationConfigMap)
                         .opss(new Opss()
                             .walletPasswordSecret(opssWalletPasswordSecretName)
                             .walletFileSecret(opssWalletFileSecretName))
