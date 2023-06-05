@@ -23,13 +23,13 @@ WebLogic domain.
 
 To use this feature, provide the following information:
 
-- [WebLogic base image](#weblogic-base-image) - This is the WebLogic product to be used. For example, WebLogic Server or Fusion Middleware Infrastructure.
+- [WebLogic base image](#weblogic-base-image) - This is the Fusion Middleware Software to be used. For example, WebLogic Server or Fusion Middleware Infrastructure.
 - [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
 - [Domain WDT models](#domain-creation-models) - This is where the WDT binaries, WDT model, WDT archive, and WDT variables files reside.
 - [Optional WDT models ConfigMap](#optional-wdt-models-configmap) - Optional, WDT model, WDT variables files.
-- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain with WebLogic Kubernetes Operator.
+- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
 
 
 - For details about each field,
