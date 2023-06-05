@@ -10,6 +10,7 @@ import oracle.kubernetes.operator.helpers.EventHelper;
  * Defines the operation to log a ClusterCreated/Changed/Deleted event.
  */
 public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPresenceInfo> {
+
   /**
    * Set the event data that is associated with this operation.
    *
@@ -26,11 +27,4 @@ public interface MakeRightClusterOperation extends MakeRightOperation<ClusterPre
   MakeRightClusterOperation interrupt();
 
   MakeRightClusterOperation withExplicitRecheck();
-
-  /**
-   * Get the event data associated with this make-right operation.
-   *
-   * @return the event data.
-   */
-  EventHelper.EventData getEventData();
 }

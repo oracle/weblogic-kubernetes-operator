@@ -44,7 +44,16 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
    */
   MakeRightDomainOperation interrupt();
 
+  /**
+   * Modifies the factory to indicate that this is a retry operation on a retriable failure.
+   +
+   + @return the updated factory
+   */
+  MakeRightDomainOperation retryOnFailure();
+
   boolean isDeleting();
+
+  boolean isRetryOnFailure();
 
   void setInspectionRun();
 
@@ -99,5 +108,4 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
   static Optional<MakeRightDomainOperation> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getValue(MAKE_RIGHT_DOMAIN_OPERATION));
   }
-
 }

@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +37,7 @@ import oracle.weblogic.domain.PersistentVolumeClaim;
 import oracle.weblogic.domain.PersistentVolumeClaimSpec;
 import oracle.weblogic.domain.PersistentVolumeSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
@@ -44,7 +47,9 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUT
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.YAML_MAX_FILE_SIZE_PROPERTY;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -58,6 +63,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Common utility methods for FMW Domain.
  */
 public class FmwUtils {
+
+  private static LoggingFacade logger = null;
 
   /**
    * Construct a domain object with the given parameters that can be used to create a domain resource.
@@ -343,9 +350,9 @@ public class FmwUtils {
    * @param domainNamespace  namespace where the domain exists
    * @param adminSecretName  name of admin secret
    * @param repoSecretName name of repository secret
-   * @param encryptionSecretName name of encryption secret
    * @param rcuAccessSecretName name of RCU access secret
    * @param opssWalletPasswordSecretName name of opss wallet password secret
+   * @param opssWalletFileSecretName name of opss wallet file secret
    * @param domainCreationImages list of domainCreationImage
    * @param pvName name of persistent volume
    * @param pvcName name of persistent volume claim
@@ -353,8 +360,9 @@ public class FmwUtils {
    */
   public static DomainResource createDomainResourceSimplifyJrfPv(
       String domainUid, String domainNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, String pvName, String pvcName,
+      String repoSecretName, String rcuAccessSecretName, String opssWalletPasswordSecretName,
+      String opssWalletFileSecretName,
+      String pvName, String pvcName,
       List<DomainCreationImage> domainCreationImages) {
 
     Map<String, Quantity> capacity = new HashMap<>();
@@ -437,10 +445,49 @@ public class FmwUtils {
                         .domainType(DomainOnPVType.JRF)
                         .domainCreationImages(domainCreationImages)
                         .opss(new Opss()
-                            .walletPasswordSecret(opssWalletPasswordSecretName))
+                            .walletPasswordSecret(opssWalletPasswordSecretName)
+                            .walletFileSecret(opssWalletFileSecretName))
+
                         )))));
 
     return domain;
+  }
+
+  /**
+   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file.
+   * @param namespace namespace where JRF domain exists
+   * @param domainUid unique domain Uid
+   * @param walletfileSecretName name of wallet file secret
+   */
+  public static void saveAndRestoreOpssWalletfileSecret(String namespace, String domainUid,
+       String walletfileSecretName) {
+
+    logger = getLogger();
+    Path saveAndRestoreOpssPath =
+         Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
+    String script = saveAndRestoreOpssPath.toString();
+    logger.info("Script for saveAndRestoreOpss is {0)", script);
+
+    //save opss wallet file
+    String command1 = script + " -d " + domainUid + " -n " + namespace + " -s";
+    logger.info("Save wallet file command: {0}", command1);
+    assertTrue(() -> Command.withParams(
+        defaultCommandParams()
+            .command(command1)
+            .saveResults(true)
+            .redirect(true))
+        .execute());
+
+    //restore opss wallet password secret
+    String command2 = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
+    logger.info("Restore wallet file command: {0}", command2);
+    assertTrue(() -> Command.withParams(
+          defaultCommandParams()
+            .command(command2)
+            .saveResults(true)
+            .redirect(true))
+        .execute());
+
   }
 
 }

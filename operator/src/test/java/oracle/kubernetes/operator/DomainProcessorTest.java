@@ -414,13 +414,68 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainChangedSpecWithDeletedEventData_dontGenerateDomainChangedEvent() {
+  void whenDomainChangedSpecWithForDeletion_dontGenerateDomainChangedEvent() {
     processor.registerDomainPresenceInfo(originalInfo);
 
-    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_DELETED)).execute();
+    processor.createMakeRightOperation(newInfo).forDeletion().execute();
 
     assertThat(testSupport, not(hasEvent(DOMAIN_CHANGED.getReason())));
     assertThat(testSupport, hasEvent(DOMAIN_DELETED.getReason()));
+  }
+
+  @Test
+  void whenDomainSpecNotChangedWithRetriableFailureButNotRetrying_dontContinueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainSpecChangedWithRetriableFailureButNotRetrying_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithRetriableFailureButForDeletion_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithNonRetriableFailureButForDeletion_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithRetriableFailureAndRetryOnFailure_continueProcess() {
+    originalInfo.setPopulated(false);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().retryOnFailure().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
 
   @Test
