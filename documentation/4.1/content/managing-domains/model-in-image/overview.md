@@ -23,7 +23,7 @@ It enables:
  - Optionally, supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models.
    For example, a secret can be used to supply a database credential.
- - Updating WDT model files and artifacts at runtime. The WDT artifacts are considered the source of truth and matches the domain configuration at all time.  For example, you can add a data source
+ - Updating WDT model files and artifacts at runtime. The WDT models are considered the source of truth and matches the domain configuration at all time.  For example, you can add a data source
    to a running domain. See [Runtime updates](#runtime-updates) for details.
 
 This feature is supported for standard WLS domains.
@@ -47,7 +47,7 @@ The WDT model format is fully described in the open source,
 When you deploy a Model in Image domain resource YAML file:
 
   - The operator will run a Kubernetes Job called the 'introspector job' that:
-    - Merges your WDT artifacts.
+    - Merges your WDT models.
     - Runs WDT tooling to generate a domain home.
     - Packages the domain home and passes it to the operator.
 

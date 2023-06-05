@@ -41,11 +41,11 @@ When using the operator to start WebLogic Server instances from a domain, you ha
  - **[Domain on PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}})**:
    - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `PersistentVolume`.
    - Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home in a persistent volume.
-   - Optionally supply domain resource `domain.spec.configuration.initialDomainOnPV` section to provide information for the Operator to create the initial domain home.
+   - Optionally supply the domain resource `domain.spec.configuration.initialDomainOnPV` section to provide information for the Operator to create the initial domain home.
    - Supply WebLogic applications in the persistent volume.
-   - Update the WebLogic configuration using WLST, or WebLogic Server Administration Console.
+   - Update the WebLogic configuration using WLST, or the WebLogic Server Administration Console.
    - Optionally use [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}})
-     supplied in a Kubernetes ConfigMap.  Use this only if WLST, or WebLogic Server Administration Console does not fit your deployment strategy.
+     supplied in a Kubernetes ConfigMap.  Use this only if WLST, or the WebLogic Server Administration Console does not fit your deployment strategy.
 
 Note that you can use different domain home types for different domains; there's no restriction on having domains with different domain home types in the same Kubernetes cluster or namespace.
 

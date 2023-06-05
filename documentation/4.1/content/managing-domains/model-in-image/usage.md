@@ -68,7 +68,7 @@ to:
   must be supplied in the model home because application archives
   are not supported in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
 
-There are multiple methods for supplying Model in Image WDT artifacts:
+There are multiple methods for supplying Model in Image WDT models files, WDT variable files, and WDT archives files:
 
   - Use auxiliary images:
     Use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
@@ -87,7 +87,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
 
     Use either of the following methods.
 
-    - _Manual image creation_ uses Docker commands to layer the WDT artifacts, described in the previous table,
+    - _Manual image creation_ uses Docker commands to layer the WDT models files, WDT variable files, and WDT archives files, described in the previous table,
       on top of your base image into a new image.
     - The _WebLogic Image Tool_ (WIT) has built-in options for layering WDT model files,
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.

@@ -27,8 +27,8 @@ To use this feature, provide the following information:
 - [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
 - [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
-- [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries, WDT model, WDT archive, and WDT variables files reside.
-- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-configmap) - Optional, WDT model, WDT variables files.
+- [Domain WDT models](#domain-creation-models) - This is where the WDT binaries, WDT model, WDT archive, and WDT variables files reside.
+- [Optional WDT models ConfigMap](#optional-wdt-models-configmap) - Optional, WDT model, WDT variables files.
 - [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain with WebLogic Kubernetes Operator.
 
 
@@ -42,7 +42,7 @@ To use this feature, provide the following information:
 
 #### WebLogic base image
 
-Because the domain will be created on a persistent volume, the base image should contain only the WebLogic product binary and JDK.  
+Because the domain will be created on a persistent volume, the base image should contain only the FMW product binary and the JDK.  
 
 ```
 spec:
@@ -52,7 +52,7 @@ spec:
 You can specify your own image, use a patched image from `container-registry.oracle.com`, or create and patch an image using the
 [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
 
-#### Domain creation WDT artifacts
+#### Domain creation WDT models
 
 Specify an image that describes the domain topology, resources, and applications in the domain resource YAML file.
 
@@ -66,10 +66,10 @@ Specify an image that describes the domain topology, resources, and applications
 |---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
 | `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
 
-In this image or images, you must provide the required WDT [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
-and also the WDT artifacts.  The operator will use the tool and the WDT artifacts to create the initial domain.  
+In this image or images, you must provide the required WDT installer [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
+and also the WDT model files, WDT variable files, and WDT archives files.  The operator will use them to create the initial domain.  
 
-For additional options in `domainCreationImages`, use the follow command to obtain the details.
+For additional options in `domainCreationImages`, use the following command to obtain the details.
 
 ```
 kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages
@@ -78,7 +78,7 @@ kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCrea
 The image layout follows this directory structure:
 
 ```
-/auxiliary/weblogic-delpoy - Unzipped WebLogic Deploy Tooling release file.
+/auxiliary/weblogic-deploy - Extracted WebLogic Deploy Tooling installer file.
 /auxiliary/models -  WDT model, WDT archive, and WDT variables files.
 ```
 
@@ -95,9 +95,9 @@ $ imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
    --tag myrepo/domain-images:v1   
 ```
 
-#### Optional WDT artifacts ConfigMap
+#### Optional WDT models ConfigMap
 
-Optionally, you can provide a Kubernetes ConfigMap with additional WDT artifacts as supplements or overrides to
+Optionally, you can provide a Kubernetes ConfigMap with additional WDT models and WDT variable files as supplements or overrides to
 those in `domainCreationImages`.
 
 ```
@@ -108,9 +108,9 @@ those in `domainCreationImages`.
           domainCreationConfigMap: mymodel-domain-configmap
 ```
 
-| Field                     | Notes                                | Values                             | Required |
-|---------------------------|--------------------------------------|------------------------------------|----------|
-| `domainCreationConfigMap`      | Optional WDT artifacts in ConfigMap. | ConfigMap name. | N        |
+| Field                     | Notes                                                 | Values                             | Required |
+|---------------------------|-------------------------------------------------------|------------------------------------|----------|
+| `domainCreationConfigMap`      | Optional WDT models and WDT varaible files in ConfigMap. | ConfigMap name. | N        |
 
 The files inside this ConfigMap must have file extensions, `.yaml`, `.properties`, or `.zip`.
 
