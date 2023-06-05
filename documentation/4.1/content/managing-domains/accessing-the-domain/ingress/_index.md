@@ -70,7 +70,7 @@ Information about how to install and configure these ingress controllers to load
  - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/nginx/README.md)
 
  {{% notice note %}}
- For production environments, we recommend NGINX, Traefik (2.2.1 or later) ingress controllers or the load balancer provided by your cloud provider.
+ For production environments, we recommend NGINX, Traefik (2.2.1 or later) ingress controllers, and Apache webtier or the load balancer provided by your cloud provider.
  {{% /notice %}}
 
 Samples are also provided for the Traefik ingress controller, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination: [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/samples).
