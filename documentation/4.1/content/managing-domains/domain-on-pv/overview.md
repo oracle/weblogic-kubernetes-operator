@@ -40,7 +40,7 @@ these tools; the data and operations _cannot_ be described using WDT models.
 
 WDT models are a convenient and simple alternative to WLST
 configuration scripts and templates.
-They compactly define a WebLogic domain using model files, variable properties files, and application archives files. 
+They compactly define a WebLogic domain using model files, variable property files, and application archive files. 
 For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
