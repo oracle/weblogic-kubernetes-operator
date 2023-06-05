@@ -10,7 +10,7 @@ weight: 2
 
 In this use case, you set up an initial WebLogic domain. This involves:
 
-  - Creating an auxiliary image with:
+  - Using the [auxiliary image](#auxiliary-image) that you previously created, it contains:
     - A WDT archive ZIP file that contains your applications.
     - A WDT model that describes your WebLogic configuration.
     - A WDT installation that contains the binaries for running WDT.
@@ -31,7 +31,7 @@ The sample uses an `auxiliary image` with the name `wdt-domain-image:WLS-v1` tha
 
 ### Deploy resources - Introduction
 
-In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
+In this section, you will deploy the domain resource with the new auxliliary image to namespace `sample-domain1-ns`, including the following steps:
 
   - Create a Secret containing your WebLogic administrator user name and password.
   - Create a Secret containing your Model in Image runtime encryption password:

@@ -124,7 +124,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 ```
 {{% /expand %}}
 
-The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`; you will update this to `v2` in a later use case that demonstrates upgrading the application.
+The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`.
 
 #### Stage a ZIP file of the archive
 
@@ -316,7 +316,7 @@ Run the following commands to create the image and verify that it worked:
 
 If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
 
-This command runs the WebLogic Image Tool to create the image and does the following:
+This command runs the WebLogic Image Tool to create the domain creation image and does the following:
 
   - Builds the final container image as a layer on a small `busybox` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.

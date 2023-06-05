@@ -11,14 +11,14 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 This sample demonstrates deploying a [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type
 with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create
+Model in Image eliminates the need to pre-create
 your WebLogic domain home prior to deploying your Domain YAML file.
 Instead, Model in Image uses a
 WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
-WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using model files, variable properties files, and application archives files. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
-Furthermore, the Model in Image auxiliary image option lets you supply your WDT artifacts
+Furthermore, the Model in Image auxiliary image option lets you supply your WDT model files
 in a small separate image separate from your WebLogic image.
 
 For more information on Model in Image, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide. For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
@@ -29,7 +29,7 @@ This sample demonstrates five Model in Image use cases:
 
 - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
 
-   - Auxiliary image `model-in-image:WLS-AI-v1` with:
+   - Auxiliary image `wdt-domain-image:WLS-v1` with:
      - A WebLogic Deploy Tooling (WDT) installation
      - A WDT archive with version `v1` of an exploded Java EE web application
      - A WDT model with:
@@ -67,11 +67,11 @@ This sample demonstrates five Model in Image use cases:
 
 - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated auxiliary image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change. Updates:
 
-  - Auxiliary image `model-in-image:WLS-AI-v2`, similar to `model-in-image:WLS-AI-v1` image with:
+  - Auxiliary image `wdt-domain-image:WLS-v2`, similar to `wdt-domain-image:WLS-v1` image with:
     - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
     - An updated model that points to the new web application path
   - Domain:
-    - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-AI-v2`
+    - Same as the Update 1 use case, except `spec.image` is `wdt-domain-image:WLS-v2`
 
 - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll). Updates:
 
