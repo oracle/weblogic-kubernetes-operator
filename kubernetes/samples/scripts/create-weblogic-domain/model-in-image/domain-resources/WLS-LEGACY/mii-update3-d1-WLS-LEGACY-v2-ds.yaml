@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -6,10 +6,10 @@
 apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
-  name: @@DOMAIN_UID@@
-  namespace: @@DOMAIN_NAMESPACE@@
+  name: sample-domain1
+  namespace: sample-domain1-ns
   labels:
-    weblogic.domainUID: @@DOMAIN_UID@@
+    weblogic.domainUID: sample-domain1
 
 spec:
   # Set to 'FromModel' to indicate 'Model in Image'.
@@ -17,30 +17,22 @@ spec:
 
   # The WebLogic Domain Home, this must be a location within
   # the image for 'Model in Image' domains.
-  domainHome: /u01/domains/@@DOMAIN_UID@@
+  domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
-  # **NOTE**:
-  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
-  # development purposes only where the environments are not available from the public Internet;
-  # they are not acceptable for production use. In production, you should always use CPU (patched)
-  # images from OCR or create your images using the WebLogic Image Tool.
-  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
-  # documentation for details.
-  image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
+  image: "wdt-domain-image:WLS-LEGACY-v2"
 
   # Defaults to "Always" if image tag (version) is ':latest'
-  imagePullPolicy: @@IMAGE_PULL_POLICY@@
+  imagePullPolicy: IfNotPresent
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: @@DOMAIN_IMAGE_PULL_SECRET_NAME@@
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
+  #- name: regsecret
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
   webLogicCredentialsSecret: 
-    name: @@DOMAIN_UID@@-weblogic-credentials
+    name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
   includeServerOutInPodLog: true
@@ -50,7 +42,7 @@ spec:
   
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
-  #logHome: /shared/logs/@@DOMAIN_UID@@
+  #logHome: /shared/logs/sample-domain1
   
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
@@ -65,7 +57,7 @@ spec:
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
-      value: "@@CUSTOM_DOMAIN_NAME@@"
+      value: "domain1"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
@@ -79,7 +71,7 @@ spec:
     #volumes:
     #- name: weblogic-domain-storage-volume
     #  persistentVolumeClaim:
-    #    claimName: @@DOMAIN_UID@@-weblogic-sample-pvc
+    #    claimName: sample-domain1-weblogic-sample-pvc
     #volumeMounts:
     #- mountPath: /shared
     #  name: weblogic-domain-storage-volume
@@ -97,7 +89,7 @@ spec:
 
   # The name of each Cluster resource
   clusters:
-  - name: @@DOMAIN_UID@@-cluster-1
+  - name: sample-domain1-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
@@ -115,43 +107,28 @@ spec:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: WLS
 
-      # Optional auxiliary image(s) containing WDT model, archives, and install.
-      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
-      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
-      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
-      # to "None" if you want skip such copies.
-      #   `image`                - Image location
-      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
-      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
-      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
-      auxiliaryImages:
-      - image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
-        #imagePullPolicy: IfNotPresent
-        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
-        #sourceModelHome: /auxiliary/models
-
       # Optional configmap for additional models and variable files
-      #configMap: @@DOMAIN_UID@@-wdt-config-map
+      configMap: sample-domain1-wdt-config-map
 
       # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
-      runtimeEncryptionSecret: @@DOMAIN_UID@@-runtime-encryption-secret
+      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
     # Secrets that are referenced by model yaml macros
     # (the model yaml in the optional configMap or in the image)
-    #secrets:
-    #- @@DOMAIN_UID@@-datasource-secret
+    secrets:
+    - sample-domain1-datasource-secret
 
 ---
 
 apiVersion: "weblogic.oracle/v1"
 kind: Cluster
 metadata:
-  name: @@DOMAIN_UID@@-cluster-1
+  name: sample-domain1-cluster-1
   # Update this with the namespace your domain will run in:
-  namespace: @@DOMAIN_NAMESPACE@@
+  namespace: sample-domain1-ns
   labels:
     # Update this with the `domainUID` of your domain:
-    weblogic.domainUID: @@DOMAIN_UID@@
+    weblogic.domainUID: sample-domain1
 spec:
   # This must match a cluster name that is  specified in the WebLogic configuration
   clusterName: cluster-1

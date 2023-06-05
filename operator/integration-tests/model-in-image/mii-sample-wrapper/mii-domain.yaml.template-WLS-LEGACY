@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -20,14 +20,7 @@ spec:
   domainHome: /u01/domains/@@DOMAIN_UID@@
 
   # The WebLogic Server image that the Operator uses to start the domain
-  # **NOTE**:
-  # This sample uses General Availability (GA) images. GA images are suitable for demonstration and
-  # development purposes only where the environments are not available from the public Internet;
-  # they are not acceptable for production use. In production, you should always use CPU (patched)
-  # images from OCR or create your images using the WebLogic Image Tool.
-  # Please refer to the `OCR` and `WebLogic Images` pages in the WebLogic Kubernetes Operator
-  # documentation for details.
-  image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
+  image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: @@IMAGE_PULL_POLICY@@
@@ -35,7 +28,6 @@ spec:
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
   #- name: @@DOMAIN_IMAGE_PULL_SECRET_NAME@@
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -114,21 +106,6 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: WLS
-
-      # Optional auxiliary image(s) containing WDT model, archives, and install.
-      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
-      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
-      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
-      # to "None" if you want skip such copies.
-      #   `image`                - Image location
-      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
-      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
-      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
-      auxiliaryImages:
-      - image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
-        #imagePullPolicy: IfNotPresent
-        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
-        #sourceModelHome: /auxiliary/models
 
       # Optional configmap for additional models and variable files
       #configMap: @@DOMAIN_UID@@-wdt-config-map

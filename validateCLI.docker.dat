@@ -40,6 +40,7 @@ docker-registry
 docker-istio-secret
 DB_IMAGE_PULL_SECRET:-docker-secret
 SOURCEDIR:-ai-docker-file
+SOURCEDIR:-dci-docker-file
 create-domain-on-aks.sh:.*
 wlsDockerContainer
 wls-docker-container-imag

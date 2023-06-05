@@ -1,13 +1,13 @@
 #!/bin/bash
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # 
 #  Summary:
 #
-#    This script builds a model image using the WebLogic Image Tool. The
+#    This script builds a domain creation image using the WebLogic Image Tool. The
 #    tool pulls a base image if there isn't already a local base image.
-#    This script, by default, builds the model image with model files from
+#    This script, by default, builds the domain creation image with model files from
 #    WORKDIR/MODEL_DIR using tooling downloaded by './stage-tooling.sh.'.
 #
 #  Optional Argument(s):
@@ -28,15 +28,15 @@
 #
 #    MODEL_DIR:
 #      Location relative to WORKDIR of the model .zip, .properties,
-#      and .yaml files that will be copied to the model image.  Default is:
-#        'wdt-artifacts/wdt-model-files/wdt-domain-image__$MODEL_IMAGE_TAG'.
+#      and .yaml files that will be copied to the domain creation image.  Default is:
+#        'wdt-artifacts/wdt-model-files/domain-on-pv__$DOMAIN_CREATION_IMAGE_TAG'.
 #
 #    ARCHIVE_SOURCEDIR:
 #      Location of archive source for MODEL_DIR/archive.zip relative to WORKDIR
 #      Default is "archives/archive-v1". This directory must contain a
 #      'wlsdeploy' directory.
 #
-#    MODEL_IMAGE_NAME, MODEL_IMAGE_TAG:
+#    DOMAIN_CREATION_IMAGE_NAME, DOMAIN_CREATION_IMAGE_TAG:
 #      Defaults to 'wdt-domain-image' and 'WDT_DOMAIN_TYPE-v1'.
 #
 #    WLSIMG_BUILDER
@@ -44,9 +44,8 @@
 #
 #    Others (see README)
 #      WORKDIR
-#      MODEL_IMAGE_BUILD
+#      DOMAIN_CREATION_IMAGE_BUILD
 #      WDT_DOMAIN_TYPE
-#      BASE_IMAGE_NAME, BASE_IMAGE_TAG
 
 #set -x
 set -eu
@@ -62,11 +61,9 @@ fi
 
 echo @@ Info: WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE}
 echo @@ Info: MODEL_DIR=${MODEL_DIR}
-echo @@ Info: BASE_IMAGE_NAME=${BASE_IMAGE_NAME}
-echo @@ Info: BASE_IMAGE_TAG=${BASE_IMAGE_TAG}
-echo @@ Info: MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME}
-echo @@ Info: MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG}
-echo @@ Info: MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD}
+echo @@ Info: DOMAIN_CREATION_IMAGE_NAME=${DOMAIN_CREATION_IMAGE_NAME}
+echo @@ Info: DOMAIN_CREATION_IMAGE_TAG=${DOMAIN_CREATION_IMAGE_TAG}
+echo @@ Info: DOMAIN_CREATION_IMAGE_BUILD=${DOMAIN_CREATION_IMAGE_BUILD}
 echo @@ Info: OKD=${OKD}
 echo @@ Info: CHOWN_ROOT=${CHOWN_ROOT:="--chown oracle:root"}
 
@@ -90,52 +87,9 @@ fi
   
 echo  TARGET=${TARGET}
 
-if [[ ${MODEL_IMAGE_TAG} == *"-LEGACY"* ]]; then
 cat << EOF
 dryrun:#!/bin/bash
-dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
-dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
-dryrun:
-dryrun:set -eux
-dryrun:
-dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
-dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
-dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
-dryrun:
-dryrun:cd $WORKDIR/wdt-artifacts/wdt-model-files
-dryrun:unzip -o imagetool.zip
-dryrun:
-dryrun:mkdir -p $WORKDIR/wdt-artifacts/wdt-model-files/imagetool/cache
-dryrun:export WLSIMG_CACHEDIR=$WORKDIR/wdt-artifacts/wdt-model-files/imagetool/cache
-dryrun:
-dryrun:mkdir -p $WORKDIR/wdt-artifacts/wdt-model-files/imagetool/bld
-dryrun:export WLSIMG_BLDDIR=$WORKDIR/wdt-artifacts/wdt-model-files/imagetool/bld
-dryrun:
-dryrun:$IMGTOOL cache deleteEntry \\
-dryrun:  --key wdt_latest
-dryrun:
-dryrun:$IMGTOOL cache addInstaller \\
-dryrun:  --type wdt \\
-dryrun:  --version latest \\
-dryrun:  --path ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip
-dryrun:
-dryrun:$IMGTOOL update \\
-dryrun:  --tag $MODEL_IMAGE \\
-dryrun:  --fromImage $BASE_IMAGE \\
-dryrun:  ${MODEL_YAML_FILES:+--wdtModel ${MODEL_YAML_FILES}} \\
-dryrun:  ${MODEL_VARIABLE_FILES:+--wdtVariables ${MODEL_VARIABLE_FILES}} \\
-dryrun:  ${MODEL_ARCHIVE_FILES:+--wdtArchive ${MODEL_ARCHIVE_FILES}} \\
-dryrun:  --wdtModelOnly \\
-dryrun:  ${CHOWN_ROOT:+${CHOWN_ROOT}} \\
-dryrun:   --target $TARGET \\
-dryrun:  --wdtDomainType ${WDT_DOMAIN_TYPE}
-dryrun:
-dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
-EOF
-else
-cat << EOF
-dryrun:#!/bin/bash
-dryrun:# Use this script to build the auxiliary image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# Use this script to build the domain creation image '$DOMAIN_CREATION_IMAGE_NAME:$DOMAIN_CREATION_IMAGE_TAG'
 dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
 dryrun:
 dryrun:set -eux
@@ -145,10 +99,10 @@ dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
 dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
 dryrun:
 dryrun:cd "$WORKDIR"
-dryrun:[ -d "ai-image/${MODEL_IMAGE_TAG}" ] && rm -rf ai-image/${MODEL_IMAGE_TAG}
+dryrun:[ -d "dci-image/${DOMAIN_CREATION_IMAGE_TAG}" ] && rm -rf dci-image/${DOMAIN_CREATION_IMAGE_TAG}
 dryrun:
-dryrun:mkdir -p $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
-dryrun:cd $WORKDIR/ai-image/${MODEL_IMAGE_TAG}
+dryrun:mkdir -p $WORKDIR/dci-image/${DOMAIN_CREATION_IMAGE_TAG}
+dryrun:cd $WORKDIR/dci-image/${DOMAIN_CREATION_IMAGE_TAG}
 dryrun:mkdir ./models
 dryrun:cp $MODEL_YAML_FILES ./models
 dryrun:cp $MODEL_VARIABLE_FILES ./models
@@ -156,12 +110,11 @@ dryrun:cp $WORKDIR/$MODEL_DIR/archive.zip ./models
 dryrun:unzip ${WORKDIR}/wdt-artifacts/wdt-model-files/weblogic-deploy.zip -d .
 dryrun:rm ./weblogic-deploy/bin/*.cmd
 dryrun:
-dryrun:# see file $WORKDIR/ai-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/model-in-image/$AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
+dryrun:# see file $WORKDIR/dci-image/${DOMAIN_CREATION_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
+dryrun:${WLSIMG_BUILDER:-docker} build -f $WORKDIR/domain-on-pv/$DOMAIN_CREATION_IMAGE_DOCKER_FILE_SOURCEDIR/Dockerfile \\
 dryrun:             --build-arg AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH} \\
-dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
+dryrun:             --tag ${DOMAIN_CREATION_IMAGE_NAME}:${DOMAIN_CREATION_IMAGE_TAG}  .
 EOF
-fi
 
 } # end of function output_dryrun()
 
@@ -174,12 +127,12 @@ else
 
   # we're not dry running
 
-  if [ ! "$MODEL_IMAGE_BUILD" = "always" ] && [ ! -z "$(${WLSIMG_BUILDER:-docker} images -q $MODEL_IMAGE)" ]; then
+  if [ ! "$DOMAIN_CREATION_IMAGE_BUILD" = "always" ] && [ ! -z "$(${WLSIMG_BUILDER:-docker} images -q $DOMAIN_CREATION_IMAGE)" ]; then
     echo "@@"
     echo "@@ Info: ----------------------------------------------------------------------------"
     echo "@@ Info: NOTE!!!                                                                     "
-    echo "@@ Info:   Skipping model image build because '$MODEL_IMAGE' found in ${WLSIMG_BUILDER:-docker} images. "
-    echo "@@ Info:   To always build the model image, 'export MODEL_IMAGE_BUILD=always'.       "
+    echo "@@ Info:   Skipping domain creation image build because '$DOMAIN_CREATION_IMAGE' found in ${WLSIMG_BUILDER:-docker} images. "
+    echo "@@ Info:   To always build the domain creation image, 'export DOMAIN_CREATION_IMAGE_BUILD=always'.       "
     echo "@@ Info: ----------------------------------------------------------------------------"
     echo "@@"
     exit 0

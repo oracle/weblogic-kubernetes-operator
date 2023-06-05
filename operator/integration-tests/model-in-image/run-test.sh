@@ -40,7 +40,7 @@ DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
 DO_UPDATE4=false
-DO_AI=${DO_AI:-false}
+DO_LEGACY=${DO_LEGACY:-false}
 WDT_DOMAIN_TYPE=WLS
 
 usage() {
@@ -54,8 +54,8 @@ usage() {
     INTROSPECTOR_DEADLINE_SECONDS: 600  (for JRF runs)
     WORKDIR               : /tmp/\$USER/mii-sample-work-dir
     DOMAIN_NAMESPACE      : sample-domain1-ns
-    MODEL_IMAGE_NAME      : model-in-image 
-    MODEL_IMAGE_TAG       : Defaults to JRF-v1, JRF-v2, WLS-v1, or WLS-v2 depending on use-case and domain type.
+    MODEL_IMAGE_NAME      : wdt-domain-image
+    MODEL_IMAGE_TAG       : Defaults to WLS-v1, or WLS-v2 depending on use-case and domain type.
                             IMPORTANT: If setting this env var, do not run multiple use cases on the same command line,
                             as then all use cases will use the same image.
     IMAGE_PULL_SECRET_NAME: (not set)
@@ -68,7 +68,7 @@ usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
-    DO_AI                 : false (run the tests in auxiliary image mode)
+    DO_LEGACY             : false (run the tests in legacy single image mode)
 
     (see test-env.sh for full list)
 
@@ -76,11 +76,7 @@ usage() {
 
     -dry      : Dry run - show but don't do.
     -?        : This help.
-    -jrf      : Run in JRF mode instead of WLS mode. 
-                Note that this depends on the db being deployed
-                and initialized via rcu. So either pre-deploy
-                the db and run rcu or pass '-db' and '-rcu' too.
-    -ai       : Run the tests in auxiliary images mode.
+    -legacy   : Run the tests in legacy MII mode.
     -assume-db: Assume Oracle DB is running.
                 If set, then the 'update4' test will include DB tests.
                 Defaults to true for '-jrf' or '-db'.
@@ -101,13 +97,6 @@ usage() {
     -traefik  : Deploy Traefik. This will monitor
                 'DOMAIN_NAMESPACE' which defaults 
                 to 'sample-domain1-ns', and open port 30305.
-    -db       : Deploy Oracle DB. A DB is needed for JRF mode
-                and optionally for 'update4'.
-                See 'test-env.sh' for DB settings.
-                See also '-assume-db'.
-    -rcu      : Initialize FMWdomain1 and FMWdomain2 schemas
-                in the DB. Needed for JRF.
-                See 'test-env.sh' for DB settings.
 
   Tests:
 
@@ -115,7 +104,7 @@ usage() {
                     checked into the mii sample git location.
 
     -initial-image: Build image required for initial use case.
-                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1' if MODEL_IMAGE_TAG not specified.
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' if MODEL_IMAGE_TAG not specified.
                     Image is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' if MODEL_IMAGE_TAG is specified.
 
     -initial-main : Deploy initial use case (domain resource, secrets, etc).
@@ -133,7 +122,7 @@ usage() {
                     Depends on '-initial-main' (calls its app).
 
     -update3-image: Build image required for update3 use case.
-                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2' if MODEL_IMAGE_TAG is not set.
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' if MODEL_IMAGE_TAG is not set.
                     And is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' if MODEL_IMAGE_TAG is set.'
 
     -update3-main : Run update3 use case (update initial domain's app via new image).
@@ -165,14 +154,10 @@ while [ ! -z "${1:-}" ]; do
     -assume-db)      DO_ASSUME_DB="true" ;;
     -oper)           DO_OPER="true" ;;
     -traefik)        DO_TRAEFIK="true" ;;
-    -jrf)            WDT_DOMAIN_TYPE="JRF"
-                     DO_ASSUME_DB="true"
-                     ;;
-    -rcu)            DO_RCU="true" ;;
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
     -initial-main)   DO_INITIAL_MAIN="true" ;;
-    -ai)             DO_AI="true" ;;
+    -legacy)         DO_LEGACY="true" ;;
     -update1)        DO_UPDATE1="true" ;;
     -update2)        DO_UPDATE2="true" ;;
     -update3-image)  DO_UPDATE3_IMAGE="true" ;;  
@@ -362,7 +347,7 @@ fi
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER DEPLOY ======"
-  doCommand "export DO_AI=$DO_AI"
+  doCommand "export DO_LEGACY=$DO_LEGACY"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
@@ -386,9 +371,9 @@ fi
 if [ "$DO_INITIAL_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-IMAGE ======"
 
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
   fi
   doCommand -c "export OKD=${OKD}"
   doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
@@ -398,9 +383,9 @@ fi
 if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-MAIN ======"
 
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
@@ -452,9 +437,9 @@ fi
 if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE1 ======"
 
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
@@ -497,9 +482,9 @@ fi
 if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE2 ======"
 
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID2"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
@@ -559,9 +544,9 @@ fi
 
 if [ "$DO_UPDATE3_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE3-IMAGE ======"
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
     doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v2}"
   else
     doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
@@ -575,9 +560,9 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   dumpInfo
 
-  if [ "$DO_AI" = "true" ]; then
+  if [ "$DO_LEGACY" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
     doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v2}"
   else
     doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
@@ -625,9 +610,9 @@ fi
 if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE4 ======"
 
-  if [ "$DO_AI" = "true" ]; then
-    doCommand -c "echo Running in auxiliary image mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
+  if [ "$DO_LEGACY" = "true" ]; then
+    doCommand -c "echo Running in legacy mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-LEGACY"
   fi
 
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
@@ -668,4 +653,3 @@ fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."
 
-# TBD Add JRF wallet export/import testing?  There's another test that already tests the sample's import/export script.
