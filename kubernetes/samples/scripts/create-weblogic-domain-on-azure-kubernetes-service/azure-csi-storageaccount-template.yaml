@@ -6,11 +6,8 @@ kind: StorageClass
 metadata:
   name: %STORAGE_CLASS_NAME%
 provisioner: file.csi.azure.com
+allowVolumeExpansion: true
 parameters:
   protocol: nfs
-  resourceGroup: %STORAGE_ACCOUNT_RESOURCE_GROUP_NAME%
-  storageAccount: %STORAGE_ACCOUNT_NAME%
-  shareName: %AZURE_FILE_SHARE_NAME%
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
+mountOptions:
+  - nconnect=4
