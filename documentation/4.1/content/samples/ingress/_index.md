@@ -5,7 +5,7 @@ weight: 5
 description: "Ingress controllers and load balancer sample scripts."
 ---
 
-The WebLogic Kubernetes Operator supports NGINX, and Traefik. We provide samples that demonstrate how to install and configure each one.
+The WebLogic Kubernetes Operator supports NGINX and Traefik. We provide samples that demonstrate how to install and configure each one.
 
 {{% notice note %}}
 For production environments, we recommend NGINX, Traefik (2.2.1 or later) ingress controllers or the load balancer provided by your cloud provider.
