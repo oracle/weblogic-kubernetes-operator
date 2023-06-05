@@ -31,6 +31,6 @@ initChownData:
     pullPolicy: IfNotPresent
   
 securityContext:
-  fsGroup: 0
-  runAsGroup: 0
-  runAsUser: 0
+  fsGroup: 1000
+  runAsGroup: 1000
+  runAsUser: 1000
