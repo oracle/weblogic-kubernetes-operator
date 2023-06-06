@@ -141,8 +141,6 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
 | | | **Update**: domains (weblogic.oracle), domains/status | |
 | | | **Create**: tokenreviews, selfsubjectrulesreviews | |
 | Operator `nonresource` | Operator `nonresource` | **Get**: /version/* | [^1] |
-| Operator `discovery` | Kubernetes `system:discovery` | **See**: [Kubernetes Discovery Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#discovery-roles) | [^3] |
-| Operator `auth-delegator` | Kubernetes `system:auth-delegator` | **See**: [Kubernetes Component Roles](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#other-component-roles) | [^3] |
 
 
 [^1]: The binding is assigned to the operator `ServiceAccount`.
