@@ -40,7 +40,7 @@ these tools; the data and operations _cannot_ be described using WDT models.
 
 WDT models are a convenient and simple alternative to WLST
 configuration scripts and templates.
-They compactly define a WebLogic domain using model files, variable properties files, and application archives files. 
+They compactly define a WebLogic domain using model files, variable property files, and application archive files. 
 For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
@@ -63,7 +63,7 @@ When you deploy a Domain on PV domain resource YAML file:
 ### Runtime updates
 
 You control runtime updates to the WebLogic domain configuration using tools, such as Fusion Middleware Control, product-specific WLST functions,
-the WebLogic Server Administration Console, the Service Bus Console, WebLogic Remote Console or JDeveloper.  After the initial domain is created, subsequent updates to the
+the WebLogic Server Administration Console, the Service Bus Console, the WebLogic Remote Console or the JDeveloper.  After the initial domain is created, subsequent updates to the
 source of the WDT model files or any referenced macros _will be ignored_.  
 
 Some changes may require triggering an introspector job.  For example:
