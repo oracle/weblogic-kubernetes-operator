@@ -262,7 +262,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_MAXSIZE")
-                                                .value("2e+07"))
+                                                .value("20000000"))
                                         .addEnvItem(
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_COUNT")
@@ -554,59 +554,6 @@ abstract class CreateOperatorGeneratedFilesTestBase {
         .roleRef(
             newClusterRoleRef()
                 .name(getInputs().getNamespace() + "-weblogic-operator-clusterrole-nonresource")
-                .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
-  }
-
-  @Test
-  void generatesCorrect_operatorRoleBindingDiscovery() {
-    assertThat(
-        getGeneratedFiles().getOperatorRoleBindingDiscovery(),
-        equalTo(getExpectedOperatorRoleBindingDiscovery()));
-  }
-
-  private V1ClusterRoleBinding getExpectedOperatorRoleBindingDiscovery() {
-    return newClusterRoleBinding()
-        .metadata(
-            newObjectMeta()
-                .name(
-                    getInputs().getNamespace() + "-weblogic-operator-clusterrolebinding-discovery")
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .addSubjectsItem(
-            newSubject()
-                .kind("ServiceAccount")
-                .name(getInputs().getServiceAccount())
-                .namespace(getInputs().getNamespace())
-                .apiGroup(""))
-        .roleRef(
-            newClusterRoleRef()
-                .name("system:discovery")
-                .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
-  }
-
-  @Test
-  void generatesCorrect_operatorRoleBindingAuthDelegator() {
-    assertThat(
-        getGeneratedFiles().getOperatorRoleBindingAuthDelegator(),
-        equalTo(getExpectedOperatorRoleBindingAuthDelegator()));
-  }
-
-  private V1ClusterRoleBinding getExpectedOperatorRoleBindingAuthDelegator() {
-    return newClusterRoleBinding()
-        .metadata(
-            newObjectMeta()
-                .name(
-                    getInputs().getNamespace()
-                        + "-weblogic-operator-clusterrolebinding-auth-delegator")
-                .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
-        .addSubjectsItem(
-            newSubject()
-                .kind("ServiceAccount")
-                .name(getInputs().getServiceAccount())
-                .namespace(getInputs().getNamespace())
-                .apiGroup(""))
-        .roleRef(
-            newClusterRoleRef()
-                .name("system:auth-delegator")
                 .apiGroup(KubernetesArtifactUtils.API_GROUP_RBAC));
   }
 
