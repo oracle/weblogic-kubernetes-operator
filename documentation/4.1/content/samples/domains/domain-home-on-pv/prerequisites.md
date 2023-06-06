@@ -147,7 +147,7 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
 
 ### Additional prerequisites for JRF domains
 
-**NOTE**: If you're using a Domain on PV WLS domain type, skip this section and continue on to [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}})
+**NOTE**: If you're using a Domain on PV, WLS domain type, skip this section and continue on to [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image.md" >}})
 for the Domain on PV sample.
 
 #### JRF prerequisites

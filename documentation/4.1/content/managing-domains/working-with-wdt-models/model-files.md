@@ -69,9 +69,9 @@ For a description of model file macro references to secrets and environment vari
 
     - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
-- You can control the order that WDT uses to load your model files, see [WDT artifacts source location and loading order](#wdt-artifacts-source-location-and-loading-order).
+- You can control the order that WDT uses to load your model files, see [WDT models location and loading order](#wdt-models-source-location-and-loading-order).
 
-### WDT artifacts source location and loading order
+### WDT models source location and loading order
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 

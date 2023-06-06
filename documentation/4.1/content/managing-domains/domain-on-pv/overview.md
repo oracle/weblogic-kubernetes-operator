@@ -23,8 +23,8 @@ the WebLogic Server Administration Console, WebLogic Scripting Tool (WLST), or o
 The `initializeDomainOnPv` section:
 
 - Creates the PersistentVolume (PV) and/or PersistenVolumeClaim (PVC), if needed.
-- Creates the JRF schema, if needed.
-- Creates the WebLogic domain home, based on the provided WDT models on the persistent volume.
+- Creates the RCU schema, if needed.
+- Creates the WebLogic domain home on the persistent volume based on the provided WDT models.
 
 ### High level use case
 
@@ -40,8 +40,8 @@ these tools; the data and operations _cannot_ be described using WDT models.
 
 WDT models are a convenient and simple alternative to WLST
 configuration scripts and templates.
-They compactly define a WebLogic domain using YAML files and support including
-application archives in a ZIP file. For more information about the model format
+They compactly define a WebLogic domain using model files, variable property files, and application archive files. 
+For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
 and [Working with WDT Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
@@ -53,19 +53,18 @@ The WDT model format is fully described in the open source,
 When you deploy a Domain on PV domain resource YAML file:
 
 - The operator will run a Kubernetes Job, called an introspector job, that:
-    - Merges your WDT artifacts.
-    - Runs WDT tooling to generate a domain home.
+    - Merges your WDT model files.
+    - Runs WDT Create Domain tool to create a domain home.
 
 - After the introspector job completes:
-    - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`
-      (possibly with some additional maps distinguished by serial names).
+    - The operator creates one or more ConfigMap following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.
     - The operator subsequently boots your domain's WebLogic Server pods.
 
 ### Runtime updates
 
 You control runtime updates to the WebLogic domain configuration using tools, such as Fusion Middleware Control, product-specific WLST functions,
-the WebLogic Server Administration Console, the Service Bus Console, WebLogic Remote Console or JDeveloper.  After the initial domain is created, subsequent updates to the
-source of the WDT artifacts or any referenced macros _will be ignored_.  
+the WebLogic Server Administration Console, the Service Bus Console, the WebLogic Remote Console or the JDeveloper.  After the initial domain is created, subsequent updates to the
+source of the WDT model files or any referenced macros _will be ignored_.  
 
 Some changes may require triggering an introspector job.  For example:
 
