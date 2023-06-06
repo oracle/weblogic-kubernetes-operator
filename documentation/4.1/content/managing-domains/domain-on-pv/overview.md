@@ -10,15 +10,15 @@ description = "Learn how to create a domain on a persistent volume."
 
 ### Overview
 
-Domain on persistent volume (Domain on PV) is one of the operator's [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) choices.
-Domain on PV requires that the domain home exists on a persistent volume. The domain home can be created either manually
+Domain on persistent volume (Domain on PV) is an operator [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}),
+which requires that the domain home exists on a persistent volume. The domain home can be created either manually
 or automatically by specifying the section, `domain.spec.configuration.initializeDomainOnPV`, in the domain resource YAML file.
 The initial domain topology and resources are described using [WebLogic Deploy Tooling (WDT) models](#weblogic-deploy-tooling-models).
 
 **NOTE**: The `initializeDomainOnPV` section provides a **one time only** domain home initialization.
 The operator creates the domain when the domain resource is first deployed. After the domain is created,
 this section is ignored. Subsequent domain life cycle updates must be controlled by
-the WebLogic Server Administration Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
+the WebLogic Server Administration Console, the WebLogic Remote Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
 
 The `initializeDomainOnPv` section:
 
@@ -33,14 +33,14 @@ The typical Domain on PV use case is for an application life cycle that requires
 For example, you might use frameworks like Meta Data Service (MDS), Oracle Application Development Framework (ADF), or Oracle Service Bus (OSB).
 These frameworks require a running domain and the lifecycle operations are persisted to the file system. Typically,
 after the initial domain is created, you use tools like Fusion Middleware Control, product-specific WLST functions,
-the WebLogic Server Administration Console, the Service Bus Console, or JDeveloper for lifecycle operations. The changes are managed by
+the WebLogic Server Administration Console, the WebLogic Remote Console, the Service Bus Console, or JDeveloper for lifecycle operations. The changes are managed by
 these tools; the data and operations _cannot_ be described using WDT models.
 
 ### WebLogic Deploy Tooling models
 
 WDT models are a convenient and simple alternative to WLST
 configuration scripts and templates.
-They compactly define a WebLogic domain using model files, variable property files, and application archive files. 
+They compactly define a WebLogic domain using model files, variable properties files, and application archive files.
 For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
@@ -54,16 +54,16 @@ When you deploy a Domain on PV domain resource YAML file:
 
 - The operator will run a Kubernetes Job, called an introspector job, that:
     - Merges your WDT model files.
-    - Runs WDT Create Domain tool to create a domain home.
+    - Runs the WDT Create Domain Tool to create a domain home.
 
 - After the introspector job completes:
-    - The operator creates one or more ConfigMap following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.
+    - The operator creates one or more ConfigMaps following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.
     - The operator subsequently boots your domain's WebLogic Server pods.
 
 ### Runtime updates
 
 You control runtime updates to the WebLogic domain configuration using tools, such as Fusion Middleware Control, product-specific WLST functions,
-the WebLogic Server Administration Console, the Service Bus Console, the WebLogic Remote Console or the JDeveloper.  After the initial domain is created, subsequent updates to the
+the WebLogic Server Administration Console, the WebLogic Remote Console, the Service Bus Console, or JDeveloper.  After the initial domain is created, subsequent updates to the
 source of the WDT model files or any referenced macros _will be ignored_.  
 
 Some changes may require triggering an introspector job.  For example:
