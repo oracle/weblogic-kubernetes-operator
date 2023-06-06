@@ -60,9 +60,6 @@ Run the following `kubectl` commands to deploy the required secrets:
   __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
-  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
-  be unique and different than the admin password, but this is not required.
-
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \

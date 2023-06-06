@@ -75,7 +75,7 @@ spec:
             storage: 5Gi
           hostPath:
             path: "/shared"
-
+      
       # Optional settings for creating a persistent volume claim. The sample
       # creates a claim using persistent volume named 'sample-domain1-weblogic-sample-pv'
       # and storage class name that matches the storage class name of PV.
@@ -93,7 +93,7 @@ spec:
       # Settings for domain home on PV.
       domain:
          # Valid model domain types are 'WLS', and 'JRF', default is 'JRF'
-         domainType: JRF
+         domainType: WLS
 
          # Domain creation image(s) containing WDT model, archives, and install.
          #   `image`                - Image location
@@ -101,17 +101,13 @@ spec:
          #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
          #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
          domainCreationImages:
-         - image: phx.ocir.io/weblogick8s/domain-on-pv-image:WLS-v1
+         - image: "wdt-domain-image:WLS-v1"
            #imagePullPolicy: IfNotPresent
            #sourceWDTInstallHome: /auxiliary/weblogic-deploy
            #sourceModelHome: /auxiliary/models
 
          # Optional configmap for additional models and variable files
          #domainCreationConfigMap: sample-domain1-wdt-config-map
-
-         opss:
-           walletPasswordSecret: wallet-password-secret
-           #walletFileSecret: wallet-file-secret
 
     # Secrets that are referenced by model yaml macros
     # (the model yaml in the optional configMap or in the image)
@@ -160,8 +156,7 @@ spec:
   - name: sample-domain1-cluster-1
 
   # Change the restartVersion to force the introspector job to rerun
-  # and apply any new model configuration, to also force a subsequent
-  # roll of your domain's WebLogic Server pods.
+  # to force a roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
   # Changes to this field cause the operator to repeat its introspection of the

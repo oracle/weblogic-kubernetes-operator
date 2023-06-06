@@ -59,9 +59,8 @@ Here are the steps for this use case:
      ```shell
      $ cd /tmp/sample/wdt-artifacts/archives/archive-v2
      ```
-     ```
-     # Using the [WDT archive helper tool](#https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
-     ```
+     Using the [WDT archive helper tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
+     `
      ```shell
      $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip -source=wlsdeploy/applications/myapp-v2
      ```
