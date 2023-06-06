@@ -38,7 +38,7 @@ Model in Image requires an image with a WebLogic Server installation.
 ### Directory structure
 
 Model in Image requires the following directory structure in its pods for
-its (optional) WDT model artifacts and (required) WDT binaries:
+its (optional) WDT model files and (required) WDT binaries:
 
 | Domain resource attribute  | Contents                              | Default directory                                                                                                                                                                                                                                                                                                         |
 | -------------------------- | ------------------------------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -51,7 +51,7 @@ then the operator will ignore WDT model and installation files
 that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}).
 {{% /notice %}}
 
-### Supplying initial model files and WDT
+### Supplying initial WDT model files and WDT installation
 
 Model in Image minimally requires an image with a WebLogic installation
 (see [WebLogic Server image](#weblogic-server-image)), plus access
@@ -68,7 +68,7 @@ to:
   must be supplied in the model home because application archives
   are not supported in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
 
-There are multiple methods for supplying Model in Image WDT models files, WDT variable files, and WDT archives files:
+There are multiple methods for supplying Model in Image WDT models files, WDT variables files, and WDT archive files (collectively known as WDT model files):
 
   - Use auxiliary images:
     Use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
@@ -78,8 +78,8 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
     from each of the small images into the `/aux/models` and `/aux/weblogic-deploy` directories
     in each pod's file system so that the introspection job can find them.
 
-  - Include in main image:
-    You can include the artifacts in your domain resource `domain.spec.image`
+  - Include in the main image:
+    You can include the WDT model files in your domain resource `domain.spec.image`
     in its `domain.spec.configuration.model.modelHome`
     and `domain.spec.configuration.model.wdtInstallHome` directories as
     a layer on top of your base image
@@ -87,14 +87,14 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
 
     Use either of the following methods.
 
-    - _Manual image creation_ uses Docker commands to layer the WDT models files, WDT variable files, and WDT archives files, described in the previous table,
+    - _Manual image creation_ uses Docker commands to layer the WDT models files, described in the previous table,
       on top of your base image into a new image.
     - The _WebLogic Image Tool_ (WIT) has built-in options for layering WDT model files,
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       See [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}}).
 
   - Use a Persistent Volume Claim (PVC):
-    This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
+    This method is for advanced use cases only. Supply WDT model YAML, variables, or archive files
     in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
     and modify `configuration.model.modelHome` and `configuration.model.wdtInstallHome` to
     the corresponding directory within the PVC's mount location.
@@ -106,7 +106,7 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
     updates to models supplied by one of these methods.
 
 For more information about model file syntax,
-see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+see [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 
 ### Optional WDT model ConfigMap
 
@@ -127,12 +127,12 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-See [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
+See [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
 
 
 ### Required runtime encryption secret
 
-Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. You can safely change the `password`, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
+Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home files before it adds them to a runtime ConfigMap or log. You can safely change the `password`, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
 **NOTE**: Because the runtime encryption password does not need to be shared and needs to exist only for the life of a domain, you may want to use a password generator.
 

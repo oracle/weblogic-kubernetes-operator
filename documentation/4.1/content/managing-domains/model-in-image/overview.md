@@ -10,25 +10,21 @@ description = "Introduction to Model in Image, description of its runtime behavi
 
 ### Introduction
 
-Model in Image is an alternative to the operator's Domain in Image and Domain in PV domain types. See [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
-
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.
+Model in Image is an alternative to the operator's Domain in Image and Domain on PV domain home source types. For a comparison, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.
 
 It enables:
 
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tooling (WDT) model files and application archives.
  - Embedding these files in a single image that also contains a WebLogic installation,
    and using the WebLogic Image Tool (WIT) to generate this image. Or, alternatively,
-   embedding the files in one or more application specific images.
+   embedding the files in one or more application-specific images.
  - Optionally, supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models.
    For example, a secret can be used to supply a database credential.
- - Updating WDT model files and artifacts at runtime. The WDT models are considered the source of truth and matches the domain configuration at all time.  For example, you can add a data source
+ - Updating WDT model files at runtime. The WDT models are considered the source of truth and match the domain configuration at all times.  For example, you can add a data source
    to a running domain. See [Runtime updates](#runtime-updates) for details.
 
-This feature is supported for standard WLS domains.
-
-For JRF domains, use [Domain on PV]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
+This feature is supported for standard WLS domains. For JRF domains, use [Domain on PV]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
 
 ### WebLogic Deploy Tooling models
 
@@ -52,8 +48,7 @@ When you deploy a Model in Image domain resource YAML file:
     - Packages the domain home and passes it to the operator.
 
   - After the introspector job completes:
-    - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`
-      (possibly with some additional maps distinguished by serial names) and puts the packaged domain home in it.
+    - The operator creates one or more ConfigMaps following the pattern `DOMAIN_UID-weblogic-domain-introspect-cm***`.
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 

@@ -3,17 +3,17 @@ title = "Domain creation images"
 date = 2019-02-23T16:45:16-05:00
 weight = 25
 pre = "<b> </b>"
-description = "Domain creation images supply the WDT models for Domain on PV."
+description = "Domain creation images supply the WDT model for Domain on PV."
 +++
 
 {{< table_of_contents >}}
 
 ### Introduction
 
-Domain creation images are used for supplying model files, variable files,
-application archive files, and WebLogic Deploy Tooling (WDT) installation files when deploying a domain using
-a Domain on PV model.  You will distribute model files, application archives, and the
-WebLogic Deploy Tooling executable using these images.  Then, the operator uses WDT and WDT models to
+Domain creation images are used for supplying WebLogic Deploy Tooling (WDT) model files, WDT variables files,
+WDT application archive files (collectively known as WDT model files), and WDT installation files when deploying a domain using
+a Domain on PV model.  You distribute WDT model files and the
+WDT executable using these images, then the operator uses them to
 manage the domain.
 
 **Note:**  These images are _only_ used for creating the domain and will not be used to update the domain.
@@ -27,7 +27,7 @@ which defaults to `Always` if the `image` ends in `:latest` and `IfNotPresent`,
 otherwise.
 If image pull secrets are required for pulling the images, then the secrets must be referenced using `domain.spec.imagePullSecrets`.
 
-Also, optionally, you can configure the [source locations](#source-locations) of the WebLogic Deploy Tooling model
+Also, optionally, you can configure the [source locations](#source-locations) of the WDT model
 and installation files in the image using the `sourceModelHome` and `sourceWDTInstallHome` fields, as described in this
 [section](#source-locations).
 
@@ -37,7 +37,7 @@ and installation files in the image using the `sourceModelHome` and `sourceWDTIn
 
 ### References
 
-- Run the ` kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages` command or
+- Run the ` kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages` command, or
 
 - See the `initializeDomainOnPV.domain.domainCreationImages` section
     in the domain resource
@@ -46,13 +46,13 @@ and installation files in the image using the `sourceModelHome` and `sourceWDTIn
 
 #### Source locations
 
-Use the optional attributes `sourceModelHome` and
-`sourceWdtInstallHome` to specify non-default locations for the
-WebLogic Deploy Tooling model and installation files in your domain creation image(s).
+Use the optional attributes, `sourceModelHome` and
+`sourceWdtInstallHome`, to specify non-default locations for the
+WDT model and installation files in your domain creation image(s).
 Allowed values for `sourceModelHome` and `sourceWdtInstallHome`:
 - Unset - Defaults to `/auxiliary/models` and `/auxiliary/weblogic-deploy`, respectively.
 - Set to a path - Must point to an existing location containing WDT model and WDT installation files, respectively.
-- `None` - Indicates that the image has no WDT models files and installation files, respectively.
+- `None` - Indicates that the image has no WDT model files and installation files, respectively.
 
 If you set the `sourceModelHome` or `sourceWDTInstallHome` to `None` or,
 the source attributes are left unset and there are no files at the default locations,
@@ -68,8 +68,8 @@ For example source locations, see [Configuration example 2](#example-2-source-lo
 
 #### Multiple images
 
-If specifying multiple images with model files in their respective `sourceModelHome`
-directories, then model files are merged. Files from later images take precedence over files from earlier images.
+If specifying multiple images with WDT model files in their respective `sourceModelHome`
+directories, then WDT model files are merged. Files from later images take precedence over files from earlier images.
 
 When specifying multiple images, ensure that only one of the images supplies a WDT installation location using
 `sourceWDTInstallHome`.
@@ -100,7 +100,7 @@ spec:
 
 #### Example 2: Source locations
 
-This example is the same as Example 1, except that it specifies the source locations for the WebLogic Deploy Tooling model and installation files.
+This example is the same as Example 1, except that it specifies the source locations for the WDT model and installation files.
 
 ```
 spec:
@@ -117,7 +117,7 @@ spec:
 
 This example is the same as Example 1, except it configures multiple images and sets the `sourceWDTInstallHome`
 for the second image to `None`.
-In this case, the source location of the WebLogic Deploy Tooling installation from the second image `wdt-model-image2:v1` will be ignored.
+In this case, the source location of the WDT installation from the second image `wdt-model-image2:v1` will be ignored.
 
 ```
 spec:
