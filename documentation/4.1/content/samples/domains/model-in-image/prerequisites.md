@@ -24,7 +24,7 @@ description: "Follow these prerequisite steps for WLS domain type."
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
-1. Copy the Model in Image sample to a new directory; for example, use directory /tmp/sample.
+1. Copy the Model in Image sample to a new directory; for example, use directory `/tmp/sample`.
    ```
    $ mkdir -p /tmp/sample
    ```

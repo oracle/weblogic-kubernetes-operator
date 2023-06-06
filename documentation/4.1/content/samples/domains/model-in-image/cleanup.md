@@ -49,14 +49,8 @@ To remove the resources you have created in these samples:
 
 7. Delete the images you may have created in this sample:
    ```shell
-   $ docker image rm model-in-image:WLS-AI-v1
+   $ docker image rm wdt-domain-image:WLS-v1
    ```
    ```shell
-   $ docker image rm model-in-image:WLS-AI-v2
-   ```
-   ```shell
-   $ docker image rm model-in-image:JRF-AI-v1
-   ```
-   ```shell
-   $ docker image rm model-in-image:JRF-AI-v2
+   $ docker image rm wdt-domain-image:WLS-v2
    ```

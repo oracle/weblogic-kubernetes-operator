@@ -53,12 +53,6 @@ weight: 4
         --set "kubernetes.namespaces={traefik}"
     ```
 
-1.	Delete the domain namespace.
-
-    ```shell
-    $ kubectl delete namespace sample-domain1-ns
-    ```
-
 #### Remove the operator
 
 1.	Remove the operator.

@@ -11,7 +11,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain on PV). This involves:
 
-  - Building a [domain creation image](#domain-creation-image) with:
+  - Using the [domain creation image](#domain-creation-image) that you previously built, it contains:
     - A WDT model that describes your WebLogic domain configuration.
     - A WDT archive ZIP file that contains your applications.
     - A WDT installation that contains the binaries for running WDT.
@@ -343,7 +343,7 @@ Events:
 ```
 {{% /expand %}}
 
-In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
+In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the domain resource is applied, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
 
 ### Verify the pods
 
@@ -499,3 +499,7 @@ If the PVC and PV were created by the operator and you don't want to preserve th
 $ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
 $ kubectl delete PV sample-domain1-weblogic-sample-pv
 ```
+
+#### Delete the domain namespace.
+
+$ kubectl delete namespace sample-domain1-ns

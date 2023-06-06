@@ -121,7 +121,7 @@ Here are the steps for this use case:
 
     - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
+      - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
         - We suggest copying this Domain YAML file and naming the copy `/tmp/sample/mii-update2.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
@@ -284,7 +284,7 @@ Here are the steps for this use case:
         **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/domain-resources/WLS-AI/mii-update2-d2-WLS-AI-v1-ds.yaml
+        $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
         ```
 
 1. Wait for `sample-domain2` to start.

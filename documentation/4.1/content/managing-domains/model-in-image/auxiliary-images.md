@@ -185,14 +185,14 @@ to use Docker to build its auxiliary image:
 1. Create a `/tmp/mystaging/models` directory as a staging directory and copy the model YAML file, properties, and archive into it:
    ```shell
    $ mkdir -p /tmp/mystaging/models
-   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.yaml ./models
-   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.properties ./models
-   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip ./models
    ```
    If the `archive.zip` file is missing, then repeat the step to create this file
    in the Model in Image sample
    [initial use case]({{< relref "/samples/domains/model-in-image/initial.md#staging-a-zip-file-of-the-archive" >}})
-   while using `/tmp/mii-sample/model-images/model-in-image__WLS-AI-v1` as the target directory.
+   while using `/tmp/mii-sample/model-images/model-in-image__WLS-v1` as the target directory.
 
 1. Install WDT in the staging directory and remove its `weblogic-deploy/bin/*.cmd` files,
    which are not used in UNIX environments:
@@ -210,7 +210,7 @@ to use Docker to build its auxiliary image:
    $ cd /tmp/mystaging
    $ docker build -f /tmp/mii-sample/ai-docker-file/Dockerfile \
      --build-arg AUXILIARY_IMAGE_PATH=/auxiliary \
-     --tag model-in-image:WLS-AI-v1 .
+     --tag model-in-image:WLS-v1 .
    ```
 
    See `./Dockerfile` for an explanation of each build argument.
@@ -249,9 +249,9 @@ to use Docker to build its auxiliary image:
 1. If you have successfully created the image, then it should now be in your local machine's Docker repository. For example:
 
    ```
-   $ docker images model-in-image:WLS-AI-v1
+   $ docker images model-in-image:WLS-v1
    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-   model-in-image      WLS-AI-v1           eac9030a1f41        1 minute ago        4.04MB
+   model-in-image      WLS-v1           eac9030a1f41        1 minute ago        4.04MB
    ```
 
 1. After the image is created, it should have the WDT executables in
@@ -260,18 +260,18 @@ to use Docker to build its auxiliary image:
    image to verify this:
 
    ```shell
-   $ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary
+   $ docker run -it --rm model-in-image:WLS-v1 ls -l /auxiliary
      total 8
      drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
      drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
 
-   $ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/models
+   $ docker run -it --rm model-in-image:WLS-v1 ls -l /auxiliary/models
      total 16
      -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
      -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
      -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
 
-   $ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/weblogic-deploy
+   $ docker run -it --rm model-in-image:WLS-v1 ls -l /auxiliary/weblogic-deploy
      total 28
      -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
      -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
@@ -305,7 +305,7 @@ spec:
 
   serverPod:
     auxiliaryImages:
-    - image: "model-in-image:WLS-AI-v1"
+    - image: "model-in-image:WLS-v1"
       imagePullPolicy: IfNotPresent
       volume: auxiliaryImageVolume1
 ```
@@ -325,10 +325,10 @@ spec:
       - name: AUXILIARY_IMAGE_COMMAND
         value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
       - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
-        value: model-in-image:WLS-AI-v1
+        value: model-in-image:WLS-v1
       - name: AUXILIARY_IMAGE_CONTAINER_NAME
         value: compat-operator-aux-container1
-      image: model-in-image:WLS-AI-v1
+      image: model-in-image:WLS-v1
       imagePullPolicy: IfNotPresent
       name: compat-operator-aux-container1
       volumeMounts:

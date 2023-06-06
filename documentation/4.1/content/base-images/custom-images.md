@@ -602,8 +602,8 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    - The domain type specified in `domain.spec.configuration.model.domainType`
      must correspond with the `--wdtDomainType` specified on the WIT command line when creating the image.
 
-   - To compare this example with an equivalent auxiliary image domain:
+   - To compare this example with an equivalent single image (legacy) domain:
      ```
-     $ diff /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml \
-            /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+     $ diff /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml \
+            /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-LEGACY-v1.yaml
      ```

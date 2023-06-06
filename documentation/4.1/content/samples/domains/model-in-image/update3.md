@@ -8,7 +8,7 @@ The Update 3 use case demonstrates deploying an updated WebLogic application to 
 
 In the use case, you will:
 
- - Create an image `model-in-image:WLS-AI-v2` that is similar to the currently active `model-in-image:WLS-AI-v1` image, but with the following updates:
+ - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with the following updates:
    - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
    - An updated model YAML file within the image that points to the new web application path.
  - Apply an updated Domain YAML file that references the new image while still referencing the original [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
@@ -29,7 +29,7 @@ Here are the steps for this use case:
 
 2. Create an updated auxiliary image.
 
-   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v1` from files that were staged in `/tmp/sample/model-images/model-in-image__WLS-AI-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-AI-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a WebLogic Deploy Tooling installation in its `/auxiliary/weblogic-deploy` directory.
+   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v1` from files that were staged in `/tmp/sample/model-images/model-in-image__WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `wdt-domain-image:WLS-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a WebLogic Deploy Tooling installation in its `/auxiliary/weblogic-deploy` directory.
 
    In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain.
 
@@ -43,7 +43,7 @@ Here are the steps for this use case:
 
    - Stage a ZIP file of the WDT archive.
 
-     When you create your updated image, you will use the files in the staging directory `/tmp/sample/model-in-image__WLS-AI-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
+     When you create your updated image, you will use the files in the staging directory `/tmp/sample/model-in-image__WLS-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -51,24 +51,24 @@ Here are the steps for this use case:
      # Delete existing archive.zip in case we have an old leftover version
      ```
      ```shell
-     $ rm -f /tmp/sample/model-images/model-in-image__WLS-AI-v2/archive.zip
+     $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip
      ```
      ```
      # Move to the directory which contains the source files for our new archive
      ```
      ```shell
-     $ cd /tmp/sample/archives/archive-v2
+     $ cd /tmp/sample/wdt-artifacts/archives/archive-v2
      ```
      ```
-     # Zip the archive to the location will later use when we run the WebLogic Image Tool
+     # Using the [WDT archive helper tool](#https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/archive_helper/), create the archive in the location that we will use later when we run the WebLogic Image Tool.
      ```
      ```shell
-     $ zip -r /tmp/sample/model-images/model-in-image__WLS-AI-v2/archive.zip wlsdeploy
+     $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application -archive_file=/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip -source=wlsdeploy/applications/myapp-v2
      ```
 
    - Understanding your staged model files.
 
-     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/sample/model-in-image__WLS-AI-v2`.
+     The WDT model YAML file and properties for this use case have already been staged for you to directory `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2`.
 
      The `model.10.yaml` file in this directory has an updated path `wlsdeploy/applications/myapp-v2` that references the updated web application in your archive, but is otherwise identical to the model staged for the original image. The final related YAML file stanza looks like this:
 
@@ -85,25 +85,22 @@ Here are the steps for this use case:
 
    - Create a new auxiliary image from your staged model files using WIT.
 
-     At this point, you have staged all of the files needed for image `model-in-image:WLS-AI-v2`; they include:
+     At this point, you have staged all of the files needed for image `wdt-domain-image:WLS-v2`; they include:
 
-     - `/tmp/sample/model-images/weblogic-deploy.zip`
-     - `/tmp/sample/model-images/model-in-image__WLS-AI-v2/model.10.yaml`
-     - `/tmp/sample/model-images/model-in-image__WLS-AI-v2/model.10.properties`
-     - `/tmp/sample/model-images/model-in-image__WLS-AI-v2/archive.zip`
+     - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/model.10.yaml`
+     - `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2/model.10.properties`
+     - `/tmp/sample/model-images/wdt-artifacts/wdt-model-files/WLS-v2/archive.zip`
 
-     If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
-
-     Now, you use the Image Tool to create an auxiliary image named `model-in-image:WLS-AI-v2`. You've already set up this tool during the prerequisite steps.
+     Now, you use the Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v2`. You've already set up this tool during the prerequisite steps.
 
      Run the following commands to create the auxiliary image and verify that it worked:
 
      ```shell
-     $ cd /tmp/sample/model-images/model-in-image__WLS-AI-v2
+     $ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2
      ```
      ```shell
-     $ /tmp/sample/model-images/imagetool/bin/imagetool.sh createAuxImage \
-       --tag model-in-image:WLS-AI-v2 \
+     $ /tmp/sample/wdt-artifacts/imagetool/bin/imagetool.sh createAuxImage \
+       --tag wdt-domain-image:WLS-v2 \
        --wdtModel ./model.10.yaml \
        --wdtVariables ./model.10.properties \
        --wdtArchive ./archive.zip
@@ -121,10 +118,10 @@ Here are the steps for this use case:
      When the command succeeds, it will end with output like the following:
 
      ```
-     [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-AI-v2
+     [INFO   ] Build successful. Build time=36s. Image tag=wdt-domain-image:WLS-v2
      ```
 
-     Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-AI-v2`.
+     Also, if you run the `docker images` command, then you will see an image named `wdt-domain-image:WLS-v2`.
 
      **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
@@ -134,13 +131,13 @@ Here are the steps for this use case:
 
    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-     - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
+     - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
 
        - We suggest copying this Domain YAML file and naming the copy `/tmp/sample/mii-update3.yaml` before making any changes.
 
        - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
-     - Change the `/tmp/sample/mii-update3.yaml` Domain YAML file's `image` field to reference `model-in-image:WLS-AI-v2` instead of `model-in-image:WLS-AI-v1`.
+     - Change the `/tmp/sample/mii-update3.yaml` Domain YAML file's `image` field to reference `wdt-domain-image:WLS-v2` instead of `wdt-domain-image:WLS-v1`.
 
         The final result will look something like this:
 
@@ -148,7 +145,7 @@ Here are the steps for this use case:
         ...
         spec:
           ...
-          image: "model-in-image:WLS-AI-v2"
+          image: "wdt-domain-image:WLS-v2"
         ```
 
       - Apply your changed Domain YAML file:
@@ -164,7 +161,7 @@ Here are the steps for this use case:
         **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/domain-resources/WLS-AI/mii-update3-d1-WLS-AI-v2-ds.yaml
+        $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
         ```
 
 
