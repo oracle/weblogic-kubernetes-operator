@@ -35,7 +35,7 @@ For detailed information on how to restart servers using the operator, see [Star
 This document describes what actions you need to take to properly restart your servers for a number of common scenarios:
 
 * Modifying the WebLogic domain configuration
-* Changing the domain configuration overrides (also called situational configuration) for Domain in PV and Domain in Image domains
+* Changing the domain configuration overrides (also called situational configuration) for Domain on PV and Domain in Image domains
 * Changing the model files for Model in Image domains
 * Changing the WebLogic Server credentials (the user name and password)
 * Changing fields on the Domain that [affect WebLogic Server instance Pod generation]({{< relref "/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}) (such as `image`, `volumes`, and `env`)
@@ -50,7 +50,7 @@ Changes to the WebLogic domain configuration may require either a rolling or ful
 
 ##### Domain in Image
 
-{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
+{{% notice note %}} The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
 For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have [followed the CI/CD guidelines]({{< relref "/managing-domains/cicd/mutate-the-domain-layer">}}) to create an image with compatible encryption keys.
@@ -74,9 +74,9 @@ and
 
 * If you are supplying updated models or Secrets for a running domain, then see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-##### Domain in PV
+##### Domain on PV
 
-For Domain in PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
+For Domain on PV, the type of restart needed depends on the nature of the WebLogic domain configuration change:
 * Domain configuration changes that add new clusters (either configured or dynamic), member servers for these new clusters, or non-clustered servers can now be performed dynamically. This support requires that the new clusters or servers are added to the domain configuration and then that you [initiate the operator's introspection]({{< relref "/managing-domains/domain-lifecycle/introspection.md" >}}) of that new configuration.
 * Other changes to parts of the domain configuration that the operator introspects, require a full shutdown and restart, even if the changes are dynamic for WebLogic Server, such as:
   * Adding or removing a network access point

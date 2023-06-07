@@ -6,7 +6,7 @@ weight: 5
 description: "How to copy domains."
 ---
 
-The recommended approach to save a copy of a Domain in Image or Domain in PV
+The recommended approach to save a copy of a Domain in Image or Domain on PV
 domain is to simply ZIP (or tar)
 the domain directory.  However, there is a very important caveat with this
 recommendation - when you unzip the domain, it must go back into exactly

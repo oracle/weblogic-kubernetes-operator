@@ -18,11 +18,11 @@ Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain
 may optionally be associated with a Cluster resource in addition to a Domain resource.
 For more information, see [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource/_index.md" >}}).
 
-You can locate a WebLogic domain either in a persistent volume (Domain in PV), inside the container only (Model in Image), or in an image (Domain in Image).
+You can locate a WebLogic domain either on a persistent volume (Domain on PV), inside the container only (Model in Image), or in an image (Domain in Image).
 For an explanation of each, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
 For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/domains/_index.md" >}}).
 
-{{% notice note %}}The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
+{{% notice note %}}The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 {{% /notice %}}
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
@@ -37,11 +37,11 @@ and
 
 ### Modifying domain configurations
 
-You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
+You can modify the WebLogic domain configuration for Domain on PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
 
-When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
+When the domain is on a persistent volume, you can use WLST or WDT to change the configuration.
 
-For Domain in Image and Domain in PV, you can use [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
+For Domain in Image and Domain on PV, you can use [Configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
 
 Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,

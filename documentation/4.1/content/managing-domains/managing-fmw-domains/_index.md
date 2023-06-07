@@ -21,7 +21,7 @@ listed here, FMW Infrastructure domains work in the same way as WebLogic Server 
 The remainder of the documentation in this site applies equally to FMW
 Infrastructure domains and WebLogic Server domains.
 
-FMW Infrastructure domains are supported using the Domain in PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) _only_.
+FMW Infrastructure domains are supported using the Domain on PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) _only_.
 
 For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 

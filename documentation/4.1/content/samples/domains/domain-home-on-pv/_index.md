@@ -38,7 +38,7 @@ the `ReadWriteMany` option.
 Many storage providers will create a file system on
 the persistent volume which is owned by the `root` user.  In those cases, you will need to update the
 file permissions or ownership so that the `oracle` user (`uid 1000`) that is used in the standard
-WebLogic Server images can write to the file system in the persistent volume.
+WebLogic Server images can write to the file system on the persistent volume.
 
 This sample will automatically set the owner of all files on the persistent
 volume to `uid 1000`.  If you want to change that behavior, please edit `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml` and edit or remove the
