@@ -21,7 +21,7 @@ When using the operator to start WebLogic Server instances from a domain, you ha
    - Supply a WebLogic installation in an image and supply a WebLogic configuration in one of three ways:
      - As WDT model YAML file supplied in separate
        [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-     - As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.
+     - As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image. **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
      - As WDT model YAML file in a Kubernetes ConfigMap.
    - Supply WebLogic applications in one of two ways:
      - In auxiliary images.
@@ -31,6 +31,7 @@ When using the operator to start WebLogic Server instances from a domain, you ha
      supplied in a Kubernetes ConfigMap.
 
  - **[Domain in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})**:
+ **NOTE**: The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
    - Set the domain resource `domain.spec.domainHomeSourceType` attribute to `Image`.
    - Supply a WebLogic installation in an image and supply a WebLogic configuration as a domain home layered on this image.
    - Supply WebLogic applications layered on the installation image.
@@ -62,7 +63,7 @@ There are advantages for each domain home source type where Model in Image is th
 | Patches can be applied by simply changing the image and rolling the domain.  | To apply patches, you must update the domain-specific image and then restart or roll the domain depending on the nature of the patch.  | Same as Domain in PV when using dedicated [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) to supply model artifacts; same as Domain in Image otherwise. |
 | Many cloud providers do not provide persistent volumes that are shared across availability zones, so you may not be able to use a single persistent volume.  You may need to use some kind of volume replication technology or a clustered file system. | Provided you do not store and state in containers, you do not have to worry about volume replication across availability zones because each pod has its own copy of the domain.  WebLogic replication will handle propagation of any online configuration changes.  | Same as Domain in Image. |
 | CI/CD pipelines may be more complicated because you would need to run WLST against the live domain directory to effect changes.  | CI/CD pipelines are simpler because you can create the whole domain in the image and don't have to worry about a persistent copy of the domain.  | CI/CD pipelines are even simpler because you don't need to generate a domain home. The operator will create a domain home for you based on the model that you supply. |
-| There are fewer images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. | Same as Domain in Image unless you use the [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) approach. With auxiliary images, you can use a single image to distribute your WebLogic installation (similar to Domain on PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.|
+| There are fewer images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. | Same as Domain in Image unless you use the [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) approach. With auxiliary images, you can use a single image to distribute your WebLogic installation (similar to Domain in PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.|
 | You may be able to use standard Oracle-provided images or, at least, a very small number of self-built images, for example, with patches installed. | You may need to do more work to set up processes to build and maintain your images. | Same as Domain in Image.|
 
 ### Use or create WebLogic images depending on domain home source type
@@ -74,6 +75,8 @@ There are advantages for each domain home source type where Model in Image is th
   * [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
 
 * Model in Image domains that _do not_ use auxiliary images:
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ Auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+
   * [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}})
 
 * Domain in Image domains:

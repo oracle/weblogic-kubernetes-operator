@@ -93,6 +93,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       See [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}}).
 
+      **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+
   - Use a Persistent Volume Claim (PVC):
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
     in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
@@ -185,7 +187,7 @@ that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-im
 
 **Notes**:
 
- - There are additional attributes that are common to all domain home source types, such as the `image` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
+ - There are additional attributes that are common to all domain home source types, such as the `image` or `clusters` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 
  - For fully specified Model in Image Domain YAML file examples,
    see the [`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources) GitHub directory for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).

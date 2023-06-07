@@ -77,10 +77,37 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
     Now, you are able to create a role assignment to grant the AKS cluster **Contributor** in the scope of the storage account. Then, the AKS cluster is able to access the file share.
 
     ```shell
-    $ az role assignment create --assignee "${AKS_OBJECT_ID}" \
+    $ az role assignment create \
+      --assignee-object-id "${AKS_OBJECT_ID}" \
+      --assignee-principal-type "ServicePrincipal" \
       --role "Contributor" \
       --scope "${STORAGE_ACCOUNT_ID}"
     ```
+
+    Successful output will be a JSON object with string like:
+
+    ```json
+    {
+    "condition": null,
+    "conditionVersion": null,
+    "createdBy": "d6fe7d09-3330-45b6-ae32-4dd5e3310835",
+    "createdOn": "2023-05-11T04:13:04.922943+00:00",
+    "delegatedManagedIdentityResourceId": null,
+    "description": null,
+    "id": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/wlsresourcegroup1683777168/providers/Microsoft.Storage/storageAccounts/wlsstorage1683777168/providers/Microsoft.Authorization/roleAssignments/93dae12d-21c8-4844-99cd-e8b088356af6",
+    "name": "93dae12d-21c8-4844-99cd-e8b088356af6",
+    "principalId": "95202c6f-2073-403c-b9a7-7d2f1cbb4541",
+    "principalName": "3640cbf2-4db7-43b8-bcf6-1e51d3e90478",
+    "principalType": "ServicePrincipal",
+    "resourceGroup": "wlsresourcegroup1683777168",
+    "roleDefinitionId": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c",
+    "roleDefinitionName": "Contributor",
+    "scope": "/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/wlsresourcegroup1683777168/providers/Microsoft.Storage/storageAccounts/wlsstorage1683777168",
+    "type": "Microsoft.Authorization/roleAssignments",
+    "updatedBy": "d6fe7d09-3330-45b6-ae32-4dd5e3310835",
+    "updatedOn": "2023-05-11T04:13:04.922943+00:00"
+   }
+   ```
 
 4. Configure network security.
 
@@ -198,8 +225,7 @@ Completed
 
 To define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory.
 
-The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`; use value `${AKS_PERS_RESOURCE_GROUP}` as "resourceGroup", `${AKS_PERS_STORAGE_ACCOUNT_NAME}` as "storageAccount",
-`${AKS_PERS_SHARE_NAME}` as "shareName", and the Storage Class name is `azurefile-csi-nfs`.
+The following command displays the YAML content of your current settings. This should be the same with content in `azure-csi-nfs.yaml`. The Storage Class name is `azurefile-csi-nfs`.
 
 This sample uses Azure Files Container Storage Interface (CSI) drivers to manage the NFS file share, provisioner is `file.csi.azure.com`, see the [Azure Files CSI drivers documentation](https://docs.microsoft.com/azure/aks/azure-files-csi).
 
@@ -210,14 +236,11 @@ kind: StorageClass
 metadata:
   name: azurefile-csi-nfs
 provisioner: file.csi.azure.com
+allowVolumeExpansion: true
 parameters:
   protocol: nfs
-  resourceGroup: ${AKS_PERS_RESOURCE_GROUP}
-  storageAccount: ${AKS_PERS_STORAGE_ACCOUNT_NAME}
-  shareName: ${AKS_PERS_SHARE_NAME}
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
-allowVolumeExpansion: true
+mountOptions:
+  - nconnect=4
 EOF
 ```
 
@@ -244,8 +267,17 @@ Use the `kubectl` command to create the Storage Class and persistent volume clai
 
 ```shell
 $ kubectl apply -f ~/azure/weblogic-on-aks/azure-csi-nfs.yaml
+```
+
+```
 persistentvolume/wls-azurefile created
+```
+
+```shell
 $ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
+```
+
+```
 persistentvolumeclaim/wls-azurefile created
 ```
 

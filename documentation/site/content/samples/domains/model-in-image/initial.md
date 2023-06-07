@@ -517,6 +517,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
+This file contains both the domain resource and the referenced cluster resource definition.  See [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource">}}).
 
 {{%expand "Click here to view the WLS Domain YAML file." %}}
 ```yaml
@@ -558,10 +559,10 @@ spec:
   #imagePullSecrets:
   #- name: regsecret
   #- name: regsecret2
-  
+
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
-  webLogicCredentialsSecret: 
+  webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
@@ -569,11 +570,11 @@ spec:
 
   # Whether to enable overriding your log file location, see also 'logHome'
   #logHomeEnabled: false
-  
+
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
-  
+
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
@@ -583,7 +584,7 @@ spec:
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
@@ -613,7 +614,7 @@ spec:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
-   
+
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
@@ -639,8 +640,8 @@ spec:
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
-      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
-      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome`
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome`
       # to "None" if you want skip such copies.
       #   `image`                - Image location
       #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
@@ -722,10 +723,10 @@ spec:
   #imagePullSecrets:
   #- name: regsecret
   #- name: regsecret2
-  
+
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
-  webLogicCredentialsSecret: 
+  webLogicCredentialsSecret:
     name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
@@ -733,11 +734,11 @@ spec:
 
   # Whether to enable overriding your log file location, see also 'logHome'
   #logHomeEnabled: false
-  
+
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
   #logHome: /shared/logs/sample-domain1
-  
+
   # Set which WebLogic Servers the Operator will start
   # - "Never" will not start any server in the domain
   # - "AdminOnly" will start up only the administration server (no managed servers will be started)
@@ -747,7 +748,7 @@ spec:
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
-    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
     #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
@@ -782,7 +783,7 @@ spec:
       env:
       - name: USER_MEM_ARGS
         value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
-   
+
   # The number of managed servers to start for unlisted clusters
   replicas: 1
 
@@ -808,8 +809,8 @@ spec:
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
       # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
-      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
-      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome`
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome`
       # to "None" if you want skip such copies.
       #   `image`                - Image location
       #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
@@ -865,7 +866,7 @@ spec:
 
   **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-  Run the following command to create the domain custom resource:
+  Run the following command to create the domain custom resource and the referenced cluster resource:
 
   ```shell
   $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml
