@@ -100,6 +100,12 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
     create = "60m"
     delete = "2h"
   }
+  node_shape_config {
+    #Optional
+   	memory_in_gbs = 200.0
+    ocpus = 3.0
+  }
+
 
   #Optional
   quantity_per_subnet = var.node_pool_quantity_per_subnet
