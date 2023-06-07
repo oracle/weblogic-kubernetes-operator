@@ -93,6 +93,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       See [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}}).
 
+      **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+
   - Use a Persistent Volume Claim (PVC):
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
     in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
