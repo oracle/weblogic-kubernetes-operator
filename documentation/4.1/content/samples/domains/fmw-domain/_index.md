@@ -71,7 +71,7 @@ The script will perform the following steps:
    * Or, use built-in WDT scripts to create the domain.
 
    **NOTE**: Alternatively, you can use WDT to introspect an already existing domain, such as an on-premises domain,
-   and then create the same domain in a Persistent Volume (PV). For details, see this [Domain in PV sample using WebLogic Deploy Tooling](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README).
+   and then create the same domain on a Persistent Volume (PV). For details, see this [Domain on PV sample using WebLogic Deploy Tooling](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/README).
 * Run and wait for the job to finish.
 * Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that was created previously.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`

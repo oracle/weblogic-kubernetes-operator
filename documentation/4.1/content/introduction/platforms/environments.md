@@ -121,9 +121,9 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 AKS support and limitations:
 
 * Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
-* All three [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are supported (Domain in Image, Model in Image, and Domain in PV).
-   * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
-* For Domain in PV, we support Azure Files volumes accessed through
+* All three [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are supported (Domain in Image, Model in Image, and Domain on PV).
+   * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+* For Domain on PV, we support Azure Files volumes accessed through
   a persistent volume claim; see [here](https://docs.microsoft.com/en-us/azure/aks/azure-files-volume).
 * Azure Load Balancers are supported when provisioned using a Kubernetes Service of `type=LoadBalancer`.
 * Oracle databases running in Oracle Cloud Infrastructure are supported for Fusion Middleware
@@ -155,7 +155,7 @@ The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported 
 
 TKG support and limitations:
 
-* Both Domain in Image and Model in Image domain home source types are supported. Domain in PV is not supported.
+* Both Domain in Image and Model in Image domain home source types are supported. Domain on PV is not supported.
 * VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.
   * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.

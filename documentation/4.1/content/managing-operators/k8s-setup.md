@@ -122,7 +122,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 1. If you need shared storage between your Kubernetes worker nodes, enable and configure NFS:
 
 In the current GA version, the Oracle Container Engine for Kubernetes supports network block storage that can be shared across nodes with access permission RWOnce (meaning that only one can write, others can read only).
-If you choose to place your domain in a persistent volume,
+If you choose to place your domain on a persistent volume,
 you must use a shared file system to store the WebLogic domain configuration, which MUST be accessible from all the pods across the nodes.
 Oracle recommends that you use the Oracle Cloud Infrastructure File Storage Service (or equivalent on other cloud providers).
 Alternatively, you may install an NFS server on one node and share the file system across all the nodes.

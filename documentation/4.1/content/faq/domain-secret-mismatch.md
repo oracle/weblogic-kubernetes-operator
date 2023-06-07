@@ -55,7 +55,7 @@ may have different images under the same tag in their individual, local containe
 The simplest solution is to set `imagePullPolicy` to `Always`; however, the better solution would be to design your development
 pipeline to generate new container image tags on every build and to never reuse an existing tag.
 
-#### Domain in PV
+#### Domain on PV
 
 ##### Completely replacing the domain directory
 

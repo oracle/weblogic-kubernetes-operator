@@ -14,7 +14,7 @@ This document describes domain introspection, when it occurs automatically, and 
 
 To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an "introspection" job. This Job will be named `DOMAIN_UID-introspector`, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
-[domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain in PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
+[domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are different (for instance, Domain on PV uses a domain home on a PersistentVolume while Model in Image generates the domain home dynamically from a WDT model), the Pod created by this Job will be
 as similar as possible to the Pod that will later be generated for the Administration Server. This guarantees that the operator is
 analyzing the same WebLogic domain configuration that WebLogic Server instances will use.
 
@@ -22,7 +22,7 @@ Introspection ensures that:
 1. The operator is aware of domain topology from the WebLogic domain configuration, including servers, clusters, network access points, listen addresses, and other configurations.
 2. The operator can generate configuration overrides to adjust the WebLogic domain configuration to match the Kubernetes environment, such as modifying listen addresses.
 3. For Model in Image, the operator can generate the WebLogic domain home, including the final domain configuration.
-4. For Domain in PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}) along with the operator-generated overrides to generate the final configuration overrides.
+4. For Domain on PV and Domain in Image, the operator can use any customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}) along with the operator-generated overrides to generate the final configuration overrides.
 
 ### When introspection occurs automatically
 
@@ -81,9 +81,9 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 
 The following sections describe typical use cases for rerunning the introspector.
 
-#### Adding clusters or Managed Servers to a Domain in PV configuration
+#### Adding clusters or Managed Servers to a Domain on PV configuration
 
-When you have an existing WebLogic domain home on a persistent volume (Domain in PV) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.
+When you have an existing WebLogic domain home on a persistent volume (Domain on PV) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.
 
 Prior to operator 3.0.0, this was not possible because there was no mechanism to initiate introspection other than a full domain shut down and restart and so the operator was unaware of the new clusters or Managed Servers. Now, after updating the domain configuration, you can initiate introspection by changing the `introspectVersion`.
 
@@ -116,7 +116,7 @@ When this updated Domain YAML file is applied, the operator will initiate a new 
 
 #### Distributing changes to configuration overrides
 
-The operator supports customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain in PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
+The operator supports customer-provided [configuration overrides]({{<relref "/managing-domains/configoverrides/_index.md">}}). These configuration overrides, which are supported with Domain on PV or Domain in Image, allow you to override elements of the domain configuration, such as data source URL's or credentials.
 
 With operator 3.0.0, you can now change the configuration overrides and distribute these new configuration overrides to already running WebLogic Server instances. To do this, update the ConfigMap that contains the configuration overrides or update one or more of the Secrets referenced by those configuration overrides and then initiate introspection by changing the `introspectVersion` field.
 

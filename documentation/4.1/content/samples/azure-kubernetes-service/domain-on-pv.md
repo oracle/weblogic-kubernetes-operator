@@ -169,10 +169,10 @@ weblogic-webhook-secrets                  Opaque                           2    
 wlsregcred                                kubernetes.io/dockerconfigjson   1      38s
 ```
 
-**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them. 
+**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.
 
 ##### Create WebLogic Domain
-You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume you created previously.
+You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain on the persistent volume you created previously.
 
 {{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
 {{% /notice%}}

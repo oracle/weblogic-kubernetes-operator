@@ -50,13 +50,13 @@ but the shortest distances, almost always requires using a single database
 server to consolidate and replicate data (DataGuard).
 
 There are three common approaches on how to structure these components:
- * The first, "domain on a persistent volume" or Domain in PV,
+ * The first, "domain on a persistent volume" or Domain on PV,
    places the JDK and WebLogic binaries
    in the image, but the domain home is kept on a separate persistent storage
    outside of the image.
  * The second, Domain in Image,
    puts the JDK, WebLogic Server binaries,
-   and the domain home all in the image. **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
+   and the domain home all in the image. **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
  * The third approach, Model in Image, puts the JDK, WebLogic Server binaries, and a domain model
    in the image, and generates the domain home at runtime
    from the domain model.

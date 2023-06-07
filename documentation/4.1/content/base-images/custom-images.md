@@ -34,7 +34,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
   - WIT [`create`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) command:
 
     - Creates a new WebLogic image from a base OS image.
-    - Can be used for all [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) (Domain in Image, Model in Image, and Domain in PV).
+    - Can be used for all [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) (Domain in Image, Model in Image, and Domain on PV).
     - Optionally, includes a WebLogic Deploy Tooling (WDT) [installation](https://oracle.github.io/weblogic-deploy-tooling/userguide/install/) and model files in the image
       (for Model in Image domains).
       See also, [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
@@ -279,7 +279,7 @@ image that is meant for updating an already running domain, then see
 [Apply patched images to a running domain]({{< relref "/base-images/patch-images#apply-patched-images-to-a-running-domain" >}}).
 
 **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is
-deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
+deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 
 For Domain in Image domains,
 you must create an image with the WebLogic domain inside the image.

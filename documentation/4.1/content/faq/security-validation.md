@@ -16,7 +16,7 @@ WebLogic Server has a new, important feature to ensure and help you secure your 
 
 Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnings may recommend updating your WebLogic configuration. You can make the recommended configuration changes using an approach that depends on your [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}):
 
-- For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
+- For Domain on PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
 
 - For Domain in Image, create a new image with the recommended changes or use [configuration overrides]({{< relref "/managing-domains/configoverrides/_index.md" >}}).
 

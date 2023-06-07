@@ -53,7 +53,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 #### WebLogic Scripting Tool (WLST)
 
 You can use WLST scripts to create and update domain homes in a CI/CD pipeline
-for Domain in Image and Domain in PV domains.
+for Domain in Image and Domain on PV domains.
 We recommend that you use offline WLST for this purpose.  There may be some
 scenarios where it is necessary to use WLST online, but we recommend that
 you do that as an exception only, and when absolutely necessary.
@@ -69,5 +69,5 @@ manually when migrating to a new version of WebLogic for example.
 
 WebLogic Server provides tools called "pack" and "unpack" that can be used to
 "clone" a domain home.  These tools do not preserve the domain encryption key.
-You can use these tools to make copies of Domain in PV and Domain in Image
+You can use these tools to make copies of Domain on PV and Domain in Image
 domain homes in scenarios when you do not need the same domain encryption key. See [Creating Templates and Domains Using the Pack and Unpack Commands](https://docs.oracle.com/en/middleware/fusion-middleware/12.2.1.3/wldpu/index.html).
