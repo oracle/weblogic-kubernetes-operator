@@ -128,7 +128,7 @@ INTROSPECTOR_DEADLINE_SECONDS ::: Introspector timeout for WLS and JRF runs
 
 DB_NAMESPACE ::: Namespace for Oracle DB
 
-?DB_NODEPORT ::: NodePort for Oracle DB
+DB_NODEPORT ::: NodePort for Oracle DB
 
 AUXILIARY_IMAGE_PATH ::: The auxiliary image path
   The path to copy the Domain on PV model files and WDT installation files in the domain creation image.
