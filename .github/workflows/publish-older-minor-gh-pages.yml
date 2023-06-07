@@ -9,7 +9,7 @@ name: "PublishGitHubPages"
 on:
   push:
     branches:
-      - main
+      - release/3.4
     paths:
       - 'documentation/**'
   schedule:
@@ -25,12 +25,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout main
+      - name: Checkout branch
         uses: actions/checkout@v3
         with:
-          ref: main
           fetch-depth: 32
-          path: main
+          path: branch
 
       - name: Checkout gh-pages
         uses: actions/checkout@v3
@@ -45,10 +44,13 @@ jobs:
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
-          cd $GITHUB_WORKSPACE/main/documentation
-          ./publish.sh -o $GITHUB_WORKSPACE/WORK
+          cd $GITHUB_WORKSPACE/branch/documentation
+          echo "Documentation branch is $GITHUB_REF_NAME..."
+          minor_version=${GITHUB_REF_NAME#"release/"}
+          echo "Building documentation for older minor version..."
+          hugo -s site -d "$GITHUB_WORKSPACE/WORK/$minor_version" -b https://oracle.github.io/weblogic-kubernetes-operator/$minor_version
           cd $GITHUB_WORKSPACE/gh-pages
-          rm -Rf *
+          rm -Rf $minor_version
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
