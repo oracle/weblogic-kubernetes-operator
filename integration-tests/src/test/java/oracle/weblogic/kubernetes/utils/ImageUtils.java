@@ -589,7 +589,7 @@ public class ImageUtils {
     // create unique image name with date
     final String imageTag = getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
-    final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
+    final String imageName = DOMAIN_IMAGES_PREFIX + baseImageName;
 
     final String image = imageName + ":" + imageTag;
     LoggingFacade logger = getLogger();
