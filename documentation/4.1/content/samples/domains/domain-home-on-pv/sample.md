@@ -11,14 +11,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain on PV). This involves:
 
-<<<<<<< HEAD
-  - Using the [domain creation image](#domain-creation-image) that you previously built, it contains:
-    - A WDT model that describes your WebLogic domain configuration.
-    - A WDT archive ZIP file that contains your applications.
-    - A WDT installation that contains the binaries for running WDT.
-=======
   - Using the [domain creation image](#domain-creation-image) that you previously built.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   - Creating secrets for the domain.
   - Creating a Domain resource YAML file for the domain that:
     - References your Secrets and a WebLogic image.
@@ -66,9 +59,6 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
-
-  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
-  be unique and different than the admin password, but this is not required.
 
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \

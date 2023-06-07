@@ -29,7 +29,7 @@ To remove the resources you have created in these samples:
    $ kubectl delete namespace traefik
    ```
 
-3. If you set up a database for JRF or the Update 4 use case:
+3. If you set up a database for the Update 4 use case:
    ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```

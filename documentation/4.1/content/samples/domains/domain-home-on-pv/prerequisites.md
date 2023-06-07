@@ -120,7 +120,6 @@ To do this, follow the same steps as the [Quick Start](https://oracle.github.io/
        ```
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain1-admin-server.yaml
        $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain1-cluster-cluster-1.yaml
-       $ kubectl apply -f https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/ingresses/traefik-ingress-sample-domain2-cluster-cluster-1.yaml
        ```
 
    **NOTE**: We give each cluster ingress a different host name that is decorated using both its operator domain UID and its cluster name. This makes each cluster uniquely addressable even when cluster names are the same across different clusters.  When using `curl` to access the WebLogic domain through the ingress, you will need to supply a host name header that matches the host names in the ingress.
@@ -160,11 +159,11 @@ for the Domain on PV sample.
 
 **NOTE**: The requirements in this section are in addition to [Prerequisites for WLS and JRF domain types](#prerequisites-for-wls-and-jrf-domain-types).
 
-A JRF domain requires an infrastructure database, initializing this database with RCU, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}) in user documentation. You must perform all these steps _before_ you create your domain.
+A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}) in user documentation. You must perform all these steps _before_ you create your domain.
 
 ##### Set up and initialize an infrastructure database
 
-A JRF domain requires an infrastructure database and requires initializing this database with a schema and a set of tables for each different domain. The following example shows how to set up a database and use the RCU tool to create the infrastructure schemas for two JRF domains. The database is set up with the following attributes:
+A JRF domain requires an infrastructure database and requires initializing this database with a schema and a set of tables for each different domain. The following example shows how to set up a database. The database is set up with the following attributes:
 
 | Attribute | Value |
 | --------- | ----- |
@@ -172,7 +171,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 | database Kubernetes pod | `oracle-db` |
 | database image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
 | database password | MY_DBA_PASSWORD |
-| infrastructure schema prefixes | `FMW1` and `FMW2` (for domain1 and domain2) |
+| infrastructure schema prefix | `FMW1` (for domain1) |
 | infrastructure schema password | MY_RCU_SCHEMA_PASSWORD |
 | database URL | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 
@@ -213,66 +212,25 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      **WARNING:** The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
-
-1. Use the sample script `create-rcu-schema.sh` in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`) in the database.
-
-   This script starts a pod named `rcu` in the `default` namespace (the same namespace as the database)
-   and executes RCU setup script `createRepository.sh`.
-   It assumes that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` and the namespace is `default` by default.
-
-   - First, create a secret in the `default` namespace
-     which contains the database's SYSDBA username and password
-     in the secret's `sys_username` and `sys_password` fields,
-     and also contains the password of your choice for RCU schemas:
-     - In the local shell:
-       ```shell
-       $ kubectl -n default create secret generic oracle-rcu-secret \
-         --from-literal='sys_username=sys' \
-         --from-literal='sys_password=MY_DBA_PASSWORD' \
-         --from-literal='password=MY_RCU_SCHEMA_PASSWORD'
-       ```
-     - Replace MY_DBA_PASSWORD with the same value that you chose when deploying the database.
-     - Replace MY_RCU_SCHEMA_PASSWORD with your choice of RCU schema password.
-     - Oracle passwords can contain upper case, lower case, digits, and special characters.
-       Use only `_` and `#` as special characters to eliminate potential parsing errors in Oracle connection strings.
-     - __Note__: Record or memorize the values you chose for MY_DBA_PASSWORD and MY_RCU_SCHEMA_PASSWORD. They will be be needed again in other parts of this sample.
-
-   - Second, run the script twice, once for each RCU schema prefix:
-     ```shell
-     $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
-     ```
-     ```shell
-     $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
-     ```
-     ```shell
-     $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
-     ```
-
-   __NOTES__:
-   - If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
-   - If you need to drop the repositories, use these commands:
-     ```shell
-     $ ./drop-rcu-schema.sh -s FMW1
-     ```
-     ```shell
-     $ ./drop-rcu-schema.sh -s FMW2
-     ```
-     The drop command implicitly uses the same `rcu` pod and the same database credentials `oracle-rcu-secret` secret that
-     you set up when you created the RCU schema.
-
-
 ##### Important considerations for RCU model attributes, Domain fields, and secrets
 
 To allow the operator to access the database and OPSS wallet, you must create an RCU access secret containing the database connect string, user name, and password that's referenced from your model and an OPSS wallet password secret that's referenced from your Domain before deploying your domain.  It's also necessary to define an `RCUDbInfo` stanza in your model.
 
-The sample includes examples of JRF models and Domain YAML files in the `/tmp/sample/model-images` and `/tmp/sample/domain-resources` directories, and instructions in the following sections will describe setting up the RCU and OPSS secrets.
+The sample includes examples of JRF models and Domain YAML files in the `/tmp/sample/wdt-artifacts/wdt-model-files` and `/tmp/sample/domain-resources` directories, and instructions in the following sections will describe setting up the RCU and OPSS secrets.
 
 When you follow the instructions in the samples, avoid instructions that are `WLS` only, and substitute `JRF` for `WLS` in the corresponding model image tags and Domain YAML file names.
 
 For example, in this sample:
 
-  - JRF Domain YAML files have an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with a `walletPassword` of your choice.
+  - [JRF Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) file has an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with a `walletPassword` of your choice.
 
-  - JRF image models have a `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
+  - JRF domain creation image models have below `domainInfo -> RCUDbInfo` stanza that reference a `sample-domain1-rcu-access` secret with appropriate values for attributes `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string` for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
+
+```
+    RCUDbInfo:
+        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+```
 
 For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}).

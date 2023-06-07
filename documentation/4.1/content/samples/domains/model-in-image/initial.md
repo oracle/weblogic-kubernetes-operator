@@ -10,10 +10,7 @@ weight: 2
 
 In this use case, you set up an initial WebLogic domain. This involves:
 
-  - Using the [auxiliary image](#auxiliary-image) that you previously created, it contains:
-    - A WDT archive ZIP file that contains your applications.
-    - A WDT model that describes your WebLogic configuration.
-    - A WDT installation that contains the binaries for running WDT.
+  - Using the [auxiliary image](#auxiliary-image) that you previously created.
   - Creating secrets for the domain.
   - Creating a Domain YAML file for the domain that references your Secrets, auxiliary image, and a WebLogic image.
 

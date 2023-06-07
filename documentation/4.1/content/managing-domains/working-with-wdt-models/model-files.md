@@ -9,15 +9,15 @@ description = "Learn about model file requirements, macros, and loading order."
 {{< table_of_contents >}}
 
 
-This document describes working with WDT model files and related artifacts in the operator.
-For additional information, see the [WebLogic Deploy Tooling (WDT)](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
+This document describes working with WebLogic Deploy Tooling (WDT) model files in the operator.
+For additional information, see the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
-{{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
+{{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating WDT model files from an existing domain home.
 {{% /notice %}}
 
-### Sample model file with macros
+### Sample WDT model file with macros
 
-Here's an example of a model YAML file describing a domain.  For detailed information, see [Metadata model](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
+Here's an example of a WDT model YAML file describing a domain.  For detailed information, see [Metadata model](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
 
 ```yaml
 domainInfo:
