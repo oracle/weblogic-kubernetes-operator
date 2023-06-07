@@ -75,7 +75,7 @@ spec:
         - name: "KUBERNETES_PLATFORM"
           value: {{ .kubernetesPlatform | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
-          value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
+          value: {{ int64 .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
           value: {{ .javaLoggingFileCount | default 10 | quote }}
         {{- if .remoteDebugNodePortEnabled }}
