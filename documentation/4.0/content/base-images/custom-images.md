@@ -507,11 +507,7 @@ to create the domain home in Domain in Image.
 
 #### Create a custom image with your model inside the image
 
-{{% notice tip %}}
-This section describes an option for layering Model in Image model files on a WebLogic image.
-The preferred approach for supplying Model in Image files
-is to use [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) instead.
-{{% /notice %}}
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
 
 {{% notice warning %}}
 The example in this section references a base image,
