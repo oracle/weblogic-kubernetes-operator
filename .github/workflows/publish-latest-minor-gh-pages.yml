@@ -51,7 +51,7 @@ jobs:
           echo "Copying static files into place..."
           cp -R charts domains "$GITHUB_WORKSPACE/WORK"
           cd $GITHUB_WORKSPACE/gh-pages
-          find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -exec rm -Rf {} \;
+          find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
