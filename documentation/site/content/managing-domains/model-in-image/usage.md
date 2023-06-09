@@ -38,12 +38,12 @@ Model in Image requires an image with a WebLogic Server installation.
 ### Directory structure
 
 Model in Image requires the following directory structure in its pods for
-its (optional) WDT model artifacts and (required) WDT binaries:
+its (optional) WDT model files and (required) WDT binaries:
 
-| Domain resource attribute  | Contents                              | Default directory |
-| -------------------------- | ------------------------------------- | ----------------- |
-| `domain.spec.configuration.model.modelHome` | Zero or more model `.yaml`, `.properties`, and/or archive `.zip` files. | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
-| `domain.spec.configuration.model.wdtInstallHome` | Unzipped WDT installation binaries (required).  | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
+| Domain resource attribute  | Contents                              | Default directory                                                                                                                                                                                                                                                                                                         |
+| -------------------------- | ------------------------------------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `domain.spec.configuration.model.modelHome` | Zero or more model `.yaml`, `.properties`, and/or archive `.zip` files. | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) are configured, and to `/aux/models` otherwise. |
+| `domain.spec.configuration.model.wdtInstallHome` | Unzipped WDT installation binaries (required).  | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.                                                                          |
 
 {{% notice note %}}
 If you set `modelHome` and `wdtInstallHome` to a non-default value,
@@ -51,7 +51,7 @@ then the operator will ignore WDT model and installation files
 that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}).
 {{% /notice %}}
 
-### Supplying initial model files and WDT
+### Supplying initial WDT model files and WDT installation
 
 Model in Image minimally requires an image with a WebLogic installation
 (see [WebLogic Server image](#weblogic-server-image)), plus access
@@ -68,7 +68,7 @@ to:
   must be supplied in the model home because application archives
   are not supported in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
 
-There are multiple methods for supplying Model in Image WDT artifacts:
+There are multiple methods for supplying Model in Image WDT models files, WDT variables files, and WDT archive files (collectively known as WDT model files):
 
   - Use auxiliary images:
     Use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
@@ -78,8 +78,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
     from each of the small images into the `/aux/models` and `/aux/weblogic-deploy` directories
     in each pod's file system so that the introspection job can find them.
 
-  - Include in main image:
-    You can include the artifacts in your domain resource `domain.spec.image`
+  - Include in the main image:
+    You can include the WDT model files in your domain resource `domain.spec.image`
     in its `domain.spec.configuration.model.modelHome`
     and `domain.spec.configuration.model.wdtInstallHome` directories as
     a layer on top of your base image
@@ -87,17 +87,15 @@ There are multiple methods for supplying Model in Image WDT artifacts:
 
     Use either of the following methods.
 
-    - _Manual image creation_ uses Docker commands to layer the WDT artifacts, described in the previous table,
+    - _Manual image creation_ uses Docker commands to layer the WDT models files, described in the previous table,
       on top of your base image into a new image.
     - The _WebLogic Image Tool_ (WIT) has built-in options for layering WDT model files,
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       See [Create a custom image with your model inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-model-inside-the-image" >}}).
 
-      **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-
   - Use a Persistent Volume Claim (PVC):
-    This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
-    on a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
+    This method is for advanced use cases only. Supply WDT model YAML, variables, or archive files
+    in a [Persistent Volume Claim]({{< relref "/managing-domains/persistent-storage/volumes.md" >}})
     and modify `configuration.model.modelHome` and `configuration.model.wdtInstallHome` to
     the corresponding directory within the PVC's mount location.
 
@@ -108,7 +106,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
     updates to models supplied by one of these methods.
 
 For more information about model file syntax,
-see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
+see [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 
 ### Optional WDT model ConfigMap
 
@@ -129,12 +127,12 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-See [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
+See [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
 
 
 ### Required runtime encryption secret
 
-Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home artifacts before it adds them to a runtime ConfigMap or log. You can safely change the `password`, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
+Model in Image requires a runtime encryption secret with a secure `password` key. This secret is used by the operator to encrypt model and domain home files before it adds them to a runtime ConfigMap or log. You can safely change the `password`, at any time after you've fully shut down a domain, but it must remain the same for the life of a running domain. The runtime encryption secret that you create can be named anything, but note that it is a best practice to name and label secrets with their domain UID to help ensure that cleanup scripts can find and delete them.
 
 **NOTE**: Because the runtime encryption password does not need to be shared and needs to exist only for the life of a domain, you may want to use a password generator.
 
@@ -161,23 +159,23 @@ Corresponding Domain YAML file snippet:
 
 ### Secrets for model macros
 
-Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
+Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
 
 ### Domain fields
 
 The following Domain fields are specific to Model in Image domains.
 
-| Domain Resource Attribute                    | Notes |
-| -------------------------                    | ------------------ |
-| `domainHomeSourceType`                       | Required. Set to `FromModel`. |
-| `domainHome`                                 | Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic Server pod every time the pod restarts.|
-| `configuration.model.configMap`              | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
-| `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
-| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.domainType`             | Set the type of domain. `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
-| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise.|
-| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.|
+| Domain Resource Attribute                    | Notes                                                                                                                                                                                                                                                                                                                  |
+| -------------------------                    |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `domainHomeSourceType`                       | Required. Set to `FromModel`.                                                                                                                                                                                                                                                                                          |
+| `domainHome`                                 | Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic Server pod every time the pod restarts.                                                                                 |
+| `configuration.model.configMap`              | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap).                                                                                                                                                                                |
+| `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.                                                                       |
+| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret).                                                                                                                                                          |
+| `configuration.model.domainType`             | Set the type of domain. `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).                                                                                                                                                             |
+| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret).                                                                                                                                                          |
+| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/models` otherwise. |
+| `configuration.model.wdtInstallHome`         | Optional. Location of the WDT installation. Defaults to `/u01/wdt/weblogic-deploy` if no [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}) are configured, and to `/aux/weblogic-deploy` otherwise.                                                                       |
 
 {{% notice note %}}
 If you set `modelHome` and `wdtInstallHome` to a non-default value,

@@ -11,12 +11,12 @@ description = "Use overrides to customize domains."
 ### Overview
 
 {{% notice note %}}
-Configuration overrides can only be used in combination with Domain in Image and Domain on PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
+Configuration overrides can only be used in combination with Domain in Image and Domain in PV domains. For Model in Image domains, use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 {{% /notice %}}
 
-Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain on PV domain's WebLogic domain configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
+Use configuration overrides (also called _situational configuration_) to customize a Domain in Image or Domain in PV domain's WebLogic domain configuration without modifying the domain's actual `config.xml` or system resource files. For example, you may want to override a JDBC data source XML module user name, password, and URL so that it references a local database.
 
-**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+**NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain in PV or Model in Image, depending on your needs.
 
 You can use overrides to customize domains as they are moved from QA to production, are deployed to different sites, or are even deployed multiple times at the same site. Beginning with operator version 3.0.0, you can now modify configuration overrides for running WebLogic Server instances and have these new overrides take effect dynamically. There are [limitations](#unsupported-overrides) to the WebLogic configuration attributes that can be modified by overrides and only changes to dynamic configuration MBean attributes may be changed while a server is running. Other changes, specifically overrides to non-dynamic MBeans, must be applied when servers are starting or restarting.
 
@@ -59,7 +59,7 @@ For a detailed walk-through of the runtime flow, see the [Internal design flow](
 ---
 ### Prerequisites
 
-* Configuration overrides can be used in combination with Domain in Image and Domain on PV domains.
+* Configuration overrides can be used in combination with Domain in Image and Domain in PV domains.
   For Model in Image domains (introduced in 3.0.0), use [Model in Image Runtime Updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) instead.
 
 * A WebLogic domain home must not contain any configuration overrides XML file in its `optconfig` directory that was not placed there by the operator. Any existing configuration overrides XML files in this directory will be deleted and replaced by your operator override templates, if any.
@@ -121,7 +121,7 @@ The behavior when using an unsupported override is undefined.
 
 The operator generates the final configuration overrides, combining customer-provided configuration overrides and operator-generated overrides, during the operator's introspection phase. These overrides are then used when starting or restarting WebLogic Server instances. Starting with operator version 3.0.0, these [overrides can also be distributed]({{< relref "/managing-domains/domain-lifecycle/introspection/_index.md#distributing-changes-to-configuration-overrides" >}}) and applied to already running WebLogic Server instances.
 
-For [Domain on PV]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
+For [Domain in PV]({{< relref "/managing-domains/domain-lifecycle/restarting/_index.md#domain-in-pv" >}}), the ability to change WebLogic domain configuration using traditional management transactions involving the Administration Console or WLST can be combined with the ability to initiate a repeat introspection and distribute updated configuration overrides. This combination supports use cases such as defining a new WebLogic cluster and then immediately starting Managed Server cluster members.
 
 ---
 ### Override template names and syntax
