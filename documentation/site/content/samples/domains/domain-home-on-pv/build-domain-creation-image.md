@@ -13,11 +13,7 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 
 The image build process uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
 - A WebLogic Deploy Tooling installation, expected in an image's `/auxiliary/weblogic-deploy` directory by default.
-- WDT model YAML file (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models` by default,
-which can include the following file types:
-   - WDT model YAML file - A declarative definition of the domain configuration.
-   - WDT variable file - A property file that maps names to values. These names can be referenced from the model file to allow a model to be used across environments by applying the variable file for a particular environment to the model.
-   - WDT archive file - A ZIP file containing application binaries and other files and directories needed to run the domain.
+- WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models` by default.
 
 ### Build the domain creation image
 
