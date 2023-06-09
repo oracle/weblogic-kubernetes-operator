@@ -852,8 +852,12 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
     replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
+    String storageClass = "weblogic-domain-storage-class";
+    if (OKE_CLUSTER) {
+      storageClass = "oci-fss";
+    }
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci-bv\"",
-        "storageClass: \"weblogic-domain-storage-class\"");
+        "storageClass: \"" + storageClass + "\"");
     replaceStringInFile(dbYaml.toString(), "accessMode: \"ReadWriteOnce\"", "accessMode: \"ReadWriteMany\"");
     replaceStringInFile(dbYaml.toString(), "volumeName: \"\"", "volumeName: \"" + pvName + "\"");
     
@@ -935,8 +939,12 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "pullFrom: container-registry.oracle.com/database/express:latest", 
         "pullFrom: " + DB_PREBUILT_IMAGE);
     replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
+    String storageClass = "weblogic-domain-storage-class";
+    if (OKE_CLUSTER) {
+      storageClass = "oci-fss";
+    }
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci-bv\"",
-        "storageClass: \"weblogic-domain-storage-class\"");
+        "storageClass: \"" + storageClass + "\"");
     replaceStringInFile(dbYaml.toString(), "accessMode: \"ReadWriteOnce\"", "accessMode: \"ReadWriteMany\"");
     replaceStringInFile(dbYaml.toString(), "volumeName: \"\"", "volumeName: \"" + pvName + "\"");
     

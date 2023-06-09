@@ -39,7 +39,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -217,7 +217,7 @@ class ItWlsSamples {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
 
-    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
+    String imageName = DOMAIN_IMAGES_PREFIX + diiImageNameBase + "-" + script + ":" + diiImageTag;
     Path testSamplePath = get(WORK_DIR, "wls-sample-testing", "domainInImage", domainName, script);
     //copy the samples directory to a temporary location
     setupSample(testSamplePath);

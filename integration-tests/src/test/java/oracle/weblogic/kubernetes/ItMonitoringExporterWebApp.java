@@ -130,7 +130,7 @@ class ItMonitoringExporterWebApp {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
-  private static String releaseSuffix = "test2";
+  private static String releaseSuffix = "testwebapp";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;

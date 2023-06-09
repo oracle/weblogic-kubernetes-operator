@@ -26,9 +26,9 @@ alertmanager:
     tag: prometheus_alertmanager_tag
     pullPolicy: IfNotPresent
   securityContext:
-    runAsUser: 65534
+    runAsUser: 1000
     runAsNonRoot: true
-    runAsGroup: 65534
+    runAsGroup: 1000
 
 #nodeExporter:
 prometheus-node-exporter:
@@ -66,8 +66,9 @@ server:
     type: NodePort
     nodePort: 30500
   securityContext:
-    runAsUser: 0
-    runAsNonRoot: false
+    runAsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 1000
 
   global:
     evaluation_interval: 1m

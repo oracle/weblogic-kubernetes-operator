@@ -204,7 +204,7 @@ class ItIstioDBOperator {
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(fmwDomainNamespace);
     createBaseRepoSecret(wlsDomainNamespace);
-
+    createTestRepoSecret(wlsDomainNamespace);
     // create PV, PVC for logs/data
     createPV(pvName, wlsDomainUid, ItIstioDBOperator.class.getSimpleName());
     createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
@@ -406,7 +406,6 @@ class ItIstioDBOperator {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createTestRepoSecret(wlsDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
