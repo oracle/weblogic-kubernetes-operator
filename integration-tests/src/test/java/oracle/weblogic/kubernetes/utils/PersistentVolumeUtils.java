@@ -42,7 +42,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -211,6 +213,7 @@ public class PersistentVolumeUtils {
       String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
       LoggingFacade logger = getLogger();
       logger.info("Using FSS PV directory {0}", fssDir);
+      logger.info("Using NFS_SERVER  {0}", NFS_SERVER);
       v1pv.getSpec()
               .storageClassName("oci-fss")
               .nfs(new V1NFSVolumeSource()
@@ -320,13 +323,26 @@ public class PersistentVolumeUtils {
           + mountPath
           + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
     }
+    return createfixPVCOwnerContainer(pvName, mountPath, argCommand);
+  }
+
+  /**
+   * Create container to fix pvc owner for pod.
+   *
+   * @param pvName name of pv
+   * @param mountPath mounting path for pv
+   * @param command to run for ownership
+   * @return container object with required ownership based on OKE_CLUSTER variable value.
+   */
+  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath, String command) {
+
     V1Container container = new V1Container()
         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addCommandItem("/bin/sh")
         .addArgsItem("-c")
-        .addArgsItem(argCommand)
+        .addArgsItem(command)
         .volumeMounts(Arrays.asList(
             new V1VolumeMount()
                 .name(pvName)
@@ -404,6 +420,23 @@ public class PersistentVolumeUtils {
           .storageClassName(nameSuffix);
     }
 
-    createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
+    if (nameSuffix.contains("grafana") || nameSuffix.contains("prometheus")) {
+      String mountPath = "/data";
+      if (nameSuffix.contains("grafana")) {
+        mountPath = "/var/lib/grafana";
+      }
+      String argCommand = "chown -R 1000:1000 " + mountPath;
+      if (OKE_CLUSTER) {
+        argCommand = "chown 1000:1000 " + mountPath
+            + "/. && find "
+            + mountPath
+            + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+      }
+      createTestRepoSecret(namespace);
+      createJobToChangePermissionsOnPvHostPath("pv-test" + nameSuffix,
+          "pvc-" + nameSuffix, namespace,
+          mountPath, argCommand);
+    }
   }
 }

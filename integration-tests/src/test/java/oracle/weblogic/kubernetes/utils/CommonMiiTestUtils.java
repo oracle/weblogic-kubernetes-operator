@@ -1205,6 +1205,71 @@ public class CommonMiiTestUtils {
   }
 
   /**
+   * Create a job to change the permissions on the pv host path.
+   *
+   * @param pvName Name of the persistent volume
+   * @param pvcName Name of the persistent volume claim
+   * @param namespace Namespace containing the persistent volume claim and where the job should be created in
+   * @param mountPath path
+   * @param command to change permission
+   */
+  public static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName,
+                                                              String namespace, String mountPath, String command) {
+    LoggingFacade logger = getLogger();
+
+    if (!OKD) {
+      logger.info("Running Kubernetes job to create domain");
+      V1Job jobBody = new V1Job()
+          .metadata(
+              new V1ObjectMeta()
+                  .name("change-permissions-onpv-job-" + pvName) // name of the job
+                  .namespace(namespace))
+          .spec(new V1JobSpec()
+              .backoffLimit(0) // try only once
+              .template(new V1PodTemplateSpec()
+                  .spec(new V1PodSpec()
+                      .restartPolicy("Never")
+                      .addContainersItem(
+                          createfixPVCOwnerContainer(pvName,
+                              mountPath,
+                              command))
+                      .volumes(Arrays.asList(
+                          new V1Volume()
+                              .name(pvName)
+                              .persistentVolumeClaim(
+                                  new V1PersistentVolumeClaimVolumeSource()
+                                      .claimName(pvcName))))
+                      .imagePullSecrets(Arrays.asList(
+                          new V1LocalObjectReference()
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
+
+      String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+      // check job status and fail test if the job failed
+      V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+          "Getting the job failed");
+      if (job != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+                v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+          List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+                  namespace, "job-name=" + jobName).getItems(),
+              "Listing pods failed");
+          if (!pods.isEmpty()) {
+            String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+                "Failed to get pod log");
+            logger.severe(podLog);
+            fail("Change permissions on PV hostpath job failed");
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Check logs are written on PV by running the specified command on the pod.
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param commandToExecuteInsidePod The command to be run inside the pod
