@@ -37,6 +37,7 @@ public class OperatorValues {
   private String suspendOnDebugStartup = "";
   private String internalDebugHttpPort = "";
   private String externalDebugHttpPort = "";
+  private String jvmOptions = "-XX:MaxRAMPercentage=70";
   private String javaLoggingLevel = "";
   private String elkIntegrationEnabled = "";
   private String logStashImage = "";
@@ -348,6 +349,19 @@ public class OperatorValues {
 
   public OperatorValues externalDebugHttpPort(String val) {
     setExternalDebugHttpPort(val);
+    return this;
+  }
+
+  public String getJvmOptions() {
+    return jvmOptions;
+  }
+
+  public void setJvmOptions(String val) {
+    jvmOptions = convertNullToEmptyString(val);
+  }
+
+  public OperatorValues jvmOptions(String val) {
+    setJvmOptions(val);
     return this;
   }
 

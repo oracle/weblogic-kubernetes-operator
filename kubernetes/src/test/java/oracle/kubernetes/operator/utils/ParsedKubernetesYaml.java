@@ -59,6 +59,7 @@ public class ParsedKubernetesYaml {
    * @param factory YAML reader factory
    * @throws Exception on failure
    */
+  @SuppressWarnings("rawtypes")
   public ParsedKubernetesYaml(YamlReader factory) throws Exception {
     defineHandlers();
 

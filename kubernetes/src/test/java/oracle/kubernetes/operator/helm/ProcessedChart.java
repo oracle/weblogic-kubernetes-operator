@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -77,8 +77,9 @@ public class ProcessedChart implements YamlReader {
    * @return a list of yaml documents
    * @throws Exception if an error occurs
    */
-  List<Map<String, String>> getDocuments(String kind) throws Exception {
-    List<Map<String, String>> matches = new ArrayList<>();
+  @SuppressWarnings("rawtypes")
+  List<Map<String, Object>> getDocuments(String kind) throws Exception {
+    List<Map<String, Object>> matches = new ArrayList<>();
     for (Object object : getYamlDocuments()) {
       Map document = (Map) object;
       if (document.get("kind").equals(kind)) {
@@ -131,11 +132,10 @@ public class ProcessedChart implements YamlReader {
     return process;
   }
 
+  @SuppressWarnings("UnstableApiUsage")
   private Process processChart() throws Exception {
     // determine Helm version
-    Process vp = new ProcessBuilder(new String[] {
-        "helm", "version", "--client", "--short"
-    }).start();
+    Process vp = new ProcessBuilder("helm", "version", "--client", "--short").start();
     vp.waitFor();
     String version = CharStreams.toString(new InputStreamReader(vp.getInputStream()));
 
@@ -193,7 +193,7 @@ public class ProcessedChart implements YamlReader {
 
   private Path writeValuesOverride(Map<String, Object> values) throws IOException {
     Path valuesFile = Files.createTempFile("Value", ".yaml");
-    try (BufferedWriter writer = Files.newBufferedWriter(valuesFile, Charset.forName("UTF-8"))) {
+    try (BufferedWriter writer = Files.newBufferedWriter(valuesFile, StandardCharsets.UTF_8)) {
       new Yaml().dump(values, writer);
     }
     return valuesFile;
