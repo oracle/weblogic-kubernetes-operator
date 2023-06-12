@@ -357,10 +357,15 @@ roleRef:
 ---
 ```
 
+#### Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics
+Please read this blog post to learn how to scale a WebLogic cluster, based on WebLogic metrics provided by the Monitoring Exporter, using the Kubernetes Horizontal Pod Autoscaler (HPA). We will use the Prometheus Adapter to gather the names of the available metrics from Prometheus at regular intervals. A custom configuration of the adapter will expose only metrics that follow specific formats. [Horizontal Pod Autoscaler (HPA) using WebLogic Exporter Metrics](https://blogs.oracle.com/weblogicserver/post/horizontal-pod-autoscaler-hpausing-weblogic-exporter-metrics). See this corresponding video for a demonstation of the blog post in action. [WebLogic Kubernetes Operator support for Kubernetes Horizontal Pod Autoscaling](https://www.youtube.com/watch?v=aKBG6yJ3sMg).
+
 #### Using a Prometheus alert action to call the operator's REST scale API
 In addition to using the WebLogic Diagnostic Framework for automatic scaling of a dynamic cluster,
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
+
+
 
 ### Helpful tips
 #### Debugging scalingAction.sh
