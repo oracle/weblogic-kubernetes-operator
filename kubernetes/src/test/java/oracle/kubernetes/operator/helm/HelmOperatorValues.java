@@ -34,6 +34,7 @@ class HelmOperatorValues extends OperatorValues {
     loadFromMap(map, this::setExternalOperatorKey, "externalOperatorKey");
     loadFromMap(map, this::setLogStashImage, "logStashImage");
     loadFromMap(map, this::setElasticSearchHost, "elasticSearchHost");
+    loadFromMap(map, this::setJvmOptions, "jvmOptions");
 
     loadBooleanFromMap(map, this::setExternalRestEnabled, "externalRestEnabled");
     loadBooleanFromMap(map, this::setRemoteDebugNodePortEnabled, "remoteDebugNodePortEnabled");
@@ -114,6 +115,7 @@ class HelmOperatorValues extends OperatorValues {
     addStringMapEntry(map, this::getExternalOperatorKey, "externalOperatorKey");
     addStringMapEntry(map, this::getLogStashImage, "logStashImage");
     addStringMapEntry(map, this::getElasticSearchHost, "elasticSearchHost");
+    addStringMapEntry(map, this::getJvmOptions, "jvmOptions");
 
     addMapEntry(map, this::isRestEnabled, "enableRest");
     addMapEntry(map, this::isExternalRestEnabled, "externalRestEnabled");
