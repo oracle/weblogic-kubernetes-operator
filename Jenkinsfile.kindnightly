@@ -570,7 +570,7 @@ EOF
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
-                                    if [ -n "${IT_TEST}" ]; then
+                                    if [ "${IT_TEST}" != "**/It*" ]; then
                                         echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
                                         export MAVEN_PROFILE_NAME="integration-tests"
                                     fi
