@@ -84,6 +84,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
   private String adminServerName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
+  private final List<String> serverNamesFromPodList = Collections.synchronizedList(new ArrayList<>());
   private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
@@ -846,6 +847,36 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
    */
   public void addValidationWarning(String validationWarning) {
     validationWarnings.add(validationWarning);
+  }
+
+  /**
+   * Return server Pod names from List operation.
+   */
+  public List<String> getServerNamesFromPodList() {
+    return serverNamesFromPodList;
+  }
+
+  /**
+   * Add server Pod names from List operation.
+   * @param podNames pod names to be added
+   */
+  public void addServerNamesFromPodList(Collection<String> podNames) {
+    serverNamesFromPodList.addAll(podNames);
+  }
+
+  /**
+   * Add server Pod name from List operation.
+   * @param podName pod name to be added
+   */
+  public void addServerNameFromPodList(String podName) {
+    serverNamesFromPodList.add(podName);
+  }
+
+  /**
+   * Clear server Pod names from List operation.
+   */
+  public void clearServerPodNamesFromList() {
+    serverNamesFromPodList.clear();
   }
 
   /**

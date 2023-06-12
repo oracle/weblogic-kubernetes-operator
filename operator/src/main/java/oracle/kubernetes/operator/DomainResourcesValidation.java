@@ -104,6 +104,8 @@ class DomainResourcesValidation {
             .forEach(info -> adjustClusterResources(c, info)));
         executeMakeRightForClusterEvents(dp);
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
+        getDomainPresenceInfoMap().values().forEach(DomainResourcesValidation.this::removeDeletedPodsFromDPI);
+        getDomainPresenceInfoMap().values().forEach(DomainPresenceInfo::clearServerPodNamesFromList);
       }
     };
   }
@@ -134,15 +136,11 @@ class DomainResourcesValidation {
   }
 
   private void addPodList(V1PodList list) {
-    getDomainPresenceInfoMap().values().forEach(dpi -> removeDeletedPodsFromDPI(list, dpi));
     list.getItems().forEach(this::addPod);
   }
 
-  private void removeDeletedPodsFromDPI(V1PodList list, DomainPresenceInfo dpi) {
-    Collection<String> serverNamesFromPodList = list.getItems().stream()
-        .map(PodHelper::getPodServerName).collect(Collectors.toList());
-
-    dpi.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
+  private void removeDeletedPodsFromDPI(DomainPresenceInfo dpi) {
+    dpi.getServerNames().stream().filter(s -> !dpi.getServerNamesFromPodList().contains(s)).collect(Collectors.toList())
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
@@ -157,11 +155,14 @@ class DomainResourcesValidation {
   private void addPod(V1Pod pod) {
     String domainUid = PodHelper.getPodDomainUid(pod);
     String serverName = PodHelper.getPodServerName(pod);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(domainUid);
+    Optional.ofNullable(info).ifPresent(i -> i.addServerNameFromPodList(serverName));
+
     if (domainUid != null && serverName != null) {
-      setServerPodFromEvent(getExistingDomainPresenceInfo(domainUid), serverName, pod);
+      setServerPodFromEvent(info, serverName, pod);
     }
     if (PodHelper.getPodLabel(pod, LabelConstants.JOBNAME_LABEL) != null) {
-      processor.updateDomainStatus(pod, getExistingDomainPresenceInfo(domainUid));
+      processor.updateDomainStatus(pod, info);
     }
   }
 
@@ -243,14 +244,14 @@ class DomainResourcesValidation {
   }
 
   private void addCluster(ClusterResource cluster) {
-    ClusterPresenceInfo cachedInfo = getClusterPresenceInfoMap().get(cluster.getClusterName());
+    ClusterPresenceInfo cachedInfo = getClusterPresenceInfoMap().get(getClusterName(cluster));
     if (cachedInfo == null) {
-      newClusterNames.add(cluster.getClusterName());
+      newClusterNames.add(getClusterName(cluster));
     } else if (cluster.isGenerationChanged(cachedInfo.getCluster())) {
-      modifiedClusterNames.add(cluster.getClusterName());
+      modifiedClusterNames.add(getClusterName(cluster));
     }
 
-    getClusterPresenceInfoMap().put(cluster.getClusterName(), new ClusterPresenceInfo(cluster));
+    getClusterPresenceInfoMap().put(getClusterName(cluster), new ClusterPresenceInfo(cluster));
   }
 
   private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
@@ -305,18 +306,22 @@ class DomainResourcesValidation {
   }
 
   private EventItem getEventItem(ClusterResource cluster) {
-    if (newClusterNames.contains(cluster.getClusterName()) || cluster.getStatus() == null) {
+    if (newClusterNames.contains(getClusterName(cluster)) || cluster.getStatus() == null) {
       return CLUSTER_CREATED;
     }
-    if (modifiedClusterNames.contains(cluster.getClusterName())) {
+    if (modifiedClusterNames.contains(getClusterName(cluster))) {
       return CLUSTER_CHANGED;
     }
     return null;
   }
 
+  private String getClusterName(ClusterResource cluster) {
+    return cluster.getMetadata().getName();
+  }
+
   private void updateCluster(DomainProcessor dp, ClusterResource cluster, EventItem eventItem) {
     List<DomainPresenceInfo> list =
-        dp.getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), cluster.getClusterName());
+        dp.getExistingDomainPresenceInfoForCluster(cluster.getNamespace(), getClusterName(cluster));
     if (list.isEmpty()) {
       createAndExecuteMakeRightOperation(dp, cluster, eventItem, null);
     } else {

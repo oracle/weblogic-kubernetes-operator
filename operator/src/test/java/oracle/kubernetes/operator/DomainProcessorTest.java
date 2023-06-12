@@ -1011,6 +1011,22 @@ class DomainProcessorTest {
     assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
   }
 
+  @Test
+  void whenClusterResourceWithDifferentMetadataNameAndSpecNameChanged_generateClusterChangedEvent() {
+    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
+    ClusterResource cluster1 = createClusterWithDifferentMetadataAndSpecName(CLUSTER4, NS).withStatus(status);
+    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
+    processor.registerClusterPresenceInfo(info);
+    ClusterResource cluster2 = createClusterWithDifferentMetadataAndSpecName(CLUSTER4, NS).withStatus(status);
+    cluster2.getMetadata().setGeneration(1234L);
+    testSupport.defineResources(cluster2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
+    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
+  }
+
   private List<Object> getEventsForSeason(String reason) {
     return testSupport.getResources(EVENT).stream()
         .filter(e -> ((CoreV1Event)e).getReason().equals(reason)).collect(Collectors.toList());
@@ -1467,6 +1483,12 @@ class DomainProcessorTest {
     return new ClusterResource()
         .withMetadata(new V1ObjectMeta().name(clusterName).namespace(ns))
         .spec(new ClusterSpec().withClusterName(clusterName));
+  }
+
+  private ClusterResource createClusterWithDifferentMetadataAndSpecName(String clusterMetadataName, String ns) {
+    return new ClusterResource()
+        .withMetadata(new V1ObjectMeta().name(clusterMetadataName).namespace(ns))
+        .spec(new ClusterSpec().withClusterName("specClusterName-" + clusterMetadataName));
   }
 
   private V1Service createNonOperatorService() {
