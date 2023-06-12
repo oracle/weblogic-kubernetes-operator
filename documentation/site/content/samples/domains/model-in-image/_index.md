@@ -9,19 +9,26 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 ### Introduction
 
-This sample demonstrates deploying a [Model in Image]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type
-with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
-Model in Image eliminates the need to pre-create
+This sample demonstrates deploying a Model in Image
+[domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}})
+ with [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create
 your WebLogic domain home prior to deploying your Domain YAML file.
 Instead, Model in Image uses a
 WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
-WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using model files, variable properties files, and application archive files. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
-Furthermore, the Model in Image auxiliary image option lets you supply your WDT models files, WDT variable files, and WDT archives files
+Furthermore, the Model in Image auxiliary image option allows you to supply your WDT artifacts
 in a small separate image separate from your WebLogic image.
 
-For more information on Model in Image, see the [Model in Image]({{< relref "/managing-domains/model-in-image/_index.md" >}}) user guide. For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+For more information on Model in Image, see the [Model in Image user guide]({{< relref "/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}).
+
+#### Model in Image domain types (WLS, JRF, and Restricted JRF)
+
+There are three types of domains supported by Model in Image: a standard `WLS` domain, an Oracle Fusion Middleware Infrastructure Java Required Files (`JRF`) domain, and a `RestrictedJRF` domain. This sample demonstrates the `WLS` and `JRF` types.
+
+The `JRF` domain path through the sample includes additional steps required for JRF: deploying an infrastructure database, initializing the database using the Repository Creation Utility (RCU) tool, referencing the infrastructure database from the WebLogic configuration, setting an Oracle Platform Security Services (OPSS) wallet password, and exporting/importing an OPSS wallet file. `JRF` domains may be used by Oracle products that layer on top of WebLogic Server, such as SOA and OSB. Similarly, `RestrictedJRF` domains may be used by Oracle layered products, such as Oracle Communications products.
 
 #### Use cases
 
@@ -29,7 +36,7 @@ This sample demonstrates five Model in Image use cases:
 
 - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
 
-   - Auxiliary image `wdt-domain-image:WLS-v1` with:
+   - Auxiliary image `model-in-image:WLS-AI-v1` with:
      - A WebLogic Deploy Tooling (WDT) installation
      - A WDT archive with version `v1` of an exploded Java EE web application
      - A WDT model with:
@@ -67,11 +74,11 @@ This sample demonstrates five Model in Image use cases:
 
 - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated auxiliary image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change. Updates:
 
-  - Auxiliary image `wdt-domain-image:WLS-v2`, similar to `wdt-domain-image:WLS-v1` image with:
+  - Auxiliary image `model-in-image:WLS-AI-v2`, similar to `model-in-image:WLS-AI-v1` image with:
     - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
     - An updated model that points to the new web application path
   - Domain:
-    - Same as the Update 1 use case, except `spec.image` is `wdt-domain-image:WLS-v2`
+    - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-AI-v2`
 
 - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll). Updates:
 
@@ -89,15 +96,16 @@ The sample contains the following files and directories:
 
 Location | Description |
 ------------- | ----------- |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources` | Domain YAML files. |
-`kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
-`kubernetes/samples/scripts/create-weblogic-domain/wdt-artifacts/wdt-model-files` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
-`kubernetes/samples/scripts/create-weblogic-domain/ingresses` | Ingress resources. |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
-`kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
+`domain-resources` | JRF and WLS Domain YAML files. |
+`archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
+`model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
+`model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
+`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
+`ingresses` | Ingress resources. |
+`utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
+`utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
+`utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
+`utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 
 In addition, this sample makes use of the `waitForDomain.sh` sample lifecycle script
 that is located in the operator source `kubernetes/samples/scripts/domain-lifecycle` directory.
@@ -118,7 +126,7 @@ For example, if you have permission to put the image in a container registry tha
 
 Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 
-For more information, see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
+For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
 ### References
 

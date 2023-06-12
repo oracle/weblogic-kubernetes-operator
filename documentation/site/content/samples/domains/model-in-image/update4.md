@@ -35,7 +35,7 @@ Here are the steps:
          SampleMaxThreads:
            Count: 20
    ```
-   Optionally, place the preceding model snippet in a file named `/tmp/sample/myworkmanager.yaml` and then use it when deploying the updated model ConfigMap, or simply use the same model snippet that's provided in `/tmp/sample/model-configmaps/workmanager/model.20.workmanager.yaml`.
+   Optionally, place the preceding model snippet in a file named `/tmp/mii-sample/myworkmanager.yaml` and then use it when deploying the updated model ConfigMap, or simply use the same model snippet that's provided in `/tmp/mii-sample/model-configmaps/workmanager/model.20.workmanager.yaml`.
 
    Run the following commands:
 
@@ -44,8 +44,8 @@ Here are the steps:
    ```
    ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
-     --from-file=/tmp/sample/model-configmaps/workmanager \
-     --from-file=/tmp/sample/model-configmaps/datasource
+     --from-file=/tmp/mii-sample/model-configmaps/workmanager \
+     --from-file=/tmp/mii-sample/model-configmaps/datasource
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
@@ -53,7 +53,7 @@ Here are the steps:
    ```
 
    Notes:
-     - If you've created your own model YAML file(s), then substitute the file names in the `--from-file=` parameters (we suggested `/tmp/sample/myworkmanager.yaml` and `/tmp/sample/mydatasource.xml` earlier).
+     - If you've created your own model YAML file(s), then substitute the file names in the `--from-file=` parameters (we suggested `/tmp/mii-sample/myworkmanager.yaml` and `/tmp/mii-sample/mydatasource.xml` earlier).
      - The `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory. It can be specified multiple times on the same command line to load the contents from multiple locations into the ConfigMap.
      - You name and label the ConfigMap using its associated domain UID for two reasons:
        - To make it obvious which ConfigMap belong to which domains.
@@ -81,6 +81,16 @@ Here are the steps:
       weblogic.domainUID=sample-domain1
    ```
 
+1. Optionally, start the database.
+
+    - If the database is running, then the sample application that we will run at the end of this use case, will verify that your updates to the data source secret took effect.
+
+    - If you are taking the `JRF` path through the sample, then the database will already be running.
+
+    - If you are taking the `WLS` path through the sample, then you can deploy the database by:
+      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
+      - You can skip the remaining steps (they are only needed for `JRF`).
+
 1. Update your Domain YAML file to enable `onlineUpdate`.
 
    If `onlineUpdate` is enabled for your domain and the only model changes are to WebLogic Domain dynamic attributes, then the operator will attempt to update the running domains online without restarting the servers when you update the domain's `introspectVersion`.
@@ -107,7 +117,7 @@ Here are the steps:
       ```
 
     - Option 3: Use the sample helper script.
-      - Call `/tmp/sample/utils/patch-enable-online-update.sh -n sample-domain1-ns -d sample-domain1`.
+      - Call `/tmp/mii-sample/utils/patch-enable-online-update.sh -n sample-domain1-ns -d sample-domain1`.
       - This will perform the same `kubectl patch` commands as Option 2.
 
 1. Prompt the operator to introspect the updated WebLogic domain configuration.
@@ -137,7 +147,7 @@ Here are the steps:
        $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/introspectVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
-     - Call `/tmp/sample/utils/patch-introspect-version.sh -n sample-domain1-ns -d sample-domain1`.
+     - Call `/tmp/mii-sample/utils/patch-introspect-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl patch` command as Option 2.
 
    Because we have set the `enabled` value in `spec.configuration.model.onlineUpdate` to `true`, and all of
@@ -174,7 +184,7 @@ Here are the steps:
    Send a web application request to the ingress controller:
 
    ```shell
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
@@ -191,7 +201,7 @@ Here are the steps:
     <html><body><pre>
     *****************************************************************
 
-    Hello World! This is version 'v2' of the sample JSP web-app.
+    Hello World! This is version 'v2' of the mii-sample JSP web-app.
 
     Welcome to WebLogic server 'managed-server2'!
 

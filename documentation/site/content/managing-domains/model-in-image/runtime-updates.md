@@ -6,7 +6,6 @@ pre = "<b> </b>"
 description = "Updating a running Model in Image domain's images and model files."
 +++
 
-
 {{< table_of_contents >}}
 
 ### Overview
@@ -106,7 +105,7 @@ Model updates can include additions, changes, and deletions. For help generating
 
  - For a description of model file syntax, see the
    [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation
-   and Model in Image [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) documentation.
+   and Model in Image [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
  - For a description of helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
@@ -750,6 +749,8 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
    #      /tmp/diffed_model.yaml, and
    #      /tmp/compare_model_stdout
    ```
+
+**NOTE**: If your domain type isn't `WLS`, remember to change the domain type to `JRF` or `RestrictedJRF` in the previous `discoverDomain.sh` commands.
 
 #### Changing a Domain `restartVersion` or `introspectVersion`
 

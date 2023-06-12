@@ -29,7 +29,7 @@ To remove the resources you have created in these samples:
    $ kubectl delete namespace traefik
    ```
 
-3. If you set up a database for the Update 4 use case:
+3. If you set up a database for `JRF` or the Update 4 use case:
    ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
@@ -49,8 +49,14 @@ To remove the resources you have created in these samples:
 
 7. Delete the images you may have created in this sample:
    ```shell
-   $ docker image rm wdt-domain-image:WLS-v1
+   $ docker image rm model-in-image:WLS-AI-v1
    ```
    ```shell
-   $ docker image rm wdt-domain-image:WLS-v2
+   $ docker image rm model-in-image:WLS-AI-v2
+   ```
+   ```shell
+   $ docker image rm model-in-image:JRF-AI-v1
+   ```
+   ```shell
+   $ docker image rm model-in-image:JRF-AI-v2
    ```

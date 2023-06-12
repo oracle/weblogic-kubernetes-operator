@@ -26,7 +26,7 @@ Here are the steps:
 
     Create a WDT model snippet for a data source (or use the example provided).  Make sure that its target is set to `cluster-1`, and that its initial capacity is set to `0`.
 
-   The reason for the latter is to prevent the data source from causing a WebLogic Server startup failure if it can't find the database, which would be likely to happen because you haven't deployed one.
+   The reason for the latter is to prevent the data source from causing a WebLogic Server startup failure if it can't find the database, which would be likely to happen because you haven't deployed one (unless you're using the `JRF` path through the sample).
 
    Here's an example data source model configuration that meets these criteria:
 
@@ -62,7 +62,7 @@ Here are the steps:
 
    ```
 
-   Place the previous model snippet in a file named `/tmp/sample/mydatasource.yaml` and then use it in the later step where you deploy the model ConfigMap, or alternatively, use the same data source that's provided in `/tmp/sample/model-configmaps/datasource/model.20.datasource.yaml`.
+   Place the previous model snippet in a file named `/tmp/mii-sample/mydatasource.yaml` and then use it in the later step where you deploy the model ConfigMap, or alternatively, use the same data source that's provided in `/tmp/mii-sample/model-configmaps/datasource/model.20.datasource.yaml`.
 
 1. Create the data source secret.
 
@@ -96,14 +96,14 @@ Here are the steps:
 
    ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
-     --from-file=/tmp/sample/model-configmaps/datasource
+     --from-file=/tmp/mii-sample/model-configmaps/datasource
    ```
    ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
      weblogic.domainUID=sample-domain1
    ```
 
-     - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/sample/mydatasource.yaml` earlier).
+     - If you've created your own data source file, then substitute the file name in the `--from-file=` parameter (we suggested `/tmp/mii-sample/mydatasource.yaml` earlier).
      - Note that the `-from-file=` parameter can reference a single file, in which case it puts the designated file in the ConfigMap, or it can reference a directory, in which case it populates the ConfigMap with all of the files in the designated directory.
 
    You name and label the ConfigMap using its associated domain UID for two reasons:
@@ -114,8 +114,8 @@ Here are the steps:
 
     - Option 1: Update a copy of your Domain YAML file from the Initial use case.
 
-      - In the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/sample/mii-initial-domain.yaml` or using the [domain resource](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file that is supplied with the sample.
-        - We suggest copying the original Domain YAML file and naming the copy `/tmp/sample/mii-update1.yaml` before making any changes.
+      - In the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` file that is supplied with the sample.
+        - We suggest copying the original Domain YAML file and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
 
@@ -145,18 +145,18 @@ Here are the steps:
 
       - Apply your changed Domain YAML file:
 
-        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/mii-update1.yaml
+        $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
         ```
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        **NOTE**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
+        $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml
         ```
 
 1. Restart ('roll') the domain.
@@ -184,7 +184,7 @@ Here are the steps:
        $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
-     - Call `/tmp/sample/utils/patch-restart-version.sh -n sample-domain1-ns -d sample-domain1`.
+     - Call `/tmp/mii-sample/utils/patch-restart-version.sh -n sample-domain1-ns -d sample-domain1`.
      - This will perform the same `kubectl get` and `kubectl patch` commands as Option 2.
 
 
@@ -212,7 +212,7 @@ Here are the steps:
    Send a web application request to the ingress controller:
 
    ```shell
-   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.sample.org' \
+   $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
@@ -229,7 +229,7 @@ Here are the steps:
     <html><body><pre>
     *****************************************************************
 
-    Hello World! This is version 'v1' of the sample JSP web-app.
+    Hello World! This is version 'v1' of the mii-sample JSP web-app.
 
     Welcome to WebLogic Server 'managed-server1'!
 

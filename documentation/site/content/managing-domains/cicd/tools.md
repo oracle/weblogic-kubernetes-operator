@@ -42,6 +42,9 @@ Other than the tools themselves, there are three components to the WDT tools:
 
 #### WDT Create Domain Samples
 
+- (Kubernetes) A sample of creating a domain in an image with WDT
+  can be found in the WebLogic Kubernetes Operator project for creating a
+  [domain-in-image with WDT]({{< relref "/samples/domains/domain-home-in-image/" >}}).
 - (Kubernetes) A [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}})
   for supplying an image that contains a WDT model only,
   instead of a domain home. In this case, the operator generates the domain
