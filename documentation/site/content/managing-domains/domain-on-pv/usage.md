@@ -23,28 +23,6 @@ WebLogic domain.
 
 To use this feature, provide the following information:
 
-<<<<<<< HEAD
-- [WebLogic base image](#weblogic-base-image) - This is the WebLogic product to be used.
-- [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
-- [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
-- [Domain information](#domain-information) - This describes the domain type and whether the operator should create the RCU schema.
-- [Domain WDT artifacts](#domain-creation-wdt-artifacts) - This is where the WDT binaries and WDT artifacts reside.
-- [Optional WDT artifacts ConfigMap](#optional-wdt-artifacts-configmap) - Optional, WDT artifacts.
-- [Domain resource YAML file]({{< relref "/reference/domain-resource.md">}}) - This is for deploying the domain in WebLogic Kubernetes Operator.
-
-
-- For details about each field,
-  - See the `initializeDomainOnPV` section
-    in the domain resource
-    [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md),
-    or use the command `kubectl explain domain.spec.configuration.initializeDomainOnPV`
-
-- For a basic configuration example, see [Basic configuration](#basic-configuration).
-
-#### WebLogic base image
-
-Because the domain will be created on a persistent volume, the base image should contain only the WebLogic product binary and JDK.  
-=======
 - [WebLogic base image](#weblogic-base-image) - This is the Fusion Middleware Software to be used, for example, WebLogic Server or Fusion Middleware Infrastructure.
 - [Volumes and VolumeMounts information](#volumes-and-volumemounts-information) - This follows the standard Kubernetes pod requirements for mounting persistent volumes.
 - [PersistentVolume and PersistentVolumeClaim](#persistent-volume-and-persistent-volume-claim) - This is environment specific and usually requires assistance from your administrator to provide the underlying details, such as `storageClass` or any permissions.
@@ -64,7 +42,6 @@ For a basic configuration example, see [Basic configuration](#basic-configuratio
 #### WebLogic base image
 
 Because the domain will be created on a persistent volume, the base image should contain only the FMW product binary and the JDK.  
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 spec:
@@ -74,11 +51,7 @@ spec:
 You can specify your own image, use a patched image from `container-registry.oracle.com`, or create and patch an image using the
 [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
 
-<<<<<<< HEAD
-#### Domain creation WDT artifacts
-=======
 #### Domain creation WDT models
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 Specify an image that describes the domain topology, resources, and applications in the domain resource YAML file.
 
@@ -92,17 +65,10 @@ Specify an image that describes the domain topology, resources, and applications
 |---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
 | `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
 
-<<<<<<< HEAD
-In this image or images, you must provide the required WDT [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
-and also the WDT artifacts.  The operator will use the tool and the WDT artifacts to create the initial domain.  
-
-For additional options in `domainCreationImages`, use the follow command to obtain the details.
-=======
 In this image or images, you must provide the required WDT installer [binaries](https://github.com/oracle/weblogic-deploy-tooling/releases),
 and also the WDT model files, WDT variables files, and WDT archive files.  The operator will use them to create the initial domain.  
 
 For additional options in `domainCreationImages`, use the following command to obtain the details.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCreationImages
@@ -111,24 +77,14 @@ kubectl explain domain.spec.configuration.initializeDomainOnPV.domain.domainCrea
 The image layout follows this directory structure:
 
 ```
-<<<<<<< HEAD
-/auxiliary/weblogic-delpoy - Unzipped WebLogic Deploy Tooling release file.
-/auxiliary/models -  All WDT artifacts, such as model YAML files, model properties, model archives.
-=======
 /auxiliary/weblogic-deploy - Extracted WebLogic Deploy Tooling installer file.
 /auxiliary/models -  WDT model, WDT archive, and WDT variables files.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 ```
 
 You can create your own image using your familiar method or use the [WebLogic Image Tool (WIT)](https://github.com/oracle/weblogic-image-tool).
 
-<<<<<<< HEAD
-For example, using WIT, because the file structure is the same as an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) that's used in the Model in Image domain home type, you can
-use the same command `createAuxImage`.
-=======
 For example, because the file structure is the same as an [Auxiliary Image]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}) that's used in the Model in Image domain home source type, you can
 use the same WIT command `createAuxImage`.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 $ imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
@@ -138,15 +94,9 @@ $ imagetool.sh createAuxImage --wdtArchive /home/acme/myapp/wdt/myapp.zip \
    --tag myrepo/domain-images:v1   
 ```
 
-<<<<<<< HEAD
-#### Optional WDT artifacts ConfigMap
-
-Optionally, you can provide a Kubernetes ConfigMap with additional WDT artifacts as supplements or overrides to
-=======
 #### Optional WDT models ConfigMap
 
 Optionally, you can provide a Kubernetes ConfigMap with additional WDT models and WDT variables files as supplements or overrides to
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 those in `domainCreationImages`.
 
 ```
@@ -157,15 +107,9 @@ those in `domainCreationImages`.
           domainCreationConfigMap: mymodel-domain-configmap
 ```
 
-<<<<<<< HEAD
-| Field                     | Notes                                | Values                             | Required |
-|---------------------------|--------------------------------------|------------------------------------|----------|
-| `domainCreationConfigMap`      | Optional WDT artifacts in ConfigMap. | ConfigMap name. | N        |
-=======
 | Field                     | Notes                                                 | Values                             | Required |
 |---------------------------|-------------------------------------------------------|------------------------------------|----------|
 | `domainCreationConfigMap`      | Optional WDT models and WDT variables files in ConfigMap. | ConfigMap name. | N        |
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 The files inside this ConfigMap must have file extensions, `.yaml`, `.properties`, or `.zip`.
 
@@ -196,11 +140,7 @@ persistent storage in the Kubernetes environment. You can either use an existing
 for you.
 
 The specifications of `PersistentVolume` and `PersistentVolumeClaim` are environment specific and often require information
-<<<<<<< HEAD
-from your Kubernetes cluster administrator. See [PV and PVC in different environments](#references).
-=======
 from your Kubernetes cluster administrator. See [Persistent Storage](#references) in different environments.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 For example, if you specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML file,  
 then the operator will create the `PV` and `PVC`, and mount the persistent volume to the `/share` directory.
@@ -247,16 +187,9 @@ spec:
 | `persistentVolumeClaim` | Specification of the persistent volume claim if the operator is creating it.                                                                                                                                                          | Specification of the persistent volume claim if you want operator to create it. | N (operator will not create any persistent volume claim) |
 
 
-<<<<<<< HEAD
-Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see
-- See the `initializeDomainOnPV.peristentVolume` and `initializeDomainOnPV.peristentVolumeClaim` section
-  in the domain resource
-  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md), or use the commands
-=======
 Not all the fields in the standard Kubernetes PV and PVC are supported.  For the list of supported fields in `persistentVolume` and `persistentVolumeClaim`, see the `initializeDomainOnPV.peristentVolume` and `initializeDomainOnPV.peristentVolumeClaim` section
   in the domain resource
   [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md), or use the commands:
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   ```
    kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolume
    kubectl explain domain.spec.configuration.initializeDomainOnPV.persistentVolumeClaim
@@ -277,11 +210,7 @@ to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intiali
 
 For JRF-based domains, before proceeding, please be sure to read this document, [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md">}}).
 
-<<<<<<< HEAD
-This is the section describing the WebLogic domain. For example,
-=======
 This is the section describing the WebLogic domain. For example:
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 spec:
@@ -379,10 +308,6 @@ The following configuration example illustrates a basic configuration.
 
 #### Basic configuration
 
-<<<<<<< HEAD
-This example specifies the required image parameter for the domain creation image(s); all other fields are at default values.
-=======
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 spec:

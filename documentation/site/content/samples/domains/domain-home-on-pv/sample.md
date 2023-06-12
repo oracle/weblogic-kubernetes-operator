@@ -11,14 +11,7 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain on PV). This involves:
 
-<<<<<<< HEAD
-  - Building a [domain creation image](#domain-creation-image) with:
-    - A WDT model that describes your WebLogic domain configuration.
-    - A WDT archive ZIP file that contains your applications.
-    - A WDT installation that contains the binaries for running WDT.
-=======
   - Using the [domain creation image](#domain-creation-image) that you previously built.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   - Creating secrets for the domain.
   - Creating a Domain resource YAML file for the domain that:
     - References your Secrets and a WebLogic image.
@@ -67,12 +60,6 @@ Run the following `kubectl` commands to deploy the required secrets:
   __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
-<<<<<<< HEAD
-  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
-  be unique and different than the admin password, but this is not required.
-
-=======
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
@@ -350,11 +337,7 @@ Events:
 ```
 {{% /expand %}}
 
-<<<<<<< HEAD
-In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the script finishes, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
-=======
 In the `Status` section of the output, the available servers and clusters are listed.  Note that if this command is issued very soon after the domain resource is applied, there may be no servers available yet, or perhaps only the Administration Server but no Managed Servers.  The operator will start up the Administration Server first and wait for it to become ready before starting the Managed Servers.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ### Verify the pods
 
@@ -510,12 +493,9 @@ If the PVC and PV were created by the operator and you don't want to preserve th
 $ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
 $ kubectl delete PV sample-domain1-weblogic-sample-pv
 ```
-<<<<<<< HEAD
-=======
 
 #### Delete the domain namespace.
 
 ```
 $ kubectl delete namespace sample-domain1-ns
 ```
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new

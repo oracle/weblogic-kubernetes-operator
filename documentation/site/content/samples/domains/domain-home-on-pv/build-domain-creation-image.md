@@ -12,13 +12,8 @@ description: "Create WebLogic images using the WebLogic Image Tool and WebLogic 
 ### Overview
 
 The image build process uses the WebLogic Image Tool to create a Domain on PV `domain creation image`.  This image contains:
-<<<<<<< HEAD
-- A WebLogic Deploy Tooling installation (expected in an image's `/auxiliary/weblogic-deploy` directory by default).
-- WDT model YAML, property, and archive files (expected in directory `/auxiliary/models` by default).
-=======
 - A WebLogic Deploy Tooling installation, expected in an image's `/auxiliary/weblogic-deploy` directory by default.
 - WDT model YAML (model), WDT variable (property), and WDT archive ZIP (archive) files, expected in directory `/auxiliary/models` by default.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ### Build the domain creation image
 
@@ -29,11 +24,7 @@ Use the steps in the following sections to build the domain creation image.
 The sample includes a predefined archive directory in `/tmp/sample/wdt-artifacts/archives/archive-v1` that you will use to create an archive ZIP file for the image.
 
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
-<<<<<<< HEAD
-  - A model image can contain multiple WDT archives.
-=======
   - A domain creation image can contain multiple WDT archives.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   - WDT archives can contain multiple applications, libraries, and other components.
   - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
 
@@ -133,19 +124,11 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 ```
 {{% /expand %}}
 
-<<<<<<< HEAD
-The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`; you will update this to `v2` in a later use case that demonstrates upgrading the application.
-
-#### Stage a ZIP file of the archive
-
-When you create the image, you will use the files in the staging directory, `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
-=======
 The application displays important details about the WebLogic Server instance that it's running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it's at version `v1`.
 
 #### Stage the archive ZIP file
 
 When you create the image, you will use the files in the staging directory, `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1`. In preparation, you need it to contain a WDT application archive ZIP file.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -170,11 +153,7 @@ $ /tmp/sample/wdt-artifacts/weblogic-deploy/bin/archiveHelper.sh add application
 
 #### Stage the model files
 
-<<<<<<< HEAD
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
-=======
 In this step, you explore the staged WDT model YAML file and properties in the `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Administration Server, and configures a WebLogic cluster. It consists of two files only, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a model YAML file with your WebLogic configuration `model.10.yaml`.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```
 CLUSTER_SIZE=5
@@ -303,20 +282,12 @@ The model files:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
   - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
     - You set this environment variable later in this sample using an `env` field in its Domain.
-<<<<<<< HEAD
-    - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image._
-=======
     - _This conveniently provides a simple way to deploy multiple differently named domains using the same domain creation image._
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
   - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
     - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
     - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-<<<<<<< HEAD
-An image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
-=======
 An image can contain multiple properties files, archive ZIP files, and model YAML files but in this sample you use just one of each. For a complete description of WDT model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) in the user documentation.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 #### Create the image with WIT
 
@@ -345,21 +316,13 @@ Run the following commands to create the image and verify that it worked:
 
 If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}).
 
-<<<<<<< HEAD
-This command runs the WebLogic Image Tool to create the image and does the following:
-=======
 This command runs the WebLogic Image Tool to create the domain creation image and does the following:
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
   - Builds the final container image as a layer on a small `busybox` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
     - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
     - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
-<<<<<<< HEAD
-  - Copies the specified WDT model, properties, and application archives to image location `/u01/wdt/models`.
-=======
   - Copies the specified WDT model, properties, and application archives to image location `/auxiliary/models`.
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 When the command succeeds, it should end with output like the following:
 ```

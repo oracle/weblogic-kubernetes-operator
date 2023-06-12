@@ -9,17 +9,6 @@ description = "Learn about model file requirements, macros, and loading order."
 {{< table_of_contents >}}
 
 
-<<<<<<< HEAD
-This document describes working with WDT model files and related artifacts in the operator.
-For additional information, see the [WebLogic Deploy Tooling (WDT)](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
-
-{{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
-{{% /notice %}}
-
-### Sample model file with macros
-
-Here's an example of a model YAML file describing a domain.  For detailed information, see [Metadata model](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
-=======
 This document describes working with WebLogic Deploy Tooling (WDT) model files in the operator.
 For additional information, see the [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
@@ -29,7 +18,6 @@ For additional information, see the [WebLogic Deploy Tooling](https://oracle.git
 ### Sample WDT model file with macros
 
 Here's an example of a WDT model YAML file describing a domain.  For detailed information, see [Metadata model](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 ```yaml
 domainInfo:
@@ -81,15 +69,9 @@ For a description of model file macro references to secrets and environment vari
 
     - For most models, it's useful to minimize or eliminate the usage of model variable files (also known as property files) and use secrets or environment variables instead.
 
-<<<<<<< HEAD
-- You can control the order that WDT uses to load your model files, see [WDT artifacts source location and loading order](#wdt-artifacts-source-location-and-loading-order).
-
-### WDT artifacts source location and loading order
-=======
 - You can control the order that WDT uses to load your model files, see [WDT models location and loading order](#wdt-models-source-location-and-loading-order).
 
 ### WDT models source location and loading order
->>>>>>> origin/pv-domain-simplify-doc-update-withsample-new
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
