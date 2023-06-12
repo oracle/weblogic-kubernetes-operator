@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +69,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterAndVerify;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResource;
@@ -86,6 +88,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVHostPathDir;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -464,6 +467,10 @@ class ItFmwDomainInPVSimplified {
     deleteDomainResource(domainNamespace, domainUid);
     // delete the cluster
     deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
+    //delete the rcu pod
+    assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
+              "Got exception while deleting server " + "rcu");
+    checkPodDoesNotExist("rcu", null, dbNamespace);
   }
 
   /**
@@ -567,6 +574,154 @@ class ItFmwDomainInPVSimplified {
     deleteDomainResource(domainNamespace, domainUid);
     // delete the cluster
     deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
+  }
+
+  /**
+   * Create a basic FMW domain on PV using simplified feature.
+   * User creates RCU schema, Operator creates PV/PVC and JRF domain
+   * The user creates multiple domain initialization images
+   * Verify Pod is ready and service exists for both admin server and managed servers.
+   */
+  @Test
+  @DisplayName("Create a FMW domain on PV. User creates RCU and operator creates PV/PVC and domain, "
+                + "User creates multiple domain initialization images")
+  void testUserCreatesRcuOperatorCreatesPvPvcDomainMultipleImages() {
+    String domainUid = "jrfonpv-simplified4";
+    final String pvName = getUniqueName(domainUid + "-pv-");
+    final String pvcName = getUniqueName(domainUid + "-pvc-");
+    final int t3ChannelPort = getNextFreePort();
+    final String wlSecretName = domainUid + "-weblogic-credentials";
+    final String fmwModelFile = fmwModelFilePrefix + ".yaml";
+
+    // create FMW domain credential secret
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create RCU schema
+    assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX + "4", dbUrl,
+        dbNamespace), "create rcu schema failed");
+
+    // create RCU access secret
+    String rcuAccessSecretName = domainUid + "-rcu-credentials";
+    logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
+        rcuAccessSecretName, RCUSCHEMAPREFIX + "4", RCUSCHEMAPASSWORD, dbUrl);
+    assertDoesNotThrow(() -> createRcuAccessSecret(
+        rcuAccessSecretName,
+        domainNamespace,
+        RCUSCHEMAPREFIX + "4",
+        RCUSCHEMAPASSWORD,
+        dbUrl),
+        String.format("createSecret failed for %s", rcuAccessSecretName));
+
+    // create a model property file
+    File fmwModelPropFile = createWdtPropertyFile(domainUid, RCUSCHEMAPREFIX + "4");
+
+    // create domainCreationImage
+    String domainCreationImageName1 = DOMAIN_IMAGES_REPO + "jrf-domain-on-pv-image41";
+    // create image with model and wdt installation files
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(domainCreationImageName1)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + fmwModelFile))
+            .modelVariableFiles(Collections.singletonList(fmwModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName1, MII_BASIC_IMAGE_TAG, witParams);
+
+    DomainCreationImage domainCreationImage1 =
+        new DomainCreationImage().image(domainCreationImageName1 + ":" + MII_BASIC_IMAGE_TAG);
+
+    // create second image
+    String domainCreationImageName2 = DOMAIN_IMAGES_REPO + "jrf-domain-on-pv-image42";
+    // create image with model and wdt installation files
+    witParams =
+        new WitParams()
+            .modelImageName(domainCreationImageName2)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .modelFiles(Collections.singletonList(MODEL_DIR + "/model.jms2.yaml"))
+            .modelVariableFiles(Collections.singletonList(fmwModelPropFile.getAbsolutePath()));
+    createAndPushAuxiliaryImage(domainCreationImageName2, MII_BASIC_IMAGE_TAG, witParams);
+
+    DomainCreationImage domainCreationImage2 =
+        new DomainCreationImage()
+            .image(domainCreationImageName2 + ":" + MII_BASIC_IMAGE_TAG)
+            .sourceWDTInstallHome("None");
+
+    List<DomainCreationImage> domainCreationImages = new ArrayList<>();
+    domainCreationImages.add(domainCreationImage1);
+    domainCreationImages.add(domainCreationImage2);
+
+    // create opss wallet password secret
+    String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
+    logger.info("Create OPSS wallet password secret");
+    assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
+        opsswalletpassSecretName,
+        domainNamespace,
+        ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", opsswalletpassSecretName));
+
+    // create a domain resource
+    logger.info("Creating domain custom resource");
+    Map<String, Quantity> pvCapacity = new HashMap<>();
+    pvCapacity.put("storage", new Quantity("2Gi"));
+
+    Map<String, Quantity> pvcRequest = new HashMap<>();
+    pvcRequest.put("storage", new Quantity("2Gi"));
+
+    Configuration configuration = new Configuration()
+        .addSecretsItem(rcuAccessSecretName)
+        .initializeDomainOnPV(new InitializeDomainOnPV()
+            .persistentVolume(new PersistentVolume()
+                .metadata(new V1ObjectMeta()
+                    .name(pvName))
+                .spec(new PersistentVolumeSpec()
+                    .storageClassName(storageClassName)
+                    .capacity(pvCapacity)
+                    .persistentVolumeReclaimPolicy("Retain")
+                    .hostPath(new V1HostPathVolumeSource()
+                        .path(getHostPath(pvName, this.getClass().getSimpleName())))))
+            .persistentVolumeClaim(new PersistentVolumeClaim()
+                .metadata(new V1ObjectMeta()
+                    .name(pvcName))
+                .spec(new PersistentVolumeClaimSpec()
+                    .storageClassName(storageClassName)
+                    .resources(new V1ResourceRequirements()
+                        .requests(pvcRequest))))
+            .domain(new DomainOnPV()
+                .createMode(CreateIfNotExists.DOMAIN)
+                .domainCreationImages(domainCreationImages)
+                .domainType(DomainOnPVType.JRF)
+                .opss(new Opss()
+                    .walletPasswordSecret(opsswalletpassSecretName))));
+
+    DomainResource domain = createDomainResourceOnPv(
+        domainUid,
+        domainNamespace,
+        wlSecretName,
+        clusterName,
+        pvName,
+        pvcName,
+        DOMAINHOMEPREFIX,
+        replicaCount,
+        t3ChannelPort,
+        configuration);
+
+    // Set the inter-pod anti-affinity for the domain custom resource
+    setPodAntiAffinity(domain);
+
+    // create a domain custom resource and verify domain is created
+    createDomainAndVerify(domain, domainNamespace);
+
+    // verify that all servers are ready
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+
+    // delete the domain
+    deleteDomainResource(domainNamespace, domainUid);
+    // delete the cluster
+    deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
+    //delete the rcu pod
+    assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
+              "Got exception while deleting server " + "rcu");
+    checkPodDoesNotExist("rcu", null, dbNamespace);
   }
 
   private File createWdtPropertyFile(String domainName, String rcuSchemaPrefix) {

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -80,7 +80,7 @@ public class ItMiiSampleHelper {
   }
 
   private String getModelImageName(String suffix) {
-    return new StringBuffer(DOMAIN_IMAGES_REPO)
+    return new StringBuffer(DOMAIN_IMAGES_PREFIX)
         .append("mii-")
         .append(suffix).toString();
   }

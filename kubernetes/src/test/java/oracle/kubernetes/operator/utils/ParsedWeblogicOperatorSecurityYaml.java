@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -53,16 +53,6 @@ public class ParsedWeblogicOperatorSecurityYaml extends ParsedKubernetesYaml {
   public V1ClusterRoleBinding getOperatorRoleBindingNonResource() {
     return getClusterRoleBindings()
         .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-nonresource");
-  }
-
-  public V1ClusterRoleBinding getOperatorRoleBindingDiscovery() {
-    return getClusterRoleBindings()
-        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-discovery");
-  }
-
-  public V1ClusterRoleBinding getOperatorRoleBindingAuthDelegator() {
-    return getClusterRoleBindings()
-        .find(inputs.getNamespace() + "-weblogic-operator-clusterrolebinding-auth-delegator");
   }
 
   public V1ClusterRole getWeblogicOperatorNamespaceRole() {

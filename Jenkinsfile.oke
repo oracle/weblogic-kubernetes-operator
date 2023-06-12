@@ -61,16 +61,16 @@ pipeline {
 
         string(name: 'KUBE_VERSION',
                description: 'kube version for oke cluster',
-               defaultValue: '1.25.4'
+               defaultValue: '1.26.2'
         )
         string(name: 'IMAGE_ID',
                        description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
                        //defaultValue7.6: 'ocid1.image.oc1.phx.aaaaaaaancucg25pze6m52agxwxmmfszvsdnhp3kvim53pts2tw6mik4xtha'
-                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaancq36l7q4fqwznqhnp626wuekkq7twk2em5ysyd65bd4xho72tmq'
+                       defaultValue: 'ocid1.image.oc1.phx.aaaaaaaanubtknjwx3bra4zvi3kuwgkpiku2brdjjzj5eiv7pimmzfjka4dq'
                 )
         string(name: 'KUBECTL_VERSION',
                        description: 'kubectl version',
-                       defaultValue: '1.25.4'
+                       defaultValue: '1.26.2'
                 )
         string(name: 'HELM_VERSION',
                description: 'Helm version',
@@ -113,9 +113,17 @@ pipeline {
                description: '',
                defaultValue: 'phx.ocir.io'
         )
+        string(name: 'NODE_SHAPE',
+                       description: '',
+                       defaultValue: 'VM.Standard.E3.Flex'
+                )
+        string(name: 'BRANCH',
+                       description: '',
+                       defaultValue: 'okeextfix'
+                )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
-               defaultValue: 'weblogick8s/test-images/weblogic'
+               defaultValue: 'test-images/weblogic'
         )
         string(name: 'WEBLOGIC_IMAGE_TAG',
                description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
@@ -123,7 +131,7 @@ pipeline {
         )
         string(name: 'FMWINFRA_IMAGE_NAME',
                description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
-               defaultValue: 'weblogick8s/test-images/fmw-infrastructure'
+               defaultValue: 'test-images/fmw-infrastructure'
         )
         string(name: 'FMWINFRA_IMAGE_TAG',
                description: 'FWM Infra image tag',
@@ -131,7 +139,7 @@ pipeline {
         )
         string(name: 'DB_IMAGE_NAME',
                description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
-               defaultValue: 'weblogick8s/test-images/database/enterprise'
+               defaultValue: 'test-images/database/enterprise'
         )
         string(name: 'DB_IMAGE_TAG',
                description: 'Oracle DB image tag',
@@ -205,7 +213,7 @@ pipeline {
                 stage('Setup terraform property file  ') {
                     environment {
                         OKE_CLUSTER_NAME="${CLUSTER_NAME}"
-                        NODE_SHAPE="VM.Standard2.24"
+                        NODE_SHAPE="${NODE_SHAPE}"
                         IMAGE_ID="${IMAGE_ID}"
                         OCI_PROP_FILE="${WORKSPACE}/terraform/oci.prop"
                         TVARS_FILE = credentials("${terraform_property_file}")
