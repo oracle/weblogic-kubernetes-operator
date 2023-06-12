@@ -89,9 +89,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.doesPodExist;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -379,6 +381,9 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
 
     //before create pod ensure rcu pod does not exist
+    if (doesPodExist(dbNamespace, null, RCUPODNAME)) {
+      deletePod(RCUPODNAME, dbNamespace);
+    }
     checkPodDoesNotExist(RCUPODNAME, null, dbNamespace);
 
     Map<String, String> labels = new HashMap<>();
