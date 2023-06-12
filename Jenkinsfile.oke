@@ -119,7 +119,7 @@ pipeline {
                 )
         string(name: 'BRANCH',
                        description: '',
-                       defaultValue: 'okeextfix'
+                       defaultValue: 'main'
                 )
         string(name: 'WEBLOGIC_IMAGE_NAME',
                description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
