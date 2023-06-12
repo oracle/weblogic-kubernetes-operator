@@ -468,7 +468,7 @@ public class LoggingExporter {
 
   private static String execLoggingExpStatusCheck(String opNamespace, String esNamespace,
       String labelSelector, String indexRegex) {
-    String elasticSearchHost = "elasticsearch." + esNamespace + ".svc.cluster.local";
+    String elasticSearchHost = "elasticsearch." + esNamespace + ".svc";
     StringBuffer k8sExecCmdPrefixBuff = new StringBuffer("curl http://");
     String cmd = k8sExecCmdPrefixBuff
         .append(elasticSearchHost)
