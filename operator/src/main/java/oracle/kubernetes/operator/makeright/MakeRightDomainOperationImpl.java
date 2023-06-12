@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.makeright;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -435,11 +434,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         }
 
         private void processList(V1PodList list) {
-          Collection<String> serverNamesFromPodList = list.getItems().stream()
-              .map(PodHelper::getPodServerName).collect(Collectors.toList());
-
-          info.getServerNames().stream().filter(s -> !serverNamesFromPodList.contains(s)).collect(Collectors.toList())
-              .forEach(name -> info.deleteServerPodFromEvent(name, null));
+          info.addServerNamesFromPodList(list.getItems().stream()
+              .map(PodHelper::getPodServerName).collect(Collectors.toList()));
           list.getItems().forEach(this::addPod);
         }
 
@@ -464,6 +460,14 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         private void addPodDisruptionBudget(V1PodDisruptionBudget pdb) {
           PodDisruptionBudgetHelper.addToPresence(info, pdb);
+        }
+
+        @Override
+        public void completeProcessing(Packet packet) {
+          info.getServerNames().stream().filter(
+              s -> !info.getServerNamesFromPodList().contains(s)).collect(Collectors.toList())
+              .forEach(name -> info.deleteServerPodFromEvent(name, null));
+          info.clearServerPodNamesFromList();
         }
       };
 

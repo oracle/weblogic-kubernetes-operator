@@ -61,6 +61,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CH
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CLUSTER;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.tuning.TuningParameters.DEFAULT_CALL_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -81,6 +82,9 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   // Call builder tuning
   public static final int CALL_REQUEST_LIMIT = 10;
   private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
+  /** More than one chunk's worth of pods. */
+  private static final int MULTICHUNK_LAST_POD_NUM = 2 * DEFAULT_CALL_LIMIT - 1;
+
   public static final String CLUSTER_1 = "cluster1";
   public static final String CLUSTER_2 = "cluster2";
   public static final String CLUSTER_3 = "cluster3";
@@ -433,6 +437,23 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  void whenK8sDomainWithMoreThanCallRequestLimitNumberOfPods_recordPodsPresence() {
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
+    testSupport.defineResources(pod);
+    createPodResources(UID1, NS, MULTICHUNK_LAST_POD_NUM);
+
+    dp.domains.computeIfAbsent(NS, k -> new ConcurrentHashMap<>()).put(UID1, info);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("managed-server1"), notNullValue());
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("managed-server" + MULTICHUNK_LAST_POD_NUM),
+        notNullValue());
+  }
+
+  @Test
   void whenK8sHasOneDomainWithPodButMissingInfo_dontRecordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
@@ -477,6 +498,14 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private void addPodResource(String uid, String namespace, String serverName) {
     testSupport.defineResources(createPodResource(uid, namespace, serverName));
+  }
+
+  private void createPodResources(String uid, String namespace, int lastPodNum) {
+    IntStream.rangeClosed(1, lastPodNum)
+        .boxed()
+        .map(i -> "managed-server" + i)
+        .map(s -> createPodResource(uid, namespace, s))
+        .forEach(testSupport::defineResources);
   }
 
   @Test
