@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 echo "Launching Oracle WebLogic Server Kubernetes Operator..."
@@ -63,11 +63,8 @@ mkdir -m 777 -p /logs
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
-# Container memory optimization flags
-HEAP="-XshowSettings:vm"
-
 # Start operator
-java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $JVM_OPTIONS $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID
 

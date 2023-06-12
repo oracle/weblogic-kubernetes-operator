@@ -89,6 +89,8 @@ spec:
           value: {{ int64 .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
           value: {{ .javaLoggingFileCount | default 10 | quote }}
+        - name: "JVM_OPTIONS"
+          value: {{ .jvmOptions | default "-XshowSettings:vm -XX:MaxRAMPercentage=70" | quote }}
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}

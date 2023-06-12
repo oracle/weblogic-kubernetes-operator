@@ -267,6 +267,10 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                                             newEnvVar()
                                                 .name("JAVA_LOGGING_COUNT")
                                                 .value("10"))
+                                        .addEnvItem(
+                                            newEnvVar()
+                                                .name("JVM_OPTIONS")
+                                                .value("-XX:MaxRAMPercentage=70"))
                                         .resources(
                                             new V1ResourceRequirements()
                                                 .putRequestsItem("cpu", Quantity.fromString("250m"))

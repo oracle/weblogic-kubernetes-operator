@@ -1,9 +1,7 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
-
-import java.nio.file.Path;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -13,14 +11,7 @@ import io.kubernetes.client.openapi.models.V1Service;
 /** Parses a generated weblogic-operator.yaml file into a set of typed k8s java objects */
 public class ParsedWeblogicOperatorYaml extends ParsedKubernetesYaml {
 
-  private static String OPERATOR_RELEASE = "weblogic-operator";
-
-  private OperatorValues inputs;
-
-  ParsedWeblogicOperatorYaml(Path yamlPath, OperatorValues inputs) throws Exception {
-    super(new ScriptGeneratedYamlReader(yamlPath));
-    this.inputs = inputs;
-  }
+  private final OperatorValues inputs;
 
   public ParsedWeblogicOperatorYaml(YamlReader factory, OperatorValues inputs) throws Exception {
     super(factory);

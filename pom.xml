@@ -81,7 +81,6 @@
                 <consoleOutput>true</consoleOutput>
                 <configLocation>${checkstyle.config.location}</configLocation>
                 <suppressionsLocation>${root.basedir}/build-tools/checkstyle/suppressions.xml</suppressionsLocation>
-                <encoding>UTF-8</encoding>
                 <failOnViolation>true</failOnViolation>
                 <violationSeverity>warning</violationSeverity>
                 <includeTestResources>true</includeTestResources>
