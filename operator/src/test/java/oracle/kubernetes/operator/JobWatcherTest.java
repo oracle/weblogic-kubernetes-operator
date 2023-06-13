@@ -20,12 +20,15 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,8 +36,12 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
+import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
+import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
@@ -385,6 +392,16 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     }
   }
 
+  private void startWatchDomainIntrospectorJobReadyStep(Function<V1Job,V1Job> jobFunction) {
+    V1Job persistedJob = jobFunction.apply(createJob());
+    testSupport.defineResources(persistedJob);
+    testSupport.defineResources(domain);
+    testSupport.getPacket().put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, this.dontChangeJob(persistedJob));
+    domain.getOrCreateStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED).withMessage("ugh"));
+
+    testSupport.runSteps(testSupport.getPacket(), new WatchDomainIntrospectorJobReadyStep());
+  }
+
   private void startWaitForReadyWithJobPodFluentdThenReadJob(Function<V1Job,V1Job> jobFunction) {
     AtomicBoolean stopping = new AtomicBoolean(false);
     JobWatcher watcher = createWatcher(stopping);
@@ -438,6 +455,18 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
     assertThat(terminalStep.wasRun(), is(false));
   }
 
+  @Test
+  void whenJobWithReady_performNextStep() {
+    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
+    startWatchDomainIntrospectorJobReadyStep(this::dontChangeJob);
+
+    assertThat(getDomainStatus().hasConditionWithType(FAILED), is(false));
+  }
+
+  private DomainStatus getDomainStatus() {
+    return ((DomainResource)testSupport.getResources(DOMAIN).get(0)).getStatus();
+  }
+
   @SuppressWarnings("unused")
   private V1Job createCompletedJobWithDifferentTimestamp(V1Job job) {
     clock = clock.plusSeconds(1);
@@ -468,6 +497,13 @@ class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   public void receivedEvents_areNotSentToListenersWhenWatchersPaused() {
     // Override as JobWatcher doesn't currently implement listener for callback
+  }
+
+  private static class JobAwaiterStepFactoryStub implements JobAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Job job, Step next) {
+      return next;
+    }
   }
 
 }
