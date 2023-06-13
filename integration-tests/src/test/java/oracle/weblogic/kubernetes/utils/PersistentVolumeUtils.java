@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 
@@ -42,7 +42,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -193,6 +195,13 @@ public class PersistentVolumeUtils {
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");
+
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, null),
+          String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
   }
 
   public static void setVolumeSource(Path pvHostPath, V1PersistentVolume v1pv) {
@@ -204,6 +213,7 @@ public class PersistentVolumeUtils {
       String fssDir = FSS_DIR[new Random().nextInt(FSS_DIR.length)];
       LoggingFacade logger = getLogger();
       logger.info("Using FSS PV directory {0}", fssDir);
+      logger.info("Using NFS_SERVER  {0}", NFS_SERVER);
       v1pv.getSpec()
               .storageClassName("oci-fss")
               .nfs(new V1NFSVolumeSource()
@@ -225,8 +235,14 @@ public class PersistentVolumeUtils {
     }
   }
 
+  /**
+   * Create PV hostPath directory.
+   * @param pvName Persistent Volume Name
+   * @param className Test class name to create the PV
+   * @return Path object representing PV host path
+   */
   @Nonnull
-  private static Path createPVHostPathDir(String pvName, String className) {
+  public static Path createPVHostPathDir(String pvName, String className) {
     Path pvHostPath = null;
     LoggingFacade logger = getLogger();
     try {
@@ -280,6 +296,16 @@ public class PersistentVolumeUtils {
     boolean success = assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
         "Failed to create persistent volume claim");
     assertTrue(success, "PersistentVolumeClaim creation failed");
+
+    // wait for PVC exists
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
+          String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+            pvcName, namespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        namespace);
   }
 
   /**
@@ -297,13 +323,26 @@ public class PersistentVolumeUtils {
           + mountPath
           + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
     }
+    return createfixPVCOwnerContainer(pvName, mountPath, argCommand);
+  }
+
+  /**
+   * Create container to fix pvc owner for pod.
+   *
+   * @param pvName name of pv
+   * @param mountPath mounting path for pv
+   * @param command to run for ownership
+   * @return container object with required ownership based on OKE_CLUSTER variable value.
+   */
+  public static synchronized V1Container createfixPVCOwnerContainer(String pvName, String mountPath, String command) {
+
     V1Container container = new V1Container()
         .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
         .imagePullPolicy(IMAGE_PULL_POLICY)
         .addCommandItem("/bin/sh")
         .addArgsItem("-c")
-        .addArgsItem(argCommand)
+        .addArgsItem(command)
         .volumeMounts(Arrays.asList(
             new V1VolumeMount()
                 .name(pvName)
@@ -381,6 +420,23 @@ public class PersistentVolumeUtils {
           .storageClassName(nameSuffix);
     }
 
-    createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector, namespace);
+    if (nameSuffix.contains("grafana") || nameSuffix.contains("prometheus")) {
+      String mountPath = "/data";
+      if (nameSuffix.contains("grafana")) {
+        mountPath = "/var/lib/grafana";
+      }
+      String argCommand = "chown -R 1000:1000 " + mountPath;
+      if (OKE_CLUSTER) {
+        argCommand = "chown 1000:1000 " + mountPath
+            + "/. && find "
+            + mountPath
+            + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+      }
+      createTestRepoSecret(namespace);
+      createJobToChangePermissionsOnPvHostPath("pv-test" + nameSuffix,
+          "pvc-" + nameSuffix, namespace,
+          mountPath, argCommand);
+    }
   }
 }
