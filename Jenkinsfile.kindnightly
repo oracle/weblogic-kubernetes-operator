@@ -106,10 +106,10 @@ pipeline {
                defaultValue: 'release/4.0'
         )
         choice(name: 'MAVEN_PROFILE_NAME',
-                description: 'Profile to use in mvn command to run the tests.  Possible values are kind-sequential (the default), kind-parallel and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are kind-parallel (the default), kind-sequential and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
-                        'kind-sequential',
                         'kind-parallel',
+                        'kind-sequential',
                         'integration-tests'
                 ]
         )
@@ -246,7 +246,7 @@ pipeline {
         )
         string(name: 'PROMETHEUS_CHART_VERSION',
                description: '',
-               defaultValue: '15.2.0'
+               defaultValue: '17.0.0'
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
@@ -516,8 +516,6 @@ EOF
                                     PARALLEL_RUN='false'
                                 fi
                                 if [ -n "${IT_TEST}" ]; then
-                                    echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
-                                    MAVEN_PROFILE_NAME="integration-tests"
                                     echo "-Dit.test=\"${IT_TEST}\"" > ${WORKSPACE}/.mvn/maven.config
                                 fi
                                 echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
@@ -564,6 +562,11 @@ EOF
                                     export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
                                     export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
                                     export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+
+                                    if [[ -n "${IT_TEST}" && "${IT_TEST}" != "**/It*" ]]; then
+                                        echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                        MAVEN_PROFILE_NAME="integration-tests"
+                                    fi
                                     if ! time mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/kindtest.log"; then
                                         echo "integration-tests failed"
                                         exit 1
