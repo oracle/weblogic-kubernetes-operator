@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -655,6 +655,54 @@ public class CommonMiiTestUtils {
           String dbSecretName,
           boolean onlineUpdateEnabled,
           boolean setDataHome) {
+    return createDomainResourceWithLogHome(domainResourceName,
+        domNamespace,
+        imageName,
+        adminSecretName,
+        repoSecretName,
+        encryptionSecretName,
+        pvName,
+        pvcName,
+        configMapName,
+        dbSecretName,
+        "-Dweblogic.security.SSL.ignoreHostnameVerification=true",
+    onlineUpdateEnabled,
+    setDataHome);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param pvName Name of persistent volume
+   * @param pvcName Name of persistent volume claim
+   * @param configMapName name of the configMap containing Weblogic Deploy Tooling model
+   * @param dbSecretName name of the Secret for WebLogic configuration overrides
+   * @param javaOpt sting of all java options to be set
+   * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
+   * @param setDataHome whether to set data home at domain resource
+   * @return domain object of the domain resource
+   */
+  public static DomainResource createDomainResourceWithLogHome(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      String pvName,
+      String pvcName,
+      String configMapName,
+      String dbSecretName,
+      String javaOpt,
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -679,7 +727,7 @@ public class CommonMiiTestUtils {
         .serverPod(new ServerPod()
             .addEnvItem(new V1EnvVar()
                 .name("JAVA_OPTIONS")
-                .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .value(javaOpt))
             .addEnvItem(new V1EnvVar()
                 .name("USER_MEM_ARGS")
                 .value("-Djava.security.egd=file:/dev/./urandom "))
@@ -1144,6 +1192,71 @@ public class CommonMiiTestUtils {
           logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
           List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
               namespace, "job-name=" + jobName).getItems(),
+              "Listing pods failed");
+          if (!pods.isEmpty()) {
+            String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+                "Failed to get pod log");
+            logger.severe(podLog);
+            fail("Change permissions on PV hostpath job failed");
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Create a job to change the permissions on the pv host path.
+   *
+   * @param pvName Name of the persistent volume
+   * @param pvcName Name of the persistent volume claim
+   * @param namespace Namespace containing the persistent volume claim and where the job should be created in
+   * @param mountPath path
+   * @param command to change permission
+   */
+  public static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName,
+                                                              String namespace, String mountPath, String command) {
+    LoggingFacade logger = getLogger();
+
+    if (!OKD) {
+      logger.info("Running Kubernetes job to create domain");
+      V1Job jobBody = new V1Job()
+          .metadata(
+              new V1ObjectMeta()
+                  .name("change-permissions-onpv-job-" + pvName) // name of the job
+                  .namespace(namespace))
+          .spec(new V1JobSpec()
+              .backoffLimit(0) // try only once
+              .template(new V1PodTemplateSpec()
+                  .spec(new V1PodSpec()
+                      .restartPolicy("Never")
+                      .addContainersItem(
+                          createfixPVCOwnerContainer(pvName,
+                              mountPath,
+                              command))
+                      .volumes(Arrays.asList(
+                          new V1Volume()
+                              .name(pvName)
+                              .persistentVolumeClaim(
+                                  new V1PersistentVolumeClaimVolumeSource()
+                                      .claimName(pvcName))))
+                      .imagePullSecrets(Arrays.asList(
+                          new V1LocalObjectReference()
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
+
+      String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+      // check job status and fail test if the job failed
+      V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+          "Getting the job failed");
+      if (job != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+                v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+          List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+                  namespace, "job-name=" + jobName).getItems(),
               "Listing pods failed");
           if (!pods.isEmpty()) {
             String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),

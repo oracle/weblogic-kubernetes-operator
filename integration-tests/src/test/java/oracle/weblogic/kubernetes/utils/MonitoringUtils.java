@@ -583,7 +583,7 @@ public class MonitoringUtils {
         BUSYBOX_IMAGE), "Failed to replace String ");
     assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
         "busybox_tag",
-        BUSYBOX_TAG), "Failed to replace String ");
+        BUSYBOX_TAG), "Failed to replace String ");   
     if (!OKE_CLUSTER) {
       assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
               "enabled: false", "enabled: true"));
@@ -668,6 +668,9 @@ public class MonitoringUtils {
       if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-kube-state-metrics")) {
         Kubernetes.deleteClusterRole(prometheusReleaseName + "-kube-state-metrics");
       }
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-pushgateway")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-pushgateway");
+      }
       if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-server")) {
         Kubernetes.deleteClusterRole(prometheusReleaseName + "-server");
       }
@@ -685,6 +688,9 @@ public class MonitoringUtils {
       }
       if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-kube-state-metrics")) {
         Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-kube-state-metrics");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-pushgateway")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-pushgateway");
       }
       if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-server")) {
         Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-server");
