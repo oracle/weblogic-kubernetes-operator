@@ -4,8 +4,8 @@
 
 #
 # This script downloads the latest version of the WebLogic Deploy Tooling
-# and of the WebLogic Image Tool to WORKDIR/model-images/weblogic-deploy-tooling.zip
-# and WORKDIR/model-images/weblogic-image-tool.zip by default.
+# and of the WebLogic Image Tool to WORKDIR/wdt-artifacts/wdt-model-files/weblogic-deploy-tooling.zip
+# and WORKDIR/wdt-artifacts/wdt-model-files/weblogic-image-tool.zip by default.
 #
 # Optional command line:
 #    -dry    Show, but don't perform, the final download command. (This
@@ -40,7 +40,7 @@ curl_parms+=" --retry-max-time 400" # total seconds before giving up
 dry_run=false
 [ "${1:-}" = "-dry" ] && dry_run=true
 
-cd ${WORKDIR}/model-images
+cd ${WORKDIR}/wdt-artifacts/wdt-model-files
 
 download_zip() {
   set -eu
@@ -53,14 +53,14 @@ download_zip() {
     echo "@@"
     echo "@@ -----------------------------------------------------------------------"
     echo "@@ Info: NOTE! Skipping '$LOCATION' download since local                  "
-    echo "@@             file '$WORKDIR/model-images/$ZIPFILE' already exists.      "
+    echo "@@             file '$WORKDIR/model-in-image/model-images/$ZIPFILE' already exists.      "
     echo "@@             To force a download, 'export $DOWNLOAD_VAR_NAME=always'.   "
     echo "@@ -----------------------------------------------------------------------"
     echo "@@"
     return
   fi
 
-  echo "@@ Info: Downloading $ZIPFILE from '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+  echo "@@ Info: Downloading $ZIPFILE from '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE'."
 
   local iurl="$LOCATION"
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
@@ -72,7 +72,7 @@ download_zip() {
       LOCATION=https://github.com/oracle/weblogic-image-tool/releases/latest/download/
     fi
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
-    echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+    echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE'."
 
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
@@ -84,7 +84,7 @@ download_zip() {
     fi
   else
     echo "@@ Info: The location URL does not match regex 'https://github.com.*/latest$' "
-    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/$ZIPFILE' "
+    echo "@@ Info: Downloading from custom URL '$LOCATION' to '$WORKDIR/wdt-artifacts/wdt-model-files/$ZIPFILE' "
     if [ ! "$dry_run" = "true" ]; then
       rm -f $ZIPFILE
       echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"

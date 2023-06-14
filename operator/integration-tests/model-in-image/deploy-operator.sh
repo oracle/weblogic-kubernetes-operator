@@ -63,7 +63,7 @@ cd ${SRCDIR}
 
 helm install $OPER_NAME kubernetes/charts/weblogic-operator \
   --namespace $OPER_NAMESPACE \
-  --set       image=$OPER_IMAGE \
+  --set       image="$OPER_IMAGE" \
   --set       serviceAccount=$OPER_SA \
   --set       "domainNamespaces={$DOMAIN_NAMESPACE}" \
   --set       "javaLoggingLevel=INFO" \

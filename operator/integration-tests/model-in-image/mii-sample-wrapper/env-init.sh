@@ -13,19 +13,14 @@ MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/m
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
 IMAGE_TYPE=${IMAGE_TYPE:-$WDT_DOMAIN_TYPE}
 
-if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
-   && [ ! "$WDT_DOMAIN_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$WDT_DOMAIN_TYPE" = "JRF" ]; then
-  echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS', 'JRF', or 'RestrictedJRF'."
+if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ]; then
+  echo "@@ Error: Invalid domain type WDT_DOMAIN_TYPE '$WDT_DOMAIN_TYPE': expected 'WLS'."
   exit 1
 fi
 
-if    [ ! "$IMAGE_TYPE" = "WLS" ] \
-   && [ ! "$IMAGE_TYPE" = "WLS-AI" ] \
-   && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF-AI" ]; then
-  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-AI', 'JRF', 'JRF-AI' or 'RestrictedJRF'."
+if    [ ! "$IMAGE_TYPE" = "WLS-LEGACY" ] \
+   && [ ! "$IMAGE_TYPE" = "WLS" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS-LEGACY', or 'WLS'."
   exit 1
 fi
 
@@ -44,7 +39,7 @@ DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
-if [[ "$WDT_DOMAIN_TYPE" = "WLS" || "$WDT_DOMAIN_TYPE" = "WLS-AI" ]]; then
+if [[ "$WDT_DOMAIN_TYPE" = "WLS-LEGACY" || "$WDT_DOMAIN_TYPE" = "WLS" ]]; then
   defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
 else
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
@@ -54,11 +49,11 @@ BASE_IMAGE_NAME="${BASE_IMAGE_NAME:-$defaultBaseImage}"
 BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
-MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
+MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-wdt-domain-image}
 MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
-MODEL_DIR=${MODEL_DIR:-model-images/model-in-image__${MODEL_IMAGE_TAG}}
+MODEL_DIR=${MODEL_DIR:-wdt-artifacts/wdt-model-files/${MODEL_IMAGE_TAG}}
 AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH:-/auxiliary}
 WDT_MODEL_HOME=${WDT_MODEL_HOME:-${AUXILIARY_IMAGE_PATH}/models}
 WDT_INSTALL_HOME=${WDT_INSTALL_HOME:-${AUXILIARY_IMAGE_PATH}/weblogic-deploy}
@@ -67,7 +62,7 @@ AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR=${AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR:-a
 IMAGE_PULL_SECRET_NAME=${IMAGE_PULL_SECRET_NAME:-""}
 DOMAIN_IMAGE_PULL_SECRET_NAME=${DOMAIN_IMAGE_PULL_SECRET_NAME:-""}
 
-ARCHIVE_SOURCEDIR=${ARCHIVE_SOURCEDIR:-archives/archive-v1}
+ARCHIVE_SOURCEDIR=${ARCHIVE_SOURCEDIR:-wdt-artifacts/archives/archive-v1}
 
 INCLUDE_MODEL_CONFIGMAP=${INCLUDE_MODEL_CONFIGMAP:-false}
 CORRECTED_DATASOURCE_SECRET=${CORRECTED_DATASOURCE_SECRET:-false}
