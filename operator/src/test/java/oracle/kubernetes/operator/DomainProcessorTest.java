@@ -209,7 +209,7 @@ class DomainProcessorTest {
 
   private static String[] getManagedServerNames(String clusterName) {
     return IntStream.rangeClosed(1, MAX_SERVERS)
-            .mapToObj(n -> getManagedServerName(n, clusterName)).toArray(String[]::new);
+        .mapToObj(n -> getManagedServerName(n, clusterName)).toArray(String[]::new);
   }
 
   @Nonnull
@@ -255,7 +255,7 @@ class DomainProcessorTest {
 
   V1JobStatus createCompletedStatus() {
     return new V1JobStatus()
-          .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
+        .addConditionsItem(new V1JobCondition().type("Complete").status("True"));
   }
 
   V1JobStatus createNotCompletedStatus() {
@@ -268,7 +268,7 @@ class DomainProcessorTest {
 
   private static WlsDomainConfig createDomainConfig(List<String> clusterNames, List<String> independentServerNames) {
     WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(DOMAIN_NAME)
-            .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001);
+        .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001);
     for (String serverName : independentServerNames) {
       wlsDomainConfig.addWlsServer(serverName, "domain-" + serverName, 8001);
     }
@@ -285,7 +285,7 @@ class DomainProcessorTest {
   @BeforeEach
   void setUp() throws Exception {
     consoleHandlerMemento = TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE);
+        .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE);
     mementos.add(consoleHandlerMemento);
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
@@ -413,13 +413,68 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainChangedSpecWithDeletedEventData_dontGenerateDomainChangedEvent() {
+  void whenDomainChangedSpecWithForDeletion_dontGenerateDomainChangedEvent() {
     processor.registerDomainPresenceInfo(originalInfo);
 
-    processor.createMakeRightOperation(newInfo).withEventData(new EventData(DOMAIN_DELETED)).execute();
+    processor.createMakeRightOperation(newInfo).forDeletion().execute();
 
     assertThat(testSupport, not(hasEvent(DOMAIN_CHANGED.getReason())));
     assertThat(testSupport, hasEvent(DOMAIN_DELETED.getReason()));
+  }
+
+  @Test
+  void whenDomainSpecNotChangedWithRetriableFailureButNotRetrying_dontContinueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();
+
+    assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
+  }
+
+  @Test
+  void whenDomainSpecChangedWithRetriableFailureButNotRetrying_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(newInfo).withExplicitRecheck().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithRetriableFailureButForDeletion_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithNonRetriableFailureButForDeletion_continueProcessing() {
+    originalInfo.setPopulated(true);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().forDeletion().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
+  }
+
+  @Test
+  void whenDomainWithRetriableFailureAndRetryOnFailure_continueProcess() {
+    originalInfo.setPopulated(false);
+    processor.registerDomainPresenceInfo(originalInfo);
+    domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
+
+    processor.createMakeRightOperation(originalInfo).withExplicitRecheck().retryOnFailure().execute();
+
+    assertThat(logRecords, not(containsFine(NOT_STARTING_DOMAINUID_THREAD)));
   }
 
   @Test
@@ -740,20 +795,20 @@ class DomainProcessorTest {
 
   private void makePodsReady() {
     testSupport.<V1Pod>getResources(POD).stream()
-          .filter(this::isWlsServer)
-          .forEach(pod -> pod.setStatus(createReadyStatus()));
+        .filter(this::isWlsServer)
+        .forEach(pod -> pod.setStatus(createReadyStatus()));
   }
 
   private V1PodStatus createReadyStatus() {
     return new V1PodStatus().phase("Running")
-          .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
+        .addConditionsItem(new V1PodCondition().type("Ready").status("True"));
   }
 
   private V1Secret createCredentialsSecret() {
     return new V1Secret()
-          .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
-          .data(Map.of(USERNAME_KEY, "user".getBytes(),
-                PASSWORD_KEY, "password".getBytes()));
+        .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
+        .data(Map.of(USERNAME_KEY, "user".getBytes(),
+            PASSWORD_KEY, "password".getBytes()));
   }
 
   @SuppressWarnings("HttpUrlsUsage")
@@ -764,10 +819,10 @@ class DomainProcessorTest {
 
   private boolean isWlsServer(V1Pod pod) {
     return Optional.of(pod)
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getLabels)
-          .stream()
-          .anyMatch(this::hasServerNameLabel);
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .stream()
+        .anyMatch(this::hasServerNameLabel);
   }
 
   private boolean hasServerNameLabel(Map<String,String> labels) {
@@ -919,7 +974,7 @@ class DomainProcessorTest {
 
   @Test
   void whenDomainScaledUp_podDisruptionBudgetMinAvailableUpdated()
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2));
 
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
@@ -931,7 +986,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(3);
     newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
     processor.createMakeRightOperation(newInfo)
-            .withExplicitRecheck().execute();
+        .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
   }
 
@@ -948,15 +1003,15 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(newInfo, CLUSTER).withReplicas(2);
     newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
     processor.createMakeRightOperation(newInfo)
-            .withExplicitRecheck().execute();
+        .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
   }
 
   private Boolean minAvailableMatches(List<V1PodDisruptionBudget> runningPDBs, int count) {
     return runningPDBs.stream().findFirst()
-          .map(V1PodDisruptionBudget::getSpec)
-          .map(V1PodDisruptionBudgetSpec::getMinAvailable)
-          .map(IntOrString::getIntValue).orElse(0) == count;
+        .map(V1PodDisruptionBudget::getSpec)
+        .map(V1PodDisruptionBudgetSpec::getMinAvailable)
+        .map(IntOrString::getIntValue).orElse(0) == count;
   }
 
   @Test
@@ -1002,22 +1057,6 @@ class DomainProcessorTest {
     ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
     processor.registerClusterPresenceInfo(info);
     ClusterResource cluster2 = createClusterAlone(CLUSTER4, NS).withStatus(status);
-    cluster2.getMetadata().setGeneration(1234L);
-    testSupport.defineResources(cluster2);
-
-    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
-
-    assertThat(testSupport, hasEvent(CLUSTER_CHANGED.getReason()));
-    assertThat(getEventsForSeason(CLUSTER_CHANGED.getReason()), not(empty()));
-  }
-
-  @Test
-  void whenClusterResourceWithDifferentMetadataNameAndSpecNameChanged_generateClusterChangedEvent() {
-    ClusterStatus status = new ClusterStatus().withClusterName(CLUSTER4);
-    ClusterResource cluster1 = createClusterWithDifferentMetadataAndSpecName(CLUSTER4, NS).withStatus(status);
-    ClusterPresenceInfo info = new ClusterPresenceInfo(cluster1);
-    processor.registerClusterPresenceInfo(info);
-    ClusterResource cluster2 = createClusterWithDifferentMetadataAndSpecName(CLUSTER4, NS).withStatus(status);
     cluster2.getMetadata().setGeneration(1234L);
     testSupport.defineResources(cluster2);
 
@@ -1485,12 +1524,6 @@ class DomainProcessorTest {
         .spec(new ClusterSpec().withClusterName(clusterName));
   }
 
-  private ClusterResource createClusterWithDifferentMetadataAndSpecName(String clusterMetadataName, String ns) {
-    return new ClusterResource()
-        .withMetadata(new V1ObjectMeta().name(clusterMetadataName).namespace(ns))
-        .spec(new ClusterSpec().withClusterName("specClusterName-" + clusterMetadataName));
-  }
-
   private V1Service createNonOperatorService() {
     return new V1Service()
         .metadata(
@@ -1507,17 +1540,17 @@ class DomainProcessorTest {
 
   private V1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
     return new V1PodDisruptionBudget()
-            .metadata(
-                    new V1ObjectMeta()
-                            .name("do-not-delete-pdb")
-                            .namespace(NS)
-                            .putLabelsItem("serviceType", "SERVER")
-                            .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false"))
-            .spec(new V1PodDisruptionBudgetSpec()
-                    .selector(new V1LabelSelector()
-                            .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
-                            .putMatchLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
-                            .putMatchLabelsItem(CLUSTERNAME_LABEL, CLUSTER)));
+        .metadata(
+            new V1ObjectMeta()
+                .name("do-not-delete-pdb")
+                .namespace(NS)
+                .putLabelsItem("serviceType", "SERVER")
+                .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false"))
+        .spec(new V1PodDisruptionBudgetSpec()
+            .selector(new V1LabelSelector()
+                .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
+                .putMatchLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
+                .putMatchLabelsItem(CLUSTERNAME_LABEL, CLUSTER)));
   }
 
   @Test
@@ -1637,7 +1670,7 @@ class DomainProcessorTest {
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
     MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
-          newInfo).interrupt();
+        newInfo).interrupt();
     makeRight.execute();
 
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
@@ -1682,9 +1715,9 @@ class DomainProcessorTest {
   @Test
   void whenFluentdSpecified_verifyConfigMap() {
     domainConfigurator
-            .withFluentdConfiguration(true, "fluentd-cred",
-                    null, null, null)
-            .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+        .withFluentdConfiguration(true, "fluentd-cred",
+            null, null, null)
+        .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -1692,17 +1725,17 @@ class DomainProcessorTest {
     V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, UID + FLUENTD_CONFIGMAP_NAME_SUFFIX);
 
     assertThat(Optional.ofNullable(fluentdConfigMap)
-            .map(V1ConfigMap::getData)
-            .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
+        .map(V1ConfigMap::getData)
+        .stream().anyMatch(map -> map.containsKey(FLUENTD_CONFIG_DATA_NAME)), equalTo(true));
 
   }
 
   @Test
   void whenFluentdSpecifiedWithConfig_verifyConfigMap() {
     domainConfigurator
-            .withFluentdConfiguration(true, "fluentd-cred",
-                    "<match>me</match>", null, null)
-            .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
+        .withFluentdConfiguration(true, "fluentd-cred",
+            "<match>me</match>", null, null)
+        .configureCluster(newInfo, CLUSTER).withReplicas(MIN_REPLICAS);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
     processor.createMakeRightOperation(newInfo).execute();
@@ -1710,15 +1743,15 @@ class DomainProcessorTest {
     V1ConfigMap fluentdConfigMap = testSupport.getResourceWithName(CONFIG_MAP, UID + FLUENTD_CONFIGMAP_NAME_SUFFIX);
 
     assertThat(Optional.ofNullable(fluentdConfigMap)
-            .map(V1ConfigMap::getData)
-            .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
-            .orElse(null), equalTo("<match>me</match>"));
+        .map(V1ConfigMap::getData)
+        .map(d -> d.get(FLUENTD_CONFIG_DATA_NAME))
+        .orElse(null), equalTo("<match>me</match>"));
   }
 
 
   V1JobStatus createTimedOutStatus() {
     return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
-            .reason("DeadlineExceeded"));
+        .reason("DeadlineExceeded"));
   }
 
   @Test
@@ -1744,7 +1777,7 @@ class DomainProcessorTest {
 
   V1JobStatus createBackoffStatus() {
     return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
-            .reason("BackoffLimitExceeded"));
+        .reason("BackoffLimitExceeded"));
   }
 
   private void deletePod() {
@@ -1759,7 +1792,7 @@ class DomainProcessorTest {
     Map<String, String> labels = new HashMap<>();
     labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
     testSupport.defineResources(POD,
-            new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS)));
+        new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS)));
     job.setStatus(createCompletedStatus());
   }
 
@@ -1808,8 +1841,8 @@ class DomainProcessorTest {
 
   public static V1PodStatus getInitContainerStatusWithImagePullError() {
     return new V1PodStatus().initContainerStatuses(
-          List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
-                new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image")))));
+        List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
+            new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image")))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
@@ -1825,13 +1858,13 @@ class DomainProcessorTest {
   }
 
   private void establishPreviousIntrospection(Consumer<DomainResource> domainSetup, List<Integer> msNumbers)
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     establishPreviousIntrospection(domainSetup, msNumbers, Collections.singletonList(CLUSTER), new ArrayList<>());
   }
 
   private void establishPreviousIntrospection(Consumer<DomainResource> domainSetup, List<Integer> msNumbers,
                                               List<String> clusterNames, List<String> independentServers)
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     if (domainSetup != null) {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
@@ -1859,16 +1892,16 @@ class DomainProcessorTest {
   private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue, List<String> clusterNames,
                                                   List<String> serverNames) throws JsonProcessingException {
     return new V1ConfigMap()
-          .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
-          .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
-                  defineTopology(clusterNames, serverNames),
-                  IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
+        .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
+        .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
+            defineTopology(clusterNames, serverNames),
+            IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
   }
 
   private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
     final V1ObjectMeta meta = new V1ObjectMeta()
-          .namespace(NS)
-          .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
+        .namespace(NS)
+        .name(ConfigMapHelper.getIntrospectorConfigMapName(UID));
     Optional.ofNullable(introspectionDoneValue).ifPresent(v -> meta.putLabelsItem(INTROSPECTION_STATE_LABEL, v));
     return meta;
   }
@@ -1896,12 +1929,12 @@ class DomainProcessorTest {
 
   private String getIntrospectorConfigMapIntrospectionVersion() {
     return getConfigMaps()
-          .map(V1ConfigMap::getMetadata)
-          .filter(this::isIntrospectorMeta)
-          .findFirst()
-          .map(V1ObjectMeta::getLabels)
-          .map(m -> m.get(INTROSPECTION_STATE_LABEL))
-          .orElse(null);
+        .map(V1ConfigMap::getMetadata)
+        .filter(this::isIntrospectorMeta)
+        .findFirst()
+        .map(V1ObjectMeta::getLabels)
+        .map(m -> m.get(INTROSPECTION_STATE_LABEL))
+        .orElse(null);
   }
 
   private Stream<V1ConfigMap> getConfigMaps() {
@@ -2052,7 +2085,7 @@ class DomainProcessorTest {
 
   void configureForModelInImageOnlineUpdate(DomainResource domain) {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL).withRuntimeEncryptionSecret("wdt-cm-secret")
-      .withMIIOnlineUpdate();
+        .withMIIOnlineUpdate();
   }
 
   private DomainConfigurator configureDomain(DomainResource domain) {
@@ -2074,10 +2107,10 @@ class DomainProcessorTest {
 
   private void cacheChangedDomainInputsHash() {
     getConfigMaps()
-          .filter(this::isIntrospectorConfigMap)
-          .findFirst()
-          .map(V1ConfigMap::getData)
-          .ifPresent(data -> data.put(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, "changedHash"));
+        .filter(this::isIntrospectorConfigMap)
+        .findFirst()
+        .map(V1ConfigMap::getData)
+        .ifPresent(data -> data.put(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, "changedHash"));
   }
 
   private boolean isIntrospectorConfigMap(V1ConfigMap map) {
@@ -2099,7 +2132,7 @@ class DomainProcessorTest {
     makeRightOperation.execute();
 
     assertThat(introspectionRunBeforeUpdates,
-          allOf(hasEntry(getManagedPodName(1), true), hasEntry(getManagedPodName(2), true)));
+        allOf(hasEntry(getManagedPodName(1), true), hasEntry(getManagedPodName(2), true)));
   }
 
   @Test
@@ -2168,14 +2201,14 @@ class DomainProcessorTest {
 
     domainProcessorTestSupport.getCachedPresenceInfo("namespace", "test-domain").getServerPods()
         .forEach(p -> {
-          Map<String, String> labels = Optional.ofNullable(p)
-                .map(V1Pod::getMetadata)
-                .map(V1ObjectMeta::getLabels)
-                .orElse(new HashMap<>());
-          String message = String.format("Server pod (%s) should have label weblogic.configChangesPendingRestart"
-                + " set to true", p.getMetadata().getName());
-          assertThat(message, labels.get("weblogic.configChangesPendingRestart"), is("true"));
-          }
+              Map<String, String> labels = Optional.ofNullable(p)
+                  .map(V1Pod::getMetadata)
+                  .map(V1ObjectMeta::getLabels)
+                  .orElse(new HashMap<>());
+              String message = String.format("Server pod (%s) should have label weblogic.configChangesPendingRestart"
+                  + " set to true", p.getMetadata().getName());
+              assertThat(message, labels.get("weblogic.configChangesPendingRestart"), is("true"));
+            }
     );
   }
 
@@ -2191,9 +2224,9 @@ class DomainProcessorTest {
 
   private void recordPodCreation(MakeRightDomainOperation makeRightOperation, V1Pod pod) {
     Optional.of(pod)
-          .map(V1Pod::getMetadata)
-          .map(V1ObjectMeta::getName)
-          .ifPresent(name -> introspectionRunBeforeUpdates.put(name, makeRightOperation.wasInspectionRun()));
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getName)
+        .ifPresent(name -> introspectionRunBeforeUpdates.put(name, makeRightOperation.wasInspectionRun()));
   }
 
   // Map of server names to a boolean, indicating that the introspection had already been run when the pod was created
@@ -2245,9 +2278,9 @@ class DomainProcessorTest {
 
   @Test
   void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
-          throws JsonProcessingException {
+      throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
-          List.of(INDEPENDENT_SERVER));
+        List.of(INDEPENDENT_SERVER));
     domainConfigurator.withDefaultReplicaCount(2);
     newInfo.getReferencedClusters().forEach(testSupport::defineResources);
 
@@ -2296,37 +2329,37 @@ class DomainProcessorTest {
         + DOMAIN_INTROSPECTION_COMPLETE;
 
     String topologyxml = "domainValid: true\n"
-            + "domain:\n"
-            + "  name: \"base_domain\"\n"
-            + "  adminServerName: \"admin-server\"\n"
-            + "  configuredClusters:\n"
-            + "  - name: \"cluster-1\"\n"
-            + "    servers:\n"
-            + "      - name: \"managed-server1\"\n"
-            + "        listenPort: 7003\n"
-            + "        listenAddress: \"domain1-managed-server1\"\n"
-            + "        adminPort: 7099\n"
-            + "        sslListenPort: 7104\n"
-            + "      - name: \"managed-server2\"\n"
-            + "        listenPort: 7003\n"
-            + "        listenAddress: \"domain1-managed-server2\"\n"
-            + "        adminPort: 7099\n"
-            + "        sslListenPort: 7104\n"
-            + "  servers:\n"
-            + "    - name: \"admin-server\"\n"
-            + "      listenPort: 7001\n"
-            + "      listenAddress: \"domain1-admin-server\"\n"
-            + "      adminPort: 7099\n"
-            + "    - name: \"server1\"\n"
-            + "      listenPort: 9003\n"
-            + "      adminPort: 7099\n"
-            + "      listenAddress: \"domain1-server1\"\n"
-            + "      sslListenPort: 8003\n"
-            + "    - name: \"server2\"\n"
-            + "      listenPort: 9004\n"
-            + "      listenAddress: \"domain1-server2\"\n"
-            + "      adminPort: 7099\n"
-            + "      sslListenPort: 8004\n";
+        + "domain:\n"
+        + "  name: \"base_domain\"\n"
+        + "  adminServerName: \"admin-server\"\n"
+        + "  configuredClusters:\n"
+        + "  - name: \"cluster-1\"\n"
+        + "    servers:\n"
+        + "      - name: \"managed-server1\"\n"
+        + "        listenPort: 7003\n"
+        + "        listenAddress: \"domain1-managed-server1\"\n"
+        + "        adminPort: 7099\n"
+        + "        sslListenPort: 7104\n"
+        + "      - name: \"managed-server2\"\n"
+        + "        listenPort: 7003\n"
+        + "        listenAddress: \"domain1-managed-server2\"\n"
+        + "        adminPort: 7099\n"
+        + "        sslListenPort: 7104\n"
+        + "  servers:\n"
+        + "    - name: \"admin-server\"\n"
+        + "      listenPort: 7001\n"
+        + "      listenAddress: \"domain1-admin-server\"\n"
+        + "      adminPort: 7099\n"
+        + "    - name: \"server1\"\n"
+        + "      listenPort: 9003\n"
+        + "      adminPort: 7099\n"
+        + "      listenAddress: \"domain1-server1\"\n"
+        + "      sslListenPort: 8003\n"
+        + "    - name: \"server2\"\n"
+        + "      listenPort: 9004\n"
+        + "      listenAddress: \"domain1-server2\"\n"
+        + "      adminPort: 7099\n"
+        + "      sslListenPort: 8004\n";
 
     //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo, "cluster-1").withReplicas(2);
@@ -2454,12 +2487,12 @@ class DomainProcessorTest {
 
   private void removeSecondClusterAndIndependentServerFromDomainTopology() throws JsonProcessingException {
     testSupport.deleteResources(new V1ConfigMap()
-            .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE)));
+        .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE)));
     testSupport.defineResources(new V1ConfigMap()
-            .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE))
-            .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
-                    IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
-                    IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
+        .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE))
+        .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
+            IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
+            IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
   }
 
   // todo after external service created, if adminService deleted, delete service
@@ -2555,9 +2588,9 @@ class DomainProcessorTest {
 
   private WlsServerConfig getClusteredServerConfig(String serverName, String clusterName) {
     return domainConfig.getClusterConfig(clusterName).getServerConfigs()
-          .stream()
-          .filter(c -> serverName.equals(c.getName())).findFirst()
-          .orElseThrow();
+        .stream()
+        .filter(c -> serverName.equals(c.getName())).findFirst()
+        .orElseThrow();
   }
 
   private V1Service createServerService(String serverName) {
@@ -2626,7 +2659,7 @@ class DomainProcessorTest {
     assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
-  
+
   private String getStatusReason(DomainResource updatedDomain) {
     return Optional.ofNullable(updatedDomain).map(DomainResource::getStatus).map(DomainStatus::getReason).orElse(null);
   }
@@ -2651,16 +2684,16 @@ class DomainProcessorTest {
 
   private Integer getContainerReadinessPort(List<V1Pod> pods, String podName) {
     return pods.stream()
-          .filter(pod -> isNamedPod(pod, podName))
-          .findFirst()
-          .map(V1Pod::getSpec)
-          .map(V1PodSpec::getContainers)
-          .flatMap(c -> c.stream().findFirst())
-          .map(V1Container::getReadinessProbe)
-          .map(V1Probe::getHttpGet)
-          .map(V1HTTPGetAction::getPort)
-          .map(IntOrString::getIntValue)
-          .orElse(null);
+        .filter(pod -> isNamedPod(pod, podName))
+        .findFirst()
+        .map(V1Pod::getSpec)
+        .map(V1PodSpec::getContainers)
+        .flatMap(c -> c.stream().findFirst())
+        .map(V1Container::getReadinessProbe)
+        .map(V1Probe::getHttpGet)
+        .map(V1HTTPGetAction::getPort)
+        .map(IntOrString::getIntValue)
+        .orElse(null);
   }
 
   private boolean isNamedPod(V1Pod pod, String name) {
@@ -2669,15 +2702,15 @@ class DomainProcessorTest {
 
   private String getContainerReadinessScheme(List<V1Pod> pods, String podName) {
     return pods.stream()
-          .filter(pod -> isNamedPod(pod, podName))
-          .findFirst()
-          .map(V1Pod::getSpec)
-          .map(V1PodSpec::getContainers)
-          .flatMap(c -> c.stream().findFirst())
-          .map(V1Container::getReadinessProbe)
-          .map(V1Probe::getHttpGet)
-          .map(V1HTTPGetAction::getScheme)
-          .orElse(null);
+        .filter(pod -> isNamedPod(pod, podName))
+        .findFirst()
+        .map(V1Pod::getSpec)
+        .map(V1PodSpec::getContainers)
+        .flatMap(c -> c.stream().findFirst())
+        .map(V1Container::getReadinessProbe)
+        .map(V1Probe::getHttpGet)
+        .map(V1HTTPGetAction::getScheme)
+        .orElse(null);
   }
 
   private void defineDuplicateServerNames() {

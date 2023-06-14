@@ -188,9 +188,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   }
 
   private static void registerStatusUpdater(
-        String ns, String domainUid, ScheduledFuture<?> future) {
+      String ns, String domainUid, ScheduledFuture<?> future) {
     ScheduledFuture<?> existing =
-          statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
+        statusUpdaters.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).put(domainUid, future);
     if (existing != null) {
       existing.cancel(false);
     }
@@ -293,8 +293,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     Optional.ofNullable(domains.get(event.getMetadata().getNamespace()))
-          .map(m -> m.get(domainUid))
-          .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
   /**
@@ -337,9 +337,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private static String getReadinessStatus(CoreV1Event event) {
     return Optional.ofNullable(event.getMessage())
-          .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
-          .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
-          .orElse(null);
+        .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
+        .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
+        .orElse(null);
   }
 
   // pre-conditions: DomainPresenceInfo SPI
@@ -379,10 +379,14 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     final DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(liveInfo);
     if (isNewDomain(cachedInfo)) {
       return true;
-    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)
-        || liveInfo.isDomainProcessingHalted(cachedInfo)) {
+    } else if (liveInfo.isFromOutOfDateEvent(operation, cachedInfo)) {
       return false;
-    } else if (operation.isExplicitRecheck() || liveInfo.isDomainGenerationChanged(cachedInfo)) {
+    } else if (isDeleting(operation)) {
+      return true;
+    } else if (liveInfo.isDomainProcessingHalted(cachedInfo)) {
+      return false;
+    } else if (isExplicitRecheckWithoutRetriableFailure(operation, liveInfo)
+        || liveInfo.isDomainGenerationChanged(cachedInfo)) {
       return true;
     } else {
       cachedInfo.setDomain(liveInfo.getDomain());
@@ -392,7 +396,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private boolean shouldContinue(MakeRightClusterOperation operation, ClusterPresenceInfo liveInfo) {
     final ClusterPresenceInfo cachedInfo = getExistingClusterPresenceInfo(liveInfo);
-    if (hasDeletedClusterEventData(operation)) {
+    if (isDeleting(operation)) {
       return findClusterPresenceInfo(liveInfo.getNamespace(), liveInfo.getResourceName());
     } else if (isNewCluster(cachedInfo)) {
       return true;
@@ -404,6 +408,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       cachedInfo.setCluster(liveInfo.getCluster());
       return false;
     }
+  }
+
+  private boolean isExplicitRecheckWithoutRetriableFailure(
+      MakeRightDomainOperation operation, DomainPresenceInfo info) {
+    return operation.isExplicitRecheck() && !hasRetriableFailureNonRetryingOperation(operation, info);
+  }
+
+  private boolean hasRetriableFailureNonRetryingOperation(MakeRightDomainOperation operation, DomainPresenceInfo info) {
+    return info.hasRetriableFailure() && !operation.isRetryOnFailure();
   }
 
   private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
@@ -418,11 +431,15 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     return Optional.ofNullable(clusters.get(namespace)).orElse(Collections.emptyMap()).get(clusterName) != null;
   }
 
-  private boolean hasDeletedClusterEventData(MakeRightClusterOperation operation) {
+  private boolean isDeleting(MakeRightClusterOperation operation) {
     return EventItem.CLUSTER_DELETED == getEventItem(operation);
   }
 
-  private EventItem getEventItem(MakeRightClusterOperation operation) {
+  private boolean isDeleting(MakeRightDomainOperation operation) {
+    return operation.isDeleting() || EventItem.DOMAIN_DELETED == getEventItem(operation);
+  }
+
+  private EventItem getEventItem(MakeRightOperation operation) {
     return Optional.ofNullable(operation.getEventData()).map(EventData::getItem).orElse(null);
   }
 
@@ -454,8 +471,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void registerDomainPresenceInfo(DomainPresenceInfo info) {
     domains
-          .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
-          .put(info.getDomainUid(), info);
+        .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
+        .put(info.getDomainUid(), info);
   }
 
   @Override
@@ -522,12 +539,12 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     if (LOGGER.isFineEnabled()) {
       BiConsumer<String, FiberGate> consumer =
           (namespace, gate) -> gate.getCurrentFibers().forEach(
-            (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-              try (ThreadLoggingContext ignored
-                  = setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
-                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getResourceName());
-              }
-            }));
+              (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
+                try (ThreadLoggingContext ignored
+                         = setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+                  LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getResourceName());
+                }
+              }));
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
@@ -535,9 +552,9 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
 
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
-          .map(Fiber::getPacket)
-          .map(p -> p.getSpi(DomainPresenceInfo.class))
-          .map(DomainPresenceInfo::getDomainUid).orElse("");
+        .map(Fiber::getPacket)
+        .map(p -> p.getSpi(DomainPresenceInfo.class))
+        .map(DomainPresenceInfo::getDomainUid).orElse("");
   }
 
   /**
@@ -622,9 +639,8 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
   @Override
   public void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info) {
     Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
-          .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
+        .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps, null));
   }
-
 
   /* Recently, we've seen a number of intermittent bugs where K8s reports
    * outdated watch events.  There seem to be two main cases: 1) a DELETED
@@ -677,7 +693,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
     }
 
     DomainPresenceInfo info =
-            getExistingDomainPresenceInfo(getPDBNamespace(pdb), domainUid);
+        getExistingDomainPresenceInfo(getPDBNamespace(pdb), domainUid);
     if (info == null) {
       return;
     }
@@ -718,7 +734,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         case DELETED:
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                    c.getMetadata().getNamespace(), productVersion));
+                  c.getMetadata().getNamespace(), productVersion));
           break;
 
         case ERROR:
@@ -993,7 +1009,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
         logThrowable(throwable);
         runFailureSteps(throwable);
       }
-  
+
       private void runFailureSteps(Throwable throwable) {
         gate.startNewFiberIfCurrentFiberMatches(
             ((DomainPresenceInfo)presenceInfo).getDomainUid(),
@@ -1042,7 +1058,7 @@ public class DomainProcessorImpl implements DomainProcessor, MakeRightExecutor {
       final MakeRightDomainOperation retry = operation.createRetry(domainPresenceInfo);
       gate.getExecutor().schedule(retry::execute, delayUntilNextRetry(domainPresenceInfo), TimeUnit.SECONDS);
     }
-    
+
     private long delayUntilNextRetry(@Nonnull DomainPresenceInfo domainPresenceInfo) {
       final OffsetDateTime nextRetryTime = domainPresenceInfo.getDomain().getNextRetryTime();
       final Duration interval = Duration.between(SystemClock.now(), nextRetryTime);

@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import javax.annotation.Nonnull;
 
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.ResourcePresenceInfo;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
@@ -15,6 +16,7 @@ import oracle.kubernetes.operator.work.Step;
  * or to log a ClusterCreated/Changed/Deleted event.
  */
 public interface MakeRightOperation<T extends ResourcePresenceInfo> extends PacketComponent {
+
   void execute();
 
   @Nonnull
@@ -27,6 +29,13 @@ public interface MakeRightOperation<T extends ResourcePresenceInfo> extends Pack
   T getPresenceInfo();
 
   boolean hasEventData();
+
+  /**
+   * Get the event data associated with this make-right operation.
+   *
+   * @return the event data.
+   */
+  EventHelper.EventData getEventData();
 
   boolean isExplicitRecheck();
 }
