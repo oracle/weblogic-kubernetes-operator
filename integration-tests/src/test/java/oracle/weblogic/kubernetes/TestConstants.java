@@ -96,6 +96,7 @@ public interface TestConstants {
   public static final String WEBLOGIC_IMAGE_TAG_DEFAULT = "12.2.1.4";
   public static final String FMWINFRA_IMAGE_NAME_DEFAULT = "test-images/fmw-infrastructure";
   public static final String FMWINFRA_IMAGE_TAG_DEFAULT = "12.2.1.4";
+  public static final String FMWINFRA_IMAGE_TAG_12213 = "12.2.1.3";
   public static final String DB_IMAGE_NAME_DEFAULT = "test-images/database/enterprise";
   public static final String DB_PREBUILT_IMAGE_NAME_DEFAULT = "test-images/database/express";
   public static final String DB_IMAGE_TAG_DEFAULT = "12.2.0.1-slim";
@@ -151,6 +152,8 @@ public interface TestConstants {
       getKindRepoImageForSpec(KIND_REPO, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
   public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC =
       getKindRepoImageForSpec(KIND_REPO, FMWINFRA_IMAGE_NAME, FMWINFRA_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
+  public static final String FMWINFRA_IMAGE_TO_USE_IN_SPEC_12213 =
+      getKindRepoImageForSpec(KIND_REPO, FMWINFRA_IMAGE_NAME, FMWINFRA_IMAGE_TAG_12213, BASE_IMAGES_REPO_PREFIX_LENGTH);
   public static final String DB_IMAGE_TO_USE_IN_SPEC =
       getKindRepoImageForSpec(KIND_REPO, DB_IMAGE_NAME, DB_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
 
