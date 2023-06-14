@@ -68,7 +68,7 @@ public class DomainStatus {
   /**
    * The number of introspector job failures since the last success.
    *
-   * @deprecated Introspection permanent failure is now controlled by time rather than failure count
+   * @deprecated Introspection failure is now controlled by a maximum time rather than a failure count
    **/
   @SuppressWarnings("unused")
   @Description(
@@ -329,6 +329,10 @@ public class DomainStatus {
    */
   public String getReason() {
     return reason;
+  }
+
+  private DomainFailureReason getReason(DomainCondition newCondition) {
+    return newCondition.getReason();
   }
 
   /**

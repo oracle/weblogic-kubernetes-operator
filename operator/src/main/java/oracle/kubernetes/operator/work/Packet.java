@@ -24,7 +24,9 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
    * @param component a component which knows how to add itself to a packet.
    */
   public Packet with(PacketComponent component) {
-    component.addToPacket(this);
+    if (component != null) {
+      component.addToPacket(this);
+    }
     return this;
   }
 
