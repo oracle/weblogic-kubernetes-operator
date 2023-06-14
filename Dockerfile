@@ -13,9 +13,9 @@ ENV JAVA_URL="https://download.java.net/java/GA/jdk19.0.1/afdd2e245b014143b62ccb
 
 RUN set -eux; \
     microdnf -y install gzip tar; \
-    curl -fL -o /jdk.tar.gz "$JAVA_URL"; \
+    curl -fL -o jdk.tar.gz "$JAVA_URL"; \
     mkdir -p /jdk; \
-    tar --extract --file /jdk.tar.gz --directory /jdk --strip-components 1; \
+    tar --extract --file jdk.tar.gz --directory /jdk --strip-components 1; \
     /jdk/bin/jlink --verbose --compress 2 --strip-java-debug-attributes --no-header-files --no-man-pages --output jre --add-modules java.base,java.desktop,java.instrument,java.management,java.naming,java.net.http,java.sql,jdk.attach,jdk.jdi,jdk.unsupported,jdk.crypto.ec,jdk.zipfs
 
 FROM ghcr.io/oracle/oraclelinux:9-slim
