@@ -1055,6 +1055,10 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return clusters.values();
   }
 
+  public boolean hasRetriableFailure() {
+    return Optional.ofNullable(getDomain()).map(DomainResource::hasRetriableFailure).orElse(false);
+  }
+
   /** Details about a specific managed server. */
   public static class ServerInfo {
     public final WlsServerConfig serverConfig;

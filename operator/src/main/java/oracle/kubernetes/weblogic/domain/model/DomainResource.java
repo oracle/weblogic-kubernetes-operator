@@ -893,6 +893,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
         getLastRetryTime(domainStatus));
   }
 
+  public boolean hasRetriableFailure() {
+    return Optional.ofNullable(getStatus()).map(DomainStatus::getConditions)
+        .orElse(Collections.emptyList()).stream().anyMatch(DomainCondition::isRetriableFailure);
+  }
+
   class PrivateDomainApiImpl implements PrivateDomainApi {
 
     @Override

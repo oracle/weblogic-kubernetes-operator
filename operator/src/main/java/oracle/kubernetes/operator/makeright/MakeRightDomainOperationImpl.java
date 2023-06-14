@@ -39,6 +39,8 @@ import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
@@ -57,6 +59,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 
 /**
  * A factory which creates and executes steps to align the cached domain status with the value read from Kubernetes.
@@ -64,8 +67,10 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DE
 public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainPresenceInfo>
     implements MakeRightDomainOperation {
 
-  private boolean deleting;
+  public static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private boolean inspectionRun;
+  private boolean retryOnFailure;
 
   /**
    * Create the operation.
@@ -89,7 +94,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   @Override
   public MakeRightDomainOperation createRetry(@Nonnull DomainPresenceInfo presenceInfo) {
     presenceInfo.setPopulated(false);
-    return cloneWith(presenceInfo).withExplicitRecheck();
+    return cloneWith(presenceInfo).withExplicitRecheck().retryOnFailure();
   }
 
   /**
@@ -138,6 +143,12 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   }
 
   @Override
+  public MakeRightDomainOperation retryOnFailure() {
+    this.retryOnFailure = true;
+    return this;
+  }
+
+  @Override
   public boolean isDeleting() {
     return deleting;
   }
@@ -145,6 +156,11 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   @Override
   public boolean isExplicitRecheck() {
     return explicitRecheck;
+  }
+
+  @Override
+  public boolean isRetryOnFailure() {
+    return retryOnFailure;
   }
 
   @Override
@@ -208,12 +224,13 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   public Step createSteps() {
     final List<Step> result = new ArrayList<>();
 
-    result.add(Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null));
-    result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
-    result.add(createStatusInitializationStep(hasEventData()));
+    result.add(new UpdateDomainPresenceInfoStep(liveInfo));
     if (deleting || domainHasDeletionTimestamp()) {
       result.add(new StartPlanStep(liveInfo, createDomainDownPlan()));
     } else {
+      result.add(getCreateEventStep());
+      result.add(new DomainProcessorImpl.PopulatePacketServerMapsStep());
+      result.add(createStatusInitializationStep(hasEventData()));
       result.add(createListClusterResourcesStep(getNamespace()));
       result.add(createDomainValidationStep(getDomain()));
       result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
@@ -253,12 +270,8 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
   }
 
   private Step createDomainDownPlan() {
-    Step eventStep = null;
-    if (Optional.ofNullable(eventData).map(e -> e.getItem() != DOMAIN_DELETED).orElse(true)) {
-      eventStep = EventHelper.createEventStep(new EventData(DOMAIN_DELETED));
-    }
     return Step.chain(
-        eventStep,
+        createEventStep(new EventData(DOMAIN_DELETED)),
         new DeleteDomainStep(),
         new UnregisterStatusUpdaterStep(),
         new UnregisterEventK8SObjectsStep());
@@ -300,6 +313,10 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         DomainPresenceStep.createDomainPresenceStep(domainUpStrategy, managedServerStrategy));
 
     return new UpHeadStep(introspectionAndDomainPresenceSteps);
+  }
+
+  private Step getCreateEventStep() {
+    return Optional.ofNullable(eventData).map(EventHelper::createEventStep).orElse(null);
   }
 
   static Step domainIntrospectionSteps() {
@@ -394,6 +411,27 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
     }
   }
 
+  class UpdateDomainPresenceInfoStep extends Step {
+
+    private final DomainPresenceInfo info;
+
+    UpdateDomainPresenceInfoStep(DomainPresenceInfo info) {
+      super();
+      this.info = info;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      if (deleting) {
+        executor.unregisterDomainPresenceInfo(info);
+      } else {
+        executor.registerDomainPresenceInfo(info);
+      }
+      return doNext(packet);
+    }
+  }
+
+
   class StartPlanStep extends Step {
 
     private final DomainPresenceInfo info;
@@ -405,12 +443,6 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
     @Override
     public NextAction apply(Packet packet) {
-      if (deleting) {
-        executor.unregisterDomainPresenceInfo(info);
-      } else {
-        executor.registerDomainPresenceInfo(info);
-      }
-
       return doNext(getNextSteps(), packet);
     }
 

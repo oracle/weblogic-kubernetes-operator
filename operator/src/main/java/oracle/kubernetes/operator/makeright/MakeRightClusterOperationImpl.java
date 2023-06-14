@@ -14,6 +14,7 @@ import oracle.kubernetes.operator.MakeRightExecutor;
 import oracle.kubernetes.operator.helpers.ClusterPresenceInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.ClusterResourceEventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -105,7 +106,7 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   }
 
   private EventHelper.EventItem getEventItem() {
-    return Optional.ofNullable(getEventData()).map(EventHelper.EventData::getItem).orElse(null);
+    return Optional.ofNullable(getEventData()).map(EventData::getItem).orElse(null);
   }
 
   @Override
@@ -121,11 +122,6 @@ public class MakeRightClusterOperationImpl extends MakeRightOperationImpl<Cluste
   @Override
   public boolean isExplicitRecheck() {
     return explicitRecheck;
-  }
-
-  @Override
-  public EventHelper.EventData getEventData() {
-    return eventData;
   }
 
   class StartPlanStep extends Step {
