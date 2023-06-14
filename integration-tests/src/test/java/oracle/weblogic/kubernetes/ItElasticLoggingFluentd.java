@@ -182,7 +182,7 @@ class ItElasticLoggingFluentd {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc.cluster.local";
+    elasticSearchHost = "elasticsearch." + elasticSearchNs + ".svc";
 
     // upgrade to latest operator
     HelmParams upgradeHelmParams = new HelmParams()
