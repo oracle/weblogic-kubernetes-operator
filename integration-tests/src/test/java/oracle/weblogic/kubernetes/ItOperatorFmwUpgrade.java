@@ -104,7 +104,7 @@ class ItOperatorFmwUpgrade {
   private static String java_home = null;
   private List<String> namespaces;
 
-  private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
+  private static final String RCUSCHEMAPREFIX = "operfmwupgr";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";

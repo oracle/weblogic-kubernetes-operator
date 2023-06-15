@@ -72,7 +72,7 @@ class ItFmwBigCMMiiDomain {
   private static String jrfDomainNamespace = null;
   private static String jrfMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
+  private static final String RCUSCHEMAPREFIX = "jrfbigdomain";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";

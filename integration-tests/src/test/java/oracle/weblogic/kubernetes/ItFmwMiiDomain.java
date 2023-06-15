@@ -79,7 +79,7 @@ class ItFmwMiiDomain {
   private static String fmwDomainNamespace = null;
   private static String fmwMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
+  private static final String RCUSCHEMAPREFIX = "fmwmiidom";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";

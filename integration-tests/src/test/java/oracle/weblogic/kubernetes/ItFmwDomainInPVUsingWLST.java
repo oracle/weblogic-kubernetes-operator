@@ -79,7 +79,7 @@ class ItFmwDomainInPVUsingWLST {
   private static String oracle_home = null;
   private static String java_home = null;
 
-  private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
+  private static final String RCUSCHEMAPREFIX = "fmwdomwlst";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
