@@ -359,13 +359,25 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void whenNewDomainAdded_generateDomainCreatedEvent() {
+  void whenNewDomainAddedWithoutStatus_generateDomainCreatedEvent() {
+    processor.getDomainPresenceInfoMap().clear();
+    addDomainResource(UID1, NS);
+    DomainResource domain = testSupport.getResourceWithName(DOMAIN, UID1);
+    domain.withStatus(null);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
+  }
+
+  @Test
+  void whenNewDomainAddedWithStatus_dontGenerateDomainCreatedEvent() {
     processor.getDomainPresenceInfoMap().clear();
     addDomainResource(UID1, NS);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
-    assertThat(testSupport, hasEvent(DOMAIN_CREATED.getReason()));
+    assertThat(testSupport, not(hasEvent(DOMAIN_CREATED.getReason())));
   }
 
   @Test

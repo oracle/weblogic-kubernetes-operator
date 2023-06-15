@@ -230,9 +230,9 @@ class DomainResourcesValidation {
 
   private void addDomain(DomainResource domain) {
     DomainPresenceInfo cachedInfo = getDomainPresenceInfoMap().get(domain.getDomainUid());
-    if (cachedInfo == null) {
+    if (domain.getStatus() == null) {
       newDomainNames.add(domain.getDomainUid());
-    } else if (domain.isGenerationChanged(cachedInfo.getDomain())) {
+    } else if (cachedInfo != null && domain.isGenerationChanged(cachedInfo.getDomain())) {
       modifiedDomainNames.add(domain.getDomainUid());
     }
     getOrComputeDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
@@ -245,9 +245,9 @@ class DomainResourcesValidation {
 
   private void addCluster(ClusterResource cluster) {
     ClusterPresenceInfo cachedInfo = getClusterPresenceInfoMap().get(getClusterName(cluster));
-    if (cachedInfo == null) {
+    if (cluster.getStatus() == null) {
       newClusterNames.add(getClusterName(cluster));
-    } else if (cluster.isGenerationChanged(cachedInfo.getCluster())) {
+    } else if (cachedInfo != null && cluster.isGenerationChanged(cachedInfo.getCluster())) {
       modifiedClusterNames.add(getClusterName(cluster));
     }
 
@@ -296,7 +296,7 @@ class DomainResourcesValidation {
   }
 
   private EventItem getEventItem(DomainPresenceInfo info) {
-    if (newDomainNames.contains(info.getDomainUid()) || info.getDomain().getStatus() == null) {
+    if (newDomainNames.contains(info.getDomainUid())) {
       return DOMAIN_CREATED;
     }
     if (modifiedDomainNames.contains(info.getDomainUid())) {
@@ -306,7 +306,7 @@ class DomainResourcesValidation {
   }
 
   private EventItem getEventItem(ClusterResource cluster) {
-    if (newClusterNames.contains(getClusterName(cluster)) || cluster.getStatus() == null) {
+    if (newClusterNames.contains(getClusterName(cluster))) {
       return CLUSTER_CREATED;
     }
     if (modifiedClusterNames.contains(getClusterName(cluster))) {
