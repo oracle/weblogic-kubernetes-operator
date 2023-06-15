@@ -99,7 +99,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `elasticSearchCredentials` | string | Fluentd elastic search credentials. A Kubernetes secret in the same namespace of the domain. It must contains 4 keys: elasticsearchhost - ElasticSearch Host Service Address, elasticsearchport - Elastic Search Service Port, elasticsearchuser - Elastic Search Service User Name, elasticsearchpassword - Elastic Search User Password |
 | `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the fluentd container. See `kubectl explain pods.spec.containers.env`. |
 | `fluentdConfiguration` | string | The fluentd configuration text, specify your own custom fluentd configuration. |
-| `image` | string | The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1 |
+| `image` | string | The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2 |
 | `imagePullPolicy` | string | The image pull policy for the Fluentd sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the fluentd container. See `kubectl explain pods.spec.containers.resources`. |
 | `volumeMounts` | Array of [Volume Mount](k8s1.13.5.md#volume-mount) | Volume mounts for fluentd container |
