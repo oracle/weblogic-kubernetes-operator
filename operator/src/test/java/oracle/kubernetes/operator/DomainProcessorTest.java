@@ -1040,14 +1040,27 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenNewClusterAdded_generateClusterCreatedEvent() {
+  void whenNewClusterAddedWithoutStatus_generateClusterCreatedEvent() {
     processor.getClusterPresenceInfoMap().values().clear();
     ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    cluster1.setStatus(null);
     testSupport.defineResources(cluster1);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
 
     assertThat(testSupport, hasEvent(CLUSTER_CREATED.getReason()));
+  }
+
+  @Test
+  void whenNewClusterAddedWithStatus_dontGenerateClusterCreatedEvent() {
+    processor.getClusterPresenceInfoMap().values().clear();
+    ClusterResource cluster1 = createClusterAlone(CLUSTER4, NS);
+    cluster1.setStatus(new ClusterStatus());
+    testSupport.defineResources(cluster1);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, processor));
+
+    assertThat(testSupport, not(hasEvent(CLUSTER_CREATED.getReason())));
   }
 
   @Test
