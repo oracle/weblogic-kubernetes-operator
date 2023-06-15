@@ -117,7 +117,7 @@ class ItDBOperator {
   private static String wlsDomainNamespace = null;
   private static String fmwMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
+  private static final String RCUSCHEMAPREFIX = "dboperator";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";

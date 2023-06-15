@@ -69,7 +69,7 @@ class ItFmwDomainInPVUsingWDT {
   private static String oracle_home = null;
   private static String java_home = null;
 
-  private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
+  private static final String RCUSCHEMAPREFIX = "fmwdomwdt";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";

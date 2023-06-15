@@ -71,7 +71,7 @@ class ItFmwDynamicClusterMiiDomain {
   private static String domainNamespace = null;
   private static String jrfMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
+  private static final String RCUSCHEMAPREFIX = "jrfdynclus";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
