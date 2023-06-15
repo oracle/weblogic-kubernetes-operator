@@ -12,6 +12,7 @@ import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.common.logging.MessageKeys;
+import oracle.kubernetes.operator.OperatorMain;
 import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -26,6 +27,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 
+import static oracle.kubernetes.common.CommonConstants.CRD;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
@@ -178,9 +180,7 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   private NextAction logNoRetry(Packet packet, CallResponse<T> callResponse) {
-    if ((callResponse != null)
-        && (callResponse.getStatusCode() != HTTP_NOT_FOUND)
-        && (callResponse.getStatusCode() != HTTP_CONFLICT)) {
+    if (shouldLogNoRetryWarning(callResponse)) {
       addDomainFailureStatus(packet, callResponse.getRequestParams(), callResponse.getE());
       if (LOGGER.isWarningEnabled()) {
         LOGGER.warning(
@@ -204,6 +204,25 @@ public abstract class ResponseStep<T> extends Step {
       }
     }
     return null;
+  }
+
+  private boolean shouldLogNoRetryWarning(CallResponse<T> callResponse) {
+    return (callResponse != null)
+        && (callResponse.getStatusCode() != HTTP_NOT_FOUND)
+        && (callResponse.getStatusCode() != HTTP_CONFLICT)
+        && (isNotCrdForbiddenWhenDedicated(callResponse));
+  }
+
+  private boolean isNotCrdForbiddenWhenDedicated(CallResponse<T> callResponse) {
+    if (OperatorMain.isDedicated() && isCRDCall(callResponse)) {
+      return callResponse.getStatusCode() != HTTP_FORBIDDEN && callResponse.getStatusCode() != HTTP_UNAUTHORIZED;
+    }
+    return true;
+  }
+
+  private boolean isCRDCall(CallResponse<T> callResponse) {
+    return Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call)
+        .map(c -> c.toUpperCase().contains(CRD)).orElse(false);
   }
 
   private void addDomainFailureStatus(Packet packet, RequestParams requestParams, ApiException apiException) {

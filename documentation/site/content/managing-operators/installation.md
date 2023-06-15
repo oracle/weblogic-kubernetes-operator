@@ -24,8 +24,8 @@ See [Prepare for installation]({{<relref "/managing-operators/preparation.md">}}
 {{% notice note %}}
 By default, installing the operator also configures a deployment and supporting resources for the
 [conversion webhook]({{<relref "/managing-operators/conversion-webhook">}})
-and deploys the conversion webhook.
-To skip the conversion webhook installation, set helm configuration value `operatorOnly` to `true`
+and deploys the conversion webhook. The conversion webhook deployment is required for Operator version 4.x.
+To skip the conversion webhook installation when a conversion webhook is already installed, set the helm configuration value `operatorOnly` to `true`
 in the `helm install` command.
 For more details, see [install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook">}}).
 {{% /notice %}}

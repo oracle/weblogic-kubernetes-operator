@@ -324,6 +324,38 @@ weblogic-operator-webhook-svc   ClusterIP   10.106.89.198   <none>        8084/T
 ```
 If the conversion webhook Deployment status is not ready, then [check the conversion webhook log]({{<relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and the [conversion webhook events]({{<relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. If the conversion webhook service doesn't exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.
 
+#### X509: Certificate signed by unknown authority error from the webhook
+The following `x509: certificate signed by unknown authority` error from the conversion webhook can be due to the incorrect proxy configuration of the Kubernetes API server in your environment or incorrect self-signed certificate in the conversion webhook configuration in the Domain CustomResourceDefinition (CRD).
+
+```
+Error from server (InternalError): error when creating "./weblogic-domains/sample-domain1/domain.yaml": Internal error occurred: conversion webhook for weblogic.oracle/v8, Kind=Domain failed: Post "https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s": x509: certificate signed by unknown authority
+```
+- If your environment uses a PROXY server, then ensure that the NO_PROXY settings of the Kubernetes API server include `.svc` value. The Kubernetes API server makes a REST request to the conversion webhook REST end-point using the hostname `weblogic-operator-webhook-svc.${NAMESPACE}.svc` in the POST URL. If the REST request is routed through a PROXY server, then you will see an "x509: certificate signed by unknown authority" error. As this REST request is internal to your Kubernetes cluster, ensure that it doesn't get routed through a PROXY server by adding `.svc` to the `NO_PROXY` settings.
+- If your CRD conversion webhook configuration has an incorrect self-signed certificate for some reason, then you can patch the CRD to remove the existing conversion webhook configuration. The operator will re-create the CRD conversion webhook configuration using the correct self-signed certificate. Use the below patch command to remove the conversion webhook configuration in the CRD to see if it resolves the error.
+
+    ```
+    kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "None", "webhook": null}}}'
+    ```
+
+#### Webhook errors in older operator versions
+When you install Operator version 4.x or upgrade to Operator 4.x, a conversion webhook configuration is added to your Domain CRD. If you downgrade or switch back to the operator version 3.x, the conversion webhook configuration is not removed from the CRD. This is to support the environments with multiple Operator installations potentially with different versions. For environments having a single Operator installation, use the below patch command to manually remove the conversion webhook configuration from Domain CRD. 
+
+```
+kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "None", "webhook": null}}}'
+```
+
+#### Webhook errors in operator Dedicated Mode
+If the Operator is running in the `Dedicated` mode, the operator's service account will not have the permission to read or update the CRD. If you need to convert the domain resources with `weblogic.oracle/v8` schema to `weblogic.oracle/v9` schema using conversion webhook in `Dedicated` mode, then you can manually add the conversion webhook configuration to the Domain CRD. Use the below patch command to add the conversion webhook configuration to the Domain CRD.
+
+**Note**: Substitute `YOUR_OPERATOR_NS` in the below command with the namespace where the operator is installed.
+
+```
+export OPERATOR_NS=YOUR_OPERATOR_NS
+```
+```
+kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "Webhook", "webhook": {"clientConfig": { "caBundle": "'$(kubectl get secret weblogic-webhook-secrets -n ${OPERATOR_NS} -o=jsonpath="{.data.webhookCert}"| base64 --decode)'", "service": {"name": "weblogic-operator-webhook-svc", "namespace": "'${OPERATOR_NS}'", "path": "/webhook", "port": 8084}}, "conversionReviewVersions": ["v1"]}}}}'
+```
+
 #### Check for runtime errors during conversion
 If you see a `WebLogic Domain custom resource conversion webhook failed` error when creating a Domain with a `weblogic.oracle/v8` schema domain resource, then [check the conversion webhook runtime Pod logs]({{<relref "/managing-operators/troubleshooting#check-the-conversion-webhook-log">}}) and [check for the generated events]({{<relref "/managing-operators/troubleshooting#check-for-conversion-webhook-events">}}) in the conversion webhook namespace. Assuming that the conversion webhook is deployed in the `sample-weblogic-operator-ns` namespace, run the following commands to check for logs and events.
 

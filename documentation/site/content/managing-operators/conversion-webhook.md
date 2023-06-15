@@ -46,6 +46,10 @@ Beginning with  operator version 4.0, when you [install the operator]({{<relref 
 The `helm install` step requires cluster-level permissions for listing and reading all Namespaces and Deployments to search for existing conversion webhook deployments. If you cannot grant the cluster-level permissions and have multiple operators deployed, then install the conversion webhook separately and set the Helm configuration value `operatorOnly` to `true` in the `helm install` command to prevent multiple conversion webhook deployments. In addition, the webhook uses a service account that is usually the same service account as an operator running in the same namespace. This service account requires permissions to create and read events in the conversion webhook namespace. For more information, see [RBAC]({{<relref "/managing-operators/rbac.md" >}}).
 {{% /notice %}}
 
+{{% notice note %}}
+The Operator version 4.x requires a conversion webhook installation. The `operatorOnly` Helm configuration value is an advanced setting and should be used only when a conversion webhook is already installed.
+{{% /notice %}}
+
 
 If you want to install _only_ the conversion webhook (and not the operator) in the given namespace, set the Helm configuration value `webhookOnly` to `true` in the `helm install` command. After meeting the [prerequisite requirements]({{<relref "/managing-operators/preparation.md">}}), call:
 ```

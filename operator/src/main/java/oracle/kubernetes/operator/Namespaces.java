@@ -47,7 +47,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public class Namespaces {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
+  public static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
   /**
    * The key in a Packet of the collection of existing namespaces that are designated as domain namespaces.
    */
