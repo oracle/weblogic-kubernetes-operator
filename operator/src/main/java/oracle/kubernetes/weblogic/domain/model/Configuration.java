@@ -7,7 +7,6 @@ import java.util.List;
 
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -46,7 +45,6 @@ public class Configuration {
   @Default(strDefault = "Dynamic")
   private OverrideDistributionStrategy overrideDistributionStrategy;
 
-  @Feature("DomainOnPvSimplification")
   @Description("Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize"
       + " related resources such as a persistent volume and a persistent volume claim. If specified, the operator will"
       + " perform these one-time initialization steps only if the domain and resources do not already exist."

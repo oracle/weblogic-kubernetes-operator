@@ -176,6 +176,10 @@
     "Configuration": {
       "type": "object",
       "properties": {
+        "initializeDomainOnPV": {
+          "description": "Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize related resources such as a persistent volume and a persistent volume claim. If specified, the operator will perform these one-time initialization steps only if the domain and resources do not already exist. The operator will not recreate or update the domain and resources when they already exist.  For more information, see https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ",
+          "$ref": "#/definitions/InitializeDomainOnPV"
+        },
         "overrideDistributionStrategy": {
           "default": "Dynamic",
           "description": "Determines how updated configuration overrides are distributed to already running WebLogic Server instances following introspection when the `domainHomeSourceType` is PersistentVolume or Image. Configuration overrides are generated during introspection from Secrets, the `overridesConfigMap` field, and WebLogic domain topology. Legal values are `Dynamic`, which means that the operator will distribute updated configuration overrides dynamically to running servers, and `OnRestart`, which means that servers will use updated configuration overrides only after the server\u0027s next restart. The selection of `OnRestart` will not cause servers to restart when there are updated configuration overrides available. See also `domains.spec.introspectVersion`. Defaults to `Dynamic`.",
@@ -269,6 +273,65 @@
         "type",
         "status"
       ]
+    },
+    "DomainCreationImage": {
+      "type": "object",
+      "properties": {
+        "sourceWDTInstallHome": {
+          "description": "The source location of the WebLogic Deploy Tooling installation within the domain creation image. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple domain images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
+          "type": "string"
+        },
+        "image": {
+          "description": "The domain creation image containing model files, application archive files, and/or WebLogic Deploying Tooling installation files to create the domain in persistent volume. Required.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string"
+        },
+        "sourceModelHome": {
+          "description": "The source location of the WebLogic Deploy Tooling model home within the domain image. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple domain images with model files in their respective `sourceModelHome` directories, then model files are merged.",
+          "type": "string"
+        }
+      }
+    },
+    "DomainOnPV": {
+      "type": "object",
+      "properties": {
+        "domainCreationConfigMap": {
+          "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
+          "type": "string"
+        },
+        "domainCreationImages": {
+          "description": "Domain creation images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images ",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DomainCreationImage"
+          }
+        },
+        "domainType": {
+          "default": "JRF",
+          "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.",
+          "type": "string",
+          "enum": [
+            "WLS",
+            "JRF"
+          ]
+        },
+        "opss": {
+          "description": "Settings for OPSS security.",
+          "$ref": "#/definitions/Opss"
+        },
+        "createIfNotExists": {
+          "default": "domain",
+          "description": "Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain.",
+          "type": "string",
+          "enum": [
+            "domain",
+            "domainAndRCU"
+          ]
+        }
+      }
     },
     "DomainSpec": {
       "description": "The specification of the operation of the WebLogic domain. Required.",
@@ -568,6 +631,27 @@
         }
       }
     },
+    "InitializeDomainOnPV": {
+      "type": "object",
+      "properties": {
+        "waitForPvcToBind": {
+          "description": "Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before proceeding with the domain creation. Defaults to true.",
+          "type": "boolean"
+        },
+        "persistentVolume": {
+          "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
+          "$ref": "#/definitions/PersistentVolume"
+        },
+        "domain": {
+          "description": "Describes the configuration for creating an initial WebLogic Domain in persistent volume (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.",
+          "$ref": "#/definitions/DomainOnPV"
+        },
+        "persistentVolumeClaim": {
+          "description": "An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user\u0027s request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc",
+          "$ref": "#/definitions/PersistentVolumeClaim"
+        }
+      }
+    },
     "Introspector": {
       "type": "object",
       "properties": {
@@ -743,6 +827,78 @@
         },
         "walletPasswordSecret": {
           "description": "Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.The password must have a minimum length of eight characters and contain alphabetic characters combined with numbers or special characters.",
+          "type": "string"
+        }
+      }
+    },
+    "PersistentVolume": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "description": "The PersistentVolume metadata. Must include the `name` field. Required.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "The specification of a persistent volume for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolume specifications.",
+          "$ref": "#/definitions/PersistentVolumeSpec"
+        }
+      }
+    },
+    "PersistentVolumeClaim": {
+      "type": "object",
+      "properties": {
+        "metadata": {
+          "description": "The PersistentVolumeClaim metadata. Must include the `name` field. Required.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "The specifications of a persistent volume claim for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications.",
+          "$ref": "#/definitions/PersistentVolumeClaimSpec"
+        }
+      }
+    },
+    "PersistentVolumeClaimSpec": {
+      "type": "object",
+      "properties": {
+        "storageClassName": {
+          "description": "StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass.",
+          "type": "string"
+        },
+        "volumeName": {
+          "description": "VolumeName is the binding reference to the PersistentVolume backing this claim.",
+          "type": "string"
+        },
+        "resources": {
+          "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+        },
+        "volumeMode": {
+          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
+          "type": "string"
+        }
+      }
+    },
+    "PersistentVolumeSpec": {
+      "type": "object",
+      "properties": {
+        "storageClassName": {
+          "description": "StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass.",
+          "type": "string"
+        },
+        "persistentVolumeReclaimPolicy": {
+          "description": "PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  ",
+          "type": "string"
+        },
+        "hostPath": {
+          "description": "HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:\n https://kubernetes.io/docs/concepts/storage/volumes#hostpath\nRepresents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.HostPathVolumeSource"
+        },
+        "capacity": {
+          "description": "Capacity is the description of the persistent volume\u0027s resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
+          "$ref": "#/definitions/Map"
+        },
+        "volumeMode": {
+          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
           "type": "string"
         }
       }

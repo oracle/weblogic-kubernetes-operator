@@ -83,6 +83,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `initializeDomainOnPV` | [Initialize Domain On PV](#initialize-domain-on-pv) | Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize related resources such as a persistent volume and a persistent volume claim. If specified, the operator will perform these one-time initialization steps only if the domain and resources do not already exist. The operator will not recreate or update the domain and resources when they already exist.  For more information, see https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization  |
 | `introspectorJobActiveDeadlineSeconds` | integer | The introspector job timeout value in seconds. If this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds. |
 | `model` | [Model](#model) | Model in image model files and properties. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
@@ -216,6 +217,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `channels` | Array of [Channel](#channel) | Specifies which of the Administration Server's WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server's NodePort Service will not be created. |
 | `labels` | Map | Labels to associate with the Administration Server's NodePort Service, if it is created. |
 
+### Initialize Domain On PV
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `domain` | [Domain On PV](#domain-on-pv) | Describes the configuration for creating an initial WebLogic Domain in persistent volume (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required. |
+| `persistentVolume` | [Persistent Volume](#persistent-volume) | An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv |
+| `persistentVolumeClaim` | [Persistent Volume Claim](#persistent-volume-claim) | An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc |
+| `waitForPvcToBind` | Boolean | Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before proceeding with the domain creation. Defaults to true. |
+
 ### Model
 
 | Name | Type | Description |
@@ -288,6 +298,30 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | integer | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
+### Domain On PV
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `createIfNotExists` | string | Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain. |
+| `domainCreationConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
+| `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain creation images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
+| `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
+| `opss` | [Opss](#opss) | Settings for OPSS security. |
+
+### Persistent Volume
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The PersistentVolume metadata. Must include the `name` field. Required. |
+| `spec` | [Persistent Volume Spec](#persistent-volume-spec) | The specification of a persistent volume for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolume specifications. |
+
+### Persistent Volume Claim
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `metadata` | [Object Meta](k8s1.13.5.md#object-meta) | The PersistentVolumeClaim metadata. Must include the `name` field. Required. |
+| `spec` | [Persistent Volume Claim Spec](#persistent-volume-claim-spec) | The specifications of a persistent volume claim for `Domain on PV` domain. Required. This section provides a subset of fields in standard Kubernetes PersistentVolumeClaim specifications. |
+
 ### Auxiliary Image
 
 | Name | Type | Description |
@@ -312,6 +346,34 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `health` | string | Server health of this WebLogic Server instance. |
 | `subsystemName` | string | Name of subsystem providing symptom information. |
 | `symptoms` | Array of string | Symptoms provided by the reporting subsystem. |
+
+### Domain Creation Image
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `image` | string | The domain creation image containing model files, application archive files, and/or WebLogic Deploying Tooling installation files to create the domain in persistent volume. Required. |
+| `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the domain image. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple domain images with model files in their respective `sourceModelHome` directories, then model files are merged. |
+| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the domain creation image. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple domain images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail. |
+
+### Persistent Volume Spec
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `capacity` | Map | Capacity is the description of the persistent volume's resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity |
+| `hostPath` | [Host Path Volume Source](k8s1.13.5.md#host-path-volume-source) | HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:<br/> https://kubernetes.io/docs/concepts/storage/volumes#hostpath<br/>Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling. |
+| `persistentVolumeReclaimPolicy` | string | PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming   |
+| `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
+| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
+
+### Persistent Volume Claim Spec
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
+| `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
+| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
+| `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 
 ### WDT Timeouts
 
