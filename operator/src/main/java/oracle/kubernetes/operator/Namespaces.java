@@ -256,7 +256,7 @@ public class Namespaces {
    */
   static SelectionStrategy getSelectionStrategy() {
     return Optional.ofNullable(HelmAccess.getHelmVariable(SELECTION_STRATEGY_KEY))
-        .or(() -> Optional.ofNullable(TuningParameters.getInstance().get(SELECTION_STRATEGY_KEY)))
+        .or(() -> Optional.ofNullable(TuningParameters.getInstance()).map(i -> i.get(SELECTION_STRATEGY_KEY)))
         .map(SelectionStrategy::fromValue)
         .orElse(SelectionStrategy.LABEL_SELECTOR);
   }
