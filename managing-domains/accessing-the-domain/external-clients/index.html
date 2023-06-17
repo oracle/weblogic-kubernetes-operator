@@ -12,20 +12,20 @@
     <title>External WebLogic clients :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1686672887" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1686672887" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1687014029" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1687014029" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1686672887"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1687014029"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1686672887"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1686672887"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1687014029"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1687014029"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1686672887"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1687014029"></script>
 
     
   </div>
@@ -3637,6 +3637,13 @@
         <li><a href="#how-to-enable-unknown-host-access">How to enable unknown host access</a></li>
       </ul>
     </li>
+    <li><a href="#cross-domain-transactions">Cross-domain transactions</a>
+      <ul>
+        <li><a href="#rmi-forwarding">RMI forwarding</a></li>
+        <li><a href="#when-is-it-necessary-to-configure-rmi-forwarding">When is it necessary to configure RMI forwarding?</a></li>
+        <li><a href="#how-to-configure-rmi-forwarding">How to configure RMI forwarding</a></li>
+      </ul>
+    </li>
     <li><a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a></li>
     <li><a href="#configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</a></li>
     <li><a href="#security-notes">Security notes</a></li>
@@ -3691,6 +3698,13 @@
       <ul>
         <li><a href="#when-is-it-necessary-to-enable-unknown-host-access">When is it necessary to enable unknown host access?</a></li>
         <li><a href="#how-to-enable-unknown-host-access">How to enable unknown host access</a></li>
+      </ul>
+    </li>
+    <li><a href="#cross-domain-transactions">Cross-domain transactions</a>
+      <ul>
+        <li><a href="#rmi-forwarding">RMI forwarding</a></li>
+        <li><a href="#when-is-it-necessary-to-configure-rmi-forwarding">When is it necessary to configure RMI forwarding?</a></li>
+        <li><a href="#how-to-configure-rmi-forwarding">How to configure RMI forwarding</a></li>
       </ul>
     </li>
     <li><a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a></li>
@@ -3847,12 +3861,8 @@ This can significantly speedup connection creation for EJB and JMS clients.
 See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</p>
 </li>
 <li>
-<p><strong>JTA NOTE</strong>: The operator does not directly support external WebLogic JTA access
-to a Kubernetes hosted WebLogic cluster. This is because external JTA access
-requires each server in a cluster to be individually addressable,
-but this conflicts with the current operator requirement that
-a network channel in a cluster have the same port across all servers in the cluster.
-If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
+<p>You may need to use <a href="#cross-domain-transactions">RMI forwarding</a> to
+support JTA transactions that involve multiple WebLogic Server domains.</p>
 </li>
 </ul>
 <p>If a WebLogic EJB or JMS resource is hosted outside of
@@ -3876,10 +3886,8 @@ See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Co
 </ul>
 </li>
 <li>
-<p><strong>JTA NOTE</strong>: WebLogic does not directly support JTA access to a cluster that is exposed
-using a single port. This is because external JTA requires each server in a cluster
-to be individually addressable.
-If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
+<p>You may need to use <a href="#cross-domain-transactions">RMI forwarding</a> to
+support JTA transactions that involve multiple WebLogic Server domains.</p>
 </li>
 </ul>
 
@@ -4179,6 +4187,67 @@ please see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managi
 </li>
 <li>Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.</li>
 </ul>
+<h3 id="cross-domain-transactions">Cross-domain transactions</h3>
+<p>JTA transactions that span WebLogic Server domains are referred to as cross-domain transactions. The
+WebLogic Server Transaction Manager (TM) requires direct server-to-server communications with all
+other global transaction server participants. For a Kubernetes hosted WebLogic cluster, this
+requires each server in the cluster to be individually addressable. This conflicts
+with the current operator requirement that a network channel in a cluster have the same port across
+all servers in the cluster, and the fact that we use cluster service to load balance communication
+in the WebLogic Server cluster.</p>
+<h4 id="rmi-forwarding">RMI forwarding</h4>
+<p>RMI forwarding makes cross-domain transactions possible without requiring each server in a cluster
+to be individually addressable.</p>
+<p>It requires the use of a proxy, such as a load balancer or an <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/ingress/">Ingress</a>,
+that is configured to route messages to servers in the target WebLogic Server domain.</p>
+<p>When a T3 message, such as transaction coordination RMI calls issued by the WebLogic Server TM,
+is sent from a source WebLogic Server to a target WebLogic Server in a different WebLogic Server domain:</p>
+<ol>
+<li>The source WebLogic Server chooses the URL of a proxy based on the destination
+address of the message, and sends the message to that URL.</li>
+<li>The proxy then routes the message to one of the WebLogic Servers in the
+target WebLogic Server domain according to its routing rules. Note that the message may or may not
+be routed to the target WebLogic Server.</li>
+<li>If the message is routed to a WebLogic Server other than the target WebLogic Server,
+that WebLogic Server will forward the message to the intended recipient
+within the same WebLogic Server domain.</li>
+</ol>
+<h4 id="when-is-it-necessary-to-configure-rmi-forwarding">When is it necessary to configure RMI forwarding?</h4>
+<p>RMI forwarding may be needed when transaction server participants are not able to establish
+connection directly with one another.</p>
+<p>For example, if a cross-domain transaction communication has failed, and messages such as the
+following can be found in the WebLogic server log files:</p>
+<p><code>&lt;BEA-111015&gt; &lt;The commit operation for transaction BEA1-0000993203DB6CDB7DE9 timed out after 30 seconds.&gt;</code></p>
+<p>With additional JTA debugging turned on using the Java system property <code>-Dweblogic.debug.DebugJTA2PC=true</code>,
+messages, such as the following, confirm that the failed transaction is caused by transaction
+participants not being able to reach the transaction coordinator:</p>
+<p><code>...&lt;startPrepare FAILED javax.transaction.SystemException: Could not obtain coordinator at managed-server1+domain1-managed-server1:8001+domain1+t3+...</code></p>
+<h4 id="how-to-configure-rmi-forwarding">How to configure RMI forwarding</h4>
+<p>Configure a proxy for each WebLogic Server domain that is a participant in global transactions but
+is not reachable by all other global transaction participants, because the listen addresses of
+the WebLogic Server instances in the domain cannot be resolved by the DNS from other participants.
+For example, if servers in domain1 cannot be reached from servers in domain2, configure a proxy
+for domain1 such that messages sent from servers in domain2 can be routed to servers in domain1
+through the proxy.</p>
+<p>In each source WebLogic Server domain, specify the URL for the proxy configured for each target
+WebLogic Server domain:</p>
+<ul>
+<li>Set the Java system property as <code>weblogic.rjvm.domain.proxy.&lt;prefix&gt;</code> where <code>&lt;prefix&gt;</code> is the
+domain UID of the target WebLogic Server domain.
+Multiple Java system properties with different values of <code>&lt;prefix&gt;</code> can be specified.</li>
+<li>For WebLogic Server domains running in Kubernetes managed by the operator, you can set this property by including the system property in the <code>JAVA_OPTIONS</code>
+<a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain environment variable</a> defined in the domain resource&rsquo;s <code>spec.serverPod.env</code> attribute.</li>
+</ul>
+<p>For example, if the URL of the proxy for domain1 is <code>t3://proxy-host:31234</code>, specify
+Java system property <code>-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234</code>
+in WebLogic Server domain2.
+A message originating from WebLogic Server instances in domain2 that are addressed to the host name that starts
+with domain1, such as <code>t3://domain1-managed-server1:8001</code>, will be sent to the proxy at
+<code>t3://proxy-host:31234</code>. The proxy then routes the message to a WebLogic Server instance in domain2, and
+RMI forwarding will ensure that the message will reach WebLogic Server managed-server1 in domain1.</p>
+<p>Patch 32408938 is required in each WebLogic Server instance that participates in cross-domain transactions, or that is the routing
+destination of a proxy. The patch is available for WebLogic versions 12.2.1.3.0 (PS3),
+12.2.1.4.0 (PS4), and 14.1.1.0.0, and is already included in the PSUs for these releases since July 2022.</p>
 <h3 id="configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</h3>
 <p>When providing external clients access to EJB and JMS resources using load balancer tunneling, we recommend that you configure a server affinity load balancing algorithm for the cluster in which the resources are targeted.  Using a server affinity based algorithm reduces the amount of time it takes for EJB and JMS standalone or server hosted clients to establish a connection through a tunneling port. It does this by ensuring that the clients prefer communicating with a target server instance which already has an established connection to the client, where this server instance is implicitly picked when such clients create their JNDI context.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6">Load Balancing for EJBs and RMI Objects</a> in <em>Load Balancing in a Cluster</em>.</p>
 <p>Here is a snippet of offline WLST code for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
@@ -6702,19 +6771,19 @@ See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-se
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1686672887"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1687014029"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1686672887"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1686672887"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1687014029"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1687014029"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1686672887"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1687014029"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
