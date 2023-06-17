@@ -4,7 +4,7 @@
 # Description
 #  Use Hugo to build static site and publish to gh-pages
 #
-name: "PublishGitHubPages"
+name: "PublishLatestMinorGitHubPages"
 
 on:
   push:
@@ -12,8 +12,6 @@ on:
       - release/4.0
     paths:
       - 'documentation/**'
-  schedule:
-    - cron: '15 3 * * *'
 
 defaults:
   run:
