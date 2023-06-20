@@ -83,6 +83,7 @@ public interface TestConstants {
   public static final String TEST_IMAGES_REPO = Optional.ofNullable(getImageRepoFromImageName(CRIO_PIPELINE_IMAGE))
       .orElse(System.getProperty("wko.it.test.images.repo"));
   public static final String TEST_IMAGES_TENANCY = System.getProperty("wko.it.test.images.tenancy");
+  public static final String TEST_IMAGES_PREFIX = getDomainImagePrefix(TEST_IMAGES_REPO, TEST_IMAGES_TENANCY);
 
   public static final String TEST_IMAGES_REPO_USERNAME = System.getenv("TEST_IMAGES_REPO_USERNAME");
   public static final String TEST_IMAGES_REPO_PASSWORD = System.getenv("TEST_IMAGES_REPO_PASSWORD");
@@ -135,7 +136,7 @@ public interface TestConstants {
   public static final String DB_IMAGE_PREBUILT_TAG = getNonEmptySystemProperty("wko.it.db.image.tag", "18.4.0-xe");
 
   // WebLogic Base Image with Japanese Locale
-  public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY + "/test-images/weblogic";
+  public static final String LOCALE_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/weblogic";
   public static final String LOCALE_IMAGE_TAG = "12.2.1.4-jp";
 
   // For kind, replace repo name in image name with KIND_REPO, 
@@ -201,8 +202,7 @@ public interface TestConstants {
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/docker/elasticsearch";
+  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5");
@@ -219,17 +219,15 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/docker/kibana";
+  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/kibana";
   public static final String KIBANA_IMAGE = KIBANA_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
-  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/docker/logstash";
+  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
-  public static final String FLUENTD_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-            + "/test-images/docker/fluentd-kubernetes-daemonset:"
+  public static final String FLUENTD_IMAGE = TEST_IMAGES_PREFIX
+            + "test-images/docker/fluentd-kubernetes-daemonset:"
             + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
@@ -239,8 +237,7 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-ai-image";
   public static final boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
-  public static final String BUSYBOX_IMAGE = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/docker/busybox";
+  public static final String BUSYBOX_IMAGE = TEST_IMAGES_PREFIX + "test-images/docker/busybox";
   public static final String BUSYBOX_TAG = "1.34.1";
 
   // Skip the mii/wdt basic image build locally if needed
@@ -286,30 +283,28 @@ public interface TestConstants {
   public static final String PROMETHEUS_REPO_NAME = "prometheus-community";
   public static final String PROMETHEUS_REPO_URL = "https://prometheus-community.github.io/helm-charts";
 
-  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/prometheus/prometheus";
+  public static final String PROMETHEUS_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/prometheus/prometheus";
   public static final String PROMETHEUS_IMAGE_TAG = "v2.39.1";
 
-  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/prometheus/alertmanager";
+  public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_NAME = TEST_IMAGES_PREFIX
+      + "test-images/prometheus/alertmanager";
   public static final String PROMETHEUS_ALERT_MANAGER_IMAGE_TAG = "v0.24.0";
 
-  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/jimmidyson/configmap-reload";
+  public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME = TEST_IMAGES_PREFIX
+      + "test-images/jimmidyson/configmap-reload";
   public static final String PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG = "v0.5.0";
 
-  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/prometheus/pushgateway";
+  public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_NAME = TEST_IMAGES_PREFIX
+      + "test-images/prometheus/pushgateway";
   public static final String PROMETHEUS_PUSHGATEWAY_IMAGE_TAG = "v1.4.3";
 
-  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/prometheus/node-exporter";
+  public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_NAME = TEST_IMAGES_PREFIX
+      + "test-images/prometheus/node-exporter";
   public static final String PROMETHEUS_NODE_EXPORTER_IMAGE_TAG = "v1.3.1";
 
   public static final String GRAFANA_REPO_NAME = "grafana";
   public static final String GRAFANA_REPO_URL = "https://grafana.github.io/helm-charts";
-  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_REPO + "/" + TEST_IMAGES_TENANCY
-      + "/test-images/grafana/grafana";
+  public static final String GRAFANA_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/grafana/grafana";
   public static final String GRAFANA_IMAGE_TAG = "9.3.0";
 
   // credentials
