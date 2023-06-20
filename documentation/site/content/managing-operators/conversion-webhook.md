@@ -47,7 +47,7 @@ The `helm install` step requires cluster-level permissions for listing and readi
 {{% /notice %}}
 
 {{% notice note %}}
-The Operator version 4.x requires a conversion webhook installation. The `operatorOnly` Helm configuration value is an advanced setting and should be used only when a conversion webhook is already installed.
+Operator version 4.x requires a conversion webhook. The `operatorOnly` Helm configuration value is an advanced setting and should be used only when a conversion webhook is already installed.
 {{% /notice %}}
 
 
