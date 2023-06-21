@@ -319,7 +319,12 @@ public class ImageUtils {
     Date date = new Date();
     final String imageTag = baseImageTag + "-" + dateFormat.format(date) + "-" + System.currentTimeMillis();
     // Add repository name in image name for Jenkins runs
-    final String imageName = DOMAIN_IMAGES_REPO + imageNameBase;
+    String imageName;
+    if (!DOMAIN_IMAGES_REPO.endsWith("/")) {
+      imageName = DOMAIN_IMAGES_REPO + "/" + imageNameBase;
+    } else {
+      imageName = DOMAIN_IMAGES_REPO + imageNameBase;
+    }
     final String image = imageName + ":" + imageTag;
 
     List<String> archiveList = new ArrayList<>();
