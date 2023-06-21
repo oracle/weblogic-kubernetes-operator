@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -1720,6 +1721,24 @@ class DomainV2Test extends DomainTestBase {
             .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
             .hostPath(new V1HostPathVolumeSource().path("/shared"))
             .volumeMode("Block"));
+  }
+
+  @Test
+  void whenPersistentVolumeConfiguredWithNfs_useConfiguredValues() {
+    configureDomain(domain).withInitializeDomainOnPv(new InitializeDomainOnPV().persistentVolume(createNfsPv()));
+
+    assertThat(getPersistentVolume(domain), equalTo(createNfsPv()));
+    assertThat(getPersistentVolume(domain).getSpec().getStorageClassName(), equalTo("oke-pv"));
+    assertThat(getPersistentVolume(domain).getSpec().getCapacity(), notNullValue());
+    assertThat(getPersistentVolume(domain).getSpec().getNfs().getPath(), equalTo("/shared"));
+  }
+
+  private PersistentVolume createNfsPv() {
+    return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
+        .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
+            .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
+            .nfs(new V1NFSVolumeSource().path("/shared")
+            .server("10.0.3.9")));
   }
 
   @Test

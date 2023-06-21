@@ -885,6 +885,10 @@
           "description": "StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass.",
           "type": "string"
         },
+        "nfs": {
+          "description": "nfs represents an NFS mount on the host. Provisioned by an admin. More info:\nhttps://kubernetes.io/docs/concepts/storage/volumes#nfs\nRepresents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.NFSVolumeSource"
+        },
         "persistentVolumeReclaimPolicy": {
           "description": "PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  ",
           "type": "string"

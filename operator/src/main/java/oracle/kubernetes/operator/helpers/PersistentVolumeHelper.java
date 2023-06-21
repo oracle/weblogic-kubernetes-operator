@@ -223,7 +223,8 @@ public class PersistentVolumeHelper {
       return new V1PersistentVolumeSpec().accessModes(Collections.singletonList(READ_WRITE_MANY))
           .storageClassName(spec.getStorageClassName())
           .capacity(spec.getCapacity()).persistentVolumeReclaimPolicy(spec.getPersistentVolumeReclaimPolicy())
-          .hostPath(spec.getHostPath());
+          .hostPath(spec.getHostPath())
+          .nfs(spec.getNfs());
     }
 
 

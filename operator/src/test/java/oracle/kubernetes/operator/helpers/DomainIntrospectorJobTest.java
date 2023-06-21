@@ -31,7 +31,6 @@ import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
@@ -84,8 +83,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainTestUtils;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.Opss;
-import oracle.kubernetes.weblogic.domain.model.PersistentVolume;
-import oracle.kubernetes.weblogic.domain.model.PersistentVolumeSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -558,13 +555,6 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
     opss.withWalletFileSecret("wfSecret");
     opss.withWalletPasswordSecret("wpSecret");
     return opss;
-  }
-
-  private PersistentVolume createPv() {
-    return new PersistentVolume().metadata(new V1ObjectMeta().name("test-pv"))
-        .spec(new PersistentVolumeSpec().storageClassName("oke-pv")
-            .capacity(Collections.singletonMap("storage", new Quantity("500Gi")))
-            .hostPath(new V1HostPathVolumeSource().path("/shared")));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
