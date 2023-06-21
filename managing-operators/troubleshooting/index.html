@@ -12,20 +12,20 @@
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1687317653" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1687317653" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1687358896" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1687358896" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1687317653"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1687358896"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1687317653"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1687317653"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1687358896"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1687358896"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1687317653"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1687358896"></script>
 
     
   </div>
@@ -3622,6 +3622,9 @@
     <li><a href="#troubleshooting-the-conversion-webhook">Troubleshooting the conversion webhook</a>
       <ul>
         <li><a href="#ensure-the-conversion-webhook-is-deployed-and-running">Ensure the conversion webhook is deployed and running</a></li>
+        <li><a href="#x509-certificate-signed-by-unknown-authority-error-from-the-webhook">X509: Certificate signed by unknown authority error from the webhook</a></li>
+        <li><a href="#webhook-errors-in-older-operator-versions">Webhook errors in older operator versions</a></li>
+        <li><a href="#webhook-errors-in-operator-dedicated-mode">Webhook errors in operator dedicated Mode</a></li>
         <li><a href="#check-for-runtime-errors-during-conversion">Check for runtime errors during conversion</a></li>
       </ul>
     </li>
@@ -3669,6 +3672,9 @@
     <li><a href="#troubleshooting-the-conversion-webhook">Troubleshooting the conversion webhook</a>
       <ul>
         <li><a href="#ensure-the-conversion-webhook-is-deployed-and-running">Ensure the conversion webhook is deployed and running</a></li>
+        <li><a href="#x509-certificate-signed-by-unknown-authority-error-from-the-webhook">X509: Certificate signed by unknown authority error from the webhook</a></li>
+        <li><a href="#webhook-errors-in-older-operator-versions">Webhook errors in older operator versions</a></li>
+        <li><a href="#webhook-errors-in-operator-dedicated-mode">Webhook errors in operator dedicated Mode</a></li>
         <li><a href="#check-for-runtime-errors-during-conversion">Check for runtime errors during conversion</a></li>
       </ul>
     </li>
@@ -3867,7 +3873,27 @@ $  kubectl get service weblogic-operator-webhook-svc -n sample-weblogic-operator
 NAME                            TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
 weblogic-operator-webhook-svc   ClusterIP   10.106.89.198   &lt;none&gt;        8084/TCP   88m
 </code></pre><p>If the conversion webhook Deployment status is not ready, then <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#check-the-conversion-webhook-log">check the conversion webhook log</a> and the <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#check-for-conversion-webhook-events">conversion webhook events</a> in the conversion webhook namespace. If the conversion webhook service doesn&rsquo;t exist, make sure that the conversion webhook was installed correctly and reinstall the conversion webhook to see if it resolves the issue.</p>
-<h4 id="check-for-runtime-errors-during-conversion">Check for runtime errors during conversion</h4>
+<h4 id="x509-certificate-signed-by-unknown-authority-error-from-the-webhook">X509: Certificate signed by unknown authority error from the webhook</h4>
+<p>The following <code>x509: certificate signed by unknown authority</code> error from the conversion webhook can be due to the incorrect proxy configuration of the Kubernetes API server in your environment or incorrect self-signed certificate in the conversion webhook configuration in the Domain CRD.</p>
+<pre tabindex="0"><code>Error from server (InternalError): error when creating &#34;./weblogic-domains/sample-domain1/domain.yaml&#34;: Internal error occurred: conversion webhook for weblogic.oracle/v8, Kind=Domain failed: Post &#34;https://weblogic-operator-webhook-svc.sample-weblogic-operator-ns.svc:8084/webhook?timeout=30s&#34;: x509: certificate signed by unknown authority
+</code></pre><ul>
+<li>
+<p>If your environment uses a PROXY server, then ensure that the NO_PROXY settings of the Kubernetes API server include the <code>.svc</code> value. The Kubernetes API server makes a REST request to the conversion webhook REST endpoint using the host name <code>weblogic-operator-webhook-svc.${NAMESPACE}.svc</code> in the POST URL. If the REST request is routed through a PROXY server, then you will see an &ldquo;x509: certificate signed by unknown authority&rdquo; error. Because this REST request is internal to your Kubernetes cluster, ensure that it doesn&rsquo;t get routed through a PROXY server by adding <code>.svc</code> to the <code>NO_PROXY</code> settings.</p>
+</li>
+<li>
+<p>If, for some reason your Domain CRD conversion webhook configuration has an incorrect self-signed certificate, then you can patch the Domain CRD to remove the existing conversion webhook configuration. The operator will re-create the conversion webhook configuration with the correct self-signed certificate in the Domain CRD. Use the following <code>patch</code> command to remove the conversion webhook configuration in the Domain CRD to see if it resolves the error.</p>
+<pre tabindex="0"><code>kubectl patch crd domains.weblogic.oracle --type=merge --patch &#39;{&#34;spec&#34;: {&#34;conversion&#34;: {&#34;strategy&#34;: &#34;None&#34;, &#34;webhook&#34;: null}}}&#39;
+</code></pre></li>
+</ul>
+<h4 id="webhook-errors-in-older-operator-versions">Webhook errors in older operator versions</h4>
+<p>When you install operator version 4.x or upgrade to operator 4.x, a conversion webhook configuration is added to your Domain CRD. If you downgrade or switch back to the operator version 3.x, the conversion webhook configuration is not removed from the CRD. This is to support environments with multiple operator installations potentially with different versions. For environments having a single operator installation, use the following <code>patch</code> command to manually remove the conversion webhook configuration from Domain CRD.</p>
+<pre tabindex="0"><code>kubectl patch crd domains.weblogic.oracle --type=merge --patch &#39;{&#34;spec&#34;: {&#34;conversion&#34;: {&#34;strategy&#34;: &#34;None&#34;, &#34;webhook&#34;: null}}}&#39;
+</code></pre><h4 id="webhook-errors-in-operator-dedicated-mode">Webhook errors in operator dedicated Mode</h4>
+<p>If the operator is running in the <code>Dedicated</code> mode, the operator&rsquo;s service account will not have the permission to read or update the CRD. If you need to convert the domain resources with <code>weblogic.oracle/v8</code> schema to <code>weblogic.oracle/v9</code> schema using the conversion webhook in <code>Dedicated</code> mode, then you can manually add the conversion webhook configuration to the Domain CRD. Use the following <code>patch</code> command to add the conversion webhook configuration to the Domain CRD.</p>
+<p><strong>Note</strong>: Substitute <code>YOUR_OPERATOR_NS</code> in the below command with the namespace where the operator is installed.</p>
+<pre tabindex="0"><code>export OPERATOR_NS=YOUR_OPERATOR_NS
+</code></pre><pre tabindex="0"><code>kubectl patch crd domains.weblogic.oracle --type=merge --patch &#39;{&#34;spec&#34;: {&#34;conversion&#34;: {&#34;strategy&#34;: &#34;Webhook&#34;, &#34;webhook&#34;: {&#34;clientConfig&#34;: { &#34;caBundle&#34;: &#34;&#39;$(kubectl get secret weblogic-webhook-secrets -n ${OPERATOR_NS} -o=jsonpath=&#34;{.data.webhookCert}&#34;| base64 --decode)&#39;&#34;, &#34;service&#34;: {&#34;name&#34;: &#34;weblogic-operator-webhook-svc&#34;, &#34;namespace&#34;: &#34;&#39;${OPERATOR_NS}&#39;&#34;, &#34;path&#34;: &#34;/webhook&#34;, &#34;port&#34;: 8084}}, &#34;conversionReviewVersions&#34;: [&#34;v1&#34;]}}}}&#39;
+</code></pre><h4 id="check-for-runtime-errors-during-conversion">Check for runtime errors during conversion</h4>
 <p>If you see a <code>WebLogic Domain custom resource conversion webhook failed</code> error when creating a Domain with a <code>weblogic.oracle/v8</code> schema domain resource, then <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#check-the-conversion-webhook-log">check the conversion webhook runtime Pod logs</a> and <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/troubleshooting/#check-for-conversion-webhook-events">check for the generated events</a> in the conversion webhook namespace. Assuming that the conversion webhook is deployed in the <code>sample-weblogic-operator-ns</code> namespace, run the following commands to check for logs and events.</p>
 <pre tabindex="0"><code>$ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator-webhook deployments/weblogic-operator-webhook
 
@@ -6291,19 +6317,19 @@ $ kubectl get events -n sample-weblogic-operator-ns
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1687317653"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1687358896"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1687317653"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1687317653"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1687358896"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1687358896"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1687317653"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1687358896"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
