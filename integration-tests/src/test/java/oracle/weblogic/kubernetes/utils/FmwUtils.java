@@ -456,7 +456,7 @@ public class FmwUtils {
   }
 
   /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file.
+   * Save and restore the OPSS key wallet from a running JRF domain's introspector configmap to a file.
    * @param namespace namespace where JRF domain exists
    * @param domainUid unique domain Uid
    * @param walletfileSecretName name of wallet file secret
@@ -489,6 +489,36 @@ public class FmwUtils {
             .saveResults(true)
             .redirect(true))
         .execute());
+
+  }
+
+  /**
+   * Restore the OPSS key wallet from a running JRF domain's introspector configmap to a file.
+   * @param namespace namespace where JRF domain exists
+   * @param domainUid unique domain Uid
+   * @param walletfileSecretName name of wallet file secret
+   * @return ExecResult result of running corresponding script
+   */
+  public static ExecResult restoreOpssWalletfileSecret(String namespace, String domainUid,
+       String walletfileSecretName) {
+
+    logger = getLogger();
+    Path saveAndRestoreOpssPath =
+         Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
+    String script = saveAndRestoreOpssPath.toString();
+    logger.info("Script for saveAndRestoreOpss is {0)", script);
+
+    //restore opss wallet password secret
+    String command = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
+    logger.info("Restore wallet file command: {0}", command);
+    ExecResult result = Command.withParams(
+          defaultCommandParams()
+            .command(command)
+            .saveResults(true)
+            .redirect(true))
+        .executeAndReturnResult();
+
+    return result;
 
   }
 

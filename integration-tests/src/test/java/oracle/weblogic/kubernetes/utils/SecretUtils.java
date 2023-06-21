@@ -126,6 +126,22 @@ public class SecretUtils {
   }
 
   /**
+   * Create a OPSS wallet file secret without file in the specified namespace.
+   * This is for a negative test scenario
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   */
+  public static void createOpsswalletFileSecretWithoutFile(String secretName, String namespace) {
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))),
+         "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
    * Create a secret with username and password and Elasticsearch host and port in the specified namespace.
    *
    * @param secretName secret name to create
