@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f276330d4f124e1c8828a6183c3232d15a7ab68cda30d3cdf8d1e008e3c726e2
+    weblogic.sha256: 74446d3b1c48a2baabc56f1240b28e5a2d1e8a6e8f656295532ad83de1517552
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -206,6 +206,22 @@ spec:
                                   to which this persistent volume belongs. Empty value
                                   means that this volume does not belong to any StorageClass.
                                 type: string
+                              nfs:
+                                description: |-
+                                  nfs represents an NFS mount on the host. Provisioned by an admin. More info:
+                                  https://kubernetes.io/docs/concepts/storage/volumes#nfs
+                                  Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.
+                                properties:
+                                  path:
+                                    type: string
+                                  server:
+                                    type: string
+                                  readOnly:
+                                    type: boolean
+                                required:
+                                - path
+                                - server
+                                type: object
                               persistentVolumeReclaimPolicy:
                                 description: 'PersistentVolumeReclaimPolicy defines
                                   what happens to a persistent volume when released
