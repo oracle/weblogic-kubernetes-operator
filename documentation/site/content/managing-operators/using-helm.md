@@ -265,6 +265,8 @@ If set to `true`, the `helm install` will install _only_ the conversion webhook 
 Defaults to `false`.
 
 ##### `operatorOnly`
+**Note**: This is an advanced setting and should be used only in environments where a conversion webhook is already installed. The operator version 4.x requires a conversion webhook to be installed.
+
 Specifies whether only the operator should be installed during the `helm install` and that the conversion webhook installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
 If set to `true`, the `helm install` will install _only_ the operator (and not the conversion webhook).
 
