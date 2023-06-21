@@ -5,6 +5,8 @@ package oracle.kubernetes.common;
 
 public class CommonConstants {
 
+  public static final String CRD = "CRD";
+
   private CommonConstants() {
     //not called
   }

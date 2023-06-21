@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.Namespaces;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.tuning.TuningParametersStub;
 import oracle.kubernetes.operator.utils.Certificates;
@@ -37,6 +38,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.common.logging.MessageKeys.ASYNC_NO_RETRY;
 import static oracle.kubernetes.common.logging.MessageKeys.CREATE_CRD_FAILED;
@@ -232,6 +234,37 @@ class CrdHelperTest extends CrdHelperTestBase {
     testSupport.runSteps(scriptCrdStep);
     assertThat(logRecords, containsWarning(ASYNC_NO_RETRY));
   }
+
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenNotAuthorizedToReadCrdDedicatedMode_dontLogWarningMessageInOnFailureNoRetry(TestSubject testSubject) {
+    consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY);
+    defineSelectionStrategy(Namespaces.SelectionStrategy.DEDICATED);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_UNAUTHORIZED);
+
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
+    testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, not(containsWarning(ASYNC_NO_RETRY)));
+  }
+
+  private void defineSelectionStrategy(Namespaces.SelectionStrategy selectionStrategy) {
+    TuningParametersStub.setParameter(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = TestSubject.class)
+  void whenForbiddenToReadCrdDedicatedMode_dontLogWarningMessageInOnFailureNoRetry(TestSubject testSubject) {
+    consoleHandlerMemento.collectLogMessages(logRecords, ASYNC_NO_RETRY);
+    defineSelectionStrategy(Namespaces.SelectionStrategy.DEDICATED);
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnResource(CUSTOM_RESOURCE_DEFINITION, null, null, HTTP_FORBIDDEN);
+
+    Step scriptCrdStep = testSubject.createCrdStep(PRODUCT_VERSION);
+    testSupport.runSteps(scriptCrdStep);
+    assertThat(logRecords, not(containsWarning(ASYNC_NO_RETRY)));
+  }
+
 
   @ParameterizedTest
   @EnumSource(value = TestSubject.class)
