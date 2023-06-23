@@ -65,7 +65,7 @@ public class DomainValidationTestBase extends DomainTestUtils {
         return (T) new V1Secret().metadata(meta);
       }
       if (ClusterResource.class.equals(type)) {
-        return (T) new ClusterResource().withMetadata(meta);
+        return (T) new ClusterResource().withMetadata(meta).withClusterName(name);
       }
       if (DomainResource.class.equals(type)) {
         return (T) new DomainResource().withMetadata(meta);

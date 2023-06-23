@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -41,16 +41,9 @@ class ClusterResourceTest {
   }
 
   @Test
-  void canReadClusterNameFromMetadata() {
+  void canReadClusterResourceNameFromMetadata() {
     resource.setMetadata(new V1ObjectMeta().name("cluster-2"));
 
-    assertThat(resource.getClusterName(), equalTo("cluster-2"));
-  }
-
-  @Test
-  void whenNameInBothMetadataAndSpec_useNameFromSpec() {
-    resource.withMetadata(new V1ObjectMeta().name("cluster-2")).spec(new ClusterSpec().withClusterName("cluster-1"));
-
-    assertThat(resource.getClusterName(), equalTo("cluster-1"));
+    assertThat(resource.getClusterResourceName(), equalTo("cluster-2"));
   }
 }

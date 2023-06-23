@@ -19,12 +19,14 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * An element representing a cluster in the domain configuration.
  *
  * @since 4.0
  */
+@SuppressWarnings("JavadocLinkAsPlainText")
 @Description(
     "A Cluster resource describes the lifecycle options for all "
     + "of the Managed Server members of a WebLogic cluster, including Java "
@@ -80,8 +82,30 @@ public class ClusterResource implements KubernetesObject {
   @Description("The current status of the operation of the WebLogic cluster. Updated automatically by the operator.")
   private ClusterStatus status;
 
+  public ClusterResource() {
+  }
+
+  /**
+   * Returns the Kubernetes name of this cluster resource. This must be unique within a namespace and should not be
+   * confused with {@link #getClusterName()}.
+   */
+  @Nullable
+  public String getClusterResourceName() {
+    return getMetadata().getName();
+  }
+
+  /**
+   * Returns the WebLogic name of the cluster represented by this resource. It should not be confused with
+   * {@link #getClusterResourceName()}.
+   */
+  @Nonnull
   public String getClusterName() {
-    return Optional.ofNullable(spec.getClusterName()).orElse(getMetadata().getName());
+    return spec.getClusterName();
+  }
+
+  ClusterResource withClusterName(String clusterName) {
+    spec.withClusterName(clusterName);
+    return this;
   }
 
   Integer getReplicas() {

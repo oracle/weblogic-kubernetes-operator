@@ -1407,9 +1407,9 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     private void verifyClusterNotInUseByAnotherDomain(KubernetesResourceLookup kubernetesResources,
                                                       ClusterResource cluster) {
       String domainAlreadyReferenceCluster =
-          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getMetadata().getName());
+          getReferencingDomains(kubernetesResources, cluster.getNamespace(), cluster.getClusterResourceName());
       if (domainAlreadyReferenceCluster != null) {
-        failures.add(clusterInUse(cluster.getMetadata().getName(), domainAlreadyReferenceCluster));
+        failures.add(clusterInUse(cluster.getClusterResourceName(), domainAlreadyReferenceCluster));
       }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -328,7 +328,7 @@ class RestBackendImplTest {
             .withReplicas(1);
     testSupport.defineResources(clusterResource);
 
-    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
+    configureDomain().withClusterReference(clusterResource.getClusterResourceName());
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
@@ -340,7 +340,7 @@ class RestBackendImplTest {
     clusterResource.getSpec().setReplicas(null);
     testSupport.defineResources(clusterResource);
 
-    configureDomain().withClusterReference(clusterResource.getMetadata().getName());
+    configureDomain().withClusterReference(clusterResource.getClusterResourceName());
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
@@ -351,7 +351,7 @@ class RestBackendImplTest {
     defineClusterResources(new String[] {DOMAIN2, DOMAIN1, DOMAIN3}, new String[] {NS, NS, NS});
     restBackend.scaleCluster(DOMAIN1, CLUSTER_1, 5);
 
-    assertThat(getUpdatedClusterResource().getMetadata().getName(), equalTo(DOMAIN1 + '-' + CLUSTER_1));
+    assertThat(getUpdatedClusterResource().getClusterResourceName(), equalTo(DOMAIN1 + '-' + CLUSTER_1));
     assertThat(getUpdatedClusterResource().getSpec().getReplicas(), equalTo(5));
   }
 
