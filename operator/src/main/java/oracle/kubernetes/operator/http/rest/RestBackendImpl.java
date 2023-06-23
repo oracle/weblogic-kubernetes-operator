@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -288,18 +288,18 @@ public class RestBackendImpl implements RestBackend {
         .findFirst();
   }
 
-  private boolean isInSameNamespace(ClusterResource c, DomainResource domain) {
-    return Objects.equals(c.getNamespace(), domain.getNamespace());
+  private boolean isInSameNamespace(ClusterResource clusterResource, DomainResource domain) {
+    return Objects.equals(clusterResource.getNamespace(), domain.getNamespace());
   }
 
-  private boolean isReferencedByDomain(ClusterResource c, List<String> referencedClusterResources) {
+  private boolean isReferencedByDomain(ClusterResource clusterResource, List<String> referencedClusterResources) {
     return Optional.ofNullable(referencedClusterResources)
-        .map(l -> l.contains(c.getMetadata().getName()))
+        .map(l -> l.contains(clusterResource.getClusterResourceName()))
         .orElse(false);
   }
 
-  private boolean isMatchingClusterResource(String clusterName, ClusterResource c) {
-    return clusterName.equals(c.getClusterName());
+  private boolean isMatchingClusterResource(String clusterName, ClusterResource clusterResource) {
+    return clusterName.equals(clusterResource.getClusterName());
   }
 
   @Override
@@ -370,7 +370,7 @@ public class RestBackendImpl implements RestBackend {
     try {
       callBuilder
               .patchCluster(
-                      cluster.getMetadata().getName(), cluster.getMetadata().getNamespace(),
+                      cluster.getClusterResourceName(), cluster.getNamespace(),
                       new V1Patch(patchBuilder.build().toString()));
     } catch (ApiException e) {
       throw handleApiException(e);
