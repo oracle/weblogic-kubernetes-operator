@@ -18,7 +18,15 @@ public class Configuration {
   @Description("Model in image model files and properties.")
   private Model model;
 
-  @Description("Settings for OPSS security.")
+  /**
+   * Settings for OPSS security for the Model in Image JRF Domain.
+   *
+   * @deprecated JRF domain support is deprecated in Model in Image.
+   **/
+  @Description("Settings for OPSS security for the Model in Image JRF Domain. This field is deprecated,"
+      + " and will be removed in a future release. For JRF domain on PV initialization, "
+      + "use `configuration.initializeDomainOnPV.domain.opss` section for configuring OPSS security settings.")
+  @Deprecated(since = "4.1")
   private Opss opss;
 
   @Description(
@@ -51,7 +59,7 @@ public class Configuration {
       + " The operator will not recreate or update the domain and resources when they already exist. "
       + " For more information, see"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and"
-      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ")
+      + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv ")
   private InitializeDomainOnPV initializeDomainOnPV;
 
   public Model getModel() {
