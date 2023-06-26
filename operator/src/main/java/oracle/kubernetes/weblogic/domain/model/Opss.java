@@ -12,14 +12,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Opss {
 
   @Description("Name of a Secret containing the OPSS key wallet file, which must be in a key named `walletFile`."
-      + " Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify"
+      + " Use this to allow a JRF domain to reuse its schemas in the RCU database. This allows you to specify"
       + " a wallet file that was obtained from the domain home after the domain was booted for the first time.")
   private String walletFileSecret;
 
   @Description(
       "Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`."
-      + " Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database."
-      + "The password must have a minimum length of eight characters and contain alphabetic characters combined"
+      + " Used to encrypt and decrypt the wallet that is used for accessing the domain's schemas in its RCU database."
+      + " The password must have a minimum length of eight characters and contain alphabetic characters combined"
       + " with numbers or special characters.")
   @Valid
   private String walletPasswordSecret;

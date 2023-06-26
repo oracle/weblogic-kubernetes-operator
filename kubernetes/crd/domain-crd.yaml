@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 74446d3b1c48a2baabc56f1240b28e5a2d1e8a6e8f656295532ad83de1517552
+    weblogic.sha256: 99585cc6da80c53c308ee386305361ba10859fe959ee7cac31bd526dc30e2a42
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -98,7 +98,7 @@ spec:
                       steps only if the domain and resources do not already exist.
                       The operator will not recreate or update the domain and resources
                       when they already exist.  For more information, see https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/
-                      and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization '
+                      and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv '
                     properties:
                       waitForPvcToBind:
                         description: Specifies whether the operator will wait for
@@ -329,7 +329,7 @@ spec:
                               walletFileSecret:
                                 description: Name of a Secret containing the OPSS
                                   key wallet file, which must be in a key named `walletFile`.
-                                  Use this to allow a JRF domain to reuse its entries
+                                  Use this to allow a JRF domain to reuse its schemas
                                   in the RCU database. This allows you to specify
                                   a wallet file that was obtained from the domain
                                   home after the domain was booted for the first time.
@@ -338,10 +338,10 @@ spec:
                                 description: Name of a Secret containing the OPSS
                                   key passphrase, which must be in a key named `walletPassword`.
                                   Used to encrypt and decrypt the wallet that is used
-                                  for accessing the domain's entries in its RCU database.The
-                                  password must have a minimum length of eight characters
-                                  and contain alphabetic characters combined with
-                                  numbers or special characters.
+                                  for accessing the domain's schemas in its RCU database.
+                                  The password must have a minimum length of eight
+                                  characters and contain alphabetic characters combined
+                                  with numbers or special characters.
                                 type: string
                             type: object
                           createIfNotExists:
@@ -506,12 +506,15 @@ spec:
                     - OnRestart
                     type: string
                   opss:
-                    description: Settings for OPSS security.
+                    description: Settings for OPSS security for the Model in Image
+                      JRF Domain. This field is deprecated, and will be removed in
+                      a future release. For JRF domain on PV initialization, use `configuration.initializeDomainOnPV.domain.opss`
+                      section for configuring OPSS security settings.
                     properties:
                       walletFileSecret:
                         description: Name of a Secret containing the OPSS key wallet
                           file, which must be in a key named `walletFile`. Use this
-                          to allow a JRF domain to reuse its entries in the RCU database.
+                          to allow a JRF domain to reuse its schemas in the RCU database.
                           This allows you to specify a wallet file that was obtained
                           from the domain home after the domain was booted for the
                           first time.
@@ -520,7 +523,7 @@ spec:
                         description: Name of a Secret containing the OPSS key passphrase,
                           which must be in a key named `walletPassword`. Used to encrypt
                           and decrypt the wallet that is used for accessing the domain's
-                          entries in its RCU database.The password must have a minimum
+                          schemas in its RCU database. The password must have a minimum
                           length of eight characters and contain alphabetic characters
                           combined with numbers or special characters.
                         type: string

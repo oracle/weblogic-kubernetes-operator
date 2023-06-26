@@ -177,7 +177,7 @@
       "type": "object",
       "properties": {
         "initializeDomainOnPV": {
-          "description": "Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize related resources such as a persistent volume and a persistent volume claim. If specified, the operator will perform these one-time initialization steps only if the domain and resources do not already exist. The operator will not recreate or update the domain and resources when they already exist.  For more information, see https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ",
+          "description": "Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize related resources such as a persistent volume and a persistent volume claim. If specified, the operator will perform these one-time initialization steps only if the domain and resources do not already exist. The operator will not recreate or update the domain and resources when they already exist.  For more information, see https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv ",
           "$ref": "#/definitions/InitializeDomainOnPV"
         },
         "overrideDistributionStrategy": {
@@ -190,7 +190,8 @@
           ]
         },
         "opss": {
-          "description": "Settings for OPSS security.",
+          "deprecated": "true",
+          "description": "Settings for OPSS security for the Model in Image JRF Domain. This field is deprecated, and will be removed in a future release. For JRF domain on PV initialization, use `configuration.initializeDomainOnPV.domain.opss` section for configuring OPSS security settings.",
           "$ref": "#/definitions/Opss"
         },
         "model": {
@@ -822,11 +823,11 @@
       "type": "object",
       "properties": {
         "walletFileSecret": {
-          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a key named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
+          "description": "Name of a Secret containing the OPSS key wallet file, which must be in a key named `walletFile`. Use this to allow a JRF domain to reuse its schemas in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time.",
           "type": "string"
         },
         "walletPasswordSecret": {
-          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s entries in its RCU database.The password must have a minimum length of eight characters and contain alphabetic characters combined with numbers or special characters.",
+          "description": "Name of a Secret containing the OPSS key passphrase, which must be in a key named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain\u0027s schemas in its RCU database. The password must have a minimum length of eight characters and contain alphabetic characters combined with numbers or special characters.",
           "type": "string"
         }
       }
