@@ -52,7 +52,7 @@ jobs:
           echo "Building documentation for latest minor version..."
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
-          cp -R charts domains "$GITHUB_WORKSPACE/WORK"
+          cp -R domains "$GITHUB_WORKSPACE/WORK"
           
           cd $GITHUB_WORKSPACE/branch-3.4/documentation
           echo "Building documentation for older minor version..."
