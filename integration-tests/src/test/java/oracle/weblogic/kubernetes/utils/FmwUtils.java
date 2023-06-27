@@ -456,6 +456,111 @@ public class FmwUtils {
   }
 
   /**
+   * Construct a domain and RCU with the given parameters that can be used to create a domain resource.
+   * @param domainUid unique Uid of the domain
+   * @param domainNamespace  namespace where the domain exists
+   * @param adminSecretName  name of admin secret
+   * @param repoSecretName name of repository secret
+   * @param rcuAccessSecretName name of RCU access secret
+   * @param opssWalletPasswordSecretName name of opss wallet password secret
+   * @param opssWalletFileSecretName name of opss wallet file secret
+   * @param domainCreationImages list of domainCreationImage
+   * @param pvName name of persistent volume
+   * @param pvcName name of persistent volume claim
+   * @return Domain WebLogic domain
+   */
+  public static DomainResource createSimplifyJrfPvDomainAndRCU(
+      String domainUid, String domainNamespace, String adminSecretName,
+      String repoSecretName, String rcuAccessSecretName, String opssWalletPasswordSecretName,
+      String opssWalletFileSecretName,
+      String pvName, String pvcName,
+      List<DomainCreationImage> domainCreationImages,
+      String domainCreationConfigMap) {
+
+    Map<String, Quantity> capacity = new HashMap<>();
+    capacity.put("storage", Quantity.fromString("10Gi"));
+
+    Map<String, Quantity> request = new HashMap<>();
+    request.put("storage", Quantity.fromString("10Gi"));
+
+    // create the domain CR
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("PersistentVolume")
+            .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .introspectVersion("1")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
+            .serverPod(new ServerPod()
+                .addVolumesItem(new V1Volume()
+                    .name("weblogic-domain-storage-volume")
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name("weblogic-domain-storage-volume"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("WLSDEPLOY_PROPERTIES")
+                    .value(YAML_MAX_FILE_SIZE_PROPERTY)))
+            .adminServer(new AdminServer()
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .configuration(new Configuration()
+                .addSecretsItem(rcuAccessSecretName)
+                .introspectorJobActiveDeadlineSeconds(3000L)
+                .initializeDomainOnPV((new InitializeDomainOnPV()
+                    .persistentVolume(new PersistentVolume()
+                        .metadata(new V1ObjectMeta()
+                            .name(pvName))
+                        .spec(new PersistentVolumeSpec()
+                            .storageClassName("weblogic-domain-storage-class")
+                            .hostPath(new V1HostPathVolumeSource()
+                                .path("/share"))
+                            .capacity(capacity)))
+                    .persistentVolumeClaim(new PersistentVolumeClaim()
+                        .metadata(new V1ObjectMeta()
+                            .name(pvcName))
+                         .spec(new PersistentVolumeClaimSpec()
+                             .volumeName(pvName)
+                             .storageClassName("weblogic-domain-storage-class")
+                             .resources(new V1ResourceRequirements()
+                                 .requests(request))))
+                    .domain(new DomainOnPV()
+                        .createMode(CreateIfNotExists.DOMAIN_AND_RCU)
+                        .domainType(DomainOnPVType.JRF)
+                        .domainCreationImages(domainCreationImages)
+                        .domainCreationConfigMap(domainCreationConfigMap)
+                        .opss(new Opss()
+                            .walletPasswordSecret(opssWalletPasswordSecretName)
+                            .walletFileSecret(opssWalletFileSecretName))
+
+                        )))));
+
+    return domain;
+  }
+
+  /**
    * Save and restore the OPSS key wallet from a running JRF domain's introspector configmap to a file.
    * @param namespace namespace where JRF domain exists
    * @param domainUid unique domain Uid
