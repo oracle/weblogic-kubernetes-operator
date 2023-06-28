@@ -40,8 +40,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <surefireArgLine></surefireArgLine>
-                <failsafeArgLine></failsafeArgLine>
+                <surefireArgLine />
+                <failsafeArgLine />
             </properties>
         </profile>
     </profiles>

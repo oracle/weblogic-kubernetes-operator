@@ -202,7 +202,7 @@
                         </include>
                     </includes>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                 </configuration>
                 <executions>
@@ -291,7 +291,7 @@
                 <configuration>
                     <skipTests>true</skipTests>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                     <properties>
                         <configurationParameters>

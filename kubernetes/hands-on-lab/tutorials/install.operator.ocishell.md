@@ -7,7 +7,7 @@ An operator is an application-specific controller that extends Kubernetes to cre
 #### Clone the operator repository to a Cloud Shell instance ####
 First, clone the operator git repository to OCI Cloud Shell.
 ```shell
-$ git clone --branch v4.1.0-SNAPSHOT https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch $(git ls-remote --tags https://github.com/oracle/weblogic-kubernetes-operator.git v4.1.\* | tail -1 | sed -E 's|.*refs/tags/(.+)|\1|') https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 The output should be similar to the following:
 ```shell

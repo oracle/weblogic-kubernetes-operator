@@ -23,7 +23,7 @@ Contributions must conform to [coding and formatting standards]({{< relref "/dev
 These commands should be executed in the project root directory:
 
 ```shell
-$ ./buildAndPushImage.sh -t weblogic-kubernetes-operator:some-tag
+$ docker build -t weblogic-kubernetes-operator:some-tag .
 ```
 
 Replace `<version>` with the version of the project found in the `pom.xml` file in the project root directory.
