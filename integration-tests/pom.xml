@@ -202,7 +202,7 @@
                         </include>
                     </includes>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                 </configuration>
                 <executions>
@@ -291,7 +291,7 @@
                 <configuration>
                     <skipTests>true</skipTests>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                     <properties>
                         <configurationParameters>
@@ -392,8 +392,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <surefireArgLine></surefireArgLine>
-                <failsafeArgLine></failsafeArgLine>
+                <surefireArgLine />
+                <failsafeArgLine />
                 <skipITs>true</skipITs>
             </properties>
         </profile>
