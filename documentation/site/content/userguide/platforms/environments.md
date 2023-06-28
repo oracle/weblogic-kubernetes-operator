@@ -148,8 +148,6 @@ AKS support and limitations:
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
 
-See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
-
 ##### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
 The WebLogic Server on AKS Azure Marketplace

@@ -21,11 +21,10 @@ description: "Deploying WebLogic Server on Azure Kubernetes Service."
 
 #### Introduction
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
+Azure Kubernetes Service (AKS) makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You manage and maintain only the agent nodes. As a managed Kubernetes service, AKS is free - you pay for only the agent nodes within your clusters, not for the masters.
 
+To learn more, see [What is Azure Kubernetes Service?](https://docs.microsoft.com/azure/aks/intro-kubernetes)
 This document describes the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
-
-It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
 
 #### Basics
 
