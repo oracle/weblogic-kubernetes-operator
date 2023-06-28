@@ -47,8 +47,10 @@ jobs:
           
           cd $GITHUB_WORKSPACE/branch/documentation
           echo "Documentation branch is $GITHUB_REF_NAME..."
+          latest_tag=$(git tag -l --sort=v:refname | grep v4.0 | tail -1 | cut -c2-)
+          echo "Latest tag is $latest_tag..."
+          echo $latest_tag >| $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
           echo "Building documentation for latest minor version..."
-          git tag -l --sort=v:refname | grep v4.0 | tail -1 | cut -c2- > $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"
