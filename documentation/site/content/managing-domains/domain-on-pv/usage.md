@@ -142,6 +142,13 @@ for you.
 The specifications of `PersistentVolume` and `PersistentVolumeClaim` are environment specific and often require information
 from your Kubernetes cluster administrator. See [Persistent Storage](#references) in different environments.
 
+##### PV and PVC requirements
+- The Domain on PV requires that the PV and PVC are created with `Filesystem` volume mode, and `Block` volume mode is **not** supported. 
+  - If you request the operator to create the PV and PVC, then it by default uses the `Filesystem` volume mode. 
+  - If you plan to use an existing PV and PVC, then ensure that it was created with `Filesystem` volume mode.
+- You must use a storage provider that supports the `ReadWriteMany` option.
+- This operator will automatically set the owner of all files in the domain home on the persistent volume to `uid 1000` with `gid 0`. If you want to use a different user and group, then configure the desired `runAsUser` and `runAsGroup` in the security context under the `spec.serverPod.podSecurityContext` section of the Domain YAML file. The operator will use these values when setting the owner for files in the domain home directory.
+
 For example, if you specify the specification of the `Persistent Volume` and `Persistent Volume Claim` in the domain resource YAML file,  
 then the operator will create the `PV` and `PVC`, and mount the persistent volume to the `/share` directory.
 
