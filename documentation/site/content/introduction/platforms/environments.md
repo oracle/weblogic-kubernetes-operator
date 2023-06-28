@@ -35,9 +35,9 @@ These include, but are not limited to:
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
-**Notes:**
+**NOTES**:
 
-- **Important:** Some supported environments have additional help or samples that are specific
+- **Important**: Some supported environments have additional help or samples that are specific
 to the operator, or are subject to limitations and restrictions; see
 [Important notes about specific environments](#important-notes-about-specific-environments).
 
@@ -60,7 +60,7 @@ Here are some important considerations for specific environments:
 - [WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes](#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes)
 - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
 
-**Note:** This section does not list all supported environments.
+**NOTE**: This section does not list all supported environments.
 See the [Overview](#overview) for a list of all supported environments.
 
 #### Oracle Cloud Infrastructure

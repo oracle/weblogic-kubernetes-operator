@@ -17,7 +17,7 @@ Domain resources reference WebLogic domain configuration, a WebLogic install,
 and anything else necessary to run the domain. Beginning with operator 4.0, WebLogic clusters that are within a WebLogic domain
 configuration may optionally be associated with a Cluster resource in addition to a Domain resource. This Cluster resource makes it
 simpler to scale the number of running member servers using `kubectl scale`, the Kubernetes built-in Horizontal Pod Autoscaling,
-or similar tools. These Cluster resources are only active if referenced by a Domain resource. **Note:**  This Cluster resource is a new
+or similar tools. These Cluster resources are only active if referenced by a Domain resource. **NOTE**:  This Cluster resource is a new
 custom resource different from the Domain resource. In earlier operator versions, you specified the life cycle attributes of WebLogic clusters
 in the Domain resource cluster section. Beginning with operator 4.0, the Domain resource cluster section references only the name of the Cluster resources;
 all the life cycle attributes are specified in the new Cluster resource objects.
@@ -223,7 +223,7 @@ Additional information for the `clusterService.sessionAffinity` element:
 
 * `sessionAffinity`: This is an advanced setting that is applicable only when the `kube-proxy` is running in non-default proxy modes, such as [User space (legacy) proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-userspace) and [IPVS proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-ipvs). It is used to enable session affinity based on the client's IP addresses. For more information, see the [Virtual IPs and service proxies](https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies). Must be `ClientIP` or `None`. Defaults to `None`.
 
-  **Note:** This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables).
+  **NOTE**: This setting is not applicable when the `kube-proxy` is running in the default [`iptables` proxy mode](https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables).
 
 {{% notice note %}}
 For additional domain and cluster resource attribute reference material, see [Domain and cluster resource attribute references](#domain-and-cluster-resource-attribute-references).
@@ -243,7 +243,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 
-**Notes:**
+**NOTES**:
 
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
   * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.

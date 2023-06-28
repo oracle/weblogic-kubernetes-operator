@@ -61,7 +61,7 @@ Here are the steps:
 
 1. Update the data source secret that you created in the Update 1 use case with the correct password as well as with an increased maximum pool capacity:
 
-   __NOTE:__ Replace MY_ORACLE_SYS_PASSWORD with the same database `sys` account password
+   **NOTE**: Replace MY_ORACLE_SYS_PASSWORD with the same database `sys` account password
    that you chose (or plan to choose) when deploying the database.
 
    ```shell

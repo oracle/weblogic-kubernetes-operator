@@ -282,7 +282,7 @@ that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace]({{< relref "/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-**Note**: You will need to manually install the operator CRD
+**NOTE**: You will need to manually install the operator CRD
 because `enableClusterRoleBinding` is not set to `true`
 and installation of the CRD requires cluster role binding privileges.
 See [How to manually install the Domain resource custom resource definition (CRD)](#how-to-manually-install-the-domain-resource-custom-resource-definition-crd).
@@ -345,7 +345,7 @@ If applicable, please review the following special use cases.
 
 #### How to download the Helm chart if Internet access is not available
 
-At a high-level, you use `helm pull` to download a released version of the Helm chart and move it to the machine with no Internet access,
+At a high level, you use `helm pull` to download a released version of the Helm chart and move it to the machine with no Internet access,
 so that then you can run `helm install` to install the operator.  
 
 The steps are:

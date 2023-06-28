@@ -408,7 +408,7 @@ __Debugging steps:__
          * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational configuration file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
          * This line indicates a configuration overrides file has been loaded.
       * If the search yields `Warning` or `Error` lines, then the format of the custom configuration overrides template is incorrect, and the `Warning` or `Error` text should describe the problem.
-      * **Note**: The following exception may show up in the server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored:
+      * **NOTE**: The following exception may show up in the server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored:
          ```
          java.lang.NullPointerException
            at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.registerListener(SituationalConfigManagerImpl.java:227)

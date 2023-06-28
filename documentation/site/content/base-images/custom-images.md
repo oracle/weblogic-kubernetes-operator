@@ -80,7 +80,7 @@ Finally, you can use the WIT `inspect` command to [inspect images]({{< relref "/
     - Optionally, includes a WDT installation and model files in the image
       (for Model in Image domains).
     - _Important_:
-      - **Note:** Patching an Oracle Home using the WIT `update`
+      - **NOTE**: Patching an Oracle Home using the WIT `update`
         command results in a larger WebLogic Server image
         due to the immutable layering in container images. For small updates, such as a one-off patch,
         the increase in the image size may be negligible. However, for larger updates, the increase in size will be _significant_.
@@ -144,7 +144,7 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
 
 1. Download your desired WebLogic Server installer from the Oracle Technology Network [WebLogic Server installers](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html) page or from the [Oracle Software Delivery Cloud](https://edelivery.oracle.com/osdc/faces/Home.jspx) (OSDC).
 
-   **Note:** The WebLogic Server installers will not be fully patched.
+   **NOTE**: The WebLogic Server installers will not be fully patched.
    In a subsequent step, you'll use
    the WIT `--patches` or `--recommendedPatches` options
    to apply one-off and recommended Oracle patches.
@@ -214,7 +214,7 @@ Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, 
      --passwordEnv=MYPWD
    ```
 
-   **Notes:**
+   **NOTES**:
    - To enable WIT to download patches,
         you must supply your My Oracle Support (Oracle Single Sign-On) credentials
      using the `--user` and `--passwordEnv` parameters (or one of the other password CLA options).
@@ -494,7 +494,7 @@ to create the domain home in Domain in Image.
 
   {{% /expand %}}
 
-**Notes**:
+**NOTES**:
 
 - The sample script and its `domain.properties` file include a sample WebLogic administration password.
   These files must be protected and the sample password must be changed.
@@ -507,7 +507,7 @@ to create the domain home in Domain in Image.
 
 #### Create a custom image with your model inside the image
 
-**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
 
 {{% notice warning %}}
 The example in this section references a base image,
@@ -581,16 +581,17 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
      --chown oracle:root
    ```
 
-   __Note__: If using a Fusion Middleware Infrastructure base image,
+   **NOTE**: If using a Fusion Middleware Infrastructure base image,
    then specify a `--wdtDomainType` of `JRF` or `RestrictedJRF`,
    `JRF-v1` instead of `WLS-v1` for the image tag,
    and substitute each occurrence of `model-in-image__WLS-v1` with `model-in-image__JRF-v1`.
+   **Also note** that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
 
 1. For an example Domain YAML file that sets up Model in Image to reference the image,
    see `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`
    (or `./JRF/mii-initial-d1-JRF-v1.yaml` if using Fusion Middleware Infrastructure `JRF` mode).
 
-   __Notes__:
+   **NOTES**:
 
    - The default values for `domain.spec.configuration.model.wdtInstallHome` and `.modelHome`
      reference the location of the WDT installation and model files that WIT copied into the image.

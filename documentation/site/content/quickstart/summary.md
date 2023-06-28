@@ -77,7 +77,7 @@ These steps help you understand and customize auxiliary image creation. Then you
    You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
 1. Download the sample WDT model, web application, and properties files to be included in the auxiliary image and put them in your `/tmp/quickstart/models` directory.
-Then use the JAR command to put the web application files into a model archive ZIP file.
+Then use the `jar` command to put the web application files into a model archive ZIP file.
 
    For example:
    ```shell
@@ -190,7 +190,7 @@ If you followed the previous steps to create an auxiliary image, then use these 
 
 Use following commands to delete the generated image and directories for tools and models.
 
-1. Delete the generated image by using the `docker rmi` command. Use the following command to delete an image tagged with `quick-start-aux-image:v1`
+1. Delete the generated image by using the `docker rmi` command. Use the following command to delete an image tagged with `quick-start-aux-image:v1`.
 
    ```shell
    $ docker rmi quick-start-aux-image:v1
