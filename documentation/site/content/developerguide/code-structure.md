@@ -10,7 +10,6 @@ This project has the following directory structure:
 
 * `documentation/latest`: This documentation
 * `documentation/<numbered directory>`: The archived documentation for a previous release
-* `documentation/charts`: Helm chart repository
 * `documentation/swagger`: The operator REST API swagger
 * `documentation/domains`: Reference for Domain and Cluster resource schemas
 * `json-schema-generator`: Java model to JSON schema generator
