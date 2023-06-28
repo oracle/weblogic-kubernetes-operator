@@ -8,10 +8,13 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Default;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.DomainOnPVType;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.WebLogicConstants.JRF;
+import static oracle.kubernetes.operator.WebLogicConstants.RESTRICTED_JRF;
+import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 
 public class DomainOnPV {
 
@@ -20,10 +23,10 @@ public class DomainOnPV {
   @Default(strDefault = "domain")
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
-  @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.")
+  @Description("WebLogic Deploy Tooling domain type. Known values are: WLS, RestrictedJRF, JRF. Defaults to JRF.")
   @SerializedName("domainType")
   @Default(strDefault = "JRF")
-  private DomainOnPVType domainType = DomainOnPVType.JRF;
+  private String domainType = JRF;
 
   /**
    * The domain images.
@@ -51,11 +54,24 @@ public class DomainOnPV {
     return this;
   }
 
-  public DomainOnPVType getDomainType() {
+  /**
+   * Returns the domain type in upper case for WLS and JRF domains, camel case for RestrictedJRF domain,
+   * and user provided value otherwise.
+   *
+   * @return the domain type in proper case.
+   */
+  public String getDomainType() {
+    if (JRF.equalsIgnoreCase(domainType)) {
+      return JRF;
+    } else if (WLS.equalsIgnoreCase(domainType)) {
+      return WLS;
+    } else if (RESTRICTED_JRF.equalsIgnoreCase(domainType)) {
+      return RESTRICTED_JRF;
+    }
     return domainType;
   }
 
-  public DomainOnPV domainType(DomainOnPVType domainType) {
+  public DomainOnPV domainType(String domainType) {
     this.domainType = domainType;
     return this;
   }

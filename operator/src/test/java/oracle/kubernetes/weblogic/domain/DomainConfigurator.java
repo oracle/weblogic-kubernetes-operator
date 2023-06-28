@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -688,7 +687,7 @@ public abstract class DomainConfigurator {
    * @param type the domain type
    * @return this object
    */
-  public abstract DomainConfigurator withInitializeDomainOnPVType(DomainOnPVType type);
+  public abstract DomainConfigurator withInitializeDomainOnPVType(String type);
 
   /**
    * Add domain type for the domain resource's initializeDomainOnPV.

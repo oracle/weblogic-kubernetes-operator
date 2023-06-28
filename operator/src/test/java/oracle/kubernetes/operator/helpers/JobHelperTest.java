@@ -45,7 +45,6 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.utils.CommonUtils;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
@@ -90,9 +89,11 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
-import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
+import static oracle.kubernetes.operator.ProcessingConstants.DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.WebLogicConstants.JRF;
+import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -966,15 +967,15 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().domainType(DomainOnPVType.WLS).createMode(CreateIfNotExists.DOMAIN)));
+            .domain(new DomainOnPV().domainType(WLS).createMode(CreateIfNotExists.DOMAIN)));
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getPodSpecActiveDeadlineSeconds(jobSpec),
-        is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+        is(DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
     assertThat(
-        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
+        jobSpec.getActiveDeadlineSeconds(), is(DEFAULT_WLS_OR_RESTRICTED_JRF_INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS));
   }
 
   @Test
@@ -1132,7 +1133,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                 .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                     .withWalletPasswordSecret("wallet-secret-password"))
             ));
@@ -1157,7 +1158,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
             .withPodSecurityContext(new V1PodSecurityContext().runAsUser(2000L).runAsGroup(0L))
             .withInitializeDomainOnPV(new InitializeDomainOnPV()
-                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                             .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                                     .withWalletPasswordSecret("wallet-secret-password"))
                     ));
@@ -1184,7 +1185,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
             .withInitializeDomainOnPV(new InitializeDomainOnPV()
-                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                             .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                                     .withWalletPasswordSecret("wallet-secret-password"))
                     ));
@@ -1212,7 +1213,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
             .withInitializeDomainOnPV(new InitializeDomainOnPV()
-                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                             .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                                     .withWalletPasswordSecret("wallet-secret-password"))
                     ));
@@ -1241,7 +1242,7 @@ class JobHelperTest extends DomainValidationTestBase {
             .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
             .withPodSecurityContext(new V1PodSecurityContext().runAsUser(2000L).runAsGroup(0L))
             .withInitializeDomainOnPV(new InitializeDomainOnPV()
-                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+                    .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                             .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                                     .withWalletPasswordSecret("wallet-secret-password"))
                     ));
@@ -1270,7 +1271,7 @@ class JobHelperTest extends DomainValidationTestBase {
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
-                .domainType(DomainOnPVType.JRF)
+                .domainType(JRF)
                 .domainCreationConfigMap("wdt-config-map")));
 
     V1JobSpec jobSpec = createJobSpec();
@@ -1295,7 +1296,7 @@ class JobHelperTest extends DomainValidationTestBase {
         .withAdditionalVolumeMount("volume1Mount", VOLUME_MOUNT_PATH_1)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
             .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU)
-                .domainType(DomainOnPVType.JRF)
+                .domainType(JRF)
                 .domainCreationConfigMap("wdt-config-map")));
 
     V1JobSpec jobSpec = createJobSpec();
@@ -1319,7 +1320,7 @@ class JobHelperTest extends DomainValidationTestBase {
     configureDomain()
         .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
         .withInitializeDomainOnPV(new InitializeDomainOnPV()
-            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(DomainOnPVType.JRF)
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN_AND_RCU).domainType(JRF)
                 .opss(new Opss().withWalletFileSecret("wallet-secret-file")
                     .withWalletPasswordSecret("wallet-secret-password"))
             ));

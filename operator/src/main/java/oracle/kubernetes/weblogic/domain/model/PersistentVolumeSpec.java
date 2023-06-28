@@ -44,10 +44,6 @@ public class PersistentVolumeSpec {
       + " Empty value means that this volume does not belong to any StorageClass.")
   private String storageClassName;
 
-  @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
-      + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
-  private String volumeMode;
-
   public Map<String, Quantity> getCapacity() {
     return capacity;
   }
@@ -92,15 +88,6 @@ public class PersistentVolumeSpec {
     return this;
   }
 
-  public String getVolumeMode() {
-    return volumeMode;
-  }
-
-  public PersistentVolumeSpec volumeMode(String volumeMode) {
-    this.volumeMode = volumeMode;
-    return this;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -109,8 +96,7 @@ public class PersistentVolumeSpec {
             .append("hostPath", hostPath)
             .append("nfs", nfs)
             .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
-            .append("storageClassName", storageClassName)
-            .append("volumeMode", volumeMode);
+            .append("storageClassName", storageClassName);
 
     return builder.toString();
   }
@@ -122,8 +108,7 @@ public class PersistentVolumeSpec {
         .append(hostPath)
         .append(nfs)
         .append(persistentVolumeReclaimPolicy)
-        .append(storageClassName)
-        .append(volumeMode);
+        .append(storageClassName);
 
     return builder.toHashCode();
   }
@@ -143,8 +128,7 @@ public class PersistentVolumeSpec {
             .append(hostPath, rhs.hostPath)
             .append(nfs, rhs.nfs)
             .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
-            .append(storageClassName, rhs.storageClassName)
-            .append(volumeMode, rhs.volumeMode);
+            .append(storageClassName, rhs.storageClassName);
 
     return builder.isEquals();
   }

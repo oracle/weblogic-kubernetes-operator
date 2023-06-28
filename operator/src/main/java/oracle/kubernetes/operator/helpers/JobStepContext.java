@@ -33,7 +33,6 @@ import oracle.kubernetes.common.AuxiliaryImageConstants;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.common.utils.CommonUtils;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -296,8 +295,8 @@ public class JobStepContext extends BasePodStepContext {
     if (getInitializeDomainOnPV().isEmpty()) {
       return getDomain().getWdtDomainType().toString();
     } else {
-      return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType).map(
-          DomainOnPVType::toString).orElse(null);
+      return getInitializeDomainOnPV().map(InitializeDomainOnPV::getDomain).map(DomainOnPV::getDomainType)
+          .orElse(null);
     }
   }
 
