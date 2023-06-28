@@ -20,7 +20,7 @@ description: "Follow these prerequisite steps for WLS domain type."
    $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
-   **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
+   **NOTE**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
 
    For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
 
@@ -32,7 +32,7 @@ description: "Follow these prerequisite steps for WLS domain type."
    ```
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/sample
    ```
-   **Note**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.
+   **NOTE**: We will refer to this working copy of the sample as `/tmp/sample`; however, you can use a different location.
 
 1. Copy the `wdt-artifacts` directory of the sample to a new directory; for example, use directory `/tmp/sample/wdt-artifacts`.
 

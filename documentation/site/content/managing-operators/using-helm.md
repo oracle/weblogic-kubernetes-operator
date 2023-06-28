@@ -76,7 +76,7 @@ and [Installation and upgrade]({{< relref "/managing-operators/installation.md" 
     --set "javaLoggingLevel=FINE" \
     --wait
   ```
-  **Notes**:
+  **NOTES**:
   - In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained.
   - Before changing the `javaLoggingLevel` setting,
     consult the [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) advice.
@@ -129,7 +129,7 @@ privilege in _all_ Kubernetes namespaces. If you want to limit the operator's pr
 then remove this option; this will mean that the operator has privilege only in the set of namespaces that match the selection strategy
 at the time the Helm release was installed or upgraded.
 
-**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
+**NOTE**: If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 then a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
@@ -256,7 +256,7 @@ runAsUser: 1000
 
 The WebLogic domain conversion webhook is automatically installed by default when an operator is installed and uninstalled when an operator is uninstalled. You can optionally install and uninstall it independently by using the operator's Helm chart. For details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}) and [Uninstall the conversion webhook]({{<relref "/managing-operators/conversion-webhook#uninstall-the-conversion-webhook" >}}).
 
-**Note:** By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
+**NOTE**: By default, the conversion webhook installation uses the same [`serviceAccount`](#serviceaccount), [Elastic Stack integration](#elastic-stack-integration), and [Debugging options](#debugging-options) configuration values that are used by the operator installation. If you want to use different `serviceAccount` or `Elastic Stack integration` or `Debugging options` for the conversion webhook, then install the conversion webhook independently by using the following `webhookOnly` configuration value and provide the new value during webhook installation.
 
 ##### `webhookOnly`
 Specifies whether only the conversion webhook should be installed during the `helm install` and that the operator installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
@@ -265,7 +265,7 @@ If set to `true`, the `helm install` will install _only_ the conversion webhook 
 Defaults to `false`.
 
 ##### `operatorOnly`
-**Note**: This is an advanced setting and should be used only in environments where a conversion webhook is already installed. The operator version 4.x requires a conversion webhook to be installed.
+**NOTE**: This is an advanced setting and should be used only in environments where a conversion webhook is already installed. The operator version 4.x requires a conversion webhook to be installed.
 
 Specifies whether only the operator should be installed during the `helm install` and that the conversion webhook installation should be skipped. By default, the `helm install` command installs both the operator and the conversion webhook.
 If set to `true`, the `helm install` will install _only_ the operator (and not the conversion webhook).
@@ -298,7 +298,7 @@ Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
 - Finally, if set to `Dedicated`, then operator will manage WebLogic domains only in the same namespace
   which the operator itself is deployed, which is the namespace of the Helm release.
 
-**NOTES:**
+**NOTES**:
 - Defaults to `List`.
 - For more information, see [Choose a domain namespace section strategy]({{<relref "/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}}).
 
@@ -333,7 +333,7 @@ Examples:
   --set "domainNamespaces={namespace1,namespace2}"
   ```
 
-**Notes:**
+**NOTES**:
 - Defaults to the `default` namespace.
 - You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 - If you change `domainNamespaces` using a `helm upgrade` command,
@@ -359,7 +359,7 @@ Examples:
   domainNamespaceLabelSelector: environment notin (production,systemtest)
   ```
 
-**Notes**:
+**NOTES**:
 - To specify the previous sample on the Helm command line, escape the equal sign, spaces, and commas as follows:
   ```
   --set "domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)"
@@ -375,7 +375,7 @@ Specifies a regular expression that will be used when searching for namespaces t
 The operator will only manage domains found in namespaces matching this regular expression.
 This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ignored otherwise.
 
-**Notes:**
+**NOTES**:
 
 - The regular expression functionality included with Helm is restricted to linear time constructs and,
   in particular, does not support lookarounds. The operator, written in Java, supports these
@@ -517,7 +517,7 @@ Example:
 externalRestEnabled: true
 ```
 
-**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
+**NOTE**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestHttpsPort`
 Specifies the node port that should be allocated for the external operator REST HTTPS interface.
@@ -531,7 +531,7 @@ Example:
 externalRestHttpsPort: 32009
 ```
 
-**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
+**NOTE**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestIdentitySecret`
 Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. To create the Kubernetes `tls` secret, you can use the following command:
@@ -632,7 +632,7 @@ Example:
 javaLoggingLevel:  "FINE"
 ```
 
-**Note**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) before changing this setting.
+**NOTE**: Please consult [Operator logging level]({{< relref "/managing-operators/troubleshooting#operator-and-conversion-webhook-logging-level" >}}) before changing this setting.
 
 ##### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.
@@ -669,4 +669,4 @@ Example:
 externalDebugHttpPort:  30777
 ```
 
-**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.
+**NOTE**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.

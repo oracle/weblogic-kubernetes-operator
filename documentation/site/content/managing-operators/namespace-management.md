@@ -57,7 +57,7 @@ configuration setting controls which namespaces an operator manages.
 For detailed reference information about each setting,
 see [WebLogic domain management]({{<relref "/managing-operators/using-helm#weblogic-domain-management">}}).
 
-**Notes:**
+**NOTES**:
 
 - Your security strategy may determine which namespace strategy you should choose,
   see [Choose a security strategy]({{<relref "/managing-operators/preparation#choose-a-security-strategy">}}).
@@ -99,7 +99,7 @@ If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
   ```shell
   $ helm upgrade weblogic-operator/weblogic-operator --reuse-values
   ```
-  **Note:** If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
+  **NOTE**: If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
   that is deleted and recreated, then you can
   try [forcing the operator to restart]({{< relref "/managing-operators/troubleshooting#force-the-operator-to-restart" >}}).
 

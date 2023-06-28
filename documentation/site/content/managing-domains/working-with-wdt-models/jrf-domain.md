@@ -110,7 +110,7 @@ If the domain home directory is corrupted, and you have a recent backup of the d
    $ kubectl -n sample-ns patch domain sample-domain1 --type='JSON' -p='[ { "op" : "replace", "path" : "/spec/restartVersion", "value" : "15" }]'
    ```
 3. After the domain is restarted, check the WebLogic domain configuration to ensure that it has the latest changes.
-   **Note:** If you made any changes that are persisted in the domain home directory after your last backup, you must reapply those changes to the domain home directory.
+   **NOTE**: If you made any changes that are persisted in the domain home directory after your last backup, you must reapply those changes to the domain home directory.
    However, because the operator will reconnect to the same RCU schema, the data stored in the OPSS, MDS, or OWSM tables will be current.
 
 4. Reapply any domain configuration changes persisted to the domain home directory, such as
@@ -135,7 +135,7 @@ In the rare scenario where the domain home directory is corrupted, and you do **
 
 4. The operator will then create a new domain from the existing WDT models and reuse the original RCU schema.
 
-   **NOTE:**
+   **NOTE**:
    All the updates made to the domain after the initial deployment will **not** be available in the recovered domain.
    However, this allows you to access the original RCU schema database without losing all its data.
 
@@ -149,7 +149,7 @@ In the rare scenario where the domain home directory is corrupted, and you do **
 
 #### Disaster recovery for Model in Image domains
 
-**Note**: JRF support in Model in Image domains has been deprecated since operator version 4.1.0; use the Domain on PV [domain home source type](({{< relref "/managing-domains/choosing-a-model/_index.md" >}})) instead.
+**NOTE**: JRF support in Model in Image domains is deprecated in operator version 4.1.0; use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
 
 When a JRF domain is created, an OPSS wallet is stored in the file system where the domain home resides.
 This specific wallet key can be exported and used to create a new domain. There is no way to reuse the original RCU schema without this specific wallet key.

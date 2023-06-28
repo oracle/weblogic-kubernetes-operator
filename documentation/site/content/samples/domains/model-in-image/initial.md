@@ -44,10 +44,10 @@ First, create the secrets needed by the domain. You have to create the WebLogic 
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
+  **NOTE**: Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
-  __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
+  **NOTE**: Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
   be unique and different than the admin password, but this is not required.
 
   ```shell
@@ -153,7 +153,7 @@ If you see an error, then consult [Debugging]({{< relref "/managing-domains/debu
 
 Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller's NodePort.
 
-**Note**: The web application will display a list of any data sources it finds, but at this point, we don't expect it to find any because the model doesn't contain any.
+**NOTE**: The web application will display a list of any data sources it finds, but at this point, we don't expect it to find any because the model doesn't contain any.
 
 - Send a web application request to the load balancer for the application, as shown in the following example.
 

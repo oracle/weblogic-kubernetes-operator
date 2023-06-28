@@ -77,7 +77,7 @@ of the WebLogic domain to update the Oracle Home of the servers.
 
 #### Model in Image without auxiliary images
 
-**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
 
 For Model in Image domains _without_ using auxiliary images:
 
@@ -168,7 +168,7 @@ files in a Domain in Image image so that, when they are both deployed to the sam
 your updated images and original images can interoperate without a
 [domain secret mismatch]({{< relref "/faq/domain-secret-mismatch.md" >}}).
 
-**Notes:**
+**NOTES**:
 
   - You cannot use the `rebase` command alone to update the domain home configuration.
     If you need to update the domain home configuration,

@@ -27,7 +27,7 @@ from the Oracle Container Registry (OCR).
 
 The Oracle Container Registry (OCR) is located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/) and contains images for licensed commercial Oracle software products that may be used in your enterprise for deployment using a container engine and Kubernetes.
 
-OCR contains WebLogic Server images, which have a pre-installed Oracle Home with Oracle WebLogic Server and Coherence. OCR, also, contains Fusion Middleware Infrastructure images, which have a pre-installed Oracle Home with Oracle WebLogic Server, Coherence, Fusion Middleware Control, and Java Required Files (JRF). **Note**: Oracle strongly recommends that you use _only_ images with the latest set of recommended patches applied.
+OCR contains WebLogic Server images, which have a pre-installed Oracle Home with Oracle WebLogic Server and Coherence. OCR, also, contains Fusion Middleware Infrastructure images, which have a pre-installed Oracle Home with Oracle WebLogic Server, Coherence, Fusion Middleware Control, and Java Required Files (JRF). **NOTE**: Oracle strongly recommends that you use _only_ images with the latest set of recommended patches applied.
 
 {{% notice note %}}
 As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
@@ -182,7 +182,7 @@ For example, to use Docker to pull an image from OCR:
         This database is automatically checked when
         you use `docker pull` to obtain images from OCR.
 
-   **Note**: This step is needed only once for each image name (not the tag level).
+   **NOTE**: This step is needed only once for each image name (not the tag level).
    For example, if you accept the terms for `weblogic_cpu`
    in the `middleware` repository, then
    the acceptance applies to all versions of WebLogic CPU images.
@@ -209,7 +209,7 @@ For example, to use Docker to pull an image from OCR:
 
 1. If desired, then you can [inspect](#inspect-images) the content of the image.
 
-__Notes:__
+**NOTES**:
 - If you are using a multi-node Kubernetes cluster,
   or your Kubernetes cluster is remote from your locally created or pulled domain image,
   then additional steps are usually required to ensure that your Kubernetes cluster can access the image.

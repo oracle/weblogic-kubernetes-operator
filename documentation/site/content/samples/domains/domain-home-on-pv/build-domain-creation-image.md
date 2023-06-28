@@ -291,7 +291,7 @@ An image can contain multiple properties files, archive ZIP files, and model YAM
 
 #### Create the image with WIT
 
-**Note**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
+**NOTE**: If you are using JRF in this sample, substitute `JRF` for each occurrence of `WLS` in the following `imagetool` command line.
 
 At this point, you have all of the files needed for image `wdt-domain-image:WLS-v1` staged; they include:
 

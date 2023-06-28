@@ -32,7 +32,7 @@ The following table lists the components of the WebLogic Domain resource convers
 | Secret | `webLogic-webhook-secrets` | Contains the CA certificate and key used to secure the communication between the Kubernetes API server and the REST endpoint of WebLogic domain resource conversion webhook. |
 | The `spec.conversion` stanza in the Domain CRD | | Used internally by the Kubernetes API server to call an external service when a Domain conversion is required. |
 
-**Notes:**
+**NOTES**:
 - The conversion webhook Deployment `webLogic-operator-webhook` uses and requires the same image as the operator image. You can scale the Deployment by increasing the number of replicas, although this is rarely required.
 
 - The conversion webhook Deployment sets the `spec.conversion.strategy` field of the Domain CRD to `Webhook`. It also adds webhook client configuration details such as service name, namespace, path, port, and the self-signed CA certificate used for authentication.
@@ -80,7 +80,7 @@ The following table describes the behavior of different operator `Helm` chart co
 | Helm uninstall | | Operator and webhook deployment uninstalled. |
 | Helm uninstall with `preserveWebhook=true` set during `helm install` | | Operator deployment uninstalled and webhook deployment preserved. |
 
-**Note:**
+**NOTE**:
 A webhook install is skipped if there's already a webhook deployment at the same or newer version. The `helm install` step requires cluster-level permissions to search for existing conversion webhook deployments in all namespaces.
 
 ### Uninstall the conversion webhook

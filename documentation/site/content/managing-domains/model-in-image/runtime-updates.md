@@ -422,7 +422,7 @@ Deletion can be problematic for online updates in two cases:
 In general, complex deletion should be handled by offline updates
       to avoid these problems.
 
-**Note**: Implicitly removing a model's parent type
+**NOTE**: Implicitly removing a model's parent type
       section may sometimes work depending
       on the type of the section. For example, if you have an application
       in the model under `appDeployments:` in a `model.configMap` and you

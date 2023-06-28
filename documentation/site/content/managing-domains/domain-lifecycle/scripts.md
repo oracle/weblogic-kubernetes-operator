@@ -24,4 +24,4 @@ They are helpful when scripting the life cycle of a WebLogic Server domain.
 For more information,
 see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/domain-lifecycle/README.md).
 
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
+**NOTE**: Prior to running these scripts, you must have previously created and deployed the domain.

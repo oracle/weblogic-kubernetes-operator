@@ -30,7 +30,7 @@ with a specific configuration or applications deployed, then you can create the 
 manually to deploy your domain.  This process is documented in [this
 sample]({{< relref "/samples/domains/manually-create-domain/_index.md" >}}).
 
-**Note:** Once you are familiar with the basics, it is recommended to review
+**NOTE**: After you are familiar with the basics, it is recommended to review
 [important considerations]({{< relref "/managing-domains/manage-domains#important-considerations-for-weblogic-domains-in-kubernetes" >}})
 and
 [resource name restrictions]({{< relref "/managing-domains/manage-domains#meet-kubernetes-resource-name-restrictions" >}}).
@@ -60,7 +60,7 @@ See [Domain life cycle]({{< relref "/managing-domains/domain-lifecycle/_index.md
 
 The operator lets you initiate scaling of clusters in various ways:
 
-* Using kubectl to edit a Cluster resource
+* Using `kubectl` to edit a Cluster resource
 * Using Kubernetes `scale` commands
 * Using a Kubernetes Horizontal Pod Autoscaler
 * Using the operator's REST APIs

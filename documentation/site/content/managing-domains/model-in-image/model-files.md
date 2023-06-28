@@ -73,7 +73,7 @@ For a description of model file macro references to secrets and environment vari
       AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
     ```
 
-- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza; see [Requirements for JRF domain types]({{< relref "/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+- A JRF domain type model __must__ contain a `domainInfo.RCUDbInfo` stanza. **NOTE**: JRF support in Model in Image domains is deprecated in operator version 4.1.0; use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
@@ -92,7 +92,7 @@ The loading order within each of these locations is first determined using the c
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
  * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
 
-**Note**: If `configuration.models.modelHome` files are supplied by combining multiple
+**NOTE**: If `configuration.models.modelHome` files are supplied by combining multiple
 [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}),
 then the files in this directory are populated according to their
 [Auxiliary image merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-auxiliary-images" >}})

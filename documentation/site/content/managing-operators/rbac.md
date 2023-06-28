@@ -132,7 +132,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 Assuming that the operator was installed into the Kubernetes Namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
 
-**Note**: The operator names in following table represent the `<role-name>` from the [cluster names](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions) section.
+**NOTE**: The operator names in following table represent the `<role-name>` from the [cluster names](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions) section.
 
 | ClusterRoleBinding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |

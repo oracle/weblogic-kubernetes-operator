@@ -16,7 +16,7 @@ when deploying a domain using a Domain on PV model.  You distribute WDT model fi
 WDT executable using these images, then the operator uses them to
 manage the domain.
 
-**Note:**  These images are _only_ used for creating the domain and will not be used to update the domain.
+**NOTE**:  These images are _only_ used for creating the domain and will not be used to update the domain.
 
 ### Configuration
 
