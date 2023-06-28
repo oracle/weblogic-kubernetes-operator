@@ -312,12 +312,8 @@
         },
         "domainType": {
           "default": "JRF",
-          "description": "WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.",
-          "type": "string",
-          "enum": [
-            "WLS",
-            "JRF"
-          ]
+          "description": "WebLogic Deploy Tooling domain type. Known values are: WLS, RestrictedJRF, JRF. Defaults to JRF.",
+          "type": "string"
         },
         "opss": {
           "description": "Settings for OPSS security.",
@@ -872,10 +868,6 @@
         "resources": {
           "description": "Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
-        },
-        "volumeMode": {
-          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
-          "type": "string"
         }
       }
     },
@@ -901,10 +893,6 @@
         "capacity": {
           "description": "Capacity is the description of the persistent volume\u0027s resources and capacity. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity",
           "$ref": "#/definitions/Map"
-        },
-        "volumeMode": {
-          "description": "VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec.",
-          "type": "string"
         }
       }
     },

@@ -32,8 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.DomainOnPVType.JRF;
-import static oracle.kubernetes.operator.DomainOnPVType.WLS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestCluster;
@@ -43,6 +41,8 @@ import static oracle.kubernetes.operator.DomainSourceType.FROM_MODEL;
 import static oracle.kubernetes.operator.DomainSourceType.IMAGE;
 import static oracle.kubernetes.operator.DomainSourceType.PERSISTENT_VOLUME;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
+import static oracle.kubernetes.operator.WebLogicConstants.JRF;
+import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.contains;

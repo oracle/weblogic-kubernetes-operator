@@ -37,13 +37,13 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.processing.EffectiveAdminServerSpec;
@@ -57,8 +57,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.common.logging.MessageKeys.MAKE_RIGHT_WILL_RETRY;
-import static oracle.kubernetes.operator.DomainOnPVType.JRF;
-import static oracle.kubernetes.operator.DomainOnPVType.WLS;
+import static oracle.kubernetes.operator.WebLogicConstants.JRF;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.DomainValidationMessages.clusterInUse;
@@ -564,7 +563,7 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
    * Returns the domain type when initializeDomainOnPV is specified.
    * @return domain type
    */
-  public DomainOnPVType getInitializeDomainOnPVDomainType() {
+  public String getInitializeDomainOnPVDomainType() {
     return spec.getInitializeDomainOnPVDomainType();
   }
 
@@ -1680,10 +1679,11 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     }
 
     private boolean isDomainTypeWLS() {
-      return spec.getInitializeDomainOnPVDomainType() == WLS;
+      return WebLogicConstants.WLS.equals(spec.getInitializeDomainOnPVDomainType());
     }
 
     private CreateIfNotExists getCreateIfNotExists() {
+
       return spec.getInitializeDomainOnPV().getDomain().getCreateIfNotExists();
     }
 
