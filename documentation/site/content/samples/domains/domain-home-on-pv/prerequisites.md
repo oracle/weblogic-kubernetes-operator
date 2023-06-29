@@ -159,7 +159,7 @@ for the Domain on PV sample.
 
 **NOTE**: The requirements in this section are in addition to [Prerequisites for WLS and JRF domain types](#prerequisites-for-wls-and-jrf-domain-types).
 
-A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}) in the user documentation. You must perform all these steps _before_ you create your domain.
+A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}) in the user documentation. You must perform all these steps _before_ you create your domain.
 
 ##### Set up and initialize an infrastructure database
 
@@ -233,4 +233,4 @@ For example, in this sample:
         rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
 ```
 
-For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md" >}}).
+For important JRF domain information, refer to [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}).

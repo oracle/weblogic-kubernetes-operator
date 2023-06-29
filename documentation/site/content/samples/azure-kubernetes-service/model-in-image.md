@@ -298,7 +298,7 @@ The model file:
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
         - The `weblogic-credentials` is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.
 
-A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) files in the Model in Image user documentation.
+A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete description of Model in Images model file naming conventions, file loading order, and macro syntax, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) files in the Model in Image user documentation.
 
 ##### Creating the image with WIT
 
