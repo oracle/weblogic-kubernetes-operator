@@ -44,7 +44,7 @@ They compactly define a WebLogic domain using model files, variable properties f
 For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
-and [Working with WDT Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and [Working with WDT Model files]({{< relref "/managing-domains/domain-on-pv/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 

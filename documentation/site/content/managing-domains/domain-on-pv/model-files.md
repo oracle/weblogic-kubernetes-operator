@@ -1,7 +1,7 @@
 +++
 title = "Working with WDT model files"
 date = 2020-03-11T16:45:16-05:00
-weight = 30
+weight = 4
 pre = "<b> </b>"
 description = "Learn about model file requirements, macros, and loading order."
 +++

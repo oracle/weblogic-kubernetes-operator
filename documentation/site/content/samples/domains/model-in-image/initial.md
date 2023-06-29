@@ -40,7 +40,7 @@ In this section, you will deploy the domain resource with the new auxliliary ima
 
 #### Secrets
 
-First, create the secrets needed by the domain. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
+First, create the secrets needed by the domain. You have to create the WebLogic credentials secret and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/domain-on-pv/model-files.md" >}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 

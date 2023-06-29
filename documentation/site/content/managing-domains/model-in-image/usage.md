@@ -108,7 +108,7 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
     updates to models supplied by one of these methods.
 
 For more information about model file syntax,
-see [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+see [Working with WDT model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
 ### Optional WDT model ConfigMap
 
@@ -129,7 +129,7 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-See [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
+See [Working with WDT model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
 
 
 ### Required runtime encryption secret
@@ -161,7 +161,7 @@ Corresponding Domain YAML file snippet:
 
 ### Secrets for model macros
 
-Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
 ### Domain fields
 
