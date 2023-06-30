@@ -665,7 +665,7 @@ public class ItFmwDomainInPvUserCreateRcu {
 
   /**
    * Export the OPSS wallet file secret of Fmw domain from the previous run
-   * CrateIfNotExists set to domainAndRCU
+   * CrateIfNotExists set to DomainAndRCU
    * Use this OPSS wallet file secret to create Fmw domain on PV to connect to the same database
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */

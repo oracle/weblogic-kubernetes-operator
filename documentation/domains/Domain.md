@@ -302,7 +302,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `createIfNotExists` | string | Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain. |
+| `createIfNotExists` | string | Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: Domain, DomainAndRCU. Defaults to Domain. |
 | `domainCreationConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain creation images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Known values are: WLS, RestrictedJRF, JRF. Defaults to JRF. |

@@ -89,7 +89,7 @@ In the domain resource YAML file, you can provide two secrets in the `opss` sect
         initializeDomainOnPV:
         ...
            domain:
-              createIfNotExists: domain
+              createIfNotExists: Domain
               domainType: JRF
               ...
               opss:

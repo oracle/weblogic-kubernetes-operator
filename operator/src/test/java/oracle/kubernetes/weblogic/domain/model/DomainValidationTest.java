@@ -1519,7 +1519,7 @@ public class DomainValidationTest extends DomainValidationTestBase {
 
     assertThat(domain.getValidationFailures(resourceLookup),
         contains(stringContainsInOrder("spec.configuration.initializeDomainOnPV.domain.createIfNotExists",
-            "domainAndRCU", "WLS")));
+            "DomainAndRCU", "WLS")));
   }
 
   @Test

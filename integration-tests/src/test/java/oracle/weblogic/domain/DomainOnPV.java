@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class DomainOnPV {
 
   @ApiModelProperty("Specifies if the operator should create only the domain or the domain with RCU"
-      + " (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain.")
+      + " (for JRF-based domains). Legal values: Domain, DomainAndRCU. Defaults to Domain.")
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
   @ApiModelProperty("WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.")

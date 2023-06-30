@@ -320,12 +320,12 @@
           "$ref": "#/definitions/Opss"
         },
         "createIfNotExists": {
-          "default": "domain",
-          "description": "Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain.",
+          "default": "Domain",
+          "description": "Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: Domain, DomainAndRCU. Defaults to Domain.",
           "type": "string",
           "enum": [
-            "domain",
-            "domainAndRCU"
+            "Domain",
+            "DomainAndRCU"
           ]
         }
       }
