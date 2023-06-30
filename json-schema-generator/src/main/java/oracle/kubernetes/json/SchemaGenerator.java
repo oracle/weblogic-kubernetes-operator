@@ -532,14 +532,14 @@ public class SchemaGenerator {
 
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (isBoolean(type)) {
+      if (isString(type) || type.getName().equals("io.kubernetes.client.custom.Quantity")) {
+        result.put(TYPE, STRING);
+      } else if (isBoolean(type)) {
         result.put(TYPE, BOOLEAN);
       } else if (isScalarNumeric(type)) {
         result.put(TYPE, INTEGER);
       } else if (isFloatingNumeric(type)) {
         result.put(TYPE, NUMBER);
-      } else if (isString(type)) {
-        result.put(TYPE, STRING);
       } else if (type.isEnum()) {
         generateEnumTypeIn(result, (Class<? extends Enum<?>>) type);
       } else if (type.isArray()) {
