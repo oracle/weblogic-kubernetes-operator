@@ -340,16 +340,7 @@ openAPIV3Schema:
                         type: object
                         properties:
                           divisor:
-                            type: object
-                            properties:
-                              number:
-                                type: number
-                              format:
-                                type: string
-                                enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                            type: string
                           resource:
                             type: string
                           containerName:
@@ -1069,16 +1060,7 @@ openAPIV3Schema:
                                             type: object
                                             properties:
                                               divisor:
-                                                type: object
-                                                properties:
-                                                  number:
-                                                    type: number
-                                                  format:
-                                                    type: string
-                                                    enum:
-                                                      - DECIMAL_EXPONENT
-                                                      - DECIMAL_SI
-                                                      - BINARY_SI
+                                                type: string
                                               resource:
                                                 type: string
                                               containerName:
@@ -1207,16 +1189,7 @@ openAPIV3Schema:
                         type: object
                         properties:
                           sizeLimit:
-                            type: object
-                            properties:
-                              number:
-                                type: number
-                              format:
-                                type: string
-                                enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                            type: string
                           medium:
                             type: string
                       glusterfs:
@@ -1305,16 +1278,7 @@ openAPIV3Schema:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: number
-                                        format:
-                                          type: string
-                                          enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -1602,16 +1566,7 @@ openAPIV3Schema:
                             type: object
                             properties:
                               divisor:
-                                type: object
-                                properties:
-                                  number:
-                                    type: number
-                                  format:
-                                    type: string
-                                    enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                type: string
                               resource:
                                 type: string
                               containerName:
@@ -1992,16 +1947,7 @@ openAPIV3Schema:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: number
-                                        format:
-                                          type: string
-                                          enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -2608,16 +2554,7 @@ openAPIV3Schema:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: number
-                                        format:
-                                          type: string
-                                          enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -4047,16 +3984,7 @@ openAPIV3Schema:
                                               type: object
                                               properties:
                                                 divisor:
-                                                  type: object
-                                                  properties:
-                                                    number:
-                                                      type: number
-                                                    format:
-                                                      type: string
-                                                      enum:
-                                                        - DECIMAL_EXPONENT
-                                                        - DECIMAL_SI
-                                                        - BINARY_SI
+                                                  type: string
                                                 resource:
                                                   type: string
                                                 containerName:
@@ -4185,16 +4113,7 @@ openAPIV3Schema:
                           type: object
                           properties:
                             sizeLimit:
-                              type: object
-                              properties:
-                                number:
-                                  type: number
-                                format:
-                                  type: string
-                                  enum:
-                                    - DECIMAL_EXPONENT
-                                    - DECIMAL_SI
-                                    - BINARY_SI
+                              type: string
                             medium:
                               type: string
                         glusterfs:
@@ -4283,16 +4202,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -4581,16 +4491,7 @@ openAPIV3Schema:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -4971,16 +4872,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -5587,16 +5479,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -7028,16 +6911,7 @@ openAPIV3Schema:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: number
-                                              format:
-                                                type: string
-                                                enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -7166,16 +7040,7 @@ openAPIV3Schema:
                     type: object
                     properties:
                       sizeLimit:
-                        type: object
-                        properties:
-                          number:
-                            type: number
-                          format:
-                            type: string
-                            enum:
-                              - DECIMAL_EXPONENT
-                              - DECIMAL_SI
-                              - BINARY_SI
+                        type: string
                       medium:
                         type: string
                   glusterfs:
@@ -7264,16 +7129,7 @@ openAPIV3Schema:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -7560,16 +7416,7 @@ openAPIV3Schema:
                         type: object
                         properties:
                           divisor:
-                            type: object
-                            properties:
-                              number:
-                                type: number
-                              format:
-                                type: string
-                                enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                            type: string
                           resource:
                             type: string
                           containerName:
@@ -7947,16 +7794,7 @@ openAPIV3Schema:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -8563,16 +8401,7 @@ openAPIV3Schema:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -9909,16 +9738,7 @@ openAPIV3Schema:
                                               type: object
                                               properties:
                                                 divisor:
-                                                  type: object
-                                                  properties:
-                                                    number:
-                                                      type: number
-                                                    format:
-                                                      type: string
-                                                      enum:
-                                                        - DECIMAL_EXPONENT
-                                                        - DECIMAL_SI
-                                                        - BINARY_SI
+                                                  type: string
                                                 resource:
                                                   type: string
                                                 containerName:
@@ -10047,16 +9867,7 @@ openAPIV3Schema:
                           type: object
                           properties:
                             sizeLimit:
-                              type: object
-                              properties:
-                                number:
-                                  type: number
-                                format:
-                                  type: string
-                                  enum:
-                                    - DECIMAL_EXPONENT
-                                    - DECIMAL_SI
-                                    - BINARY_SI
+                              type: string
                             medium:
                               type: string
                         glusterfs:
@@ -10145,16 +9956,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -10443,16 +10245,7 @@ openAPIV3Schema:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -10833,16 +10626,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -11449,16 +11233,7 @@ openAPIV3Schema:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                              - DECIMAL_EXPONENT
-                                              - DECIMAL_SI
-                                              - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:

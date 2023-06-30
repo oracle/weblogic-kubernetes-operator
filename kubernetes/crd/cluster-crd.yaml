@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: ffde049cbfc1e4ed71b15848d7cfcc06b79619f6b7e76bd564d8466c3f045e9f
+    weblogic.sha256: f19085ef94808bd2579ce399e5958ea0607b8877fc2fd2dbe78151b3b240cc49
   name: clusters.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -659,16 +659,7 @@ spec:
                                               type: object
                                               properties:
                                                 divisor:
-                                                  type: object
-                                                  properties:
-                                                    number:
-                                                      type: integer
-                                                    format:
-                                                      type: string
-                                                      enum:
-                                                      - DECIMAL_EXPONENT
-                                                      - DECIMAL_SI
-                                                      - BINARY_SI
+                                                  type: string
                                                 resource:
                                                   type: string
                                                 containerName:
@@ -797,16 +788,7 @@ spec:
                           type: object
                           properties:
                             sizeLimit:
-                              type: object
-                              properties:
-                                number:
-                                  type: integer
-                                format:
-                                  type: string
-                                  enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                              type: string
                             medium:
                               type: string
                         glusterfs:
@@ -895,16 +877,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -1191,16 +1164,7 @@ spec:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: integer
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -1540,16 +1504,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -2156,16 +2111,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:

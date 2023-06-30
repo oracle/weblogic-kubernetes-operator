@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 178adc9415467dab4785cad74e3af8193024aa29ee181df4b22224fbe7866c0e
+    weblogic.sha256: 84402da7f071cbcf0e5933f9f71f58a22199026bb60d7cd6100fde377bd4bb7b
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -802,16 +802,7 @@ spec:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: integer
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -1561,16 +1552,7 @@ spec:
                                                   type: object
                                                   properties:
                                                     divisor:
-                                                      type: object
-                                                      properties:
-                                                        number:
-                                                          type: integer
-                                                        format:
-                                                          type: string
-                                                          enum:
-                                                          - DECIMAL_EXPONENT
-                                                          - DECIMAL_SI
-                                                          - BINARY_SI
+                                                      type: string
                                                     resource:
                                                       type: string
                                                     containerName:
@@ -1699,16 +1681,7 @@ spec:
                               type: object
                               properties:
                                 sizeLimit:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: integer
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 medium:
                                   type: string
                             glusterfs:
@@ -1797,16 +1770,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: integer
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -2094,16 +2058,7 @@ spec:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: integer
-                                        format:
-                                          type: string
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -2443,16 +2398,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: integer
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -3059,16 +3005,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: integer
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -3920,16 +3857,7 @@ spec:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: integer
-                                        format:
-                                          type: string
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -4646,16 +4574,7 @@ spec:
                                               type: object
                                               properties:
                                                 divisor:
-                                                  type: object
-                                                  properties:
-                                                    number:
-                                                      type: integer
-                                                    format:
-                                                      type: string
-                                                      enum:
-                                                      - DECIMAL_EXPONENT
-                                                      - DECIMAL_SI
-                                                      - BINARY_SI
+                                                  type: string
                                                 resource:
                                                   type: string
                                                 containerName:
@@ -4784,16 +4703,7 @@ spec:
                           type: object
                           properties:
                             sizeLimit:
-                              type: object
-                              properties:
-                                number:
-                                  type: integer
-                                format:
-                                  type: string
-                                  enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                              type: string
                             medium:
                               type: string
                         glusterfs:
@@ -4882,16 +4792,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -5178,16 +5079,7 @@ spec:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: integer
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -5527,16 +5419,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -6143,16 +6026,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -7478,16 +7352,7 @@ spec:
                                                     type: object
                                                     properties:
                                                       divisor:
-                                                        type: object
-                                                        properties:
-                                                          number:
-                                                            type: integer
-                                                          format:
-                                                            type: string
-                                                            enum:
-                                                            - DECIMAL_EXPONENT
-                                                            - DECIMAL_SI
-                                                            - BINARY_SI
+                                                        type: string
                                                       resource:
                                                         type: string
                                                       containerName:
@@ -7616,16 +7481,7 @@ spec:
                                 type: object
                                 properties:
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      number:
-                                        type: integer
-                                      format:
-                                        type: string
-                                        enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                    type: string
                                   medium:
                                     type: string
                               glusterfs:
@@ -7714,16 +7570,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: integer
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -8012,16 +7859,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: integer
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -8361,16 +8199,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: integer
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -8977,16 +8806,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: integer
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -10302,16 +10122,7 @@ spec:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -11031,16 +10842,7 @@ spec:
                                                   type: object
                                                   properties:
                                                     divisor:
-                                                      type: object
-                                                      properties:
-                                                        number:
-                                                          type: number
-                                                        format:
-                                                          type: string
-                                                          enum:
-                                                          - DECIMAL_EXPONENT
-                                                          - DECIMAL_SI
-                                                          - BINARY_SI
+                                                      type: string
                                                     resource:
                                                       type: string
                                                     containerName:
@@ -11169,16 +10971,7 @@ spec:
                               type: object
                               properties:
                                 sizeLimit:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 medium:
                                   type: string
                             glusterfs:
@@ -11267,16 +11060,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: number
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -11564,16 +11348,7 @@ spec:
                                   type: object
                                   properties:
                                     divisor:
-                                      type: object
-                                      properties:
-                                        number:
-                                          type: number
-                                        format:
-                                          type: string
-                                          enum:
-                                          - DECIMAL_EXPONENT
-                                          - DECIMAL_SI
-                                          - BINARY_SI
+                                      type: string
                                     resource:
                                       type: string
                                     containerName:
@@ -11954,16 +11729,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: number
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -12570,16 +12336,7 @@ spec:
                                         type: object
                                         properties:
                                           divisor:
-                                            type: object
-                                            properties:
-                                              number:
-                                                type: number
-                                              format:
-                                                type: string
-                                                enum:
-                                                - DECIMAL_EXPONENT
-                                                - DECIMAL_SI
-                                                - BINARY_SI
+                                            type: string
                                           resource:
                                             type: string
                                           containerName:
@@ -14009,16 +13766,7 @@ spec:
                                                     type: object
                                                     properties:
                                                       divisor:
-                                                        type: object
-                                                        properties:
-                                                          number:
-                                                            type: number
-                                                          format:
-                                                            type: string
-                                                            enum:
-                                                            - DECIMAL_EXPONENT
-                                                            - DECIMAL_SI
-                                                            - BINARY_SI
+                                                        type: string
                                                       resource:
                                                         type: string
                                                       containerName:
@@ -14147,16 +13895,7 @@ spec:
                                 type: object
                                 properties:
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      number:
-                                        type: number
-                                      format:
-                                        type: string
-                                        enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                    type: string
                                   medium:
                                     type: string
                               glusterfs:
@@ -14245,16 +13984,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -14543,16 +14273,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -14933,16 +14654,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -15549,16 +15261,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -16990,16 +16693,7 @@ spec:
                                               type: object
                                               properties:
                                                 divisor:
-                                                  type: object
-                                                  properties:
-                                                    number:
-                                                      type: number
-                                                    format:
-                                                      type: string
-                                                      enum:
-                                                      - DECIMAL_EXPONENT
-                                                      - DECIMAL_SI
-                                                      - BINARY_SI
+                                                  type: string
                                                 resource:
                                                   type: string
                                                 containerName:
@@ -17128,16 +16822,7 @@ spec:
                           type: object
                           properties:
                             sizeLimit:
-                              type: object
-                              properties:
-                                number:
-                                  type: number
-                                format:
-                                  type: string
-                                  enum:
-                                  - DECIMAL_EXPONENT
-                                  - DECIMAL_SI
-                                  - BINARY_SI
+                              type: string
                             medium:
                               type: string
                         glusterfs:
@@ -17226,16 +16911,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -17522,16 +17198,7 @@ spec:
                               type: object
                               properties:
                                 divisor:
-                                  type: object
-                                  properties:
-                                    number:
-                                      type: number
-                                    format:
-                                      type: string
-                                      enum:
-                                      - DECIMAL_EXPONENT
-                                      - DECIMAL_SI
-                                      - BINARY_SI
+                                  type: string
                                 resource:
                                   type: string
                                 containerName:
@@ -17909,16 +17576,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -18525,16 +18183,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -19871,16 +19520,7 @@ spec:
                                                     type: object
                                                     properties:
                                                       divisor:
-                                                        type: object
-                                                        properties:
-                                                          number:
-                                                            type: number
-                                                          format:
-                                                            type: string
-                                                            enum:
-                                                            - DECIMAL_EXPONENT
-                                                            - DECIMAL_SI
-                                                            - BINARY_SI
+                                                        type: string
                                                       resource:
                                                         type: string
                                                       containerName:
@@ -20009,16 +19649,7 @@ spec:
                                 type: object
                                 properties:
                                   sizeLimit:
-                                    type: object
-                                    properties:
-                                      number:
-                                        type: number
-                                      format:
-                                        type: string
-                                        enum:
-                                        - DECIMAL_EXPONENT
-                                        - DECIMAL_SI
-                                        - BINARY_SI
+                                    type: string
                                   medium:
                                     type: string
                               glusterfs:
@@ -20107,16 +19738,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -20405,16 +20027,7 @@ spec:
                                     type: object
                                     properties:
                                       divisor:
-                                        type: object
-                                        properties:
-                                          number:
-                                            type: number
-                                          format:
-                                            type: string
-                                            enum:
-                                            - DECIMAL_EXPONENT
-                                            - DECIMAL_SI
-                                            - BINARY_SI
+                                        type: string
                                       resource:
                                         type: string
                                       containerName:
@@ -20795,16 +20408,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
@@ -21411,16 +21015,7 @@ spec:
                                           type: object
                                           properties:
                                             divisor:
-                                              type: object
-                                              properties:
-                                                number:
-                                                  type: number
-                                                format:
-                                                  type: string
-                                                  enum:
-                                                  - DECIMAL_EXPONENT
-                                                  - DECIMAL_SI
-                                                  - BINARY_SI
+                                              type: string
                                             resource:
                                               type: string
                                             containerName:
