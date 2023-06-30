@@ -405,7 +405,7 @@ in the directory specified in `domain.spec.domainHome`, and the application dire
 
 1. If the underlying storage volume is dynamically allocated, then delete the PVC with `ReclaimPolcy: delete` and recreate the PVC.
 2. Attach a pod to the shared volume and then access the pod to remove the contents.  See the sample script,
-[Domain on PV helper script](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh).
+[PV and PVC helper script](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh).
 3. Delete the domain resource.
 
    ```
