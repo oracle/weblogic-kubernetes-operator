@@ -29,6 +29,8 @@ For information on how to start, stop, restart, and scale WebLogic Server instan
   - [`waitForDomain.sh`](#waitfordomainsh)
 - [Examine, change permissions or delete PV contents](#examine-change-or-delete-pv-contents)
   - [`pv-pvc-helper.sh`](#pv-pvc-helpersh)  
+- [OPSS Wallet utility](#opss-wallet-utility)
+  - [`opss-wallet.sh`](#opss-walletsh)  
 
 ### Prerequisites
 
@@ -315,6 +317,8 @@ $ kubectl delete pod pvhelper -n <namespace>
 ```
 
 ### OPSS Wallet utility
+
+#### `opss-wallet.sh` 
 
 The OPSS wallet utility is a helper script for JRF type domains that can save an OPSS key
 wallet from a running domain's introspector configmap to a file, and/or
