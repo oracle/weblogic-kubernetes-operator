@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -522,12 +522,12 @@ public class SchemaGenerator {
 
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) {
+      if (isString(type) || type.getName().equals("io.kubernetes.client.custom.Quantity")) {
+        result.put("type", "string");
+      } else if (type.equals(Boolean.class) || type.equals(Boolean.TYPE)) {
         result.put("type", "boolean");
       } else if (isNumeric(type)) {
         result.put("type", "number");
-      } else if (isString(type)) {
-        result.put("type", "string");
       } else if (type.isEnum()) {
         generateEnumTypeIn(result, (Class<? extends Enum<?>>) type);
       } else if (type.isArray()) {
