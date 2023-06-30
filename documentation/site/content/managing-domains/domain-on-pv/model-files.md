@@ -1,7 +1,7 @@
 +++
 title = "Working with WDT model files"
 date = 2020-03-11T16:45:16-05:00
-weight = 30
+weight = 4
 pre = "<b> </b>"
 description = "Learn about model file requirements, macros, and loading order."
 +++
@@ -103,7 +103,7 @@ to create the domain.  The final merged model must be valid, both syntactically 
 the deployment model is Model in Image, then the merged model is saved internally.
 
 
-**Note**: If the WDT model files in the image source are supplied by combining multiple images ,
+**NOTE**: If the WDT model files in the image source are supplied by combining multiple images ,
 then the files in this directory are populated according to their
 [Merge order]({{< relref "/managing-domains/model-in-image/auxiliary-images#multiple-images" >}})
 before the loading order is determined.

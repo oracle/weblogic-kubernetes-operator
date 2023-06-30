@@ -20,10 +20,6 @@ public class PersistentVolumeClaimSpec {
       + " Empty value means that this volume does not belong to any StorageClass.")
   private String storageClassName;
 
-  @Description("VolumeMode defines if a volume is intended to be used with a formatted filesystem "
-      + "or to remain in raw block state. Value of Filesystem is implied when not included in spec.")
-  private String volumeMode;
-
   @Description("VolumeName is the binding reference to the PersistentVolume backing this claim.")
   private String volumeName;
 
@@ -45,15 +41,6 @@ public class PersistentVolumeClaimSpec {
     return this;
   }
 
-  public String getVolumeMode() {
-    return volumeMode;
-  }
-
-  public PersistentVolumeClaimSpec volumeMode(String volumeMode) {
-    this.volumeMode = volumeMode;
-    return this;
-  }
-
   public String getVolumeName() {
     return volumeName;
   }
@@ -69,7 +56,6 @@ public class PersistentVolumeClaimSpec {
         new ToStringBuilder(this)
             .append("resources", resources)
             .append("storageClassName", storageClassName)
-            .append("volumeMode", volumeMode)
             .append("volumeName", volumeName);
 
     return builder.toString();
@@ -80,7 +66,6 @@ public class PersistentVolumeClaimSpec {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(resources)
         .append(storageClassName)
-        .append(volumeMode)
         .append(volumeName);
 
     return builder.toHashCode();
@@ -99,7 +84,6 @@ public class PersistentVolumeClaimSpec {
         new EqualsBuilder()
             .append(resources, rhs.resources)
             .append(storageClassName, rhs.storageClassName)
-            .append(volumeMode, rhs.volumeMode)
             .append(volumeName, rhs.volumeName);
 
     return builder.isEquals();

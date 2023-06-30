@@ -41,7 +41,7 @@ The operator registers two Kubernetes custom resource definitions. The first is 
 
 The following diagram shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:
 
-{{< img "High level architecture" "images/high-level-architecture.png" >}}
+{{< img "High-level architecture" "images/high-level-architecture.png" >}}
 
 The Kubernetes cluster has several namespaces. Components may be deployed into namespaces as follows:
 

@@ -23,7 +23,6 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
-import oracle.kubernetes.operator.DomainOnPVType;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LogHomeLayoutType;
@@ -936,7 +935,7 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(null);
   }
 
-  DomainOnPVType getInitializeDomainOnPVDomainType() {
+  String getInitializeDomainOnPVDomainType() {
     return Optional.ofNullable(getInitializeDomainOnPV())
         .map(InitializeDomainOnPV::getDomain)
         .map(DomainOnPV::getDomainType)

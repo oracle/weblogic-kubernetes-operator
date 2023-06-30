@@ -25,7 +25,7 @@ See [Prepare for installation]({{<relref "/managing-operators/preparation.md">}}
 By default, installing the operator also configures a deployment and supporting resources for the
 [conversion webhook]({{<relref "/managing-operators/conversion-webhook">}})
 and deploys the conversion webhook. The conversion webhook deployment is required for operator version 4.x.
-When a conversion webhook is already installed, skip the conversion webhook installation by setting 
+When a conversion webhook is already installed, skip the conversion webhook installation by setting
 the Helm configuration value `operatorOnly` to `true` in the `helm install` command.
 For more details, see [install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook">}}).
 {{% /notice %}}
@@ -120,7 +120,7 @@ You can verify the operator installation by examining the output from the `helm 
 To check if the operator is deployed and running,
 see [Troubleshooting]({{<relref "/managing-operators/troubleshooting#check-the-operator-deployment">}}).
 
-**Notes**:
+**NOTES**:
 - In this example, you have not set the `kubernetesPlatform`, but this may be required
   for your environment.
   See [Determine the platform setting]({{<relref "/managing-operators/preparation#determine-the-platform-setting">}}).
@@ -135,7 +135,7 @@ see [Troubleshooting]({{<relref "/managing-operators/troubleshooting#check-the-o
 
 By default, the WebLogic domain resource conversion webhook is automatically installed the first time an operator is installed in a cluster and removed the first time an operator is uninstalled.
 
-**Note:** If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
+**NOTE**: If you are using multiple operators, or want to be able to create or alter domains even when no operators are running, then you will need to fine tune this life cycle.
 For conversion webhook installation details, see [Install the conversion webhook]({{<relref "/managing-operators/conversion-webhook#install-the-conversion-webhook" >}}).
 
 ### Set up domain namespaces

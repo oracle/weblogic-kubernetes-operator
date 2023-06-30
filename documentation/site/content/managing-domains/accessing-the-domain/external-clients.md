@@ -337,7 +337,7 @@ Although [Kubernetes `NodePorts`](#kubernetes-nodeports) are good for use in dem
 
 #### `NodePort` steps
 
-Here are the high level steps:
+Here are the high-level steps:
 
 - Review [`NodePort` warnings](#nodeport-warnings).
 
@@ -455,7 +455,7 @@ is sent from a source WebLogic Server to a target WebLogic Server in a different
 RMI forwarding may be needed when transaction server participants are not able to establish
 connection directly with one another.
 
-For example, if a cross-domain transaction communication has failed, and messages such as the 
+For example, if a cross-domain transaction communication has failed, and messages such as the
 following can be found in the WebLogic server log files:
 
 `<BEA-111015> <The commit operation for transaction BEA1-0000993203DB6CDB7DE9 timed out after 30 seconds.>`
@@ -478,8 +478,8 @@ through the proxy.
 In each source WebLogic Server domain, specify the URL for the proxy configured for each target
 WebLogic Server domain:
 
-- Set the Java system property as `weblogic.rjvm.domain.proxy.<prefix>` where `<prefix>` is the 
-  domain UID of the target WebLogic Server domain. 
+- Set the Java system property as `weblogic.rjvm.domain.proxy.<prefix>` where `<prefix>` is the
+  domain UID of the target WebLogic Server domain.
   Multiple Java system properties with different values of `<prefix>` can be specified.
 - For WebLogic Server domains running in Kubernetes managed by the operator, you can set this property by including the system property in the `JAVA_OPTIONS`
   [Domain environment variable]({{< relref "/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.

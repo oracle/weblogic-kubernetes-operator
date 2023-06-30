@@ -25,7 +25,7 @@ Following is an example configuration to change the liveness probe interval, tim
       failureThreshold: 3
 ```
 
-**Note**: The liveness probe success threshold value must always be 1. See [Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) in the Kubernetes documentation for more details.
+**NOTE**: The liveness probe success threshold value must always be 1. See [Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) in the Kubernetes documentation for more details.
 
 After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource, or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the following configuration examples). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
 
@@ -34,9 +34,9 @@ After the liveness probe script (livenessProbe.sh) performs its normal checks, y
 * The `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable takes precedence over the `spec.livenessProbeCustomScript` domain resource attribute when both are configured, and, like all domain resource environment variables, can be customized on a per domain, per cluster, or even a per server basis.
 * Changes to either the domain resource attribute or the environment variable on a running domain take effect on running WebLogic Server instance Pods when such Pods are restarted (rolled).
 
-**Note**: The liveness probe custom script option is for advanced usage only and its value is not set by default. If the specified script is not found, then the custom script is ignored and the existing liveness script will perform its normal checks.
+**NOTE**: The liveness probe custom script option is for advanced usage only and its value is not set by default. If the specified script is not found, then the custom script is ignored and the existing liveness script will perform its normal checks.
 
-**Note**: Oracle recommends against having any long running calls (for example, any network calls or executing wlst.sh) in the liveness probe custom script.
+**NOTE**: Oracle recommends against having any long running calls (for example, any network calls or executing wlst.sh) in the liveness probe custom script.
 
 Use the following configuration to specify a liveness probe custom script using the `livenessProbeCustomScript` domain resource field.
 ```yaml
@@ -82,7 +82,7 @@ The following operator-populated environment variables are available for use in 
 
 WebLogic Server provides a self-health monitoring feature to improve the reliability and availability of server instances in a domain. If an individual subsystem determines that it can no longer operate consistently and reliably, it registers its health state as `FAILED` with the host server.  Each WebLogic Server instance, in turn, checks the health state of its registered subsystems to determine its overall viability. If one or more of its critical subsystems have reached the `FAILED` state, the server instance marks its health state as `FAILED` to indicate that it cannot reliably host an application.  
 
-Using Node Manager, server self-health monitoring enables the automatic restart of the failed server instances. The operator configures the Node Manager to restart the failed server a maximum of two times within a one-hour interval. It does this by setting the value of the `RestartMax` property (in the [server startup properties](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244) file) to `2` and the value of the `RestartInterval` property to `3600`. You can change the number of times the Node Manager will attempt to restart the server in a given interval by setting the `RESTART_MAX` and `RESTART_INTERVAL` environment variables in the domain resource using the `env` attribute under the `serverPod` element. 
+Using Node Manager, server self-health monitoring enables the automatic restart of the failed server instances. The operator configures the Node Manager to restart the failed server a maximum of two times within a one-hour interval. It does this by setting the value of the `RestartMax` property (in the [server startup properties](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/java_nodemgr.html#GUID-26475256-2830-434B-B31F-A2D06F48B244) file) to `2` and the value of the `RestartInterval` property to `3600`. You can change the number of times the Node Manager will attempt to restart the server in a given interval by setting the `RESTART_MAX` and `RESTART_INTERVAL` environment variables in the domain resource using the `env` attribute under the `serverPod` element.
 
 Use the following configuration to specify the number of times the Node Manager can attempt to restart the server within a given interval using the `RESTART_MAX` and `RESTART_INTERVAL` environment variables.
 ```yaml

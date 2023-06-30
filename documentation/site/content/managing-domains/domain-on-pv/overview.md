@@ -18,7 +18,7 @@ The initial domain topology and resources are described using [WebLogic Deploy T
 **NOTE**: The `initializeDomainOnPV` section provides a **one time only** domain home initialization.
 The operator creates the domain when the domain resource is first deployed. After the domain is created,
 this section is ignored. Subsequent domain lifecycle updates must be controlled by
-the WebLogic Server Administration Console, the WebLogic Remote Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High level use case](#high-level-use-case).
+the WebLogic Server Administration Console, the WebLogic Remote Console, WebLogic Scripting Tool (WLST), or other mechanisms.  See the [High-level use case](#high-level-use-case).
 
 The `initializeDomainOnPv` section:
 
@@ -26,7 +26,7 @@ The `initializeDomainOnPv` section:
 - Creates the RCU schema, if needed.
 - Creates the WebLogic domain home on the persistent volume based on the provided WDT models.
 
-### High level use case
+### High-level use case
 
 The typical Domain on PV use case is for an application life cycle that requires persisting changes to the permanent file system.
 
@@ -44,7 +44,7 @@ They compactly define a WebLogic domain using model files, variable properties f
 For more information about the model format
 and its integration,
 see [Usage]({{< relref "/managing-domains/domain-on-pv/usage.md" >}})
-and [Working with WDT Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and [Working with WDT Model files]({{< relref "/managing-domains/domain-on-pv/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 

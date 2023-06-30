@@ -7,9 +7,15 @@ description: "Sample for creating a WebLogic domain home on a PV for deploying t
 
 {{< table_of_contents >}}
 
+{{% notice note %}}
+
+**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and then build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}).
+If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
+{{% /notice %}}
+
 ### Overview
 
-The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (Domain on PV). This involves:
+The sample demonstrates setting up a WebLogic domain with a domain home on a Kubernetes PersistentVolume (PV) (**Domain on PV**). This involves:
 
   - Using the [domain creation image](#domain-creation-image) that you previously built.
   - Creating secrets for the domain.
@@ -19,13 +25,8 @@ The sample demonstrates setting up a WebLogic domain with a domain home on a Kub
     - Defines PV and PVC metadata and specifications in the `spec.configuration.initializeDomainOnPV` section to create a PV and PVC (optional).
 
 
-{{% notice note %}}
-**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/domain-home-on-pv/prerequisites.md" >}}) and then build a Domain on PV `domain creation image` by completing the steps in [Build the domain creation image]({{< relref "/samples/domains/domain-home-on-pv/build-domain-creation-image#build-the-domain-creation-image" >}}).
-If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
-{{% /notice %}}
 
-
-__PV and PVC Notes:__
+**PV and PVC Notes:**
 - The specifications of PersistentVolume and PersistentVolumeClaim defined in the `spec.configuration.initializeDomainOnPV` section of the Domain resource YAML file are environment specific and often require information from your Kubernetes cluster administrator to provide the information. See [Persistent volume and Persistent Volume Claim]({{< relref "/managing-domains/domain-on-pv/usage#persistent-volume-and-persistent-volume-claim" >}}) in the user documentation for more details.
 - You must use a storage provider that supports the `ReadWriteMany` option.
 - This sample will automatically set the owner of all files in the domain home on the persistent
@@ -53,11 +54,11 @@ In this section, you will define the PV and PVC configuration and reference the 
 
 #### Secrets
 
-First, create the secrets needed by both WLS and JRF type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/working-with-wdt-models/model-files/_index.md" >}}).
+First, create the secrets needed by both WLS and JRF type model domains. You have to create the "WebLogic credentials secret" and any other secrets that are referenced from the macros in the WDT model file. For more details about using macros in the WDT model files, see [Working with the WDT model files]({{< relref "managing-domains/domain-on-pv/model-files.md" >}}).
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
+  **NOTE**: Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
   password should contain at least seven letters plus one digit.
 
   ```shell
@@ -81,7 +82,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
-  __NOTE__: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
+  **NOTE**: Replace `MY_RCU_SCHEMA_PASSWORD` with the RCU schema password
   that you chose in the prequisite steps when
   [setting up JRF]({{< relref "/samples/domains/domain-home-on-pv/prerequisites#additional-prerequisites-for-jrf-domains" >}}).
 
@@ -98,7 +99,7 @@ Run the following `kubectl` commands to deploy the required secrets:
     weblogic.domainUID=sample-domain1
   ```
 
-  __NOTES__:
+  **NOTES**:
   - Replace `MY_OPSS_WALLET_PASSWORD` with a password of your choice.
     The password can contain letters and digits.
   - The domain's JRF RCU schema will be automatically initialized

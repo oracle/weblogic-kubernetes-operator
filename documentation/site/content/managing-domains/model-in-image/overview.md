@@ -24,7 +24,7 @@ It enables:
  - Updating WDT model files at runtime. The WDT models are considered the source of truth and match the domain configuration at all times.  For example, you can add a data source
    to a running domain. See [Runtime updates](#runtime-updates) for details.
 
-This feature is supported for standard WLS domains. For JRF domains, use [Domain on PV]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
+This feature is supported for standard WLS domains. **For JRF domains**, use [Domain on PV]({{< relref "/managing-domains/domain-on-pv/overview.md" >}}).
 
 ### WebLogic Deploy Tooling models
 
@@ -34,7 +34,7 @@ They compactly define a WebLogic domain using YAML files and support including
 application archives in a ZIP file. For a description of the model format
 and its integration with Model in Image,
 see [Usage]({{< relref "/managing-domains/model-in-image/usage.md" >}})
-and [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+and [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 

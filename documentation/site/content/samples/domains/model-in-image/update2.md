@@ -58,10 +58,10 @@ Here are the steps for this use case:
 
    Run the following commands:
 
-   __NOTE:__ Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
+   **NOTE**: Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
    password should contain at least seven letters plus one digit.
 
-   __NOTE:__ Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
+   **NOTE**: Substitute a password of your choice for `MY_RUNTIME_PASSWORD`. It should
    be unique and different than the admin password, but this is not required.
 
    ```
@@ -140,7 +140,7 @@ Here are the steps for this use case:
               weblogic.domainUID: sample-domain2
           ```
 
-        > __NOTE__: We are leaving the namespace `sample-domain1-ns` unchanged because you will be deploying domain `sample-domain2` to the same namespace as `sample-domain1`.
+        > **NOTE**: We are leaving the namespace `sample-domain1-ns` unchanged because you will be deploying domain `sample-domain2` to the same namespace as `sample-domain1`.
 
       - Change the `/tmp/sample/mii-update2.yaml` Domain YAML file's `CUSTOM_DOMAIN_NAME` environment variable from `domain1` to `domain2`.
 
@@ -268,7 +268,7 @@ Here are the steps for this use case:
           >     - sample-domain2-datasource-secret
           ```
 
-         __NOTE__: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
+         **NOTE**: The diff should _not_ contain a namespace change. You are deploying domain `sample-domain2` to the same namespace as `sample-domain1` (namespace `sample-domain1-ns`).
 
 
       - Apply your changed Domain YAML file:

@@ -338,7 +338,7 @@ Error from server (InternalError): error when creating "./weblogic-domains/sampl
     ```
 
 #### Webhook errors in older operator versions
-When you install operator version 4.x or upgrade to operator 4.x, a conversion webhook configuration is added to your Domain CRD. If you downgrade or switch back to the operator version 3.x, the conversion webhook configuration is not removed from the CRD. This is to support environments with multiple operator installations potentially with different versions. For environments having a single operator installation, use the following `patch` command to manually remove the conversion webhook configuration from Domain CRD. 
+When you install operator version 4.x or upgrade to operator 4.x, a conversion webhook configuration is added to your Domain CRD. If you downgrade or switch back to the operator version 3.x, the conversion webhook configuration is not removed from the CRD. This is to support environments with multiple operator installations potentially with different versions. For environments having a single operator installation, use the following `patch` command to manually remove the conversion webhook configuration from Domain CRD.
 
 ```
 kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conversion": {"strategy": "None", "webhook": null}}}'
@@ -347,7 +347,7 @@ kubectl patch crd domains.weblogic.oracle --type=merge --patch '{"spec": {"conve
 #### Webhook errors in operator dedicated Mode
 If the operator is running in the `Dedicated` mode, the operator's service account will not have the permission to read or update the CRD. If you need to convert the domain resources with `weblogic.oracle/v8` schema to `weblogic.oracle/v9` schema using the conversion webhook in `Dedicated` mode, then you can manually add the conversion webhook configuration to the Domain CRD. Use the following `patch` command to add the conversion webhook configuration to the Domain CRD.
 
-**Note**: Substitute `YOUR_OPERATOR_NS` in the below command with the namespace where the operator is installed.
+**NOTE**: Substitute `YOUR_OPERATOR_NS` in the below command with the namespace where the operator is installed.
 
 ```
 export OPERATOR_NS=YOUR_OPERATOR_NS

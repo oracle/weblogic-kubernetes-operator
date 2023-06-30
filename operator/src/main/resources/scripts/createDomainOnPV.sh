@@ -26,7 +26,7 @@ WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 
 FATAL_JRF_INTROSPECTOR_ERROR_MSG="Domain On PV domain creation encountered an unrecoverable error.
  Please correct the errors and patch the domain resource 'domain.spec.introspectVersion' with a new
- value and try again. If the domain type is JRF and you are not setting 'domainAndRCU' in 'domain.spec.configuration.initializeDomainOnPV.domain.createIfNotExists'
+ value and try again. If the domain type requires RCU and you are not setting 'domainAndRCU' in 'domain.spec.configuration.initializeDomainOnPV.domain.createIfNotExists'
  then you may have to drop and recreate the RCU schema before retry. Introspection Error: "
 
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
@@ -39,6 +39,13 @@ if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
+required_rcu() {
+  if [ "${WDT_DOMAIN_TYPE}" == "WLS" ] || [ "${WDT_DOMAIN_TYPE}" == "RestrictedJRF" ] ; then
+    echo "0"
+  else
+    echo "1"
+  fi
+}
 
 createDomainOnPVWLDomain() {
   start_trap
@@ -69,7 +76,7 @@ createDomainOnPVWLDomain() {
   # create domain again
   if  [ -f ${DOMAIN_HOME}/config/config.xml ]; then
     trace "Domain already exists: no operation needed"
-    if [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
+    if [ "$(required_rcu)" == "1" ]; then
       local curl_wl_ver="`getWebLogicVersion`"
       local curl_domain_ver="`getDomainVersion`"
       local wl_major_ver="`getMajorVersion ${curl_wl_ver}`"
@@ -157,7 +164,7 @@ buildWDTParams() {
     model_list="-model_file ${model_list}"
   fi
 
-  #  We cannot strictly run create domain for JRF type because it's tied to a database schema
+  #  We cannot strictly run create domain for JRF liked type because it's tied to a database schema
   #  We shouldn't require user to drop the db first since it may have data in it
   #
   opss_wallet=$(get_opss_key_wallet_dopv)
@@ -195,7 +202,7 @@ createDomainFromWDTModel() {
   wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
   wdtArgs+=" ${OPSS_FLAGS}"
 
-  if [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
+  if [ "$(required_rcu)" == "1" ]; then
     export WDT_CUSTOM_CONFIG=/tmp/model_filters
     mkdir -p "${WDT_CUSTOM_CONFIG}" || exitOrLoop
     cp /weblogic-operator/scripts/dopv-filters.json "${WDT_CUSTOM_CONFIG}/model_filters.json" || exitOrLoop
@@ -205,7 +212,7 @@ createDomainFromWDTModel() {
 
     # Determine run rcu or not
 
-    if [ "${INIT_DOMAIN_ON_PV}" == "domainAndRCU" ] && [ "${WDT_DOMAIN_TYPE}" == 'JRF' ]; then
+    if [ "${INIT_DOMAIN_ON_PV}" == "domainAndRCU" ] && [ "$(required_rcu)" == "1" ]; then
       wdtArgs+=" -run_rcu"
     fi
     trace "About to call '${WDT_BINDIR}/createDomain.sh ${wdtArgs}'."

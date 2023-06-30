@@ -215,7 +215,7 @@ spec:
 This example creates a gateway that will accept requests with any host name
 using HTTP on port 80, and a virtual service that will route all of
 those requests to the cluster service for `cluster-1` in `domain1` in
-the namespace `domain1`.  **Note**: In a production environment, `hosts` should be limited to the proper DNS name.
+the namespace `domain1`.  **NOTE**: In a production environment, `hosts` should be limited to the proper DNS name.
 
 After the gateway and virtual service has been set up, you can access it through your ingress host and port.
 Refer to [Determining the ingress IP and ports](https://istio.io/latest/docs/setup/getting-started/#determining-the-ingress-ip-and-ports).

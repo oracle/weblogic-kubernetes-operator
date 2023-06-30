@@ -1,7 +1,7 @@
 +++
 title = "Domain creation images"
 date = 2019-02-23T16:45:16-05:00
-weight = 25
+weight = 3
 pre = "<b> </b>"
 description = "Domain creation images supply the WDT model for Domain on PV."
 +++
@@ -16,7 +16,7 @@ when deploying a domain using a Domain on PV model.  You distribute WDT model fi
 WDT executable using these images, then the operator uses them to
 manage the domain.
 
-**Note:**  These images are _only_ used for creating the domain and will not be used to update the domain.
+**NOTE**:  These images are _only_ used for creating the domain and will not be used to update the domain.
 
 ### Configuration
 

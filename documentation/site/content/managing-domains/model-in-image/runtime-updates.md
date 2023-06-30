@@ -106,7 +106,7 @@ Model updates can include additions, changes, and deletions. For help generating
 
  - For a description of model file syntax, see the
    [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) documentation
-   and Model in Image [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) documentation.
+   and Model in Image [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
  - For a description of helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
@@ -422,7 +422,7 @@ Deletion can be problematic for online updates in two cases:
 In general, complex deletion should be handled by offline updates
       to avoid these problems.
 
-**Note**: Implicitly removing a model's parent type
+**NOTE**: Implicitly removing a model's parent type
       section may sometimes work depending
       on the type of the section. For example, if you have an application
       in the model under `appDeployments:` in a `model.configMap` and you

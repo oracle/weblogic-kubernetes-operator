@@ -215,7 +215,7 @@ to specify any `persistentVolume` or `persistentVolumeClaim`  under the `intiali
 
 #### Domain information
 
-**For JRF-based domains, before proceeding, please be sure to read this document**, [JRF domains]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain.md">}}).
+**For JRF-based domains, before proceeding, please be sure to read this document**, [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md">}}).
 
 This is the section describing the WebLogic domain. For example:
 
@@ -245,16 +245,16 @@ spec:
 | `createIfNotExists`         | Specifies whether the operator should create the RCU schema first, before creating the domain. | `domain` or `domainAndRCU` (drop existing RCU schema and create new RCU schema) | N (default `domain`) |
 | `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
 | `domainCreationConfigMap`   | Optional ConfigMap containing extra WDT models.                                       | Kubernetes ConfigMap name.                                               | N                                                  |
-| `osss.walletPasswordSecret` | Password for extracting OPSS wallet encryption key for JRF domain.               | Kubernetes Secret name with the key `walletPassword`.                       | Y                                                                   |
+| `osss.walletPasswordSecret` | Password for extracting OPSS wallet for JRF domain.               | Kubernetes Secret name with the key `walletPassword`.                       | Y                                                                   |
 | `osss.walletFileSecret`     | Extracted OPSS wallet file.                                                        | Kubernetes Secret name with the key `walletFile`.                            | N (Only needed when recreating the domain during disaster recovery) |
 
 **After a JRF domain is successfully deployed**: follow the next section, [Best practices](#best-practices), to download and back up the OPSS wallet.
 
 ### Best practices
 
-Oracle recommends that you save the OPSS wallet file in a safe, backed-up location __immediately__ after an initial JRF domain is created.
+Oracle recommends that you save the OPSS wallet file in a safe, backed-up location __immediately__ after the initial JRF domain is created.
 In addition, you should make sure to store the wallet in a Kubernetes Secret in the same namespace. This will allow the secret to be available when the domain needs to be recovered in a disaster scenario or if the domain directory gets corrupted. There is no way to reuse the original RCU schema without this specific wallet key.
-Therefore, for disaster recovery, **you should back up this encryption key**.
+Therefore, for disaster recovery, **you should back up this OPSS wallet**.
 
 
 #### Back up the JRF domain home directory and database
@@ -278,7 +278,7 @@ Therefore, if you recreate the domain using the original WDT model files, you wi
 the backup copy of the domain home directory and connect to the existing RCU schema from the database backup.
 
 #### Store the OPSS wallet in a Kubernetes Secret and update `opss.walletFileSecret` in the domain resource
-After the domain is created, the operator automatically exports the OPSS wallet and stores it in an introspector ConfigMap; the name of the ConfigMap follows the pattern `<domain uid>-weblogic-domain-introspect-cm` with the key `ewallet.p12`. Oracle recommends that you save the OPSS wallet file in a safe, backed-up location __immediately__ after an initial JRF domain is created. In addition, you should make sure to store the wallet in a Kubernetes Secret in the same namespace. This will allow the secret to be available when the domain needs to be recovered in a disaster scenario or if the domain directory gets corrupted.
+After the domain is created, the operator automatically exports the OPSS wallet and stores it in an introspector ConfigMap; the name of the ConfigMap follows the pattern `<domain uid>-weblogic-domain-introspect-cm` with the key `ewallet.p12`. Oracle recommends that you save the OPSS wallet file in a safe, backed-up location __immediately__ after the initial JRF domain is created. In addition, you should make sure to store the wallet in a Kubernetes Secret in the same namespace. This will allow the secret to be available when the domain needs to be recovered in a disaster scenario or if the domain directory gets corrupted.
 
 The following are the high-level steps for storing the OPSS wallet in a Kubernetes Secret.
 1. The operator provides a utility script, [OPSS wallet utility](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh), for extracting the wallet file and storing it in a Kubernetes `walletFileSecret`. In addition, you should also save the wallet file in a safely backed-up location outside of Kubernetes. For example, the following command saves the OPSS wallet for the `sample-domain1` domain in the `sample-ns` namespace to a file named `ewallet.p12` in the `/tmp` directory and also stores it in the wallet secret named `jrf-wallet-file-secret`.
@@ -321,7 +321,7 @@ If the domain home directory is corrupted, and you have a recent backup of the d
    $ kubectl -n sample-ns patch domain sample-domain1 --type='JSON' -p='[ { "op" : "replace", "path" : "/spec/restartVersion", "value" : "15" }]'
    ```
 3. After the domain is restarted, check the WebLogic domain configuration to ensure that it has the latest changes.
-   **Note:** If you made any changes that are persisted in the domain home directory after your last backup, you must reapply those changes to the domain home directory.
+   **NOTE**: If you made any changes that are persisted in the domain home directory after your last backup, you must reapply those changes to the domain home directory.
    However, because the operator will reconnect to the same RCU schema, the data stored in the OPSS, MDS, or OWSM tables will be current.
 
 4. Reapply any domain configuration changes persisted to the domain home directory, such as
@@ -338,7 +338,7 @@ In the rare scenario where the domain home directory is corrupted, and you do **
 
 3. The operator will then create a new domain from the existing WDT models and reuse the original RCU schema.
 
-    **NOTE:**
+    **NOTE**:
     All the updates made to the domain after the initial deployment will **not** be available in the recovered domain.
     However, this allows you to access the original RCU schema database without losing all its data.
 
@@ -350,7 +350,7 @@ In the rare scenario where the domain home directory is corrupted, and you do **
    $ kubectl -n sample-ns patch domain sample-domain1 --type='JSON' -p='[ { "op" : "replace", "path" : "/spec/restartVersion", "value" : "15" }]'
    ```
 
-For more information, see [Disaster Recovery]({{< relref "/managing-domains/working-with-wdt-models/jrf-domain#disaster-recovery-for-domain-on-pv-deployment">}}).  
+For more information, see [Disaster Recovery]({{< relref "/managing-domains/domain-on-pv/jrf-domain#disaster-recovery-for-domain-on-pv-deployment">}}).  
 
 ### Troubleshooting
 

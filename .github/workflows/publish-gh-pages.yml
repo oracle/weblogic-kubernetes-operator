@@ -52,6 +52,9 @@ jobs:
           
           cd $GITHUB_WORKSPACE/branch-4.0/documentation
           echo "Building documentation for latest minor version..."
+          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.0 | tail -1 | cut -c12-)
+          echo "Latest tag is $latest_tag..."
+          echo $latest_tag >| $GITHUB_WORKSPACE/branch-4.0/documentation/site/layouts/shortcodes/latestVersion.html
           hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
           echo "Copying static files into place..."
           cp -R domains "$GITHUB_WORKSPACE/WORK"

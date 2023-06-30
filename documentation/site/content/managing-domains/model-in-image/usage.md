@@ -85,7 +85,7 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
     a layer on top of your base image
     (where the base image includes your WebLogic installation).
 
-    **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) will be deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+    **NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
 
     Use either of the following methods.
 
@@ -108,7 +108,7 @@ There are multiple methods for supplying Model in Image WDT models files, WDT va
     updates to models supplied by one of these methods.
 
 For more information about model file syntax,
-see [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+see [Working with WDT model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
 ### Optional WDT model ConfigMap
 
@@ -129,7 +129,7 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
     weblogic.domainUID=MY-DOMAINUID
   ```
 
-See [Working with WDT model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
+See [Working with WDT model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}) for a description of model file syntax and loading order, and see [Runtime updates]({{< relref "/managing-domains/model-in-image/runtime-updates.md" >}}) for a description of using WDT model ConfigMaps to update the model configuration of a running domain.
 
 
 ### Required runtime encryption secret
@@ -161,7 +161,7 @@ Corresponding Domain YAML file snippet:
 
 ### Secrets for model macros
 
-Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/working-with-wdt-models/model-files.md" >}}).
+Create additional secrets as needed by macros in your model files. For example, these can store database URLs and credentials that are accessed using `@@SECRET` macros in your model that reference the secrets.  For a description of model macros, see [Model files]({{< relref "/managing-domains/model-in-image/model-files.md" >}}).
 
 ### Domain fields
 
@@ -185,7 +185,7 @@ then the operator will ignore WDT model files and WDT Home
 that are copied from [Auxiliary Images]({{<relref "/managing-domains/model-in-image/auxiliary-images" >}}).
 {{% /notice %}}
 
-**Notes**:
+**NOTES**:
 
  - There are additional attributes that are common to all domain home source types, such as the `image` or `clusters` field. See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) and [documentation]({{< relref "/managing-domains/domain-resource.md" >}}) for a full list of Domain fields.
 

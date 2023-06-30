@@ -305,7 +305,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `createIfNotExists` | string | Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains). Legal values: domain, domainAndRCU. Defaults to domain. |
 | `domainCreationConfigMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainCreationImages` | Array of [Domain Creation Image](#domain-creation-image) | Domain creation images containing WebLogic Deploy Tooling model, application archive, and WebLogic Deploy Tooling installation files. These files will be used to create the domain during introspection. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images  |
-| `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF. |
+| `domainType` | string | WebLogic Deploy Tooling domain type. Known values are: WLS, RestrictedJRF, JRF. Defaults to JRF. |
 | `opss` | [Opss](#opss) | Settings for OPSS security. |
 
 ### Persistent Volume
@@ -365,7 +365,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `nfs` | [NFS Volume Source](k8s1.13.5.md#nfs-volume-source) | nfs represents an NFS mount on the host. Provisioned by an admin. More info:<br/>https://kubernetes.io/docs/concepts/storage/volumes#nfs<br/>Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling. |
 | `persistentVolumeReclaimPolicy` | string | PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from its claim. Valid options are Retain (default for manually created PersistentVolumes), Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). Recycle must be supported by the volume plugin underlying this PersistentVolume. More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming   |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
-| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
 
 ### Persistent Volume Claim Spec
 
@@ -373,7 +372,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Resources represents the minimum resources the volume should have. More info https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources. ResourceRequirements describes the compute resource requirements. |
 | `storageClassName` | string | StorageClassName is the name of StorageClass to which this persistent volume belongs. Empty value means that this volume does not belong to any StorageClass. |
-| `volumeMode` | string | VolumeMode defines if a volume is intended to be used with a formatted filesystem or to remain in raw block state. Value of Filesystem is implied when not included in spec. |
 | `volumeName` | string | VolumeName is the binding reference to the PersistentVolume backing this claim. |
 
 ### WDT Timeouts
