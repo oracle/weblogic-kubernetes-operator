@@ -118,6 +118,7 @@ abstract class CreateOperatorGeneratedFilesTestBase {
                     .name("weblogic-operator-cm")
                     .namespace(getInputs().getNamespace())
                     .putLabelsItem(OPERATORNAME_LABEL, getInputs().getNamespace()))
+            .putDataItem("helmChartVersion", "4.0.0-RELEASE-MARKER")
             .putDataItem("serviceaccount", getInputs().getServiceAccount())
             .putDataItem("domainNamespaceSelectionStrategy", getInputs().getDomainNamespaceSelectionStrategy())
             .putDataItem("domainNamespaces", getInputs().getDomainNamespaces())
