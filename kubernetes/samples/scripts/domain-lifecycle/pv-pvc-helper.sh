@@ -25,7 +25,7 @@ initGlobals() {
 usage() {
   cat << EOF
 
-  This is a helper script for examining, changing permissions, or deleting the contents of persistent 
+  This is a helper script for examining, changing permissions, or deleting the contents of the persistent
   volume (such as domain files or logs) for a WebLogic Domain on PV or Model in Image domain.
   The script launches a a Kubernetes pod named as 'pvhelper' using the provided persistent volume claim name and the mount path. 
   You can run the '${KUBERNETES_CLI} exec' to get a shell to the running pod container and run commands to examine or clean up the contents of 

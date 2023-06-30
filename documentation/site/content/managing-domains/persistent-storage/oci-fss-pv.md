@@ -16,17 +16,17 @@ when the domain is initially created."
 - [Provisioning PVCs on the File Storage Service (FSS)](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim_Provisioning_PVCs_on_FSS.htm#Provisioning_Persistent_Volume_Claims_on_the_FileStorageService) in the OCI documentation.
 - [Setting up storage for kubernetes clusters](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm) in the OCI documentation.
 
-If you are running your Kubernetes cluster on Oracle Container Engine
-for Kubernetes (commonly known as OKE), and you use Oracle Cloud Infrastructure File Storage (FSS)
-for persistent volumes to store the WebLogic domain home or log files, then the file system
+Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store
+the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE). When using the FSS with OKE for domain home or log files,  the file system
 handling will require an update to properly initialize the file ownership on the persistent volume 
 when the domain is initially created.  
 
 {{% notice note %}}
 File permission handling on persistent volumes can differ between
 cloud providers and even with the underlying storage handling on
-Linux based systems. 
-The operator requires permissions to create directories on the persistent volume under the shared mount path.
+Linux-based systems. 
+The operator requires permission to create directories on the persistent volume under the shared mount path.
 The following instructions provide an option to update the file ownership and permissions.
 {{% /notice %}}
 
@@ -38,13 +38,13 @@ This script launches a Pod and mounts the specified PVC in the Pod containers at
 
 See the `pv-pvc-helper.sh` in `Examine, change permissions or delete PV contents` section in the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/domain-lifecycle/README.md) file for the script details.
 
-For example, run the following command to create the pod.
+For example, run the following command to create the Pod.
 
 ```
 $ pv-pvc-helper.sh -n sample-domain1-ns -r -c sample-domain1-weblogic-sample-pvc -m /shared
 ```
 
-This will create a pod with following specifications.
+The script will create a Pod with the following specifications.
 ```
 apiVersion: v1
 kind: Pod
@@ -72,7 +72,7 @@ Run the following command to exec into the Pod.
 $ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
 ```
 
-After you get a shell to the running pod container, change the directory to `/shared` and you can change the ownership or permissions using appropriate `chown` or `chmod` commands. For example,
+After you get a shell to the running Pod container, change the directory to `/shared`, and you can change the ownership or permissions using appropriate `chown` or `chmod` commands. For example,
 
 ```
 chown 1000:0 /shared/. && find /shared/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0
