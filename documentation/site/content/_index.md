@@ -38,7 +38,7 @@ See the [operator prerequisites]({{< relref "/introduction/prerequisites/introdu
 
 #### Recent changes and known issues
 
-See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
+See the Release Notes for recent changes to the operator and known issues.
 
 #### Operator earlier versions
 
