@@ -6,6 +6,6 @@ pre = "<b> </b>"
 description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) to store WebLogic domain homes and log files."
 +++
 
-This section provides general information about settting up Persistent storage which can be used as storage for WebLogic domain homes and log files. 
+This section provides general information about setting up Persistent storage, which can be used for the WebLogic domain homes and log files. 
 
 {{% children style="h4" description="true" %}}
