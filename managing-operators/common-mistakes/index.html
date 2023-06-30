@@ -12,20 +12,20 @@
     <title>Common mistakes and solutions :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1688095414" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1688095414" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1688151643" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1688151643" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1688095414"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1688151643"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1688095414"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1688095414"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1688151643"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1688151643"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1688095414"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1688151643"></script>
 
     
   </div>
@@ -3608,6 +3608,7 @@
   <ul>
     <li><a href="#namespace-related">Namespace related</a>
       <ul>
+        <li><a href="#changes-in-default-helm-chart-values-from-weblogic-kubernetes-operator-version-34-to-40">Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0</a></li>
         <li><a href="#deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator">Deleting and recreating a namespace that an operator manages without informing the operator</a></li>
         <li><a href="#forgetting-to-configure-the-operator-to-monitor-a-namespace">Forgetting to configure the operator to monitor a namespace</a></li>
         <li><a href="#installing-the-operator-a-second-time-into-the-same-namespace">Installing the operator a second time into the same namespace</a></li>
@@ -3658,6 +3659,7 @@
   <ul>
     <li><a href="#namespace-related">Namespace related</a>
       <ul>
+        <li><a href="#changes-in-default-helm-chart-values-from-weblogic-kubernetes-operator-version-34-to-40">Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0</a></li>
         <li><a href="#deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator">Deleting and recreating a namespace that an operator manages without informing the operator</a></li>
         <li><a href="#forgetting-to-configure-the-operator-to-monitor-a-namespace">Forgetting to configure the operator to monitor a namespace</a></li>
         <li><a href="#installing-the-operator-a-second-time-into-the-same-namespace">Installing the operator a second time into the same namespace</a></li>
@@ -3683,6 +3685,13 @@
 </nav></div>
 <h3 id="namespace-related">Namespace related</h3>
 <p>Common namespace-related mistakes.</p>
+<h4 id="changes-in-default-helm-chart-values-from-weblogic-kubernetes-operator-version-34-to-40">Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0</h4>
+<p>The default for the <code>domainNamespaceSelectionStrategy</code> Helm chart value, which specifies how the operator will select the namespaces that it will manage, was changed between version 3.4 and 4.0.
+In version 3.4, the default was <code>List</code> and in version 4.0, the default is <code>LabelSelector</code>. This means that the operator used to default to managing the set of namespaces listed in the <code>domainNamespaces</code> Helm chart value and
+the updated default is that the operator searches for namespaces that have the label specified in the <code>domainNamespaceLabelSelector</code> Helm chart value, which defaults to <code>weblogic-operator=enabled</code>.</p>
+<p>When upgrading the operator from 3.4 to 4.0, you can use the <code>--reuse-values</code> option, such as <code>helm upgrade --reuse-values</code>, to install the upgraded chart with the values that were used during the original installation, including default values.
+If you do not use <code>--reuse-values</code>, then the upgraded chart will be installed with the updated default values, which could result in an unanticipated change in the set of namespaces that the operator is managing. Alternatively, you can also set
+the value of <code>domainNamespaceSelectionStragegy</code> (or any other value) using a values file or the <code>--set</code> option.</p>
 <h4 id="deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator">Deleting and recreating a namespace that an operator manages without informing the operator</h4>
 <p>If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
 For more details about the problem and solutions, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/namespace-management/#recreate-a-previously-deleted-kubernetes-namespace-with-a-running-operator">Namespace management</a>.</p>
@@ -6205,19 +6214,19 @@ Then check to make sure that the Domain&rsquo;s namespace has been set up to be 
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1688095414"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1688151643"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1688095414"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1688095414"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1688151643"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1688151643"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1688095414"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1688151643"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
