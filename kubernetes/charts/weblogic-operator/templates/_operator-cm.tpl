@@ -5,6 +5,7 @@
 ---
 apiVersion: "v1"
 data:
+  helmChartVersion: {{ .Chart.Version }}
   {{- if .externalRestEnabled }}
     {{- if (hasKey . "externalRestIdentitySecret") }}
   externalRestIdentitySecret: {{ .externalRestIdentitySecret | quote }}

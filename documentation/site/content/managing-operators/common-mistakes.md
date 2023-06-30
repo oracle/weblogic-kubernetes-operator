@@ -11,6 +11,16 @@ description: "Help for common installing and upgrading mistakes."
 
 Common namespace-related mistakes.
 
+#### Changes in default Helm chart values from WebLogic Kubernetes Operator version 3.4 to 4.0
+
+The default for the `domainNamespaceSelectionStrategy` Helm chart value, which specifies how the operator will select the namespaces that it will manage, was changed between version 3.4 and 4.0.
+In version 3.4, the default was `List` and in version 4.0, the default is `LabelSelector`. This means that the operator used to default to managing the set of namespaces listed in the `domainNamespaces` Helm chart value and
+the updated default is that the operator searches for namespaces that have the label specified in the `domainNamespaceLabelSelector` Helm chart value, which defaults to `weblogic-operator=enabled`.
+
+When upgrading the operator from 3.4 to 4.0, you can use the `--reuse-values` option, such as `helm upgrade --reuse-values`, to install the upgraded chart with the values that were used during the original installation, including default values.
+If you do not use `--reuse-values`, then the upgraded chart will be installed with the updated default values, which could result in an unanticipated change in the set of namespaces that the operator is managing. Alternatively, you can also set
+the value of `domainNamespaceSelectionStragegy` (or any other value) using a values file or the `--set` option.
+
 #### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
