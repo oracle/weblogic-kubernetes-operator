@@ -19,8 +19,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.WLS;
 public class DomainOnPV {
 
   @Description("Specifies if the operator should create only the domain or the domain with RCU (for JRF-based domains)."
-      + " Legal values: domain, domainAndRCU. Defaults to domain.")
-  @Default(strDefault = "domain")
+      + " Legal values: Domain, DomainAndRCU. Defaults to Domain.")
+  @Default(strDefault = "Domain")
   private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
   @Description("WebLogic Deploy Tooling domain type. Known values are: WLS, RestrictedJRF, JRF. Defaults to JRF.")

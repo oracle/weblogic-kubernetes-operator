@@ -229,8 +229,8 @@ spec:
     initializeDomainOnPV:
       ...
       domain:
-          # domain |  domainAndRCU
-          createIfNotExists: domainAndRCU
+          # Domain | DomainAndRCU
+          createIfNotExists: DomainAndRCU
           domainCreationImages:
             - image: 'myrepo/domain-images:v1'
           domainType: JRF
@@ -239,14 +239,14 @@ spec:
            walletPasswordSecret: sample-domain1-opss-wallet-password-secret
 ```
 
-| Field                     | Notes                                                                                | Values                                                                  | Required                                                            |
-|---------------------------|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------|---------------------------------------------------------------------|
-| `domainType`                | Type of domain being created.                                                          | `JRF` or `WLS`                                                              | N (default `WLS`)                                           |
-| `createIfNotExists`         | Specifies whether the operator should create the RCU schema first, before creating the domain. | `domain` or `domainAndRCU` (drop existing RCU schema and create new RCU schema) | N (default `domain`) |
-| `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                          | Y                                |
-| `domainCreationConfigMap`   | Optional ConfigMap containing extra WDT models.                                       | Kubernetes ConfigMap name.                                               | N                                                  |
-| `osss.walletPasswordSecret` | Password for extracting OPSS wallet for JRF domain.               | Kubernetes Secret name with the key `walletPassword`.                       | Y                                                                   |
-| `osss.walletFileSecret`     | Extracted OPSS wallet file.                                                        | Kubernetes Secret name with the key `walletFile`.                            | N (Only needed when recreating the domain during disaster recovery) |
+| Field                     | Notes                                                                                | Values                                                                          | Required                                                            |
+|---------------------------|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|---------------------------------------------------------------------|
+| `domainType`                | Type of domain being created.                                                          | `JRF` or `WLS`                                                                  | N (default `WLS`)                                                   |
+| `createIfNotExists`         | Specifies whether the operator should create the RCU schema first, before creating the domain. | `Domain` or `DomainAndRCU` (drop existing RCU schema and create new RCU schema) | N (default `Domain`)                                                |
+| `domainCreationImages`      | WDT domain images.                                                                    | An array of images.                                                             | Y                                                                   |
+| `domainCreationConfigMap`   | Optional ConfigMap containing extra WDT models.                                       | Kubernetes ConfigMap name.                                                      | N                                                                   |
+| `osss.walletPasswordSecret` | Password for extracting OPSS wallet for JRF domain.               | Kubernetes Secret name with the key `walletPassword`.                           | Y                                                                   |
+| `osss.walletFileSecret`     | Extracted OPSS wallet file.                                                        | Kubernetes Secret name with the key `walletFile`.                               | N (Only needed when recreating the domain during disaster recovery) |
 
 **After a JRF domain is successfully deployed**: follow the next section, [Best practices](#best-practices), to download and back up the OPSS wallet.
 
@@ -472,8 +472,8 @@ spec:
                 requests:
                     storage: 10Gi
       domain:
-          # domain |  domainAndRCU
-          createIfNotExists: domainAndRCU
+          # Domain | DomainAndRCU
+          createIfNotExists: DomainAndRCU
           domainCreationImages:
             - image: 'myrepo/domain-images:v1'
           domainType: JRF

@@ -92,7 +92,7 @@ NOTES:
     to 0 that's fine, the test will dynamically find
     the actual nodeport.
 
-- Call '-rcu' if `createIfExists` mode is other than `domainAndRCU` and the database is not already RCU initialized.
+- Call '-rcu' if `createIfExists` mode is other than `DomainAndRCU` and the database is not already RCU initialized.
 
 - You can run the test in stages. For example:
   ./run-test.sh -precleanup 

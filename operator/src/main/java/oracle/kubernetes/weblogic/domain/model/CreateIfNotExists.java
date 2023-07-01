@@ -6,10 +6,10 @@ package oracle.kubernetes.weblogic.domain.model;
 import com.google.gson.annotations.SerializedName;
 
 public enum CreateIfNotExists {
-  @SerializedName("domain")
-  DOMAIN("domain"),
-  @SerializedName("domainAndRCU")
-  DOMAIN_AND_RCU("domainAndRCU");
+  @SerializedName("Domain")
+  DOMAIN("Domain"),
+  @SerializedName("DomainAndRCU")
+  DOMAIN_AND_RCU("DomainAndRCU");
 
   private final String value;
 

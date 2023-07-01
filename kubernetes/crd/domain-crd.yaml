@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 84402da7f071cbcf0e5933f9f71f58a22199026bb60d7cd6100fde377bd4bb7b
+    weblogic.sha256: d5bf4792de6093d8414edc6efa477cb911342a195f5def8ed02834b4187ee9f2
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -336,14 +336,14 @@ spec:
                                 type: string
                             type: object
                           createIfNotExists:
-                            default: domain
+                            default: Domain
                             description: 'Specifies if the operator should create
                               only the domain or the domain with RCU (for JRF-based
-                              domains). Legal values: domain, domainAndRCU. Defaults
-                              to domain.'
+                              domains). Legal values: Domain, DomainAndRCU. Defaults
+                              to Domain.'
                             enum:
-                            - domain
-                            - domainAndRCU
+                            - Domain
+                            - DomainAndRCU
                             type: string
                         type: object
                       persistentVolumeClaim:

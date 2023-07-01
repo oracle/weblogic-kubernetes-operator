@@ -96,8 +96,8 @@ spec:
          domainType: JRF
 
          # Specifies if the operator should create only the domain or the domain with RCU."
-         # Legal values: domain, domainAndRCU. Defaults to domain."
-         createIfNotExists: domainAndRCU
+         # Legal values: Domain, DomainAndRCU. Defaults to Domain."
+         createIfNotExists: DomainAndRCU
 
          # Domain creation image(s) containing WDT model, archives, and install.
          #   `image`                - Image location
