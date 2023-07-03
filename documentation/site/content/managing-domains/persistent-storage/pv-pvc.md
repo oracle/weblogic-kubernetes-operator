@@ -1,5 +1,5 @@
 +++
-title = "Persistent Volumes and Persistent Volume Claims"
+title = "PersistentVolumes and PersistentVolumeClaims"
 date = 2019-02-23T16:45:09-05:00
 weight = 1
 description = "Use a Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC) to store WebLogic domain homes and log files."
@@ -15,15 +15,15 @@ The following prerequisites must be fulfilled before proceeding with the creatio
 * Make sure that all the servers in the WebLogic domain are able to reach the storage location.
 * Make sure that the host directory that will be used, already exists and has the appropriate file permissions set.
 
-### Persistent Volume Storage locations
+### Persistent volume storage locations
 PersistentVolumes can point to different storage locations, for example NFS servers or a local directory path. For a list of available options, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
-**Note regarding HostPath**: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely available option.  There are other options listed in the referenced table.
+**Note regarding HostPath**: In a single-node Kubernetes cluster, such as may be used for testing or proof of concept activities, `HOST_PATH` provides the simplest configuration.  In a multinode Kubernetes cluster, a `HOST_PATH` that is located on shared storage mounted by all nodes in the Kubernetes cluster is the simplest configuration.  If nodes do not have shared storage, then NFS is probably the most widely-available option.  There are other options listed in the referenced table.
 
-The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}), the operator provides options to create the PV and PVC during the domain initialization. See [Domain on PV documentation]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) or the `domain.spec.configuration.initializeDomainOnPV` section in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) for more details.
+The operator provides a sample script to create the PersistentVolume and PersistentVolumeClaim for the domain. This script must be executed before creating the domain.  Beginning with operator version 4.1.0, for the Domain on PV [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}), the operator provides options to create the PV and PVC during the domain initialization. See the [Domain on PV documentation]({{< relref "/managing-domains/domain-on-pv/_index.md" >}}) or the `domain.spec.configuration.initializeDomainOnPV` section in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/documentation/domains/Domain.md) for more details.
 
-#### Persistent Volumes using HostPath approach
-The `HOST_PATH` provider is the simplest case for creating a Persistent Volume. It requires creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
+#### Persistent volumes using HostPath approach
+The `HOST_PATH` provider is the simplest case for creating a PersistentVolume. It requires creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
 
 ```shell
 $ mkdir -m 777 -p /path/to/domain1PersistentVolume
@@ -57,4 +57,3 @@ This section provides details of common problems that might occur while running 
 Possibly the most common problem experienced during testing was the incorrect configuration of the PersistentVolume provider. The PersistentVolume must be accessible to all Kubernetes Nodes, and must be able to be mounted as `Read/Write/Many`. If this is not the case, the PersistentVolume creation will fail.
 
 The simplest case is where the `HOST_PATH` provider is used. This can be either with one Kubernetes Node, or with the `HOST_PATH` residing in shared storage available at the same location on every node (for example, on an NFS mount). In this case, the path used for the PersistentVolume must have its permission bits set to 777.
-
