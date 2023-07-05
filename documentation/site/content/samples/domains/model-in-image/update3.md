@@ -8,7 +8,7 @@ The Update 3 use case demonstrates deploying an updated WebLogic application to 
 
 In the use case, you will:
 
- - Create an image `model-in-image:WLS-AI-v2` that is similar to the currently active `model-in-image:WLS-AI-v1` image, but with the following updates:
+ - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with the following updates:
    - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
    - An updated model YAML file within the image that points to the new web application path.
  - Apply an updated Domain YAML file that references the new image while still referencing the original [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
@@ -29,13 +29,13 @@ Here are the steps for this use case:
 
 2. Create an updated auxiliary image.
 
-   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v1` from files that were staged in `/tmp/sample/model-images/model-in-image__WLS-AI-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `wdt-domain-image:WLS-AI-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a directory `/auxiliary/weblogic-deploy` where the WebLogic Deploy Tooling software is installed.
+   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an auxiliary image named `wdt-domain-image:WLS-v1` from files that were staged in `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Server Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `wdt-domain-image:WLS-v1` and, in addition to having a copy of the staged files in its `/auxiliary/models` directory, also contained a directory `/auxiliary/weblogic-deploy` where the WebLogic Deploy Tooling software is installed.
 
    In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain.
 
    - Understanding your updated WDT archive.
 
-     The updated archive for this use case is in directory `/tmp/sample/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/sample/archives/archive-v1` from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case with the following differences:
+     The updated archive for this use case is in directory `/tmp/sample/wdt-artifacts/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/sample/wdt-artifacts/archives/archive-v1` from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case with the following differences:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
      - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the sample JSP web-app.");`.
 
@@ -43,7 +43,7 @@ Here are the steps for this use case:
 
    - Stage a ZIP file of the WDT archive.
 
-     When you create your updated image, you will use the files in the staging directory `/tmp/sample/model-in-image__WLS-AI-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
+     When you create your updated image, you will use the files in the staging directory `/tmp/sample/wdt-artifacts/wdt-model-files/WLS-v2`. In preparation, you need it to contain a ZIP file of the new WDT application archive.
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -130,7 +130,7 @@ Here are the steps for this use case:
 
    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-     - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml` file that is supplied with the sample.
+     - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/sample/mii-update1.yaml` or using the `/tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
 
        - We suggest copying this Domain YAML file and naming the copy `/tmp/sample/mii-update3.yaml` before making any changes.
 
@@ -160,7 +160,7 @@ Here are the steps for this use case:
         **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxiliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/domain-resources/WLS-AI/mii-update3-d1-WLS-AI-v2-ds.yaml
+        $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
         ```
 
 

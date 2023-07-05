@@ -156,7 +156,7 @@ Here are the steps:
         **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `auxliary-image` and other images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
-        $ kubectl apply -f /tmp/sample/domain-resources/WLS-AI/mii-update1-d1-WLS-AI-v1-ds.yaml
+        $ kubectl apply -f /tmp/sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
 1. Restart ('roll') the domain.
