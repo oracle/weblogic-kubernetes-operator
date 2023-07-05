@@ -27,6 +27,10 @@ For information on how to start, stop, restart, and scale WebLogic Server instan
   - [`kubectl --watch`](#kubectl---watch)
   - [`clusterStatus.sh`](#clusterstatussh)
   - [`waitForDomain.sh`](#waitfordomainsh)
+- [Examine, change permissions or delete PV contents](#examine-change-or-delete-pv-contents)
+  - [`pv-pvc-helper.sh`](#pv-pvc-helpersh)  
+- [OPSS Wallet utility](#opss-wallet-utility)
+  - [`opss-wallet.sh`](#opss-walletsh)  
 
 ### Prerequisites
 
@@ -273,4 +277,69 @@ Use the following command to wait for a domain to fully shut down:
 
 ```
 $ waitForDomain.sh -n my-namespace -d my-domain -p 0
+```
+
+### Examine, change, or delete PV contents
+
+#### `pv-pvc-helper.sh`
+
+Use this helper script for examining, changing permissions, or deleting the contents of the persistent volume (such as domain files or logs) for a WebLogic Domain on PV or Model in Image domain.
+The script launches a Kubernetes pod named 'pvhelper' using the provided persistent volume claim name and the mount path.
+You can run the 'kubectl exec' command to get a shell to the running pod container and run commands to examine or clean up the contents of shared directories on the persistent volume.
+Use the 'kubectl delete pvhelper -n <namespace>' command to delete the Pod after it's no longer needed.
+
+Use the following command for script usage:
+
+```
+$ domain-on-pv-helper.sh -h
+```
+
+The following is an example command to launch the helper pod with the PVC name `sample-domain1-weblogic-sample-pvc` and mount path `/shared`.
+
+```
+$ domain-on-pv-helper.sh -n sample-domain1-ns -c sample-domain1-weblogic-sample-pvc -m /shared
+```
+
+After the Pod is created, use the following command to get a shell to the running pod container.
+
+```
+$ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
+```
+
+After you get a shell to the running pod container, you can recursively delete the contents of the domain home and applications
+directories using the `rm -rf /shared/domains/sample-domain1` and `rm -rf /shared/applications/sample-domain1` commands. Because these
+commands will delete files on the persistent storage, we recommend that you understand and execute these commands carefully.
+
+Use the following command to delete the Pod after it's no longer needed.
+
+```
+$ kubectl delete pod pvhelper -n <namespace>
+```
+
+### OPSS Wallet utility
+
+#### `opss-wallet.sh`
+
+The OPSS wallet utility is a helper script for JRF-type domains that can save an OPSS key
+wallet from a running domain's introspector ConfigMap to a file and
+restore an OPSS key wallet file to a Kubernetes Secret for use by a
+domain that you're about to run.
+
+Use the following command for script usage:
+
+```
+$ opss-wallet.sh -?
+```
+
+For example, run the following command to save an OPSS key wallet from a running domain to the file './ewallet.p12':
+
+```
+$ opss-wallet.sh -s
+```
+
+Run the following command to restore the OPSS key wallet from the file './ewallet.p12' to the secret
+'sample-domain1-opss-walletfile-secret' for use by a domain you're about to run:
+
+```
+$ opss-wallet.sh -r
 ```

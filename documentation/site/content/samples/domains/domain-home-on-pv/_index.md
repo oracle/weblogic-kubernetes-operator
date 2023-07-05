@@ -36,7 +36,7 @@ Location | Description |
 `kubernetes/samples/scripts/create-weblogic-domain/ingresses` | Ingress resources. |
 `kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 `kubernetes/samples/scripts/domain-lifecycle/waitForDomain.sh` | Utility script that optionally waits for the pods in a domain to reach their expected `Completed`, `image`, and `ready` state. |
-`kubernetes/samples/scripts/domain-lifecycle/domain-on-pv-helper.sh` | Utility script to examine or clean up the contents of shared directories on the persistent volume. |
+`kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh` | Utility script to examine or clean up the contents of shared directories on the persistent volume. |
 
 #### Ensuring your Kubernetes cluster can access images
 

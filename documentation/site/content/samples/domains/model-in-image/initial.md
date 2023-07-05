@@ -6,6 +6,10 @@ weight: 2
 
 {{< table_of_contents >}}
 
+{{% notice note %}}
+**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
+{{% /notice %}}
+
 ### Overview
 
 In this use case, you set up an initial WebLogic domain. This involves:
@@ -15,10 +19,6 @@ In this use case, you set up an initial WebLogic domain. This involves:
   - Creating a Domain YAML file for the domain that references your Secrets, auxiliary image, and a WebLogic image.
 
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
-
-{{% notice note %}}
-**Before you begin**: Perform the steps in [Prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) and then create a Model in Image `auxiliary image` by completing the steps in [Auxiliary image creation]({{< relref "/samples/domains/model-in-image/auxiliary-image-creation.md" >}}).  
-{{% /notice %}}
 
 ### Auxiliary image
 
@@ -83,7 +83,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.
 
-Copy the contents of the [domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml` that is included in the sample source.
+Copy the contents of the [domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) file to a file called `/tmp/sample/mii-initial-domain.yaml` or similar. Alternatively, you can use the file `/tmp/sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 This file contains both the domain resource and the referenced cluster resource definition.  See [Domain and Cluster resources]({{< relref "/managing-domains/domain-resource">}}).
 
 Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml) to view the Domain YAML file.

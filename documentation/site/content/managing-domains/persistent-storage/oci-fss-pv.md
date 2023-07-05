@@ -11,90 +11,69 @@ an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created."
 ---
 
-If you are running your Kubernetes cluster on Oracle Container Engine
-for Kubernetes (commonly known as OKE), and you use Oracle Cloud Infrastructure File Storage (FSS)
-for persistent volumes to store the WebLogic domain home, then the file system
-handling, as demonstrated in the operator persistent volume sample, will require
-an update to properly initialize the file ownership on the persistent volume
-when the domain is initially created.
+Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store
+the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE). When using the FSS with OKE for domain home or log files,  the file system
+handling will require an update to properly initialize the file ownership on the persistent volume
+when the domain is initially created.  
 
 {{% notice note %}}
 File permission handling on persistent volumes can differ between
 cloud providers and even with the underlying storage handling on
-Linux based systems. These instructions provide one option to
-update file ownership used by the standard Oracle images where
-UID `1000` and GID `1000` typically represent the `oracle` or `opc` user.
-For more information on persistent volume handling,
-see [Persistent storage]({{< relref "/managing-domains/persistent-storage/_index.md" >}}).
+Linux-based systems.
+The operator requires permission to create directories on the persistent volume under the shared mount path.
+The following instructions provide an option to update the file ownership and permissions.
 {{% /notice %}}
 
 
-#### Failure during domain creation with persistent volume sample
+#### Updating the permissions of shared directory on persistent storage
+The operator provides a utility script, `pv-pvc-helper.sh`, as part of the lifecycle scripts to change the ownership and permissions of the shared directory on the persistent storage.
 
-The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
-uses a Kubernetes Job to create the domain. The sample uses an
-`initContainers` section to change the file ownership which will
-fail for Oracle Cloud Infrastructure FSS created volumes used with an OKE cluster.
+This script launches a Pod and mounts the specified PVC in the Pod containers at the specified mount path. You can then `exec` in the Pod and manually change the permissions or ownership.
 
-The Oracle Cloud Infrastructure FSS volume contains some files that are not modifiable thus
-causing the Kubernetes Job to fail. The failure is seen in the
-description of the Kubernetes Job pod:
-```shell
-$ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
-```
-```
-Init Containers:
-  fix-pvc-owner:
-    Container ID:  docker://7051b6abdc296c76e937246df03d157926f2f7477e63b6af3bf65f6ae1ceddee
-    Image:         container-registry.oracle.com/middleware/weblogic:12.2.1.3
-    Image ID:      docker-pullable://container-registry.oracle.com/middleware/weblogic@sha256:47dfd4fdf6b56210a6c49021b57dc2a6f2b0d3b3cfcd253af7a75ff6e7421498
-    Port:          <none>
-    Host Port:     <none>
-    Command:
-      sh
-      -c
-      chown -R 1000:0 /shared
-    State:          Terminated
-      Reason:       Error
-      Exit Code:    1
-      Started:      Wed, 12 Feb 2020 18:28:53 +0000
-      Finished:     Wed, 12 Feb 2020 18:28:53 +0000
-    Ready:          False
-    Restart Count:  0
-    Environment:    <none>
-```
-**NOTE**: As of December, 2022, Oracle will continue support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+See the `pv-pvc-helper.sh` in "Examine, change permissions or delete PV contents" section in the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/{{< latestMinorVersion >}}/kubernetes/samples/scripts/domain-lifecycle/README.md) file for the script details.
 
-#### Updating the domain on persistent volume sample
-In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
-you can see the updated `command` for the init container:
-```yaml
-apiVersion: batch/v1
-kind: Job
+For example, run the following command to create the Pod.
+
+```
+$ pv-pvc-helper.sh -n sample-domain1-ns -r -c sample-domain1-weblogic-sample-pvc -m /shared
+```
+
+The script will create a Pod with the following specifications.
+```
+apiVersion: v1
+kind: Pod
 metadata:
-  name: %DOMAIN_UID%-create-weblogic-sample-domain-job
-  namespace: %NAMESPACE%
+  name: pvhelper
+  namespace: sample-domain1-ns
 spec:
-  template:
-    metadata:
-    ...
-    spec:
-      restartPolicy: Never
-      initContainers:
-        - name: fix-pvc-owner
-          image: %WEBLOGIC_IMAGE%
-          command: ["sh", "-c", "chown 1000:0 %DOMAIN_ROOT_DIR%/. && find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0"]
-          volumeMounts:
-          - name: weblogic-sample-domain-storage-volume
-            mountPath: %DOMAIN_ROOT_DIR%
-          securityContext:
-            runAsUser: 0
-            runAsGroup: 0
-      containers:
-        - name: create-weblogic-sample-domain-job
-          image: %WEBLOGIC_IMAGE%
-...
+  containers:
+  - args:
+    - sleep
+    - infinity
+    image: ghcr.io/oracle/oraclelinux:8-slim
+    name: pvhelper
+    volumeMounts:
+    - name: pv-volume
+      mountPath: /shared
+  volumes:
+  - name: pv-volume
+    persistentVolumeClaim:
+      claimName: wko-domain-on-pv-pvc
 ```
-Use this new `command` in your copy of this template file. This will result in
-the ownership being updated for the expected files only, before the WebLogic
-domain is created on the persistent volume.
+
+Run the following command to `exec` into the Pod.
+```
+$ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
+```
+
+After you get a shell to the running Pod container, change the directory to `/shared`, and you can change the ownership or permissions using the appropriate `chown` or `chmod` commands. For example,
+
+```
+$ chown 1000:0 /shared/. && find /shared/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0 chown -R 1000:0
+```
+
+#### References
+
+- [Provisioning PVCs on the File Storage Service (FSS)](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim_Provisioning_PVCs_on_FSS.htm#Provisioning_Persistent_Volume_Claims_on_the_FileStorageService) in the OCI documentation.
+- [Setting up storage for Kubernetes clusters](https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm) in the OCI documentation.

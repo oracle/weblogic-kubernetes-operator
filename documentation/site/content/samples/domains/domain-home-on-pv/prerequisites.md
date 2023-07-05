@@ -159,7 +159,7 @@ for the Domain on PV sample.
 
 **NOTE**: The requirements in this section are in addition to [Prerequisites for WLS and JRF domain types](#prerequisites-for-wls-and-jrf-domain-types).
 
-A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domain]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}) in the user documentation. You must perform all these steps _before_ you create your domain.
+A JRF domain requires an infrastructure database, and configuring your domain to access this database. For more details, see [JRF domains]({{< relref "/managing-domains/domain-on-pv/jrf-domain.md" >}}) in the user documentation. You must perform all these steps _before_ you create your domain.
 
 ##### Set up and initialize an infrastructure database
 
@@ -222,7 +222,7 @@ When you follow the instructions in the samples, avoid instructions that are `WL
 
 For example, in this sample:
 
-  - [JRF Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) file has an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with a `walletPassword` of your choice.
+  - [JRF Domain YAML](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) file has an `configuration.opss.walletPasswordSecret` field that references a secret named `sample-domain1-opss-wallet-password-secret`, with a `walletPassword` of your choice.
 
   - JRF domain creation image models have the following `domainInfo -> RCUDbInfo` stanza that references a `sample-domain1-rcu-access` secret with the appropriate values for attributes, `rcu_prefix`, `rcu_schema_password`, and `rcu_db_conn_string`, for accessing the Oracle database that you deployed to the default namespace as one of the prerequisite steps.
 
