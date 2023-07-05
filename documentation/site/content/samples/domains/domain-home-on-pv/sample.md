@@ -125,11 +125,11 @@ Run the following `kubectl` commands to deploy the required secrets:
 
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-Copy the contents of the [WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) file that is included in the sample source to a file called `/tmp/sample/domain-resource.yaml` or similar.
+Copy the contents of the [WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) file that is included in the sample source to a file called `/tmp/sample/domain-resource.yaml` or similar.
 
-Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
+Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
 
-Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
+Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/JRF/domain-on-pv-JRF-v1.yaml) to view the JRF Domain YAML file.
 
   **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
