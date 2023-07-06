@@ -525,7 +525,7 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
 
 1. To gain an overall understanding of Model in Image domains,
    read the [Model in Image User Guide]({{< relref "/managing-domains/model-in-image/_index.md" >}})
-   and the [Model in Image Sample]({{< relref "/managing-domains/samples/domains/model-in-image/_index.md" >}}).
+   and the [Model in Image Sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    Note that the sample uses the recommended best approach,
    auxiliary images, instead of the alternative approach, which is used in this example.
 
@@ -534,10 +534,10 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    that describe how to:
 
    - Download the operator source and its Model in Image sample
-     (including copying the sample to the suggested location, `/tmp/mii-sample`).
+     (including copying the sample to the suggested location, `/tmp/sample`).
    - Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT)
      and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files
-     to your `/tmp/mii-sample/model-images` directory.
+     to your `/tmp/sample/wdt-artifacts` directory.
      Both WDT and WIT are required to create your Model in Image container images.
    - Install (unzip) the WebLogic Image Tool and configure its cache to reference your WebLogic Deploy Tooling download.
 
@@ -555,9 +555,9 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    where the sample model YAML file and model properties files are already staged:
 
    ```shell
-   $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
-   $ cd /tmp/mii-sample/archives/archive-v1
-   $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+   $ rm -f /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip
+   $ cd /tmp/sample/wdt-artifacts/archives/archive-v1
+   $ zip -r /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1/archive.zip wlsdeploy
    ```
 
    (The `rm -f` command is included in case there's an
@@ -567,29 +567,23 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
    Second, run the following WIT command:
 
    ```shell
-   $ cd /tmp/mii-sample/model-images
+   $ cd /tmp/sample/wdt-artifacts/wdt-model-files/WLS-LEGACY-v1
    ```
    ```shell
    $ ./imagetool/bin/imagetool.sh update \
-     --tag model-in-image:WLS-v1 \
+     --tag wdt-domain-image:WLS-LEGACY-v1 \
      --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
-     --wdtModel      ./model-in-image__WLS-v1/model.10.yaml \
-     --wdtVariables  ./model-in-image__WLS-v1/model.10.properties \
-     --wdtArchive    ./model-in-image__WLS-v1/archive.zip \
+     --wdtModel      ./model.10.yaml \
+     --wdtVariables  ./model.10.properties \
+     --wdtArchive    ./archive.zip \
      --wdtModelOnly \
      --wdtDomainType WLS \
      --chown oracle:root
    ```
-
-   **NOTE**: If using a Fusion Middleware Infrastructure base image,
-   then specify a `--wdtDomainType` of `JRF` or `RestrictedJRF`,
-   `JRF-v1` instead of `WLS-v1` for the image tag,
-   and substitute each occurrence of `model-in-image__WLS-v1` with `model-in-image__JRF-v1`.
-   **Also note** that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
+   **NOTE** that JRF support in Model in Image domains is deprecated in operator version 4.1.0; For JRF domains, use the [Domain on PV]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) domain home source type instead.
 
 1. For an example Domain YAML file that sets up Model in Image to reference the image,
-   see `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`
-   (or `./JRF/mii-initial-d1-JRF-v1.yaml` if using Fusion Middleware Infrastructure `JRF` mode).
+   see `/tmp/sample/domain-resources/WLS-LEGACY/mii-initial-d1-WLS-LEGACY-v1.yaml`
 
    **NOTES**:
 
@@ -598,9 +592,3 @@ Example steps for creating a custom WebLogic image with a Model in Image file la
 
    - The domain type specified in `domain.spec.configuration.model.domainType`
      must correspond with the `--wdtDomainType` specified on the WIT command line when creating the image.
-
-   - To compare this example with an equivalent auxiliary image domain:
-     ```
-     $ diff /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml \
-            /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
-     ```
