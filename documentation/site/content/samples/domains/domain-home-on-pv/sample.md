@@ -491,8 +491,8 @@ After you get a shell to the running pod container, you can recursively delete t
 #### Remove the PVC and PV
 If the PVC and PV were created by the operator and you don't want to preserve them, then run following command to delete PVC and PV.
 ```
-$ kubectl delete PVC sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
-$ kubectl delete PV sample-domain1-weblogic-sample-pv
+$ kubectl delete pvc sample-domain1-weblogic-sample-pvc -n sample-domain1-ns
+$ kubectl delete pv sample-domain1-weblogic-sample-pv
 ```
 
 #### Delete the domain namespace.
