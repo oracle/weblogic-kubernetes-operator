@@ -54,7 +54,7 @@ domainNamespaceSelectionStrategy: LabelSelector
 enableClusterRoleBinding: true
 
 # image specifies the container image containing the operator.
-image: "4.1.0-RELEASE-MARKER"
+image: "4.2.0-RELEASE-MARKER"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
