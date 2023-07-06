@@ -39,10 +39,6 @@ This release was published on April 7, 2023. See the [operator prerequisites]({{
 
 See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes to the operator and known issues.
 
-#### Operator earlier versions
-
-Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/), and [3.3.x](https://oracle.github.io/weblogic-kubernetes-operator/3.3/).
-
 #### Backward compatibility guidelines
 
 Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
