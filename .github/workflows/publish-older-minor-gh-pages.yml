@@ -4,7 +4,7 @@
 # Description
 #  Use Hugo to build static site and publish to gh-pages
 #
-name: "PublishLatestMinorGitHubPages"
+name: "PublishOlderMinorGitHubPages"
 
 on:
   push:
@@ -42,20 +42,13 @@ jobs:
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
-          
-          cp -R $GITHUB_WORKSPACE/gh-pages/charts $GITHUB_WORKSPACE/WORK
-          
           cd $GITHUB_WORKSPACE/branch/documentation
           echo "Documentation branch is $GITHUB_REF_NAME..."
-          latest_tag=$(git ls-remote https://github.com/oracle/weblogic-kubernetes-operator.git --h --sort origin "refs/tags/v*" | cut -f2 | grep v4.0 | tail -1 | cut -c12-)
-          echo "Latest tag is $latest_tag..."
-          echo $latest_tag >| $GITHUB_WORKSPACE/branch/documentation/site/layouts/shortcodes/latestVersion.html
-          echo "Building documentation for latest minor version..."
-          hugo -s site -d "$GITHUB_WORKSPACE/WORK" -b https://oracle.github.io/weblogic-kubernetes-operator
-          echo "Copying static files into place..."
-          cp -R domains "$GITHUB_WORKSPACE/WORK"
+          minor_version=${GITHUB_REF_NAME#"release/"}
+          echo "Building documentation for older minor version..."
+          hugo -s site -d "$GITHUB_WORKSPACE/WORK/$minor_version" -b https://oracle.github.io/weblogic-kubernetes-operator/$minor_version
           cd $GITHUB_WORKSPACE/gh-pages
-          find . -maxdepth 1 -mindepth 1 -not -name '[0-9]*' -not -name '.git*' -exec rm -Rf {} \;
+          rm -Rf $minor_version
           cp -R $GITHUB_WORKSPACE/WORK/* .
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
