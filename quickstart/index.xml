@@ -28,8 +28,7 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prepare/</guid>
       <description>Create and label a namespace that can host one or more domains.
 $ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled Configure Traefik to manage ingresses created in this namespace.
-$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.
-Accept the license agreement for WebLogic Server images.</description>
+$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the prerequisites in the domain samples, stop here and return to the Model in Image sample instructions or Domain on PV sample instructions.</description>
     </item>
     
     <item>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.108.0">
+    <meta name="generator" content="Hugo 0.115.1">
     <meta name="description" content="If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (OKE), and you use Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling, as demonstrated in the operator persistent volume sample, will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.">
 
 
@@ -12,20 +12,20 @@
     <title>Use OCI File Storage (FSS) for persistent volumes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1688700295" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1688700295" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1688763901" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1688763901" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1688700295"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1688763901"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1688700295"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1688700295"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1688763901"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1688763901"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1688700295"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1688763901"></script>
 
     
   </div>
@@ -813,6 +813,147 @@
  
   
     
+    <li data-nav-id="/managing-domains/domain-on-pv/" title="Domain on Persistent Volume (PV)" class="dd-item
+        
+        
+        
+        ">
+      <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/">
+          <b> </b>Domain on Persistent Volume (PV)
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/overview/" title="Overview" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/">
+        <b> </b>Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/usage/" title="Usage" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/">
+        <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/domain-creation-images/" title="Domain creation images" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/">
+        <b> </b>Domain creation images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/model-files/" title="Working with WDT model files" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/">
+        <b> </b>Working with WDT model files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/managing-domains/domain-on-pv/jrf-domain/" title="JRF domains" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/">
+        <b> </b>JRF domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
     <li data-nav-id="/managing-domains/model-in-image/" title="Model in Image" class="dd-item
         
         
@@ -980,13 +1121,13 @@
  
   
     
-    <li data-nav-id="/managing-domains/persistent-storage/" title="Persistent volumes" class="dd-item
+    <li data-nav-id="/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
         parent
         
         
         ">
       <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/">
-          <b> </b>Persistent volumes
+          <b> </b>Persistent storage
           
       </a>
       
@@ -1007,9 +1148,9 @@
  
   
     
-      <li data-nav-id="/managing-domains/persistent-storage/host-paths/" title="Host paths and other PVs" class="dd-item ">
-        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/">
-        Host paths and other PVs
+      <li data-nav-id="/managing-domains/persistent-storage/pv-pvc/" title="PersistentVolumes and PersistentVolumeClaims" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/">
+        PersistentVolumes and PersistentVolumeClaims
         
         </a>
     </li>
@@ -2074,44 +2215,40 @@
  
   
     
-    <li data-nav-id="/samples/domains/manually-create-domain/" title="Manually" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/manually-create-domain/">
-          Manually
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item
+    <li data-nav-id="/samples/domains/domain-home-on-pv/" title="Domain on PV" class="dd-item
         
         
         
         ">
       <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/">
-          Domain home on a PV
+          Domain on PV
           
       </a>
       
       
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/prerequisites/">
+        Prerequisites
+        
+        </a>
     </li>
+     
   
  
 
@@ -2126,16 +2263,62 @@
  
   
     
-    <li data-nav-id="/samples/domains/domain-home-in-image/" title="Domain home in image" class="dd-item
+      <li data-nav-id="/samples/domains/domain-home-on-pv/build-domain-creation-image/" title="Build domain creation image" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/build-domain-creation-image/">
+        Build domain creation image
         
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-in-image/">
-          Domain home in image
+        </a>
+    </li>
+     
+  
+ 
+
+            
           
-      </a>
-      
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/sample/" title="Sample" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/sample/">
+        Sample
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/domain-home-on-pv/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
       
     </li>
   
@@ -2182,6 +2365,27 @@
       <li data-nav-id="/samples/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
         <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/">
         Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/samples/domains/model-in-image/auxiliary-image-creation/" title="Auxiliary image creation" class="dd-item ">
+        <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/auxiliary-image-creation/">
+        Auxiliary image creation
         
         </a>
     </li>
@@ -2319,58 +2523,6 @@
           
         
         </ul>
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/fmw-domain/">
-          FMW Infrastructure domain on a PV
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/samples/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
-        
-        
-        
-        ">
-      <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/fmw-domain-home-in-image/">
-          FMW Infrastructure domain home in image
-          
-      </a>
-      
       
     </li>
   
@@ -3540,7 +3692,7 @@
 
           
         
-      <li><a  class="padding" href="https://github.com/oracle/weblogic-kubernetes-operator/releases">Releases</a></li>
+      <li><a  class="padding" href="https://github.com/oracle/weblogic-kubernetes-operator/releases">Release Notes</a></li>
     </ul>
 
     
@@ -3595,7 +3747,7 @@
             
           
           
-            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/'>Manage domains</a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/'>Persistent volumes</a> > Use OCI File Storage (FSS) for persistent volumes
+            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/'>Manage domains</a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/'>Persistent storage</a> > Use OCI File Storage (FSS) for persistent volumes
           
         
           
@@ -3614,8 +3766,8 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</a></li>
-        <li><a href="#updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</a></li>
+        <li><a href="#updating-the-permissions-of-shared-directory-on-persistent-storage">Updating the permissions of shared directory on persistent storage</a></li>
+        <li><a href="#references">References</a></li>
       </ul>
     </li>
   </ul>
@@ -3642,82 +3794,54 @@
         
 
 
-<p>If you are running your Kubernetes cluster on Oracle Container Engine
-for Kubernetes (commonly known as OKE), and you use Oracle Cloud Infrastructure File Storage (FSS)
-for persistent volumes to store the WebLogic domain home, then the file system
-handling, as demonstrated in the operator persistent volume sample, will require
-an update to properly initialize the file ownership on the persistent volume
+<p>Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store
+the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine
+for Kubernetes (OKE). When using the FSS with OKE for domain home or log files,  the file system
+handling will require an update to properly initialize the file ownership on the persistent volume
 when the domain is initially created.</p>
 
 <div class="notices note" ><p>File permission handling on persistent volumes can differ between
 cloud providers and even with the underlying storage handling on
-Linux based systems. These instructions provide one option to
-update file ownership used by the standard Oracle images where
-UID <code>1000</code> and GID <code>1000</code> typically represent the <code>oracle</code> or <code>opc</code> user.
-For more information on persistent volume handling,
-see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/">Persistent storage</a>.</p>
+Linux-based systems.
+The operator requires permission to create directories on the persistent volume under the shared mount path.
+The following instructions provide an option to update the file ownership and permissions.</p>
 </div>
 
-<h4 id="failure-during-domain-creation-with-persistent-volume-sample">Failure during domain creation with persistent volume sample</h4>
-<p>The existing sample for <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/release/4.0/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv">creation of a domain home on persistent volume</a>
-uses a Kubernetes Job to create the domain. The sample uses an
-<code>initContainers</code> section to change the file ownership which will
-fail for Oracle Cloud Infrastructure FSS created volumes used with an OKE cluster.</p>
-<p>The Oracle Cloud Infrastructure FSS volume contains some files that are not modifiable thus
-causing the Kubernetes Job to fail. The failure is seen in the
-description of the Kubernetes Job pod:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
-</span></span></code></pre></div><pre tabindex="0"><code>Init Containers:
-  fix-pvc-owner:
-    Container ID:  docker://7051b6abdc296c76e937246df03d157926f2f7477e63b6af3bf65f6ae1ceddee
-    Image:         container-registry.oracle.com/middleware/weblogic:12.2.1.3
-    Image ID:      docker-pullable://container-registry.oracle.com/middleware/weblogic@sha256:47dfd4fdf6b56210a6c49021b57dc2a6f2b0d3b3cfcd253af7a75ff6e7421498
-    Port:          &lt;none&gt;
-    Host Port:     &lt;none&gt;
-    Command:
-      sh
-      -c
-      chown -R 1000:0 /shared
-    State:          Terminated
-      Reason:       Error
-      Exit Code:    1
-      Started:      Wed, 12 Feb 2020 18:28:53 +0000
-      Finished:     Wed, 12 Feb 2020 18:28:53 +0000
-    Ready:          False
-    Restart Count:  0
-    Environment:    &lt;none&gt;
-</code></pre><p><strong>NOTE</strong>: As of December, 2022, Oracle will continue support of WebLogic Server 12.2.1.3, for six months <em>only</em>, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.</p>
-<h4 id="updating-the-domain-on-persistent-volume-sample">Updating the domain on persistent volume sample</h4>
-<p>In the following snippet of the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/release/4.0/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml">create-domain-job-template.yaml</a>,
-you can see the updated <code>command</code> for the init container:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">batch/v1</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Job</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">metadata</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">%DOMAIN_UID%-create-weblogic-sample-domain-job</span>
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">%NAMESPACE%</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">spec</span>:
-</span></span><span style="display:flex;"><span>  <span style="color:#f92672">template</span>:
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">metadata</span>:
-</span></span><span style="display:flex;"><span>    <span style="color:#ae81ff">...</span>
-</span></span><span style="display:flex;"><span>    <span style="color:#f92672">spec</span>:
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">restartPolicy</span>: <span style="color:#ae81ff">Never</span>
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">initContainers</span>:
-</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fix-pvc-owner</span>
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">%WEBLOGIC_IMAGE%</span>
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">command</span>: [<span style="color:#e6db74">&#34;sh&#34;</span>, <span style="color:#e6db74">&#34;-c&#34;</span>, <span style="color:#e6db74">&#34;chown 1000:0 %DOMAIN_ROOT_DIR%/. &amp;&amp; find %DOMAIN_ROOT_DIR%/. -maxdepth 1 ! -name &#39;.snapshot&#39; ! -name &#39;.&#39; -print0 | xargs -r -0 chown -R 1000:0&#34;</span>]
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">volumeMounts</span>:
-</span></span><span style="display:flex;"><span>          - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-sample-domain-storage-volume</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">%DOMAIN_ROOT_DIR%</span>
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">securityContext</span>:
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">runAsUser</span>: <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>            <span style="color:#f92672">runAsGroup</span>: <span style="color:#ae81ff">0</span>
-</span></span><span style="display:flex;"><span>      <span style="color:#f92672">containers</span>:
-</span></span><span style="display:flex;"><span>        - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">create-weblogic-sample-domain-job</span>
-</span></span><span style="display:flex;"><span>          <span style="color:#f92672">image</span>: <span style="color:#ae81ff">%WEBLOGIC_IMAGE%</span>
-</span></span><span style="display:flex;"><span>...
-</span></span></code></pre></div><p>Use this new <code>command</code> in your copy of this template file. This will result in
-the ownership being updated for the expected files only, before the WebLogic
-domain is created on the persistent volume.</p>
+<h4 id="updating-the-permissions-of-shared-directory-on-persistent-storage">Updating the permissions of shared directory on persistent storage</h4>
+<p>The operator provides a utility script, <code>pv-pvc-helper.sh</code>, as part of the lifecycle scripts to change the ownership and permissions of the shared directory on the persistent storage.</p>
+<p>This script launches a Pod and mounts the specified PVC in the Pod containers at the specified mount path. You can then <code>exec</code> in the Pod and manually change the permissions or ownership.</p>
+<p>See the <code>pv-pvc-helper.sh</code> in &ldquo;Examine, change permissions or delete PV contents&rdquo; section in the <a href="https://github.com/oracle/weblogic-kubernetes-operator/tree/release/4.1/kubernetes/samples/scripts/domain-lifecycle/README.md">README</a> file for the script details.</p>
+<p>For example, run the following command to create the Pod.</p>
+<pre tabindex="0"><code>$ pv-pvc-helper.sh -n sample-domain1-ns -r -c sample-domain1-weblogic-sample-pvc -m /shared
+</code></pre><p>The script will create a Pod with the following specifications.</p>
+<pre tabindex="0"><code>apiVersion: v1
+kind: Pod
+metadata:
+  name: pvhelper
+  namespace: sample-domain1-ns
+spec:
+  containers:
+  - args:
+    - sleep
+    - infinity
+    image: ghcr.io/oracle/oraclelinux:8-slim
+    name: pvhelper
+    volumeMounts:
+    - name: pv-volume
+      mountPath: /shared
+  volumes:
+  - name: pv-volume
+    persistentVolumeClaim:
+      claimName: wko-domain-on-pv-pvc
+</code></pre><p>Run the following command to <code>exec</code> into the Pod.</p>
+<pre tabindex="0"><code>$ kubectl -n sample-domain1-ns exec -it pvhelper -- /bin/sh
+</code></pre><p>After you get a shell to the running Pod container, change the directory to <code>/shared</code>, and you can change the ownership or permissions using the appropriate <code>chown</code> or <code>chmod</code> commands. For example,</p>
+<pre tabindex="0"><code>$ chown 1000:0 /shared/. &amp;&amp; find /shared/. -maxdepth 1 ! -name &#39;.snapshot&#39; ! -name &#39;.&#39; -print0 | xargs -r -0 chown -R 1000:0
+</code></pre><h4 id="references">References</h4>
+<ul>
+<li><a href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim_Provisioning_PVCs_on_FSS.htm#Provisioning_Persistent_Volume_Claims_on_the_FileStorageService">Provisioning PVCs on the File Storage Service (FSS)</a> in the OCI documentation.</li>
+<li><a href="https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingpersistentvolumeclaim.htm">Setting up storage for Kubernetes clusters</a> in the OCI documentation.</li>
+</ul>
 
 
 <footer class="footline">
@@ -4377,6 +4501,102 @@ domain is created on the persistent volume.</p>
                     
 
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
             
         
                     
@@ -4562,134 +4782,6 @@ domain is created on the persistent volume.</p>
                     
             
         
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
                     
                         
             
@@ -4915,6 +5007,372 @@ domain is created on the persistent volume.</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
             
         
                     
@@ -5046,148 +5504,6 @@ domain is created on the persistent volume.</p>
             
         
                     
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
                         
             
             
@@ -5251,86 +5567,6 @@ domain is created on the persistent volume.</p>
                     
             
         
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
                     
             
         
@@ -6122,7 +6358,7 @@ domain is created on the persistent volume.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/" title="Host paths and other PVs"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/" title="PersistentVolumes and PersistentVolumeClaims"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/volumes/" title="Provide access to a PersistentVolumeClaim" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
@@ -6135,19 +6371,19 @@ domain is created on the persistent volume.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1688700295"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1688763901"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1688700295"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1688700295"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1688763901"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1688763901"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1688700295"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1688763901"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

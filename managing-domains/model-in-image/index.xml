@@ -13,8 +13,7 @@
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/</guid>
-      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain in PV domain types. See Choose a domain home source type for a comparison of operator domain types.
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>
@@ -24,7 +23,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/usage/</guid>
       <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
-Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial model files and WDT Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See Manage operators and Quick Start.</description>
+Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial WDT model files and WDT Home Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
     </item>
     
     <item>

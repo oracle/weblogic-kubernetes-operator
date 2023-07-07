@@ -24,7 +24,7 @@ Contents Introduction Starting and stopping servers serverStartPolicy rules Avai
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/restarting/</guid>
       <description>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
-Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain in PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
+Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain on PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
     </item>
     
     <item>
@@ -44,7 +44,7 @@ Contents Overview kubectl CLI commands kubectl scale command kubectl patch comma
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/introspection/</guid>
       <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
-Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain in PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
+Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain on PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
     </item>
     
     <item>

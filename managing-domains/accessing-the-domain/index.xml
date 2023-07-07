@@ -36,7 +36,7 @@ Use a kubectl port-forward connection</description>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/wlst/</guid>
       <description>Contents Introduction Use kubectl exec Use a NodePort Use port forwarding Introduction You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
 To give WLST access to a domain running in Kubernetes, you can:
-Use kubectl exec Use a NodePort Use port forwarding Note: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
+Use kubectl exec Use a NodePort Use port forwarding NOTE: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
     </item>
     
     <item>

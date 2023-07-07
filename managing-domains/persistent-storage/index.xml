@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Persistent volumes on WebLogic Kubernetes Operator</title>
+    <title>Persistent storage on WebLogic Kubernetes Operator</title>
     <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/</link>
-    <description>Recent content in Persistent volumes on WebLogic Kubernetes Operator</description>
+    <description>Recent content in Persistent storage on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 23 Feb 2019 16:45:09 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Host paths and other PVs</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/</link>
+      <title>PersistentVolumes and PersistentVolumeClaims</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:09 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/</guid>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/</guid>
       <description>This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.
 Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace.</description>
@@ -24,8 +24,8 @@ Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention
       <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/oci-fss-pv/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling, as demonstrated in the operator persistent volume sample, will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
-File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
+      <description>Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine for Kubernetes (OKE). When using the FSS with OKE for domain home or log files, the file system handling will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux-based systems.</description>
     </item>
     
     <item>

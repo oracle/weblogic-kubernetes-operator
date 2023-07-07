@@ -6,7 +6,16 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 24 Oct 2022 16:43:45 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 26 Apr 2023 16:45:16 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Overview</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/</guid>
+      <description>Contents Overview High-level use case WebLogic Deploy Tooling models Runtime behavior Runtime updates Overview Domain on persistent volume (Domain on PV) is an operator domain home source type, which requires that the domain home exists on a persistent volume. The domain home can be created either manually or automatically by specifying the section, domain.spec.configuration.initializeDomainOnPV, in the domain resource YAML file. The initial domain topology and resources are described using WebLogic Deploy Tooling (WDT) models.</description>
+    </item>
+    
     <item>
       <title>Overview</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/overview/</link>
@@ -81,12 +90,28 @@ Use a kubectl port-forward connection</description>
     
     <item>
       <title>Prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/prerequisites/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/prerequisites/</guid>
+      <description>Contents Prerequisites for WLS and JRF domain types Additional prerequisites for JRF domains Prerequisites for WLS and JRF domain types Choose the type of domain you’re going to use throughout the sample, WLS or JRF.
+The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
+Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
+For example:
+$ cd /tmp $ git clone --branch v4.</description>
+    </item>
+    
+    <item>
+      <title>Prerequisites</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</link>
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</guid>
-      <description>Prerequisites for all domain types Choose the type of domain you&amp;rsquo;re going to use throughout the sample, WLS or JRF.
-The first time you try this sample, we recommend that you choose WLS even if you&amp;rsquo;re familiar with JRF. This is because WLS is simpler and will more easily familiarize you with Model in Image concepts. We recommend choosing JRF only if you are already familiar with JRF, you have already tried the WLS path through this sample, and you have a definite use case where you need to use JRF.</description>
+      <description>Prerequisites The JAVA_HOME environment variable must be set and must reference a valid JDK 8 or 11 installation.
+Get the operator source and put it in /tmp/weblogic-kubernetes-operator.
+For example:
+$ cd /tmp $ git clone --branch v4.1.0 https://github.com/oracle/weblogic-kubernetes-operator.git NOTE: We will refer to the top directory of the operator source tree as /tmp/weblogic-kubernetes-operator; however, you can use a different location.
+For additional information about obtaining the operator source, see the Developer Guide Requirements.</description>
     </item>
     
     <item>
@@ -130,11 +155,11 @@ Contents Introduction Starting and stopping servers serverStartPolicy rules Avai
     </item>
     
     <item>
-      <title>Host paths and other PVs</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/</link>
+      <title>PersistentVolumes and PersistentVolumeClaims</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:09 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/host-paths/</guid>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/pv-pvc/</guid>
       <description>This document show you how to set up a Kubernetes PersistentVolume and PersistentVolumeClaim, which can be used as storage for WebLogic domain homes and log files. A PersistentVolume can be shared by multiple WebLogic domains or dedicated to a particular domain.
 Prerequisites The following prerequisites must be fulfilled before proceeding with the creation of the volume:
 Create a Kubernetes Namespace for the PersistentVolumeClaim unless the intention is to use the default namespace.</description>
@@ -174,6 +199,16 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
     </item>
     
     <item>
+      <title>Usage</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</guid>
+      <description>This document describes how to create and deploy a typical Domain home on persistent volume (Domain on PV).
+Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain creation WDT models Optional WDT models ConfigMap Volumes and VolumeMounts information Persistent Volume and Persistent Volume Claim PV and PVC requirements References Domain information Best practices Back up the JRF domain home directory and database Store the OPSS wallet in a Kubernetes Secret and update opss.</description>
+    </item>
+    
+    <item>
       <title>Prepare for installation</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/preparation/</link>
       <pubDate>Sun, 05 Dec 2021 16:47:21 -0500</pubDate>
@@ -200,8 +235,8 @@ Contents Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operato
       <pubDate>Wed, 12 Feb 2020 12:12:12 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/persistent-storage/oci-fss-pv/</guid>
-      <description>If you are running your Kubernetes cluster on Oracle Container Engine for Kubernetes (commonly known as OKE), and you use Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home, then the file system handling, as demonstrated in the operator persistent volume sample, will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
-File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux based systems.</description>
+      <description>Oracle recommends using Oracle Cloud Infrastructure File Storage (FSS) for persistent volumes to store the WebLogic domain home or log files when running the Kubernetes cluster on Oracle Container Engine for Kubernetes (OKE). When using the FSS with OKE for domain home or log files, the file system handling will require an update to properly initialize the file ownership on the persistent volume when the domain is initially created.
+File permission handling on persistent volumes can differ between cloud providers and even with the underlying storage handling on Linux-based systems.</description>
     </item>
     
     <item>
@@ -243,7 +278,7 @@ The WebLogic domain home that is part of a Domain in Image image contains sensit
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/restarting/</guid>
       <description>This document describes when WebLogic Server instances should and will be restarted in the Kubernetes environment.
-Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain in PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
+Contents Overview Common restart scenarios Use cases Modifying the WebLogic domain configuration Domain in Image Model in Image Domain on PV Changing the domain configuration overrides Changing the WebLogic Server credentials Changing fields on the Domain that affect WebLogic Server instance Pods Applying WebLogic Server patches Updating deployed applications Rolling out an updated domain home in image or model in image Avoiding a rolling restart when changing the image field on a Domain Other considerations for restarting a domain Overview There are many situations where changes to the WebLogic or Kubernetes environment configuration require that all the servers in a domain or cluster be restarted, for example, when applying a WebLogic Server patch or when upgrading an application.</description>
     </item>
     
     <item>
@@ -264,7 +299,29 @@ Human operators are typically responsible for starting and stopping environments
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/accessing-the-domain/wlst/</guid>
       <description>Contents Introduction Use kubectl exec Use a NodePort Use port forwarding Introduction You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
 To give WLST access to a domain running in Kubernetes, you can:
-Use kubectl exec Use a NodePort Use port forwarding Note: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
+Use kubectl exec Use a NodePort Use port forwarding NOTE: If your domain home type is either Domain in Image or Model in Image, then do not use the WLST to make changes to the WebLogic domain configuration because these changes are ephemeral and will be lost when servers restart.</description>
+    </item>
+    
+    <item>
+      <title>Auxiliary image creation</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/auxiliary-image-creation/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/auxiliary-image-creation/</guid>
+      <description>Contents Overview Auxiliary image creation Understand your first archive Stage a ZIP file of the archive Stage model files Create the image with WIT Before you begin: Complete the steps in Prerequisites.
+Overview Auxiliary image creation step uses the WebLogic Image Tool to create a Model in Image auxiliary image. This image contains:
+The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image&amp;rsquo;s /auxiliary/weblogic-deploy directory, by default.</description>
+    </item>
+    
+    <item>
+      <title>Build domain creation image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/build-domain-creation-image/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/build-domain-creation-image/</guid>
+      <description>Contents Overview Build the domain creation image Understand your first archive Stage the archive ZIP file Stage the model files Create the image with WIT Before you begin: Complete the steps in Prerequisites.
+Overview The image build process uses the WebLogic Image Tool to create a Domain on PV domain creation image. This image contains:
+The directory where the WebLogic Deploy Tooling software is installed (also known as WDT Home), expected in an image&amp;rsquo;s /auxiliary/weblogic-deploy directory, by default.</description>
     </item>
     
     <item>
@@ -273,8 +330,9 @@ Use kubectl exec Use a NodePort Use port forwarding Note: If your domain home ty
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/</guid>
-      <description>Contents Overview Image creation Image creation - Introduction Understanding your first archive Staging a ZIP file of the archive Staging model files Creating the image with WIT Deploy resources Deploy resources - Introduction Secrets Domain resource Overview In this use case, you set up an initial WebLogic domain. This involves:
-Creating an auxiliary image with: A WDT archive ZIP file that contains your applications. A WDT model that describes your WebLogic configuration.</description>
+      <description>Contents Overview Auxiliary image Deploy resources - Introduction Secrets Domain resource Verify the domain Verify the pods Invoke the web application Before you begin: Perform the steps in Prerequisites and then create a Model in Image auxiliary image by completing the steps in Auxiliary image creation.
+Overview In this use case, you set up an initial WebLogic domain. This involves:
+Using the auxiliary image that you previously created. Creating secrets for the domain.</description>
     </item>
     
     <item>
@@ -294,8 +352,7 @@ Creating an auxiliary image with: A WDT archive ZIP file that contains your appl
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prepare/</guid>
       <description>Create and label a namespace that can host one or more domains.
 $ kubectl create namespace sample-domain1-ns $ kubectl label ns sample-domain1-ns weblogic-operator=enabled Configure Traefik to manage ingresses created in this namespace.
-$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the &amp;ldquo;Model in Image&amp;rdquo; sample, please stop here and return to the sample instructions.
-Accept the license agreement for WebLogic Server images.</description>
+$ helm upgrade traefik-operator traefik/traefik \ --namespace traefik \ --reuse-values \ --set &amp;#34;kubernetes.namespaces={traefik,sample-domain1-ns}&amp;#34; If you have reached this point while following the prerequisites in the domain samples, stop here and return to the Model in Image sample instructions or Domain on PV sample instructions.</description>
     </item>
     
     <item>
@@ -344,7 +401,7 @@ Contents Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operato
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/choose-an-approach/</guid>
       <description>Let&amp;rsquo;s review what we have discussed and talk about when we might want to use various approaches. We can start by asking ourselves questions like these:
 Can you make the desired change with a configuration override or Model in Image ConfigMap?
-When your domain home source type is Domain in PV or Domain in Image, the operator allows you to inject a number of configuration overrides into your pods before starting any servers in the domain.</description>
+When your domain home source type is Domain on PV or Domain in Image, the operator allows you to inject a number of configuration overrides into your pods before starting any servers in the domain.</description>
     </item>
     
     <item>
@@ -384,6 +441,15 @@ The operator runtime, which is a process that: Runs in a container deployed into
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/</guid>
       <description>Contents Introspector encryption Encryption of Kubernetes Secrets Additional reading Introspector encryption The operator has an introspection job that handles WebLogic domain encryption. The introspection job also addresses the use of Kubernetes Secrets with configuration overrides. For additional information on the configuration handling, see Configuration overrides.
 The introspection job also creates a boot.properties file that is made available to the pods in the WebLogic domain. The credential used for the WebLogic domain is kept in a Kubernetes Secret which follows the naming pattern &amp;lt;domainUID&amp;gt;-weblogic-credentials, where &amp;lt;domainUID&amp;gt; is the unique identifier of the domain, for example, mydomain-weblogic-credentials.</description>
+    </item>
+    
+    <item>
+      <title>Sample</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/sample/</link>
+      <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/sample/</guid>
+      <description>Contents Overview Domain creation image Deploy resources - Introduction Secrets Domain resource Verify the PV, PVC, and domain Verify the persistent volume Verify the persistent volume claim Verify the domain Verify the pods Verify the services Invoke the web application Clean up resources and remove the generated domain home Remove the PVC and PV Delete the domain namespace. Before you begin: Perform the steps in Prerequisites and then build a Domain on PV domain creation image by completing the steps in Build the domain creation image.</description>
     </item>
     
     <item>
@@ -434,7 +500,16 @@ Contents Overview kubectl CLI commands kubectl scale command kubectl patch comma
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/patch-images/</guid>
       <description>Apply patched images to a running domain When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image, the operator applies the update in a zero downtime fashion. The procedure for the operator to update the running domain differs depending on the domain home source type. See the following corresponding sections:
-Domain in PV Model in Image with auxiliary images Model in Image without auxiliary images Domain in Image For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see CI/CD.</description>
+Domain on PV Model in Image with auxiliary images Model in Image without auxiliary images Domain in Image For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see CI/CD.</description>
+    </item>
+    
+    <item>
+      <title>Domain creation images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/</guid>
+      <description>Contents Introduction Configuration References Source locations Multiple images Configuration examples Example 1: Basic configuration Example 2: Source locations Example 3: Multiple images Introduction Domain creation images are used for supplying WebLogic Deploy Tooling (WDT) model files, WDT variables files, WDT application archive files (collectively known as WDT model files), and the directory where the WebLogic Deploy Tooling software is installed (known as the WDT Home) when deploying a domain using a Domain on PV model.</description>
     </item>
     
     <item>
@@ -465,6 +540,16 @@ View the Cluster reference document here.</description>
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/create-domain/</guid>
       <description>Create the domain using a domain resource. Select a user name and password for the WebLogic domain administrator credentials and use them to create a Kubernetes Secret for the domain.
 $ kubectl create secret generic sample-domain1-weblogic-credentials \ --from-literal=username=ADMIN_USERNAME --from-literal=password=ADMIN_PASSWORD \ -n sample-domain1-ns Replace ADMIN_USERNAME and ADMIN_PASSWORD with your choice of user name and password. Note that the password must be at least 8 characters long and must contain at least one non-alphabetical character.</description>
+    </item>
+    
+    <item>
+      <title>Working with WDT model files</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/</link>
+      <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/model-files/</guid>
+      <description>Contents Sample WDT model file with macros Important notes about WDT model files WDT models source location and loading order Model file macros Using secrets in model files Using environment variables in model files Combining secrets and environment variables in model files This document describes working with WebLogic Deploy Tooling (WDT) model files in the operator. For additional information, see the WebLogic Deploy Tooling documentation.
+The WDT Discover Domain Tool is particularly useful for generating WDT model files from an existing domain home.</description>
     </item>
     
     <item>
@@ -578,13 +663,34 @@ $ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-
     </item>
     
     <item>
+      <title>Cleanup</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/cleanup/</link>
+      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/cleanup/</guid>
+      <description>Remove the domain and cluster Remove the domain&amp;rsquo;s ingress routes by using kubectl.
+$ kubectl delete ingressroute traefik-ingress-sample-domain1-admin-server -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain1-cluster-cluster-1 -n sample-domain1-ns $ kubectl delete ingressroute traefik-ingress-sample-domain2-cluster-cluster-1 -n sample-domain1-ns Use kubectl to delete the domain resource.
+$ kubectl delete domain sample-domain1 -n sample-domain1-ns Use kubectl to confirm that the WebLogic Server instance Pods and Domain are gone.
+$ kubectl get pods -n sample-domain1-ns $ kubectl get domains -n sample-domain1-ns Use kubectl to delete the cluster resource.</description>
+    </item>
+    
+    <item>
+      <title>JRF domains</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/</link>
+      <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/jrf-domain/</guid>
+      <description>Contents Overview Sample WDT model for JRF domain Importance of domain home directory backup Download OPSS wallet and store in a Kubernetes Secret Disaster recovery for Domain on PV deployment Disaster recovery for Model in Image domains Overview A Java Required Files (JRF) domain consists of those components not included in a WebLogic Server installation that provide common functionality for Oracle business applications and application frameworks. They consist of a number of independently developed libraries and applications that are deployed in a common location.</description>
+    </item>
+    
+    <item>
       <title>Domain introspection</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/introspection/</link>
       <pubDate>Tue, 07 Jul 2020 08:14:51 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-lifecycle/introspection/</guid>
       <description>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in a Kubernetes environment.
-Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain in PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
+Contents Overview When introspection occurs automatically Initiating introspection Failed introspection Introspection use cases Adding clusters or Managed Servers to a Domain on PV configuration Distributing changes to configuration overrides Distributing changes to running Model in Image domains Overview To manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic domain configuration using an &amp;ldquo;introspection&amp;rdquo; job.</description>
     </item>
     
     <item>
@@ -612,7 +718,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       <pubDate>Thu, 11 Apr 2019 13:48:15 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/cicd/how-to-copy-domains/</guid>
-      <description>The recommended approach to save a copy of a Domain in Image or Domain in PV domain is to simply ZIP (or tar) the domain directory. However, there is a very important caveat with this recommendation - when you unzip the domain, it must go back into exactly the same location (Domain Home) in the (new) file system. Using this approach will maintain the same domain encryption key.
+      <description>The recommended approach to save a copy of a Domain in Image or Domain on PV domain is to simply ZIP (or tar) the domain directory. However, there is a very important caveat with this recommendation - when you unzip the domain, it must go back into exactly the same location (Domain Home) in the (new) file system. Using this approach will maintain the same domain encryption key.
 The best practice/recommended approach is to create a &amp;ldquo;primordial domain&amp;rdquo; which does not contain any applications or resources, and to create a ZIP file of this domain before starting any servers.</description>
     </item>
     
@@ -624,7 +730,7 @@ The best practice/recommended approach is to create a &amp;ldquo;primordial doma
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/</guid>
       <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated image.
 In the use case, you will:
-Create an image model-in-image:WLS-AI-v2 that is similar to the currently active model-in-image:WLS-AI-v1 image, but with the following updates: An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
+Create an image model-in-image:WLS-v2 that is similar to the currently active model-in-image:WLS-v1 image, but with the following updates: An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
     </item>
     
     <item>
@@ -673,7 +779,7 @@ Create a Kubernetes Secret containing the Administration Server boot credentials
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/introduction/prerequisites/introduction/</guid>
-      <description>For the current production release 4.0.6 :
+      <description>For the current production release 4.1.0 :
 Kubernetes 1.23.4+, 1.24.0+, 1.25.0+, and 1.26.2+ (check with kubectl version).
 Flannel networking v0.13.0-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems.
 Docker 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion).
@@ -924,8 +1030,7 @@ $ git checkout -b your-branch Make your documentation updates by editing the sou
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/overview/</guid>
-      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain in PV domain types. See Choose a domain home source type for a comparison of operator domain types.
-Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
+      <description>Contents Introduction WebLogic Deploy Tooling models Runtime behavior Runtime updates Continuous integration and delivery (CI/CD) References Introduction Model in Image is an alternative to the operator&amp;rsquo;s Domain in Image and Domain on PV domain home source types. For a comparison, see Choose a domain home source type. Unlike Domain on PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file.</description>
     </item>
     
     <item>
@@ -1036,7 +1141,7 @@ You can set nodeSelector labels for WebLogic Server pods, all server pods in a c
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/usage/</guid>
       <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
-Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial model files and WDT Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See Manage operators and Quick Start.</description>
+Contents WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial WDT model files and WDT Home Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
     </item>
     
     <item>
