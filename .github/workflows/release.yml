@@ -17,7 +17,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "IMAGE_NAME=${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
+          echo "IMAGE_NAME=${{ env.BASE_IMAGE_NAME }}:$VERSION" >> $GITHUB_ENV
 
       - name: Checkout branch
         uses: actions/checkout@v3
