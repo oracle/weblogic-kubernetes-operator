@@ -463,6 +463,7 @@
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/</loc>
     <lastmod>2023-04-26T16:45:16-05:00</lastmod>
+    <priority>0</priority>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/categories/</loc>
   </url><url>
