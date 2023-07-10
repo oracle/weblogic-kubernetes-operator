@@ -33,9 +33,10 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
-      {{- if .runAsUser }}
+      {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
       securityContext:
-        runAsUser: {{ .runAsUser }}
+        seccompProfile:
+          type: RuntimeDefault
       {{- end }}
       {{- with .nodeSelector }}
       nodeSelector:
@@ -103,6 +104,15 @@ spec:
             {{- if .memoryLimits}}
             memory: {{ .memoryLimits }}
             {{- end }}
+        securityContext:
+          {{- if (ne ( .kubernetesPlatform | default "Generic" ) "OpenShift") }}
+          runAsUser: {{ .runAsUser | default 1000 }}
+          {{- end }}
+          runAsNonRoot: true
+          privileged: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         volumeMounts:
         - name: "weblogic-operator-cm-volume"
           mountPath: "/operator/config"

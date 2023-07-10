@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -127,6 +127,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, info.getDomain().getAuxiliaryImageVolumes(), getName(index)))
             .resources(createResources())
+            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),

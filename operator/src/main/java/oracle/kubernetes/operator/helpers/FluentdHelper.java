@@ -49,7 +49,7 @@ public class FluentdHelper {
     fluentdContainer.setImage(fluentdSpecification.getImage());
     fluentdContainer.setImagePullPolicy(fluentdSpecification.getImagePullPolicy());
     fluentdContainer.setResources(fluentdSpecification.getResources());
-
+    fluentdContainer.setSecurityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
     addFluentdContainerEnvList(fluentdSpecification, fluentdContainer, domain, isJobPod);
 
     fluentdSpecification.getVolumeMounts()

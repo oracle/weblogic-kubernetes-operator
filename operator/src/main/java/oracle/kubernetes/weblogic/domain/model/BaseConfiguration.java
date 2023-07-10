@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import com.google.gson.annotations.Expose;
@@ -27,6 +28,9 @@ import oracle.kubernetes.operator.ServerStartState;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultContainerSecurityContext;
+import static oracle.kubernetes.operator.helpers.PodSecurityHelper.getDefaultPodSecurityContext;
 
 /**
  * Configuration values shared by multiple levels: domain, admin server, managed server, and
@@ -279,7 +283,7 @@ public abstract class BaseConfiguration {
   }
 
   V1PodSecurityContext getPodSecurityContext() {
-    return serverPod.getPodSecurityContext();
+    return Optional.ofNullable(serverPod.getPodSecurityContext()).orElse(getDefaultPodSecurityContext());
   }
 
   void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
@@ -287,7 +291,7 @@ public abstract class BaseConfiguration {
   }
 
   V1SecurityContext getContainerSecurityContext() {
-    return serverPod.getContainerSecurityContext();
+    return Optional.ofNullable(serverPod.getContainerSecurityContext()).orElse(getDefaultContainerSecurityContext());
   }
 
   void setContainerSecurityContext(V1SecurityContext containerSecurityContext) {

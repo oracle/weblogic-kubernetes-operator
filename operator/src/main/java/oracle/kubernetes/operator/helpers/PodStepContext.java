@@ -611,10 +611,29 @@ public abstract class PodStepContext extends BasePodStepContext {
     return !hasLabel(currentPod, OPERATOR_VERSION);
   }
 
+  private void restoreSecurityContext(V1Pod recipe) {
+    if (PodSecurityHelper.getDefaultPodSecurityContext().equals(recipe.getSpec().getSecurityContext())) {
+      recipe.getSpec().setSecurityContext(null);
+    }
+    Optional.ofNullable(recipe.getSpec().getContainers())
+            .ifPresent(containers -> containers.forEach(container -> {
+              if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(container.getSecurityContext())) {
+                container.setSecurityContext(null);
+              }
+            }));
+    Optional.ofNullable(recipe.getSpec().getInitContainers())
+            .ifPresent(initContainers -> initContainers.forEach(initContainer -> {
+              if (PodSecurityHelper.getDefaultContainerSecurityContext().equals(initContainer.getSecurityContext())) {
+                initContainer.setSecurityContext(null);
+              }
+            }));
+  }
+
   private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
     return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_0))
         || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1))
-        || requiredHash.equals(adjustedHash(currentPod, this::restoreFluentdVolume));
+        || requiredHash.equals(adjustedHash(currentPod, this::restoreFluentdVolume))
+        || requiredHash.equals(adjustedHash(currentPod, this::restoreSecurityContext));
   }
 
   private boolean hasLabel(V1Pod pod, String key) {
