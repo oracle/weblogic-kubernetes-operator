@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -162,7 +162,10 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`.")
+  @Description("Pod-level security attributes. See `kubectl explain pods.spec.podSecurityContext`. "
+      + "Beginning with operator version 3.4.8, if no value is specified for this field, the operator will use default "
+      + "content for the pod-level `securityContext`. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
   private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
 
   /**
@@ -198,9 +201,11 @@ class ServerPod extends KubernetesResource {
    *
    * @since 2.0
    */
-  @Description(
-      "Container-level security attributes. Will override any matching Pod-level attributes. "
-          + "See `kubectl explain pods.spec.containers.securityContext`.")
+  @Description("Container-level security attributes. Will override any matching Pod-level attributes. "
+      + "See `kubectl explain pods.spec.containers.securityContext`. "
+      + "Beginning with operator version 3.4.8, if no value is specified for this field, the operator will use default "
+      + "content for container-level `securityContext`. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
   /**
