@@ -286,18 +286,19 @@ $ waitForDomain.sh -n my-namespace -d my-domain -p 0
 Use this helper script for examining, changing permissions, or deleting the contents of the persistent volume (such as domain files or logs) for a WebLogic Domain on PV or Model in Image domain.
 The script launches a Kubernetes pod named 'pvhelper' using the provided persistent volume claim name and the mount path.
 You can run the 'kubectl exec' command to get a shell to the running pod container and run commands to examine or clean up the contents of shared directories on the persistent volume.
-Use the 'kubectl delete pvhelper -n <namespace>' command to delete the Pod after it's no longer needed.
+Use the 'kubectl delete pod pvhelper -n <namespace>' command to delete the Pod after it's no longer needed.
 
 Use the following command for script usage:
 
 ```
-$ domain-on-pv-helper.sh -h
+$ pv-pvc-helper.sh -h
 ```
 
-The following is an example command to launch the helper pod with the PVC name `sample-domain1-weblogic-sample-pvc` and mount path `/shared`.
+The following is an example command to launch the helper pod with the PVC name `sample-domain1-weblogic-sample-pvc` and mount path `/shared`. 
+Specifying the `-r` argument allows the script to run as the `root` user.
 
 ```
-$ domain-on-pv-helper.sh -n sample-domain1-ns -c sample-domain1-weblogic-sample-pvc -m /shared
+$ pv-pvc-helper.sh -n sample-domain1-ns -c sample-domain1-weblogic-sample-pvc -m /shared -r
 ```
 
 After the Pod is created, use the following command to get a shell to the running pod container.
