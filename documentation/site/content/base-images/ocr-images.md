@@ -30,8 +30,7 @@ The Oracle Container Registry (OCR) is located at [https://container-registry.or
 OCR contains WebLogic Server images, which have a pre-installed Oracle Home with Oracle WebLogic Server and Coherence. OCR, also, contains Fusion Middleware Infrastructure images, which have a pre-installed Oracle Home with Oracle WebLogic Server, Coherence, Fusion Middleware Control, and Java Required Files (JRF). **NOTE**: Oracle strongly recommends that you use _only_ images with the latest set of recommended patches applied.
 
 {{% notice note %}}
-As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
-Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last Critical Patch Updates (CPU) images for WebLogic Server 12.2.1.3 were published in April, 2023. As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last CPU images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
 {{% /notice %}}
 
 See the following sections for information about OCR images:
@@ -214,10 +213,7 @@ For example, to use Docker to pull an image from OCR:
   or your Kubernetes cluster is remote from your locally created or pulled domain image,
   then additional steps are usually required to ensure that your Kubernetes cluster can access the image.
   See [Access domain images]({{< relref "/base-images/access-images.md" >}}).
-- The operator requires domain images to contain WebLogic Server 12.2.1.3.0 or later.
-  When using 12.2.1.3 images, the operator requires that
-  the images contain patches 29135930 and 27117282;
-  these patches are included in OCR 12.2.1.3 GA and CPU images.
+- The operator requires domain images to contain WebLogic Server 12.2.1.4.0 or later.
 
 ### Inspect images
 
