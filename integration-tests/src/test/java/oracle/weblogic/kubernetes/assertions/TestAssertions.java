@@ -871,6 +871,25 @@ public class TestAssertions {
   }
 
   /**
+   * Check if a admin server pod admin node port is accessible.
+   *
+   * @param nodePort the node port of the WebLogic administration server service
+   * @param userName user name to access WebLogic administration server
+   * @param password password to access WebLogic administration server
+   * @return true if the WebLogic administration service node port is accessible otherwise false
+   * @throws java.io.IOException when connection to WebLogic administration server fails
+   */
+  public static Callable<Boolean> adminLoginPageAccessible(int nodePort, String userName,
+                                                          String password, String... routeHost)
+      throws IOException {
+    if (routeHost.length == 0) {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
+    } else {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, routeHost[0]);
+    }
+  }
+
+  /**
    * Check if an image exists.
    *
    * @param imageName the name of the image to be checked
@@ -885,7 +904,7 @@ public class TestAssertions {
    * Check if the given WebLogic credentials are valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
-   * @param host hostname of the admin server pod
+   * @param port listen port of the admin server pod
    * @param podName name of the admin server pod
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
@@ -893,20 +912,20 @@ public class TestAssertions {
    * @return true if the RESTful Management Services command succeeded
    */
   public static Callable<Boolean> credentialsValid(
-      String host,
+      int port,
       String podName,
       String namespace,
       String username,
       String password,
       String... args) {
-    return () -> Domain.credentialsValid(host, podName, namespace, username, password, args);
+    return () -> Domain.credentialsValid(port, podName, namespace, username, password, args);
   }
 
   /**
    * Check if the given WebLogic credentials are NOT valid by using the credentials to
    * invoke a RESTful Management Services command.
    *
-   * @param host hostname of the admin server pod
+   * @param port listen port of the admin server pod
    * @param podName name of the admin server pod
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
@@ -914,13 +933,13 @@ public class TestAssertions {
    * @return true if the RESTful Management Services command failed with exitCode 401
    */
   public static Callable<Boolean> credentialsNotValid(
-      String host,
+      int port,
       String podName,
       String namespace,
       String username,
       String password,
       String... args) {
-    return () -> Domain.credentialsNotValid(host, podName, namespace, username, password, args);
+    return () -> Domain.credentialsNotValid(port, podName, namespace, username, password, args);
   }
 
   /**

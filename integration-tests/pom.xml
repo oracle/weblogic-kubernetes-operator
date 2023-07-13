@@ -48,6 +48,7 @@
         <wko.it.grafana.chart.version>${env.GRAFANA_CHART_VERSION}</wko.it.grafana.chart.version>
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
+        <wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
         <wko.it.node.ip>${env.NODE_IP}</wko.it.node.ip>
         <wko.it.fss.dir>${env.FSS_DIR}</wko.it.fss.dir>
@@ -245,6 +246,7 @@
                                 <wko.it.grafana.chart.version>${wko.it.grafana.chart.version}</wko.it.grafana.chart.version>
                                 <wko.it.istio.version>${wko.it.istio.version}</wko.it.istio.version>
                                 <wko.it.oke.cluster>${wko.it.oke.cluster}</wko.it.oke.cluster>
+        			<wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
                                 <wko.it.nfs.server>${wko.it.nfs.server}</wko.it.nfs.server>
                                 <wko.it.fss.dir>${wko.it.fss.dir}</wko.it.fss.dir>
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
@@ -449,6 +451,14 @@
             <properties>
                 <skipITs>false</skipITs>
                 <groups>oke-parallel</groups>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>oke-gate</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>oke-gate</groups>
             </properties>
         </profile>
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -261,9 +261,9 @@ class ItOperatorRestart {
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
     logger.info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+    verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
         ADMIN_PASSWORD_DEFAULT, VALID);
-    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
+    verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
         ADMIN_PASSWORD_PATCH, INVALID);
 
     // create a new secret for admin credentials
@@ -308,9 +308,9 @@ class ItOperatorRestart {
 
     // check if the new credentials are valid and the old credentials are not valid any more
     logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+    verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
         ADMIN_PASSWORD_DEFAULT, INVALID);
-    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
+    verifyCredentials(7001, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
         ADMIN_PASSWORD_PATCH, VALID);
 
     logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",

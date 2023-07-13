@@ -126,14 +126,14 @@ class ItServerStartPolicyDynamicCluster {
 
     // Check configured cluster configuration is available
     boolean isServerConfigured =
-        checkManagedServerConfiguration(ingressHost, "config-cluster-server1", domainNamespace, adminServerPodName);
+        checkManagedServerConfiguration("config-cluster-server1", domainNamespace, adminServerPodName);
     assertTrue(isServerConfigured,
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
     // Check standalone server configuration is available
     boolean isStandaloneServerConfigured =
-        checkManagedServerConfiguration(ingressHost, "standalone-managed", domainNamespace, adminServerPodName);
+        checkManagedServerConfiguration("standalone-managed", domainNamespace, adminServerPodName);
     assertTrue(isStandaloneServerConfigured,
         "Could not find standalone managed server from configured cluster");
     logger.info("Found standalone managed server configuration");

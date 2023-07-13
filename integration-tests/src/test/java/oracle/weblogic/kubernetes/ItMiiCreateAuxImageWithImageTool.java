@@ -76,6 +76,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
 @Tag("olcne")
+@Tag("oke-gate")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;

@@ -5,7 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.net.http.HttpResponse;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,8 +41,8 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -98,7 +98,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -142,6 +142,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItIntrospectVersion {
 
   private static String opNamespace = null;
@@ -183,6 +184,7 @@ class ItIntrospectVersion {
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
   private static final int managedServerPort = 7100;
+  private static int adminPort = 7001;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -397,6 +399,7 @@ class ItIntrospectVersion {
 
     try {
       execCommand(introDomainNamespace, adminServerPodName, null, true, "/bin/sh", "-c", curlCmd);
+      adminPort = newAdminPort;
     } catch (Exception ex) {
       logger.severe(ex.getMessage());
     }
@@ -583,9 +586,9 @@ class ItIntrospectVersion {
     // So that the test will also work with WebLogic slim image
     final boolean VALID = true;
     logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
+    verifyCredentials(adminPort, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, false);
-    verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
+    verifyCredentials(adminPort, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
     List<String> managedServerNames = new ArrayList<>();
@@ -1128,19 +1131,15 @@ class ItIntrospectVersion {
 
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}", clusterViewAppPath, cluster1Name);
-    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
 
-    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
-    logger.info("hostAndPort = {0} ", hostAndPort);
-    testUntil(
-        () -> {
-          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
-              wlsUserName, wlsPassword,
-              targets, clusterViewAppPath, null, "clusterview"));
-          return result.stdout().equals("202");
-        },
-        logger,
-        "Deploying the application using Rest");
+    assertDoesNotThrow(() -> deployUsingWlst(adminServerPodName,
+        String.valueOf(adminPort),
+        wlsUserName,
+        wlsPassword,
+        cluster1Name + "," + adminServerName,
+        clusterViewAppPath,
+        introDomainNamespace),"Deploying the application");
+
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= cluster1ReplicaCount; i++) {
       managedServerNames.add(cluster1ManagedServerNameBase + i);
@@ -1208,16 +1207,39 @@ class ItIntrospectVersion {
     String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
+
+    final String command = KUBERNETES_CLI + " exec -n "
+            + introDomainNamespace + "  " + adminServerPodName + " -- curl http://"
+            //+ wlsUserName
+            //+ ":"
+            //+ wlsPassword
+            //+ "@"
+            + adminServerPodName + ":"
+            + adminPort + "/clusterview/ClusterViewServlet"
+            + "\"?user=" + user
+            + "&password=" + password + "\"";
+
     testUntil(
         () -> {
+          ExecResult result = null;
+          try {
+            result = ExecCommand.exec(command, true);
+          } catch (IOException | InterruptedException ex) {
+            logger.severe(ex.getMessage());
+          }
+          String response = result.stdout().trim();
+          logger.info(response);
+          /*
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
           if (response.statusCode() != 200) {
             logger.info("Response code is not 200 retrying...");
             return false;
           }
+
+          */
           boolean health = true;
           for (String managedServer : managedServerNames) {
-            health = health && response.body().contains(managedServer + ":HEALTH_OK");
+            health = health && response.contains(managedServer + ":HEALTH_OK");
             if (health) {
               logger.info(managedServer + " is healthy");
             } else {

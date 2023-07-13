@@ -143,6 +143,7 @@ public class CommonTestUtils {
   public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
 
   private static final String TMP_FILE_NAME = "temp-download-file.out";
+  private static int adminListenPort = 7001;
 
   /**
    * Create a condition factory with custom values for pollDelay, pollInterval and atMost time.
@@ -581,13 +582,13 @@ public class CommonTestUtils {
       String password,
       boolean expectValid) {
 
-    verifyCredentials(null, podName, namespace, username, password, expectValid);
+    verifyCredentials(adminListenPort, podName, namespace, username, password, expectValid);
   }
 
   /**
    * Check that the given credentials are valid to access the WebLogic domain.
    *
-   * @param host this is only for OKD - ingress host to access the service
+   * @param port listen port of admin server
    * @param podName name of the admin server pod
    * @param namespace name of the namespace that the pod is running in
    * @param username WebLogic admin username
@@ -595,7 +596,7 @@ public class CommonTestUtils {
    * @param expectValid true if the check expects a successful result
    */
   public static void verifyCredentials(
-      String host,
+      int port,
       String podName,
       String namespace,
       String username,
@@ -605,13 +606,12 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
-    String finalHost = host != null ? host : K8S_NODEPORT_HOST;
-    logger.info("finalHost = {0}", finalHost);
+
     testUntil(
         withQuickRetryPolicy,
         assertDoesNotThrow(
-          expectValid ? () -> credentialsValid(finalHost, podName, namespace, username, password, args)
-              : () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
+          expectValid ? () -> credentialsValid(port, podName, namespace, username, password, args)
+              : () -> credentialsNotValid(port, podName, namespace, username, password, args),
           String.format(
             "Failed to validate credentials %s/%s on pod %s in namespace %s",
             username, password, podName, namespace)),
@@ -664,6 +664,46 @@ public class CommonTestUtils {
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return Command
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminServerPodName admin pod name
+   * @param namespace admin pod namespace
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(String adminServerPodName, String namespace,
+                                                         String resourcesType,
+                                                         String resourcesName, String expectedStatusCode) {
+    final LoggingFacade logger = getLogger();
+    String protocol = "http";
+    String port = "7001";
+
+    StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -k --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" " + protocol + "://")
+        .append(adminServerPodName + ":" + port)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/")
+        .append(resourcesName)
+        .append("/")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code}")
+        .append(" && echo ${status}")
+        .append(" \"");
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
     return Command
         .withParams(new CommandParams()
@@ -743,6 +783,37 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource configuration using REST API.
+   * @param adminServerPodName admin server pod name
+   * @param namespace admin server pod namespace
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfigViaAdminPod(String adminServerPodName, String namespace,
+                                                  String resourcesPath, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+
+    StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n "
+        + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + adminServerPodName + ":" + adminListenPort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesPath)
+        .append("/")
+        .append(" \"");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return Command
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
    * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
    * @param expectedValue expected value returned in the REST call
@@ -769,26 +840,27 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource runtime using REST API.
-   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
-   * @param nodePort admin node port
+   * @param adminServerPodName admin server pod name
+   * @param namespace admin pod namespace
    * @param resourcesUrl url of the resource
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort,
+  public static boolean checkSystemResourceRuntime(String adminServerPodName, String namespace,
                                             String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
-    StringBuffer curlString = new StringBuffer("curl --user ");
-    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + hostAndPort)
+    StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n "
+        + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + adminServerPodName + ":" + adminListenPort)
         .append("/management/weblogic/latest/domainRuntime")
         .append("/")
         .append(resourcesUrl)
-        .append("/");
+        .append("/")
+        .append(" \"");
 
     logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
     return Command
@@ -1338,13 +1410,15 @@ public class CommonTestUtils {
 
     // verify WebLogic console is accessible before port forwarding using ingress port
     String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+
     boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console");
     logger.info("WebLogic console is accessible");
 
+
     // forwarding admin port to a local port
     String localhost = "localhost";
-    String forwardedPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
+    String forwardedPort = startPortForwardProcess(localhost, domainNamespace, domainUid, adminListenPort);
     assertNotNull(forwardedPort, "port-forward command fails to assign local port");
     logger.info("Forwarded local port is {0}", forwardedPort);
 
@@ -1455,7 +1529,8 @@ public class CommonTestUtils {
     ExecResult result = null;
 
     // create a WebLogic container
-    String createContainerCmd = new StringBuffer(WLSIMG_BUILDER + " run -d -p 7001:7001 --name=")
+    String createContainerCmd = new StringBuffer(WLSIMG_BUILDER + " run -d -p "
+        + adminListenPort + ":" + adminListenPort + " --name=")
         .append(containerName)
         .append(" --network=host ")
         //.append(" --add-host=host.docker.internal:host-gateway ")
@@ -1651,12 +1726,12 @@ public class CommonTestUtils {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     testUntil(
-        () -> checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, resourceType,
+        () -> checkSystemResourceConfiguration(adminServerPodName, domainNamespace, resourceType,
             resourceName, expectedValue),
         logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} exists",
-        adminSvcExtHost,
-        adminServiceNodePort,
+        "Checking for adminServerPodName: {0} in domainNamespace: {1} if resourceName: {2} exists",
+        adminServerPodName,
+        domainNamespace,
         resourceName);
     logger.info("Found the " + resourceType + " configuration");
   }
@@ -1676,13 +1751,13 @@ public class CommonTestUtils {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     testUntil(
-        () -> checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+        () -> checkSystemResourceConfigViaAdminPod(adminServerPodName, domainNamespace,
             resourcePath,
             expectedValue),
         logger,
-        "Checking for adminSvcExtHost: {0} or adminServiceNodePort: {1} if resourceName: {2} has the right value",
-        adminSvcExtHost,
-        adminServiceNodePort,
+        "Checking for adminSvcPod: {0} in namespace: {1} if resourceName: {2} has the right value",
+        adminServerPodName,
+        domainNamespace,
         resourcePath);
     logger.info("Found the " + resourcePath + " configuration");
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -36,10 +36,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.adminLoginPageAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
+@Tag("oke-gate")
 class ItMultiDomainModels {
 
   // domain constants
@@ -193,11 +194,12 @@ class ItMultiDomainModels {
 
     logger.info("Validating WebLogic admin server access by login to console");
     testUntil(
-        assertDoesNotThrow(() ->
-           adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost),
-            "Access to admin server node port failed"),
-        logger,
-        "Console login validation");
+        assertDoesNotThrow(
+          () -> {
+            return () -> adminLoginPageAccessible(adminServerPodName, "7001",
+            domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+          },
+        "Access to admin console page failed"), logger, "Console login validation failed");
 
     // shutdown domain and verify the domain is shutdown
     shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);

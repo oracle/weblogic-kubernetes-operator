@@ -182,15 +182,20 @@ public class SecretUtils {
 
     StringBuffer command = new StringBuffer()
         .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
-
-    if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
-      command.append(" -a \"IP:");
+    if (K8S_NODEPORT_HOST != null && !K8S_NODEPORT_HOST.equals("<none>")) {
+      if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
+        command.append(" -a \"IP:");
+      } else {
+        command.append(" -a \"DNS:");
+      }
+      command.append(K8S_NODEPORT_HOST);
     } else {
-      command.append(" -a \"DNS:");
+      command.append(" -a \"DNS:")
+          .append("external-weblogic-operator-svc.")
+          .append(namespace)
+          .append(".svc.cluster.local");
     }
-
-    command.append(K8S_NODEPORT_HOST)
-        .append(",DNS:localhost,IP:127.0.0.1\"")
+    command.append(",DNS:localhost,IP:127.0.0.1\"")
         .append(" -n ")
         .append(namespace)
         .append(" -s ")

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -310,7 +310,7 @@ class ItMiiDomain {
       logger.info("WebLogic console is accessible thru default service");
     } else {
       logger.info("Checking Rest API management console in WebLogic slim image");
-      verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
+      verifyCredentials(7001, adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
 
