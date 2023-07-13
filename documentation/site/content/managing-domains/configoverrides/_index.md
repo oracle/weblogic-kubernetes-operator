@@ -373,8 +373,7 @@ __Background notes:__
     overrides are failing to take effect.
 
 - Some incorrect overrides may be detected on WebLogic Server versions that
-  support the `weblogic.SituationalConfig.failBootOnError` system property
-  (not applicable to WebLogic Server 12.2.1.3.0).
+  support the `weblogic.SituationalConfig.failBootOnError` system property.
   - If the system property is supported, then, by default, WebLogic Server will fail to boot
     if it encounters a syntax error while loading configuration overrides files.
   - If you _want_ to start up WebLogic Servers with incorrectly formatted override files,
