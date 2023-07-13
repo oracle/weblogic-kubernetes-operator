@@ -34,18 +34,16 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -53,10 +51,8 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -84,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
+@Tag("oke-gate")
 class ItMiiMultiModel {
 
   private static String domainNamespace = null;
@@ -486,22 +483,19 @@ class ItMiiMultiModel {
       String namespace,
       String dsName) {
 
-    int adminServiceNodePort = getServiceNodePort(
-        namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
-
-    String serviceName = adminServerPodName + "-ext";
-    if (ingressHost == null) {
-      ingressHost = createRouteForOKD(serviceName, domainNamespace);
-    }
-
-    String hostAndPort = getHostAndPort(ingressHost, adminServiceNodePort);
-    String command = new StringBuffer()
-        .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + hostAndPort)
+    StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -k --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://")
+        .append(adminServerPodName + ":7001")
         .append("/management/wls/latest/datasources/id/" + dsName)
         .append(" --noproxy '*'")
         .append(" --silent --show-error ")
-        .append("| grep maxCapacity | tr -d -c 0-9 ").toString();
+        .append("| grep maxCapacity | tr -d -c 0-9 ")
+        .append("\"");
+
+    String command = curlString.toString();
 
     CommandParams params = Command
         .defaultCommandParams()
@@ -523,22 +517,18 @@ class ItMiiMultiModel {
       String adminServerPodName,
       String namespace,
       String dsName) {
-    int adminServiceNodePort = getServiceNodePort(
-        namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
-    String serviceName = adminServerPodName + "-ext";
-    if (ingressHost == null) {
-      ingressHost = createRouteForOKD(serviceName, domainNamespace);
-    }
-
-    String hostAndPort = getHostAndPort(ingressHost, adminServiceNodePort);
-    String command = new StringBuffer()
-        .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + hostAndPort)
+    String command = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + adminServerPodName)
+        .append(" -- /bin/bash -c \"")
+        .append("curl -k --user ")
+        .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://")
+        .append(adminServerPodName + ":7001")
         .append("/management/wls/latest/datasources")
         .append("/id/" + dsName)
         .append(" --noproxy '*'")
-        .append(" --silent --show-error ").toString();
+        .append(" --silent --show-error ")
+        .append("\"").toString();
 
     CommandParams params = Command
         .defaultCommandParams()

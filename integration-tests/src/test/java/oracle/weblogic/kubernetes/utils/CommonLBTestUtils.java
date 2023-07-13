@@ -47,6 +47,9 @@ import oracle.weblogic.domain.ClusterSpec;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
@@ -60,7 +63,9 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -195,9 +200,16 @@ public class CommonLBTestUtils {
       getLogger().info("Getting admin service node port: {0}", serviceNodePort);
 
       getLogger().info("Validating WebLogic admin server access by login to console");
-      assertTrue(assertDoesNotThrow(
-          () -> adminNodePortAccessible(serviceNodePort),
-          "Access to admin server node port failed"), "Console login validation failed");
+      if (OKE_CLUSTER_PRIVATEIP) {
+        assertTrue(assertDoesNotThrow(
+            () -> adminLoginPageAccessible(adminServerPodName, "7001", domainNamespace,
+                ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+            "Access to admin server node port failed"), "Console login validation failed");
+      } else {
+        assertTrue(assertDoesNotThrow(
+            () -> adminNodePortAccessible(serviceNodePort),
+            "Access to admin server node port failed"), "Console login validation failed");
+      }
     }
   }
 
@@ -464,6 +476,77 @@ public class CommonLBTestUtils {
   }
 
   /**
+   * Verify admin console is accessible by login to WebLogic console.
+   *
+   * @param adminServerPodName admin server pod
+   * @param adminPort admin port
+   * @param namespace admin server pod namespace
+   * @param userName WebLogic administration server user name
+   * @param password WebLogic administration server password
+   * @return true if login to WebLogic administration console is successful
+   * @throws IOException when connection to console fails
+   */
+  public static boolean adminLoginPageAccessible(String adminServerPodName, String adminPort, String namespace,
+                                                 String userName, String password)
+      throws IOException {
+    LoggingFacade logger = getLogger();
+    if (WEBLOGIC_SLIM) {
+      logger.info("Check REST Console for WebLogic slim image");
+      StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
+          + namespace + " " + adminServerPodName)
+          .append(" -- /bin/bash -c \"")
+          .append("curl --user ")
+          .append(userName)
+          .append(":")
+          .append(password)
+          .append(" http://" + adminServerPodName + ":" + adminPort)
+          .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code} && ")
+          .append("echo ${status}");
+      logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
+      try {
+        ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        return response.contains("200");
+      } catch (IOException | InterruptedException ex) {
+        logger.info("Exception in checkRestConsole {0}", ex);
+        return false;
+      }
+    } else {
+      // generic/dev Image
+      logger.info("Check administration Console for generic/dev image");
+      String curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
+          + namespace + " " + adminServerPodName)
+          .append(" -- /bin/bash -c \"")
+          .append("curl --user ")
+          .append(userName)
+          .append(":")
+          .append(password)
+          .append(" http://" + adminServerPodName + ":" + adminPort)
+          .append("/console/login/LoginForm.jsp")
+          .append("\"").toString();
+
+      boolean adminAccessible = false;
+      String expectedValue = "Oracle WebLogic Server Administration Console";
+      for (int i = 1; i <= 10; i++) {
+        logger.info("Iteration {0} out of 10: Accessing WebLogic console ", i);
+        logger.info("check administration console: curl command {0} expectedValue {1}", curlCmd, expectedValue);
+        adminAccessible = Command
+            .withParams(new CommandParams()
+                .command(curlCmd))
+            .executeAndVerify(expectedValue);
+
+        if (adminAccessible) {
+          getLogger().info("Console login passed");
+          break;
+        }
+      }
+      return adminAccessible;
+    }
+  }
+
+  /**
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
@@ -654,6 +737,36 @@ public class CommonLBTestUtils {
                                           int replicaCount,
                                           boolean hostRouting,
                                           String locationString) {
+    verifyClusterLoadbalancing(domainUid,
+        ingressHostName,
+        protocol,
+        lbPort,
+        replicaCount,
+        hostRouting,
+        locationString,
+        K8S_NODEPORT_HOST);
+  }
+
+  /**
+   * Verify cluster load balancing with ClusterViewServlet app.
+   *
+   * @param domainUid uid of the domain in which the cluster exists
+   * @param ingressHostName ingress host name
+   * @param protocol protocol used to test, accepted value: http or https
+   * @param lbPort  load balancer service port
+   * @param replicaCount replica count of the managed servers in the cluster
+   * @param hostRouting whether it is a host base routing
+   * @param locationString location string in apache configuration or path prefix in path routing
+   * @param host hostname
+   */
+  public static void verifyClusterLoadbalancing(String domainUid,
+                                                String ingressHostName,
+                                                String protocol,
+                                                int lbPort,
+                                                int replicaCount,
+                                                boolean hostRouting,
+                                                String locationString,
+                                                String host) {
     // access application in managed servers through load balancer
     getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
@@ -662,13 +775,13 @@ public class CommonLBTestUtils {
               + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
               + "\"?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-          ingressHostName, protocol, K8S_NODEPORT_HOST, lbPort);
+          ingressHostName, protocol, host, lbPort);
     } else {
       curlRequest = String.format("curl --show-error -ks --noproxy '*' "
               + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
               + "\"?user=" + ADMIN_USERNAME_DEFAULT
               + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-          protocol, K8S_NODEPORT_HOST, lbPort);
+          protocol, host, lbPort);
     }
 
     List<String> managedServers = new ArrayList<>();

@@ -138,6 +138,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("oke-parallel")
 @Tag("okd-wls-srg")
+@Tag("oke-gate")
 @IntegrationTest
 @Tag("olcne")
 class ItKubernetesDomainEvents {

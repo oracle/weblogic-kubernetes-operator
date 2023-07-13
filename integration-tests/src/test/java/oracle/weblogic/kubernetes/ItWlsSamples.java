@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -115,6 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("oke-sequential")
+@Tag("oke-gate")
 @IntegrationTest
 @Disabled
 class ItWlsSamples {
@@ -448,6 +450,7 @@ class ItWlsSamples {
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
    * Use the Nginx Controller image on TEST REPOSITOTY instead of k8s.gcr.io
    */
+  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {

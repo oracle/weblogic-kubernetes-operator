@@ -585,7 +585,7 @@ class ItMiiUpdateDomainConfig {
   @Order(8)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   void testMiiUpdateWebLogicCredential() {
-    verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
+    verifyUpdateWebLogicCredential(7001, domainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount);
   }
 
