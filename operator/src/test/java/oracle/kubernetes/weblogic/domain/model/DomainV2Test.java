@@ -1531,6 +1531,13 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenReplaceEnvironmentVariablesInJavaOptions_useValue() {
+    configureDomain(domain).withReplaceEnvVariablesInJavaOptions(Boolean.TRUE);
+
+    assertThat(domain.getSpec().getReplaceVariablesInJavaOptions(), equalTo(Boolean.TRUE));
+  }
+
+  @Test
   void domainHomeTest_standardHome1() {
     configureDomain(domain).withDomainHomeSourceType(FROM_MODEL);
 

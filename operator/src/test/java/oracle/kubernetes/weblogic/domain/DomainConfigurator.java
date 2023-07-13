@@ -74,6 +74,17 @@ public abstract class DomainConfigurator {
     return this;
   }
 
+  /**
+   * Sets the value of replace environment variables in Java options for domain.
+   *
+   * @param replaceEnvironmentVariablesInJavaOptions value of replace Env variables in Java options.
+   * @return this object
+   */
+  public DomainConfigurator withReplaceEnvVariablesInJavaOptions(Boolean replaceEnvironmentVariablesInJavaOptions) {
+    getDomainSpec().setReplaceVariablesInJavaOptions(replaceEnvironmentVariablesInJavaOptions);
+    return this;
+  }
+
   public DomainConfigurator withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
     return this;

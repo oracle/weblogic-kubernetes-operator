@@ -621,6 +621,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void updateEnvForStartupMode(List<V1EnvVar> env) {
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "LIVENESS_PROBE_CUSTOM_SCRIPT", s));
+    Optional.ofNullable(getDomain().isReplaceVariablesInJavaOptions())
+        .ifPresent(r -> addDefaultEnvVarIfMissing(env, "REPLACE_VARIABLES_IN_JAVA_OPTIONS", Boolean.toString(r)));
   }
 
   private void defineConfigOverride(List<V1EnvVar> env) {

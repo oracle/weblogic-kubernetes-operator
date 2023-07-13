@@ -42,6 +42,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_UNAVAILABLE;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_REPLACE_VARIABLES_IN_JAVA_OPTIONS;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
@@ -158,6 +159,15 @@ public class DomainSpec extends BaseConfiguration {
       + "Defaults to true.")
   @Default(boolDefault = true)
   private Boolean includeServerOutInPodLog;
+
+  /** Whether to replace the environment variables in the Java options when JAVA_OPTIONS specified using config-map.
+   * Default is false.
+   */
+  @Description("Specifies whether the operator will replace the environment variables in the Java options "
+      + "in certain situations, such as when the JAVA_OPTIONS are specified using a config map. "
+      + "Defaults to false.")
+  @Default(boolDefault = false)
+  private Boolean replaceVariablesInJavaOptions;
 
   /** Whether to include the server HTTP access log file to the  directory specified in {@link #logHome}
    *  if {@link #logHomeEnabled} is true. Default is true. */
@@ -556,6 +566,15 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Whether to replace environment variables in Java options such as when JAVA_OPTIONS specified using config map.
+   *
+   * @return true if environment variables should be replaced, false otherwise.
+   */
+  public boolean getReplaceVariablesInJavaOptions() {
+    return Optional.ofNullable(replaceVariablesInJavaOptions).orElse(DEFAULT_REPLACE_VARIABLES_IN_JAVA_OPTIONS);
+  }
+
+  /**
    * Domain home.
    *
    * @since 2.0
@@ -567,6 +586,10 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setLivenessProbeCustomScript(String livenessProbeCustomScript) {
     this.livenessProbeCustomScript = livenessProbeCustomScript;
+  }
+
+  public void setReplaceVariablesInJavaOptions(boolean replaceVariablesInJavaOptions) {
+    this.replaceVariablesInJavaOptions = replaceVariablesInJavaOptions;
   }
 
   @Nullable
@@ -1084,7 +1107,8 @@ public class DomainSpec extends BaseConfiguration {
             .append("replicas", replicas)
             .append("serverStartPolicy", serverStartPolicy)
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
-            .append("fluentdSpecification", fluentdSpecification);
+            .append("fluentdSpecification", fluentdSpecification)
+            .append("replaceVariablesInJavaOptions", replaceVariablesInJavaOptions);
 
     return builder.toString();
   }
@@ -1116,7 +1140,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas)
             .append(serverStartPolicy)
             .append(webLogicCredentialsSecret)
-            .append(fluentdSpecification);
+            .append(fluentdSpecification)
+            .append(replaceVariablesInJavaOptions);
 
     return builder.toHashCode();
   }
@@ -1156,7 +1181,8 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown())
             .append(getMaxClusterUnavailable(), rhs.getMaxClusterUnavailable())
-            .append(fluentdSpecification, rhs.getFluentdSpecification());
+            .append(fluentdSpecification, rhs.getFluentdSpecification())
+            .append(replaceVariablesInJavaOptions, rhs.replaceVariablesInJavaOptions);
     return builder.isEquals();
   }
 

@@ -1875,6 +1875,12 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   }
 
   @Test
+  void whenPodCreated_withReplaceVariablesInJavaOptionsSpecified_hasEnvVariable() {
+    domainPresenceInfo.getDomain().getSpec().setReplaceVariablesInJavaOptions(true);
+    assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("REPLACE_VARIABLES_IN_JAVA_OPTIONS", "true"));
+  }
+
+  @Test
   void whenOperatorHasKubernetesPlatformConfigured_createdPodSpecContainerHasKubernetesPlatformEnvVariable() {
     TuningParametersStub.setParameter(KUBERNETES_PLATFORM_NAME, "Openshift");
     assertThat(getCreatedPodSpecContainer().getEnv(),
