@@ -358,6 +358,11 @@
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
         },
+        "replaceVariablesInJavaOptions": {
+          "default": false,
+          "description": "Specifies whether the operator will replace the environment variables in the Java options in certain situations, such as when the JAVA_OPTIONS are specified using a config map. Defaults to false.",
+          "type": "boolean"
+        },
         "serverService": {
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"

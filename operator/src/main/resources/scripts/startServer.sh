@@ -288,6 +288,10 @@ if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
 fi
 export JAVA_OPTIONS="${JAVA_XX_OPTIONS:--XX:+CrashOnOutOfMemoryError} $JAVA_OPTIONS"
 
+if [[ "${REPLACE_VARIABLES_IN_JAVA_OPTIONS}" == "true" ]]; then
+  export JAVA_OPTIONS=$(eval "echo $JAVA_OPTIONS")
+fi
+
 #
 # Start WLS
 #

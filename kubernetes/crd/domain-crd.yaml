@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d5bf4792de6093d8414edc6efa477cb911342a195f5def8ed02834b4187ee9f2
+    weblogic.sha256: 3c634a8c4889c6fe1474599f12ae5e335d4607c5d0164733e928e8bd149db909
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -870,6 +870,12 @@ spec:
                   Defaults to the value of `metadata.name`.
                 pattern: ^[a-z0-9-.]{1,45}$
                 type: string
+              replaceVariablesInJavaOptions:
+                default: false
+                description: Specifies whether the operator will replace the environment
+                  variables in the Java options in certain situations, such as when
+                  the JAVA_OPTIONS are specified using a config map. Defaults to false.
+                type: boolean
               serverService:
                 description: Customization affecting the generation of ClusterIP Services
                   for WebLogic Server instances.
