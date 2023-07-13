@@ -20,6 +20,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DELEGATE_COMPONENT_
 
 public interface CoreDelegate extends PacketComponent {
 
+  String SHUTDOWN_MARKER_NAME = "marker.shutdown";
+
   SemanticVersion getProductVersion();
 
   KubernetesVersion getKubernetesVersion();
@@ -33,6 +35,10 @@ public interface CoreDelegate extends PacketComponent {
   void setClusterCrdResourceVersion(String resourceVersion);
 
   File getDeploymentHome();
+
+  default File getShutdownMarker() {
+    return new File(getDeploymentHome(), SHUTDOWN_MARKER_NAME);
+  }
 
   File getProbesHome();
 
