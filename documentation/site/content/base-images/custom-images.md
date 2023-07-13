@@ -189,30 +189,8 @@ sample assumes that you have installed WIT in `/tmp/imagetool`; you can choose t
      --passwordEnv=MYPWD
    ```
 
-   As another example, if you want to create a WebLogic Server image
-   named `minimal_weblogic:12.2.1.3` with:
-   - The WebLogic slim installer instead of the generic installer
-   - JDK 8u291
-   - The latest version of the Oracle Linux 7 slim container image
-   - The minimal patches required for the operator to run a 12.2.1.3 image
-     (patches 29135930 and 27117282)
-     instead of the latest recommended patches
-
-{{% notice note %}} As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last Critical Patch Updates (CPU) images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
-Oracle has extended support of WebLogic Server 12.2.1.3, for six months _only_, for PSUs and security patches. CPU images for WebLogic Server 12.2.1.3 will be published in the January, 2023, and April, 2023, CPU cycles.
+{{% notice note %}} As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last Critical Patch Updates (CPU) images for WebLogic Server 12.2.1.3 were published in April, 2023. As of December, 2022, Fusion Middleware 12.2.1.3 is no longer supported.  The last CPU images for FMW Infrastructure 12.2.1.3 were published in October, 2022.
 {{% /notice %}}
-
-   ```shell
-   $ /tmp/imagetool/bin/imagetool.sh create \
-     --tag minimal_weblogic:12.2.1.3 \
-     --pull \
-     --jdkVersion=8u291 \
-     --type=wlsslim \
-     --version=12.2.1.3.0 \
-     --patches=29135930_12.2.1.3.0,27117282_12.2.1.3.0 \
-     --user myusername@mycompany.com \
-     --passwordEnv=MYPWD
-   ```
 
    **NOTES**:
    - To enable WIT to download patches,

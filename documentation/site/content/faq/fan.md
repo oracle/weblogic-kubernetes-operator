@@ -26,6 +26,8 @@ oracle.simplefan.impl.FanManager configure
 SEVERE: attempt to configure ONS in FanManager failed with oracle.ons.NoServersAvailable: Subscription time out
 ```
 
+**NOTE**: As of June, 2023, Oracle WebLogic Server 12.2.1.3 is no longer supported. The last Critical Patch Updates (CPU) images for WebLogic Server 12.2.1.3 were published in April, 2023.
+
 To correct the problem, you must disable FAN, in one of two places:
 
 1)	Through a system property at the domain, cluster, or server level.  
