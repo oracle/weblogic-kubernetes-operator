@@ -521,6 +521,7 @@
                   **/ItMiiAuxiliaryImage,
                   **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiDomain,
+                  **/ItMiiClusterResource,
                   **/ItMiiDomainModelInPV,
                   **/ItMiiMultiModel,
                   **/ItMiiUpdateDomainConfig,
