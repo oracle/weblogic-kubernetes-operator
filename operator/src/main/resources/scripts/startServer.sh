@@ -20,10 +20,12 @@ traceTiming "POD '${SERVICE_NAME}' MAIN START"
 
 trace "Starting WebLogic Server '${SERVER_NAME}'."
 
-source ${SCRIPTPATH}/modelInImage.sh
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+  source ${SCRIPTPATH}/modelInImage.sh
 
-if [ $? -ne 0 ]; then
+  if [ $? -ne 0 ]; then
       trace SEVERE "Error sourcing modelInImage.sh" && exit 1
+  fi
 fi
 
 exportInstallHomes
