@@ -45,7 +45,7 @@ checkEnvVars() {
 }
 ver() { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
 checkJavaVersion() {
-  java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
+  java_version=`java -version 2>&1 >/dev/null | grep 'version' | awk '{print $3}'`
   echo "Info: java version ${java_version}"
   if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
     echo "Error: Java version should be 11.0.10 or higher"
