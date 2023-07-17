@@ -30,9 +30,9 @@ resource "oci_containerengine_node_pool" "tfsample_node_pool" {
        boot_volume_size_in_gbs = "200"
   }
   node_shape_config {
-      #Optional
-      memory_in_gbs = 192.0
-      ocpus = 3.0
+        #Optional
+        memory_in_gbs = 48.0
+        ocpus = 4.0
   }
   # Optional
   initial_node_labels {
