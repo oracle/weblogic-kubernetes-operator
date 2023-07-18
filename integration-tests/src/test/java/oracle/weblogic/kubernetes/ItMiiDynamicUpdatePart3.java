@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -298,6 +299,9 @@ class ItMiiDynamicUpdatePart3 {
     // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(MiiDynamicUpdateHelper.configMapName, domainUid, helper.domainNamespace,
         List.of(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Wait until the introspector pod deleted
+    checkPodDeleted(getIntrospectJobName(domainUid), domainUid, helper.domainNamespace);
 
     // Patch a running domain with onNonDynamicChanges
     patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
