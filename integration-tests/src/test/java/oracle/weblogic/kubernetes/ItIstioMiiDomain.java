@@ -84,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItIstioMiiDomain {
 
   private static String opNamespace = null;

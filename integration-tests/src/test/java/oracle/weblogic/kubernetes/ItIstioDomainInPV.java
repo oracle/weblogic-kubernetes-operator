@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -92,6 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItIstioDomainInPV  {
 
   private static String opNamespace = null;

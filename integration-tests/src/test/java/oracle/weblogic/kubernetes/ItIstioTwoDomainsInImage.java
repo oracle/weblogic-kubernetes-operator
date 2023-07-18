@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -68,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItIstioTwoDomainsInImage {
 
   private static String opNamespace = null;
