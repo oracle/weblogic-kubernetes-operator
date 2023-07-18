@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -64,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItFmwBigCMMiiDomain {
 
   private static String dbNamespace = null;

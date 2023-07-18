@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -83,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItStickySession {
 
   // constants for creating domain image using model in image

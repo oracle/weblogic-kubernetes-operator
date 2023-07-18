@@ -131,6 +131,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
+@Tag("kind-parallel")
 class ItKubernetesDomainEvents {
 
   private static String opNamespace = null;

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -65,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image containing the cluster configuration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
+@Tag("kind-parallel")
 class ItMiiAuxiliaryImageCluster {
 
   private static String opNamespace = null;

@@ -83,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify liveness probe customization")
 @IntegrationTest
 @Tag("okdenv")
+@Tag("kind-parallel")
 class ItLivenessProbeCustomization {
 
   private static String domainNamespace = null;

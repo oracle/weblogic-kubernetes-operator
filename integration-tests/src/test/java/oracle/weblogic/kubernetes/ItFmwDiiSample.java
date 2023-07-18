@@ -75,6 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the JRF domain-in-image sample using wlst and wdt")
 @IntegrationTest
 @Tag("samples")
+@Tag("kind-parallel")
 public class ItFmwDiiSample {
 
   private static String dbNamespace = null;

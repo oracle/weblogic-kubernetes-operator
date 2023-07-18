@@ -142,6 +142,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
 @Tag("okdenv")
+@Tag("kind-parallel")
 class ItIntrospectVersion {
 
   private static String opNamespace = null;

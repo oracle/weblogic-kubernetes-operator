@@ -24,6 +24,8 @@
         <wko.it.kind.repo>${env.KIND_REPO}</wko.it.kind.repo>
         <wko.it.test.images.repo>${env.TEST_IMAGES_REPO}</wko.it.test.images.repo>
         <wko.it.base.images.repo>${env.BASE_IMAGES_REPO}</wko.it.base.images.repo>
+        <wko.it.base.images.tenancy>${env.WKO_TENANCY}</wko.it.base.images.tenancy>
+        <wko.it.test.images.tenancy>${env.WKO_TENANCY}</wko.it.test.images.tenancy>
         <wko.it.weblogic.image.name>${env.WEBLOGIC_IMAGE_NAME}</wko.it.weblogic.image.name>
         <wko.it.weblogic.image.tag>${env.WEBLOGIC_IMAGE_TAG}</wko.it.weblogic.image.tag>
         <wko.it.weblogic.image.tags>${env.WEBLOGIC_IMAGE_TAGS}</wko.it.weblogic.image.tags>
@@ -130,6 +132,18 @@
                                     <message>Set the TEST_IMAGES_REPO environment variable to specify the TEST_IMAGES_REPO username to use for pulling/pushing images.</message>
                                     <variableName>TEST_IMAGES_REPO</variableName>
                                 </requireEnvironmentVariable>
+                                <requireProperty>
+                                    <property>wko.it.base.images.tenancy</property>
+                                    <message>Set the wko.it.base.images.tenancy property to specify the tenancy to use to pull base weblogic/fmw images.</message>
+                                    <regex>^[a-zA-Z0-9_]+.*$</regex>
+                                    <regexMessage>The wko.it.base.images.repo must start with an alphanumeric character</regexMessage>
+                                </requireProperty>
+                                <requireProperty>
+                                    <property>wko.it.test.images.tenancy</property>
+                                    <message>Set the wko.it.test.images.tenancy property to specify the tenancy to use to pull local infra images and domain images.</message>
+                                    <regex>^[a-zA-Z0-9_]+.*$</regex>
+                                    <regexMessage>The wko.it.test.images.repo must start with an alphanumeric character</regexMessage>
+                                </requireProperty>
                                 <requireEnvironmentVariable>
                                     <message>Set the TEST_IMAGES_REPO_USERNAME environment variable to specify the TEST_IMAGES_REPO username to use for pulling/pushing images.</message>
                                     <variableName>TEST_IMAGES_REPO_USERNAME</variableName>
@@ -239,6 +253,8 @@
                                 <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
                                 <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
+                                <wko.it.base.images.tenancy>${wko.it.base.images.tenancy}</wko.it.base.images.tenancy>
+                                <wko.it.test.images.tenancy>${wko.it.test.images.tenancy}</wko.it.test.images.tenancy>
                             </systemPropertyVariables>
                             <trimStackTrace>false</trimStackTrace>
                         </configuration>
@@ -599,6 +615,13 @@
             <properties>
                 <skipITs>false</skipITs>
                 <groups>gate,samples-gate</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>kind-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>kind-parallel</groups>
             </properties>
         </profile>
         <profile>
