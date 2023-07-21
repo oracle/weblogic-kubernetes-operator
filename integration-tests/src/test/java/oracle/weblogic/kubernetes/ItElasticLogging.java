@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
@@ -57,7 +56,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPodUsingK8sExec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.searchStringInFile;
@@ -282,7 +281,7 @@ class ItElasticLogging {
     String queryCriteria = "/_count?q=level:INFO";
 
     // verify log level query results
-    withStandardRetryPolicy.untilAsserted(
+    withLongRetryPolicy.untilAsserted(
         () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, true),
             String.format("Query logs of level=INFO failed")));
 
@@ -300,9 +299,12 @@ class ItElasticLogging {
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false);
+    // verify results of query of type:weblogic-operator in Operator log
+    withLongRetryPolicy.untilAsserted(
+        () -> assertTrue(verifyCountsHitsInSearchResults(queryCriteria, regex, LOGSTASH_INDEX_KEY, false),
+            "Query Operator log info q=type:weblogic-operator failed"));
 
-    logger.info("Query Operator log info succeeded");
+    logger.info("Query Operator log info q=type:weblogic-operator succeeded");
   }
 
   /**
@@ -326,9 +328,9 @@ class ItElasticLogging {
    * Use Elasticsearch Search APIs to query WebLogic log info pushed to Elasticsearch repository
    * by WebLogic Logging Exporter. Verify that log occurrence for WebLogic servers are not empty.
    */
+  @Disabled("WlsLoggingExporter is not supported any more")
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, elasticSearchNs, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
@@ -422,7 +424,7 @@ class ItElasticLogging {
 
   private void verifyServerRunningInSearchResults(String serverName) {
     String queryCriteria = "/_search?q=log:" + serverName;
-    withStandardRetryPolicy.untilAsserted(
+    withLongRetryPolicy.untilAsserted(
         () -> assertTrue(execSearchQuery(queryCriteria, LOGSTASH_INDEX_KEY).contains("RUNNING"),
           String.format("serverName %s is not RUNNING", serverName)));
 
@@ -531,7 +533,7 @@ class ItElasticLogging {
     }
 
     // wait for logstash config modified and verify
-    withStandardRetryPolicy.untilAsserted(
+    withLongRetryPolicy.untilAsserted(
         () -> assertTrue(copyConfigFromPodAndSearchForString(containerName, replaceStr),
             String.format("Failed to find search string %s", replaceStr)));
   }
