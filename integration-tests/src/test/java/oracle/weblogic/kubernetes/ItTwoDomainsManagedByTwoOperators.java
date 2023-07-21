@@ -105,7 +105,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("oke-gate")
 class ItTwoDomainsManagedByTwoOperators {

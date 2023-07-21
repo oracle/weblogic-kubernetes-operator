@@ -74,7 +74,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + " with different domain types and verify admin console login using admin node port.")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")

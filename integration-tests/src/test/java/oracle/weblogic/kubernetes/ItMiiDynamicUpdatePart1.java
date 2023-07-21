@@ -64,7 +64,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part1")
 @IntegrationTest
-@Tag("oke-sequential")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")

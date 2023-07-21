@@ -117,7 +117,7 @@ pipeline {
         )
         string(name: 'BRANCH',
                        description: '',
-                       defaultValue: "okejen"
+                       defaultValue: "main"
         )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
@@ -435,8 +435,10 @@ EOF
                         echo "NO_PROXY:" $NO_PROXY
                         echo "Creating Storage Class to mount OFSS"
                         export MOUNT_TARGET_ID=${mount_target_id}
-                        sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
-                        kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofss.yaml
+                        export AVAILABILITY_DOMAIN=${availability_domain}
+                        sed -i 's@%AVAILABILITY_DOMAIN%@'"$AVAILABILITY_DOMAIN"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
+                        sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
+                        kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
 
                         '''
                     }
