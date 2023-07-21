@@ -1,0 +1,36 @@
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+image:
+  repository: grafana_image
+  # Overrides the Grafana image tag whose default is the chart appVersion
+  tag: "grafana_tag"
+  sha: ""
+  pullPolicy: IfNotPresent
+
+persistence:
+  enabled: true
+  existingClaim: pvc-grafana
+service:
+  type: NodePort
+  port: 80
+  targetPort: 3000
+  nodePort: 31000
+
+admin:
+  existingSecret: "grafana-secret"
+  userKey: username
+  passwordKey: password
+
+initChownData:
+  enabled: false
+  image:
+    repository: busybox_image
+    tag: "busybox_tag"
+    sha: ""
+    pullPolicy: IfNotPresent
+  
+securityContext:
+  fsGroup: 1000
+  runAsGroup: 1000
+  runAsUser: 1000
