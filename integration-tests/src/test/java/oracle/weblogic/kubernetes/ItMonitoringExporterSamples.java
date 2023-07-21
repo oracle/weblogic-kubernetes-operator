@@ -154,7 +154,7 @@ class ItMonitoringExporterSamples {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
-  private static String releaseSuffix = "test3";
+  private static String releaseSuffix = "testsamples";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
@@ -211,8 +211,6 @@ class ItMonitoringExporterSamples {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
-    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "pvc-grafana", "pvc-" + grafanaReleaseName));
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -267,7 +265,7 @@ class ItMonitoringExporterSamples {
       if (!OKD) {
         ingressHost2List
             = createIngressForDomainAndVerify(domain2Uid, domain2Namespace, 0, clusterNameMsPortMap,
-                false, nginxHelmParams.getIngressClassName(), false, 0);
+                true, nginxHelmParams.getIngressClassName(), false, 0);
         logger.info("verify access to Monitoring Exporter");
         verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
       } else {
@@ -417,7 +415,8 @@ class ItMonitoringExporterSamples {
     if (grafanaHelmParams == null) {
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
           monitoringNS,
-          monitoringExporterEndToEndDir + "/grafana/values.yaml",
+          Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              grafanaReleaseName).toString(),
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();

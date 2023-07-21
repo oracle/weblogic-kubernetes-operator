@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -35,6 +36,7 @@ import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
@@ -815,4 +817,19 @@ public class TestAssertions {
     return () -> oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodLog(pod.getMetadata().getName(),
         pod.getMetadata().getNamespace()).contains(searchKey);
   }
+
+  /**
+   * Verify the web app can be accessed from all managed servers in the domain through Load Balancer.
+   * @param curlCmd curl command to call the sample app
+   * @param managedServerNames managed server names that the sample app response should return
+   * @param maxIterations max iterations to call the curl command
+   * @return true if the web app can hit all managed servers, false otherwise
+   */
+  public static Callable<Boolean> callTestWebAppAndCheckForServerNameInResponse(String curlCmd,
+                                                                                List<String> managedServerNames,
+                                                                                int maxIterations) {
+    return () ->
+        callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, maxIterations);
+  }
+
 }

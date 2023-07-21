@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -57,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
@@ -90,6 +90,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter WebApp via Prometheus and Grafana")
 @IntegrationTest
+@Tag("kind-sequential")
 class ItMonitoringExporterWebApp {
 
   // domain constants
@@ -126,7 +127,7 @@ class ItMonitoringExporterWebApp {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
-  private static String releaseSuffix = "test2";
+  private static String releaseSuffix = "testwebapp";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
@@ -180,8 +181,6 @@ class ItMonitoringExporterWebApp {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter(monitoringExporterDir);
-    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-        "pvc-grafana", "pvc-" + grafanaReleaseName));
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
@@ -428,7 +427,8 @@ class ItMonitoringExporterWebApp {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
               monitoringNS,
-              monitoringExporterEndToEndDir + "/grafana/values.yaml",
+          Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+              grafanaReleaseName).toString(),
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();

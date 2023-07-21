@@ -40,6 +40,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -47,7 +48,11 @@ import org.apache.commons.io.FileUtils;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -55,6 +60,17 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_BRANCH;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_ALERT_MANAGER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_NODE_EXPORTER_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_PUSHGATEWAY_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -73,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAcco
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -315,15 +332,48 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile,
         StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
     String oldValue = "regex: default;domain1";
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        oldValue,
-        prometheusRegexValue), "Failed to replace String ");
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-alertmanager",
-        "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
-    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
-        "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    logger.info("copy the promvalues.yaml to staging location");
+    assertDoesNotThrow(() -> {
+      replaceStringInFile(targetPromFile.toString(),
+          oldValue,
+          prometheusRegexValue);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanager" + promReleaseSuffix);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-" + prometheusReleaseName);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_image",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "pushgateway_tag",
+          PROMETHEUS_PUSHGATEWAY_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_image",
+          PROMETHEUS_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_tag",
+          PROMETHEUS_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_image",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_alertmanager_tag",
+          PROMETHEUS_ALERT_MANAGER_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_image",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_configmap_reload_tag",
+          PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_image",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_NAME);
+      replaceStringInFile(targetPromFile.toString(),
+          "prometheus_node_exporter_tag",
+          PROMETHEUS_NODE_EXPORTER_IMAGE_TAG);
+    }, "Failed to create " + targetPromFile);
     if (OKD) {
       assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
           "65534",
@@ -389,15 +439,45 @@ public class MonitoringUtils {
    *
    * @param grafanaReleaseName the grafana release name
    * @param grafanaNamespace the grafana namespace in which the operator will be installed
-   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaHelmValuesFileDir the grafana helm values.yaml file directory
    * @param grafanaVersion the version of the grafana helm chart
    * @return the grafana Helm installation parameters
    */
   public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
                                                       String grafanaNamespace,
-                                                      String grafanaValueFile,
+                                                      String grafanaHelmValuesFileDir,
                                                       String grafanaVersion) {
     LoggingFacade logger = getLogger();
+    logger.info("create a staging location for grafana scripts");
+    Path fileTemp = Paths.get(grafanaHelmValuesFileDir);
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()),"Failed to delete temp dir for grafana");
+
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp), "Failed to create temp dir for grafana");
+
+    logger.info("copy the grafanavalues.yaml to staging location");
+    Path srcGrafanaFile = Paths.get(RESOURCE_DIR, "exporter", "grafanavalues.yaml");
+    Path targetGrafanaFile = Paths.get(fileTemp.toString(), "grafanavalues.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcGrafanaFile, targetGrafanaFile,
+        StandardCopyOption.REPLACE_EXISTING)," Failed to copy files");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "pvc-grafana", "pvc-" + grafanaReleaseName));
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_image",
+        GRAFANA_IMAGE_NAME),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "grafana_tag",
+        GRAFANA_IMAGE_TAG),"Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "busybox_image",
+        BUSYBOX_IMAGE), "Failed to replace String ");
+    assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+        "busybox_tag",
+        BUSYBOX_TAG), "Failed to replace String ");
+
+    if (!OKE_CLUSTER) {
+      assertDoesNotThrow(() -> replaceStringInFile(targetGrafanaFile.toString(),
+          "enabled: false", "enabled: true"));
+    }
     // Helm install parameters
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
@@ -405,7 +485,7 @@ public class MonitoringUtils {
         .repoUrl(GRAFANA_REPO_URL)
         .repoName(GRAFANA_REPO_NAME)
         .chartName("grafana")
-        .chartValuesFile(grafanaValueFile);
+        .chartValuesFile(targetGrafanaFile.toString());
 
     if (grafanaVersion != null) {
       grafanaHelmParams.chartVersion(grafanaVersion);
@@ -429,6 +509,7 @@ public class MonitoringUtils {
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
     int grafanaNodePort = getNextFreePort();
     logger.info("Installing grafana with node port {0}", grafanaNodePort);
+    assertDoesNotThrow(() -> logger.info(Files.readString(targetGrafanaFile)));
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
         .helmParams(grafanaHelmParams)
@@ -454,7 +535,7 @@ public class MonitoringUtils {
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
     testUntil(
         assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
-          "grafanaIsReady failed with ApiException"),
+            "grafanaIsReady failed with ApiException"),
         logger,
         "grafana to be running in namespace {0}",
         grafanaNamespace);
@@ -789,12 +870,11 @@ public class MonitoringUtils {
             ADMIN_PASSWORD_DEFAULT,
             K8S_NODEPORT_HOST,
             nodeport);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify NGINX can access the monitoring exporter metrics "
-            + "from all managed servers in the domain via http")
-        .withFailMessage("NGINX can not access the monitoring exporter metrics "
-            + "from one or more of the managed servers via http")
-        .isTrue();
+    testUntil(withLongRetryPolicy,
+        TestAssertions.callTestWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 200),
+        logger,
+        "Verify NGINX can access the monitoring exporter metrics \n"
+            + "from all managed servers in the domain via http");
   }
 
   /**
