@@ -843,3 +843,53 @@ checkCompatibilityModeInitContainersWithLegacyAuxImages() {
   done
   return 0
 }
+
+#
+# escape_for_sed:
+#   purpose: Helper function for replaceEnv function to escape the string value for 'sed' command.
+escape_for_sed() {
+  local string="$1"
+  string="${string//\\/\\\\}"
+  string="${string//&/\\&}"
+  string="${string//\//\\/}"
+  string="${string//\$/\\$}"
+  string="${string//\!/\\!}"
+  string="${string//\'/\\\'}"
+  string="${string//\"/\\\"}"
+  echo "$string"
+}
+
+#
+# replaceEnv:
+#   purpose: replace a set of k8s style env variables ($()) provided and newline characters in a string
+# $1 - String value to replace the env variables and newline.
+# $2 - Retrun value containing the cluster resource name.
+# $3 - Specifies if the function is called from introspector script.
+#
+replaceEnv() {
+  local text=$1
+  local __result=$2
+  local isIntrospector=$3
+  local __retVal=""
+
+  text=$(echo $text | sed -r "s/\\n/ /")
+  matches=$(echo $text | grep -oP '\$\(.*?\)' )
+  __retVal="$text"
+  for match in $matches; do
+    name=${match:2:-1}
+    in_env=$(env | cut -d '=' -f 1 | grep "^$name$" | wc -l)
+    value=$(escape_for_sed ${!name})
+    match=$(echo $match | sed -r "s/\\(/\\\\(/")
+    match=$(echo $match | sed -r "s/\\)/\\\\)/")
+    if [ $in_env -gt 0 ] ; then
+      __retVal=$(echo "$__retVal" | sed -r "s/\\$match/${value}/")
+    else
+      if [[ "${isIntrospector}" == "true" ]]; then
+        __retVal=$(echo "$__retVal" | sed -r "s/\\$match/\\\\$match/")
+      else
+        __retVal="SEVERE ERROR: ''$name'' specified in the ''JAVA_OPTIONS'' is not in the list of environment variables."
+      fi
+    fi
+  done
+  eval $__result="'${__retVal}'"
+}

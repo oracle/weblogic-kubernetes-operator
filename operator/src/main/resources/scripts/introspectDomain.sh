@@ -78,6 +78,18 @@ else
 fi
 
 #
+# If JAVA_OPTIONS are specified via config-map, replace the newline and env variables.
+#
+if [[ "${REPLACE_VARIABLES_IN_JAVA_OPTIONS}" == "true" ]]; then
+  replaceEnv "$JAVA_OPTIONS" newJavaOptions true
+  if [[ "${newJavaOptions}" =~ "SEVERE ERROR: " ]]; then
+    echo  "${newJavaOptions}"
+    exit 1
+  fi
+  JAVA_OPTIONS="${newJavaOptions}"
+fi
+
+#
 # setup introspector log file
 #   keep max 11 total by default (delete oldest first)
 #

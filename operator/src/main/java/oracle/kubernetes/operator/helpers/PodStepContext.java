@@ -1196,7 +1196,7 @@ public abstract class PodStepContext extends BasePodStepContext {
                                  V1Pod currentPod) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
       List<V1EnvVar> newEnv = new ArrayList<>();
-      Optional.of(container.getEnv())
+      Optional.ofNullable(container.getEnv())
           .ifPresent(env -> env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
           .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, ""))
               .orElse(null)))));

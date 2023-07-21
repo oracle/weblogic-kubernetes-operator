@@ -807,7 +807,8 @@ public class JobStepContext extends BasePodStepContext {
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
     Optional.ofNullable(getKubernetesPlatform())
             .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
-
+    Optional.ofNullable(getDomain().isReplaceVariablesInJavaOptions())
+        .ifPresent(v -> addEnvVar(vars, "REPLACE_VARIABLES_IN_JAVA_OPTIONS", Boolean.toString(v)));
     if (isUseOnlineUpdate()) {
       addOnlineUpdateEnvVars(vars);
     }
