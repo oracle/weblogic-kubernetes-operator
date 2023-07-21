@@ -138,6 +138,7 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15',
                choices: [
                     // The first item in the list is the default value...
+                    '1.21.5',
                     '1.26.3',
                     '1.26',
                     '1.25.8',
@@ -169,7 +170,6 @@ pipeline {
                     '1.21.14',
                     '1.21.12',
                     '1.21.10',
-                    '1.21.5',
                     '1.21.1',
                     '1.21',
                     '1.20.15',
@@ -255,7 +255,7 @@ pipeline {
         )
         string(name: 'GRAFANA_CHART_VERSION',
                description: '',
-               defaultValue: '6.38.6'
+               defaultValue: '6.44.11'
         )
         booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
                      description: 'Collect logs for successful runs. Default is false.',
