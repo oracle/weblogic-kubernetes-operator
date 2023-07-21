@@ -488,7 +488,7 @@ After the successful deployment, you will find output similar to the following:
 Now, you can go to the application through the `domain1-cluster-1-lb` external IP.
 
 ```shell
-$ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-external-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
+$ CLUSTER_IP=$(kubectl get svc domain1-cluster-1-lb -o=jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
 $ curl http://${CLUSTER_IP}:8001/testwebapp/
 ```
