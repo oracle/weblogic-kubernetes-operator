@@ -82,6 +82,17 @@ if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding Model In Image WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
+#
+# If JAVA_OPTIONS are specified via config-map, replace the newline and env variables.
+#
+if [[ "${REPLACE_VARIABLES_IN_JAVA_OPTIONS}" == "true" ]]; then
+  replaceEnv "$JAVA_OPTIONS" newJavaOptions true
+  if [[ "${newJavaOptions}" =~ "SEVERE ERROR: " ]]; then
+    echo  "${newJavaOptions}"
+    exit 1
+  fi
+  JAVA_OPTIONS="${newJavaOptions}"
+fi
 
 #
 # compareArtifactsMD5  checks the WDT artifacts MD5s in the introspect config map against the current introspect job
