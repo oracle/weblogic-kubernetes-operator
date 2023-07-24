@@ -114,49 +114,78 @@ weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
   - [Create WebLogic Domain](#create-weblogic-domain-1)
   - [Create LoadBalancer](#create-loadbalancer)
 
-Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
+Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operatorto create a WLS domain.
 
 ##### Create secrets
 
-Run the following `kubectl` commands to deploy the required secrets:
+You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:
 
-  **NOTE**: Substitute a password of your choice for `MY_WEBLOGIC_ADMIN_PASSWORD`. This
-  password should contain at least seven letters plus one digit.
+```
+# cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+```
+```shell
+$ ./create-weblogic-credentials.sh -u <WebLogic admin username> -p <WebLogic admin password> -d domain1
+```
+```
+secret/domain1-weblogic-credentials created
+secret/domain1-weblogic-credentials labeled
+The secret domain1-weblogic-credentials has been successfully created in the default namespace.
+```
 
-  ```shell
-  $ kubectl -n default \
-    sample-domain1-weblogic-credentials \
-     --from-literal=username=weblogic --from-literal=password=MY_WEBLOGIC_ADMIN_PASSWORD
-  ```
-  ```shell
-  $ kubectl -n default label  secret \
-    sample-domain1-weblogic-credentials \
-    weblogic.domainUID=sample-domain1
-  ```
+Notes:
+- Replace `<WebLogic admin username>` and `<WebLogic admin password>` with a WebLogic administrator username and password of your choice.
+- The password should be at least eight characters long and include at least one digit.
+- Remember what you specified. These credentials may be needed again later.
 
-  Some important details about these secrets:
+You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
-  - The WebLogic credentials secret is required and must contain `username` and `password` fields. You reference it in `spec.webLogicCredentialsSecret` field of Domain YAML file and macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields your model YAML file.
-  - Delete a secret before creating it, otherwise the create command will fail if the secret already exists..
-  - Name and label the secrets using their associated domain UID to clarify which secrets belong to which domains and make it easier to clean up a domain.
+```shell
+# Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
+```
+```shell
+$ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
+```
+```
+# cd kubernetes/samples/scripts/create-kubernetes-secrets
+```
+```shell
+$ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
+```
+```
+secret/wlsregcred created
+The secret wlsregcred has been successfully created in the default namespace.
+```
+
+Verify secrets with the following command:
+
+```shell
+$ kubectl get secret
+```
+```
+NAME                                      TYPE                             DATA   AGE
+domain1-weblogic-credentials              Opaque                           2      2m32s
+sh.helm.release.v1.weblogic-operator.v1   helm.sh/release.v1               1      5m32s
+weblogic-operator-secrets                 Opaque                           1      5m31s
+weblogic-webhook-secrets                  Opaque                           2      5m31s
+wlsregcred                                kubernetes.io/dockerconfigjson   1      38s
+```
+
+**NOTE**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.
 
 ##### Create WebLogic Domain
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-Copy the contents of the [WLS domain resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) file that is included in the sample source to a file called `~/azure/weblogic-on-aks/domain-resource.yaml` or similar.
-
-Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
-
-
-Run command `kubectl get pvc` to get the pvc just created and modify the PVC specifications defined in the `serverPod.volumes.persistentVolumeClaim` section of the Domain resource YAML file based on your environment. 
-
-
 **NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-Run the following command to apply the two sample resources.
-```shell
-$ kubectl apply -f ~/azure/weblogic-on-aks/domain-resource.yaml
-```
+- Copy the contents of the [WLS domain on AKS resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/samples/azure-kubernetes-service/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-AKS-v1.yaml) that is included in the sample source to a file called `~/azure/weblogic-on-aks/domain-resource.yaml` or similar.
+    - Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
+
+- Run command `kubectl get pvc` to get the `pvc name` just created.
+- Modify the PVC specifications defined in the `serverPod.volumes.persistentVolumeClaim` section of the domain resource YAML file with the `pvc name`.
+- Run the following command to apply the two sample resources.
+    ```shell
+    $ kubectl apply -f ~/azure/weblogic-on-aks/domain-resource.yaml
+    ```
 
   The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
 
