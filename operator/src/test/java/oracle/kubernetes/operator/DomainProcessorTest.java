@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
 import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
@@ -202,6 +203,7 @@ class DomainProcessorTest {
 
   static final String DOMAIN_NAME = "base_domain";
   public static final String NEW_DOMAIN_UID = "56789";
+  public static final String EXEC_FORMAT_ERROR = "Exec format error";
   static long uidNum = 0;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
@@ -1848,6 +1850,15 @@ class DomainProcessorTest {
     job.setStatus(createCompletedStatus());
   }
 
+  private void createJobPodAndSetExecFormatErrorStatus(V1Job job) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
+    testSupport.defineResources(POD,
+        new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS))
+            .status(getInitContainerStatusWithExecFormatError()));
+    job.setStatus(createCompletedStatus());
+  }
+
   private void defineTimedoutIntrospection() {
     V1Job job = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
     testSupport.defineResources(job);
@@ -1895,6 +1906,20 @@ class DomainProcessorTest {
     return new V1PodStatus().initContainerStatuses(
           List.of(new V1ContainerStatus().state(new V1ContainerState().waiting(
                 new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image")))));
+  }
+
+  private void defineIntrospectionWithInitContainerWithExecFormatError() {
+    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(getInitContainerStatusWithExecFormatError());
+  }
+
+  public static V1PodStatus getInitContainerStatusWithExecFormatError() {
+    return new V1PodStatus().containerStatuses(List.of(new V1ContainerStatus().ready(false))).initContainerStatuses(
+        List.of(new V1ContainerStatus().name("operator-aux-container1")
+            .state(new V1ContainerState().terminated(new V1ContainerStateTerminated()
+            .reason("Error")))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
@@ -1964,6 +1989,28 @@ class DomainProcessorTest {
 
   private String defineTopology(List<String> clusterNames, List<String> serverNames) throws JsonProcessingException {
     return IntrospectionTestUtils.createTopologyYaml(createDomainConfig(clusterNames, serverNames));
+  }
+
+  @Test
+  void whenIntrospectionJobInitContainerScriptExecError_domainStatusUpdated() throws Exception {
+
+
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatusSupplier.setJobStatus(createBackoffStatus());
+
+    establishPreviousIntrospection(null);
+    defineIntrospectionWithInitContainerWithExecFormatError();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createJobPodAndSetExecFormatErrorStatus(job));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        String.format(EXEC_FORMAT_ERROR, defineTopology()));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    newInfo.getReferencedClusters().forEach(testSupport::defineResources);
+
+    processor.createMakeRightOperation(newInfo).interrupt().execute();
+
+    assertThat(newDomain.getStatus().getMessage().contains(EXEC_FORMAT_ERROR), is(true));
   }
 
   // case 1: job was able to pull, time out during introspection: pod will have DEADLINE_EXCEEDED
