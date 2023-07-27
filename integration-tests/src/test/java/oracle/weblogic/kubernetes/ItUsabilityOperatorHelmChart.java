@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -132,7 +132,6 @@ class ItUsabilityOperatorHelmChart {
   private final String domain5Uid = "usabdomain5";
 
   private final String clusterName = "cluster-1";
-  private final int managedServerPort = 8001;
   private final int replicaCount = 2;
   private final String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
   private final String managedServerPrefix = "-" + MANAGED_SERVER_NAME_BASE;
@@ -141,9 +140,7 @@ class ItUsabilityOperatorHelmChart {
   private int replicaCountDomain1 = 2;
   private int replicaCountDomain2 = 2;
   private String adminSvcExtRouteHost = null;
-
-  // ingress host list
-  private List<String> ingressHostList;
+  
   private static LoggingFacade logger = null;
 
   /**
@@ -252,7 +249,7 @@ class ItUsabilityOperatorHelmChart {
       }
       // delete operator
       logger.info("Uninstalling operator");
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       cleanUpSA(opNamespace);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
 
@@ -337,7 +334,7 @@ class ItUsabilityOperatorHelmChart {
       }
       // delete operator
       logger.info("Uninstalling operator");
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
 
       //install second time
       opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, false, true, false,
@@ -363,7 +360,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
@@ -477,7 +474,7 @@ class ItUsabilityOperatorHelmChart {
           "operator can still manage domain1, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -521,8 +518,8 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
@@ -566,8 +563,8 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
@@ -613,9 +610,9 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
     } finally {
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,opNamespace);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(opNamespace);
@@ -645,7 +642,7 @@ class ItUsabilityOperatorHelmChart {
           false, expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
     }
   }
 
@@ -711,7 +708,7 @@ class ItUsabilityOperatorHelmChart {
 
 
     } finally {
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -784,7 +781,7 @@ class ItUsabilityOperatorHelmChart {
       assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
     } finally {
       //uninstall operator helm chart
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
     }
@@ -891,7 +888,7 @@ class ItUsabilityOperatorHelmChart {
       } catch (Exception ex) {
         logger.info("Failed to collect operator log");
       }
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME,op3Namespace);
       cleanUpSA(op3Namespace);
     }
@@ -1283,5 +1280,16 @@ class ItUsabilityOperatorHelmChart {
         Kubernetes.deleteSecret(name, domainNamespace);
       }
     }
+  }
+
+  private void uninstallOperatorAndVerify(HelmParams opHelmParams) {
+    logger.info("Uninstalling operator");
+    uninstallOperator(opHelmParams);
+
+    String opNamespace = opHelmParams.getNamespace();
+    // check the operator pod deleted
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+        "Can't get operator's pod name");
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
   }
 }
