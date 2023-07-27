@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -181,7 +181,12 @@ class ItIstioSessionMigration {
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     String countStr = httpDataInfo.get(countAttr);
-    int count = Optional.ofNullable(countStr).map(Integer::valueOf).orElse(managedServerPort);
+    int count;
+    if (countStr.equalsIgnoreCase("null")) {
+      count = managedServerPort;
+    } else {
+      count = Optional.ofNullable(countStr).map(Integer::valueOf).orElse(managedServerPort);
+    }
     logger.info("After patching the domain, the primary server changes to {0} "
         + ", session create time {1} and session state {2}",
         primaryServerName, sessionCreateTime, countStr);
