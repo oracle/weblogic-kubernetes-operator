@@ -267,7 +267,7 @@ class ItUsabilityOperatorHelmChart {
       
       // delete operator
       logger.info("Uninstalling operator");
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       cleanUpSA(opNamespace);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
 
@@ -349,7 +349,7 @@ class ItUsabilityOperatorHelmChart {
       }
       // delete operator
       logger.info("Uninstalling operator");
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
 
       //install second time
       opHelmParams = installOperatorHelmChart(opNamespace, opServiceAccount, false, true, false,
@@ -375,7 +375,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain1 scaled to " + replicaCountDomain1 + " servers");
 
     } finally {
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
@@ -490,7 +490,7 @@ class ItUsabilityOperatorHelmChart {
           "operator can still manage domain3, scaling was succeeded for " + managedServerPodName1);
 
     } finally {
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -534,8 +534,8 @@ class ItUsabilityOperatorHelmChart {
       assertNull(opHelmParam2,
           "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       if (!isDomain1Running) {
@@ -579,8 +579,8 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed", 0, op2HelmParams,  LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(opHelmParams);
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
@@ -627,9 +627,9 @@ class ItUsabilityOperatorHelmChart {
           expectedError,"failed",
           externalRestHttpsPort, op2HelmParams, LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
     } finally {
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, opNamespace);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(opNamespace);
@@ -646,21 +646,22 @@ class ItUsabilityOperatorHelmChart {
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
   void testNotPreCreatedOpNsCreateOperatorNegativeInstall() {
     String opReleaseName = OPERATOR_RELEASE_NAME + "2";
+    String nonExistingNamespace = "ns-nonexisting";
     HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
-        .namespace("ns-somens")
+        .namespace(nonExistingNamespace)
         .chartDir(OPERATOR_CHART_DIR);
 
     // install operator
     logger.info("Installing and verifying operator will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "create: failed to create: namespaces \"ns-somens\" not found";
-      HelmParams opHelmParam2 = installOperatorHelmChart("ns-somens", opServiceAccount, false, false,
+      String expectedError = "create: failed to create: namespaces \"" + nonExistingNamespace + "\" not found";
+      HelmParams opHelmParam2 = installOperatorHelmChart(nonExistingNamespace, opServiceAccount, false, false,
           false, expectedError,"failed", 0, op2HelmParams,
           LIST_STRATEGY, domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
     } finally {
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
     }
   }
 
@@ -727,7 +728,7 @@ class ItUsabilityOperatorHelmChart {
       --replicaCountDomain2;
       logger.info("Domain2 scaled to " + replicaCountDomain2 + " servers");
     } finally {
-      uninstallOperator(op2HelmParams);
+      uninstallOperatorAndVerify(op2HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
       if (!isDomain2Running) {
@@ -802,7 +803,7 @@ class ItUsabilityOperatorHelmChart {
       assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
     } finally {
       //uninstall operator helm chart
-      uninstallOperator(opHelmParams);
+      uninstallOperatorAndVerify(opHelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op2Namespace);
       cleanUpSA(op2Namespace);
     }
@@ -904,7 +905,7 @@ class ItUsabilityOperatorHelmChart {
       } catch (Exception ex) {
         logger.info("Failed to collect operator log");
       }
-      uninstallOperator(op1HelmParams);
+      uninstallOperatorAndVerify(op1HelmParams);
       deleteSecret(TEST_IMAGES_REPO_SECRET_NAME, op3Namespace);
       cleanUpSA(op3Namespace);
     }
@@ -1294,5 +1295,16 @@ class ItUsabilityOperatorHelmChart {
         Kubernetes.deleteSecret(name, domainNamespace);
       }
     }
+  }
+
+  private void uninstallOperatorAndVerify(HelmParams opHelmParams) {
+    logger.info("Uninstalling operator");
+    uninstallOperator(opHelmParams);
+
+    String opNamespace = opHelmParams.getNamespace();
+    // check the operator pod deleted
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+        "Can't get operator's pod name");
+    checkPodDoesNotExist(operatorPodName, null, opNamespace);
   }
 }
