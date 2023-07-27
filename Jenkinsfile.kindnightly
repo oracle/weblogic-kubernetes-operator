@@ -105,7 +105,7 @@ pipeline {
     parameters {
         string(name: 'BRANCH',
                description: 'The branch to run the tests on',
-               defaultValue: 'main'
+               defaultValue: 'release/3.4'
         )
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests.  Possible values are kind-parallel (the default), kind-sequential and integration-tests.  Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
