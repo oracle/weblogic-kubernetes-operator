@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,11 +28,11 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceDomainConfig;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainInImageUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainOnPvUsingWdt;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.shutdownDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -64,13 +65,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItWDTModelNoServer {
 
   // domain constants
-  private static final String domainUid = "wdtmodelnoserver";
+  private static final String domainUidPrefix = "wdtmodelnoserver-";
   private static final String MII_IMAGE_NAME = "wdtmodelnoserver-mii";
   private static final int replicaCount = 2;
   private static final String internalPort = "8001";
   private static final String appPath = "sample-war/index.jsp";
-  private static final String adminServerPodName = domainUid + "-adminserver";
-  private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String clusterName = "cluster-1";
 
   private static String domainNamespace = null;
@@ -111,37 +110,42 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is no AdminServerName and no Server section defined")
   void testWdtModelNoAdminServerNameNoServer() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String clusterResName = domainUid + "-" + clusterName;
+    String adminServerPodName = domainUid + "-adminserver";
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String wdtModelFile = "model-noadminservername-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
-    // Also verify the cluster is up and running.
-    createMiiDomainAndVerify(domainNamespace, domainUid,
-        imageName, adminServerPodName, managedServerPrefix, replicaCount);
+    try {
+      // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
+      // Also verify the cluster is up and running.
+      createMiiDomainAndVerify(domainNamespace, domainUid, imageName, adminServerPodName, managedServerPrefix,
+          replicaCount, Arrays.asList(clusterName), false, null, true);
 
-    // check the admin server name is 'AdminServer'
-    checkAdminServerName(adminServerPodName, "AdminServer");
+      // check the admin server name is 'AdminServer'
+      checkAdminServerName(adminServerPodName, "AdminServer");
 
-    //check and wait for the application to be accessible in all server pods
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = managedServerPrefix + j;
-      String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
+      //check and wait for the application to be accessible in all server pods
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = managedServerPrefix + j;
+        String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
 
-      logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
-          + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPodName,
-          expectedStr);
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+            + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            expectedStr);
+      }
+
+      logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
+          domainUid, domainNamespace);
+    } finally {
+      // delete domain and cluster
+      deleteDomainResource(domainNamespace, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
-
-    logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
-        domainUid, domainNamespace);
-
-    // delete domain and cluster
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -153,40 +157,44 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section myadmin defined")
   void testWdtModelNoAdminServerNameWithMyAdminInServer() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String adminServerPodName = domainUid + "-adminserver";
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-noadminservername-hasmyadminserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
-    // Also verify the defined cluster is up and running.
-    createMiiDomainAndVerify(domainNamespace, domainUid,
-        imageName, adminServerPodName, managedServerPrefix, replicaCount);
+    try {
+      // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+      // Also verify the defined cluster is up and running.
+      createMiiDomainAndVerify(domainNamespace, domainUid, imageName, adminServerPodName, managedServerPrefix,
+          replicaCount, Arrays.asList(clusterName), false, null, true);
 
-    // check the admin server name is 'AdminServer'
-    checkAdminServerName(adminServerPodName, "AdminServer");
+      // check the admin server name is 'AdminServer'
+      checkAdminServerName(adminServerPodName, "AdminServer");
 
-    // check there is also a pod with name domainUid-myadmin running
-    checkPodReadyAndServiceExists(domainUid + "-myadmin", domainUid, domainNamespace);
+      // check there is also a pod with name domainUid-myadmin running
+      checkPodReadyAndServiceExists(domainUid + "-myadmin", domainUid, domainNamespace);
 
-    //check and wait for the application to be accessible in all server pods
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = managedServerPrefix + j;
-      String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
+      //check and wait for the application to be accessible in all server pods
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = managedServerPrefix + j;
+        String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
 
-      logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
-          + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPodName,
-          expectedStr);
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+            + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            expectedStr);
+        logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
+            domainUid, domainNamespace);
+      }
+    } finally {
+      // delete domain and cluster
+      deleteDomainResource(domainNamespace, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
-
-    logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
-        domainUid, domainNamespace);
-
-    // delete domain and cluster
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -197,37 +205,42 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section AdminServer defined")
   void testWdtModelNoAdminServerNameWithAdminServerInServer() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String adminServerPodName = domainUid + "-adminserver";
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-noadminservername-hasadminserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
-    // Also verify the defined cluster is up and running.
-    createMiiDomainAndVerify(domainNamespace, domainUid,
-        imageName, adminServerPodName, managedServerPrefix, replicaCount);
+    try {
+      // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+      // Also verify the defined cluster is up and running.
+      createMiiDomainAndVerify(domainNamespace, domainUid, imageName, adminServerPodName, managedServerPrefix,
+          replicaCount, Arrays.asList(clusterName), false, null, true);
 
-    // check the admin server name is 'AdminServer'
-    checkAdminServerName(adminServerPodName, "AdminServer");
+      // check the admin server name is 'AdminServer'
+      checkAdminServerName(adminServerPodName, "AdminServer");
 
-    //check and wait for the application to be accessible in all server pods
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = managedServerPrefix + j;
-      String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
+      //check and wait for the application to be accessible in all server pods
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = managedServerPrefix + j;
+        String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
 
-      logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
-          + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPodName,
-          expectedStr);
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+            + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            expectedStr);
+      }
+
+      logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
+          domainUid, domainNamespace);
+    } finally {
+      // delete domain and cluster
+      deleteDomainResource(domainNamespace, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
-
-    logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
-        domainUid, domainNamespace);
-
-    // delete domain and cluster
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -240,37 +253,42 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is no AdminServerName and in Server section 'adminserver' defined")
   void testWdtModelNoAdminServerNameWithAdminServerLowercaseInServer() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String adminServerPodName = domainUid + "-adminserver";
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-noadminservername-hasadminserverlowercase.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
-    // Also verify the defined cluster is up and running.
-    createMiiDomainAndVerify(domainNamespace, domainUid,
-        imageName, adminServerPodName, managedServerPrefix, replicaCount);
+    try {
+      // Verify the domain is created and the admin server pod "domainUid-adminserver" is up and running.
+      // Also verify the defined cluster is up and running.
+      createMiiDomainAndVerify(domainNamespace, domainUid, imageName, adminServerPodName, managedServerPrefix,
+          replicaCount, Arrays.asList(clusterName), false, null, true);
 
-    // check the admin server name is 'AdminServer'
-    checkAdminServerName(adminServerPodName, "AdminServer");
+      // check the admin server name is 'AdminServer'
+      checkAdminServerName(adminServerPodName, "AdminServer");
 
-    //check and wait for the application to be accessible in all server pods
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = managedServerPrefix + j;
-      String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
+      //check and wait for the application to be accessible in all server pods
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = managedServerPrefix + j;
+        String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
 
-      logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
-          + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPodName,
-          expectedStr);
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+            + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            expectedStr);
+      }
+
+      logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
+          domainUid, domainNamespace);
+    } finally {
+      // delete domain and cluster
+      deleteDomainResource(domainNamespace, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
-
-    logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
-        domainUid, domainNamespace);
-
-    // delete domain and cluster
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -283,41 +301,45 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is AdminServerName set and the named server is not in Server section")
   void testWdtModelAdminServerNameSetNamedServerNotInServer() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String wdtModelFile = "model-hasadminservername-namedservernotinserver.yaml";
+    String clusterResName = domainUid + "-" + clusterName;
     imageName = createAndVerifyDomainImage(wdtModelFile);
     String namedAdminServerPodName = domainUid + "-new-admin-server";
 
-    // Verify the domain is created and the admin server pod "domainUid-new-admin-server" is up and running.
-    // Also verify the defined cluster is up and running.
-    createMiiDomainAndVerify(domainNamespace, domainUid, imageName, namedAdminServerPodName,
-        managedServerPrefix, replicaCount);
+    try {
+      // Verify the domain is created and the admin server pod "domainUid-new-admin-server" is up and running.
+      // Also verify the defined cluster is up and running.
+      createMiiDomainAndVerify(domainNamespace, domainUid, imageName, namedAdminServerPodName, managedServerPrefix,
+          replicaCount, Arrays.asList(clusterName), false, null, true);
 
-    // check the admin server name is 'new-admin-server'
-    checkAdminServerName(namedAdminServerPodName, "new-admin-server");
+      // check the admin server name is 'new-admin-server'
+      checkAdminServerName(namedAdminServerPodName, "new-admin-server");
 
-    // check that there is another pod domainUid-admin-server running in 7001 since it is defined in Server section
-    checkPodReadyAndServiceExists(domainUid + "-admin-server", domainUid, domainNamespace);
+      // check that there is another pod domainUid-admin-server running in 7001 since it is defined in Server section
+      checkPodReadyAndServiceExists(domainUid + "-admin-server", domainUid, domainNamespace);
 
-    //check and wait for the application to be accessible in all server pods
-    for (int j = 1; j <= replicaCount; j++) {
-      String managedServerPodName = managedServerPrefix + j;
-      String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
+      //check and wait for the application to be accessible in all server pods
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = managedServerPrefix + j;
+        String expectedStr = "Hello World, you have reached server " + MANAGED_SERVER_NAME_BASE + j;
 
-      logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
-          + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPodName,
-          expectedStr);
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+            + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            expectedStr);
+      }
+
+      logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
+          domainUid, domainNamespace);
+    } finally {
+      // delete domain and cluster
+      deleteDomainResource(domainNamespace, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace);
     }
-
-    logger.info("Domain {0} is fully started in namespace {1} - servers are running and application is available",
-        domainUid, domainNamespace);
-
-    // delete domain and cluster
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
-    deleteClusterCustomResource(clusterName, domainNamespace);
   }
 
   /**
@@ -329,28 +351,33 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
   void testWdtModelConfiguredClusterNoManagedServersInServerMII() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-configuredcluster-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    createMiiDomain(
-        domainNamespace,
-        domainUid,
-        imageName,
-        replicaCount,
-        Collections.singletonList(clusterName),
-        false,
-        null);
+    try {
+      createMiiDomain(
+          domainNamespace,
+          domainUid,
+          imageName,
+          replicaCount,
+          Collections.singletonList(clusterName),
+          false,
+          null,
+          true);
 
-    // verify the error msg is logged in the operator log
-    String expectedErrorMsg = "The WebLogic configured cluster \\\""
-        + clusterName
-        + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
-    deleteDomainResource(domainNamespace, domainUid);
+      // verify the error msg is logged in the operator log
+      String expectedErrorMsg = "The WebLogic configured cluster \\\""
+          + clusterName
+          + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
+      String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+      checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    } finally {
+      // delete the domain and cluster
+      deleteClusterCustomResource(clusterResName, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
+    }
   }
 
   /**
@@ -362,23 +389,28 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
   void testWdtModelConfiguredClusterNoManagedServersInServerWithDII() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-configuredcluster-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
     String wlSecretName = "weblogic-credentials";
-    createDomainInImageUsingWdt(domainUid, domainNamespace,
-        wdtModelFile, null, null, wlSecretName, clusterName, replicaCount);
 
-    // verify the error msg is logged in the operator log
-    String expectedErrorMsg = "The WebLogic configured cluster \\\""
-        + clusterName
-        + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    try {
+      createDomainInImageUsingWdt(domainUid, domainNamespace,
+          wdtModelFile, null, null, wlSecretName, clusterResName, clusterName, replicaCount);
 
-    // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
-    deleteDomainResource(domainNamespace, domainUid);
+      // verify the error msg is logged in the operator log
+      String expectedErrorMsg = "The WebLogic configured cluster \\\""
+          + clusterName
+          + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
+      String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+      checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    } finally {
+      // delete the domain and cluster
+      deleteClusterCustomResource(clusterResName, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
+    }
   }
 
   /**
@@ -390,23 +422,27 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is configured cluster set but no managed servers in Server section")
   void testWdtModelConfiguredClusterNoManagedServersInServerWithDomainOnPV() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String clusterResName = domainUid + "-" + clusterName;
     String wdtModelFile = "model-configuredcluster-noserver.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
     String wlSecretName = "weblogic-credentials";
-    createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
-        clusterName, replicaCount, ItWDTModelNoServer.class.getSimpleName(), wdtModelFile, false);
+    try {
+      createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName,
+          clusterResName, clusterName, replicaCount, ItWDTModelNoServer.class.getSimpleName(), wdtModelFile, false);
 
-    // verify the error msg is logged in the operator log
-    String expectedErrorMsg = "The WebLogic configured cluster \\\""
-        + clusterName
-        + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // delete the domain and cluster
-    deleteClusterCustomResource(clusterName, domainNamespace);
-    deleteDomainResource(domainNamespace, domainUid);
+      // verify the error msg is logged in the operator log
+      String expectedErrorMsg = "The WebLogic configured cluster \\\""
+          + clusterName
+          + "\\\" is not referenced by any servers.  You must have managed servers defined that belong to this cluster";
+      String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+      checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+    } finally {
+      // delete the domain and cluster
+      deleteClusterCustomResource(clusterResName, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
+    }
   }
 
   /**
@@ -418,36 +454,40 @@ class ItWDTModelNoServer {
   @DisplayName("Test in the WDT model file there is no AdminServerName, no Server and no Cluster section defined")
   void testWdtModelNoAdminServerNameNoServerNoCluster() {
 
+    String domainUid = getUniqueName(domainUidPrefix);
+    String adminServerPodName = domainUid + "-adminserver";
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String wdtModelFile = "model-emptytopology.yaml";
     imageName = createAndVerifyDomainImage(wdtModelFile);
 
-    // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
-    createMiiDomain(
-        domainNamespace,
-        domainUid,
-        imageName,
-        replicaCount,
-        null,
-        false,
-        null);
+    try {
+      // Verify the domain is created. The admin server pod "domainUid-adminserver" is up and running.
+      createMiiDomain(
+          domainNamespace,
+          domainUid,
+          imageName,
+          replicaCount,
+          null,
+          false,
+          null);
 
-    // verify the admin server is started
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+      // verify the admin server is started
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check cluster-1 service does not exist
-    checkServiceDoesNotExist(domainUid + "-cluster-" + clusterName, domainNamespace);
-    // check managed server pods and services do not exist
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
-      checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
+      // check cluster-1 service does not exist
+      checkServiceDoesNotExist(domainUid + "-cluster-" + clusterName, domainNamespace);
+      // check managed server pods and services do not exist
+      for (int i = 1; i <= replicaCount; i++) {
+        checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
+        checkServiceDoesNotExist(managedServerPrefix + i, domainNamespace);
+      }
+
+      // check the admin server name is 'AdminServer'
+      checkAdminServerName(adminServerPodName, "AdminServer");
+    } finally {
+      // delete domain
+      deleteDomainResource(domainNamespace, domainUid);
     }
-
-    // check the admin server name is 'AdminServer'
-    checkAdminServerName(adminServerPodName, "AdminServer");
-
-    // delete domain
-    shutdownDomainAndVerify(domainNamespace, domainUid, replicaCount);
-    deleteDomainResource(domainNamespace, domainUid);
   }
 
   private static void checkAppIsRunning(
