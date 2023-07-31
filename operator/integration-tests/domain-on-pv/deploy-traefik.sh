@@ -89,7 +89,10 @@ else
     --namespace $TRAEFIK_NAMESPACE \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
     --set "ports.web.nodePort=${TRAEFIK_HTTP_NODEPORT}" \
-    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}"
+    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" \
+    --set "image.registry=${TRAEFIK_IMAGE_REGISTRY}" \
+    --set "image.repository=${TRAEFIK_IMAGE_REPOSITORY}" \
+    --set "image.tag=${TRAEFIK_IMAGE_TAG}" 
 
   set +x
 
