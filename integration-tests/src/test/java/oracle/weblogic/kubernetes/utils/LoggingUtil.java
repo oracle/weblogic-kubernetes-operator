@@ -43,7 +43,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -139,19 +138,6 @@ public class LoggingUtil {
             && pv.getMetadata().getName()
                 .equals(pvc.getSpec().getVolumeName())) {
           pvList.add(pv);
-          String pvName = pv.getMetadata().getName();
-          String pvcName = pvc.getMetadata().getName();
-          try {
-            if (pv.getMetadata().getDeletionTimestamp() == null) {
-              copyFromPV(namespace, pvcName, pvName,
-                  Files.createDirectories(
-                      Paths.get(resultDir, pvcName, pvName)));
-            }
-          } catch (ApiException ex) {
-            logger.warning(ex.getResponseBody());
-          } catch (IOException ex) {
-            logger.warning(ex.getMessage());
-          }
         }
       }
     }
@@ -497,4 +483,33 @@ public class LoggingUtil {
             podName,
             namespace);
   }
+  
+  private void archivePV(String namespace, String resultDir) {
+    // archive persistent volume contents
+    List<V1PersistentVolume> pvList = new ArrayList<>();
+    for (var pv : Kubernetes.listPersistentVolumes().getItems()) {
+      for (var pvc : Kubernetes.listPersistentVolumeClaims(namespace).getItems()) {
+        if (pv.getSpec().getStorageClassName()
+            .equals(pvc.getSpec().getStorageClassName())
+            && pv.getMetadata().getName()
+                .equals(pvc.getSpec().getVolumeName())) {
+          pvList.add(pv);
+          String pvName = pv.getMetadata().getName();
+          String pvcName = pvc.getMetadata().getName();
+          try {
+            if (pv.getMetadata().getDeletionTimestamp() == null) {
+              copyFromPV(namespace, pvcName, pvName,
+                  Files.createDirectories(
+                      Paths.get(resultDir, pvcName, pvName)));
+            }
+          } catch (ApiException ex) {
+            getLogger().warning(ex.getResponseBody());
+          } catch (IOException ex) {
+            getLogger().warning(ex.getMessage());
+          }
+        }
+      }
+    }
+  }
+
 }
