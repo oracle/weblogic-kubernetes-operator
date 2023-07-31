@@ -72,8 +72,8 @@ class ServerPod extends KubernetesResource {
   @Valid
   @Description("List of sources to populate environment variables in the container running a WebLogic Server instance. "
       + "The sources include either a config map or a secret. "
-      + "Note that the operator will not expand the dependent variables in the 'envFrom' source. "
-      + "For more details: https://kubernetes.io/docs/tasks/inject-data-application/"
+      + "The operator will not expand the dependent variables in the 'envFrom' source. "
+      + "More details: https://kubernetes.io/docs/tasks/inject-data-application/"
       + "define-environment-variable-container/#define-an-environment-variable-for-a-container. "
       + "Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables.")

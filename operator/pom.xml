@@ -237,7 +237,6 @@
                   <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
                 </artifactItem>
               </artifactItems>
-              <outputDirectory>${project.basedir}/target</outputDirectory>
             </configuration>
           </execution>
         </executions>

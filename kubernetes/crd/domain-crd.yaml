@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 7f08b67738b5bbe85e2185a1a9c56d1e452025562241078c07c3d91e7df227aa
+    weblogic.sha256: a9c6df0b3ce46a1ec950ac31ea2c6271d08c5bb1eac885acf3c58225fbbebd56
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1258,9 +1258,9 @@ spec:
                       envFrom:
                         description: 'List of sources to populate environment variables
                           in the container running a WebLogic Server instance. The
-                          sources include either a config map or a secret. Note that
-                          the operator will not expand the dependent variables in
-                          the ''envFrom'' source. For more details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                          sources include either a config map or a secret. The operator
+                          will not expand the dependent variables in the ''envFrom''
+                          source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
                           Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                         items:
                           type: object
@@ -4308,9 +4308,9 @@ spec:
                   envFrom:
                     description: 'List of sources to populate environment variables
                       in the container running a WebLogic Server instance. The sources
-                      include either a config map or a secret. Note that the operator
-                      will not expand the dependent variables in the ''envFrom'' source.
-                      For more details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                      include either a config map or a secret. The operator will not
+                      expand the dependent variables in the ''envFrom'' source. More
+                      details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
                       Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                     items:
                       type: object
@@ -7109,9 +7109,9 @@ spec:
                         envFrom:
                           description: 'List of sources to populate environment variables
                             in the container running a WebLogic Server instance. The
-                            sources include either a config map or a secret. Note
-                            that the operator will not expand the dependent variables
-                            in the ''envFrom'' source. For more details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                            sources include either a config map or a secret. The operator
+                            will not expand the dependent variables in the ''envFrom''
+                            source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
                             Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
                           type: array
                           items:
