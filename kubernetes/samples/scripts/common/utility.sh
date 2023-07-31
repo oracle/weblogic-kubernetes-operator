@@ -969,11 +969,11 @@ getPodName() {
 detectPod() {
  ns=$1
  startSecs=$SECONDS
- maxWaitSecs=10
+ maxWaitSecs=120
  while [ -z "`${KUBERNETES_CLI:-kubectl} get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
    if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
      echo "Pod not found after $((SECONDS - startSecs)) seconds, retrying ..."
-     sleep 2
+     sleep 5
    else
      echo "[Error] Could not find Pod after $((SECONDS - startSecs)) seconds"
      exit 1

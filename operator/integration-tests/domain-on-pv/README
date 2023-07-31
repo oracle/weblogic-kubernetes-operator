@@ -29,7 +29,7 @@ To run the test:
      ./run-test.sh -initial-main
 
    JRF mode:
-     ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -initial-main
+     ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -initial-image -initial-main
 
 --------------------
 SAMPLE REGENERATION:
