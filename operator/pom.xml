@@ -257,12 +257,13 @@
                   <directory>${project.basedir}/src/main/resources/scripts</directory>
                   <includes>
                     <include>model_wdt_mii_filter.py</include>
+                    <include>utils.py</include>
                   </includes>
                 </resource>
                 <resource>
                   <directory>${project.basedir}/src/test/python</directory>
                   <includes>
-                    <include>*.py</include>
+                    <include>test_wdt_mii_filter.py</include>
                   </includes>
                 </resource>
               </resources>
@@ -302,7 +303,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <skip>${skip.unit.tests}</skip>
+              <!-- <skip>${skip.unit.tests}</skip> -->
               <executable>java</executable>
               <workingDirectory>src/test/python</workingDirectory>
               <arguments>
