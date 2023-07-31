@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -122,6 +123,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withEnvironmentVariable(V1EnvVar envVar) {
     getDomainSpec().addEnvironmentVariable(envVar);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
+    getDomainSpec().setEnvFrom(List.of(envFromSource));
     return this;
   }
 
@@ -627,6 +634,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
+      server.setEnvFrom(List.of(envFromSource));
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withServerStartPolicy(ServerStartPolicy policy) {
       server.setServerStartPolicy(policy);
       return this;
@@ -812,6 +825,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterSpec.addEnvironmentVariable(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
+      clusterSpec.setEnvFrom(List.of(envFromSource));
       return this;
     }
 

@@ -259,7 +259,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_getClusterOrNone_returns_none(self):
     model = self.getModel()
     cluster = model_wdt_mii_filter.getClusterOrNone(model, "cluster-2")
-    self.assertIsNone(cluster, "Did not expect to find cluster named \'cluster-2\'")
+    self.assertTrue(cluster is None, "Did not expect to find cluster named \'cluster-2\'")
 
   def test_customize_node_manager_creds(self):
     model = self.getModel()
@@ -276,7 +276,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_customizeLog_whenNoNameProvided(self):
     model = self.getModel()
     model_wdt_mii_filter.customizeLog(None, model['topology'])
-    self.assertNotIn('Log', model['topology'], "Did not expect \'Log\' to be configured")
+    self.assertFalse('Log' in model['topology'], "Did not expect \'Log\' to be configured")
 
   def test_customizeCustomFileStores(self):
     model = self.getModel()
@@ -350,7 +350,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       admin_server_exists = 'MyAdminServer' in topology['Server']
       self.assertTrue(admin_server_exists, "Expected MyAdminServer added if AdminServerName is not set")
 
-    except ImportError as ie:
+    except ImportError, ie:
       self.assertTrue(ie is not None)
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):

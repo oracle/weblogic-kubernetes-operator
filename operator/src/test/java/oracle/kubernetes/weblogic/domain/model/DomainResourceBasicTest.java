@@ -5,6 +5,8 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -380,6 +382,19 @@ class DomainResourceBasicTest extends DomainTestBase {
     EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getEnvironmentVariables(), containsInAnyOrder(createEnvironment()));
+  }
+
+  @Test
+  void whenSpecifiedOnCluster_managedServerHasEnvFromValues() {
+    configureCluster(CLUSTER_NAME).withEnvFrom(createEnvFrom());
+
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getEnvFrom(), containsInAnyOrder(createEnvFrom()));
+  }
+
+  private V1EnvFromSource createEnvFrom() {
+    return new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("cluster"));
   }
 
   @Test

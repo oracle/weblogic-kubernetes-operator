@@ -28,10 +28,12 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -1670,6 +1672,15 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         getCreatedPodSpecContainer().getLivenessProbe(),
         hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD, CONFIGURED_SUCCESS_THRESHOLD,
                 CONFIGURED_FAILURE_THRESHOLD));
+  }
+
+  @Test
+  void whenPodCreatedWithEnvFromSettings_hasEnvFromSettings() {
+    V1EnvFromSource envFromSource = new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("test"));
+    configureServer().withEnvFrom(envFromSource);
+    assertThat(
+        getCreatedPodSpecContainer().getEnvFrom(),
+        contains(envFromSource));
   }
 
   @Test

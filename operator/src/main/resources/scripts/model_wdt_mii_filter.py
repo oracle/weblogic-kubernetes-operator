@@ -48,6 +48,8 @@ import inspect
 import os
 import sys, traceback
 
+from java.lang import System
+
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
 tmp_scriptdir=os.path.dirname(tmp_info[0])
@@ -126,16 +128,24 @@ class OfflineWlstEnv(object):
     return contents
 
   def getEnv(self, name):
-    val = os.getenv(name)
-    if val is None or val == "null":
+    val = self.getEnvOrDef(name)
+    if val is None:
       print("SEVERE: Env var %s not set." % name)
       sys.exit(1)
     return val
 
-  def getEnvOrDef(self, name, deflt):
-    val = os.getenv(name)
-    if val == None or val == "null" or len(val) == 0:
-      return deflt
+  def getEnvOrDef(self, name, deflt=None):
+    """
+    Get the environment variable and return its value or the default value if the variable is not found.
+    :param name: the environment variable name
+    :param deflt:
+    :return:
+    """
+    val = os.environ.get(name)
+    if val is None or val == "null":
+      val = System.getenv(name)
+      if val is None or val == "null":
+        return deflt
     return val
 
   def toDNS1123Legal(self, address):

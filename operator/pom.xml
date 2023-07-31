@@ -77,18 +77,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <skip>${skip.unit.tests}</skip>
-          <includes>
-            <exclude>**/*Test.java</exclude>
-          </includes>
-          <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <executions>
           <execution>
@@ -217,6 +205,33 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jython-resource-dependencies</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.python</groupId>
+                  <artifactId>jython-standalone</artifactId>
+                  <version>${jython-standalone-version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.basedir}/target</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
@@ -241,24 +256,19 @@
             </configuration>
           </execution>
           <execution>
-            <id>test-python-scripts</id>
+            <id>test-jython-scripts</id>
             <phase>test</phase>
             <goals>
               <goal>exec</goal>
             </goals>
             <configuration>
               <skip>${skip.unit.tests}</skip>
-              <executable>python</executable>
+              <executable>java</executable>
               <workingDirectory>src/test/python</workingDirectory>
-              <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/resources/scripts</PYTHONPATH>
-                <DOMAIN_UID>sample-domain1</DOMAIN_UID>
-              </environmentVariables>
               <arguments>
-                <arugument>-B</arugument>
-                <arugument>-m</arugument>
-                <argument>unittest</argument>
-                <argument>discover</argument>
+                <argument>-jar</argument>
+                <argument>${project.build.testOutputDirectory}/jython-standalone-${jython-standalone-version}.jar</argument>
+                <argument>test_wdt_mii_filter.py</argument>
               </arguments>
             </configuration>
           </execution>

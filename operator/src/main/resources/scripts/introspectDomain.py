@@ -85,6 +85,7 @@ import os
 import re
 import sys
 import traceback
+from java.lang import System
 from sets import Set
 from xml.dom.minidom import parse
 
@@ -315,16 +316,26 @@ class OfflineWlstEnv(object):
     print
 
   def getEnv(self, name):
-    val = os.getenv(name)
+    val = os.environ.get(name)
     if val is None or val == "null":
-      trace("SEVERE","Env var "+name+" not set.")
-      sys.exit(1)
+      val = System.getenv(name)
+      if val is None or val == "null":
+        trace("SEVERE: Env var %s not set." % name)
+        sys.exit(1)
     return val
 
-  def getEnvOrDef(self, name, deflt):
-    val = os.getenv(name)
-    if val == None or val == "null" or len(val) == 0:
-      return deflt
+  def getEnvOrDef(self, name, deflt=None):
+    """
+    Get the environment variable and return its value or the default value if the variable is not found.
+    :param name: the environment variable name
+    :param deflt:
+    :return:
+    """
+    val = os.environ.get(name)
+    if val is None or val == "null" or len(val) == 0:
+      val = System.getenv(name)
+      if val is None or val == "null" or len(val) == 0:
+        return deflt
     return val
 
   def isEnvSet(self, name):

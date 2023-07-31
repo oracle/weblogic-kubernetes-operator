@@ -105,6 +105,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
         .env(getEnvironmentVariables())
+        .envFrom(getServerSpec().getEnvFrom())
         .resources(getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
   }

@@ -11,7 +11,9 @@ import java.util.Map;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Capabilities;
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
@@ -351,6 +353,25 @@ class DomainV2Test extends DomainTestBase {
     assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
     assertThat(spec.getLivenessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
     assertThat(spec.getLivenessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
+  }
+
+  @Test
+  void whenEnvFromConfiguredOnMultipleLevels_useCombination() {
+    configureDomain(domain).withEnvFrom(createEnvFrom("domain"));
+    configureCluster(CLUSTER_NAME)
+        .withEnvFrom(createEnvFrom("cluster"));
+    configureServer(SERVER1)
+        .withEnvFrom(createEnvFrom("server"));
+
+    EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
+
+    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("server")));
+    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("cluster")));
+    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("domain")));
+  }
+
+  private V1EnvFromSource createEnvFrom(String scope) {
+    return new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name(scope));
   }
 
   @Test
