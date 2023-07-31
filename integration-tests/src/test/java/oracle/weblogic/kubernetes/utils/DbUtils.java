@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -55,6 +56,7 @@ import io.kubernetes.client.openapi.models.V1StorageClass;
 import io.kubernetes.client.openapi.models.V1Subject;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -76,6 +78,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.DB_PREBUILT_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_SECRET_NAME;
@@ -102,7 +105,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.setVolumeSource;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -841,6 +843,7 @@ public class DbUtils {
     Files.deleteIfExists(dbYaml);
     FileUtils.copy(Paths.get(RESOURCE_DIR, "dboperator", "singleinstancedatabase.yaml"), dbYaml);
 
+    String storageClass = "weblogic-domain-storage-class";
     replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
@@ -848,7 +851,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
     replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + BASE_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(dbYaml.toString(), "storageClass: \"oci-bv\"",
-        "storageClass: \"weblogic-domain-storage-class\"");
+        "storageClass: \"" + storageClass + "\"");
     replaceStringInFile(dbYaml.toString(), "accessMode: \"ReadWriteOnce\"", "accessMode: \"ReadWriteMany\"");
     replaceStringInFile(dbYaml.toString(), "volumeName: \"\"", "volumeName: \"" + pvName + "\"");
 
@@ -981,16 +984,15 @@ public class DbUtils {
   public static void createPV(String pvName) {
 
     LoggingFacade logger = getLogger();
-    Path pvHostPath = null;
+    Path pvHostPath = Paths.get(PV_ROOT, pvName);
 
     logger.info("creating persistent volume {0}", pvName);
-     
+
     // when tests are running in local box the PV directories need to exist
     if (!OKE_CLUSTER && !OKD) {
       try {
-        pvHostPath = Files.createDirectories(Paths.get(
-            PV_ROOT, pvName));
         logger.info("Creating PV directory host path {0}", pvHostPath);
+        Files.createDirectories(pvHostPath);
         deleteDirectory(pvHostPath.toFile());
         createDirectories(pvHostPath);
       } catch (IOException ioex) {
@@ -1000,15 +1002,29 @@ public class DbUtils {
     }
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
+        .metadata(new V1ObjectMeta()
+            .name(pvName))
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
             .putCapacityItem("storage", Quantity.fromString("100Gi"))
             .persistentVolumeReclaimPolicy("Recycle")
-            .accessModes(Arrays.asList("ReadWriteMany")))
-        .metadata(new V1ObjectMeta()
-            .name(pvName));
-    setVolumeSource(pvHostPath, v1pv);
+            .accessModes(Arrays.asList("ReadWriteMany")));
+    if (OKD) {
+      v1pv.getSpec()
+          .storageClassName("okd-nfsmnt")
+          .nfs(new V1NFSVolumeSource()
+              .path(PV_ROOT)
+              .server(NFS_SERVER)
+              .readOnly(false));
+    } else {
+      v1pv.getSpec()
+          .storageClassName("weblogic-domain-storage-class")
+          .hostPath(new V1HostPathVolumeSource()
+              .path(pvHostPath.toString()));
+    }
+    logger.info(Yaml.dump(v1pv));
+
     boolean success = assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Failed to create persistent volume");
     assertTrue(success, "PersistentVolume creation failed");

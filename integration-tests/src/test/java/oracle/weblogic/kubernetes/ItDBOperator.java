@@ -70,7 +70,6 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.deleteHostPathProvisioner;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
@@ -505,7 +504,6 @@ class ItDBOperator {
   public void tearDownAll() throws ApiException {
     if (!SKIP_CLEANUP) {
       deleteOracleDB(dbNamespace, dbName);
-      deleteHostPathProvisioner(dbNamespace);
       uninstallDBOperator(dbNamespace);
     }
   }
