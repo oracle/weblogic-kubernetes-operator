@@ -190,6 +190,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase extends DomainValidationTestBase {
@@ -1676,11 +1677,11 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
 
   @Test
   void whenPodCreatedWithEnvFromSettings_hasEnvFromSettings() {
-    V1EnvFromSource envFromSource = new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("test"));
+    List<V1EnvFromSource> envFromSource =
+        List.of(new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("test")));
     configureServer().withEnvFrom(envFromSource);
-    assertThat(
-        getCreatedPodSpecContainer().getEnvFrom(),
-        contains(envFromSource));
+    assertTrue(
+        getCreatedPodSpecContainer().getEnvFrom().containsAll(envFromSource));
   }
 
   @Test

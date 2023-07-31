@@ -241,6 +241,35 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-test-sources</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/src/main/resources/scripts</directory>
+                  <includes>
+                    <include>model_wdt_mii_filter.py</include>
+                  </includes>
+                </resource>
+                <resource>
+                  <directory>${project.basedir}/src/test/python</directory>
+                  <includes>
+                    <include>*.py</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
 
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -279,7 +308,7 @@
               <arguments>
                 <argument>-jar</argument>
                 <argument>${project.build.testOutputDirectory}/jython-standalone-${jython-standalone-version}.jar</argument>
-                <argument>test_wdt_mii_filter.py</argument>
+                <argument>${project.build.testOutputDirectory}/test_wdt_mii_filter.py</argument>
               </arguments>
             </configuration>
           </execution>

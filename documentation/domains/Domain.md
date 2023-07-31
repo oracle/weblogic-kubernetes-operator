@@ -255,6 +255,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the Introspector Job Pod container. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
+| `envFrom` | Array of [Env From Source](k8s1.13.5.md#env-from-source) | List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the 'envFrom' source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. |
 | `resources` | [Resource Requirements](k8s1.13.5.md#resource-requirements) | Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`. |
 
 ### Probe Tuning

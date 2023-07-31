@@ -67,7 +67,6 @@ class ServerPod extends KubernetesResource {
   /**
    * List of sources to populate environment variables in the container while starting a server.
    *
-   * @since 2.0
    */
   @Valid
   @Description("List of sources to populate environment variables in the container running a WebLogic Server instance. "

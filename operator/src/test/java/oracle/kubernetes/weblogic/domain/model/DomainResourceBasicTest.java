@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
@@ -25,6 +26,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 class DomainResourceBasicTest extends DomainTestBase {
 
@@ -390,11 +392,11 @@ class DomainResourceBasicTest extends DomainTestBase {
 
     EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(spec.getEnvFrom(), containsInAnyOrder(createEnvFrom()));
+    assertTrue(spec.getEnvFrom().containsAll(createEnvFrom()));
   }
 
-  private V1EnvFromSource createEnvFrom() {
-    return new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("cluster"));
+  private List<V1EnvFromSource> createEnvFrom() {
+    return List.of(new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("cluster")));
   }
 
   @Test

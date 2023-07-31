@@ -58,6 +58,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DomainV2Test extends DomainTestBase {
@@ -365,13 +366,13 @@ class DomainV2Test extends DomainTestBase {
 
     EffectiveServerSpec spec = info.getServer(SERVER1, CLUSTER_NAME);
 
-    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("server")));
-    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("cluster")));
-    assertThat(spec.getEnvFrom(), hasItems(createEnvFrom("domain")));
+    assertTrue(spec.getEnvFrom().containsAll(createEnvFrom("server")));
+    assertTrue(spec.getEnvFrom().containsAll(createEnvFrom("cluster")));
+    assertTrue(spec.getEnvFrom().containsAll(createEnvFrom("domain")));
   }
 
-  private V1EnvFromSource createEnvFrom(String scope) {
-    return new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name(scope));
+  private List<V1EnvFromSource> createEnvFrom(String scope) {
+    return List.of(new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name(scope)));
   }
 
   @Test

@@ -127,8 +127,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
-    getDomainSpec().setEnvFrom(List.of(envFromSource));
+  public DomainConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+    getDomainSpec().setEnvFrom(envFromSources);
     return this;
   }
 
@@ -578,6 +578,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public IntrospectorJobPodConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+      introspector.setEnvFrom(envFromSources);
+      return this;
+    }
+
+    @Override
     public IntrospectorJobPodConfigurator withRequestRequirement(String resource, String quantity) {
       introspector.addRequestRequirement(resource, quantity);
       return this;
@@ -634,8 +640,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
-      server.setEnvFrom(List.of(envFromSource));
+    public ServerConfigurator withEnvFrom(List<V1EnvFromSource> envFromSource) {
+      server.setEnvFrom(envFromSource);
       return this;
     }
 
@@ -829,8 +835,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withEnvFrom(V1EnvFromSource envFromSource) {
-      clusterSpec.setEnvFrom(List.of(envFromSource));
+    public ClusterConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+      clusterSpec.setEnvFrom(envFromSources);
       return this;
     }
 

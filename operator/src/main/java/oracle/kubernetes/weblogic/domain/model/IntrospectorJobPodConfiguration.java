@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.List;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.json.Description;
@@ -52,6 +53,15 @@ public class IntrospectorJobPodConfiguration implements EffectiveIntrospectorJob
 
   void addEnvironmentVariable(V1EnvVar envVar) {
     serverPod.addEnvVar(envVar);
+  }
+
+  @Nullable
+  public List<V1EnvFromSource> getEnvFrom() {
+    return serverPod.getEnvFrom();
+  }
+
+  public void setEnvFrom(@Nullable List<V1EnvFromSource> envFromSources) {
+    serverPod.setEnvFrom(envFromSources);
   }
 
   public V1ResourceRequirements getResources() {

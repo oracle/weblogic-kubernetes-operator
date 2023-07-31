@@ -18,6 +18,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
@@ -105,10 +106,12 @@ public abstract class BasePodStepContext extends StepContextBase {
         .imagePullPolicy(getServerSpec().getImagePullPolicy())
         .command(getContainerCommand())
         .env(getEnvironmentVariables())
-        .envFrom(getServerSpec().getEnvFrom())
+        .envFrom(getEnvFrom())
         .resources(getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
+
+  protected abstract List<V1EnvFromSource> getEnvFrom();
 
   protected abstract V1ResourceRequirements getResources();
 

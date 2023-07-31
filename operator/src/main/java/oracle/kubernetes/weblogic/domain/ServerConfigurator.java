@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.util.List;
+
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
@@ -18,7 +20,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withEnvironmentVariable(V1EnvVar envVar);
 
-  ServerConfigurator withEnvFrom(V1EnvFromSource envFromSource);
+  ServerConfigurator withEnvFrom(List<V1EnvFromSource> envFromSource);
 
   ServerConfigurator withServerStartPolicy(ServerStartPolicy startNever);
 

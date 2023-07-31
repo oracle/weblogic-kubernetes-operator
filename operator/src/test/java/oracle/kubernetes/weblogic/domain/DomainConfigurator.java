@@ -387,10 +387,10 @@ public abstract class DomainConfigurator {
   /**
    * Add env from a source such as a config map or a secret.
    *
-   * @param envFromSource source of the env variables.
+   * @param envFromSources list of source of the env variables.
    * @return this object
    */
-  public abstract DomainConfigurator withEnvFrom(V1EnvFromSource envFromSource);
+  public abstract DomainConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources);
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();
