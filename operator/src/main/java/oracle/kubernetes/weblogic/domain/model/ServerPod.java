@@ -65,16 +65,16 @@ class ServerPod extends KubernetesResource {
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
-   * Environment variables to pass while starting a server.
+   * List of sources to populate environment variables in the container while starting a server.
    *
    * @since 2.0
    */
   @Valid
   @Description("List of sources to populate environment variables in the container running a WebLogic Server instance. "
       + "The sources include either a config map or a secret. "
-      + "The operator will not expand the dependent variables in the env from source."
+      + "Note that the operator will not expand the dependent variables in the 'envFrom' source. "
       + "For more details: https://kubernetes.io/docs/tasks/inject-data-application/"
-      + "define-environment-variable-container/#define-an-environment-variable-for-a-container."
+      + "define-environment-variable-container/#define-an-environment-variable-for-a-container. "
       + "Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
       + "domain-resource/#jvm-memory-and-java-option-environment-variables.")
   private List<V1EnvFromSource> envFrom = null;

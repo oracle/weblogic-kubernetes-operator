@@ -268,7 +268,7 @@
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "envFrom": {
-          "description": "List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. The operator will not expand the dependent variables in the env from source.For more details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
+          "description": "List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. Note that the operator will not expand the dependent variables in the \u0027envFrom\u0027 source. For more details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
