@@ -579,7 +579,8 @@ EOF
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             '''
-                            archiveArtifacts(artifacts: "logdir/**/*")
+                            archiveArtifacts(artifacts:
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
                             junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
                         }
                     }
