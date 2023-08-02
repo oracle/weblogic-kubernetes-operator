@@ -180,10 +180,14 @@ public class DbUtils {
     LoggingFacade logger = getLogger();
 
     String dbPodNamePrefix = "oracledb";
-
+    // create pull secrets when running in non Kind Kubernetes cluster
+    // this secret is used only for non-kind cluster
+    createBaseRepoSecret(dbNamespace);
     if (OKD) {
       addSccToDBSvcAccount("default", dbNamespace);
     }
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
+        dbBaseImageName, dbPort, dbNamespace, dbListenerPort);
 
     Map<String, String> labels = new HashMap<>();
     labels.put("app", "database");
