@@ -7,6 +7,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
+import io.kubernetes.client.openapi.models.V1NFSVolumeSource;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -25,6 +26,12 @@ public class PersistentVolumeSpec {
       + "Represents a host path mapped into a pod. Host path volumes do not support ownership management"
       + " or SELinux relabeling.")
   private V1HostPathVolumeSource hostPath;
+
+  @ApiModelProperty("nfs represents an NFS mount on the host. Provisioned by an admin. More info:\n"
+      + "https://kubernetes.io/docs/concepts/storage/volumes#nfs\n"
+      + "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do"
+      + " not support ownership management or SELinux relabeling.")
+  private V1NFSVolumeSource nfs;
 
   @ApiModelProperty("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"
       + " its claim. Valid options are Retain (default for manually created PersistentVolumes),"
@@ -56,6 +63,15 @@ public class PersistentVolumeSpec {
 
   public PersistentVolumeSpec hostPath(V1HostPathVolumeSource hostPath) {
     this.hostPath = hostPath;
+    return this;
+  }
+
+  public V1NFSVolumeSource getNfs() {
+    return nfs;
+  }
+
+  public PersistentVolumeSpec nfs(V1NFSVolumeSource nfs) {
+    this.nfs = nfs;
     return this;
   }
 
@@ -116,6 +132,7 @@ public class PersistentVolumeSpec {
         new ToStringBuilder(this)
             .append("capacity", capacity)
             .append("hostPath", hostPath)
+            .append("nfs", nfs)
             .append("persistentVolumeReclaimPolicy", persistentVolumeReclaimPolicy)
             .append("storageClassName", storageClassName)
             .append("volumeMode", volumeMode);
@@ -128,6 +145,7 @@ public class PersistentVolumeSpec {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(capacity)
         .append(hostPath)
+        .append(nfs)
         .append(persistentVolumeReclaimPolicy)
         .append(storageClassName)
         .append(volumeMode);
@@ -148,6 +166,7 @@ public class PersistentVolumeSpec {
         new EqualsBuilder()
             .append(capacity, rhs.capacity)
             .append(hostPath, rhs.hostPath)
+            .append(nfs, rhs.nfs)
             .append(persistentVolumeReclaimPolicy, rhs.persistentVolumeReclaimPolicy)
             .append(storageClassName, rhs.storageClassName)
             .append(volumeMode, rhs.volumeMode);
