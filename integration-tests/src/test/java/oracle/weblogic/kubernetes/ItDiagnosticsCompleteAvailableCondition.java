@@ -8,9 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
-import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -22,15 +20,15 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.CLUSTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchClusterCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -40,6 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -65,16 +64,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-mrg")
 class ItDiagnosticsCompleteAvailableCondition {
 
-  private static final String adminServerName = "admin-server";
   private static final String cluster1Name = "cluster-1";
-  private static final String domainUid = "diagnosticsdomain";
   private static final String clusterResName = cluster1Name;
-  private static final String adminServerPodName = domainUid + "-" + adminServerName;
-  private static final String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-  private static String opServiceAccount = null;
-  private static String opNamespace = null;
-  private static int externalRestHttpsPort = 0;
   private static LoggingFacade logger = null;
   private static String domainNamespace1 = null;
   private static int replicaCount = 2;
@@ -92,34 +84,21 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace1 = namespaces.get(1);
 
     // set the service account name for the operator
-    opServiceAccount = opNamespace + "-sa";
+    String opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
-    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createBaseRepoSecret(domainNamespace1);
-
-    // create a domain resource
-    logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
-        domainUid, domainNamespace1);
-    createMiiDomainAndVerify(
-        domainNamespace1,
-        domainUid,
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        adminServerPodName,
-        managedServerPodNamePrefix,
-        replicaCount, 
-        List.of(cluster1Name));
   }
 
   /**
@@ -133,19 +112,26 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with serverStartPolicy set to IfNeeded")
   @Tag("gate")
   void testCompleteAvailableConditionWithIfNeeded() {
+    String domainUid = "diagnosticsdomain1";
+    createDomainAndVerify(domainUid);
 
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    try {
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+      // verify the condition Available type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+      // verify there is no status condition type Failed
+      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    } finally {
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
+    }
   }
 
   /**
@@ -158,10 +144,14 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   void testCompleteAvailableConditionWithAdminOnly() {
+    String domainUid = "diagnosticsdomain2";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
     try {
       logger.info("patch the domain and change the serverStartPolicy to AdminOnly");
-
       patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"AdminOnly\"}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -190,7 +180,8 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -205,6 +196,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to Never")
   void testCompleteAvailableConditionWithNever() {
+    String domainUid = "diagnosticsdomain3";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
     try {
       logger.info("patch the domain resource with serverStartPolicy set to Never");
@@ -236,7 +232,8 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     } finally {
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -251,9 +248,14 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with cluster replica set to zero and min-replicas set to zero")
   void testCompleteAvailableConditionWithReplicaZero() {
+    String domainUid = "diagnosticsdomain4";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
     try {
-      logger.info("patch the cluster resource with new cluster replica 0");      
+      logger.info("patch the cluster resource with new cluster replica 0");
       patchStr
           = "["
           + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 0}"
@@ -285,7 +287,8 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     } finally {
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -300,6 +303,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with cluster serverStartPolicy to Never")
   void testCompleteAvailableConditionWithClusterNever() {
+    String domainUid = "diagnosticsdomain5";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
     try {
       logger.info("patch the cluster resource with cluster serverStartPolicy to Never");
@@ -332,7 +340,8 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -343,20 +352,28 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeWithoutChangingIntrospectVersion() {
-    int newReplicaCount = maxClusterSize + 1;
-    String patchStr;
-    logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
-    patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    assertFalse(patchClusterCustomResource(clusterResName, domainNamespace1,
-        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+    String domainUid = "diagnosticsdomain6";
+    createDomainAndVerify(domainUid);
+
+    try {
+      int newReplicaCount = maxClusterSize + 1;
+      String patchStr;
+      logger.info("patch the cluster resource with new cluster replica count {0}", newReplicaCount);
+      patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": " + newReplicaCount + "}"
+          + "]";
+      V1Patch patch = new V1Patch(patchStr);
+      assertFalse(patchClusterCustomResource(clusterResName, domainNamespace1,
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
+    } finally {
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
+    }
   }
 
   /**
-   * Test domain status condition with cluster replica set to larger than max size of cluster and introspectVersion
+   * Test domain status condition with domain replica set to larger than max size of cluster and introspectVersion
    * changed.
    * Verify all the cluster servers pods will be up and running.
    * Verify the following conditions are generated:
@@ -365,23 +382,15 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Test
-  @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
+  @DisplayName("Test domain status condition with domain replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSizeAndIntrospectVersionChanged() {
+    String domainUid = "diagnosticsdomain7";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
-    V1Patch patch;
     try {
-      patchStr
-          = "["
-          + "{\"op\": \"remove\", \"path\": \"/spec/replicas\"}"
-          + "]";
-      logger.info("Removing replicas in cluster {0} using patch string: {1}", clusterResName, patchStr);
-      patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1, patch,
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-
-      // wait for the managed server2 get deleted
-      checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
-
       int newReplicaCount = maxClusterSize + 1;
       logger.info("patch the domain resource with new introspectVersion and replicas higher than max cluster size");
       patchStr = "["
@@ -391,18 +400,18 @@ class ItDiagnosticsCompleteAvailableCondition {
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
           V1Patch.PATCH_FORMAT_JSON_PATCH), "Patch domain did not fail as expected");
-      
+
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
       // verify the cluster server pods are up and running
       logger.info("Checking managed server pods were ready");
-      for (int i = 1; i <= maxClusterSize; i++) {
+      for (int i = 1; i <= replicaCount; i++) {
         checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
       }
 
-      // verify there is no pod created larger than max size of cluster
-      for (int i = maxClusterSize + 1; i <= newReplicaCount; i++) {
+      // verify there is no pod created larger than replicaCount since the cluster replicas does not change
+      for (int i = replicaCount + 1; i <= newReplicaCount; i++) {
         checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
       }
 
@@ -412,24 +421,13 @@ class ItDiagnosticsCompleteAvailableCondition {
       checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
       // verify the condition Completed type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
       // verify the condition Available type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
           DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-      // verify the condition Failed type has status True
-      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
-
     } finally {
-      patchStr
-          = "["
-          + "{\"op\": \"add\", \"path\": \"/spec/replicas\", \"value\": 2}"
-          + "]";
-      logger.info("Adding replicas in cluster {0} using patch string: {1}", clusterResName, patchStr);
-      patch = new V1Patch(patchStr);
-      assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1, patch,
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -444,6 +442,11 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with cluster replica set to less than max size of cluster")
   void testCompleteAvailableConditionWithReplicaLessThanMaxSize() {
+    String domainUid = "diagnosticsdomain8";
+    createDomainAndVerify(domainUid);
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     String patchStr;
     try {
       logger.info("patch the domain resource with replica less than max size of cluster");
@@ -455,7 +458,7 @@ class ItDiagnosticsCompleteAvailableCondition {
           + "]";
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1,
-          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");     
+          patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
 
       // verify the admin server service exists
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -484,7 +487,8 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-      restoreDomainResource();
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
   }
 
@@ -499,65 +503,75 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with scaling up and down of cluster")
   void testCompleteAvailableConditionWithScaleUpDownCluster() {
+    String domainUid = "diagnosticsdomain9";
+    createDomainAndVerify(domainUid);
 
-    // scale down the cluster
-    int newReplicaCount = 1;
-    assertDoesNotThrow(() ->
-        scaleCluster(clusterResName, domainNamespace1, 1));
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-    // verify the admin server service exists
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+    try {
+      // scale down the cluster
+      int newReplicaCount = 1;
+      assertDoesNotThrow(() ->
+          scaleCluster(clusterResName, domainNamespace1, 1));
 
-    // verify the cluster server pods are up and running
-    logger.info("Checking managed server pods were ready");
-    for (int i = 1; i <= newReplicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      // verify the admin server service exists
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify the cluster server pods are up and running
+      logger.info("Checking managed server pods were ready");
+      for (int i = 1; i <= newReplicaCount; i++) {
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      // verify there is no pod created larger than replicas
+      for (int i = newReplicaCount + 1; i <= replicaCount; i++) {
+        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+      // verify the condition Available type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+      // verify there is no status condition type Failed
+      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+
+      // scale up the cluster
+      newReplicaCount = 2;
+      assertDoesNotThrow(() ->
+          scaleCluster(clusterResName, domainNamespace1, 2));
+
+      // verify the admin server service exists
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify the cluster server pods are up and running
+      logger.info("Checking managed server pods were ready");
+      for (int i = 1; i <= newReplicaCount; i++) {
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+      // verify the condition Available type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+      // verify there is no status condition type Failed
+      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    } finally {
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
-
-    // verify there is no pod created larger than replicas
-    for (int i = newReplicaCount + 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-    }
-
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-
-    // scale up the cluster
-    newReplicaCount = 2;
-    assertDoesNotThrow(() ->
-        scaleCluster(clusterResName, domainNamespace1, 2));
-
-    // verify the admin server service exists
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-    // verify the cluster server pods are up and running
-    logger.info("Checking managed server pods were ready");
-    for (int i = 1; i <= newReplicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-    }
-
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
@@ -571,49 +585,59 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with new restartVersion")
   void testCompleteAvailableConditionWithNewRestartVersion() {
+    String domainUid = "diagnosticsdomain10";
+    createDomainAndVerify(domainUid);
 
-    // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace1, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+    try {
+      // get the pod creation time stamps
+      LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+      // get the creation time of the admin server pod before patching
+      OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace1, adminServerPodName);
+      pods.put(adminServerPodName, adminPodCreationTime);
+      // get the creation time of the managed server pods before patching
+      for (int i = 1; i <= replicaCount; i++) {
+        pods.put(managedServerPodNamePrefix + i,
+            getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
+      }
+
+      logger.info("patch the domain resource with new restartVersion");
+      String patchStr = "[{\"op\": \"add\",\"path\": \"/spec/restartVersion\", \"value\": \"9\"}]";
+
+      logger.info("Updating domain configuration using patch string: {0}", patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+
+      // check the domain is restarted
+      verifyRollingRestartOccurred(pods, 1, domainNamespace1);
+
+      // verify the admin server service exists
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify the cluster server pods are up and running
+      logger.info("Checking managed server pods were ready");
+      for (int i = 1; i <= replicaCount; i++) {
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+      // verify the condition Available type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+      // verify there is no status condition type Failed
+      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    } finally {
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
-
-    logger.info("patch the domain resource with new restartVersion");
-    String patchStr = "[{\"op\": \"add\",\"path\": \"/spec/restartVersion\", \"value\": \"9\"}]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-    // check the domain is restarted
-    verifyRollingRestartOccurred(pods, 1, domainNamespace1);
-
-    // verify the admin server service exists
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-    // verify the cluster server pods are up and running
-    logger.info("Checking managed server pods were ready");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-    }
-
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
@@ -627,98 +651,86 @@ class ItDiagnosticsCompleteAvailableCondition {
   @Test
   @DisplayName("Test domain status condition with new restartVersion")
   void testCompleteAvailableConditionWithNewImage() {
+    String domainUid = "diagnosticsdomain11";
+    createDomainAndVerify(domainUid);
 
-    // get the pod creation time stamps
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace1, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPodNamePrefix + i,
-          getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+
+    try {
+      // get the pod creation time stamps
+      LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+      // get the creation time of the admin server pod before patching
+      OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace1, adminServerPodName);
+      pods.put(adminServerPodName, adminPodCreationTime);
+      // get the creation time of the managed server pods before patching
+      for (int i = 1; i <= replicaCount; i++) {
+        pods.put(managedServerPodNamePrefix + i,
+            getPodCreationTime(domainNamespace1, managedServerPodNamePrefix + i));
+      }
+
+      DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
+      //print out the original image name
+      String imageName = domain.getSpec().getImage();
+      logger.info("Currently the image name used for the domain is: {0}", imageName);
+
+      //change image name to imageUpdate
+      String imageTag = CommonTestUtils.getDateAndTimeStamp();
+      String newImage = MII_BASIC_IMAGE_NAME + ":" + imageTag;
+      imageTag(imageName, newImage);
+      imageRepoLoginAndPushImageToRegistry(newImage);
+      logger.info("new image: {0}", newImage);
+
+      logger.info("patch the domain resource with new image");
+      String patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/image\", \"value\": \"" + newImage + "\"}]";
+
+      logger.info("Updating domain configuration using patch string: {0}", patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
+          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+
+      // check the domain is restarted
+      verifyRollingRestartOccurred(pods, 1, domainNamespace1);
+
+      // verify the admin server service exists
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify the cluster server pods are up and running
+      logger.info("Checking managed server pods were ready");
+      for (int i = 1; i <= replicaCount; i++) {
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+      // verify the condition Available type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+      // verify there is no status condition type Failed
+      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    } finally {
+      deleteDomainResource(domainNamespace1, domainUid);
+      deleteClusterCustomResource(clusterResName, domainNamespace1);
     }
-
-    DomainResource domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
-    //print out the original image name
-    String imageName = domain.getSpec().getImage();
-    logger.info("Currently the image name used for the domain is: {0}", imageName);
-
-    //change image name to imageUpdate
-    String imageTag = CommonTestUtils.getDateAndTimeStamp();
-    String newImage = MII_BASIC_IMAGE_NAME + ":" + imageTag;
-    imageTag(imageName, newImage);
-    imageRepoLoginAndPushImageToRegistry(newImage);
-    logger.info("new image: {0}", newImage);
-
-    logger.info("patch the domain resource with new image");
-    String patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/image\", \"value\": \"" + newImage + "\"}]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-    // check the domain is restarted
-    verifyRollingRestartOccurred(pods, 1, domainNamespace1);
-
-    // verify the admin server service exists
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-    // verify the cluster server pods are up and running
-    logger.info("Checking managed server pods were ready");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-    }
-
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
-  private void restoreDomainResource() {
-    // patch the domain back to the original state
-    String patchStr;
-    String serverStartPolicy;
-    String clusterResName =  cluster1Name;
-    logger.info("patch the domain and change the serverStartPolicy to IfNeeded");
-    ClusterResource clusterResource = assertDoesNotThrow(()
-        -> Kubernetes.getClusterCustomResource(
-            clusterResName, domainNamespace1, CLUSTER_VERSION));
-    serverStartPolicy = clusterResource.getSpec().getServerStartPolicy() != null ? "replace" : "add";
-    patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/replicas\", \"value\": 2},"
-        + "{\"op\": \"" + serverStartPolicy + "\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}"
-        + "]";
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchClusterCustomResource(clusterResName, domainNamespace1,
-        patch, V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch cluster");
-
-    patchStr
-        = "["
-        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IfNeeded\"}"
-        + "]";
-
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-    logger.info("Checking for admin server pod is up and running");
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-    // verify all the managed servers are up and running
-    logger.info("Checking managed server pods are up and running");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-    }
+  private void createDomainAndVerify(String domainUid) {
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    // create a domain resource
+    logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
+        domainUid, domainNamespace1);
+    createMiiDomainAndVerify(
+        domainNamespace1,
+        domainUid,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        adminServerPodName,
+        managedServerPodNamePrefix,
+        replicaCount,
+        List.of(cluster1Name));
   }
 }
