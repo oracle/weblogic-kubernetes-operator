@@ -492,7 +492,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private V1SecurityContext getContainerSecurityContext() {
-    if (getDomain().getInitializeDomainOnPV().getRunInitContainerAsRoot()) {
+    if (getDomain().getInitializeDomainOnPV().getRunDomainInitContainerAsRoot()) {
       return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
     }
     if (getPodSecurityContext().equals(new V1PodSecurityContext())) {
@@ -579,7 +579,7 @@ public class JobStepContext extends BasePodStepContext {
 
     if (isInitializeDomainOnPV()) {
       V1PodSecurityContext podSecurityContext = getPodSecurityContext();
-      if (getDomain().getInitializeDomainOnPV().getSetDefaultFsGroup()) {
+      if (getDomain().getInitializeDomainOnPV().getSetDefaultSecurityContextFsGroup()) {
         if (podSecurityContext.getFsGroup() == null && podSecurityContext.getRunAsGroup() != null) {
           podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
         } else if (podSecurityContext.getFsGroup() == null) {
