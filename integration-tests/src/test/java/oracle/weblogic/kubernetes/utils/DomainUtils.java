@@ -748,6 +748,33 @@ public class DomainUtils {
                                                         String testClassName,
                                                         String wdtModelFile,
                                                         boolean verifyServerPods) {
+    return createDomainOnPvUsingWdt(domainUid, domainNamespace, wlSecretName, clusterName, clusterName,
+        replicaCount, testClassName, wdtModelFile, verifyServerPods);
+  }
+
+  /**
+   * Create a domain in PV using WDT.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace in which the domain will be created
+   * @param wlSecretName WLS secret name
+   * @param clusterResName cluster resource name
+   * @param clusterName WLS domain cluster name
+   * @param replicaCount domain replica count
+   * @param testClassName the test class name calling this method
+   * @param wdtModelFile WDT model file to create the domain
+   * @param verifyServerPods whether to verify the server pods
+   * @return oracle.weblogic.domain.Domain objects
+   */
+  public static DomainResource createDomainOnPvUsingWdt(String domainUid,
+                                                        String domainNamespace,
+                                                        String wlSecretName,
+                                                        String clusterResName,
+                                                        String clusterName,
+                                                        int replicaCount,
+                                                        String testClassName,
+                                                        String wdtModelFile,
+                                                        boolean verifyServerPods) {
 
     int t3ChannelPort = getNextFreePort();
 
@@ -817,7 +844,7 @@ public class DomainUtils {
         domainUid, pvName, pvcName, domainNamespace, testClassName);
 
     DomainResource domain = createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
-        clusterName, replicaCount);
+        clusterResName, clusterName, replicaCount);
 
     // Verify the domain custom resource is created.
     // Also verify the admin server pod and managed server pods are up and running.
@@ -847,6 +874,31 @@ public class DomainUtils {
                                                                  String wlSecretName,
                                                                  String pvName,
                                                                  String pvcName,
+                                                                 String clusterName,
+                                                                 int replicaCount) {
+    return createDomainResourceForDomainOnPV(domainUid, domainNamespace, wlSecretName, pvName, pvcName,
+        clusterName, clusterName, replicaCount);
+  }
+
+  /**
+   * Create domain with domain-on-pv type and verify the domain is created.
+   * Also verify the admin server pod and managed server pods are up and running.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param wlSecretName - wls administrator secret name
+   * @param pvName - PV name
+   * @param pvcName - PVC name
+   * @param clusterResName - cluster resource name
+   * @param clusterName - cluster name
+   * @param replicaCount - repica count of the clsuter
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceForDomainOnPV(String domainUid,
+                                                                 String domainNamespace,
+                                                                 String wlSecretName,
+                                                                 String pvName,
+                                                                 String pvcName,
+                                                                 String clusterResName,
                                                                  String clusterName,
                                                                  int replicaCount) {
     String uniquePath = "/u01/shared/" + domainNamespace + "/domains/" + domainUid;
@@ -900,12 +952,12 @@ public class DomainUtils {
                         .nodePort(getNextFreePort())))));
 
     // create cluster resource for the domain
-    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(clusterName,
+    if (!Cluster.doesClusterExist(clusterResName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterResName,
           clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     setPodAntiAffinity(domain);
 
@@ -1258,6 +1310,33 @@ public class DomainUtils {
                                                            String wlSecretName,
                                                            String clusterName,
                                                            int replicaCount) {
+    return createDomainInImageUsingWdt(domainUid, domainNamespace, wdtModelFileForDomainInImage, appSrcDirList,
+        propertyFiles, wlSecretName, clusterName, clusterName, replicaCount);
+  }
+
+  /**
+   * Create a WebLogic domain in image using WDT.
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace namespace in which the domain to be created
+   * @param wdtModelFileForDomainInImage WDT model file used to create domain image
+   * @param appSrcDirList list of the app src in WDT model file
+   * @param propertyFiles list of property files
+   * @param wlSecretName wls admin secret name
+   * @param clusterResName cluster resource name
+   * @param clusterName cluster name
+   * @param replicaCount replica count of the cluster
+   * @return oracle.weblogic.domain.DomainResource object
+   */
+  public static DomainResource createDomainInImageUsingWdt(String domainUid,
+                                                           String domainNamespace,
+                                                           String wdtModelFileForDomainInImage,
+                                                           List<String> appSrcDirList,
+                                                           List<String> propertyFiles,
+                                                           String wlSecretName,
+                                                           String clusterResName,
+                                                           String clusterName,
+                                                           int replicaCount) {
 
     // create secret for admin credentials
     getLogger().info("Create secret for admin credentials");
@@ -1280,7 +1359,7 @@ public class DomainUtils {
 
     // create the domain custom resource
     DomainResource domain = createDomainResourceForDomainInImage(domainUid, domainNamespace, domainInImageWithWDTImage,
-        wlSecretName, clusterName, replicaCount);
+        wlSecretName, clusterResName, clusterName, replicaCount);
 
     // create domain and verify
     createDomainAndVerify(domain, domainNamespace);
@@ -1303,6 +1382,30 @@ public class DomainUtils {
                                                                     String domainNamespace,
                                                                     String imageName,
                                                                     String wlSecretName,
+                                                                    String clusterName,
+                                                                    int replicaCount,
+                                                                    Long... failureRetryLimitMinutesArgs) {
+    return createDomainResourceForDomainInImage(domainUid, domainNamespace, imageName, wlSecretName,
+        clusterName, clusterName, replicaCount, failureRetryLimitMinutesArgs);
+  }
+
+  /**
+   * Create domain resource with domain-in-image type.
+   *
+   * @param domainUid domain uid
+   * @param domainNamespace domain namespace
+   * @param imageName image name used to create domain-in-image domain
+   * @param wlSecretName wls admin secret name
+   * @param clusterResName cluster resource name
+   * @param clusterName cluster name
+   * @param replicaCount replica count of the cluster
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceForDomainInImage(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String imageName,
+                                                                    String wlSecretName,
+                                                                    String clusterResName,
                                                                     String clusterName,
                                                                     int replicaCount,
                                                                     Long... failureRetryLimitMinutesArgs) {
@@ -1351,12 +1454,12 @@ public class DomainUtils {
                 .introspectorJobActiveDeadlineSeconds(300L)));
 
     // create cluster resource for the domain
-    if (!Cluster.doesClusterExist(clusterName, CLUSTER_VERSION, domainNamespace)) {
-      ClusterResource cluster = createClusterResource(clusterName,
+    if (!Cluster.doesClusterExist(clusterResName, CLUSTER_VERSION, domainNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterResName,
           clusterName, domainNamespace, replicaCount);
       createClusterAndVerify(cluster);
     }
-    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterName));
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     setPodAntiAffinity(domain);
 
