@@ -486,9 +486,30 @@ public class JobStepContext extends BasePodStepContext {
                 .value(getDomainHomeOnPVHomeOwnership()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
-        .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
+        .securityContext(getContainerSecurityContext())
         .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
     );
+  }
+
+  private V1SecurityContext getContainerSecurityContext() {
+    if (getDomain().getInitializeDomainOnPV().getRunInitContainerAsRoot()) {
+      return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+    }
+    if (getPodSecurityContext().equals(new V1PodSecurityContext())) {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
+    }
+    return creatSecurityContextFromPodSecurityContext(getPodSecurityContext());
+  }
+
+  private V1SecurityContext creatSecurityContextFromPodSecurityContext(
+      V1PodSecurityContext podSecurityContext) {
+    return new V1SecurityContext()
+        .runAsUser(podSecurityContext.getRunAsUser())
+        .runAsGroup(podSecurityContext.getRunAsGroup())
+        .runAsNonRoot(podSecurityContext.getRunAsNonRoot())
+        .seccompProfile(podSecurityContext.getSeccompProfile())
+        .seLinuxOptions(podSecurityContext.getSeLinuxOptions())
+        .windowsOptions(podSecurityContext.getWindowsOptions());
   }
 
   private String getDomainHomeOnPVHomeOwnership() {
@@ -555,7 +576,27 @@ public class JobStepContext extends BasePodStepContext {
     if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
+
+    if (isInitializeDomainOnPV()) {
+      V1PodSecurityContext podSecurityContext = getPodSecurityContext();
+      if (getDomain().getInitializeDomainOnPV().getSetDefaultFsGroup()) {
+        if (podSecurityContext.getFsGroup() == null && podSecurityContext.getRunAsGroup() != null) {
+          podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
+        } else if (podSecurityContext.getFsGroup() == null) {
+          podSpec.securityContext(podSecurityContext.fsGroup(0L));
+        }
+        if (podSpec.getSecurityContext().getFsGroupChangePolicy() == null) {
+          podSpec.getSecurityContext().fsGroupChangePolicy("OnRootMismatch");
+        }
+      }
+    }
     return podSpec;
+  }
+
+  @Override
+  V1PodSecurityContext getPodSecurityContext() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(s -> s.getPodSecurityContext())
+        .orElse(getDomain().getAdminServerSpec().getPodSecurityContext());
   }
 
   private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {

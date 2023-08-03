@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -219,9 +220,11 @@ public abstract class BasePodStepContext extends StepContextBase {
         .tolerations(getTolerations())
         .hostAliases(getHostAliases())
         .restartPolicy(getServerSpec().getRestartPolicy())
-        .securityContext(getServerSpec().getPodSecurityContext())
+        .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
   }
+
+  abstract V1PodSecurityContext getPodSecurityContext();
 
   private List<V1Toleration> getTolerations() {
     List<V1Toleration> tolerations = getServerSpec().getTolerations();

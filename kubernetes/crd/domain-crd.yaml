@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d96104036903924b0d3ff60ec7427ffb6fc25d8d27628c96488798e5d7520fd0
+    weblogic.sha256: e6513b5aad65dd7e1343d404fc087f35838d0ed362bf7103d6bb04989ccdf972
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -253,6 +253,12 @@ spec:
                                 type: object
                             type: object
                         type: object
+                      runInitContainerAsRoot:
+                        description: Specifies whether the operator will run the init
+                          container in the introspector job as root. This may be needed
+                          in some environments to create the domain home directory
+                          on PV. Defaults to false.
+                        type: boolean
                       domain:
                         description: Describes the configuration for creating an initial
                           WebLogic Domain in persistent volume (`Domain in PV`). The
@@ -346,6 +352,15 @@ spec:
                             - DomainAndRCU
                             type: string
                         type: object
+                      setDefaultFsGroup:
+                        description: Specifies whether the operator will set the default
+                          'fsGroup' in the introspector job pod security context.
+                          This is needed to create the domain home directory on PV
+                          in some environments. If the 'fsGroup' is specified as part
+                          of 'spec.introspector.serverPod.podSecurityContext', then
+                          the operator will use that 'fsGroup' instead of the default
+                          'fsGroup'. Defaults to false.
+                        type: boolean
                       persistentVolumeClaim:
                         description: 'An optional field that describes the configuration
                           for creating a PersistentVolumeClaim for `Domain on PV`.
@@ -3848,6 +3863,71 @@ spec:
                     description: Customization affecting the generation of the Introspector
                       Job Pod.
                     properties:
+                      podSecurityContext:
+                        description: 'Pod-level security attributes. See `kubectl
+                          explain pods.spec.securityContext`. Beginning with operator
+                          version 4.0.5, if no value is specified for this field,
+                          the operator will use default content for the pod-level
+                          `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.'
+                        properties:
+                          runAsUser:
+                            type: integer
+                          seLinuxOptions:
+                            properties:
+                              role:
+                                type: string
+                              level:
+                                type: string
+                              type:
+                                type: string
+                              user:
+                                type: string
+                            type: object
+                          fsGroup:
+                            type: integer
+                          seccompProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          windowsOptions:
+                            properties:
+                              gmsaCredentialSpec:
+                                type: string
+                              runAsUserName:
+                                type: string
+                              hostProcess:
+                                type: boolean
+                              gmsaCredentialSpecName:
+                                type: string
+                            type: object
+                          fsGroupChangePolicy:
+                            type: string
+                          supplementalGroups:
+                            items:
+                              type: integer
+                            type: array
+                          runAsGroup:
+                            type: integer
+                          runAsNonRoot:
+                            type: boolean
+                          sysctls:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                value:
+                                  type: string
+                              required:
+                              - name
+                              - value
+                            type: array
+                        type: object
                       resources:
                         description: Memory and CPU minimum requirements and limits
                           for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.

@@ -62,8 +62,7 @@ create_directory_path_and_set_permission() {
            trace "Changing ownership of ${next_level_dir}" >> "$output_file"
            if ! errmsg=$(chown -R ${default_ugid} "${next_level_dir}" 2>&1)
              then
-               trace SEVERE "Failed to change directory permission at ${next_level_dir} Error: $errmsg" >> "$output_file"
-               failure_exit
+               trace WARNING "Failed to change directory permission at ${next_level_dir} Error: $errmsg" >> "$output_file"
            fi
 
            trace "Creating directory path completed" >> "$output_file"
@@ -90,8 +89,7 @@ adjust_domain_home_parent_dir_ownership() {
   trace "Changing ownership of ${parent_dir}" >> "$output_file"
   if ! errmsg=$(chown -R ${default_ugid} "${parent_dir}" 2>&1)
     then
-      trace SEVERE "Failed to adjust directory ownership at ${parent_dir} Error: $errmsg" >> "$output_file"
-      failure_exit
+      trace WARNING "Failed to adjust directory ownership at ${parent_dir} Error: $errmsg" >> "$output_file"
   fi
 
   trace "Adjusting directory ownership completed" >> "$output_file"

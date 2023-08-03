@@ -644,9 +644,17 @@
           "description": "An optional field that describes the configuration to create a PersistentVolume for `Domain on PV` domain. Omit this section if you have manually created a persistent volume. The operator will perform this one-time create operation only if the persistent volume does not already exist. The operator will not recreate or update the PersistentVolume when it exists. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv",
           "$ref": "#/definitions/PersistentVolume"
         },
+        "runInitContainerAsRoot": {
+          "description": "Specifies whether the operator will run the init container in the introspector job as root. This may be needed in some environments to create the domain home directory on PV. Defaults to false.",
+          "type": "boolean"
+        },
         "domain": {
           "description": "Describes the configuration for creating an initial WebLogic Domain in persistent volume (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.",
           "$ref": "#/definitions/DomainOnPV"
+        },
+        "setDefaultFsGroup": {
+          "description": "Specifies whether the operator will set the default \u0027fsGroup\u0027 in the introspector job pod security context. This is needed to create the domain home directory on PV in some environments. If the \u0027fsGroup\u0027 is specified as part of \u0027spec.introspector.serverPod.podSecurityContext\u0027, then the operator will use that \u0027fsGroup\u0027 instead of the default \u0027fsGroup\u0027. Defaults to false.",
+          "type": "boolean"
         },
         "persistentVolumeClaim": {
           "description": "An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user\u0027s request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc",
@@ -666,6 +674,10 @@
     "IntrospectorJobPod": {
       "type": "object",
       "properties": {
+        "podSecurityContext": {
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"

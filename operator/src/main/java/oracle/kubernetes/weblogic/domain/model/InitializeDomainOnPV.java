@@ -39,6 +39,18 @@ public class InitializeDomainOnPV {
       + " with the domain creation. Defaults to true.")
   Boolean waitForPvcToBind;
 
+  /** Whether to run the init container in the introspector job as root. Default is false. */
+  @Description("Specifies whether the operator will run the init container in the introspector job as root."
+      + " This may be needed in some environments to create the domain home directory on PV. Defaults to false.")
+  Boolean runInitContainerAsRoot;
+
+  /** Whether to set the default 'fsGroup' in pod security context. Default is true. */
+  @Description("Specifies whether the operator will set the default 'fsGroup' in the introspector job pod"
+      + " security context. This is needed to create the domain home directory on PV in some environments."
+      + " If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator"
+      + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to false.")
+  Boolean setDefaultFsGroup;
+
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
   }
@@ -72,6 +84,24 @@ public class InitializeDomainOnPV {
 
   public InitializeDomainOnPV waitForPvcToBind(Boolean waitForPvcToBind) {
     this.waitForPvcToBind = waitForPvcToBind;
+    return this;
+  }
+
+  public Boolean getRunInitContainerAsRoot() {
+    return Optional.ofNullable(runInitContainerAsRoot).orElse(false);
+  }
+
+  public InitializeDomainOnPV runInitContainerAsRoot(Boolean runInitContainerAsRoot) {
+    this.runInitContainerAsRoot = runInitContainerAsRoot;
+    return this;
+  }
+
+  public Boolean getSetDefaultFsGroup() {
+    return Optional.ofNullable(setDefaultFsGroup).orElse(true);
+  }
+
+  public InitializeDomainOnPV setDefaultFsGroup(Boolean setDefaultFsGroup) {
+    this.setDefaultFsGroup = setDefaultFsGroup;
     return this;
   }
 

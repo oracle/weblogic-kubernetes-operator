@@ -284,7 +284,7 @@ class ServerPod extends KubernetesResource {
   }
 
   @SuppressWarnings("Duplicates")
-  private void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
+  void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
     if (to.getRunAsNonRoot() == null) {
       to.runAsNonRoot(from.getRunAsNonRoot());
     }
