@@ -180,8 +180,6 @@ Now, you deploy a `sample-domain1` domain resource and an associated `sample-dom
 - Copy the contents of the [WLS domain on AKS resource YAML file](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/samples/azure-kubernetes-service/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-AKS-v1.yaml) that is included in the sample source to a file called `~/azure/weblogic-on-aks/domain-resource.yaml` or similar.
     - Click [here](https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/{{< latestMinorVersion >}}/kubernetes/samples/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-WLS-v1.yaml) to view the WLS Domain YAML file.
 
-- Run command `kubectl get pvc` to get the `pvc name` just created.
-- Modify the PVC specifications defined in the `serverPod.volumes.persistentVolumeClaim` section of the domain resource YAML file with the `pvc name`.
 - Run the following command to apply the two sample resources.
     ```shell
     $ kubectl apply -f ~/azure/weblogic-on-aks/domain-resource.yaml
