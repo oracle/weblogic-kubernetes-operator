@@ -591,7 +591,11 @@ public class JobStepContext extends BasePodStepContext {
         if (podSecurityContext.getFsGroup() == null && podSecurityContext.getRunAsGroup() != null) {
           podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
         } else if (podSecurityContext.getFsGroup() == null) {
-          podSpec.securityContext(podSecurityContext.fsGroup(0L));
+          Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
+            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform())) {
+              podSpec.securityContext(podSecurityContext.fsGroup(0L));
+            }
+          });
         }
         if (podSpec.getSecurityContext().getFsGroupChangePolicy() == null) {
           podSpec.getSecurityContext().fsGroupChangePolicy("OnRootMismatch");
