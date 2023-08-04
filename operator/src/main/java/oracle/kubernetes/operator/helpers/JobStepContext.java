@@ -62,6 +62,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
@@ -486,19 +487,26 @@ public class JobStepContext extends BasePodStepContext {
                 .value(getDomainHomeOnPVHomeOwnership()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
-        .securityContext(getContainerSecurityContext())
+        .securityContext(getInitContainerSecurityContext())
         .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
     );
   }
 
-  private V1SecurityContext getContainerSecurityContext() {
-    if (getDomain().getInitializeDomainOnPV().getRunDomainInitContainerAsRoot()) {
+  @Override
+  V1SecurityContext getInitContainerSecurityContext() {
+    if (isInitDomainOnPVRunAsRoot()) {
       return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
     }
     if (getPodSecurityContext().equals(new V1PodSecurityContext())) {
       return PodSecurityHelper.getDefaultContainerSecurityContext();
     }
     return creatSecurityContextFromPodSecurityContext(getPodSecurityContext());
+  }
+
+  @NotNull
+  private Boolean isInitDomainOnPVRunAsRoot() {
+    return Optional.ofNullable(getDomain().getInitializeDomainOnPV())
+        .map(p -> p.getRunDomainInitContainerAsRoot()).orElse(false);
   }
 
   private V1SecurityContext creatSecurityContextFromPodSecurityContext(

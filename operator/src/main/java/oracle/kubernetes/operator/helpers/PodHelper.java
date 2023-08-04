@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -437,6 +438,11 @@ public class PodHelper {
     }
 
     @Override
+    V1SecurityContext getInitContainerSecurityContext() {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
+    }
+
+    @Override
     V1PodSecurityContext getPodSecurityContext() {
       return getServerSpec().getPodSecurityContext();
     }
@@ -712,6 +718,11 @@ public class PodHelper {
     @Override
     protected List<String> getContainerCommand() {
       return new ArrayList<>(super.getContainerCommand());
+    }
+
+    @Override
+    V1SecurityContext getInitContainerSecurityContext() {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
     }
 
     @Override
