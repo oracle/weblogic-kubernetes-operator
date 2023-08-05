@@ -9,6 +9,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -77,6 +78,13 @@ public interface EffectiveServerSpec {
    * @return a list of volumes
    */
   List<V1Volume> getAdditionalVolumes();
+
+  /**
+   * Returns a list of sources (config-map or secret) for environment variables to be set for this server.
+   *
+   * @return envFrom list of sources.
+   */
+  List<V1EnvFromSource> getEnvFrom();
 
   @Nonnull
   ProbeTuning getLivenessProbe();

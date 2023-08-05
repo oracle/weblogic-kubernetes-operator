@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
@@ -62,6 +63,20 @@ class ServerPod extends KubernetesResource {
       + "domain-resource/#jvm-memory-and-java-option-environment-variables. "
       + "See `kubectl explain pods.spec.containers.env`.")
   private List<V1EnvVar> env = new ArrayList<>();
+
+  /**
+   * List of sources to populate environment variables in the container while starting a server.
+   *
+   */
+  @Valid
+  @Description("List of sources to populate environment variables in the container running a WebLogic Server instance. "
+      + "The sources include either a config map or a secret. "
+      + "The operator will not expand the dependent variables in the 'envFrom' source. "
+      + "More details: https://kubernetes.io/docs/tasks/inject-data-application/"
+      + "define-environment-variable-container/#define-an-environment-variable-for-a-container. "
+      + "Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-resource/#jvm-memory-and-java-option-environment-variables.")
+  private List<V1EnvFromSource> envFrom = null;
 
   /**
    * Defines the settings for the liveness probe. Any that are not specified will default to the
@@ -403,6 +418,12 @@ class ServerPod extends KubernetesResource {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
     }
+    if (serverPod1.envFrom != null) {
+      if (envFrom == null) {
+        envFrom = new ArrayList<>();
+      }
+      envFrom.addAll(serverPod1.envFrom);
+    }
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
@@ -558,6 +579,14 @@ class ServerPod extends KubernetesResource {
       setEnv(new ArrayList<>());
     }
     this.env.add(envVar);
+  }
+
+  List<V1EnvFromSource> getEnvFrom() {
+    return this.envFrom;
+  }
+
+  void setEnvFrom(@Nullable List<V1EnvFromSource> envFrom) {
+    this.envFrom = envFrom;
   }
 
   Map<String, String> getNodeSelector() {
@@ -749,6 +778,7 @@ class ServerPod extends KubernetesResource {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("env", env)
+        .append("envFrom", envFrom)
         .append("livenessProbe", livenessProbe)
         .append("readinessProbe", readinessProbe)
         .append("additionalVolumes", volumes)
@@ -790,6 +820,7 @@ class ServerPod extends KubernetesResource {
         .append(
             DomainResource.sortList(env, ENV_VAR_COMPARATOR),
             DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
+        .append(envFrom, that.envFrom)
         .append(livenessProbe, that.livenessProbe)
         .append(readinessProbe, that.readinessProbe)
         .append(
@@ -823,6 +854,7 @@ class ServerPod extends KubernetesResource {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(DomainResource.sortList(env, ENV_VAR_COMPARATOR))
+        .append(envFrom)
         .append(livenessProbe)
         .append(readinessProbe)
         .append(DomainResource.sortList(volumes, VOLUME_COMPARATOR))

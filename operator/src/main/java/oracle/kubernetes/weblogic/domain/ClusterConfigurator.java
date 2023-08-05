@@ -3,8 +3,11 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.util.List;
+
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -17,6 +20,8 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withMaxUnavailable(int maxUnavailable);
 
   ClusterConfigurator withEnvironmentVariable(String name, String value);
+
+  ClusterConfigurator withEnvFrom(List<V1EnvFromSource> v1EnvFromSource);
 
   ClusterConfigurator withServerStartPolicy(ServerStartPolicy policy);
 

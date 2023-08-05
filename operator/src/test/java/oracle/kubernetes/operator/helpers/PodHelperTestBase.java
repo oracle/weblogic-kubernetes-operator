@@ -28,10 +28,12 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -188,6 +190,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase extends DomainValidationTestBase {
@@ -1670,6 +1673,15 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
         getCreatedPodSpecContainer().getLivenessProbe(),
         hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD, CONFIGURED_SUCCESS_THRESHOLD,
                 CONFIGURED_FAILURE_THRESHOLD));
+  }
+
+  @Test
+  void whenPodCreatedWithEnvFromSettings_hasEnvFromSettings() {
+    List<V1EnvFromSource> envFromSource =
+        List.of(new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name("test")));
+    configureServer().withEnvFrom(envFromSource);
+    assertTrue(
+        getCreatedPodSpecContainer().getEnvFrom().containsAll(envFromSource));
   }
 
   @Test

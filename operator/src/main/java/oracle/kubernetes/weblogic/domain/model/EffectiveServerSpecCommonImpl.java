@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -59,6 +60,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   @Override
   public List<V1EnvVar> getEnvironmentVariables() {
     return server.getEnv();
+  }
+
+  @Override
+  public List<V1EnvFromSource> getEnvFrom() {
+    return server.getEnvFrom();
   }
 
   @Override
