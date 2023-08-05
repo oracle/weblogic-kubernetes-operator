@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
@@ -709,7 +710,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
-            .map(c -> c.env(createEnv(c)).resources(createResources()))
+            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
         .collect(Collectors.toList()));
     return initContainers;
   }
@@ -1671,6 +1672,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   @Override
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
     return getServerSpec().getEnvironmentVariables();
+  }
+
+  @Override
+  protected List<V1EnvFromSource> getEnvFrom() {
+    return getServerSpec().getEnvFrom();
   }
 
   @Override

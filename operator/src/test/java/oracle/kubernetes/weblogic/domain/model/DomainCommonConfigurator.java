@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -122,6 +123,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withEnvironmentVariable(V1EnvVar envVar) {
     getDomainSpec().addEnvironmentVariable(envVar);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+    getDomainSpec().setEnvFrom(envFromSources);
     return this;
   }
 
@@ -571,6 +578,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public IntrospectorJobPodConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+      introspector.setEnvFrom(envFromSources);
+      return this;
+    }
+
+    @Override
     public IntrospectorJobPodConfigurator withRequestRequirement(String resource, String quantity) {
       introspector.addRequestRequirement(resource, quantity);
       return this;
@@ -623,6 +636,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withEnvironmentVariable(V1EnvVar envVar) {
       server.addEnvironmentVariable(envVar);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withEnvFrom(List<V1EnvFromSource> envFromSource) {
+      server.setEnvFrom(envFromSource);
       return this;
     }
 
@@ -812,6 +831,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withEnvironmentVariable(String name, String value) {
       clusterSpec.addEnvironmentVariable(name, value);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources) {
+      clusterSpec.setEnvFrom(envFromSources);
       return this;
     }
 

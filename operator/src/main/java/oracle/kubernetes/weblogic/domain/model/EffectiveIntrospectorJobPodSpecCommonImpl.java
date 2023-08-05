@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.List;
 
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
@@ -30,6 +31,11 @@ public class EffectiveIntrospectorJobPodSpecCommonImpl implements EffectiveIntro
   @Override
   public List<V1EnvVar> getEnv() {
     return introspector.getEnv();
+  }
+
+  @Override
+  public List<V1EnvFromSource> getEnvFrom() {
+    return introspector.getEnvFrom();
   }
 
   @Override

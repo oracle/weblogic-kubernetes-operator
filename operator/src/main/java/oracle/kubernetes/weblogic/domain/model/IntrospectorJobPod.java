@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
@@ -38,6 +39,20 @@ class IntrospectorJobPod {
   private List<V1EnvVar> env = new ArrayList<>();
 
   /**
+   * List of sources to populate environment variables in the Introspector Job Pod container.
+   *
+   */
+  @Valid
+  @Description("List of sources to populate environment variables in the Introspector Job Pod container. "
+      + "The sources include either a config map or a secret. "
+      + "The operator will not expand the dependent variables in the 'envFrom' source. "
+      + "More details: https://kubernetes.io/docs/tasks/inject-data-application/"
+      + "define-environment-variable-container/#define-an-environment-variable-for-a-container. "
+      + "Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/"
+      + "domain-resource/#jvm-memory-and-java-option-environment-variables.")
+  private List<V1EnvFromSource> envFrom = null;
+
+  /**
    * Defines the requirements and limits for the pod server.
    *
    */
@@ -60,6 +75,12 @@ class IntrospectorJobPod {
   void fillInFrom(IntrospectorJobPod serverPod1) {
     for (V1EnvVar envVar : serverPod1.getV1EnvVars()) {
       addIfMissing(envVar);
+    }
+    if (serverPod1.envFrom != null) {
+      if (envFrom == null) {
+        envFrom = new ArrayList<>();
+      }
+      envFrom.addAll(serverPod1.envFrom);
     }
     copyValues(resources, serverPod1.resources);
   }
@@ -99,6 +120,14 @@ class IntrospectorJobPod {
       setEnv(new ArrayList<>());
     }
     this.env.add(envVar);
+  }
+
+  List<V1EnvFromSource> getEnvFrom() {
+    return this.envFrom;
+  }
+
+  void setEnvFrom(@Nullable List<V1EnvFromSource> envFrom) {
+    this.envFrom = envFrom;
   }
 
   V1ResourceRequirements getResourceRequirements() {

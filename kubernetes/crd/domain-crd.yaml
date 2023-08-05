@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3c634a8c4889c6fe1474599f12ae5e335d4607c5d0164733e928e8bd149db909
+    weblogic.sha256: d96104036903924b0d3ff60ec7427ffb6fc25d8d27628c96488798e5d7520fd0
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1255,6 +1255,33 @@ spec:
                           readOnlyRootFilesystem:
                             type: boolean
                         type: object
+                      envFrom:
+                        description: 'List of sources to populate environment variables
+                          in the container running a WebLogic Server instance. The
+                          sources include either a config map or a secret. The operator
+                          will not expand the dependent variables in the ''envFrom''
+                          source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                          Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
+                        items:
+                          type: object
+                          properties:
+                            configMapRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                            prefix:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                        type: array
                       schedulerName:
                         description: If specified, the Pod will be dispatched by the
                           specified scheduler. If not specified, the Pod will be dispatched
@@ -3893,6 +3920,33 @@ spec:
                           required:
                           - name
                         type: array
+                      envFrom:
+                        description: 'List of sources to populate environment variables
+                          in the Introspector Job Pod container. The sources include
+                          either a config map or a secret. The operator will not expand
+                          the dependent variables in the ''envFrom'' source. More
+                          details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                          Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
+                        items:
+                          type: object
+                          properties:
+                            configMapRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                            prefix:
+                              type: string
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                                optional:
+                                  type: boolean
+                        type: array
                     type: object
                 type: object
               clusters:
@@ -4278,6 +4332,33 @@ spec:
                       readOnlyRootFilesystem:
                         type: boolean
                     type: object
+                  envFrom:
+                    description: 'List of sources to populate environment variables
+                      in the container running a WebLogic Server instance. The sources
+                      include either a config map or a secret. The operator will not
+                      expand the dependent variables in the ''envFrom'' source. More
+                      details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                      Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
+                    items:
+                      type: object
+                      properties:
+                        configMapRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                        prefix:
+                          type: string
+                        secretRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            optional:
+                              type: boolean
+                    type: array
                   schedulerName:
                     description: If specified, the Pod will be dispatched by the specified
                       scheduler. If not specified, the Pod will be dispatched by the
@@ -7052,6 +7133,33 @@ spec:
                               type: boolean
                             readOnlyRootFilesystem:
                               type: boolean
+                        envFrom:
+                          description: 'List of sources to populate environment variables
+                            in the container running a WebLogic Server instance. The
+                            sources include either a config map or a secret. The operator
+                            will not expand the dependent variables in the ''envFrom''
+                            source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container.
+                            Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.'
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              configMapRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
+                              prefix:
+                                type: string
+                              secretRef:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                  optional:
+                                    type: boolean
                         schedulerName:
                           description: If specified, the Pod will be dispatched by
                             the specified scheduler. If not specified, the Pod will
