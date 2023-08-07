@@ -578,7 +578,6 @@ EOF
                                 mkdir -m777 -p ${result_root}/kubelogs
 
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
-                                sudo find ${result_root}/* -type f -size +50M -mtime +7 | xargs rm -vf
                                 sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
                                 ${WORKSPACE}/terraform/oke.delete.sh ${OCI_PROP_FILE} ${WORKSPACE}/terraform
                             '''
