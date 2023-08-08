@@ -1809,7 +1809,7 @@ public class CommonTestUtils {
         repo = repo.substring(0, repo.length() - 1);
       }
 
-      if (repo.endsWith(".com")) {
+      if (repo.endsWith(".com") || tenancy == null || tenancy.isEmpty()) {
         repo += "/";
       } else {
         repo += "/" + tenancy + "/";
