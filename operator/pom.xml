@@ -216,6 +216,62 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jython-resource-dependencies</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.python</groupId>
+                  <artifactId>jython-standalone</artifactId>
+                  <version>${jython-standalone-version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-test-sources</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/src/main/resources/scripts</directory>
+                  <includes>
+                    <include>model_wdt_mii_filter.py</include>
+                    <include>utils.py</include>
+                  </includes>
+                </resource>
+                <resource>
+                  <directory>${project.basedir}/src/test/python</directory>
+                  <includes>
+                    <include>test_wdt_mii_filter.py</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <executions>
@@ -240,24 +296,19 @@
             </configuration>
           </execution>
           <execution>
-            <id>test-python-scripts</id>
+            <id>test-jython-scripts</id>
             <phase>test</phase>
             <goals>
               <goal>exec</goal>
             </goals>
             <configuration>
               <skip>${skip.unit.tests}</skip>
-              <executable>python</executable>
+              <executable>java</executable>
               <workingDirectory>src/test/python</workingDirectory>
-              <environmentVariables>
-                <PYTHONPATH>${project.basedir}/src/main/resources/scripts</PYTHONPATH>
-                <DOMAIN_UID>sample-domain1</DOMAIN_UID>
-              </environmentVariables>
               <arguments>
-                <arugument>-B</arugument>
-                <arugument>-m</arugument>
-                <argument>unittest</argument>
-                <argument>discover</argument>
+                <argument>-jar</argument>
+                <argument>${project.build.testOutputDirectory}/jython-standalone-${jython-standalone-version}.jar</argument>
+                <argument>${project.build.testOutputDirectory}/test_wdt_mii_filter.py</argument>
               </arguments>
             </configuration>
           </execution>

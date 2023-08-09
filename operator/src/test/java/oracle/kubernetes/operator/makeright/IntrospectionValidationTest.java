@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
@@ -42,7 +43,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.cluster2;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.DomainType.ONE_CLUSTER_REF;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.DomainType.TWO_CLUSTER_REFS;
 import static oracle.kubernetes.operator.makeright.IntrospectionValidationTest.TopologyType.ONE_CLUSTER;
@@ -68,7 +69,7 @@ class IntrospectionValidationTest {
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
-    testSupport.addToPacket(JOB_POD_NAME, jobPodName);
+    testSupport.addToPacket(JOB_POD, new V1Pod().metadata(new V1ObjectMeta().name(jobPodName)));
     testSupport.defineResources(domain);
     DomainProcessorTestSetup.setupCluster(domain, clusters);
     testSupport.defineResources(clusters);
@@ -197,7 +198,8 @@ class IntrospectionValidationTest {
     }
 
     private String getJobPodName(KubernetesTestSupport testSupport) {
-      return testSupport.getPacket().getValue(JOB_POD_NAME);
+      V1Pod jobPod = testSupport.getPacket().getValue(JOB_POD);
+      return jobPod.getMetadata().getName();
     }
   }
 

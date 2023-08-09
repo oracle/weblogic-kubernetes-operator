@@ -20,7 +20,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTION_COMPLETE;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD;
 
 public class IntrospectionTestUtils {
 
@@ -92,7 +92,7 @@ public class IntrospectionTestUtils {
   private static void defineIntrospectionResult(KubernetesTestSupport testSupport,
                                                 String introspectResult,
                                                 Supplier<V1JobStatus> jobStatus) {
-    testSupport.addToPacket(JOB_POD_NAME, INTROSPECTION_JOB);
+    testSupport.addToPacket(JOB_POD, new V1Pod().metadata(new V1ObjectMeta().name(INTROSPECTION_JOB)));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, job -> ((V1Job) job).setStatus(jobStatus.get()));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, introspectResult);
     testSupport.defineResources(

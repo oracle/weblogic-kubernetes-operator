@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -71,6 +72,17 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLivenessProbeCustomScript(String livenessProbeCustomScript) {
     getDomainSpec().setLivenessProbeCustomScript(livenessProbeCustomScript);
+    return this;
+  }
+
+  /**
+   * Sets the value of replace environment variables in Java options for domain.
+   *
+   * @param replaceEnvironmentVariablesInJavaOptions value of replace Env variables in Java options.
+   * @return this object
+   */
+  public DomainConfigurator withReplaceEnvVariablesInJavaOptions(Boolean replaceEnvironmentVariablesInJavaOptions) {
+    getDomainSpec().setReplaceVariablesInJavaOptions(replaceEnvironmentVariablesInJavaOptions);
     return this;
   }
 
@@ -371,6 +383,14 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withEnvironmentVariable(V1EnvVar envVar);
+
+  /**
+   * Add env from a source such as a config map or a secret.
+   *
+   * @param envFromSources list of source of the env variables.
+   * @return this object
+   */
+  public abstract DomainConfigurator withEnvFrom(List<V1EnvFromSource> envFromSources);
 
   protected DomainSpec getDomainSpec() {
     return domain.getSpec();

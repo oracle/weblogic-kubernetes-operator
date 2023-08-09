@@ -13,6 +13,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -102,6 +103,11 @@ public abstract class BaseConfiguration {
     return serverPod.getEnv();
   }
 
+  @Nullable
+  public List<V1EnvFromSource> getEnvFrom() {
+    return serverPod.getEnvFrom();
+  }
+
   public void setEnv(@Nullable List<V1EnvVar> env) {
     serverPod.setEnv(env);
   }
@@ -112,6 +118,10 @@ public abstract class BaseConfiguration {
 
   void addEnvironmentVariable(V1EnvVar envVar) {
     serverPod.addEnvVar(envVar);
+  }
+
+  public void setEnvFrom(@Nullable List<V1EnvFromSource> envFromSources) {
+    serverPod.setEnvFrom(envFromSources);
   }
 
   public abstract ServerStartPolicy getServerStartPolicy();

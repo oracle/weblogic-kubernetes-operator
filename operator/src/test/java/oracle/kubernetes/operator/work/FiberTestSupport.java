@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -49,6 +49,10 @@ public class FiberTestSupport {
   private final MainDelegateStub mainDelegate = createStrictStub(MainDelegateStub.class);
 
   private Packet packet = new Packet().with(mainDelegate);
+
+  public ScheduledExecutorService getScheduledExecutorService() {
+    return schedule;
+  }
 
   /** Creates a single-threaded FiberGate instance. */
   public FiberGate createFiberGate() {
@@ -250,6 +254,13 @@ public class FiberTestSupport {
     completionCallback.throwOnFailure();
   }
 
+  /**
+   * Ensures that the next task scheduled with a fixed delay will be executed immediately.
+   */
+  public void presetFixedDelay() {
+    schedule.presetFixedDelay = true;
+  }
+
   @FunctionalInterface
   public interface StepFactory {
     Step createStepList(Step next);
@@ -263,6 +274,7 @@ public class FiberTestSupport {
     private final Queue<Runnable> queue = new ArrayDeque<>();
     private Runnable current;
     private int numItemsRun;
+    private boolean presetFixedDelay;
 
     static ScheduledExecutorStub create() {
       return createStrictStub(ScheduledExecutorStub.class);
@@ -290,6 +302,10 @@ public class FiberTestSupport {
       scheduledItems.add(
           new PeriodicScheduledItem(
               currentTime + unit.toMillis(initialDelay), unit.toMillis(delay), command));
+      if (presetFixedDelay) {
+        presetFixedDelay = false;
+        setTime(currentTime + unit.toMillis(initialDelay), TimeUnit.MILLISECONDS);
+      }
       if (current == null) {
         runNextRunnable();
       }
