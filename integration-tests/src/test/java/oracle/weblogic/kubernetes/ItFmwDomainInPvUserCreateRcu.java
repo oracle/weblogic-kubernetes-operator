@@ -101,6 +101,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
+@Tag("oke-sequential")
+@Tag("oke-gate")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;
@@ -118,6 +120,7 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static final String domainUid1 = "jrfdomainonpv-userrcu1";
   private static final String domainUid3 = "jrfdomainonpv-userrcu3";
   private static final String domainUid4 = "jrfdomainonpv-userrcu4";
+
   private static final String miiAuxiliaryImage1Tag = "jrf1" + MII_BASIC_IMAGE_TAG;
   private final String adminSecretName1 = domainUid1 + "-weblogic-credentials";
   private final String adminSecretName3 = domainUid3 + "-weblogic-credentials";
@@ -285,9 +288,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid1);
     deleteDomainResource(domainNamespace, domainUid1);
     try {
-      deleteDirectory(Paths.get("/share").toFile());
+      deleteDirectory(Paths.get("/shared").toFile());
     } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
+      logger.severe("Failed to cleanup directory /shared", ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}", pvName);
     DomainResource domain = createDomainResourceSimplifyJrfPv(
@@ -544,11 +547,12 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid4);
     deleteDomainResource(domainNamespace, domainUid4);
     try {
-      deleteDirectory(Paths.get("/share").toFile());
+      deleteDirectory(Paths.get("/shared").toFile());
     } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
+      logger.severe("Failed to cleanup directory /shared", ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}", pvName);
+
     DomainResource domain = createDomainResourceSimplifyJrfPv(
         domainUid4, domainNamespace, adminSecretName4,
         TEST_IMAGES_REPO_SECRET_NAME,
@@ -681,9 +685,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid3);
     deleteDomainResource(domainNamespace, domainUid3);
     try {
-      deleteDirectory(Paths.get("/share").toFile());
+      deleteDirectory(Paths.get("/shared").toFile());
     } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
+      logger.severe("Failed to cleanup directory /shared", ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}", pvName);
     DomainResource domain = createSimplifyJrfPvDomainAndRCU(

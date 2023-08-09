@@ -23,11 +23,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -63,7 +65,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_12213;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -73,6 +75,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
@@ -130,6 +133,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 @IntegrationTest
 @Tag("olcne")
+@Tag("oke-gate")
 class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
@@ -179,7 +183,7 @@ class ItConfigDistributionStrategy {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public void initAll(@Namespaces(2) List<String> namespaces) {
+  public void initAll(@Namespaces(2) List<String> namespaces) throws ApiException, IOException {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -198,26 +202,20 @@ class ItConfigDistributionStrategy {
 
 
     //start two MySQL database instances
-    createMySQLDB("mysqldb-1", "root", "root123", getNextFreePort(), domainNamespace, null);
-    mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
-    logger.info("mysqlDBPort1 is: " + mysqlDBPort1);
-    createMySQLDB("mysqldb-2", "root", "root456", getNextFreePort(), domainNamespace, null);
-    mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
-    logger.info("mysqlDBPort2 is: " + mysqlDBPort2);
-
-    if (OKD) {
-      mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");
-      mysql2SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-2");
-    }
-
-    String mysql1HostAndPort = getHostAndPort(mysql1SvcEndpoint, mysqlDBPort1);
-    logger.info("mysql1HostAndPort = {0} ", mysql1HostAndPort);
-    String mysql2HostAndPort = getHostAndPort(mysql2SvcEndpoint, mysqlDBPort2);
-    logger.info("mysql2HostAndPort = {0} ", mysql2HostAndPort);
-
-    dsUrl1 = "jdbc:mysql://" + mysql1HostAndPort;
-    dsUrl2 = "jdbc:mysql://" + mysql2HostAndPort;
-
+    String dbService1 = createMySQLDB("mysqldb-1", "root", "root123", domainNamespace, null);
+    V1Pod pod = getPod(domainNamespace, null, "mysqldb-1");
+    createFileInPod(pod.getMetadata().getName(), domainNamespace, "root123");
+    runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root123");
+    String dbService2 = createMySQLDB("mysqldb-2", "root", "root456", domainNamespace, null);
+    pod = getPod(domainNamespace, null, "mysqldb-2");
+    createFileInPod(pod.getMetadata().getName(), domainNamespace, "root456");
+    runMysqlInsidePod(pod.getMetadata().getName(), domainNamespace, "root456");
+    
+    dsUrl1 = "jdbc:mysql://" + dbService1 + "." + domainNamespace + ".svc:3306";
+    dsUrl2 = "jdbc:mysql://" + dbService2 + "." + domainNamespace + ".svc:3306";
+    logger.info(dsUrl1);
+    logger.info(dsUrl2);
+    
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -232,8 +230,8 @@ class ItConfigDistributionStrategy {
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
 
     //create a jdbc resource targeted to cluster
-    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
-    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
+    createJdbcDataSource(dsName0, "root", "root123", dsUrl1);
+    createJdbcDataSource(dsName1, "root", "root123", dsUrl1);
     //deploy application to view server configuration
     deployApplication(clusterName + "," + adminServerName);
 
@@ -1071,8 +1069,7 @@ class ItConfigDistributionStrategy {
   }
 
   //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String dsName, String user, String password,
-                                    int mySQLNodePort, String sqlSvcEndpoint) {
+  private void createJdbcDataSource(String dsName, String user, String password, String dsUrl) {
 
     try {
       logger.info("Getting port for default channel");
@@ -1081,11 +1078,7 @@ class ItConfigDistributionStrategy {
           "Getting admin server default port failed");
       logger.info("default channel port: {0}", defaultChannelPort);
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
-
-
-      String hostAndPort = getHostAndPort(sqlSvcEndpoint, mySQLNodePort);
-      logger.info("hostAndPort = {0} ", hostAndPort);
-      String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
+      String jdbcDsUrl = dsUrl;
 
       // based on WebLogic image, change the mysql driver to 
       // 12.2.1.3 - com.mysql.jdbc.Driver
@@ -1196,6 +1189,55 @@ class ItConfigDistributionStrategy {
       getLogger().info("Got exception, command failed with errors " + e.getMessage());
     }
     return  result.stdout();
+  }
+
+  private static void runMysqlInsidePod(String podName, String namespace, String password) {
+    final LoggingFacade logger = getLogger();
+
+    logger.info("Sleeping for 1 minute before connecting to mysql db");
+    assertDoesNotThrow(() -> TimeUnit.MINUTES.sleep(1));
+    StringBuffer mysqlCmd = new StringBuffer(KUBERNETES_CLI + " exec -i -n ");
+    mysqlCmd.append(namespace);
+    mysqlCmd.append(" ");
+    mysqlCmd.append(podName);
+    mysqlCmd.append(" -- /bin/bash -c \"");
+    mysqlCmd.append("mysql --force ");
+    mysqlCmd.append("-u root -p" + password);
+    mysqlCmd.append(" < /tmp/grant.sql ");
+    mysqlCmd.append(" \"");
+    logger.info("mysql command {0}", mysqlCmd.toString());
+    ExecResult result = assertDoesNotThrow(() -> exec(new String(mysqlCmd), true));
+    logger.info("mysql returned {0}", result.toString());
+    logger.info("mysql returned EXIT value {0}", result.exitValue());
+    assertEquals(0, result.exitValue(), "mysql execution fails");
+  }
+
+  private void createFileInPod(String podName, String namespace, String password) throws IOException {
+    final LoggingFacade logger = getLogger();
+
+    ExecResult result = assertDoesNotThrow(() -> exec(new String("hostname -i"), true));
+    String ip = result.stdout();
+
+    Path sourceFile = Files.writeString(Paths.get(WORK_DIR, "grant.sql"),
+        "select user();\n"
+        + "SELECT host, user FROM mysql.user;\n"
+        + "CREATE USER 'root'@'%' IDENTIFIED BY '" + password + "';\n"
+        + "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;\n"
+        + "CREATE USER 'root'@'" + ip + "' IDENTIFIED BY '" + password + "';\n"
+        + "GRANT ALL PRIVILEGES ON *.* TO 'root'@'" + ip + "' WITH GRANT OPTION;\n"
+        + "SELECT host, user FROM mysql.user;");
+    StringBuffer mysqlCmd = new StringBuffer("cat " + sourceFile.toString() + " | ");
+    mysqlCmd.append(KUBERNETES_CLI + " exec -i -n ");
+    mysqlCmd.append(namespace);
+    mysqlCmd.append(" ");
+    mysqlCmd.append(podName);
+    mysqlCmd.append(" -- /bin/bash -c \"");
+    mysqlCmd.append("cat > /tmp/grant.sql\"");
+    //logger.info("mysql command {0}", mysqlCmd.toString());
+    result = assertDoesNotThrow(() -> exec(new String(mysqlCmd), false));
+    //logger.info("mysql returned {0}", result.toString());
+    logger.info("mysql returned EXIT value {0}", result.exitValue());
+    assertEquals(0, result.exitValue(), "mysql execution fails");
   }
 
 }
