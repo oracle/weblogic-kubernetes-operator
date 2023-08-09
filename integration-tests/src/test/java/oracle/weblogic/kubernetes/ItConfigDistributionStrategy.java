@@ -133,7 +133,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("oke-sequential")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-gate")
 class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
