@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
@@ -158,6 +159,15 @@ public class JobStepContext extends BasePodStepContext {
 
   private V1ResourceRequirements getAdminServerResources() {
     return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getResources()).orElse(null);
+  }
+
+  protected List<V1EnvFromSource> getEnvFrom() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getEnvFrom())
+        .orElse(getAdminServerEnvFrom());
+  }
+
+  private List<V1EnvFromSource> getAdminServerEnvFrom() {
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvFrom()).orElse(null);
   }
 
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
@@ -445,7 +455,7 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addInitContainers(initContainers, dcrImages));
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> isAllowedInIntrospector(container.getName()))
-            .map(c -> c.env(createEnv(c)).resources(createResources()))
+            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
             .collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
@@ -807,7 +817,8 @@ public class JobStepContext extends BasePodStepContext {
             Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
     Optional.ofNullable(getKubernetesPlatform())
             .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
-
+    Optional.ofNullable(getDomain().isReplaceVariablesInJavaOptions())
+        .ifPresent(v -> addEnvVar(vars, "REPLACE_VARIABLES_IN_JAVA_OPTIONS", Boolean.toString(v)));
     if (isUseOnlineUpdate()) {
       addOnlineUpdateEnvVars(vars);
     }

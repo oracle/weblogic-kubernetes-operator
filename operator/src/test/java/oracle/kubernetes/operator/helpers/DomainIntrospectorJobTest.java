@@ -114,9 +114,9 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTIO
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_INTROSPECT_CONTAINER_TERMINATED_MARKER;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -223,13 +223,17 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
 
-    testSupport.addToPacket(JOB_POD_NAME, jobPodName);
+    testSupport.addToPacket(JOB_POD, getIntrospectorJobPod());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
     testSupport.defineResources(cluster);
     testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
 
     TuningParametersStub.setParameter(DOMAIN_PRESENCE_RECHECK_INTERVAL_SECONDS, "2");
+  }
+
+  private V1Pod getIntrospectorJobPod() {
+    return new V1Pod().metadata(new V1ObjectMeta().name(jobPodName));
   }
 
   private static class JobAwaiterStepFactoryStub implements JobAwaiterStepFactory {
@@ -964,8 +968,14 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
   }
 
   private void defineNewIntrospectionResult() {
-    testSupport.getPacket().put(JOB_POD_NAME, jobPodName);
+    testSupport.getPacket().put(JOB_POD, new V1Pod().metadata(new V1ObjectMeta().name(jobPodName))
+        .status(createJobPodStatus()));
     testSupport.definePodLog(jobPodName, NS, SEVERE_MESSAGE);
+  }
+
+  private V1PodStatus createJobPodStatus() {
+    return new V1PodStatus().containerStatuses(
+        Arrays.asList(new V1ContainerStatus().name(UID + "-introspector").ready(true).started(true)));
   }
 
   private void ignoreJobCreatedAndDeletedLogs() {

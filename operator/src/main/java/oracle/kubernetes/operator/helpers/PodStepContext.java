@@ -30,6 +30,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
@@ -621,6 +622,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void updateEnvForStartupMode(List<V1EnvVar> env) {
     Optional.ofNullable(getDomain().getLivenessProbeCustomScript())
           .ifPresent(s -> addDefaultEnvVarIfMissing(env, "LIVENESS_PROBE_CUSTOM_SCRIPT", s));
+    Optional.ofNullable(getDomain().isReplaceVariablesInJavaOptions())
+        .ifPresent(r -> addDefaultEnvVarIfMissing(env, "REPLACE_VARIABLES_IN_JAVA_OPTIONS", Boolean.toString(r)));
   }
 
   private void defineConfigOverride(List<V1EnvVar> env) {
@@ -707,7 +710,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
-            .map(c -> c.env(createEnv(c)).resources(createResources()))
+            .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
         .collect(Collectors.toList()));
     return initContainers;
   }
@@ -1194,7 +1197,7 @@ public abstract class PodStepContext extends BasePodStepContext {
                                  V1Pod currentPod) {
       String convertedName = container.getName().replaceAll("^" + COMPATIBILITY_MODE, "");
       List<V1EnvVar> newEnv = new ArrayList<>();
-      Optional.of(container.getEnv())
+      Optional.ofNullable(container.getEnv())
           .ifPresent(env -> env.forEach(envVar -> newEnv.add(envVar.value(Optional.ofNullable(envVar)
           .map(V1EnvVar::getValue).map(v -> v.replaceAll("^" + COMPATIBILITY_MODE, ""))
               .orElse(null)))));
@@ -1669,6 +1672,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   @Override
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
     return getServerSpec().getEnvironmentVariables();
+  }
+
+  @Override
+  protected List<V1EnvFromSource> getEnvFrom() {
+    return getServerSpec().getEnvFrom();
   }
 
   @Override

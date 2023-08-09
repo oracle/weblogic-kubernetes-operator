@@ -16,7 +16,9 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
@@ -111,7 +113,7 @@ import static oracle.kubernetes.operator.EventTestUtils.getNumberOfEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.NamespaceTest.createDomainNamespaces;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.CLUSTER_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
@@ -170,7 +172,7 @@ class EventHelperTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(HelmAccessStub.install());
 
-    testSupport.addToPacket(JOB_POD_NAME, jobPodName);
+    testSupport.addToPacket(JOB_POD, new V1Pod().metadata(new V1ObjectMeta().name(jobPodName)));
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);

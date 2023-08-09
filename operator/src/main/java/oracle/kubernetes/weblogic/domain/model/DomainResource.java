@@ -703,6 +703,10 @@ public class DomainResource implements KubernetesObject, RetryMessageFactory {
     return emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
+  public Boolean isReplaceVariablesInJavaOptions() {
+    return spec.getReplaceVariablesInJavaOptions();
+  }
+
   public boolean isShuttingDown() {
     return getEffectiveConfigurationFactory().isShuttingDown();
   }

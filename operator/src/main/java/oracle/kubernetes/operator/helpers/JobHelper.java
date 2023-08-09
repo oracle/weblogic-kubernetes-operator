@@ -481,13 +481,52 @@ public class JobHelper {
 
       @Override
       public NextAction apply(Packet packet) {
-        String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-        return doNext(readDomainIntrospectorPodLog(jobPodName, getNext()), packet);
+        String containerName;
+        V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
+        V1ContainerStatus status = getJobPodContainerStatus(jobPod);
+        if (status != null && Boolean.TRUE == status.getStarted() && Boolean.TRUE == status.getReady()) {
+          containerName = getContainerName();
+        } else {
+          containerName = getInitContainerName(jobPod);
+        }
+
+        String jobPodName = JobHelper.getName(jobPod);
+
+        return doNext(readDomainIntrospectorPodLog(jobPodName, containerName, getNext()), packet);
       }
 
-      private Step readDomainIntrospectorPodLog(String jobPodName, Step next) {
+      private V1ContainerStatus getJobPodContainerStatus(V1Pod jobPod) {
+        return Optional.ofNullable(getContainerStatuses(jobPod))
+            .map(cs -> cs.stream().findFirst().orElse(null)).orElse(null);
+      }
+
+      private List<V1ContainerStatus> getContainerStatuses(V1Pod jobPod) {
+        return Optional.ofNullable(jobPod.getStatus()).map(s -> s.getContainerStatuses()).orElse(null);
+      }
+
+      private String getContainerName() {
+        return getDomain().getDomainUid() + "-introspector";
+      }
+
+      private String getInitContainerName(V1Pod jobPod) {
+        return Optional.ofNullable(getInitContainerStatuses(jobPod))
+            .map(is -> is.stream().filter(cs -> hasError(cs)).findFirst().map(c  -> c.getName())
+                .orElse(getContainerName()))
+            .orElse(getContainerName());
+      }
+
+      private boolean hasError(V1ContainerStatus cs) {
+        return Optional.ofNullable(cs.getState()).map(s -> s.getTerminated())
+            .map(t -> t.getReason()).map(r -> r.equals("Error")).orElse(false);
+      }
+
+      private List<V1ContainerStatus> getInitContainerStatuses(V1Pod jobPod) {
+        return Optional.ofNullable(jobPod.getStatus()).map(s -> s.getInitContainerStatuses()).orElse(null);
+      }
+
+      private Step readDomainIntrospectorPodLog(String jobPodName, String containerName, Step next) {
         return new CallBuilder()
-                .withContainerName(getDomain().getDomainUid() + "-introspector")
+                .withContainerName(containerName)
                 .readPodLogAsync(
                         jobPodName, getNamespace(), getDomainUid(), new ReadPodLogResponseStep(next));
       }
@@ -791,7 +830,7 @@ public class JobHelper {
           return onFailureNoRetry(packet, callResponse);
         } else {
           addContainerTerminatedMarkerToPacket(jobPod, getJobName(), packet);
-          recordJobPodName(packet, getName(jobPod));
+          recordJobPod(packet, jobPod);
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }
       }
@@ -855,27 +894,31 @@ public class JobHelper {
         return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
       }
 
-      private void recordJobPodName(Packet packet, String podName) {
-        packet.put(ProcessingConstants.JOB_POD_NAME, podName);
+      private void recordJobPod(Packet packet, V1Pod jobPod) {
+        packet.put(ProcessingConstants.JOB_POD, jobPod);
       }
     }
   }
 
   private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
     Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
-    String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
+    V1Pod jobPod = (V1Pod) packet.get(ProcessingConstants.JOB_POD);
     if (logged == null || !logged) {
       packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           Objects.requireNonNull(domainIntrospectorJob.getMetadata()).getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getStatus(),
-          jobPodName);
+          getName(jobPod));
       LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.toString());
     }
+  }
+
+  private static String getName(V1Pod pod) {
+    return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
   }
 
   static void logJobDeleted(String domainUid, String namespace, String jobName, Packet packet) {
@@ -887,7 +930,7 @@ public class JobHelper {
         && hasStatusAndCondition(domainIntrospectorJob) && !JobWatcher.isComplete(domainIntrospectorJob)) {
       logIntrospectorFailure(packet, domainIntrospectorJob);
     }
-    packet.remove(ProcessingConstants.JOB_POD_NAME);
+    packet.remove(ProcessingConstants.JOB_POD);
 
     LOGGER.fine(getJobDeletedMessageKey(), domainUid, namespace, jobName);
   }

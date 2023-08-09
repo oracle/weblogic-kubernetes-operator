@@ -14,9 +14,11 @@ import sys;
 
 def getEnvVar(var):
   val=os.environ.get(var)
-  if val==None:
-    print "ERROR: Env var ",var, " not set."
-    sys.exit(1)
+  if val is None:
+    val = System.getenv(var)
+    if val is None:
+      print "ERROR: Env var ",var, " not set."
+      sys.exit(1)
   return val
 
 domain_uid = getEnvVar('DOMAIN_UID')

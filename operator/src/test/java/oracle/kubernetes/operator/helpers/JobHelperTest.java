@@ -27,7 +27,9 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapEnvSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
@@ -72,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Opss;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -610,6 +613,23 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenIntrospectorServerHasEnvFromItems_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureIntrospector()
+        .withEnvFrom(createEnvFrom("test"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnvFrom(domainPresenceInfo, jobSpec), is(createEnvFrom("test")));
+  }
+
+  @NotNull
+  private List<V1EnvFromSource> createEnvFrom(String name) {
+    return List.of(new V1EnvFromSource().configMapRef(new V1ConfigMapEnvSource().name(name)));
+  }
+
+  @Test
   void whenDomainAndIntrospectorHaveEnvironmentItems_introspectorPodStartupWithBothEnvVars() {
     configureDomain()
           .withEnvironmentVariable("item1", "domain-value1")
@@ -633,6 +653,23 @@ class JobHelperTest extends DomainValidationTestBase {
                 envVarOEVNContains("item1"),
                 envVarOEVNContains("JAVA_OPTIONS"),
                 envVarOEVNContains("USER_MEM_ARGS")));
+  }
+
+  @Test
+  void whenDomainAndIntrospectorHaveEnvFromItems_introspectorPodStartupWithIntrospectorEnvFrom() {
+    configureDomain()
+        .withEnvFrom(createEnvFrom("domain"))
+        .configureIntrospector()
+        .withEnvFrom(createEnvFrom("introspector"));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnvFrom(domainPresenceInfo, jobSpec),
+        is(createEnvFrom("introspector")));
+    assertThat(
+        getMatchingContainerEnvFrom(domainPresenceInfo, jobSpec),
+        not(is(createEnvFrom("domain"))));
   }
 
   @Test
@@ -1945,6 +1982,13 @@ class JobHelperTest extends DomainValidationTestBase {
     return getMatchingContainer(domainPresenceInfo, jobSpec)
           .map(V1Container::getEnv)
           .orElse(Collections.emptyList());
+  }
+
+  private List<V1EnvFromSource> getMatchingContainerEnvFrom(
+      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+    return getMatchingContainer(domainPresenceInfo, jobSpec)
+        .map(V1Container::getEnvFrom)
+        .orElse(Collections.emptyList());
   }
 
   private V1ResourceRequirements getMatchingContainerResources(
