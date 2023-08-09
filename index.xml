@@ -623,7 +623,7 @@ Because we want to balance separating destabilizing work into feature branches a
     </item>
     
     <item>
-      <title>Domain upgrade</title>
+      <title>Upgrade operator from version 3.x to 4.x</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/</link>
       <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
       

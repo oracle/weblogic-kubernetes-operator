@@ -9,23 +9,23 @@
 
     <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Domain upgrade :: WebLogic Kubernetes Operator</title>
+    <title>Upgrade operator from version 3.x to 4.x :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1691551203" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1691551203" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1691592368" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1691592368" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1691551203"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1691592368"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1691551203"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1691551203"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1691592368"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1691592368"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1691551203"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1691592368"></script>
 
     
   </div>
@@ -473,9 +473,9 @@
  
   
     
-      <li data-nav-id="/managing-operators/conversion-webhook/" title="Domain upgrade" class="dd-item active">
+      <li data-nav-id="/managing-operators/conversion-webhook/" title="Upgrade operator from version 3.x to 4.x" class="dd-item active">
         <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/conversion-webhook/">
-        Domain upgrade
+        Upgrade operator from version 3.x to 4.x
         
         </a>
     </li>
@@ -3743,7 +3743,7 @@
             
           
           
-            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/'>Manage operators</a> > Domain upgrade
+            <a href='https://oracle.github.io/weblogic-kubernetes-operator/'></a> > <a href='https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/'>Manage operators</a> > Upgrade operator from version 3.x to 4.x
           
         
           
@@ -3780,7 +3780,7 @@
           
             <h1>
               
-              Domain upgrade
+              Upgrade operator from version 3.x to 4.x
             </h1>
           
 
@@ -3809,7 +3809,7 @@ To simplify this conversion, see
 <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/#upgrade-the-weblogicoraclev8-schema-domain-resource-manually">manual upgrade command line tool</a>.</p>
 </div>
 
-<p>The WebLogic Domain resource conversion webhook is a singleton Deployment in your Kubernetes cluster that automatically and transparently upgrades domain resources with <code>weblogic.oracle/v8</code> schema to <code>weblogic.oracle/v9</code> schema. It does this by internally using a <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion">Kubernetes Webhook Conversion</a> strategy.  The Domain CustomResourceDefinition in your Kubernetes cluster, which defines the schema of operator managed Domains, has changed significantly in operator version 4.0 from previous operator releases, therefore we have updated the API version to <code>weblogic.oracle/v9</code>. For example, we have enhanced <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a> in operator version 4.0, and its configuration has changed as a result. With the <code>Webhook</code> conversion strategy, the Kubernetes API server internally invokes an external REST service which pulls out the configuration of the auxiliary images defined in the <code>weblogic.oracle/v8</code> schema domain resource and converts it to the equivalent <code>weblogic.oracle/v9</code> schema configuration in operator 4.0. The webhook is automatically installed by default when an operator is installed, and uninstalled when any operator is uninstalled, but you can optionally install and uninstall it independently. For details, see <a href="#install-the-conversion-webhook">Install the conversion webhook</a> and <a href="#uninstall-the-conversion-webhook">Uninstall the conversion webhook</a>.</p>
+<p>The Domain CustomResourceDefinition (CRD) in your Kubernetes cluster, which defines the schema of operator managed Domains, has changed significantly in operator version 4.0 from previous operator releases, therefore, we have updated the API version to <code>weblogic.oracle/v9</code>. For example, we have enhanced <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a> in operator version 4.0, and its configuration has changed. Operator 4.0 uses the <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-conversion">Kubernetes Webhook Conversion</a> strategy and a WebLogic Domain resource conversion webhook to automatically and transparently upgrade domain resources with <code>weblogic.oracle/v8</code> schema to <code>weblogic.oracle/v9</code> schema. With the Webhook conversion strategy, the Kubernetes API server internally invokes an external REST service that pulls out the configuration of the auxiliary images defined in the <code>weblogic.oracle/v8</code> schema domain resource and converts it to the equivalent <code>weblogic.oracle/v9</code> schema configuration. The WebLogic Domain resource conversion webhook is a singleton Deployment in your Kubernetes cluster. It is installed by default when an operator is installed, and uninstalled when any operator is uninstalled, but you can optionally install and uninstall it independently. For details, see <a href="#install-the-conversion-webhook">Install the conversion webhook</a> and <a href="#uninstall-the-conversion-webhook">Uninstall the conversion webhook</a>. For manually upgrading the domain resources with <code>weblogic.oracle/v8</code> schema to <code>weblogic.oracle/v9</code> schema, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/upgrade-domain-resource/">Upgrade Domain resource</a>.</p>
 <h3 id="conversion-webhook-components">Conversion webhook components</h3>
 <p>The following table lists the components of the WebLogic Domain resource conversion webhook and their purpose.</p>
 <table>
@@ -6459,19 +6459,19 @@ and the conversion webhook namespace is <code>sample-weblogic-conversion-webhook
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1691551203"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1691592368"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1691551203"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1691551203"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1691592368"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1691592368"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1691551203"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1691592368"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

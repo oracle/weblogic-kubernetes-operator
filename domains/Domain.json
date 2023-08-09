@@ -358,6 +358,11 @@
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
         },
+        "replaceVariablesInJavaOptions": {
+          "default": false,
+          "description": "Specifies whether the operator will replace the environment variables in the Java options in certain situations, such as when the JAVA_OPTIONS are specified using a config map. Defaults to false.",
+          "type": "boolean"
+        },
         "serverService": {
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
@@ -670,6 +675,13 @@
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvVar"
+          }
+        },
+        "envFrom": {
+          "description": "List of sources to populate environment variables in the Introspector Job Pod container. The sources include either a config map or a secret. The operator will not expand the dependent variables in the \u0027envFrom\u0027 source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
           }
         }
       }
@@ -1017,6 +1029,13 @@
         "containerSecurityContext": {
           "description": "Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for container-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+        },
+        "envFrom": {
+          "description": "List of sources to populate environment variables in the container running a WebLogic Server instance. The sources include either a config map or a secret. The operator will not expand the dependent variables in the \u0027envFrom\u0027 source. More details: https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container. Also see: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.",
+          "type": "array",
+          "items": {
+            "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.EnvFromSource"
+          }
         },
         "schedulerName": {
           "description": "If specified, the Pod will be dispatched by the specified scheduler. If not specified, the Pod will be dispatched by the default scheduler. See `kubectl explain pods.spec.schedulerName`.",
