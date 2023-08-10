@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1691637640" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1691637640" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1691702837" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1691702837" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1691637640"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1691702837"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1691637640"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1691637640"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1691702837"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1691702837"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1691637640"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1691702837"></script>
 
     
   </div>
@@ -3777,6 +3777,7 @@
           <ul>
             <li><a href="#create-secrets">Create secrets</a></li>
             <li><a href="#create-weblogic-domain-1">Create WebLogic Domain</a></li>
+            <li><a href="#create-loadbalancer">Create LoadBalancer</a></li>
           </ul>
         </li>
         <li><a href="#automation">Automation</a></li>
@@ -3847,6 +3848,7 @@
 <li><a href="https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/">kubectl</a>; use <code>kubectl version</code> to test if <code>kubectl</code> works.  This document was tested with version v1.21.2.</li>
 <li><a href="https://helm.sh/docs/intro/install/">Helm</a>, version 3.1 and later; use <code>helm version</code> to check the <code>helm</code> version.  This document was tested with version v3.6.2.</li>
 <li>A Java JDK, Version 8 or 11. Azure recommends <a href="https://docs.microsoft.com/java/openjdk/download">Microsoft Build of OpenJDK</a>. Ensure that your <code>JAVA_HOME</code> environment variable is set correctly in the shells in which you run the commands.</li>
+<li>A <code>domain creation image</code> with the name <code>wdt-domain-image:WLS-v1</code>. You can create it by following the <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/build-domain-creation-image/#build-the-domain-creation-image">Build the domain creation image</a> step.</li>
 </ul>
 
 
@@ -3930,9 +3932,9 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>Merged <span style="color:#e6db74">&#34;wlsaks1596087429&#34;</span> as current context in /home/username/.kube/config
 </span></span></code></pre></div><p>After your Kubernetes cluster is up and running, run the following commands to make sure <code>kubectl</code> can access the Kubernetes cluster:</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get nodes -o wide
-</span></span><span style="display:flex;"><span>NAME                                  STATUS   ROLES   AGE     VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
-</span></span><span style="display:flex;"><span>aks-pool1haiche-33688868-vmss000000   Ready    agent   4m25s   v1.17.13   10.240.0.4    &lt;none&gt;        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
-</span></span><span style="display:flex;"><span>aks-pool1haiche-33688868-vmss000001   Ready    agent   4m12s   v1.17.13   10.240.0.5    &lt;none&gt;        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
+</span></span><span style="display:flex;"><span>NAME                                STATUS   ROLES   AGE    VERSION   INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+</span></span><span style="display:flex;"><span>aks-nodepool1-15679926-vmss000000   Ready    agent   118s   v1.25.6   10.224.0.4    &lt;none&gt;        Ubuntu 22.04.2 LTS   5.15.0-1041-azure   containerd://1.7.1+azure-1
+</span></span><span style="display:flex;"><span>aks-nodepool1-15679926-vmss000001   Ready    agent   2m8s   v1.25.6   10.224.0.5    &lt;none&gt;        Ubuntu 22.04.2 LTS   5.15.0-1041-azure   containerd://1.7.1+azure-1
 </span></span></code></pre></div>
 
 <p><strong>NOTE</strong>: If you run into VM size failure, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/#virtual-machine-size-is-not-supported">Troubleshooting - Virtual Machine size is not supported</a>.</p>
@@ -4097,11 +4099,11 @@ The following command enables access from AKS subnet to the storage account:</p>
 </span></span><span style="display:flex;"><span>]
 </span></span></code></pre></div></li>
 </ol>
-<h5 id="create-storage-class-and-pvc">Create Storage Class and PVC</h5>
+<h5 id="create-storage-class">Create Storage Class</h5>
 <p>This sample will dynamically create and use a persistent volume with Azure Files in AKS.  These features are passed to Kubernetes using YAML files.</p>
 <p>The script <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh</code> generates the required configuration files automatically, given an input file containing the parameters.</p>
 <p>A parameters file is provided at <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml</code>.  Copy and customize this file for your needs.</p>
-<p>To generate YAML files to create Storage Class and PVC in the AKS cluster, the following values must be substituted in your copy of the input file.</p>
+<p>To generate YAML files to create Storage Class in the AKS cluster, the following values must be substituted in your copy of the input file.</p>
 <table>
 <thead>
 <tr>
@@ -4119,7 +4121,7 @@ The following command enables access from AKS subnet to the storage account:</p>
 </tbody>
 </table>
 <p>Use the following command to generate configuration files, assuming the output directory is <code>~/azure</code>.  The script will overwrite any files generated by a previous invocation.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e">#cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
 </span></span><span style="display:flex;"><span>$ cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
 </span></span><span style="display:flex;"><span>$ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -u <span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span>
 </span></span></code></pre></div><p>After running the command, all needed configuration files are generated and output to <code>~/azure/weblogic-on-aks</code>:</p>
@@ -4148,32 +4150,18 @@ The following command enables access from AKS subnet to the storage account:</p>
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">mountOptions:
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  - nconnect=4
 </span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
-</span></span></code></pre></div><p>We have provided another configuration file <code>pvc.yaml</code> for the <code>PersistentVolumeClaim</code>.  The <code>pvc.yaml</code> file has exactly the same Storage Class name as created previously. This is required.
-The following command displays the YAML content of <code>pvc.yaml</code>.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>cat <span style="color:#e6db74">&lt;&lt;EOF
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">apiVersion: v1
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">kind: PersistentVolumeClaim
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">metadata:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  name: wls-azurefile-${TIMESTAMP}
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">spec:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  accessModes:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    - ReadWriteMany
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  storageClassName: azurefile-csi-nfs
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  resources:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    requests:
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">      storage: 100Gi
-</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">EOF</span>
 </span></span></code></pre></div><p>Use the <code>kubectl</code> command to create the Storage Class and persistent volume claim to the <code>default</code> namespace.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f ~/azure/weblogic-on-aks/azure-csi-nfs.yaml
 </span></span></code></pre></div><pre tabindex="0"><code>persistentvolume/wls-azurefile created
-</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
-</span></span></code></pre></div><pre tabindex="0"><code>persistentvolumeclaim/wls-azurefile created
 </code></pre><p>Use the following command to verify:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pvc
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get sc
 </span></span></code></pre></div><p>Example output:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get pvc
-</span></span><span style="display:flex;"><span>NAME                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS        AGE
-</span></span><span style="display:flex;"><span>wls-azurefile-1612795811   Bound    pvc-b9c0dfbb-0cee-4362-809e-1621894c5794   100Gi      RWX            azurefile-csi-nfs   17s
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl get sc
+</span></span><span style="display:flex;"><span>NAME                    PROVISIONER          RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+</span></span><span style="display:flex;"><span>azurefile               file.csi.azure.com   Delete          Immediate              true                   83s
+</span></span><span style="display:flex;"><span>azurefile-csi           file.csi.azure.com   Delete          Immediate              true                   83s
+</span></span><span style="display:flex;"><span>azurefile-csi-nfs       file.csi.azure.com   Delete          Immediate              true                   50s
+</span></span><span style="display:flex;"><span>....
 </span></span></code></pre></div><p><strong>NOTE</strong>: Carefully inspect the output and verify it matches the above. <code>ACCESS MODES</code>, <code>CLAIM</code>, and <code>STORAGECLASS</code> are vital.</p>
 
 
@@ -4203,8 +4191,9 @@ weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
 <ul>
 <li><a href="#create-secrets">Create secrets</a></li>
 <li><a href="#create-weblogic-domain-1">Create WebLogic Domain</a></li>
+<li><a href="#create-loadbalancer">Create LoadBalancer</a></li>
 </ul>
-<p>Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.</p>
+<p>Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operatorto create a WLS domain.</p>
 <h5 id="create-secrets">Create secrets</h5>
 <p>You will use the <code>kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh</code> script to create the domain WebLogic administrator credentials as a Kubernetes secret. Please run:</p>
 <pre tabindex="0"><code># cd kubernetes/samples/scripts/create-weblogic-domain-credentials
@@ -4235,162 +4224,19 @@ weblogic-webhook-secrets                  Opaque                           2    
 wlsregcred                                kubernetes.io/dockerconfigjson   1      38s
 </code></pre><p><strong>NOTE</strong>: If the <code>NAME</code> column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.</p>
 <h5 id="create-weblogic-domain-1">Create WebLogic Domain</h5>
-<p>You will use the <code>kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh</code> script to create the WLS domain on the persistent volume you created previously.</p>
-
-<div class="notices note" ><p>The <code>create-domain.sh</code> script and its inputs file are for demonstration purposes <em>only</em>; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.</p>
-</div>
-
-<p>You need to set up the domain configuration for the WebLogic domain.</p>
-<ol>
+<p>Now, you deploy a <code>sample-domain1</code> domain resource and an associated <code>sample-domain1-cluster-1</code> cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.</p>
+<p><strong>NOTE</strong>: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#ensuring-your-kubernetes-cluster-can-access-images">can access <code>domain-creation-image</code> and other images</a>.</p>
+<ul>
 <li>
-<p>Check if resources are ready.</p>
-<p>If you used the automation script to create the AKS cluster, skip this step and go to step 2.</p>
-<p>If you created Azure resources, step-by-step, according to the previous steps, then validate that all the resources above were created by using the script <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh</code>.</p>
-<p>Use the following commands to check if the resources are ready:</p>
-<pre tabindex="0"><code># cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./validate.sh -g <span style="color:#e6db74">${</span>AKS_PERS_RESOURCE_GROUP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --aks-name <span style="color:#e6db74">${</span>AKS_CLUSTER_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --file-share <span style="color:#e6db74">${</span>AKS_PERS_SHARE_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --storage-account <span style="color:#e6db74">${</span>AKS_PERS_STORAGE_ACCOUNT_NAME<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --domain-uid domain1 <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --pvc-name <span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span>-azurefile-<span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span> <span style="color:#ae81ff">\
-</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span> --secret-docker <span style="color:#e6db74">${</span>SECRET_NAME_DOCKER<span style="color:#e6db74">}</span>
-</span></span></code></pre></div><p>You will see output with <code>PASS</code> if all the resources are ready. The following is an example of output:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>PASS
-</span></span><span style="display:flex;"><span>You can create your domain with the following resources ready:
-</span></span><span style="display:flex;"><span>  Azure resource group: wlsresourcegroup1683786842
-</span></span><span style="display:flex;"><span>  Azure Kubernetes Service instance: wlsaks1683786842
-</span></span><span style="display:flex;"><span>  Azure storage account: wlsstorage1683786842
-</span></span><span style="display:flex;"><span>  Azure file share: wls-weblogic-1683786842
-</span></span><span style="display:flex;"><span>  Kubernetes secret for Container Registry Account: wlsregcred
-</span></span><span style="display:flex;"><span>  Kubernetes secret for WebLogic domain: domain1-weblogic-credentials
-</span></span><span style="display:flex;"><span>  Persistent Volume Claim: wls-azurefile-1683786842
-</span></span></code></pre></div></li>
-<li>
-<p>Enable the operator to monitor the namespace</p>
-<p>For more details of namespace management, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/namespace-management/">Namespace management</a>.</p>
-<p>The domain will be created in <code>default</code> namespace. Run the following command to enable the operator to monitor <code>default</code> namespace.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl label namespace default weblogic-operator<span style="color:#f92672">=</span>enabled
-</span></span></code></pre></div></li>
-<li>
-<p>Now let&rsquo;s ask the operator to create a WebLogic Server domain within the AKS cluster.</p>
-<p>For complete details on domain creation, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#use-the-script-to-create-a-domain">Domain home on a PV - Use the script to create a domain</a>.  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the <code>create-domain.sh</code> script as shown next.</p>
-<pre tabindex="0"><code># cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
-</code></pre><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
-</span></span></code></pre></div><p>You may observe error-related output during the creation of the domain.  This is due to timing issues during domain creation.  The script accounts for this with a series of retries.  The error output looks similar to the following:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-text" data-lang="text"><span style="display:flex;"><span>Waiting for the job to complete...
-</span></span><span style="display:flex;"><span>Error from server (BadRequest): container &#34;create-weblogic-sample-domain-job&#34; in pod &#34;domain1-create-weblogic-sample-domain-job-4l767&#34; is waiting to start: PodInitializing
-</span></span><span style="display:flex;"><span>status on iteration 1 of 20
-</span></span><span style="display:flex;"><span>pod domain1-create-weblogic-sample-domain-job-4l767 status is Init:0/1
-</span></span><span style="display:flex;"><span>status on iteration 2 of 20
-</span></span><span style="display:flex;"><span>pod domain1-create-weblogic-sample-domain-job-4l767 status is Running
-</span></span></code></pre></div><p>If you see error messages that include the status <code>ImagePullBackOff</code> along with output similar to the following, it is likely your credentials for the Oracle Container Registry have not been successfully conveyed to the AKS cluster.</p>
-<pre tabindex="0"><code>Failed to pull image &#34;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#34;: rpc error: code = Unknown desc = Error response from daemon: Get https://container-registry-phx.oracle.com/v2/middleware/weblogic/manifests/12.2.1.4: unauthorized: authentication required
-</code></pre><p>Ensure that the arguments you passed to the script <code>create-docker-credentials-secret.sh</code> are correct with respect to your Oracle SSO credentials.</p>
-<p>The following example output shows the WebLogic domain was created successfully.</p>
-
-<div class="expand">
-    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
-        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
-        <span>
-        
-    	
-    	Click here to view the example output.
-    	
-    	</span>
-    </div>
-    <div class="expand-content" style="display: none;">
-        <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ ./create-domain.sh -i ~/azure/weblogic-on-aks/my-create-domain-inputs.yaml -o ~/azure -e -v
-</span></span></code></pre></div><pre tabindex="0"><code>Input parameters being used
-export version=&#34;create-weblogic-sample-domain-inputs-v1&#34;
-export adminPort=&#34;7001&#34;
-export adminServerName=&#34;admin-server&#34;
-export domainUID=&#34;domain1&#34;
-export domainHome=&#34;/shared/domains/domain1&#34;
-export serverStartPolicy=&#34;IfNeeded&#34;
-export clusterName=&#34;cluster-1&#34;
-export configuredManagedServerCount=&#34;5&#34;
-export initialManagedServerReplicas=&#34;2&#34;
-export managedServerNameBase=&#34;managed-server&#34;
-export managedServerPort=&#34;8001&#34;
-export image=&#34;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#34;
-export imagePullPolicy=&#34;IfNotPresent&#34;
-export imagePullSecretName=&#34;wlsregcred&#34;
-export productionModeEnabled=&#34;true&#34;
-export weblogicCredentialsSecretName=&#34;domain1-weblogic-credentials&#34;
-export includeServerOutInPodLog=&#34;true&#34;
-export logHome=&#34;/shared/logs/domain1&#34;
-export httpAccessLogInLogHome=&#34;true&#34;
-export t3ChannelPort=&#34;30012&#34;
-export exposeAdminT3Channel=&#34;false&#34;
-export adminNodePort=&#34;30701&#34;
-export exposeAdminNodePort=&#34;true&#34;
-export namespace=&#34;default&#34;
-javaOptions=-Dweblogic.StdoutDebugEnabled=false -XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
-export persistentVolumeClaimName=&#34;wls-azurefile-1683777168&#34;
-export domainPVMountPath=&#34;/shared&#34;
-export createDomainScriptsMountPath=&#34;/u01/weblogic&#34;
-export createDomainScriptName=&#34;create-domain-job.sh&#34;
-export createDomainFilesDir=&#34;wlst&#34;
-export serverPodMemoryRequest=&#34;1.5Gi&#34;
-export serverPodCpuRequest=&#34;250m&#34;
-
-validateWlsDomainName called with domain1
-createFiles - valuesInputFile is /home/username/azure/weblogic-on-aks/domain1.yaml
-createDomainScriptName is create-domain-job.sh
-Generating /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
-Generating /home/username/azure/weblogic-domains/domain1/delete-domain-job.yaml
-Generating /home/username/azure/weblogic-domains/domain1/domain.yaml
-Checking to see if the secret domain1-weblogic-credentials exists in namespace default
-Checking if the persistent volume claim wls-azurefile-1683777168 in NameSpace default exists
-The persistent volume claim wls-azurefile-1683777168 already exists in NameSpace default
-configmap/domain1-create-weblogic-sample-domain-job-cm created
-Checking the configmap domain1-create-weblogic-sample-domain-job-cm was created
-configmap/domain1-create-weblogic-sample-domain-job-cm labeled
-Checking if object type job with name domain1-create-weblogic-sample-domain-job exists
-No resources found in default namespace.
-Creating the domain by creating the job /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
-job.batch/domain1-create-weblogic-sample-domain-job created
-Waiting for the job to complete...
-status on iteration 1 of 30
-pod domain1-create-weblogic-sample-domain-job-v9hp6 status is Init:0/1
-status on iteration 2 of 30
-pod domain1-create-weblogic-sample-domain-job-v9hp6 status is Completed
-domain.weblogic.oracle/domain1 created
-cluster.weblogic.oracle/domain1-cluster-1 created
-
-Domain domain1 was created and will be started by the WebLogic Kubernetes Operator
-
-Administration console access is available at http://wlsaks1683-wlsresourcegroup-260524-3dtnmx4n.hcp.eastus.azmk8s.io:30701/console
-The following files were generated:
-  /home/username/azure/weblogic-domains/domain1/create-domain-inputs.yaml
-  /home/username/azure/weblogic-domains/domain1/create-domain-job.yaml
-  /home/username/azure/weblogic-domains/domain1/domain.yaml
-
-Completed
-</code></pre>
-    </div>
-</div>
-<p>If your output does not show a successful completion, you must
-troubleshoot the reason and resolve it before proceeding to the next
-step.</p>
-
-<div class="notices note" ><p>This sample creates WebLogic Server pods with reasonable values for memory, CPU, and JVM heap size (as a percentage of memory). These settings were determined by running a skeleton WebLogic domain with minimal or no deployed services and applications on potentially limited or heavily shared container environments. For advice about tuning CPU and memory requests and limits for broader use cases or in a production environment, see the <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/">Pod memory and CPU resources</a> FAQ. You can supply different values. Edit <code>~/azure/weblogic-on-aks/domain1.yaml</code> and set the desired values for <code>serverPodMemoryRequest</code>, <code>serverPodMemoryLimit</code>, <code>serverPodCpuRequest</code>, <code>serverPodCpuLimit</code> and <code>javaOptions</code> before running <code>./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v</code>.</p>
-</div>
-
-<p>Here is an excerpt showing reasonable values:</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">serverPodMemoryRequest</span>: <span style="color:#e6db74">&#34;1.5Gi&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">serverPodCpuRequest</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">serverPodMemoryLimit</span>: <span style="color:#e6db74">&#34;1.5Gi&#34;</span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">serverPodCpuLimit</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span><span style="color:#f92672">javaOptions</span>: -<span style="color:#ae81ff">Dweblogic.StdoutDebugEnabled=false -XX:InitialRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0</span>
-</span></span></code></pre></div><p>Notice that the <code>Limit</code> and <code>Request</code> values are the same for each of <code>serverPodMemory</code> and <code>serverPodCpu</code>.  This is intentional.  To learn why, see <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed">Create a Pod that gets assigned a QoS class of Guaranteed</a>.  You must have allocated sufficient CPU and memory resources so that the pod can be scheduled for running by Kubernetes.  This is an example of <strong>capacity planning</strong>, a very important Kubernetes success factor. For more details on capacity planning with AKS, see <a href="https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/azure-kubernetes-service-cluster-capacity-planning/ba-p/1474990">Azure Kubernetes Service Cluster Capacity Planning
-</a>.  For more details about Java and capacity planning, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/">Java heap size and memory resource considerations</a>.</p>
-<p>The complete set of values that can be configured in this way is described in <a href="https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#configuration-parameters">configuration parameters</a>.   If you want further advanced domain configuration, then run <code>./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure</code>, which will output a Kubernetes domain resource YAML file in <code>~/azure/weblogic-domains/domain.yaml</code>. Edit the <code>domain.yaml</code> file and use <code>kubectl create -f ~/azure/weblogic-domains/domain.yaml</code> to create domain resources.</p>
+<p>Copy the contents of the <a href="https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/release/4.1/kubernetes/samples/samples/azure-kubernetes-service/scripts/create-weblogic-domain/domain-on-pv/domain-resources/WLS/domain-on-pv-AKS-v1.yaml">WLS domain on AKS resource YAML file</a> that is included in the sample source to a file called <code>~/azure/weblogic-on-aks/domain-resource.yaml</code> or similar.</p>
 </li>
 <li>
+<p>Run the following command to apply the two sample resources.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ kubectl apply -f ~/azure/weblogic-on-aks/domain-resource.yaml
+</span></span></code></pre></div><p>The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample <code>domain creation image</code>, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-resource/">Domain and cluster resources</a>.</p>
+</li>
+</ul>
+<h5 id="create-loadbalancer">Create LoadBalancer</h5>
 <p>You must create <code>LoadBalancer</code> services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.</p>
 <p>Use the sample configuration file <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/admin-lb.yaml</code> to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.</p>
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
@@ -4482,48 +4328,46 @@ The user name and password that you enter for the Administration Console must ma
     </div>
     <div class="expand-content" style="display: none;">
         <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#f92672">Status</span>:
-</span></span><span style="display:flex;"><span> <span style="color:#f92672">Clusters</span>:
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
-</span></span><span style="display:flex;"><span> <span style="color:#f92672">Conditions</span>:
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
-</span></span><span style="display:flex;"><span> <span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
-</span></span><span style="display:flex;"><span> <span style="color:#f92672">Servers</span>:
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
-</span></span><span style="display:flex;"><span>   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">Clusters</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">Conditions</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">Servers</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
 </span></span></code></pre></div>
     </div>
 </div></p>
-</li>
-</ol>
 <p>To deploy a sample application on WLS, you may skip to the section <a href="#deploy-sample-application">Deploy sample application</a>.  The next section includes a script that automates all of the preceding steps.</p>
 <h4 id="automation">Automation</h4>
 <p>If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh</code>.</p>
@@ -4694,7 +4538,7 @@ Replace <code>&lt;WebLogic admin username&gt;</code> and <code>&lt;WebLogic admi
     </div>
 </div>
 <p>Now, you can go to the application through the <code>domain1-cluster-1-lb</code> external IP.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ CLUSTER_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get svc domain1-cluster-1-external-lb -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span style="color:#66d9ef">)</span>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ CLUSTER_IP<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</span>kubectl get svc domain1-cluster-1-lb -o<span style="color:#f92672">=</span>jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.status.loadBalancer.ingress[0].ip}&#39;</span><span style="color:#66d9ef">)</span>
 </span></span><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>$ curl http://<span style="color:#e6db74">${</span>CLUSTER_IP<span style="color:#e6db74">}</span>:8001/testwebapp/
 </span></span></code></pre></div><p>The test application will list the server host and server IP on the output, like the following:</p>
@@ -7275,19 +7119,19 @@ Replace <code>&lt;WebLogic admin username&gt;</code> and <code>&lt;WebLogic admi
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1691637640"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1691702837"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1691637640"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1691637640"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1691702837"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1691702837"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1691637640"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1691702837"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
