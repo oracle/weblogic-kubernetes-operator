@@ -955,14 +955,5 @@ Contents Check the Domain status Check the Domain events Check the introspector 
 If you are performing an online update to a running domain&amp;rsquo;s WebLogic configuration, then see Online update status and labels.</description>
     </item>
     
-    <item>
-      <title>Release Notes</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/3.4/release-notes/</link>
-      <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/3.4/release-notes/</guid>
-      <description>Releases Date Version Introduces backward incompatibilities? Change - See also, Change log. April 7, 2023 v3.4.7 no Resolved and issue related to WDT models that do not include AdminServerName and an update to prevent use of the SnakeYAML empty-arguments SafeConstructor constructor. February 17, 2023 v3.4.6 no Resolved several issues related to WDT models for Model in Image, resolved an issue related to an exception while correcting container port names, and updates including the WebLogic Monitoring Exporter version.</description>
-    </item>
-    
   </channel>
 </rss>
