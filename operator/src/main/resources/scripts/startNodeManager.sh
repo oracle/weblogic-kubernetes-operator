@@ -203,8 +203,6 @@ cat <<EOF > ${nm_props_file}
   weblogic.StopScriptEnabled=false
   QuitEnabled=false
   StateCheckInterval=500
-  AutoRestart=false
-  AutoKillIfFailed=true
   CrashRecoveryEnabled=false
   LogFile=${nodemgr_log_file}
   LogToStderr=true
