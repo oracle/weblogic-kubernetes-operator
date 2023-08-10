@@ -274,7 +274,10 @@ doCommand -c export OKE_CLUSTER=$OKE_CLUSTER
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER BUILD ======"
-  doCommand  "\$TESTDIR/build-operator.sh" 
+  doCommand  "\$TESTDIR/build-operator.sh"
+  if [ "$KIND_CLUSTER" = "true" ]; then
+    doCommand -c "kind load docker-image ${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}:${OPER_IMAGE_TAG:-test} --name kind"
+  fi
 fi
 
 #
