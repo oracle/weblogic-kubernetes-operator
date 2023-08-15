@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -22,11 +22,6 @@ public class OperatorLoggingFormatter extends BaseLoggingFormatter<Fiber> {
   @Override
   protected Fiber getCurrentFiberIfSet() {
     return Fiber.getCurrentIfSet();
-  }
-
-  @Override
-  protected String getFiber() {
-    return fiberObject != null ? fiberObject.toString() : "";
   }
 
   /**
