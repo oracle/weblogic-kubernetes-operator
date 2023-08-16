@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -40,8 +40,6 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-  protected T fiberObject = null;
-
   @Override
   public String format(LogRecord logRecord) {
     String sourceClassName = "";
@@ -74,11 +72,11 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(logRecord.getInstant(),
             ZoneId.systemDefault()));
     long thread = Thread.currentThread().getId();
-    fiberObject = getCurrentFiberIfSet();
+    T fiberObject = getCurrentFiberIfSet();
 
     map.put(TIMESTAMP, dateString);
     map.put(THREAD, thread);
-    Optional.ofNullable(getFiber()).ifPresent(f -> map.put(FIBER, f));
+    map.put(FIBER, Optional.ofNullable(fiberObject).map(Object::toString).orElse(""));
     Optional.ofNullable(getNamespace(fiberObject)).ifPresent(namespace -> map.put(DOMAIN_NAMESPACE, namespace));
     Optional.ofNullable(getDomainUid(fiberObject)).ifPresent(uid -> map.put(DOMAIN_UID, uid));
     map.put(LOG_LEVEL, level);
@@ -114,9 +112,9 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   protected abstract void serializeModelObjectsWithJSON(LogRecord logRecord);
 
-  protected abstract T getCurrentFiberIfSet();
-
-  protected abstract String getFiber();
+  protected T getCurrentFiberIfSet() {
+    return null;
+  }
 
   protected abstract String getNamespace(T fiber);
 
