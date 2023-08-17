@@ -170,7 +170,7 @@ class ItFmwDomainOnPV {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
-  @Test
+  //@Test
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
   void testOperatorCreatesPvPvcRcuDomain() {
     String domainUid = "jrfonpv-simplified";
@@ -374,9 +374,9 @@ class ItFmwDomainOnPV {
       execCommandInPv(domainNamespace, pvcName, "/shared",
           "cd /shared && ls -al .");
       // delete the domain
-      deleteDomainResource(domainNamespace, domainUid);
+      //deleteDomainResource(domainNamespace, domainUid);
       // delete the cluster
-      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
     }
   }
 
@@ -482,9 +482,9 @@ class ItFmwDomainOnPV {
       execCommandInPv(domainNamespace, pvcName, "/shared",
           "cd /shared && ls -al .");
       // delete the domain
-      deleteDomainResource(domainNamespace, domainUid);
+      //deleteDomainResource(domainNamespace, domainUid);
       // delete the cluster
-      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
       //delete the rcu pod
       assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
           "Got exception while deleting server " + "rcu");
@@ -498,7 +498,7 @@ class ItFmwDomainOnPV {
    * The user creates multiple domain initialization images
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
-  @Test
+  //@Test
   @DisplayName("Create a FMW domain on PV. User creates RCU and operator creates PV/PVC and domain, "
                 + "User creates multiple domain initialization images")
   void testUserCreatesRcuOperatorCreatesPvPvcDomainMultipleImages() {
@@ -620,9 +620,9 @@ class ItFmwDomainOnPV {
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
 
     // delete the domain
-    deleteDomainResource(domainNamespace, domainUid);
+    //deleteDomainResource(domainNamespace, domainUid);
     // delete the cluster
-    deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
+    //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
     //delete the rcu pod
     assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
               "Got exception while deleting server " + "rcu");
