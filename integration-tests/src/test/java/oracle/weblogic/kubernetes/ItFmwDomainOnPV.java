@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -622,6 +623,7 @@ class ItFmwDomainOnPV {
    * Verfiy PVC is created.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
+  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   @Test
   @DisplayName("Create a FMW domain on PV. User creates PV and RCU and operator creates PVC and domain")
   void testUserCreatesPvRcuOperatorCreatesPvcDomain() {
