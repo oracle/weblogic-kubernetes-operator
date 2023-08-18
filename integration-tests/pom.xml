@@ -471,6 +471,14 @@
         </profile>
 
         <profile>
+            <id>kind-upgrade</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>kind-upgrade</groups>
+            </properties>
+        </profile>
+
+        <profile>
             <id>kind-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
