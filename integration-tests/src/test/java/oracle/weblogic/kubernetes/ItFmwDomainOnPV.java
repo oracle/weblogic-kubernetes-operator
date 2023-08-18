@@ -5,8 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +16,6 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.CreateIfNotExists;
 import oracle.weblogic.domain.DomainCreationImage;
@@ -27,14 +24,11 @@ import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.InitializeDomainOnPV;
 import oracle.weblogic.domain.Opss;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -50,13 +44,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.imagePull;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
@@ -84,7 +76,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpassw
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -170,7 +161,7 @@ class ItFmwDomainOnPV {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
-  //@Test
+  @Test
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
   void testOperatorCreatesPvPvcRcuDomain() {
     String domainUid = "jrfonpv-simplified";
@@ -371,12 +362,10 @@ class ItFmwDomainOnPV {
       // verify that all servers are ready
       verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
     } finally {
-      execCommandInPv(domainNamespace, pvcName, "/shared",
-          "cd /shared && ls -al .");
       // delete the domain
-      //deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainUid);
       // delete the cluster
-      //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
     }
   }
 
@@ -479,12 +468,10 @@ class ItFmwDomainOnPV {
       // verify that all servers are ready
       verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
     } finally {
-      execCommandInPv(domainNamespace, pvcName, "/shared",
-          "cd /shared && ls -al .");
       // delete the domain
-      //deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainUid);
       // delete the cluster
-      //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
       //delete the rcu pod
       assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
           "Got exception while deleting server " + "rcu");
@@ -498,7 +485,7 @@ class ItFmwDomainOnPV {
    * The user creates multiple domain initialization images
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
-  //@Test
+  @Test
   @DisplayName("Create a FMW domain on PV. User creates RCU and operator creates PV/PVC and domain, "
                 + "User creates multiple domain initialization images")
   void testUserCreatesRcuOperatorCreatesPvPvcDomainMultipleImages() {
@@ -791,48 +778,5 @@ class ItFmwDomainOnPV {
       imageRepoLoginAndPushImageToRegistry(taggedImage);
       return result;
     });
-  }
-
-  /**
-   *  Run commands inside pv.
-   * @param domainNamespace  domain ns
-   * @param commandToExecuteInsidePod  command
-   * @param pvcName  name
-   * @param mountPath  path
-   */
-  public static void execCommandInPv(String domainNamespace, String pvcName,
-                                     String mountPath, String commandToExecuteInsidePod) {
-    LoggingFacade logger = getLogger();
-    Path pvhelperPath =
-        Paths.get(ITTESTS_DIR, "/../kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh");
-    String pvhelperScript = pvhelperPath.toString();
-    String command =
-        String.format("%s -n %s -r -c %s -m %s", pvhelperScript,
-            domainNamespace, pvcName, mountPath);
-    logger.info("pvchelper pod command {0}", command);
-    assertTrue(() -> Command.withParams(
-            defaultCommandParams()
-                .command(command)
-                .redirect(false))
-        .execute());
-
-    V1Pod serverPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(domainNamespace, null, "pvhelper"),
-        String.format("Could not get the server Pod %s in namespace %s",
-            "pvhelper", domainNamespace));
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
-            "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, "pvhelper", domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
-
-    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
-    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
-    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
-        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
-
   }
 }
