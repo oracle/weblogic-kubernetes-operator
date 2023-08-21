@@ -278,6 +278,7 @@ public class PersistentVolumeUtils {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
+            .volumeName(pvName)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("5Gi"))))
         .metadata(new V1ObjectMeta()
@@ -288,8 +289,7 @@ public class PersistentVolumeUtils {
 
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
-          .storageClassName("oci-fss")
-          .volumeName(pvName);
+          .storageClassName("oci-fss");
     } else if (OKD) {
       v1pvc.getSpec()
           .storageClassName("okd-nfsmnt");
@@ -407,6 +407,7 @@ public class PersistentVolumeUtils {
     V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
         .spec(new V1PersistentVolumeClaimSpec()
             .addAccessModesItem("ReadWriteMany")
+            .volumeName("pv-test" + nameSuffix)
             .resources(new V1ResourceRequirements()
                 .putRequestsItem("storage", Quantity.fromString("10Gi"))))
         .metadata(new V1ObjectMeta()
@@ -417,8 +418,7 @@ public class PersistentVolumeUtils {
     }
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
-          .storageClassName("oci-fss")
-          .volumeName("pv-test" + nameSuffix);
+          .storageClassName("oci-fss");
     } else if (OKD) {
       v1pvc.getSpec()
           .storageClassName("okd-nfsmnt");
@@ -494,7 +494,7 @@ public class PersistentVolumeUtils {
 
   /**
    * Creates a job to change permission on PV.
-   * @param namespace- namespace to run job
+   * @param namespace - namespace go run a job
    * @param pvName -name of pv
    * @param pvcName - name of pvc
    * @param mountPath -mountPath
