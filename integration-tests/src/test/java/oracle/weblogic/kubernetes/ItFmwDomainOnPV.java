@@ -614,9 +614,9 @@ class ItFmwDomainOnPV {
     verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
 
     // delete the domain
-    //deleteDomainResource(domainNamespace, domainUid);
+    deleteDomainResource(domainNamespace, domainUid);
     // delete the cluster
-    //deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
+    deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
     //delete the rcu pod
     assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
               "Got exception while deleting server " + "rcu");

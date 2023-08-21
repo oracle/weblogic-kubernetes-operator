@@ -17,10 +17,15 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -58,7 +63,6 @@ import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER_PRIVATEIP;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -69,9 +73,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
@@ -90,8 +96,9 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.execCommandInPv;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -105,6 +112,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The common utility class for model-in-image tests.
@@ -1256,16 +1264,56 @@ public class CommonMiiTestUtils {
    */
   public static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
     LoggingFacade logger = getLogger();
-    String mountPath = "/shared";
-    String command = "chown -R 1000:0 " + mountPath;
-    if (OKE_CLUSTER) {
-      command = "chown 1000:0 " + mountPath
-          + "/. && find "
-          + mountPath
-          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:0";
+
+    if (!OKD) {
+      logger.info("Running Kubernetes job to create domain");
+      V1Job jobBody = new V1Job()
+          .metadata(
+              new V1ObjectMeta()
+                  .name("change-permissions-onpv-job-" + pvName) // name of the job
+                  .namespace(namespace))
+          .spec(new V1JobSpec()
+              .backoffLimit(0) // try only once
+              .template(new V1PodTemplateSpec()
+                  .spec(new V1PodSpec()
+                      .restartPolicy("Never")
+                      .addContainersItem(
+                          createfixPVCOwnerContainer(pvName,
+                              "/shared")) // mounted under /shared inside pod
+                      .volumes(Arrays.asList(
+                          new V1Volume()
+                              .name(pvName)
+                              .persistentVolumeClaim(
+                                  new V1PersistentVolumeClaimVolumeSource()
+                                      .claimName(pvcName))))
+                      .imagePullSecrets(Arrays.asList(
+                          new V1LocalObjectReference()
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
+
+      String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+      // check job status and fail test if the job failed
+      V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+          "Getting the job failed");
+      if (job != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+            v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+          List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+              namespace, "job-name=" + jobName).getItems(),
+              "Listing pods failed");
+          if (!pods.isEmpty()) {
+            String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+                "Failed to get pod log");
+            logger.severe(podLog);
+            fail("Change permissions on PV hostpath job failed");
+          }
+        }
+      }
     }
-    execCommandInPv(namespace, pvcName, mountPath, "cd " + mountPath
-        + " && " + command);
   }
 
   /**
@@ -1280,8 +1328,57 @@ public class CommonMiiTestUtils {
   public static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName,
                                                               String namespace, String mountPath, String command) {
     LoggingFacade logger = getLogger();
-    execCommandInPv(namespace, pvcName, mountPath, "cd " + mountPath
-          + " && " + command);
+
+    if (!OKD) {
+      logger.info("Running Kubernetes job to create domain");
+      V1Job jobBody = new V1Job()
+          .metadata(
+              new V1ObjectMeta()
+                  .name("change-permissions-onpv-job-" + pvName) // name of the job
+                  .namespace(namespace))
+          .spec(new V1JobSpec()
+              .backoffLimit(0) // try only once
+              .template(new V1PodTemplateSpec()
+                  .spec(new V1PodSpec()
+                      .restartPolicy("Never")
+                      .addContainersItem(
+                          createfixPVCOwnerContainer(pvName,
+                              mountPath,
+                              command))
+                      .volumes(Arrays.asList(
+                          new V1Volume()
+                              .name(pvName)
+                              .persistentVolumeClaim(
+                                  new V1PersistentVolumeClaimVolumeSource()
+                                      .claimName(pvcName))))
+                      .imagePullSecrets(Arrays.asList(
+                          new V1LocalObjectReference()
+                              .name(TEST_IMAGES_REPO_SECRET_NAME)))))); // this secret is used only for non-kind cluster
+
+      String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+      // check job status and fail test if the job failed
+      V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+          "Getting the job failed");
+      if (job != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+                v1JobCondition -> "Failed".equals(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+          List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+                  namespace, "job-name=" + jobName).getItems(),
+              "Listing pods failed");
+          if (!pods.isEmpty()) {
+            String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+                "Failed to get pod log");
+            logger.severe(podLog);
+            fail("Change permissions on PV hostpath job failed");
+          }
+        }
+      }
+    }
   }
 
   /**
