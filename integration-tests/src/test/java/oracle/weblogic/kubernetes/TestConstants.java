@@ -338,8 +338,6 @@ public interface TestConstants {
   //OKE constants
   public static final boolean OKE_CLUSTER =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster", "false"));
-  public static final boolean OKE_PV_USE_OFSS =
-      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.pv.use.ofss", "true"));
   public static final boolean OKE_CLUSTER_PRIVATEIP =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.oke.cluster.privateip", "false"));
   public static final String NFS_SERVER = System.getProperty("wko.it.nfs.server", "");

@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -66,8 +67,10 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.getConfiguration;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.changePermissionOnPv;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -303,6 +306,8 @@ class ItFmwDomainOnPV {
       // create persistent volume and persistent volume claim for domain
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace);
+      String mountPath = "/shared";
+      changePermissionOnPv(domainNamespace, pvName, pvcName, mountPath);
 
       // create a model property file
       File fmwModelPropFile = createWdtPropertyFile(domainUid, RCUSCHEMAPREFIX + "2");
@@ -392,7 +397,8 @@ class ItFmwDomainOnPV {
       // create persistent volume and persistent volume claim for domain
       createPV(pvName, domainUid, this.getClass().getSimpleName());
       createPVC(pvName, pvcName, domainUid, domainNamespace);
-
+      String mountPath = "/shared";
+      changePermissionOnPv(domainNamespace, pvName, pvcName, mountPath);
       // create RCU schema
       assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX + "3", dbUrl,
           dbNamespace), "create rcu schema failed");
