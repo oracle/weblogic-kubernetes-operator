@@ -1016,6 +1016,38 @@ public class MonitoringUtils {
                                             boolean twoClusters,
                                             String monexpConfig,
                                             String exporterImage) {
+    createAndVerifyDomain(miiImage,
+        domainUid,
+        namespace,
+        domainHomeSource,
+        replicaCount,
+        twoClusters,
+        monexpConfig,
+        exporterImage, true);
+  }
+
+  /**
+   * create domain from provided image and monitoring exporter sidecar and verify it's start.
+   *
+   * @param miiImage model in image name
+   * @param domainUid domain uid
+   * @param namespace namespace
+   * @param domainHomeSource domain home source type
+   * @param replicaCount replica count for the cluster
+   * @param twoClusters boolean indicating if the domain has 2 clusters
+   * @param monexpConfig monitoring exporter config
+   * @param exporterImage exporter image
+   * @param checkPodsReady  true or false if test need to check pods status
+   */
+  public static void createAndVerifyDomain(String miiImage,
+                                           String domainUid,
+                                           String namespace,
+                                           String domainHomeSource,
+                                           int replicaCount,
+                                           boolean twoClusters,
+                                           String monexpConfig,
+                                           String exporterImage,
+                                           boolean checkPodsReady) {
     // create registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     // create secret for admin credentials
@@ -1024,14 +1056,14 @@ public class MonitoringUtils {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
-        "weblogic", "welcome1"),
+            "weblogic", "welcome1"),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, namespace,
-        "weblogicenc", "weblogicenc"),
+            "weblogicenc", "weblogicenc"),
         String.format("create encryption secret failed for %s", encryptionSecretName));
 
     // create domain and verify
@@ -1039,33 +1071,35 @@ public class MonitoringUtils {
         domainUid, namespace, miiImage);
     createDomainCrAndVerify(adminSecretName, TEST_IMAGES_REPO_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
         namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig, exporterImage);
-    String adminServerPodName = domainUid + "-admin-server";
+    if (checkPodsReady) {
+      String adminServerPodName = domainUid + "-admin-server";
 
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, namespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
+      // check that admin server pod is ready
+      logger.info("Checking that admin server pod {0} is ready in namespace {1}",
+          adminServerPodName, namespace);
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
 
-    // check for managed server pods existence in the domain namespace
+      // check for managed server pods existence in the domain namespace
 
-    for (int i = 1; i <= replicaCount; i++) {
-      if (twoClusters) {
-        String managedServerCluster1PodName = domainUid
-            + "-" + cluster1Name + "-managed-server" + i;
-        String managedServerCluster2PodName = domainUid
-            + "-" + cluster2Name + "-managed-server" + i;
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerCluster1PodName, namespace);
-        checkPodReadyAndServiceExists(managedServerCluster1PodName, domainUid, namespace);
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerCluster2PodName, namespace);
-        checkPodReadyAndServiceExists(managedServerCluster2PodName, domainUid, namespace);
-      } else {
-        String managedServerPodName = domainUid + "-managed-server" + i;
-        // check that the managed server pod exists
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerPodName, namespace);
-        checkPodReadyAndServiceExists(managedServerPodName, domainUid, namespace);
+      for (int i = 1; i <= replicaCount; i++) {
+        if (twoClusters) {
+          String managedServerCluster1PodName = domainUid
+              + "-" + cluster1Name + "-managed-server" + i;
+          String managedServerCluster2PodName = domainUid
+              + "-" + cluster2Name + "-managed-server" + i;
+          logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+              managedServerCluster1PodName, namespace);
+          checkPodReadyAndServiceExists(managedServerCluster1PodName, domainUid, namespace);
+          logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+              managedServerCluster2PodName, namespace);
+          checkPodReadyAndServiceExists(managedServerCluster2PodName, domainUid, namespace);
+        } else {
+          String managedServerPodName = domainUid + "-managed-server" + i;
+          // check that the managed server pod exists
+          logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+              managedServerPodName, namespace);
+          checkPodReadyAndServiceExists(managedServerPodName, domainUid, namespace);
+        }
       }
     }
   }
