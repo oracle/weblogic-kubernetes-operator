@@ -636,6 +636,10 @@
     "InitializeDomainOnPV": {
       "type": "object",
       "properties": {
+        "runDomainInitContainerAsRoot": {
+          "description": "Specifies whether the operator will run the domain initialization init container in the introspector job as root. This may be needed in some environments to create the domain home directory on PV. Defaults to false.",
+          "type": "boolean"
+        },
         "waitForPvcToBind": {
           "description": "Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before proceeding with the domain creation. Defaults to true.",
           "type": "boolean"
@@ -651,6 +655,10 @@
         "persistentVolumeClaim": {
           "description": "An optional field that describes the configuration for creating a PersistentVolumeClaim for `Domain on PV`. PersistentVolumeClaim is a user\u0027s request for and claim to a persistent volume. The operator will perform this one-time create operation only if the persistent volume claim does not already exist. Omit this section if you have manually created a persistent volume claim. If specified, the name must match one of the volumes under `serverPod.volumes` and the domain home must reside in the mount path of the volume using this claim. More info: https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc",
           "$ref": "#/definitions/PersistentVolumeClaim"
+        },
+        "setDefaultSecurityContextFsGroup": {
+          "description": "Specifies whether the operator will set the default \u0027fsGroup\u0027 in the introspector job pod security context. This is needed to create the domain home directory on PV in some environments. If the \u0027fsGroup\u0027 is specified as part of \u0027spec.introspector.serverPod.podSecurityContext\u0027, then the operator will use that \u0027fsGroup\u0027 instead of the default \u0027fsGroup\u0027. Defaults to true.",
+          "type": "boolean"
         }
       }
     },
@@ -666,6 +674,10 @@
     "IntrospectorJobPod": {
       "type": "object",
       "properties": {
+        "podSecurityContext": {
+          "description": "Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default content for the pod-level `securityContext`. More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.",
+          "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+        },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.",
           "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"

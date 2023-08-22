@@ -62,6 +62,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
 import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
@@ -486,9 +487,37 @@ public class JobStepContext extends BasePodStepContext {
                 .value(getDomainHomeOnPVHomeOwnership()))
         .addEnvItem(new V1EnvVar().name(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH)
             .value(AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH))
-        .securityContext(new V1SecurityContext().runAsGroup(0L).runAsUser(0L))
+        .securityContext(getInitContainerSecurityContext())
         .command(List.of(INIT_DOMAIN_ON_PV_SCRIPT))
     );
+  }
+
+  @Override
+  V1SecurityContext getInitContainerSecurityContext() {
+    if (isInitDomainOnPVRunAsRoot()) {
+      return new V1SecurityContext().runAsGroup(0L).runAsUser(0L);
+    }
+    if (getPodSecurityContext().equals(new V1PodSecurityContext())) {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
+    }
+    return creatSecurityContextFromPodSecurityContext(getPodSecurityContext());
+  }
+
+  @NotNull
+  private Boolean isInitDomainOnPVRunAsRoot() {
+    return Optional.ofNullable(getDomain().getInitializeDomainOnPV())
+        .map(p -> p.getRunDomainInitContainerAsRoot()).orElse(false);
+  }
+
+  private V1SecurityContext creatSecurityContextFromPodSecurityContext(
+      V1PodSecurityContext podSecurityContext) {
+    return new V1SecurityContext()
+        .runAsUser(podSecurityContext.getRunAsUser())
+        .runAsGroup(podSecurityContext.getRunAsGroup())
+        .runAsNonRoot(podSecurityContext.getRunAsNonRoot())
+        .seccompProfile(podSecurityContext.getSeccompProfile())
+        .seLinuxOptions(podSecurityContext.getSeLinuxOptions())
+        .windowsOptions(podSecurityContext.getWindowsOptions());
   }
 
   private String getDomainHomeOnPVHomeOwnership() {
@@ -555,7 +584,31 @@ public class JobStepContext extends BasePodStepContext {
     if (getDefaultAntiAffinity().equals(podSpec.getAffinity())) {
       podSpec.affinity(null);
     }
+
+    if (isInitializeDomainOnPV()) {
+      V1PodSecurityContext podSecurityContext = getPodSecurityContext();
+      if (getDomain().getInitializeDomainOnPV().getSetDefaultSecurityContextFsGroup()) {
+        if (podSecurityContext.getFsGroup() == null && podSecurityContext.getRunAsGroup() != null) {
+          podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
+        } else if (podSecurityContext.getFsGroup() == null) {
+          Optional.ofNullable(TuningParameters.getInstance()).ifPresent(instance -> {
+            if (!"OpenShift".equalsIgnoreCase(instance.getKubernetesPlatform())) {
+              podSpec.securityContext(podSecurityContext.fsGroup(0L));
+            }
+          });
+        }
+        if (podSpec.getSecurityContext().getFsGroupChangePolicy() == null) {
+          podSpec.getSecurityContext().fsGroupChangePolicy("OnRootMismatch");
+        }
+      }
+    }
     return podSpec;
+  }
+
+  @Override
+  V1PodSecurityContext getPodSecurityContext() {
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(s -> s.getPodSecurityContext())
+        .orElse(getDomain().getAdminServerSpec().getPodSecurityContext());
   }
 
   private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {
