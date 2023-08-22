@@ -23,8 +23,10 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -154,12 +156,14 @@ public abstract class BasePodStepContext extends StepContextBase {
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
-            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
+            .securityContext(getInitContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
   }
+
+  abstract V1SecurityContext getInitContainerSecurityContext();
 
   private String getName(int index) {
     return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
@@ -219,9 +223,11 @@ public abstract class BasePodStepContext extends StepContextBase {
         .tolerations(getTolerations())
         .hostAliases(getHostAliases())
         .restartPolicy(getServerSpec().getRestartPolicy())
-        .securityContext(getServerSpec().getPodSecurityContext())
+        .securityContext(getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
   }
+
+  abstract V1PodSecurityContext getPodSecurityContext();
 
   private List<V1Toleration> getTolerations() {
     List<V1Toleration> tolerations = getServerSpec().getTolerations();

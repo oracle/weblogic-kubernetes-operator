@@ -7,6 +7,7 @@ import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 
 /** An interface for an object to configure a introspector job pod in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -42,4 +43,6 @@ public interface IntrospectorJobPodConfigurator {
    * @return this object
    */
   IntrospectorJobPodConfigurator withLimitRequirement(String resource, String quantity);
+
+  IntrospectorJobPodConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext);
 }

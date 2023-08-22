@@ -630,6 +630,74 @@ class JobHelperTest extends DomainValidationTestBase {
   }
 
   @Test
+  void whenIntrospectorServerHasSecurityContext_introspectorPodStartupWithThem() {
+    configureDomain()
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec), is(getPodSecurityContext(1000L, 2000L)));
+  }
+
+  @Test
+  void whenDomainOnPVIntrospectorServerHasSecurityContextWithNoFsGroup_introspectorPodStartupWithDefaultFsGroup() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)))
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec),
+        is(getPodSecurityContext(1000L, 2000L, 2000L).fsGroupChangePolicy("OnRootMismatch")));
+  }
+
+  private V1PodSecurityContext getPodSecurityContext(long user, long group) {
+    return new V1PodSecurityContext().runAsUser(user).runAsGroup(group);
+  }
+
+  private V1PodSecurityContext getPodSecurityContext(long user, long group, long fsGroup) {
+    return new V1PodSecurityContext().runAsUser(user).runAsGroup(group).fsGroup(fsGroup);
+  }
+
+  @Test
+  void whenDomainOnPVHasSecurityContextWithNoFsGroupAndNoRunAsGroup_introspectorPodStartupWithDefaultFsGroup() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)))
+        .configureIntrospector()
+        .withPodSecurityContext(new V1PodSecurityContext().runAsUser(1000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec),
+        is(new V1PodSecurityContext().runAsUser(1000L).fsGroup(0L).fsGroupChangePolicy("OnRootMismatch")));
+  }
+
+  @Test
+  void whenDomainOnPVIntrospectorServerHasSecurityContextWithFsGroup_introspectorPodStartupWithSpecifiedFsGroup() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)))
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L, 3000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec),
+        is(getPodSecurityContext(1000L, 2000L, 3000L).fsGroupChangePolicy("OnRootMismatch")));
+  }
+
+  @Test
   void whenDomainAndIntrospectorHaveEnvironmentItems_introspectorPodStartupWithBothEnvVars() {
     configureDomain()
           .withEnvironmentVariable("item1", "domain-value1")
@@ -670,6 +738,78 @@ class JobHelperTest extends DomainValidationTestBase {
     assertThat(
         getMatchingContainerEnvFrom(domainPresenceInfo, jobSpec),
         not(is(createEnvFrom("domain"))));
+  }
+
+  @Test
+  void whenDomainOnPVAndIntrospectorHavePodSecurityContext_introspectorPodStartupWithIntrospectorPodSecurityContext() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)))
+        .withPodSecurityContext(getPodSecurityContext(3000L, 4000L))
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec),
+        is(getPodSecurityContext(1000L, 2000L, 2000L).fsGroupChangePolicy("OnRootMismatch")));
+  }
+
+  @Test
+  void whenDomainOnPVHasRunInitContainerAsRoot_introspectorPodStartupWithCorrectInitContainerSecurityContext() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)).runInitContainerAsRoot(true))
+        .withPodSecurityContext(getPodSecurityContext(3000L, 4000L))
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    V1Container domainOnPVINitContainer = podSpec.getInitContainers().stream().filter(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER)).findFirst().orElse(null);
+    assertThat(domainOnPVINitContainer.getSecurityContext(),
+        is(new V1SecurityContext().runAsUser(0L).runAsGroup(0L)));
+  }
+
+  @Test
+  void whenDomainOnPVWithDefaultFsGroupDisable_introspectorPodStartupWithCorrectPodSecurityContext() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)).setDefaultFsGroup(false))
+        .withPodSecurityContext(getPodSecurityContext(3000L, 4000L))
+        .configureIntrospector()
+        .withPodSecurityContext(getPodSecurityContext(1000L, 2000L));
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingPodSecurityContext(domainPresenceInfo, jobSpec),
+        is(getPodSecurityContext(1000L, 2000L)));
+  }
+
+  @Test
+  void whenDomainAndIntrospectorHaveNoPodSecurityContext_initContainerStartsWithContextWithfsGroup() {
+    configureDomain()
+        .withDomainHomeSourceType(DomainSourceType.PERSISTENT_VOLUME)
+        .withInitializeDomainOnPv(new InitializeDomainOnPV()
+            .domain(new DomainOnPV().createMode(CreateIfNotExists.DOMAIN)));
+
+    V1JobSpec jobSpec = createJobSpec();
+    V1PodSpec podSpec = getPodSpec(jobSpec);
+
+    assertThat(podSpec.getSecurityContext().getFsGroup(), is(0L));
+    assertThat(podSpec.getSecurityContext().getFsGroupChangePolicy(), is("OnRootMismatch"));
+
+    V1Container domainOnPVINitContainer = podSpec.getInitContainers().stream().filter(
+        a -> a.getName().equals(INIT_DOMAIN_ON_PV_CONTAINER)).findFirst().orElse(null);
+    assertThat(domainOnPVINitContainer.getSecurityContext(),
+        is(PodSecurityHelper.getDefaultContainerSecurityContext()));
   }
 
   @Test
@@ -1995,6 +2135,13 @@ class JobHelperTest extends DomainValidationTestBase {
       DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
     return getMatchingContainer(domainPresenceInfo, jobSpec)
         .map(V1Container::getResources)
+        .orElse(null);
+  }
+
+  private V1PodSecurityContext getMatchingPodSecurityContext(
+      DomainPresenceInfo domainPresenceInfo, V1JobSpec jobSpec) {
+    return Optional.ofNullable(jobSpec.getTemplate().getSpec())
+        .map(V1PodSpec::getSecurityContext)
         .orElse(null);
   }
 
