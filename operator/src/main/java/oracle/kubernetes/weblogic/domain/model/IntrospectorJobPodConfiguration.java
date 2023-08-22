@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.processing.EffectiveIntrospectorJobPodSpec;
@@ -74,6 +75,14 @@ public class IntrospectorJobPodConfiguration implements EffectiveIntrospectorJob
 
   void addLimitRequirement(String resource, String quantity) {
     serverPod.addLimitRequirement(resource, quantity);
+  }
+
+  public V1PodSecurityContext getPodSecurityContext() {
+    return serverPod.getPodSecurityContext();
+  }
+
+  public void setPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+    serverPod.setPodSecurityContext(podSecurityContext);
   }
 
   @Override
