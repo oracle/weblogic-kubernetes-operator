@@ -436,6 +436,26 @@
         <version>${okhttp-version}</version>
       </dependency>
       <dependency>
+        <groupId>com.squareup.okio</groupId>
+        <artifactId>okio</artifactId>
+        <version>${okio-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk18on</artifactId>
+        <version>${bc-jdk18on-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
+        <version>${bc-jdk18on-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bc-jdk18on-version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-junit</artifactId>
         <version>${hamcrest-junit-version}</version>
@@ -662,6 +682,8 @@
     <client-java-version>18.0.1</client-java-version>
     <kotlin-stdlib-version>1.9.0</kotlin-stdlib-version>
     <okhttp-version>4.11.0</okhttp-version>
+    <okio-version>3.5.0</okio-version>
+    <bc-jdk18on-version>1.76</bc-jdk18on-version>
     <junit.jupiter.version>5.10.0</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
@@ -675,7 +697,7 @@
     <jackson-databind-version>2.15.2</jackson-databind-version>
     <snakeyaml-version>2.1</snakeyaml-version>
     <gson-version>2.10.1</gson-version>
-    <dependency-check-version>8.3.1</dependency-check-version>
+    <dependency-check-version>8.4.0</dependency-check-version>
     <slf4j-version>2.0.7</slf4j-version>
     <logback-classic-version>1.4.11</logback-classic-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
