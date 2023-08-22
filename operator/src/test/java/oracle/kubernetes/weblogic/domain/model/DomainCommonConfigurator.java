@@ -596,6 +596,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public IntrospectorJobPodConfigurator withPodSecurityContext(V1PodSecurityContext podSecurityContext) {
+      introspector.setPodSecurityContext(podSecurityContext);
+      return this;
+    }
+
+    @Override
     public Introspector getIntrospector() {
       return introspector;
     }

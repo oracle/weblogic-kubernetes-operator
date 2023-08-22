@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
@@ -61,6 +62,18 @@ class IntrospectorJobPod {
   private final V1ResourceRequirements resources =
       new V1ResourceRequirements().limits(new HashMap<>()).requests(new HashMap<>());
 
+  /**
+   * PodSecurityContext holds pod-level security attributes and common container settings. Some
+   * fields are also present in container.securityContext. Field values of container.securityContext
+   * take precedence over field values of PodSecurityContext.
+   *
+   */
+  @Description("Pod-level security attributes. See `kubectl explain pods.spec.securityContext`. "
+      + "Beginning with operator version 4.0.5, if no value is specified for this field, the operator will use default "
+      + "content for the pod-level `securityContext`. "
+      + "More info: https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/pod-and-container/.")
+  private V1PodSecurityContext podSecurityContext = new V1PodSecurityContext();
+
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -69,6 +82,30 @@ class IntrospectorJobPod {
       if (from.getLimits() != null) {
         from.getLimits().forEach(to.getLimits()::putIfAbsent);
       }
+    }
+  }
+
+  void copyValues(V1PodSecurityContext to, V1PodSecurityContext from) {
+    if (to.getRunAsNonRoot() == null) {
+      to.runAsNonRoot(from.getRunAsNonRoot());
+    }
+    if (to.getFsGroup() == null) {
+      to.fsGroup(from.getFsGroup());
+    }
+    if (to.getRunAsGroup() == null) {
+      to.runAsGroup(from.getRunAsGroup());
+    }
+    if (to.getRunAsUser() == null) {
+      to.runAsUser(from.getRunAsUser());
+    }
+    if (to.getSeLinuxOptions() == null) {
+      to.seLinuxOptions(from.getSeLinuxOptions());
+    }
+    if (to.getSupplementalGroups() == null) {
+      to.supplementalGroups(from.getSupplementalGroups());
+    }
+    if (to.getSysctls() == null) {
+      to.sysctls(from.getSysctls());
     }
   }
 
@@ -83,6 +120,7 @@ class IntrospectorJobPod {
       envFrom.addAll(serverPod1.envFrom);
     }
     copyValues(resources, serverPod1.resources);
+    copyValues(podSecurityContext, serverPod1.podSecurityContext);
   }
 
   private void addIfMissing(V1EnvVar envVar) {
@@ -142,12 +180,22 @@ class IntrospectorJobPod {
     resources.putLimitsItem(resource, Quantity.fromString(quantity));
   }
 
+  V1PodSecurityContext getPodSecurityContext() {
+    return this.podSecurityContext;
+  }
+
+  void setPodSecurityContext(@Nullable V1PodSecurityContext podSecurityContext) {
+    this.podSecurityContext = podSecurityContext;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("env", env)
         .append("resources", resources)
+        .append("envFrom", envFrom)
+        .append("podSecurityContext", podSecurityContext)
         .toString();
   }
 
@@ -168,6 +216,8 @@ class IntrospectorJobPod {
             DomainResource.sortList(env, ENV_VAR_COMPARATOR),
             DomainResource.sortList(that.env, ENV_VAR_COMPARATOR))
         .append(resources, that.resources)
+        .append(envFrom, that.envFrom)
+        .append(podSecurityContext, that.podSecurityContext)
         .isEquals();
   }
 
@@ -177,6 +227,8 @@ class IntrospectorJobPod {
         .appendSuper(super.hashCode())
         .append(DomainResource.sortList(env, ENV_VAR_COMPARATOR))
         .append(resources)
+        .append(envFrom)
+        .append(podSecurityContext)
         .toHashCode();
   }
 }

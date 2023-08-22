@@ -19,8 +19,10 @@ import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1SecurityContext;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -436,6 +438,16 @@ public class PodHelper {
     }
 
     @Override
+    V1SecurityContext getInitContainerSecurityContext() {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
+    }
+
+    @Override
+    V1PodSecurityContext getPodSecurityContext() {
+      return getServerSpec().getPodSecurityContext();
+    }
+
+    @Override
     Integer getOldMetricsPort() {
       return getAsPort();
     }
@@ -706,6 +718,16 @@ public class PodHelper {
     @Override
     protected List<String> getContainerCommand() {
       return new ArrayList<>(super.getContainerCommand());
+    }
+
+    @Override
+    V1SecurityContext getInitContainerSecurityContext() {
+      return PodSecurityHelper.getDefaultContainerSecurityContext();
+    }
+
+    @Override
+    V1PodSecurityContext getPodSecurityContext() {
+      return getServerSpec().getPodSecurityContext();
     }
 
     @Override
