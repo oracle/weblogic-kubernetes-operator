@@ -441,7 +441,17 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk18on</artifactId>
-        <version>${bcprov-jdk18on-version}</version>
+        <version>${bc-jdk18on-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcutil-jdk18on</artifactId>
+        <version>${bc-jdk18on-version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk18on</artifactId>
+        <version>${bc-jdk18on-version}</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -671,7 +681,7 @@
     <kotlin-stdlib-version>1.9.0</kotlin-stdlib-version>
     <okhttp-version>4.11.0</okhttp-version>
     <okio-version>3.5.0</okio-version>
-    <bcprov-jdk18on-version>1.76</bcprov-jdk18on-version>
+    <bc-jdk18on-version>1.76</bc-jdk18on-version>
     <junit.jupiter.version>5.10.0</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
