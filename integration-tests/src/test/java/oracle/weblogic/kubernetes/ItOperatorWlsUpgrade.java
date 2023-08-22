@@ -119,7 +119,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
-@Tag("kind-sequential")
+@Tag("kind-upgrade")
 class ItOperatorWlsUpgrade {
 
   private static LoggingFacade logger = null;
@@ -196,9 +196,19 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
+   * Operator upgrade from 4.0.7 to current.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 4.0.7 to current")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom407ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom407ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.0.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
    * Operator upgrade from 4.0.6 to current.
    */
-  @Tag("oke-sequential")
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 4.0.6 to current")
   @ValueSource(strings = { "Image", "FromModel" })
@@ -208,15 +218,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 4.0.5 to current.
+   * Operator upgrade from 4.1.0 to current.
    */
-  @Tag("oke-sequential")
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 4.0.5 to current")
+  @DisplayName("Upgrade Operator from 4.1.0 to current")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom405ToCurrent(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom405ToCurrent with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "4.0.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom410ToCurrent(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom410ToCurrent with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "4.1.0", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
