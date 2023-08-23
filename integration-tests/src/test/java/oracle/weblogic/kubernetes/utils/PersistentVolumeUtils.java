@@ -76,10 +76,13 @@ public class PersistentVolumeUtils {
     LoggingFacade logger = getLogger();
 
     assertNotNull(v1pv, "v1pv is null");
+    assertNotNull(v1pvc, "v1pvc is null");
+
     String pvName = v1pv.getMetadata().getName();
+    String pvcName = v1pvc.getMetadata().getName();
     logger.info("Creating persistent volume {0}", pvName);
     assertTrue(assertDoesNotThrow(() -> createPersistentVolume(v1pv),
-            "Persistent volume creation failed with ApiException "),
+        "Persistent volume creation failed with ApiException "),
         "PersistentVolume creation failed");
     // check the persistent volume and persistent volume claim exist
     testUntil(
@@ -88,10 +91,6 @@ public class PersistentVolumeUtils {
         logger,
         "persistent volume {0} exists",
         pvName);
-
-    assertNotNull(v1pvc, "v1pvc is null");
-
-    String pvcName = v1pvc.getMetadata().getName();
 
     logger.info("Creating persistent volume claim {0}", pvcName);
     assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
