@@ -378,7 +378,6 @@
           "minimum": 1
         },
         "logHomeLayout": {
-          "default": "ByServers",
           "description": "Control how log files under `logHome` are organized when logHome is set and `logHomeEnabled` is true. `Flat` specifies that all files are kept directly in the `logHome` root directory. `ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, all other files are organized under the respective server name logs directory  `logHome/servers/\u003cserver name\u003e/logs`. Defaults to `ByServers`.",
           "type": "string",
           "enum": [

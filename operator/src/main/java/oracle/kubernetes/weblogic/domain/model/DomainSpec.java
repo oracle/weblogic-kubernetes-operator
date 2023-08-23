@@ -129,7 +129,6 @@ public class DomainSpec extends BaseConfiguration {
         + "`ByServers` specifies that domain log files and `introspector.out` are at the `logHome` root level, "
         + "all other files are organized under the respective server name logs directory  "
         + "`logHome/servers/<server name>/logs`. Defaults to `ByServers`.")
-  @Default(strDefault = "ByServers")
   private LogHomeLayoutType logHomeLayout = LogHomeLayoutType.BY_SERVERS;
 
 
