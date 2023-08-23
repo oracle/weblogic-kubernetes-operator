@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: f65b4f29f490db1bbe4238ea6be340a514a236d4654b858a1136270132239c62
+    weblogic.sha256: 40333b90cd079349282d5038a27c045388ea7df3cb112116c79a74974b142cc9
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -519,7 +519,6 @@ spec:
                 minimum: 1
                 type: integer
               logHomeLayout:
-                default: ByServers
                 description: Control how log files under `logHome` are organized when
                   logHome is set and `logHomeEnabled` is true. `Flat` specifies that
                   all files are kept directly in the `logHome` root directory. `ByServers`
