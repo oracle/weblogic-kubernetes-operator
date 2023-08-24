@@ -1,30 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
-        <packageUrl regex="true">^pkg:maven/jakarta\.ws\.rs/jakarta\.ws\.rs-api@.*$</packageUrl>
-        <cpe>cpe:/a:eclipse:eclipse_ide</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java@.*$</packageUrl>
-        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-api@.*$</packageUrl>
-        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-api\-fluent@.*$</packageUrl>
-        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-proto@.*$</packageUrl>
-        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
-        <cpe>cpe:/a:google:protobuf-java</cpe>
-    </suppress>
-    <suppress>
         <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/weblogic\-kubernetes\-operator@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
@@ -45,11 +21,10 @@
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-jdk7@.*$</packageUrl>
-        <cpe>cpe:/a:jetbrains:kotlin</cpe>
-    </suppress>
-    <suppress>
-        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib\-jdk8@.*$</packageUrl>
-        <cpe>cpe:/a:jetbrains:kotlin</cpe>
+        <notes><![CDATA[
+        This CVE is in dispute for the very reason that it does not apply to us. We do not use databind for processing protocol data, but use it to write our own objects.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-35116</vulnerabilityName>
     </suppress>
 </suppressions>
