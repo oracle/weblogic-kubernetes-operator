@@ -292,7 +292,7 @@
         <configuration>
           <skip>${skip.dependency-check}</skip>
           <skipTestScope>true</skipTestScope>
-          <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+          <failBuildOnCVSS>0</failBuildOnCVSS>
           <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
           <formats>
             <format>HTML</format>
