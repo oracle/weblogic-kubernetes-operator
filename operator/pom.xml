@@ -102,6 +102,25 @@
               <excludeArtifactIds>kotlin-stdlib-jdk7,kotlin-stdlib-jdk8</excludeArtifactIds>
             </configuration>
           </execution>
+          <execution>
+            <id>jython-resource-dependencies</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.python</groupId>
+                  <artifactId>jython-standalone</artifactId>
+                  <version>${jython-standalone-version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
@@ -212,37 +231,6 @@
               </outputDirectory>
             </configuration>
           </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>jython-resource-dependencies</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>copy</goal>
-            </goals>
-            <configuration>
-              <artifactItems>
-                <artifactItem>
-                  <groupId>org.python</groupId>
-                  <artifactId>jython-standalone</artifactId>
-                  <version>${jython-standalone-version}</version>
-                  <type>jar</type>
-                  <overWrite>true</overWrite>
-                  <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
-                </artifactItem>
-              </artifactItems>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <executions>
           <execution>
             <id>copy-test-sources</id>
             <phase>process-test-resources</phase>
