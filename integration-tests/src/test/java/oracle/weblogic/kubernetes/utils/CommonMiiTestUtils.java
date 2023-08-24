@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -1377,6 +1378,7 @@ public class CommonMiiTestUtils {
             fail("Change permissions on PV hostpath job failed");
           }
         }
+        assertDoesNotThrow(() -> deleteJob(jobName, namespace));
       }
     }
   }

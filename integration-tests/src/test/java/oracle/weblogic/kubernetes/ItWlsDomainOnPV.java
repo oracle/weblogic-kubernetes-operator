@@ -37,6 +37,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createAndPushAuxiliaryImage;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.deleteClusterCustomResourceAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -119,71 +121,74 @@ class ItWlsDomainOnPV {
     final int t3ChannelPort = getNextFreePort();
     final String wlSecretName = domainUid + "-weblogic-credentials";
     final String wlsModelFile = wlsModelFilePrefix + ".yaml";
+    try {
+      // create WLS domain credential secret
+      createSecretWithUsernamePassword(wlSecretName, domainNamespace,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create WLS domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      // create a model property file
+      File wlsModelPropFile = createWdtPropertyFile("wlsonpv-simplified1");
 
-    // create a model property file
-    File wlsModelPropFile = createWdtPropertyFile("wlsonpv-simplified1");
+      // create domainCreationImage
+      String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
+      // create image with model and wdt installation files
+      WitParams witParams =
+          new WitParams()
+              .modelImageName(domainCreationImageName)
+              .modelImageTag(MII_BASIC_IMAGE_TAG)
+              .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
+              .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
+      createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
 
-    // create domainCreationImage
-    String domainCreationImageName = DOMAIN_IMAGES_PREFIX + "wls-domain-on-pv-image";
-    // create image with model and wdt installation files
-    WitParams witParams =
-        new WitParams()
-            .modelImageName(domainCreationImageName)
-            .modelImageTag(MII_BASIC_IMAGE_TAG)
-            .modelFiles(Collections.singletonList(MODEL_DIR + "/" + wlsModelFile))
-            .modelVariableFiles(Collections.singletonList(wlsModelPropFile.getAbsolutePath()));
-    createAndPushAuxiliaryImage(domainCreationImageName, MII_BASIC_IMAGE_TAG, witParams);
+      DomainCreationImage domainCreationImage =
+          new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
 
-    DomainCreationImage domainCreationImage =
-        new DomainCreationImage().image(domainCreationImageName + ":" + MII_BASIC_IMAGE_TAG);
+      // create a domain resource
+      logger.info("Creating domain custom resource");
+      Map<String, Quantity> pvCapacity = new HashMap<>();
+      pvCapacity.put("storage", new Quantity("2Gi"));
 
-    // create a domain resource
-    logger.info("Creating domain custom resource");
-    Map<String, Quantity> pvCapacity = new HashMap<>();
-    pvCapacity.put("storage", new Quantity("2Gi"));
+      Map<String, Quantity> pvcRequest = new HashMap<>();
+      pvcRequest.put("storage", new Quantity("2Gi"));
+      Configuration configuration = null;
+      if (OKE_CLUSTER) {
+        configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+      } else {
+        configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
+            this.getClass().getSimpleName());
+      }
+      configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
+          .createMode(CreateIfNotExists.DOMAIN)
+          .domainCreationImages(Collections.singletonList(domainCreationImage))
+          .domainType(DomainOnPVType.WLS));
+      DomainResource domain = createDomainResourceOnPv(
+          domainUid,
+          domainNamespace,
+          wlSecretName,
+          clusterName,
+          pvName,
+          pvcName,
+          DOMAINHOMEPREFIX,
+          replicaCount,
+          t3ChannelPort,
+          configuration);
 
-    Map<String, Quantity> pvcRequest = new HashMap<>();
-    pvcRequest.put("storage", new Quantity("2Gi"));
-    Configuration configuration = null;
-    if (OKE_CLUSTER) {
-      configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
-    } else {
-      configuration = getConfiguration(pvName, pvcName, pvCapacity, pvcRequest, storageClassName,
-      this.getClass().getSimpleName());
+      // Set the inter-pod anti-affinity for the domain custom resource
+      setPodAntiAffinity(domain);
+
+      // create a domain custom resource and verify domain is created
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify that all servers are ready
+      verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+    } finally {
+      // delete the domain
+      deleteDomainResource(domainNamespace, domainUid);
+      // delete the cluster
+      deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName, domainNamespace);
+      deletePersistentVolumeClaim(pvcName, domainNamespace);
+      deletePersistentVolume(pvName);
     }
-    configuration.getInitializeDomainOnPV().domain(new DomainOnPV()
-        .createMode(CreateIfNotExists.DOMAIN)
-        .domainCreationImages(Collections.singletonList(domainCreationImage))
-        .domainType(DomainOnPVType.WLS));
-    DomainResource domain = createDomainResourceOnPv(
-        domainUid,
-        domainNamespace,
-        wlSecretName,
-        clusterName,
-        pvName,
-        pvcName,
-        DOMAINHOMEPREFIX,
-        replicaCount,
-        t3ChannelPort,
-        configuration);
-
-    // Set the inter-pod anti-affinity for the domain custom resource
-    setPodAntiAffinity(domain);
-
-    // create a domain custom resource and verify domain is created
-    createDomainAndVerify(domain, domainNamespace);
-
-    // verify that all servers are ready
-    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
-
-    // delete the domain
-    deleteDomainResource(domainNamespace, domainUid);
-    // delete the cluster
-    deleteClusterCustomResourceAndVerify(domainUid + "-" + clusterName,  domainNamespace);
   }
 
   private File createWdtPropertyFile(String domainName) {

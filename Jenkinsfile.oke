@@ -439,6 +439,8 @@ EOF
                         sed -i 's@%AVAILABILITY_DOMAIN%@'"$AVAILABILITY_DOMAIN"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
                         sed -i 's@%MOUNT_TARGET_ID%@'"$MOUNT_TARGET_ID"'@' ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
                         kubectl apply -f ${WORKSPACE}/integration-tests/src/test/resources/oke/ofssnew.yaml
+                        kubectl delete csiDriver fss.csi.oraclecloud.com
+                        kubectl create -f ${WORKSPACE}/integration-tests/src/test/resources/oke/fss_csi_driver.yaml
 
                         '''
                     }

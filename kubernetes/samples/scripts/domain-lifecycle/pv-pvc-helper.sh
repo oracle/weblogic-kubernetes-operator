@@ -16,7 +16,7 @@ initGlobals() {
   claimName=""
   mountPath=""
   namespace="default"
-  image="ghcr.io/oracle/oraclelinux:8-slim"
+  image="ghcr.io/oracle/oraclelinux:8"
   imagePullPolicy="IfNotPresent"
   pullsecret=""
   runAsRoot=""
@@ -46,7 +46,7 @@ usage() {
 
     [-n | --namespace]                : Domain namespace. Default is 'default'.
 
-    [-i | --image]                    : Container image for the helper pod (optional). Default is 'ghcr.io/oracle/oraclelinux:8-slim'.
+    [-i | --image]                    : Container image for the helper pod (optional). Default is 'ghcr.io/oracle/oraclelinux:8'.
 
     [-u | --imagePullPolicy]          : Image pull policy for the helper pod (optional). Default is 'IfNotPresent'.
 

@@ -51,7 +51,7 @@ spec:
   - args:
     - sleep
     - infinity
-    image: ghcr.io/oracle/oraclelinux:8-slim
+    image: ghcr.io/oracle/oraclelinux:8
     name: pvhelper
     volumeMounts:
     - name: pv-volume
