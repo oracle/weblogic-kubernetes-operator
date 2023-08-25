@@ -553,6 +553,7 @@ public class FmwUtils {
               .requests(request))));
     } else {
       initializeDomainOnPV = initializeDomainOnPV
+          .runInitContainerAsRoot(true)
           .persistentVolume(new PersistentVolume()
               .metadata(new V1ObjectMeta()
                   .name(pvName))
