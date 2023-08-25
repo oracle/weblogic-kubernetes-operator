@@ -291,7 +291,7 @@ class ItMonitoringExporterSideCar {
    * Check that introspector job fails with expected error message
    * if domain crd contains exporter config with restfull services disabled
    */
-  @Test
+  //@Test - test disabled until OWLS-111639 will be implemented
   @DisplayName("Negative test to check error message in case if restfull"
       + " services in the domain are disabled.")
   void testSideCarRESTfullServicesDisabled() throws Exception {
