@@ -49,7 +49,8 @@ jobs:
             --generate-notes \
             --target release/4.0 \
             --title 'Operator ${{ env.VERSION }}' \
-            --repo https://github.com/oracle/weblogic-kubernetes-operator
+            --repo https://github.com/oracle/weblogic-kubernetes-operator \
+            domain-upgrader/target/domain-upgrader.jar
           echo 'EOF' >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
