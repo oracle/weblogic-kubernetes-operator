@@ -1,13 +1,12 @@
 <!-- Copyright (c) 2020, 2023, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.4.9-SNAPSHOT</version>
+        <version>3.4.9</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -187,7 +186,7 @@
                         </include>
                     </includes>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                 </configuration>
 
@@ -274,7 +273,7 @@
                 <configuration>
                     <skipTests>true</skipTests>
                     <excludes>
-                        <exclude/>
+                        <exclude />
                     </excludes>
                     <properties>
                         <configurationParameters>
@@ -353,8 +352,8 @@
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <surefireArgLine></surefireArgLine>
-                <failsafeArgLine></failsafeArgLine>
+                <surefireArgLine />
+                <failsafeArgLine />
                 <skipITs>true</skipITs>
             </properties>
         </profile>
