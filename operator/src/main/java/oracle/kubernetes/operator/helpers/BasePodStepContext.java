@@ -156,7 +156,7 @@ public abstract class BasePodStepContext extends StepContextBase {
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
-            .securityContext(getInitContainerSecurityContext())
+            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
