@@ -532,7 +532,9 @@ public class SchemaGenerator {
 
     @SuppressWarnings("unchecked")
     private void generateTypeIn(Map<String, Object> result, Class<?> type) {
-      if (isString(type) || type.getName().equals("io.kubernetes.client.custom.Quantity")) {
+      if (type.getName().equals("io.kubernetes.client.custom.IntOrString")) {
+        result.put("x-kubernetes-int-or-string", Boolean.TRUE);
+      } else if (isString(type) || type.getName().equals("io.kubernetes.client.custom.Quantity")) {
         result.put(TYPE, STRING);
       } else if (isBoolean(type)) {
         result.put(TYPE, BOOLEAN);
