@@ -779,7 +779,7 @@ public class DbUtils {
     replaceStringInFile(operatorYamlDestFile.toString(), "oracle-database-operator-system", namespace);
     replaceStringInFile(operatorYamlDestFile.toString(), "container-registry-secret", TEST_IMAGES_REPO_SECRET_NAME);
     replaceStringInFile(operatorYamlDestFile.toString(),
-        "container-registry.oracle.com/database/operator:0.2.1", DB_OPERATOR_IMAGE);
+        "container-registry.oracle.com/database/operator:1.0.0", DB_OPERATOR_IMAGE);
     replaceStringInFile(operatorYamlDestFile.toString(), "imagePullPolicy: Always", "imagePullPolicy: IfNotPresent");
     createTestRepoSecret(namespace);
     createBaseRepoSecret(namespace);
@@ -881,7 +881,7 @@ public class DbUtils {
 
     ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(25, MINUTES).await();
+        .atMost(40, MINUTES).await();
 
     // wait for the pod to be ready
     logger.info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);

@@ -53,10 +53,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -150,6 +153,7 @@ class ItSystemResOverrides {
 
     //create and start WebLogic domain
     createDomain();
+    restartDomain();
 
     // build the sitconfig application
     Path distDir = buildApplication(Paths.get(APP_DIR, "sitconfig"),
@@ -500,6 +504,28 @@ class ItSystemResOverrides {
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer);
+  }
+
+  //restart pods by manipulating the serverStartPolicy to Never and IfNeeded
+  private void restartDomain() {
+    logger.info("Restarting domain {0}", domainNamespace);
+    shutdownDomain(domainUid, domainNamespace);
+
+    logger.info("Checking for admin server pod shutdown");
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Checking managed server pods were shutdown");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+
+    startDomain(domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // verify managed server services and pods are created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
   }
 
 }
