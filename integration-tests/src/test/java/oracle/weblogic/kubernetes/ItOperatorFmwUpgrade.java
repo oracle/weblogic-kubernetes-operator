@@ -230,12 +230,12 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 4.0.6 to current with a FMW Domain.
+   * Operator upgrade from 4.0.8 to current with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 4.0.6 to current")
-  void testOperatorFmwUpgradeFrom406ToCurrent() {
-    installAndUpgradeOperator("4.0.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 4.0.8 to current")
+  void testOperatorFmwUpgradeFrom408ToCurrent() {
+    installAndUpgradeOperator("4.0.8", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -245,6 +245,15 @@ class ItOperatorFmwUpgrade {
   @DisplayName("Upgrade Operator from 4.1.0 to current")
   void testOperatorFmwUpgradeFrom410ToCurrent() {
     installAndUpgradeOperator("4.1.0", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  }
+
+  /**
+   * Operator upgrade from 4.1.1 to current with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 4.1.1 to current")
+  void testOperatorFmwUpgradeFrom411ToCurrent() {
+    installAndUpgradeOperator("4.1.1", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(
