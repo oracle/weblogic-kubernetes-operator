@@ -425,6 +425,7 @@ public class FmwUtils {
                 .addSecretsItem(rcuAccessSecretName)
                 .introspectorJobActiveDeadlineSeconds(3000L)
                 .initializeDomainOnPV((new InitializeDomainOnPV()
+                    .runInitContainerAsRoot(true)
                     .persistentVolume(new PersistentVolume()
                         .metadata(new V1ObjectMeta()
                             .name(pvName))

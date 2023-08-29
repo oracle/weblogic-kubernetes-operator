@@ -39,6 +39,19 @@ public class InitializeDomainOnPV {
       + " proceeding with the domain creation. Defaults to true.")
   Boolean waitForPvcToBind;
 
+  /** Whether to run the domain initialization init container in the introspector job as root. Default is false. */
+  @ApiModelProperty("Specifies whether the operator will run the domain initialization init container in the "
+      + "introspector job as root. This may be needed in some environments to create the domain home directory on PV."
+      + " Defaults to false.")
+  Boolean runDomainInitContainerAsRoot;
+
+  /** Whether to set the default 'fsGroup' in pod security context. Default is true. */
+  @ApiModelProperty("Specifies whether the operator will set the default 'fsGroup' in the introspector job pod"
+      + " security context. This is needed to create the domain home directory on PV in some environments."
+      + " If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator"
+      + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true.")
+  Boolean setDefaultSecurityContextFsGroup;
+
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;
   }
@@ -72,6 +85,24 @@ public class InitializeDomainOnPV {
 
   public InitializeDomainOnPV waitForPvcToBind(Boolean waitForPvcToBind) {
     this.waitForPvcToBind = waitForPvcToBind;
+    return this;
+  }
+
+  public Boolean getRunDomainInitContainerAsRoot() {
+    return Optional.ofNullable(runDomainInitContainerAsRoot).orElse(false);
+  }
+
+  public InitializeDomainOnPV runInitContainerAsRoot(Boolean runInitContainerAsRoot) {
+    this.runDomainInitContainerAsRoot = runInitContainerAsRoot;
+    return this;
+  }
+
+  public Boolean getSetDefaultSecurityContextFsGroup() {
+    return Optional.ofNullable(setDefaultSecurityContextFsGroup).orElse(true);
+  }
+
+  public InitializeDomainOnPV setDefaultFsGroup(Boolean setDefaultFsGroup) {
+    this.setDefaultSecurityContextFsGroup = setDefaultFsGroup;
     return this;
   }
 
