@@ -1,0 +1,475 @@
+// Copyright (c) 2023, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+//
+
+CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=olcne'''
+
+pipeline {
+    agent { label 'large' }
+    options {
+        timeout(time: 1800, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+    triggers {
+        // timer trigger for "nightly build"
+        parameterizedCron(env.JOB_NAME == 'wko-ocne-main-nightly' ?
+        CRON_SETTINGS : '')
+    }
+
+    tools {
+        maven 'maven-3.8.7'
+        jdk 'jdk17'
+    }
+
+    environment {
+        ocir_host = "${env.WKT_OCIR_HOST}"
+        wko_tenancy = "${env.WKT_TENANCY}"
+        wko_images_rep = '${wko_tenancy}/wkt/infra'
+        wko_region = "${env.WKT_REGION}"
+        compartment_id = "${env.WKT_TEST_COMPARTMENT_ID}"
+        ocir_creds = 'wkt-ocir-creds'
+        wko_files_bucket_token = 'wko-system-test-files-bucket-par-token'
+
+        oci_profile = 'DEFAULT'
+        jenkins_user = sh(returnStdout: true, script: "id -nu").trim()
+        jenkins_home_directory = sh(returnStdout: true, script: "getent passwd ${jenkins_user} | cut -d: -f6").trim()
+        
+        oci_config_file_creds = 'wkt-oci-config-file'
+        oci_signing_key_creds = 'wkt-oci-signing-key'
+
+        //terraform_property_file = 'tvarsFile'
+        compartmentName='test'
+
+        wkobuild_cert_fingerprint = 'wkotestcert_fingerprint'
+        wkobuild_user_ocid = 'wkotest-user-ocid'
+
+        wkotest_ssh_pubcert = "${WORKSPACE}/.ssh/wkotestkey.pub"
+        wkotest_ssh_pk = "${WORKSPACE}/.ssh/wkotestkey"
+
+        OCNE='true'
+
+        outdir = "${WORKSPACE}/staging"
+        result_root = "${outdir}/wl_k8s_test_results"
+        pv_root_parent = "${outdir}/k8s-pvroot"
+        pv_root = "${pv_root_parent}/pvroot"
+
+        start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
+        wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
+
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'mycluster' : 'mycluster'}"
+        kubeconfig_file = "${WORKSPACE}/ocne_kubeconfig"
+        MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'olcne' : 'olcne'}"
+        availability_domain = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
+        PARALLEL_RUN = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? true : false}"
+    }
+
+    parameters {
+
+        string(name: 'BRANCH',
+               description: '',
+               defaultValue: "main"
+        )
+
+        string(name: 'IT_TEST',
+               description: 'Comma separated list of individual It test classes to be run e.g., ItParameterizedDomain, ItMiiUpdateDomainConfig, ItMiiDynamicUpdate*, ItMiiMultiMode',
+               defaultValue: ''
+        )
+
+        string(name: 'OCNE_KUBE_VERSION',
+               description: 'kube version for OCNE cluster',
+               defaultValue: '1.26.2'
+        )
+        string(name: 'IMAGE_ID',
+               description: 'oci image id for node pool, find image OCID for your region from https://docs.oracle.com/iaas/images/',
+               //defaultValue7.6: 'ocid1.image.oc1.phx.aaaaaaaancucg25pze6m52agxwxmmfszvsdnhp3kvim53pts2tw6mik4xtha'
+               defaultValue: 'ocid1.image.oc1.phx.aaaaaaaaaizmtmozeudeeuq7o5ir7dkl2bkxbbb3tgomshqbqn6jpomrsjza'
+                       
+        )
+        string(name: 'KUBECTL_VERSION',
+               description: 'kubectl version',
+               defaultValue: '1.26.2'
+        )
+        string(name: 'HELM_VERSION',
+               description: 'Helm version',
+               defaultValue: '3.11.2'
+        )
+        choice(name: 'ISTIO_VERSION',
+               description: 'Istio version',
+               choices: [
+                   '1.17.2',
+                   '1.16.1',
+                   '1.13.2',
+                   '1.12.6',
+                   '1.11.1',
+                   '1.10.4',
+                   '1.9.9'
+               ]
+        )
+
+        string(name: 'NUMBER_OF_THREADS',
+               description: 'Number of threads to run the classes in parallel, default is 2.',
+               defaultValue: "2"
+        )
+        string(name: 'WDT_DOWNLOAD_URL',
+               description: 'URL to download WDT.',
+               //defaultValue: 'https://github.com/oracle/weblogic-deploy-tooling/releases/latest'
+        )
+        string(name: 'WIT_DOWNLOAD_URL',
+               description: 'URL to download WIT.',
+               //defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
+        )
+        string(name: 'REPO_REGISTRY',
+               description: '',
+               defaultValue: "${env.WKT_OCIR_HOST}"
+        )
+        string(name: 'NODE_SHAPE',
+               description: '',
+               defaultValue: "VM.Standard.E3.Flex"
+        )
+        choice(name: 'BASE_IMAGES_REPO',
+               choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
+               description: 'Repository to pull the base images. Make sure to modify the image names if you are modifying this parameter value.'
+        )
+        string(name: 'TEST_IMAGES_REPO',
+               description: '',
+               defaultValue: "${env.WKT_OCIR_HOST}"
+        )
+        string(name: 'WEBLOGIC_IMAGE_NAME',
+               description: 'WebLogic base image name. Default is the image name in OCIR. Use middleware/weblogic for OCR.',
+               defaultValue: 'test-images/weblogic'
+        )
+        string(name: 'WEBLOGIC_IMAGE_TAG',
+               description: '12.2.1.3  (12.2.1.3-ol7) , 12.2.1.3-dev  (12.2.1.3-dev-ol7), 12.2.1.3-ol8, 12.2.1.3-dev-ol8, 12.2.1.4,  12.2.1.4-dev(12.2.1.4-dev-ol7) , 12.2.1.4-slim(12.2.1.4-slim-ol7), 12.2.1.4-ol8, 12.2.1.4-dev-ol8, 12.2.1.4-slim-ol8, 14.1.1.0-11-ol7, 14.1.1.0-dev-11-ol7, 14.1.1.0-slim-11-ol7, 14.1.1.0-8-ol7, 14.1.1.0-dev-8-ol7, 14.1.1.0-slim-8-ol7, 14.1.1.0-11-ol8, 14.1.1.0-dev-11-ol8, 14.1.1.0-slim-11-ol8, 14.1.1.0-8-ol8, 14.1.1.0-dev-8-ol8, 14.1.1.0-slim-8-ol8',
+               defaultValue: '12.2.1.4'
+        )
+        string(name: 'FMWINFRA_IMAGE_NAME',
+               description: 'FWM Infra image name. Default is the image name in OCIR. Use middleware/fmw-infrastructure for OCR.',
+               defaultValue: 'test-images/fmw-infrastructure'
+        )
+        string(name: 'FMWINFRA_IMAGE_TAG',
+               description: 'FWM Infra image tag',
+               defaultValue: '12.2.1.4'
+        )
+        string(name: 'DB_IMAGE_NAME',
+               description: 'Oracle DB image name. Default is the image name in OCIR, use database/enterprise for OCR.',
+               defaultValue: 'test-images/database/enterprise'
+        )
+        string(name: 'DB_IMAGE_TAG',
+               description: 'Oracle DB image tag',
+               defaultValue: '12.2.0.1-slim'
+        )
+        string(name: 'MONITORING_EXPORTER_BRANCH',
+               description: '',
+               defaultValue: 'main'
+        )
+        string(name: 'MONITORING_EXPORTER_WEBAPP_VERSION',
+               description: '',
+               defaultValue: '2.1.3'
+        )
+        string(name: 'PROMETHEUS_CHART_VERSION',
+               description: '',
+               defaultValue: '17.0.0'
+        )
+        string(name: 'GRAFANA_CHART_VERSION',
+               description: '',
+               defaultValue: '6.44.11'
+        )
+        booleanParam(name: 'COLLECT_LOGS_ON_SUCCESS',
+                     description: 'Collect logs for successful runs. Default is false.',
+                     defaultValue: false
+        )
+    }
+
+    stages {
+        stage('Filter unwanted branches') {
+            stages {
+                stage('Workaround JENKINS-41929 Parameters bug') {
+                    steps {
+                        echo 'Initialize parameters as environment variables due to https://issues.jenkins-ci.org/browse/JENKINS-41929'
+                        evaluate """${def script = ""; params.each { k, v -> script += "env.${k} = '''${v}'''\n" }; return script}"""
+                    }
+                }
+                stage ('Echo environment') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            env|sort
+                            java -version
+                            mvn --version
+                            python --version
+                            docker version
+                            ulimit -a
+                            ulimit -aH
+                        '''
+                    }
+                }
+                stage('Make Workspace bin directory') {
+                    steps {
+                        sh "mkdir -m777 -p ${WORKSPACE}/bin"
+                    }
+                }
+                stage('Install Helm') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=helm/helm-v${HELM_VERSION}.tar.gz --file=helm.tar.gz \
+                                --auth=instance_principal
+                            tar zxf helm.tar.gz
+                            mv linux-amd64/helm ${WORKSPACE}/bin/helm
+                            rm -rf linux-amd64
+                            helm version
+                        '''
+                    }
+                }
+
+                stage ('Install kubectl') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                    }
+                    steps {
+                        sh '''
+                            export PATH=${runtime_path}
+                            oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                                            --name=kubectl/kubectl-v${KUBECTL_VERSION} --file=${WORKSPACE}/bin/kubectl \
+                                                            --auth=instance_principal
+                            chmod +x ${WORKSPACE}/bin/kubectl
+                            kubectl version --client=true
+                        '''
+                    }
+                }
+
+                stage('Build WebLogic Kubernetes Operator') {
+
+                    steps {
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                                                    sh "mvn -DtrimStackTrace=false clean install"
+                        }
+                    }
+                }
+
+                stage('Preparing Integration Test Environment') {
+                    steps {
+                        sh 'mkdir -m777 -p ${result_root}'
+                        echo "Results will be in ${result_root}"
+                        sh 'mkdir -m777 -p ${pv_root_parent}'
+                        sh 'sudo mount 100.105.4.71:/fs-ocne-test ${pv_root_parent}'
+                        sh 'mkdir -m777 -p ${pv_root}'
+                        echo "Persistent volume files, if any, will be in ${pv_root}"
+                    }
+                }
+
+                stage('Populate kubeconfig file') {
+                    steps {
+
+                        sh '''
+                        #################
+                        echo "Generating kubeconfig file"
+
+cat > $kubeconfig_file <<EOF
+
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1EZ3hOVEl3TVRZMU1Gb1hEVE16TURneE1qSXdNVFkxTUZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBS1pECnBWQS9RMVdoN1hqUTRUVzV2dmJkZ2Y3OElieEtwS21DWFlMeTNXV2ZlMCs3Y2VrOGlyNitIZVh0Y09TdTdib2kKWU9oejhYTXIyMVdTdHM3dkdMNk5OQnoxem9UWXo1aHIwclhqcTBwd0lJcDRvS3RTZmo4K1haWE13VnpnVmVGSApxNmNod2trZ20yMVlxTnkxd0dGVXBnYWNmd3BmUDdaUk8wS1lGWlpRMFlaZ3FqWlNjSDhldFliL2k4WWpRQVJ2CklzTGJyT2VsWURRQjl4OW00RE5zcm1oWG5heHJ1SjJidkFVY2pPWU1RSk5KNzljYmtNKzBJS05yaWkwWG9NZ3AKOEJqWG53dEQvUG4xbE1KVzA2bVNQMDJQTmxYby9DczJPSVhZWHEzVU9BeU5zV3hVOVltaElFSDVpLzRHTldmOApUTms3LzV6aXcvbVhWbWplWmlzQ0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZONEVoZGN3RGFZM3pVbjMxbFhhaVk5eVVYdlNNQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBSXh5MnowTzcvUGM3Mm1ZT3pHaQozRDl2dEd0RjZNL0tkUm44MjRNamZUWkpaNWlyVXk4cDRSVzI4VVhORmFLeC9veU0xaTdWREQxWWQ3QUZtbjZ4CmwrVmllbFVib0p6YTQ4Z1VWZ2oxOGlEV2E4NU5ZNm1TYUFwVDZZMkYydm8wL2VLZEdxM2h2NnVjS2FqbGlDeFEKUkRSTngvT3UraDQ3WEswR053NFlFVUdUMEY0eVFUOFVGRFIyRGk4RTR0MHpwM3lRUDRYYXJJOTdWUlNMd0dRRQpXV3hqa3JjS3loV3FoOG90UitmcWxneVNYSHJGTXovakoyZzI1elM5aUZTMVdrTVJNR2xOZXF0Y29KQWozbnRmClcwbWhLRGh3bTNROUk0dS95dlUrTjNKbEl2eWJrbHhiQk91aGY1ZzRYUTRVRVptQlZPYWFROUVPUHZYbm5oemgKd2hRPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    server: https://100.105.4.31:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: kubernetes-admin
+  name: kubernetes-admin@kubernetes
+current-context: kubernetes-admin@kubernetes
+kind: Config
+preferences: {}
+users:
+- name: kubernetes-admin
+  user:
+    client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lJTFZ1Z0I0YUhKZ3d3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TXpBNE1UVXlNREUyTlRCYUZ3MHlOREE0TVRReU1ERTJOVEphTURReApGekFWQmdOVkJBb1REbk41YzNSbGJUcHRZWE4wWlhKek1Sa3dGd1lEVlFRREV4QnJkV0psY201bGRHVnpMV0ZrCmJXbHVNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXVmY2oxRmhjUDNKM2FDc3MKWnZZdkQzVzlHMUMwUWo1QTlwaDJxVk1sc2I5Zkg4S2x5N2Z4ZWpCYXloRVJtVko1U0xpU2I4VlI1ck8vK1BpOAp1R0kyTDJMeVFSRnh5VGxxOWxwQVVQMk1zaHF1OUI3RC9HVVQzdUxlQWxSejlXVUxGc1BQOFJDTGpnbTVLbFN3CkdQQTFzN2JFRUdxOThhdkdOYTdZYmNINE9XbTJqRW5wNGtEaERJeVJMN3MvenhCVVVnTzRMdmM5VzA0azJoS0MKaFdVQzFzeERma1dUWDhIeXJtOVcxYi9tZ3dlMkFkTVd2M2FpSWdUYnpqckptbzh6R3RENlphdkQ4TEE4WTE1YQpEaHo3OHR2ZzE5YTRRaDJxUmhVSkNkeGdiQm5iTlpvQWlFWnpwQ3RqOTBwWWExOXMyRVp6NFlUbU9SaVMxMVViCnZ3bEZOd0lEQVFBQm8xWXdWREFPQmdOVkhROEJBZjhFQkFNQ0JhQXdFd1lEVlIwbEJBd3dDZ1lJS3dZQkJRVUgKQXdJd0RBWURWUjBUQVFIL0JBSXdBREFmQmdOVkhTTUVHREFXZ0JUZUJJWFhNQTJtTjgxSjk5WlYyb21QY2xGNwowakFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBbXRvcmtYSTRidW8zaHk5eWhaYm5DOCt3QzNNOGlMbG0wOW1UCkpYbUo0MzJqSXpDM01JSTVKckRHWmVuS0s1MUs2Y1FvQTlUMlVGcVBUOFBTaTZNdSsrSlBLWFRsZllFclNpMXEKTWx6M01lT2V3aWsrU3dxNTloWmozMzk5a01LdEw5ZFBOVVdTSzFOeWNtWkRYYThLSGFibE10UzJnV1FacmlLcQpOcm5mdjBBdkkzOU92WjYrUUcyVWUvblpqK3gzMTVsc1E4L2E5Rno0Rlh4Y25pS1BaYnhCd1kvNzRBKzl3SGo2CkV3Qi8zZGhtYmlrUGphTngwWHV1YUJ2NVNScXhFSGd6UlRQYVhXcWRJdnpRZ3czdUlsRzluMFlOekg4dHV1d1IKZ1pLQ2NpZmRCbktLQ1FDd1VzYzJnbXRJcHZ1VzJqY3NYUlYrM0lRUkNFRkdzZ2hxYnc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+    client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBdWZjajFGaGNQM0ozYUNzc1p2WXZEM1c5RzFDMFFqNUE5cGgycVZNbHNiOWZIOEtsCnk3ZnhlakJheWhFUm1WSjVTTGlTYjhWUjVyTy8rUGk4dUdJMkwyTHlRUkZ4eVRscTlscEFVUDJNc2hxdTlCN0QKL0dVVDN1TGVBbFJ6OVdVTEZzUFA4UkNMamdtNUtsU3dHUEExczdiRUVHcTk4YXZHTmE3WWJjSDRPV20yakVucAo0a0RoREl5Ukw3cy96eEJVVWdPNEx2YzlXMDRrMmhLQ2hXVUMxc3hEZmtXVFg4SHlybTlXMWIvbWd3ZTJBZE1XCnYzYWlJZ1RiempySm1vOHpHdEQ2WmF2RDhMQThZMTVhRGh6Nzh0dmcxOWE0UWgycVJoVUpDZHhnYkJuYk5ab0EKaUVaenBDdGo5MHBZYTE5czJFWno0WVRtT1JpUzExVWJ2d2xGTndJREFRQUJBb0lCQUJWN3NuenVkRUcwSkkwNQpKNWtCYWJCY2hxc29LSnJhZkVEQW5qeXphVkJlYmt2Si9jTktEYkJ5ODVvU1hMa2NxUHc0cmxvUkxvUDdVZnNlCktSY1g2WENSK3JCL3BtaDdwSnF2RkcwR3pZRXB5ZnBUcjRweDF0alIxcG5vVGJrVW9qSlFEcTZubmFlY0FmTWMKODNiK0VRWWc0QWVSZlQzMC9TSG9nQUkxL1VvTWROWDJtZHBMSmNEVWNwM3pzdUxZNm9zbnhoWTVMLzRDNXhhcQprQTZSSzF4RWxHazcxOXlucEN1aXZRVnlqRy9yNklIT2hzTVV5MUh2dUpWN0FkWGZ6eU5WbHhPTGx2ZDZwWWhnCkdtWEdTVmRCRHJUTjhiUHIvL0RvSXJIeENENGI0blE1WjNSRGdyTnY4Wmtwd0JlR29TdFlLNC9xdHViUHFYY0sKeGVVVFZCRUNnWUVBemVqbyt6WlRYQWxiZzAveFpMYnlNalc4M1JWdVFKdERuT2RQbytHL1VnejRLbDZvS3RkUQplOGp6anVXQkNiTGlkN3BEODc4Q1FkRmFFWXVzaEc5cUd5c002U1BsOXFzcEFTcU1TNkx1c2xZcFEzbkVxU3BVCnBRMUNKVkprK25FTWdUU2FpK3hmWjVnSHM4THhCODl6VTlKQ3VOeTlIOVBscFhoK2pLWEpDTjhDZ1lFQTV6UXYKbXVMT2d1SU1RQkxFcDNGa0xsa3lqMHBpemd3ZjNTTnVKS0RWUkt3MXk2RS9DRWllNGF0VDdVTVJseXo4SlUwYQpkanE2MUZaaFZJUDI0SzM2OWpoTjhhTVFpNnZ0aEJhM0hXYnVWOEwxK05aQkxXMkxzQlZaNHFwMUlHd05PeW1jCncvclo3Y0NsZndDcnBEaEl1UFlDYWp4a3owM2g3MmpGYXZVWTFxa0NnWUJTcmNIWEZRSTF3NEFlWXR3dnI1SGkKZlZkZmducHBzSzVlY3phMFBESUJOVG4wY1Z1ZkVDTytBSHRqbGwzUTBpWkRJdVNrRzc5QlJGbWhEKzl1b2ZuOQovTFJMYk9HcXdTRk8yWkhKMFJ0OU9rR0pXWHlRM0hGdWNMdHRsdjc2M0tmRHZhYU1wcFhNVit4SHp1L1BUZ29sCnp4aUJlQWpzbmIzcFNrK3VFK2Q4Q3dLQmdBMGQwczJRckhLVWJHbCtKeFh3d3VRMlB6NE4xRWtvT3U2S3dnYmwKOFBOeWFhTGh4UGV0VndZcWVCcHZ3YUczOVo0UUg3NHhXc1FOR254MitCeUxBai9SdGVwTmUvVFFqaXIrTnVrKwpHNnR5N2cxdDZraXZmRXREQ3RSbkl6bnhwMWFCNTlqZWRGcWVvVVR4UHN1VVBkdndhUGFwOG5Zb1R2Y01GSmNhCnpJdnhBb0dCQUlEN3ZKSUtXY3hzSDVKSFd4OUg4a0ViamM5Tkd2UW9VQXhUN2xrRlFTY2RZYXd5RzRjUVRyVEIKNlAzeGRWM3pwa0lFMURVaERrMVUycFM0K2Fhd1JVVXRETU9DamVOZXFzTUVpMGFwMUt5Vkc3NlcwY2JNdmRhNQpqQjZ0Y3RGc0xqTW8xMXlHeHp5YVY0TExpczBiUG9UZG5WNUtZYzVReHdNMktjd2t2R1l0Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+EOF
+
+                        ##################
+                        echo "kubeconfig file: "
+                        cat $kubeconfig_file
+                        '''
+                    }
+                }
+
+                stage('Run integration tests') {
+                    environment {
+                        runtime_path = "${WORKSPACE}/bin:${PATH}"
+                        clusterName = "${CLUSTER_NAME}"
+
+                    }
+                    steps {
+                         script {
+                             def res = 0
+                             res = sh(script: '''
+                                     if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
+                                        echo 'ERROR: All tests cannot be run with integration-tests profile'
+                                        exit 1
+                                     fi
+                                 ''', returnStatus: true)
+                             if (res != 0 ) {
+                                 currentBuild.result = 'ABORTED'
+                                 error('Profile/ItTests Validation Failed')
+                             }
+                        }
+                        withCredentials([
+                             string(credentialsId: "${wko_files_bucket_token}", variable: 'WKO_BUCKET_TOKEN')
+                        ]) {
+                            sh '''
+                                if [ -z $WIT_DOWNLOAD_URL ]; then
+                                    WIT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/imagetool-main.zip"
+                                fi
+                                if [ -z $WDT_DOWNLOAD_URL ]; then
+                                    WDT_DOWNLOAD_URL="https://objectstorage.${wko_region}.oraclecloud.com/p/${WKO_BUCKET_TOKEN}/n/${wko_tenancy}/b/wko-system-test-files/o/weblogic-deploy-main.zip"
+                                fi
+
+                                export PATH=${runtime_path}
+                                export OCI_CLI_CONFIG_FILE=${jenkins_home_directory}/.oci/config
+                                export OCI_CLI_PROFILE=${oci_profile}
+                                compartment_ocid=${compartment_id}
+                                mkdir -m777 -p "${WORKSPACE}/.mvn"
+                                touch ${WORKSPACE}/.mvn/maven.config
+                                export KUBECONFIG=${kubeconfig_file}
+
+                                clusterIP='100.105.4.31'
+                                export NO_PROXY=$NO_PROXY,${clusterIP}
+                                echo "NO_PROXY:" $NO_PROXY
+
+                                export K8S_NODEPORT_HOST=${clusterIP}
+
+                                if [ -n "${IT_TEST}" ]; then
+                                    echo 'Overriding MAVEN_PROFILE_NAME to integration-test when running individual test(s)'
+                                    MAVEN_PROFILE_NAME="integration-tests"
+                                    echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
+                                fi
+
+                                echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.k8s.nodeport.host=\"${K8S_NODEPORT_HOST}\""                                   >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.nfs.server=\"${NFS_SERVER}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.istio.version=\"${ISTIO_VERSION}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-DPARALLEL_CLASSES=\"${PARALLEL_RUN}\""                                                >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-DNUMBER_OF_THREADS=\"${NUMBER_OF_THREADS}\""                                          >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.wdt.download.url=\"${WDT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.wit.download.url=\"${WIT_DOWNLOAD_URL}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.base.images.repo=\"${BASE_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.base.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.test.images.repo=\"${TEST_IMAGES_REPO}\""                                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.test.images.tenancy=\"${wko_tenancy}\""                                       >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.weblogic.image.name=\"${WEBLOGIC_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.weblogic.image.tag=\"${WEBLOGIC_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.fmwinfra.image.name=\"${FMWINFRA_IMAGE_NAME}\""                               >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.fmwinfra.image.tag=\"${FMWINFRA_IMAGE_TAG}\""                                 >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.db.image.name=\"${DB_IMAGE_NAME}\""                                           >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.db.image.tag=\"${DB_IMAGE_TAG}\""                                             >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.monitoring.exporter.branch=\"${MONITORING_EXPORTER_BRANCH}\""                 >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.monitoring.exporter.webapp.version=\"${MONITORING_EXPORTER_WEBAPP_VERSION}\"" >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
+                                echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+
+                                echo "${WORKSPACE}/.mvn/maven.config contents:"
+                                cat "${WORKSPACE}/.mvn/maven.config"
+                                cp "${WORKSPACE}/.mvn/maven.config" "${result_root}"
+                            '''
+                        }
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            withCredentials([
+                                usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
+                            ]) {
+                                sh '''
+                                    export HTTPS_PROXY='http://www-proxy-hqdc.us.oracle.com:80'
+                                    export https_proxy='http://www-proxy-hqdc.us.oracle.com:80'
+                                    export HTTP_PROXY='http://www-proxy-hqdc.us.oracle.com:80'
+                                    export http_proxy='http://www-proxy-hqdc.us.oracle.com:80'
+                                    #100.105.4.31 is the ip address of kubernetes master node
+                                    export NO_PROXY='localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,100.105.4.31'
+                                    export no_proxy='localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,100.105.4.31'
+                                    export PATH=${runtime_path}
+                                    export OKE_CLUSTER="false"
+                                    export OCNE="true"
+                                    export OKD="false"
+                                    export KUBECONFIG=${kubeconfig_file}
+                                    export BASE_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export BASE_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export BASE_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    export TEST_IMAGES_REPO_USERNAME="${OCIR_USER}"
+                                    export TEST_IMAGES_REPO_PASSWORD="${OCIR_PASS}"
+                                    export TEST_IMAGES_REPO_EMAIL="noreply@oracle.com"
+                                    
+                                    if ! mvn -pl integration-tests -P ${MAVEN_PROFILE_NAME} verify 2>&1 | tee "${result_root}/oketest.log"; then
+                                        echo "integration-tests failed"
+                                        exit 1
+                                    fi
+                                '''
+                            }
+                        }
+                    }
+                    post {
+                        always {
+                            sh '''
+                                export PATH="${WORKSPACE}/bin:${PATH}"
+                                export KUBECONFIG=${kubeconfig_file}
+                                export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
+                                export OCI_CLI_PROFILE=${oci_profile}
+                                mkdir -m777 -p ${result_root}/kubelogs
+                                mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+                                sudo mv -f ${result_root}/* "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+
+                            '''
+
+                            archiveArtifacts(artifacts:
+                            "logdir/${BUILD_TAG}/wl_k8s_test_results/diagnostics/**/*,logdir/${BUILD_TAG}/wl_k8s_test_results/workdir/liftandshiftworkdir/**/*")
+                            junit(testResults: 'integration-tests/target/failsafe-reports/*.xml', allowEmptyResults: true)
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    sh '''
+                        export PATH="${WORKSPACE}/bin:${PATH}"
+                        export KUBECONFIG=${kubeconfig_file}
+
+                        rm -f ${jenkins_home_directory}/.oci/config
+                        rm -f ${jenkins_home_directory}/.oci/oci-signing-key.pem
+                        rm -f ${WORKSPACE}/.ssh/*
+                        rm -rf ${WORKSPACE}/.mvn
+                        sudo rm -rf ${pv_root}
+                        sudo umount ${pv_root_parent}
+
+                    '''
+                }
+            }
+        }
+
+        stage ('Sync') {
+             when {
+                 anyOf {
+                     branch 'main'
+                     branch 'release/4.0'
+                     branch 'release/3.4'
+                 }
+                 anyOf {
+                     not { triggeredBy 'TimerTrigger' }
+                     tag 'v*'
+                 }
+             }
+             steps {
+                 build job: "wkt-sync", parameters: [ string(name: 'REPOSITORY', value: 'weblogic-kubernetes-operator') ]
+             }
+        }
+    }
+}
+
+

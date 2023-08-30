@@ -39,7 +39,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DisplayName("Test WLS Session Migration via istio enabled")
 @IntegrationTest
-@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 class ItIstioSessionMigration {
