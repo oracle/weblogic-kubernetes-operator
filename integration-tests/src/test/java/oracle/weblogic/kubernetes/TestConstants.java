@@ -436,5 +436,7 @@ public interface TestConstants {
   public static final String VZ_ISTIO_NS = "istio-system";
   public static final boolean VZ_ENV = assertDoesNotThrow(() -> listNamespaces().stream()
         .anyMatch(ns -> ns.equals(VZ_SYSTEM_NS)));
+  public static final String LARGE_DOMAIN_TESTING_PROPS_FILE =
+      "largedomaintesting.props";
   
 }
