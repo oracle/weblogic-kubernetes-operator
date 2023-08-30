@@ -8,12 +8,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -22,7 +24,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
@@ -51,6 +55,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 class ItKubernetesNameSpaceWatchingEvents {
+
+  private static final String newNSWithoutLabels = "ns-newnamespace1";
+  private static final String newNSWithLabels = "ns-newnamespace2";
 
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
@@ -137,7 +144,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     domainNamespaces.add(domainNamespace2);
     OperatorParams opTestParams = opParamsOriginal;
     opTestParams = opTestParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding)
-    .domainNamespaceSelectionStrategy("List");
+        .domainNamespaceSelectionStrategy("List");
     upgradeAndVerifyOperator(opNamespace, opTestParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
@@ -221,8 +228,6 @@ class ItKubernetesNameSpaceWatchingEvents {
         enableClusterRoleBinding);
 
     if (enableClusterRoleBinding) {
-      String newNSWithoutLabels = "ns-newnamespace1";
-      String newNSWithLabels = "ns-newnamespace2";
 
       assertDoesNotThrow(() -> createNamespaces(newNSWithoutLabels, newNSWithLabels),
           "Failed to create new namespaces");
@@ -325,7 +330,7 @@ class ItKubernetesNameSpaceWatchingEvents {
     // Helm upgrade parameters
     OperatorParams opTestParams = opParamsOriginal;
     opTestParams = opTestParams.domainNamespaceSelectionStrategy("Dedicated")
-                .enableClusterRoleBinding(false);
+        .enableClusterRoleBinding(false);
 
     upgradeAndVerifyOperator(opNamespace, opTestParams);
 
@@ -334,6 +339,22 @@ class ItKubernetesNameSpaceWatchingEvents {
 
     logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
+  }
+
+  /**
+   * Delete namespace ns-newnamespace1 and ns-namespace2 created in the test.
+   * @throws ApiException if Kubernetes API calls fail
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP) {
+      if (Namespace.exists(newNSWithLabels)) {
+        deleteNamespace(newNSWithLabels);
+      }
+      if (Namespace.exists(newNSWithoutLabels)) {
+        deleteNamespace(newNSWithoutLabels);
+      }
+    }
   }
 
   // Utility method to check event

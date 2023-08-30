@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
-@Tag("olcne")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 class ItIstioTwoDomainsInImage {
