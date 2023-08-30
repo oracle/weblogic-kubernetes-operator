@@ -89,6 +89,8 @@ public class MonitoringExporterConfiguration {
 
   // A query which defines a set of values and sub-queries to select metrics to export.
   static class ExporterQuery extends HashMap<String,ExporterQuery> {
+
+    private static final long serialVersionUID = 1L;
     @ApiModelProperty("A filter for subtypes. "
         + "If specified, only those objects whose type attribute matches will be collected.")
     private String type;

@@ -740,7 +740,7 @@ class ItOperatorWlsUpgrade {
           MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
           "Could not modify image name in the mii-domain-v8.yaml file");
     }
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(KUBERNETES_CLI + " create -f " + destDomainYaml))
         .execute(), KUBERNETES_CLI + " create failed");

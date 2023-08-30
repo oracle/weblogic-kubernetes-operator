@@ -134,10 +134,9 @@ class ItAuxV8DomainImplicitUpgrade {
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
     // Remove any weblogic crd creaated from previous test class
     // Note: This class must not be run in parallel with other class
-    new Command()
-          .withParams(new CommandParams()
-              .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
-          .execute();
+    Command.withParams(new CommandParams()
+        .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
+        .execute();
   }
 
   /**

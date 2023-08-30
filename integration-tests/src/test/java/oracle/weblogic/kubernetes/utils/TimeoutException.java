@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.utils;
 
 public class TimeoutException extends RuntimeException {
 
+  private static final long serialVersionUID = 1L;
+
   /**
    * <p>Constructor for TimeoutException.</p>
    *
