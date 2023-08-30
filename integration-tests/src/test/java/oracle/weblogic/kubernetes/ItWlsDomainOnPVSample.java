@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.SampleUtils.createPVHostPathAndChangePermissionInKindCluster;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -191,6 +192,7 @@ class ItWlsDomainOnPVSample {
     if (KIND_REPO != null) {
       logger.info("loading image {0} to kind", WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       imagePush(WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
+      createPVHostPathAndChangePermissionInKindCluster("/shared", envMap);
     }
 
     execTestScriptAndAssertSuccess("-initial-main", "Failed to run -initial-main");
