@@ -750,7 +750,7 @@ class ItMiiClusterResource {
         () -> generateFileFromTemplate(srcDomainYaml.toString(), "domain.yaml", templateMap));
     logger.info("Generated domain yaml file path is {0}", destDomainYaml);
 
-    assertTrue(new Command()
+    assertTrue(Command
         .withParams(new CommandParams()
             .command(KUBERNETES_CLI + " create -f " + destDomainYaml))
         .execute(), KUBERNETES_CLI + " create failed");

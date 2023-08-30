@@ -184,6 +184,7 @@ public class Helm {
     // values can be Map or String
     for (Map.Entry<String,Object> entry : helmValues.entrySet()) {
       if (entry.getValue() instanceof Map) {
+        @SuppressWarnings("unchecked")
         Map<String, Object> item = (Map<String, Object>) entry.getValue();
         int index = 0;
         for (Map.Entry<String,Object> itemEntry : item.entrySet()) {

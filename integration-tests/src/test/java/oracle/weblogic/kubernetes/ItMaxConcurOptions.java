@@ -159,7 +159,7 @@ class ItMaxConcurOptions {
       + "when domain.spec.maxClusterConcurrentStartup = 2")
   void testMaxClusterConcurrentStartup() {
     // reduce replicas in domain resource from 4 to 2
-    ArrayList managedServerPodNamePrefixList =
+    ArrayList<String> managedServerPodNamePrefixList =
         new ArrayList<String>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
     int newReplicas = 2;
     boolean scaleup = false;
@@ -189,8 +189,8 @@ class ItMaxConcurOptions {
       + "when domain.spec.maxClusterConcurrentShutdown = 2")
   void testMaxClusterConcurrentShutdown() {
     // reduce replicas in domain resource from 4 to 2
-    ArrayList managedServerPodNamePrefixList =
-        new ArrayList<String>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
+    ArrayList<String> managedServerPodNamePrefixList =
+        new ArrayList<>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
     int newReplicas = 2;
     boolean scaleup = false;
     patchDomainResourceWithReplicasAndVerify(managedServerPodNamePrefixList, 3, 4, newReplicas, scaleup);
@@ -253,7 +253,7 @@ class ItMaxConcurOptions {
     rollingRestartDomainAndVerify(managedServerC2PodNamePrefix, maxClusterUnavailable, true);
 
     // restore test env
-    ArrayList clusterList = new ArrayList<String>(List.of(cluster1Res));
+    ArrayList<String> clusterList = new ArrayList<>(List.of(cluster1Res));
     restoreTestEnv(clusterList);
   }
 
@@ -276,8 +276,8 @@ class ItMaxConcurOptions {
       + "when domain.spec.maxClusterUnavailable = 2")
   void testMaxConcurrentShutdown() {
     // increase replicas to 5 in domain resource and patch domain with a new introspectVersion
-    ArrayList managedServerPodNamePrefixList =
-        new ArrayList<String>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
+    ArrayList<String> managedServerPodNamePrefixList =
+        new ArrayList<>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
     int newReplicas = 5;
     boolean scaleup = true;
     patchDomainResourceWithReplicasAndVerify(managedServerPodNamePrefixList, 1, newReplicas, newReplicas, scaleup);
@@ -305,7 +305,7 @@ class ItMaxConcurOptions {
     verifyShutdownConcurrently(managedServerC1PodNamePrefix, managedServerC1NamePrefix, replicaCount, newReplicaCount);
 
     // restore test env
-    ArrayList clusterList = new ArrayList<String>(List.of(cluster1Res));
+    ArrayList<String> clusterList = new ArrayList<>(List.of(cluster1Res));
     restoreTestEnv(clusterList);
   }
 
@@ -332,8 +332,8 @@ class ItMaxConcurOptions {
       + "when cluster.spec.maxConcurrentStartupe = 1")
   void testMaxConcurrentStartup() {
     // decrease replicas from 4 to 1 in domain resource and patch domain with a new introspectVersion
-    ArrayList managedServerPodNamePrefixList =
-        new ArrayList<String>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
+    ArrayList<String> managedServerPodNamePrefixList =
+        new ArrayList<>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
     int newReplicas = 1;
     boolean scaleup = false;
     patchDomainResourceWithReplicasAndVerify(managedServerPodNamePrefixList, 2, 4, newReplicas, scaleup);
@@ -365,7 +365,7 @@ class ItMaxConcurOptions {
     verifyServersStartedSequentially(managedServerC2PodNamePrefix, 2, newReplicaCount);
 
     // restore test env
-    ArrayList clusterList = new ArrayList<String>(List.of(cluster1Res, cluster2Res));
+    ArrayList<String> clusterList = new ArrayList<String>(List.of(cluster1Res, cluster2Res));
     restoreTestEnv(clusterList);
   }
 
@@ -750,7 +750,7 @@ class ItMaxConcurOptions {
     clusterResources.forEach((clusterResource) -> patchDomainResource(domainUid, domainNamespace, patchStr));
 
     // restore replicas at domain level bask to 4
-    ArrayList managedServerPodNamePrefixList =
+    ArrayList<String> managedServerPodNamePrefixList =
         new ArrayList<String>(List.of(managedServerC1PodNamePrefix, managedServerC2PodNamePrefix));
     boolean scaleup = true;
     patchDomainResourceWithReplicasAndVerify(managedServerPodNamePrefixList, 1, replicaCount, replicaCount, scaleup);

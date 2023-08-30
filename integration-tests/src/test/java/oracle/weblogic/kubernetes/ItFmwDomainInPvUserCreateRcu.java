@@ -550,7 +550,7 @@ public class ItFmwDomainInPvUserCreateRcu {
     DomainCreationImage domainCreationImage1 = createImage(fmwModelFile,fmwModelPropFile,"jrf3");
 
     // image2 with model files for jms config
-    List modelList = new ArrayList<>();
+    List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     String miiAuxiliaryImageTag = "jrf3jms" + MII_BASIC_IMAGE_TAG;
     WitParams witParams =
