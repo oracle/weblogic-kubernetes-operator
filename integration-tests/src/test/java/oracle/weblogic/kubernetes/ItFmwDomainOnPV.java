@@ -42,6 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -90,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-gate")
+@Tag("okd-fmw-cert")
 class ItFmwDomainOnPV {
 
   private static String domainNamespace = null;
@@ -166,6 +168,7 @@ class ItFmwDomainOnPV {
    * Update the base image in the domain spec, verify the domain is rolling-restarted.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV using simplified feature, Operator creates PV/PVC/RCU/Domain")
   void testOperatorCreatesPvPvcRcuDomain() {
     String domainUid = "jrfonpv-simplified";
@@ -500,6 +503,7 @@ class ItFmwDomainOnPV {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Create a FMW domain on PV. User creates RCU and operator creates PV/PVC and domain, "
                 + "User creates multiple domain initialization images")
   void testUserCreatesRcuOperatorCreatesPvPvcDomainMultipleImages() {
@@ -708,9 +712,11 @@ class ItFmwDomainOnPV {
       pvcRequest.put("storage", new Quantity("2Gi"));
       Configuration configuration = null;
       if (OKE_CLUSTER) {
-        configuration = getConfiguration(pvcName, pvcRequest, "oci-fss");
+        configuration = getConfiguration(pvcName,pvcRequest, "oci-fss");
+      } else if (OKD) {
+        configuration = getConfiguration(pvcName,pvcRequest, "okd-nfsmnt");
       } else {
-        configuration = getConfiguration(pvcName, pvcRequest, "weblogic-domain-storage-class");
+        configuration = getConfiguration(pvcName, pvcRequest,"weblogic-domain-storage-class");
 
       }
       configuration.addSecretsItem(rcuAccessSecretName)
