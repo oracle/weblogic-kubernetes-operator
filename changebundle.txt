@@ -1,0 +1,8 @@
+On branch azure-wko-update-gzh
+Your branch is ahead of 'origin/azure-wko-update-gzh' by 2 commits.
+  (use "git push" to publish your local commits)
+cccc
+Changes to be committed:
+  (use "git restore --staged <file>..." to unstage)
+	new file:   c.txt
+
