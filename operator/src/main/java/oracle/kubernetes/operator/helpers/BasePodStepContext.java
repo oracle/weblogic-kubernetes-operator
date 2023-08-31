@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars;
@@ -214,6 +215,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .volumes(getFluentdVolumes())
         .addContainersItem(createPrimaryContainer())
         .affinity(getServerSpec().getAffinity())
+        .topologySpreadConstraints(getTopologySpreadConstraints())
         .nodeSelector(getServerSpec().getNodeSelectors())
         .serviceAccountName(getServerSpec().getServiceAccountName())
         .nodeName(getServerSpec().getNodeName())
@@ -228,6 +230,11 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   abstract V1PodSecurityContext getPodSecurityContext();
+
+  private List<V1TopologySpreadConstraint> getTopologySpreadConstraints() {
+    List<V1TopologySpreadConstraint> topologySpreadConstraints = getServerSpec().getTopologySpreadConstraints();
+    return topologySpreadConstraints.isEmpty() ? null : topologySpreadConstraints;
+  }
 
   private List<V1Toleration> getTolerations() {
     List<V1Toleration> tolerations = getServerSpec().getTolerations();

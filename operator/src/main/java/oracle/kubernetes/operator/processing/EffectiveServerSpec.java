@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.weblogic.domain.model.ProbeTuning;
@@ -144,6 +145,8 @@ public interface EffectiveServerSpec {
   Map<String, String> getNodeSelectors();
 
   V1Affinity getAffinity();
+
+  List<V1TopologySpreadConstraint> getTopologySpreadConstraints();
 
   String getPriorityClassName();
 

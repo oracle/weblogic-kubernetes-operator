@@ -58,6 +58,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretKeySelector;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
@@ -256,6 +257,7 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
   protected final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
   protected final V1Affinity affinity = createAffinity();
+  protected final List<V1TopologySpreadConstraint> topologySpreadConstraints = createTopologySpreadConstraints();
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
@@ -2570,6 +2572,10 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     return new V1Affinity().podAffinity(podAffinity).podAntiAffinity(podAntiAffinity);
   }
 
+  static List<V1TopologySpreadConstraint> createTopologySpreadConstraints() {
+    return List.of(new V1TopologySpreadConstraint().maxSkew(1));
+  }
+
   static V1Toleration createToleration(String key, String operator, String value,
                                        String effect) {
     return new V1Toleration().key(key).operator(operator).value(value).effect(effect);
@@ -2675,6 +2681,16 @@ public abstract class PodHelperTestBase extends DomainValidationTestBase {
     assertThat(
         getCreatedPod().getSpec().getAffinity(),
         is(affinity));
+  }
+
+  @Test
+  void whenServerHasTopologySpreadConstraints_createPodWithIt() {
+    configureServer()
+        .withTopologySpreadConstraints(topologySpreadConstraints);
+
+    assertThat(
+        getCreatedPod().getSpec().getTopologySpreadConstraints(),
+        is(topologySpreadConstraints));
   }
 
   @Test
