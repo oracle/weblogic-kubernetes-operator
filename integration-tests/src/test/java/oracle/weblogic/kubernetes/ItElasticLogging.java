@@ -420,7 +420,7 @@ class ItElasticLogging {
     // create a domain resource
     logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
         domainUid, domainNamespace);
-    List<String> clusterNames = new ArrayList();
+    List<String> clusterNames = new ArrayList<>();
     clusterNames.add("cluster-1");
     createMiiDomainAndVerify(
         domainNamespace,

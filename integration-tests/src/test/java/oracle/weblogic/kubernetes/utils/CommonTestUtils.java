@@ -1205,7 +1205,7 @@ public class CommonTestUtils {
    */
   private static void isLocalPortFree(int port, String host) throws IOException {
     try (Socket socket = new Socket(host, port)) {
-      getLogger().info("Port {0} is already in use for host {1}", port, host);
+      getLogger().info("Port {0} is already in use for host {1}", port, socket.getInetAddress());
     }
   }
 

@@ -1,0 +1,27 @@
+# properties for large domain testing
+#number of domains to create
+NUMBER_OF_DOMAINS=2
+#number of clusters in each domain
+NUMBER_OF_CLUSTERS=2
+#number of servers to start in each cluster
+NUMBER_OF_SERVERSTOSTART=2
+#Max number of servers in each cluster
+MAXIMUM_SERVERS_IN_CLUSTER=10
+#cpu requests at server pod
+SERVER_POD_CPU_REQUEST=250m
+#memory requests at server pod
+SERVER_POD_MEM_REQUEST=768Mi
+#cpu limit at server pod
+SERVER_POD_CPU_LIMIT=2
+#memory limit at server pod
+SERVER_POD_MEM_LIMIT=2Gi
+#operator cpu requests
+OPERATOR_CPU_REQUEST=250m
+#operator memory requests
+OPERATOR_MEM_REQUEST=512Mi
+#operator cpu limit
+OPERATOR_CPU_LIMIT=2
+#operaotr memory limit
+OPERATOR_MEM_LIMIT=2Gi
+#operator jvm options to get JFR dump, JFR file will be inside operator pod, dump is taken every 900secs, change duration for shorter intervals
+OPERATOR_JVM_OPTIONS=-XshowSettings:vm -XX:MaxRAMPercentage=70 -XX:StartFlightRecording=delay=5s,disk=false,dumponexit=true,duration=900s,filename=/tmp/operator_rec.jfr

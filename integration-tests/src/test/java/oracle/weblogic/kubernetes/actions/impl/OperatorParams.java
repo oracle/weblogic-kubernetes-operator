@@ -38,6 +38,11 @@ public class OperatorParams {
   private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
   private static final String CREATE_LOGSTASH_CONFIGMAP = "createLogStashConfigMap";
   private static final String WEBHOOK_ONLY = "webhookOnly";
+  private static final String CPU_REQUESTS = "cpuRequests";
+  private static final String CPU_LIMITS = "cpuLimits";
+  private static final String MEMORY_REQUESTS = "memoryRequests";
+  private static final String MEMORY_LIMITS = "memoryLimits";
+  private static final String JVM_OPTIONS = "jvmOptions";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -66,6 +71,11 @@ public class OperatorParams {
   private boolean createLogStashConfigMap = true;
   private boolean webhookOnly;
   private boolean openshiftIstioInjection;
+  private String cpuRequests;
+  private String memoryRequests;
+  private String cpuLimits;
+  private String memoryLimits;
+  private String jvmOptions;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -192,6 +202,31 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams cpuRequests(String cpuRequests) {
+    this.cpuRequests = cpuRequests;
+    return this;
+  }
+
+  public OperatorParams memoryRequests(String memoryRequests) {
+    this.memoryRequests = memoryRequests;
+    return this;
+  }
+
+  public OperatorParams cpuLimits(String cpuLimits) {
+    this.cpuLimits = cpuLimits;
+    return this;
+  }
+
+  public OperatorParams memoryLimits(String memoryLimits) {
+    this.memoryLimits = memoryLimits;
+    return this;
+  }
+
+  public OperatorParams jvmOptions(String jvmOptions) {
+    this.jvmOptions = jvmOptions;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -207,7 +242,7 @@ public class OperatorParams {
   public String getKubernetesPlatform() {
     return kubernetesPlatform;
   }
-  
+
   public OperatorParams webHookOnly(boolean webhookOnly) {
     this.webhookOnly = webhookOnly;
     return this;
@@ -219,7 +254,8 @@ public class OperatorParams {
    */
   public Map<String, Object> getValues() {
     Map<String, Object> values = new HashMap<>();
-    values.put(DOMAIN_NAMESPACES, domainNamespaces);
+    values.put(DOMAIN_NAMESPACES, domainNamespaces != null
+        ? domainNamespaces.toString().replace(" ", "") : domainNamespaces);
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
 
@@ -267,6 +303,23 @@ public class OperatorParams {
     }    
 
     values.put(CREATE_LOGSTASH_CONFIGMAP, createLogStashConfigMap);
+
+    if (cpuRequests != null) {
+      values.put(CPU_REQUESTS, cpuRequests);
+    }
+    if (cpuLimits != null) {
+      values.put(CPU_LIMITS, cpuLimits);
+    }
+    if (memoryRequests != null) {
+      values.put(MEMORY_REQUESTS, memoryRequests);
+    }
+    if (memoryLimits != null) {
+      values.put(MEMORY_LIMITS, memoryLimits);
+    }
+
+    if (jvmOptions != null) {
+      values.put(JVM_OPTIONS, jvmOptions);
+    }
 
     values.values().removeIf(Objects::isNull);
     return values;
