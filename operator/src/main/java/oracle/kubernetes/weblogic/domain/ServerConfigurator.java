@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -11,6 +11,7 @@ import io.kubernetes.client.openapi.models.V1EnvFromSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import oracle.kubernetes.operator.ServerStartPolicy;
 
 /** An interface for an object to configure a server in a test. */
@@ -118,6 +119,8 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withRestartPolicy(String restartPolicy);
 
   ServerConfigurator withAffinity(V1Affinity affinity);
+
+  ServerConfigurator withTopologySpreadConstraints(List<V1TopologySpreadConstraint> topologySpreadConstraints);
 
   ServerConfigurator withNodeName(String nodeName);
 

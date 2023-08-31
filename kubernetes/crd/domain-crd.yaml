@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c806f8df2c6a809620cdcd5707a911d3b272ee9e315fee06ec78168c9683c425
+    weblogic.sha256: 7b9a4844e657a6c52bb7edd76ee8029a5a7ffabec2df79c66a74dd4cd2f26f9c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1338,6 +1338,58 @@ spec:
                               is performed.
                             type: integer
                         type: object
+                      topologySpreadConstraints:
+                        description: TopologySpreadConstraints describes how a group
+                          of pods ought to spread across topology domains. Scheduler
+                          will schedule pods in a way which abides by the constraints.
+                          All topologySpreadConstraints are ANDed.
+                        items:
+                          type: object
+                          properties:
+                            nodeTaintsPolicy:
+                              type: string
+                            whenUnsatisfiable:
+                              type: string
+                            maxSkew:
+                              type: integer
+                            nodeAffinityPolicy:
+                              type: string
+                            labelSelector:
+                              type: object
+                              properties:
+                                matchExpressions:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      values:
+                                        type: array
+                                        items:
+                                          type: string
+                                      key:
+                                        type: string
+                                      operator:
+                                        type: string
+                                    required:
+                                    - key
+                                    - operator
+                                matchLabels:
+                                  additionalProperties:
+                                    type: string
+                                  type: object
+                            minDomains:
+                              type: integer
+                            topologyKey:
+                              type: string
+                            matchLabelKeys:
+                              type: array
+                              items:
+                                type: string
+                          required:
+                          - maxSkew
+                          - topologyKey
+                          - whenUnsatisfiable
+                        type: array
                       volumes:
                         description: Additional volumes to be created in the server
                           Pod. See `kubectl explain pods.spec.volumes`.
@@ -4299,6 +4351,58 @@ spec:
                           is performed.
                         type: integer
                     type: object
+                  topologySpreadConstraints:
+                    description: TopologySpreadConstraints describes how a group of
+                      pods ought to spread across topology domains. Scheduler will
+                      schedule pods in a way which abides by the constraints. All
+                      topologySpreadConstraints are ANDed.
+                    items:
+                      type: object
+                      properties:
+                        nodeTaintsPolicy:
+                          type: string
+                        whenUnsatisfiable:
+                          type: string
+                        maxSkew:
+                          type: integer
+                        nodeAffinityPolicy:
+                          type: string
+                        labelSelector:
+                          type: object
+                          properties:
+                            matchExpressions:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  values:
+                                    type: array
+                                    items:
+                                      type: string
+                                  key:
+                                    type: string
+                                  operator:
+                                    type: string
+                                required:
+                                - key
+                                - operator
+                            matchLabels:
+                              additionalProperties:
+                                type: string
+                              type: object
+                        minDomains:
+                          type: integer
+                        topologyKey:
+                          type: string
+                        matchLabelKeys:
+                          type: array
+                          items:
+                            type: string
+                      required:
+                      - maxSkew
+                      - topologyKey
+                      - whenUnsatisfiable
+                    type: array
                   volumes:
                     description: Additional volumes to be created in the server Pod.
                       See `kubectl explain pods.spec.volumes`.
@@ -6923,6 +7027,58 @@ spec:
                               description: The number of seconds before the first
                                 check is performed.
                               type: integer
+                        topologySpreadConstraints:
+                          description: TopologySpreadConstraints describes how a group
+                            of pods ought to spread across topology domains. Scheduler
+                            will schedule pods in a way which abides by the constraints.
+                            All topologySpreadConstraints are ANDed.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              nodeTaintsPolicy:
+                                type: string
+                              whenUnsatisfiable:
+                                type: string
+                              maxSkew:
+                                type: integer
+                              nodeAffinityPolicy:
+                                type: string
+                              labelSelector:
+                                type: object
+                                properties:
+                                  matchExpressions:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        values:
+                                          type: array
+                                          items:
+                                            type: string
+                                        key:
+                                          type: string
+                                        operator:
+                                          type: string
+                                      required:
+                                      - key
+                                      - operator
+                                  matchLabels:
+                                    additionalProperties:
+                                      type: string
+                                    type: object
+                              minDomains:
+                                type: integer
+                              topologyKey:
+                                type: string
+                              matchLabelKeys:
+                                type: array
+                                items:
+                                  type: string
+                            required:
+                            - maxSkew
+                            - topologyKey
+                            - whenUnsatisfiable
                         volumes:
                           description: Additional volumes to be created in the server
                             Pod. See `kubectl explain pods.spec.volumes`.
