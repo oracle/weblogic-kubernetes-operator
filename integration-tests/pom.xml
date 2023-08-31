@@ -587,7 +587,8 @@
                   **/ItFmwDynamicClusterMiiDomain,
                   **/ItFmwMiiDomain,
                   **/ItMiiSampleFmwMain,
-                  **/ItMiiSampleFmwAux
+                  **/ItMiiSampleFmwAux,
+                  **/ItFmwDomainOnPV
                 </includes-failsafe>
             </properties>
         </profile>

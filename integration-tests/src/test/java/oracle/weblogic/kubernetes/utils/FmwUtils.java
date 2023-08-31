@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SE
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.YAML_MAX_FILE_SIZE_PROPERTY;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -658,7 +659,10 @@ public class FmwUtils {
     PersistentVolume pv = null;
     if (OKE_CLUSTER) {
       storageClassName = "oci-fss";
+    } else if (OKD) {
+      storageClassName = "okd-nfsmnt";
     }
+
 
     pv = new PersistentVolume()
         .spec(new PersistentVolumeSpec()
@@ -672,6 +676,7 @@ public class FmwUtils {
           .path(getHostPath(pvName, testClass)));
     }
     configuration
+        .introspectorJobActiveDeadlineSeconds(3000L)
         .initializeDomainOnPV(new InitializeDomainOnPV()
             .persistentVolume(pv)
             .persistentVolumeClaim(new PersistentVolumeClaim()
@@ -697,6 +702,7 @@ public class FmwUtils {
                                          Map<String, Quantity> pvcRequest,
                                          String storageClassName) {
     Configuration configuration = new Configuration()
+        .introspectorJobActiveDeadlineSeconds(3000L)
         .initializeDomainOnPV(new InitializeDomainOnPV()
             .persistentVolumeClaim(new PersistentVolumeClaim()
                 .metadata(new V1ObjectMeta()
