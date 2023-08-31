@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -775,6 +776,13 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ServerConfigurator withAffinity(V1Affinity affinity) {
       server.setAffinity(affinity);
+      return this;
+    }
+
+    @Override
+    public ServerConfigurator withTopologySpreadConstraints(
+        List<V1TopologySpreadConstraint> topologySpreadConstraints) {
+      server.setTopologySpreadConstraints(topologySpreadConstraints);
       return this;
     }
 

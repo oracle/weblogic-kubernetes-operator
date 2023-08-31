@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -179,6 +180,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
   @Override
   public V1Affinity getAffinity() {
     return server.getAffinity();
+  }
+
+  @Override
+  public List<V1TopologySpreadConstraint> getTopologySpreadConstraints() {
+    return server.getTopologySpreadConstraints();
   }
 
   @Override
