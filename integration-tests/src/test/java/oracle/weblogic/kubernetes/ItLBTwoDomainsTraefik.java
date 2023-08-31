@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
@@ -19,6 +20,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -27,6 +29,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
@@ -62,6 +67,7 @@ class ItLBTwoDomainsTraefik {
   private static Path tlsCertFile;
   private static Path tlsKeyFile;
   private static LoggingFacade logger = null;
+  private static List<String> pvPvcNamePair = null;
 
   // domain constants
   private static final int replicaCount = 2;
@@ -107,7 +113,7 @@ class ItLBTwoDomainsTraefik {
       domainUids.add("wls-traefik-domain-" + i);
     }
 
-    createMultipleDomainsSharingPVUsingWlstAndVerify(
+    pvPvcNamePair = createMultipleDomainsSharingPVUsingWlstAndVerify(
         domainNamespace, wlSecretName, ItLBTwoDomainsTraefik.class.getSimpleName(), numberOfDomains, domainUids,
         replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
@@ -174,6 +180,22 @@ class ItLBTwoDomainsTraefik {
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
           replicaCount, false, "/" + domainUid.substring(12).replace("-", ""));
+    }
+  }
+
+  /**
+   * Delete PV and PVC.
+   * @throws ApiException if Kubernetes API call fails
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP) {
+      if (pvPvcNamePair != null) {
+        // delete pvc
+        deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
+        // delete pv
+        deletePersistentVolume(pvPvcNamePair.get(0));
+      }
     }
   }
 

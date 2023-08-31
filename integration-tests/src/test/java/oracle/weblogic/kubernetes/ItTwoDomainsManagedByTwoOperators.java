@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -37,6 +38,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -60,9 +62,12 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageRepoLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
@@ -121,6 +126,7 @@ class ItTwoDomainsManagedByTwoOperators {
   private static List<String> domainNamespaces = new ArrayList<>();
   private static List<String> domainUids = new ArrayList<>();
   private static LoggingFacade logger = null;
+  private static List<String> pvPvcNamePair = null;
 
   // domain constants
   private final String clusterName = "cluster-1";
@@ -228,7 +234,7 @@ class ItTwoDomainsManagedByTwoOperators {
   @Tag("crio")
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
-    createMultipleDomainsSharingPVUsingWlstAndVerify(
+    pvPvcNamePair = createMultipleDomainsSharingPVUsingWlstAndVerify(
         twoDomainsNamespace, wlSecretName, ItTwoDomainsManagedByTwoOperators.class.getSimpleName(), numberOfDomains,
         domainUids, replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
@@ -243,6 +249,22 @@ class ItTwoDomainsManagedByTwoOperators {
 
     // restart domain1 and verify no impact on domain2
     restartDomain1AndVerifyNoImpactOnDomain2(replicaCount, twoDomainsNamespace, twoDomainsNamespace);
+  }
+
+  /**
+   * Delete PV and PVC.
+   * @throws ApiException if Kubernetes API call fails
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP) {
+      if (pvPvcNamePair != null) {
+        // delete pvc
+        deletePersistentVolumeClaim(pvPvcNamePair.get(1), twoDomainsNamespace);
+        // delete pv
+        deletePersistentVolume(pvPvcNamePair.get(0));
+      }
+    }
   }
 
   /**

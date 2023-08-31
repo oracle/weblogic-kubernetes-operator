@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -115,8 +115,9 @@ public class CommonLBTestUtils {
    * @param clusterName cluster name of the domain
    * @param adminServerPort admin server port
    * @param managedServerPort managed server port
+   * @return List of PV and PVC name
    */
-  public static void createMultipleDomainsSharingPVUsingWlstAndVerify(String domainNamespace,
+  public static List<String> createMultipleDomainsSharingPVUsingWlstAndVerify(String domainNamespace,
                                                                       String wlSecretName,
                                                                       String testClassName,
                                                                       int numberOfDomains,
@@ -133,8 +134,11 @@ public class CommonLBTestUtils {
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     Path pvHostPath = get(PV_ROOT, testClassName, "sharing-persistentVolume");
 
+    List<String> pvPvcPair = new ArrayList<>();
     String sharingPvName = getUniqueName("sharing-pv-");
     String sharingPvcName = getUniqueName("sharing-pvc-");
+    pvPvcPair.add(sharingPvName);
+    pvPvcPair.add(sharingPvcName);
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -211,6 +215,8 @@ public class CommonLBTestUtils {
             "Access to admin server node port failed"), "Console login validation failed");
       }
     }
+
+    return pvPvcPair;
   }
 
   /**
