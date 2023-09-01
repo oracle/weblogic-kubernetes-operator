@@ -66,8 +66,17 @@ pipeline {
     parameters {
 
         string(name: 'BRANCH',
-               description: '',
+               description: 'The branch for weblogic-kubernetes-operator project',
                defaultValue: "main"
+        )
+
+        choice(name: 'MAVEN_PROFILE_NAME',
+                description: 'Profile to use in mvn command to run the tests.  Possible values are olcne (the default), wko-olcne-cert and integration-tests. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
+                choices: [
+                        'olcne',
+                        'wko-olcne-cert',
+                        'integration-tests'
+                ]
         )
 
         string(name: 'IT_TEST',
