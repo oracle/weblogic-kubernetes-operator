@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1TopologySpreadConstraint;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeBuilder;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -111,6 +112,11 @@ class ServerPod extends KubernetesResource {
       + " More info: https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/. "
       + " See `kubectl explain pods.spec.affinity`.")
   private V1Affinity affinity = null;
+
+  @Description("TopologySpreadConstraints describes how a group of pods ought to spread across topology domains. "
+      + "Scheduler will schedule pods in a way which abides by the constraints. "
+      + "All topologySpreadConstraints are ANDed.")
+  private List<V1TopologySpreadConstraint> topologySpreadConstraints = new ArrayList<>();
 
   @Description("If specified, indicates the Pod's priority. \"system-node-critical\" and \"system-cluster-critical\" "
       + "are two special keywords which indicate the highest priorities with the former being the highest priority. "
@@ -453,6 +459,7 @@ class ServerPod extends KubernetesResource {
     if (serverPod1.affinity != null && isNullOrDefaultAffinity()) {
       affinity = serverPod1.affinity;
     }
+    topologySpreadConstraints.addAll(serverPod1.topologySpreadConstraints);
     if (priorityClassName == null) {
       priorityClassName = serverPod1.priorityClassName;
     }
@@ -689,16 +696,29 @@ class ServerPod extends KubernetesResource {
     this.affinity = affinity;
   }
 
+  List<V1TopologySpreadConstraint> getTopologySpreadConstrains() {
+    return topologySpreadConstraints;
+  }
+
+  void setTopologySpreadConstraints(List<V1TopologySpreadConstraint> topologySpreadConstraints) {
+    this.topologySpreadConstraints = topologySpreadConstraints;
+  }
+
+  void addTopologySpreadConstraint(V1TopologySpreadConstraint topologySpreadConstraint) {
+    topologySpreadConstraints.add(topologySpreadConstraint);
+  }
+
+
   String getPriorityClassName() {
     return priorityClassName;
   }
 
-  List<V1PodReadinessGate> getReadinessGates() {
-    return readinessGates;
-  }
-
   void setPriorityClassName(String priorityClassName) {
     this.priorityClassName = priorityClassName;
+  }
+
+  List<V1PodReadinessGate> getReadinessGates() {
+    return readinessGates;
   }
 
   void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
@@ -791,6 +811,7 @@ class ServerPod extends KubernetesResource {
         .append("containers", containers)
         .append("shutdown", shutdown)
         .append("affinity", affinity)
+        .append("topologySpreadConstraints", topologySpreadConstraints)
         .append("priorityClassName", priorityClassName)
         .append("readinessGates", readinessGates)
         .append("restartPolicy", restartPolicy)
@@ -837,6 +858,7 @@ class ServerPod extends KubernetesResource {
         .append(containers, that.containers)
         .append(shutdown, that.shutdown)
         .append(affinity, that.affinity)
+        .append(topologySpreadConstraints, that.topologySpreadConstraints)
         .append(priorityClassName, that.priorityClassName)
         .append(readinessGates, that.readinessGates)
         .append(restartPolicy, that.restartPolicy)
@@ -867,6 +889,7 @@ class ServerPod extends KubernetesResource {
         .append(containers)
         .append(shutdown)
         .append(affinity)
+        .append(topologySpreadConstraints)
         .append(priorityClassName)
         .append(readinessGates)
         .append(restartPolicy)
