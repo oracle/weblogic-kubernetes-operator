@@ -28,7 +28,7 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+//import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -36,7 +36,7 @@ import static java.nio.file.Files.createDirectories;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
-import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+//import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -256,6 +256,7 @@ public class PersistentVolumeUtils {
       deleteDirectory(pvHostPath.toFile());
       createDirectories(pvHostPath);
       // DEBUG: chmod -R 777 pvHostPath
+      /*
       if (OCNE) {
         String command = "chmod -R 777 " + pvHostPath;
         Command.withParams(
@@ -264,6 +265,7 @@ public class PersistentVolumeUtils {
                 .redirect(true)
         ).execute();
       }
+      */
     } catch (IOException ioex) {
       logger.severe(ioex.getMessage());
       fail("Create persistent volume host path failed");
