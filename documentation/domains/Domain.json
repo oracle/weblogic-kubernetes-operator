@@ -513,8 +513,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
-          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1",
+          "default": "fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
+          "description": "The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -687,8 +687,8 @@
       "type": "object",
       "properties": {
         "image": {
-          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.1.4",
-          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.4",
+          "default": "ghcr.io/oracle/weblogic-monitoring-exporter:2.1.5",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.5",
           "type": "string"
         },
         "imagePullPolicy": {
