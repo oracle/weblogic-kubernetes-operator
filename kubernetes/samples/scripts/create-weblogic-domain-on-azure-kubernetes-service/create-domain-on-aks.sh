@@ -818,7 +818,7 @@ initialize
 envValidate
 
 # Validate the parameters
-parametersValidate
+parametersValidate "$@"
 
 # Create resource group
 createResourceGroup
