@@ -94,7 +94,7 @@ Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/we
 
 ```shell
 $ cd $BASE_DIR
-$ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ```
 
