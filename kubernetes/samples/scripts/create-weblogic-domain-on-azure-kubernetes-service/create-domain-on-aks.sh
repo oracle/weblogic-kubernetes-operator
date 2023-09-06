@@ -126,6 +126,17 @@ parametersValidate() {
   email="$dockerEmail"
   password="$dockerPassword"
 
+  while getopts "u:p:" option; do
+      case "${option}" in
+          u)
+              email=${OPTARG}
+              ;;
+          p)
+              password=${OPTARG}
+              ;;
+      esac
+  done
+
   # Check for default values and prompt for setting
   if [ "$email" = "docker-email" ]; then
     echo -n "Please enter a value for 'dockerEmail'(Oracle Single Sign-On (SSO) account email): "
