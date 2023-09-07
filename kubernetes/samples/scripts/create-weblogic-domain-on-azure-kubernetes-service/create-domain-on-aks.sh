@@ -39,9 +39,9 @@ fail() {
 }
 
 # Define display end-------------
-BLUE="\e[34m"
-RED="\e[31m"
-RESET="\e[0m"
+BLUE="\033[34m"
+RED="\033[31m"
+RESET="\033[0m"
 
 # Function: Print colored message
 print_message() {
