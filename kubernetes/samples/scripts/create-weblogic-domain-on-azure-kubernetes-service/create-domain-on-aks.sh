@@ -760,12 +760,14 @@ while [ $waiting_time -lt $max_wait_time ]; do
     ready=$(kubectl get pod/${domainUID}-admin-server -o=jsonpath='{.ready.phase}')
     if [ "$status" == "Running" ]; then
         if [ "$ready" == "1/1" ]; then
-          echo "Pod is running. Exiting..."
+          echo "${domainUID}-admin-server is running. Exiting..."
+          break
+        else
+          echo "${domainUID}-admin-server is running, but not ready. Waiting for $interval seconds..."
         fi
-        break
     fi
     
-    echo "Pod is not running yet. Waiting for $interval seconds..."
+    echo "${domainUID}-admin-server is not running yet. Waiting for $interval seconds..."
     sleep $interval
     waiting_time=$((waiting_time + interval))
 done
