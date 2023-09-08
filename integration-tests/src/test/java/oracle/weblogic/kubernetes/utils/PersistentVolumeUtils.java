@@ -23,9 +23,12 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.createDirectories;
@@ -36,9 +39,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
@@ -48,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -67,34 +74,33 @@ public class PersistentVolumeUtils {
                                           String labelSelector,
                                           String namespace) {
     LoggingFacade logger = getLogger();
+
     assertNotNull(v1pv, "v1pv is null");
     assertNotNull(v1pvc, "v1pvc is null");
 
     String pvName = v1pv.getMetadata().getName();
     String pvcName = v1pvc.getMetadata().getName();
-
     logger.info("Creating persistent volume {0}", pvName);
     assertTrue(assertDoesNotThrow(() -> createPersistentVolume(v1pv),
         "Persistent volume creation failed with ApiException "),
         "PersistentVolume creation failed");
-
-    logger.info("Creating persistent volume claim {0}", pvcName);
-    assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
-        "Persistent volume claim creation failed with ApiException"),
-        "PersistentVolumeClaim creation failed");
-
     // check the persistent volume and persistent volume claim exist
     testUntil(
         assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
-          String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+            String.format("pvExists failed with ApiException when checking pv %s", pvName)),
         logger,
         "persistent volume {0} exists",
         pvName);
 
+    logger.info("Creating persistent volume claim {0}", pvcName);
+    assertTrue(assertDoesNotThrow(() -> createPersistentVolumeClaim(v1pvc),
+            "Persistent volume claim creation failed with ApiException"),
+        "PersistentVolumeClaim creation failed");
+
     testUntil(
         assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
-          String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
-            pvcName, namespace)),
+            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+                pvcName, namespace)),
         logger,
         "persistent volume claim {0} exists in namespace {1}",
         pvcName,
@@ -131,6 +137,8 @@ public class PersistentVolumeUtils {
               .path(fssDir)
               .server(NFS_SERVER)
               .readOnly(false));
+      v1pvc.getSpec()
+          .storageClassName("oci-fss");
     } else if (OKD) {
       v1pv.getSpec()
           .storageClassName("okd-nfsmnt")
@@ -138,19 +146,13 @@ public class PersistentVolumeUtils {
               .path(PV_ROOT)
               .server(NFS_SERVER)
               .readOnly(false));
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
     } else {
       v1pv.getSpec()
           .storageClassName(storageClassName)
           .hostPath(new V1HostPathVolumeSource()
               .path(pvHostPath.toString()));
-    }
-    if (OKE_CLUSTER) {
-      v1pvc.getSpec()
-          .storageClassName("oci-fss");
-    } else if (OKD) {
-      v1pvc.getSpec()
-          .storageClassName("okd-nfsmnt");
-    } else {
       v1pvc.getSpec()
           .storageClassName(storageClassName);
     }
@@ -365,6 +367,7 @@ public class PersistentVolumeUtils {
                                     HashMap<String,String> labels, String className)
       throws IOException {
     LoggingFacade logger = getLogger();
+    V1PersistentVolume v1pv = null;
     logger.info("creating persistent volume and persistent volume claim");
     // create persistent volume and persistent volume claims
     // when tests are running in local box the PV directories need to exist
@@ -373,7 +376,7 @@ public class PersistentVolumeUtils {
       pvHostPath = createPVHostPathDir("pv-test" + nameSuffix, className);
     }
 
-    V1PersistentVolume v1pv = new V1PersistentVolume()
+    v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
             .addAccessModesItem("ReadWriteMany")
             .volumeMode("Filesystem")
@@ -439,4 +442,70 @@ public class PersistentVolumeUtils {
           mountPath, argCommand);
     }
   }
+
+  /**
+   * Run commands inside pv.
+   * @param domainNamespace  domain ns
+   * @param commandToExecuteInsidePod  command
+   * @param pvcName  name
+   * @param mountPath  path
+   */
+  public static synchronized void execCommandInPv(String domainNamespace, String pvcName,
+                                     String mountPath, String commandToExecuteInsidePod) {
+    LoggingFacade logger = getLogger();
+    Path pvhelperPath =
+        Paths.get(ITTESTS_DIR, "/../kubernetes/samples/scripts/domain-lifecycle/pv-pvc-helper.sh");
+    String pvhelperScript = pvhelperPath.toString();
+    String command =
+        String.format("%s -n %s -r -c %s -m %s", pvhelperScript,
+            domainNamespace, pvcName, mountPath);
+    logger.info("pvhelper pod command {0}", command);
+    assertTrue(() -> Command.withParams(
+            defaultCommandParams()
+                .command(command)
+                .redirect(false))
+        .execute());
+
+    V1Pod serverPod = assertDoesNotThrow(() ->
+            Kubernetes.getPod(domainNamespace, null, "pvhelper"),
+        String.format("Could not get the server Pod %s in namespace %s",
+            "pvhelper", domainNamespace));
+
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
+            "/bin/bash", "-c", commandToExecuteInsidePod),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            commandToExecuteInsidePod, "pvhelper", domainNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
+    assertDoesNotThrow(() -> deletePod(serverPod.getMetadata().getName(), domainNamespace));
+  }
+
+  /**
+   * Creates a job to change permission on PV.
+   * @param namespace - namespace go run a job
+   * @param pvName -name of pv
+   * @param pvcName - name of pvc
+   * @param mountPath -mountPath
+   */
+  public static void changePermissionOnPv(String namespace, String pvName, String pvcName, String mountPath) {
+    String argCommand = "chown -R 1000:1000 " + mountPath;
+    if (OKE_CLUSTER) {
+      argCommand = "chown 1000:1000 " + mountPath
+          + "/. && find "
+          + mountPath
+          + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:1000";
+    }
+
+    createTestRepoSecret(namespace);
+    createJobToChangePermissionsOnPvHostPath(pvName,
+        pvcName, namespace,
+        mountPath, argCommand);
+  }
+
 }
