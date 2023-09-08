@@ -63,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-gate")
+@Tag("olcne")
 class ItWlsDomainOnPV {
 
   private static String domainNamespace = null;

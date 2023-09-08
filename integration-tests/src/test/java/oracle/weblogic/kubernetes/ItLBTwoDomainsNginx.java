@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.V1IngressBackend;
@@ -22,6 +23,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -30,7 +32,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployClusterviewApp;
@@ -70,6 +75,7 @@ class ItLBTwoDomainsNginx {
   private static Path tlsCertFile;
   private static Path tlsKeyFile;
   private static LoggingFacade logger = null;
+  private static List<String> pvPvcNamePair = null;
 
   // domain constants
   private static final int replicaCount = 2;
@@ -115,7 +121,7 @@ class ItLBTwoDomainsNginx {
       domainUids.add("wls-nginx-domain-" + i);
     }
 
-    createMultipleDomainsSharingPVUsingWlstAndVerify(
+    pvPvcNamePair = createMultipleDomainsSharingPVUsingWlstAndVerify(
         domainNamespace, wlSecretName, ItLBTwoDomainsNginx.class.getSimpleName(), numberOfDomains, domainUids,
         replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
@@ -212,6 +218,22 @@ class ItLBTwoDomainsNginx {
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getNginxLbNodePort("http"),
           replicaCount, false, "/" + domainUid.substring(4));
+    }
+  }
+
+  /**
+   * Delete PV and PVC.
+   * @throws ApiException if Kubernetes API call fails
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP) {
+      if (pvPvcNamePair != null) {
+        // delete pvc
+        deletePersistentVolumeClaim(pvPvcNamePair.get(1), domainNamespace);
+        // delete pv
+        deletePersistentVolume(pvPvcNamePair.get(0));
+      }
     }
   }
 
