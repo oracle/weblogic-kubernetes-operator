@@ -99,9 +99,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to use Elasticsearch API to query WebLogic logs")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItElasticLogging {
 
   // constants for creating domain image using model in image

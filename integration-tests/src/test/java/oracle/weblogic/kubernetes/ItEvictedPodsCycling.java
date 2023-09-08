@@ -47,8 +47,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Test WLS server pods were evicted due to Pod ephemeral storage usage exceeds the total limit")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItEvictedPodsCycling {
 
   // constants for Domain

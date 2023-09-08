@@ -84,8 +84,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItLogHomeFlatStructure {
 
   private static String opNamespace = null;

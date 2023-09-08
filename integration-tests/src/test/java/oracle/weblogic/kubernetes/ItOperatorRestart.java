@@ -57,9 +57,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;

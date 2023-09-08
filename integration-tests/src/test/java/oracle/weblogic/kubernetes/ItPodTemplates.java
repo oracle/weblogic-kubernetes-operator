@@ -61,9 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to verify domain pod templates.")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItPodTemplates {
 
   // domain constants

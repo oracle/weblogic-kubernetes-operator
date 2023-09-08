@@ -101,9 +101,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create model in image domain with Cluster Resourcees")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
+@Tag("oke-gate")
 class ItMiiClusterResource {
 
   private static String opNamespace = null;
