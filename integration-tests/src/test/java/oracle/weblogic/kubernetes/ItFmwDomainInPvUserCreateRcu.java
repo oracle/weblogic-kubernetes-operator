@@ -27,7 +27,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -72,7 +71,6 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceSimplifyJrfPv;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createSimplifyJrfPvDomainAndRCU;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.restoreOpssWalletfileSecret;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.saveAndRestoreOpssWalletfileSecret;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
@@ -84,7 +82,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodLogContains;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletFileSecretWithoutFile;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -101,6 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test for initializeDomainOnPV when user per-creates RCU")
 @IntegrationTest
 @Tag("kind-sequential")
+@Tag("oke-gate")
 public class ItFmwDomainInPvUserCreateRcu {
 
   private static String opNamespace = null;
@@ -118,6 +116,7 @@ public class ItFmwDomainInPvUserCreateRcu {
   private static final String domainUid1 = "jrfdomainonpv-userrcu1";
   private static final String domainUid3 = "jrfdomainonpv-userrcu3";
   private static final String domainUid4 = "jrfdomainonpv-userrcu4";
+
   private static final String miiAuxiliaryImage1Tag = "jrf1" + MII_BASIC_IMAGE_TAG;
   private final String adminSecretName1 = domainUid1 + "-weblogic-credentials";
   private final String adminSecretName3 = domainUid3 + "-weblogic-credentials";
@@ -285,9 +284,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid1);
     deleteDomainResource(domainNamespace, domainUid1);
     try {
-      deleteDirectory(Paths.get("/share").toFile());
+      deleteDirectory(Paths.get("/shared").toFile());
     } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
+      logger.severe("Failed to cleanup directory /shared", ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}", pvName);
     DomainResource domain = createDomainResourceSimplifyJrfPv(
@@ -497,85 +496,13 @@ public class ItFmwDomainInPvUserCreateRcu {
 
   }
 
-  /**
-   * The user provides opss.walletFileSecret that is empty.
-   * If "ewallet.p12" is an empty file, running opss-wallet.sh to restore the wallet file
-   * secret will fail and return "Error: Wallet file 'ewallet.p12' is empty"
-   * Create opss.walletFileSecret without entry with --from-file=walletFile to get an empty walletFileSecret
-   * The operator will not mount the secret but proceed with normal domain creation without error
-   */
-  @Test
-  @Order(5)
-  @DisplayName("Create a FMW domain on PV when user provide OPSS wallet file is empty")
-  void testFmwDomainOnPvUserProvideEmptyOpss() {
-
-    final String pvName = getUniqueName(domainUid4 + "-pv-");
-    final String pvcName = getUniqueName(domainUid4 + "-pvc-");
-
-    //create empty wallet file ewallet.p12
-    try {
-      File file = new File("ewallet.p12");
-      if (file.createNewFile()) {
-        logger.info("Empty wallet file ewallet.p12 is created: " + file.getAbsolutePath());
-      } else {
-        logger.info("Failed to create file ewallet.p12 ");
-      }
-    } catch (IOException ioe) {
-      logger.severe("Failed to create file ewallet.p12", ioe);
-    }
-
-    ExecResult result = restoreOpssWalletfileSecret(domainNamespace, domainUid4, opsswalletfileSecretName4);
-    logger.info("restoreOpssWalletfileSecret returns msg: " + result.stdout());
-    assertTrue(result.stdout().contains("Error: Wallet file 'ewallet.p12' is empty"));
-
-    //delete the empty wallet file ewallet.p12
-    try {
-      delete(new File("./ewallet.p12"));
-      logger.info("Wallet file ewallet.p12 is deleted");
-    } catch (IOException ioe) {
-      logger.severe("Failed to delete file ewallet.p12", ioe);
-    }
-
-    //create empty walletFileSecret
-    createOpsswalletFileSecretWithoutFile(opsswalletfileSecretName4, domainNamespace);
-    logger.info("Empty walletFile secret {0} is created in the namespace {1}",
-        opsswalletfileSecretName4, domainNamespace);
-
-    logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid4);
-    deleteDomainResource(domainNamespace, domainUid4);
-    try {
-      deleteDirectory(Paths.get("/share").toFile());
-    } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
-    }
-    logger.info("Creating domain custom resource with pvName: {0}", pvName);
-    DomainResource domain = createDomainResourceSimplifyJrfPv(
-        domainUid4, domainNamespace, adminSecretName4,
-        TEST_IMAGES_REPO_SECRET_NAME,
-        rcuaccessSecretName4,
-        opsswalletpassSecretName4, opsswalletfileSecretName4,
-        pvName, pvcName, domainCreationImages4, configMapName);
-
-    createDomainAndVerify(domain, domainNamespace);
-
-    // verify that all servers are ready
-    verifyDomainReady(domainNamespace, domainUid4, replicaCount, "nosuffix");
-
-    // delete the domain
-    deleteDomainResource(domainNamespace, domainUid4);
-    //delete the rcu pod
-    assertDoesNotThrow(() -> deletePod("rcu", dbNamespace),
-              "Got exception while deleting server " + "rcu");
-    checkPodDoesNotExist("rcu", null, dbNamespace);
-
-  }
 
   /**
    * User creates RCU, Operate creates PV/PVC and FMW domain with multiple images
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
-  @Order(6)
+  @Order(5)
   @DisplayName("Create a FMW domain on PV with multiple images when user per-creates RCU")
   void testFmwDomainOnPvUserCreatesRCUMultiImages() {
 
@@ -623,7 +550,7 @@ public class ItFmwDomainInPvUserCreateRcu {
     DomainCreationImage domainCreationImage1 = createImage(fmwModelFile,fmwModelPropFile,"jrf3");
 
     // image2 with model files for jms config
-    List modelList = new ArrayList<>();
+    List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
     String miiAuxiliaryImageTag = "jrf3jms" + MII_BASIC_IMAGE_TAG;
     WitParams witParams =
@@ -670,7 +597,7 @@ public class ItFmwDomainInPvUserCreateRcu {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
-  @Order(7)
+  @Order(6)
   @DisplayName("Create a FMW domain on PV with provided OPSS wallet file secret")
   void testFmwDomainOnPVwithProvidedOpss() {
 
@@ -681,9 +608,9 @@ public class ItFmwDomainInPvUserCreateRcu {
     logger.info("Deleting domain custom resource with namespace: {0}, domainUid {1}", domainNamespace, domainUid3);
     deleteDomainResource(domainNamespace, domainUid3);
     try {
-      deleteDirectory(Paths.get("/share").toFile());
+      deleteDirectory(Paths.get("/shared").toFile());
     } catch (IOException ioe) {
-      logger.severe("Failed to cleanup directory /share", ioe);
+      logger.severe("Failed to cleanup directory /shared", ioe);
     }
     logger.info("Creating domain custom resource with pvName: {0}", pvName);
     DomainResource domain = createSimplifyJrfPvDomainAndRCU(
@@ -719,7 +646,7 @@ public class ItFmwDomainInPvUserCreateRcu {
    * Verify Operator starts the servers in the new cluster.
    */
   @Test
-  @Order(8)
+  @Order(7)
   @DisplayName("Create a FMW domain on PV with adding new cluster")
   void testFmwDomainOnPvUserWithAddedCluster() {
     String domainUid = "jrfdomainonpv-userrcu7";

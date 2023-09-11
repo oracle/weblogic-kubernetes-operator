@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.HTTP_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
@@ -959,6 +960,92 @@ public class DomainUtils {
     domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     setPodAntiAffinity(domain);
+
+    return domain;
+  }
+
+  /**
+   *  Utility to create domain resource on pv with confiiguration.
+   * @param domainUid domain uid
+   * @param domNamespace  domain namespace
+   * @param adminSecretName wls admin secret name
+   * @param clusterName cluster name
+   * @param pvName PV name
+   * @param pvcName PVC name
+   * @param domainInHomePrefix domain in home prefix
+   * @param replicaCount repica count of the clsuter
+   * @param t3ChannelPort t3 chanel
+   * @param configuration domain configuratioin object
+   * @return oracle.weblogic.domain.Domain object
+   */
+  public static DomainResource createDomainResourceOnPv(String domainUid,
+                                                  String domNamespace,
+                                                  String adminSecretName,
+                                                  String clusterName,
+                                                  String pvName,
+                                                  String pvcName,
+                                                  String domainInHomePrefix,
+                                                  int replicaCount,
+                                                  int t3ChannelPort,
+                                                  Configuration configuration) {
+
+    // create a domain custom resource configuration object
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome(domainInHomePrefix + domainUid)
+            .domainHomeSourceType("PersistentVolume")
+            .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .imagePullSecrets(Collections.singletonList(
+                new V1LocalObjectReference()
+                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/" + domNamespace + "/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy("IfNeeded")
+            .failureRetryIntervalSeconds(FAILURE_RETRY_INTERVAL_SECONDS)
+            .failureRetryLimitMinutes(FAILURE_RETRY_LIMIT_MINUTES)
+            .serverPod(new ServerPod() //serverpod
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom"))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer() //admin server
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .configuration(configuration));
+
+    // create cluster resource for the domain
+    String clusterResName  = domainUid + "-" + clusterName;
+    if (!Cluster.doesClusterExist(clusterResName, CLUSTER_VERSION, domNamespace)) {
+      ClusterResource cluster = createClusterResource(clusterResName,
+          clusterName, domNamespace, replicaCount);
+      createClusterAndVerify(cluster);
+    }
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
 
     return domain;
   }
