@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. 
+# Copyright (c) 2023, Oracle and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 apiVersion: database.oracle.com/v1alpha1
@@ -16,6 +16,14 @@ spec:
   ## If cloning from an external containerized DB which could be either standalone or in any K8s cluster,
   ## specify connect string as `<host>:<port>/<service_name>` instead of source database ref
   cloneFrom: ""
+
+  ## Reference to a source primary database from which
+  ## Format: 1. Intra-cluster: you can give name of the primary database or the database connect string in `<host>:<port>/<service_name>` format
+  ##         2. Inter-cluster: Database connect string in `<host>:<port>/<service_name>` format
+  primaryDatabaseRef: ""
+
+  ## Enable this flag for creating Physical Standby Database
+  createAsStandby: false
 
   ## DB edition. N/A if cloning from a Source DB in current K8s cluster (if cloneFrom is set to a database ref)
   ## Valid values for edition are enterprise, standard or express
@@ -43,6 +51,15 @@ spec:
 
   ## Enable/Disable ForceLogging
   forceLog: false
+
+  ## Enable TCPS
+  enableTCPS: false
+
+  ## TCPS Certificate Renewal Interval: The time after which TCPS certificate will be renewed if TCPS connections are enabled.
+  ## tcpsCertRenewInterval can be in hours(h), minutes(m) and seconds(s); e.g. 4380h, 8760h etc.
+  ## Maximum value is 8760h (1 year), Minimum value is 24h; Default value is 8760h (1 year)
+  ## If this field is commented out/removed from the yaml, it will disable the auto-renewal feature for TCPS certificate
+  tcpsCertRenewInterval: 8760h
 
   ## NA if cloning from a SourceDB (cloneFrom is set)
   ## Specify both sgaSize and pgaSize (in MB) or dont specify both
@@ -79,6 +96,15 @@ spec:
   ## Type of service . Applicable on cloud enviroments only
   ## if loadBalService : false, service type = "NodePort" else "LoadBalancer"
   loadBalancer: false
+  
+  ## 'listenerPort' and 'tcpsListenerPort' fields customizes port cofigurations for normal and tcps database listeners
+  ## 'tcpsListenerPort' will come in effect only when 'enableTCPS' field is set
+  ## If loadBalancer is enabled, the listenerPort, tcpsListenerPort will be the load balancer ports
+  ## If loadBalancer is disabled, the listenerPort, tcpsListenerPort will be the node ports(should be in range 30000-32767)
+  ## If enableTCPS is set, and listenerPort is commented/not mentioned in the YAML file, only TCPS endpoint will be exposed
+  #listenerPort: 30001
+  #tcpsListenerPort: 30002
+
   ## Service Annotations (Cloud provider specific), for configuring the service (e.g. private LoadBalancer service)
   #serviceAnnotations:
   #  service.beta.kubernetes.io/oci-load-balancer-internal: "true"
