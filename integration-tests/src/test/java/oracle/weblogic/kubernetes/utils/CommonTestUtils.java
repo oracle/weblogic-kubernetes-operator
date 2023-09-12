@@ -1234,6 +1234,31 @@ public class CommonTestUtils {
   }
 
   /**
+   * Get external IP address of a service.
+   *
+   * @param nameSpace - nameSpace of service
+   * @param serviceName - service name
+   * @return external IP address of the given service on OKE
+   */
+  public static String getServiceExtIPAddrtOke(String nameSpace, String serviceName) {
+    LoggingFacade logger = getLogger();
+    String serviceExtIPAddr = null;
+
+    if (OKE_CLUSTER) {
+      String cmdToGetServiceExtIPAddr =
+          KUBERNETES_CLI + " get services -n " + nameSpace + " | awk '{print $4}' |tail -n+2";
+      logger.info("Command to get external IP address of {0} service {1}: ", serviceName, cmdToGetServiceExtIPAddr);
+      CommandParams params = new CommandParams().defaults();
+      params.command(cmdToGetServiceExtIPAddr);
+      ExecResult result = Command.withParams(params).executeAndReturnResult();
+      serviceExtIPAddr = result.stdout();
+      logger.info("get external IP address of {0} service returns: {1}", serviceName, serviceExtIPAddr);
+    }
+
+    return serviceExtIPAddr;
+  }
+
+  /**
    * Verify the command result contains expected message.
    *
    * @param command the command to execute
