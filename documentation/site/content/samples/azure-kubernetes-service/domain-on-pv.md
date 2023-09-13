@@ -1,11 +1,11 @@
 ---
 title: "Domain home on a PV"
-date: 2020-07-12T18:22:31-05:00
+date: 2023-09-14T18:22:31-05:00
 weight: 2
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC on the Azure Kubernetes Service."
 ---
 
-This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://oracle.github.io/weblogic-kubernetes-operator) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 
 #### Contents
 
@@ -69,12 +69,10 @@ The steps in this section show you how to sign in to the Azure CLI.
 # Change these parameters as needed for your own environment
 export ORACLE_SSO_EMAIL=<replace with your oracle account email>
 export ORACLE_SSO_PASSWORD=<replace with your oracle password>
-# An example of Domain_Creation_Image_URL: xxx.azurecr.io/wdt-domain-image:WLS-v1
-export Domain_Creation_Image_URL=<replace with your domain creation image url>
 
 # Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
 export BASE_DIR=~
-export namePrefix=wls
+export NAME_PREFIX=wls
 export WEBLOGIC_USERNAME=weblogic
 export WEBLOGIC_PASSWORD=Secret123456
 export domainUID=domain1
@@ -90,7 +88,7 @@ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 
 #### Clone WKO repository
 
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v4.1.0, but should work with the latest release.
+If you have not already done so, clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v4.1.1, but should work later releases.
 
 ```shell
 $ cd $BASE_DIR
@@ -100,7 +98,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 #### Create Resource Group
 
-```
+```shell
 $ cd $BASE_DIR/weblogic-kubernetes-operator
 $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 ```
@@ -111,6 +109,55 @@ $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
  **NOTE**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 {{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
+
+#### Create the Azure Container Registry and connect it to the AKS cluster
+
+Your AKS cluster must be connected to a container registry so it can pull and interact with container images. The WebLogic Kubernetes Operator assumes that the docker images in the container registry have the correct structure so they are ready to run as WebLogic Docker images. The WebLogic Image Toolkit you used when satisfying the preconditions produces images that meet this requirement. In particular the image `wdt-domain-image:WLS-v1`. The steps in this section show you how to create an Azure Container Registry, connect it to your existing AKS cluster, and push the `wdt-domain-image:WLS-v1` to this registry.
+
+Create the Azure Container Registry in your existing resource group.
+
+```shell
+az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name ${AKS_CLUSTER_NAME} --sku Basic --admin-enabled
+```
+
+Successful output will be a JSON object that includes the property.
+
+```json
+"id": "/subscriptions/<your subscription id>/resourceGroups/<your resource group>/providers/Microsoft.ContainerRegistry/registries/<your aks cluster name>"
+```
+
+Obtain the credentials to the Azure Container Registry and perform the `docker login`.
+
+```shell
+export LOGIN_SERVER=$(az acr show \
+    --name ${AKS_CLUSTER_NAME} \
+    --query 'loginServer' \
+    --output tsv)
+export USER_NAME=$(az acr credential show \
+    --name ${AKS_CLUSTER_NAME} \
+    --query 'username' \
+    --output tsv)
+export PASSWORD=$(az acr credential show \
+    --name ${AKS_CLUSTER_NAME} \
+    --query 'passwords[0].value' \
+    --output tsv)
+
+docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
+```
+
+Push the `wdt-domain-image:WLS-v1` image created while satisfying the preconditions to this registry.
+
+```shell
+docker push ${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+```
+
+Set an environment variable for use in a later script.
+
+```shell
+# An example of Domain_Creation_Image_tag: xxx.azurecr.io/wdt-domain-image:WLS-v1
+export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
+```
+
 
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
@@ -156,7 +203,7 @@ weblogic-operator-webhook-868db5875b-55v7r   1/1     Running   0          86s
   - [Create WebLogic Domain](#create-weblogic-domain-1)
   - [Create LoadBalancer](#create-loadbalancer)
 
-Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operatorto create a WLS domain.
+Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can ask the operator to create a WLS domain.
 
 ##### Create secrets
 
@@ -200,21 +247,28 @@ weblogic-webhook-secrets                  Opaque                           2    
 wlsregcred                                kubernetes.io/dockerconfigjson   1      38s
 ```
 
-**NOTE**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.
+**NOTE**: If the `NAME` column in your output is missing any of the values shown above, please review your execution of the preceding steps in this sample to ensure that you correctly followed all of them.
+
+##### Enable Weblogic Operator
+
+Run the following command to enable the operator to monitor the namespace.
+
+```shell
+kubectl label namespace default weblogic-operator=enabled
+```
 
 ##### Create WebLogic Domain
 Now, you deploy a `sample-domain1` domain resource and an associated `sample-domain1-cluster-1` cluster resource using a single YAML resource file which defines both resources. The domain resource and cluster resource tells the operator how to deploy a WebLogic domain. They do not replace the traditional WebLogic configuration files, but instead cooperate with those files to describe the Kubernetes artifacts of the corresponding domain.
 
-**NOTE**: Before you deploy the domain custom resource, ensure all nodes in your Kubernetes cluster [can access `domain-creation-image` and other images]({{< relref "/samples/domains/domain-home-on-pv#ensuring-your-kubernetes-cluster-can-access-images" >}}).
-
 - Run the following command to generate resource files.
+
     ```shell
-    cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
-    bash create-domain-on-aks-generate-yaml.sh
-    
+    cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service  
+
+    ./create-domain-on-aks-generate-yaml.sh
     ```
 
-After running above commands, you will get three files:domain-resource.yaml, admin-lb.yaml, cluster-lb.yaml.
+After running above commands, you will get three files: `domain-resource.yaml`, `admin-lb.yaml`, `cluster-lb.yaml`.
 
 The domain resource references the cluster resource, a WebLogic Server installation image, the secrets you defined, PV and PVC configuration details, and a sample `domain creation image`, which contains a traditional WebLogic configuration and a WebLogic application. For detailed information, see [Domain and cluster resources]({{< relref "/managing-domains/domain-resource.md" >}}).
 
@@ -302,7 +356,7 @@ The domain resource references the cluster resource, a WebLogic Server installat
   If the WLS Administration Console is still not available, use `kubectl get events --sort-by='.metadata.creationTimestamp' ` to troubleshoot.
 
   ```shell
-  $ kubectl get events --sort-by='.metadata.creationTimestamp
+  $ kubectl get events --sort-by='.metadata.creationTimestamp'
   ```
 
 To deploy a sample application on WLS, you may skip to the section [Deploy sample application](#deploy-sample-application).  The next section includes a script that automates all of the preceding steps.

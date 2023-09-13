@@ -35,7 +35,7 @@ spec:
 
   # Identify which Secret contains the credentials for pulling an image
   imagePullSecrets:
-    - name: ${namePrefix}regcred
+    - name: ${NAME_PREFIX}regcred
 
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
@@ -73,7 +73,7 @@ spec:
         #   "sourceModelHome"      - Model file directory in image, default "/auxiliary/models".
         #   "sourceWDTInstallHome" - WDT install directory in image, default "/auxiliary/weblogic-deploy".
         domainCreationImages:
-        - image: "${Domain_Creation_Image_URL}"
+        - image: "${Domain_Creation_Image_tag}"
           imagePullPolicy: IfNotPresent
           #sourceWDTInstallHome: /auxiliary/weblogic-deploy
           #sourceModelHome: /auxiliary/models

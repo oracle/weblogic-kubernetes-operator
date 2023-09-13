@@ -184,11 +184,11 @@ You will dynamically create and use a persistent volume with Azure Files NFS sha
 ##### Create SC and PVC
 
 ##### Generated configuration files
-Use below command to generate configuration files.
+Use the below command to generate configuration files.
 
 ```shell
 cat >azure-csi-nfs-${TIMESTAMP}.yaml <<EOF
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: storage.k8s.io/v1
@@ -233,10 +233,27 @@ $ kubectl apply -f pvc-${TIMESTAMP}.yaml
 Use the following command to verify:
 
 ```shell
+$ kubectl get sc
+```
+
+Example of `kubectl get sc` output:
+
+```shell
+$ kubectl get sc
+NAME                    PROVISIONER          RECLAIMPOLICY   VOLUMEBINDINGMODE      ALLOWVOLUMEEXPANSION   AGE
+azurefile               file.csi.azure.com   Delete          Immediate              true                   30m
+azurefile-csi           file.csi.azure.com   Delete          Immediate              true                   30m
+azurefile-csi-nfs       file.csi.azure.com   Delete          Immediate              true                   24m
+azurefile-csi-premium   file.csi.azure.com   Delete          Immediate              true                   30m
+azurefile-premium       file.csi.azure.com   Delete          Immediate              true                   30m
+...
+```
+
+```shell
 $ kubectl get pvc
 ```
 
-Example output:
+Example of `kubectl get pvc` output:
 
 ```shell
 $ kubectl get pvc
