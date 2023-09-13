@@ -165,6 +165,7 @@ parametersValidate() {
 
 
   # Attempt to login to Docker
+  sudo chmod 666 /var/run/docker.sock
   docker login container-registry.oracle.com -u "$dockerEmail" -p "$dockerPassword" > /dev/null 2>&1
 
   # Check the login result
