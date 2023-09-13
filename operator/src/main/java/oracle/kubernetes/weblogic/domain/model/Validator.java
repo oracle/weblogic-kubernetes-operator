@@ -44,7 +44,7 @@ public abstract class Validator {
     ClusterSpec spec = cluster.getSpec();
     Optional.of(spec).map(ClusterSpec::getAdditionalVolumeMounts)
         .ifPresent(mounts -> mounts.forEach(mount ->
-            checkValidMountPath(mount, getEnvNames(spec), getRemainingVolumeMounts(mounts, mount))));
+            checkValidMountPath(null, mount, getEnvNames(spec), getRemainingVolumeMounts(mounts, mount))));
   }
 
   List<V1VolumeMount> getRemainingVolumeMounts(List<V1VolumeMount> list, V1VolumeMount mount) {
@@ -63,7 +63,8 @@ public abstract class Validator {
         .collect(toSet());
   }
 
-  void checkValidMountPath(V1VolumeMount mount, Set<String> envNames, List<V1VolumeMount> mounts) {
+  void checkValidMountPath(DomainSpec spec, V1VolumeMount mount, Set<String> envNames,
+                           List<V1VolumeMount> mounts) {
     if (skipValidation(mount.getMountPath(), envNames)) {
       return;
     }
@@ -72,10 +73,16 @@ public abstract class Validator {
       failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
 
-    mounts.stream().forEach(m -> checkOverlappingMountPaths(mount, m));
+    mounts.stream().forEach(m -> checkOverlappingMountPaths(spec, mount, m));
   }
 
-  private void checkOverlappingMountPaths(V1VolumeMount mount1, V1VolumeMount mount2) {
+  private void checkOverlappingMountPaths(DomainSpec spec, V1VolumeMount mount1, V1VolumeMount mount2) {
+    // This validation only applies to the initialize domain on PV use case
+    if (Optional.ofNullable(spec).map(DomainSpec::getConfiguration)
+        .map(Configuration::getInitializeDomainOnPV).isEmpty()) {
+      return;
+    }
+
     List<String> list1 = getTokensWithCollection(mount1.getMountPath());
     List<String> list2 = getTokensWithCollection(mount2.getMountPath());
     for (int i = 0; i < Math.min(list1.size(), list2.size()); i++) {
