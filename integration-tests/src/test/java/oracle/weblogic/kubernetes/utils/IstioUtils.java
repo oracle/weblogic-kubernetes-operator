@@ -34,6 +34,7 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_RELOAD_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
@@ -68,9 +69,32 @@ public class IstioUtils {
    */
   public static void installIstio() {
     LoggingFacade logger = getLogger();
+
+    // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
+    // can be (un)installed manually when SKIP_CLEANUP is set to true
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
+        Paths.get(RESULTS_ROOT, "install-istio.sh"),
+        StandardCopyOption.REPLACE_EXISTING),
+        String.format("Copy install-istio.sh to %s failed", RESULTS_ROOT));
+
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
+        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
+        StandardCopyOption.REPLACE_EXISTING),
+        String.format("Copy uninstall-istio.sh to %s failed", RESULTS_ROOT));
+
     Path istioInstallPath =
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh");
+        Paths.get(RESULTS_ROOT, "install-istio.sh");
     String installScript = istioInstallPath.toString();
+
+    // When install istio in OCNE environment, use phx.ocir.io/devweblogic/istio-release instead of gcr.io/istio-release
+    if (OCNE) {
+      logger.info("replace istio installation hub in File {0}", installScript);
+      assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", "phx.ocir.io/devweblogic"),
+          String.format("Failed to replace string in File %s", installScript));
+    }
+
     String command =
         String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
     logger.info("Istio installation command {0}", command);
@@ -79,20 +103,6 @@ public class IstioUtils {
             .command(command)
             .redirect(false))
         .execute());
-    
-    // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
-    // can be (un)installed manually when SKIP_CLEANUP is set to true
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
-        Paths.get(RESULTS_ROOT, "install-istio.sh"), 
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy install-istio.sh to RESULTS_ROOT failed");
-
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
-        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"), 
-        StandardCopyOption.REPLACE_EXISTING),
-        "Copy uninstall-istio.sh to RESULTS_ROOT failed");
   }
 
   /**

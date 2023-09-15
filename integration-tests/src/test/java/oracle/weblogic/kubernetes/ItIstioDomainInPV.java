@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -32,6 +33,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -46,12 +48,17 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.LOCALE_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleAllClustersInDomain;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -92,6 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("olcne")
 class ItIstioDomainInPV  {
 
   private static String opNamespace = null;
@@ -103,6 +111,8 @@ class ItIstioDomainInPV  {
   private final String adminServerName = "admin-server";
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private static LoggingFacade logger = null;
+  private final String pvName = getUniqueName(domainUid + "-pv-");
+  private final String pvcName = getUniqueName(domainUid + "-pvc-");
 
   private static String testWebAppWarLoc = null;
 
@@ -159,9 +169,6 @@ class ItIstioDomainInPV  {
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
-
-    final String pvName = getUniqueName(domainUid + "-pv-");
-    final String pvcName = getUniqueName(domainUid + "-pvc-");
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -398,6 +405,23 @@ class ItIstioDomainInPV  {
     logger.info("Managed Server started in absence of administration server");
   }
 
+  /**
+   * Delete PV and PVC.
+   * @throws ApiException if Kubernetes API call fails
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    if (!SKIP_CLEANUP) {
+      if (assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace).call())) {
+        // delete pvc
+        deletePersistentVolumeClaim(pvcName, domainNamespace);
+      }
+      if (assertDoesNotThrow(() -> pvExists(pvName, null).call())) {
+        // delete pv
+        deletePersistentVolume(pvName);
+      }
+    }
+  }
 
   // Looks for some Japanese Character in Server Pod Logs
   private boolean matchPodLog() {
