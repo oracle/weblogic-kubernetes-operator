@@ -98,6 +98,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToImageContaine
 import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createDiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.getLbExternalIp;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodEvictedStatusInOperatorLogs;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -1242,22 +1243,57 @@ public class CommonTestUtils {
    * @param serviceName - service name
    * @return external IP address of the given service on OKE
    */
-  public static String getServiceExtIPAddrtOke(String nameSpace, String serviceName) {
+  public static String getServiceExtIPAddrtOke(String serviceName, String nameSpace) {
     LoggingFacade logger = getLogger();
     String serviceExtIPAddr = null;
 
     if (OKE_CLUSTER) {
-      String cmdToGetServiceExtIPAddr =
-          KUBERNETES_CLI + " get services -n " + nameSpace + " | awk '{print $4}' |tail -n+2";
-      logger.info("Command to get external IP address of {0} service {1}: ", serviceName, cmdToGetServiceExtIPAddr);
-      CommandParams params = new CommandParams().defaults();
-      params.command(cmdToGetServiceExtIPAddr);
-      ExecResult result = Command.withParams(params).executeAndReturnResult();
-      serviceExtIPAddr = result.stdout();
-      logger.info("get external IP address of {0} service returns: {1}", serviceName, serviceExtIPAddr);
-    }
+      testUntil(
+          isServiceExtIPAddrtOkeReady(serviceName, nameSpace),
+          logger,
+          "Waiting until external IP address of the service available");
 
+      serviceExtIPAddr =
+          assertDoesNotThrow(() -> getLbExternalIp(serviceName, nameSpace),
+              "Can't find external IP address of the service " + serviceName);
+
+      logger.info("External IP address of the service is {0} ", serviceExtIPAddr);
+    }
+    
     return serviceExtIPAddr;
+  }
+
+  /**
+   * Check if external IP address of a service is ready.
+   *
+   * @param nameSpace - nameSpace of service
+   * @param serviceName - service name
+   * @return external IP address of the given service on OKE
+   */
+  public static Callable<Boolean> isServiceExtIPAddrtOkeReady(String serviceName, String nameSpace) {
+    LoggingFacade logger = getLogger();
+    // Regex for IP address that contains digit from 0 to 255.
+    String ipAddressNumber = "(\\d{1,2}|(0|1)\\d{2}|2[0-4]\\d|25[0-5])";
+
+    // Regex for a digit from 0 to 255 and followed by a dot, repeat 4 times to validate an IP address.
+    String regex = ipAddressNumber + "\\." + ipAddressNumber + "\\." + ipAddressNumber + "\\." + ipAddressNumber;
+    Pattern p = Pattern.compile(regex);
+
+    return () -> {
+      String serviceExtIPAddr =
+          assertDoesNotThrow(() -> getLbExternalIp(serviceName, nameSpace),
+              "Can't find external IP address of the service " + serviceName);
+
+      if (serviceExtIPAddr == null) {
+        return false;
+      }
+
+      logger.info("External IP address of the service returns {0} ", serviceExtIPAddr);
+      Matcher m = p.matcher(serviceExtIPAddr);
+      logger.info("Found external IP address of the service: {0} ", m.matches());
+
+      return m.matches();
+    };
   }
 
   /**
