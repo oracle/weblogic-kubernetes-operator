@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -78,9 +79,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @DisabledOnSlimImage
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItRemoteConsole {
 
   private static String domainNamespace = null;
@@ -214,7 +215,11 @@ class ItRemoteConsole {
     int sslPort = getServicePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
-    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    String ingressServiceName = traefikHelmParams.getReleaseName();
+    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+            : getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+
     logger.info("The hostAndPort is {0}", hostAndPort);
 
     //verify WebLogic console is accessible through default-secure nodeport
@@ -242,7 +247,6 @@ class ItRemoteConsole {
     logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("Remote console is accessible through default-secure service");
-
   }
 
   /**
@@ -323,7 +327,10 @@ class ItRemoteConsole {
     String nginxServiceName = nginxHelmParams.getHelmParams().getReleaseName() + "-ingress-nginx-controller";
     nginxNodePort = assertDoesNotThrow(() -> getServiceNodePort(nginxNamespace, nginxServiceName, "http"),
         "Getting Nginx loadbalancer service node port failed");
-    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + nginxNodePort
+    String hostAndPort = getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) != null
+        ? getServiceExtIPAddrtOke(nginxServiceName, nginxNamespace) : K8S_NODEPORT_HOST + ":" + nginxNodePort;
+
+    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
     logger.info("Executing curl command {0}", curlCmd);
@@ -344,10 +351,6 @@ class ItRemoteConsole {
     logger.info("admin svc host = {0}", adminSvcExtHost);
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
-    //The final complete curl command to run is like:
-    //curl -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
-    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
-    //--write-out %{http_code} -o /dev/null
     String curlCmd = "curl -v --show-error --noproxy '*' --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
@@ -366,17 +369,18 @@ class ItRemoteConsole {
     logger.info("LB nodePort is {0}", nodePortOfLB);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    //The final complete curl command to run is like:
-    //curl -v --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
-    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
-    //--write-out %{http_code} -o /dev/null
+    String ingressServiceName = traefikHelmParams.getReleaseName();
+    String traefikNamespace = traefikHelmParams.getNamespace();
+    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : K8S_NODEPORT_HOST + ":" + nodePortOfLB;
+
     String curlCmd = "curl -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
         + "\"{ \\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
         + "\\" + "\"" + "domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + nodePortOfLB + "\\" + "\" }" + "\""
+        + hostAndPort + "\\" + "\" }" + "\""
         + "  --write-out %{http_code} -o /dev/null";
     logger.info("Executing LB nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10),

@@ -48,7 +48,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
+//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -520,18 +520,12 @@ public class LoadBalancerUtils {
   public static String getLbExternalIp(String lbrelname, String lbns) throws Exception {
     int i = 0;
     LoggingFacade logger = getLogger();
-    StringBuffer cmd = new StringBuffer();
-    cmd.append(KUBERNETES_CLI + " get svc ")
-        .append(lbrelname)
-        .append(" --namespace ")
-        .append(lbns)
-        .append(" -w ");
-    verifyCommandResultContainsMsg(cmd.toString(), "running");
-
-
     String cmdip = KUBERNETES_CLI + " get svc --namespace " + lbns
           + " -o jsonpath='{.items[?(@.metadata.name == \"" + lbrelname + "\")]"
           + ".status.loadBalancer.ingress[0].ip}'";
+
+    logger.info("Command to retrieve external IP is: {0} ", cmdip);
+
     ExecResult result = exec(cmdip, true);
     logger.info("The command returned exit value: " + result.exitValue()
         + " command output: " + result.stderr() + "\n" + result.stdout());
@@ -539,7 +533,8 @@ public class LoadBalancerUtils {
     if (result == null || result.exitValue() != 0 || result.stdout() == null) {
       return null;
     }
-    logger.info(" LB_PUBLIC_IP = " + result.stdout().trim());
+
+    logger.info(" LB_PUBLIC_IP is " + result.stdout().trim());
     return result.stdout().trim();
   }
 }

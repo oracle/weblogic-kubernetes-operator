@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
@@ -67,9 +68,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItManagedCoherence {
 
   // constants for Coherence
@@ -178,7 +179,7 @@ class ItManagedCoherence {
           traefikHelmParams.getReleaseName());
 
       String clusterHostname = domainUid + "." + domainNamespace + ".cluster-1.test";
-      // get ingress service Nodeport
+      // get ingress service Name and Nodeport
       String ingressServiceName = traefikHelmParams.getReleaseName();
       String traefikNamespace = traefikHelmParams.getNamespace();
 
@@ -187,7 +188,10 @@ class ItManagedCoherence {
           "Getting Ingress Service node port failed");
       logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
 
-      String hostAndPort = getHostAndPort(clusterHostname, ingressServiceNodePort);
+      String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+              : getHostAndPort(clusterHostname, ingressServiceNodePort);
+
       assertTrue(checkCoheranceApp(clusterHostname, hostAndPort), "Failed to access Coherance App cation");
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
@@ -315,10 +319,14 @@ class ItManagedCoherence {
 
   private boolean coherenceCacheTest(String hostName, int ingressServiceNodePort) {
     logger.info("Starting to test the cache");
+    // get ingress service Name and Nodeport
+    String ingressServiceName = traefikHelmParams.getReleaseName();
+    String traefikNamespace = traefikHelmParams.getNamespace();
 
-    String hostAndPort = getHostAndPort(hostName, ingressServiceNodePort);
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
+    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+            : getHostAndPort(hostName, ingressServiceNodePort);;
+    logger.info("hostAndPort is: {0} ", hostAndPort);
 
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
