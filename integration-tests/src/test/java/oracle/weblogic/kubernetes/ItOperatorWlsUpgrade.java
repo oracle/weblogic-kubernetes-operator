@@ -347,7 +347,8 @@ class ItOperatorWlsUpgrade {
     // before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
         DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
-    upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
+    upgradeOperatorToCurrent(opNamespace);
+    checkDomainStatus(domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     scaleClusterUpAndDown();
   }
@@ -437,7 +438,8 @@ class ItOperatorWlsUpgrade {
     accountingThread.start();
     try {
       // upgrade to current operator
-      upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
+      upgradeOperatorToCurrent(opNamespace);
+      checkDomainStatus(domainNamespace,domainUid);
       verifyPodsNotRolled(domainNamespace, pods);
     } finally {
       if (accountingThread != null) {

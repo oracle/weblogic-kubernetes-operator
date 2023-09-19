@@ -48,23 +48,22 @@ public class Domain {
   private static final ApiextensionsV1Api apiextensionsV1Api = new ApiextensionsV1Api();
 
   /**
-   * Check if the Domain CRD exists.
+   * Check if the CRD exists.
    *
-   * @return true if domains.weblogic.oracle CRD exists otherwise false
+   * @return true if CRD exists otherwise false
    */
-  public static boolean doesCrdExist() {
+  public static boolean doesCrdExist(String crd) {
     try {
       V1CustomResourceDefinition domainCrd
-          = apiextensionsV1Api.readCustomResourceDefinition(
-          "domains.weblogic.oracle", null);
-      assertNotNull(domainCrd, "Domain CRD is null");
+          = apiextensionsV1Api.readCustomResourceDefinition(crd, null);
+      assertNotNull(domainCrd, crd + " CRD is null");
       return true;
     } catch (ApiException aex) {
       getLogger().info(aex.getMessage());
       return false;
     }
   }
-
+  
   /**
    * Checks if weblogic.oracle CRD domain object exists.
    *

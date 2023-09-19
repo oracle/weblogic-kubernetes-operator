@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -44,7 +44,7 @@ public class UpgradeUtils {
   /**
    * Install a released WebLogic Kubernates Operator Version.
    */
-  public static void installOldOperator(String operatorVersion, String opNamespace, String domainNamespace) {
+  public static void installOldOperator(String operatorVersion, String opNamespace, String... domainNamespace) {
     logger = getLogger();
     assertNotNull(opNamespace, "Operator Namespace is null");
     assertNotNull(opNamespace, "Domain Namespace is null");
@@ -55,7 +55,7 @@ public class UpgradeUtils {
   }
 
   private static HelmParams installOperator(String operatorVersion,
-      String opNamespace, String domainNamespace) {
+      String opNamespace, String... domainNamespace) {
     // delete existing CRD if any
     cleanUpCRD();
 
@@ -78,8 +78,10 @@ public class UpgradeUtils {
 
   /**
    * upgrade to operator to current version.
+   *
+   * @param opNamespace Operator namespace
    */
-  public static void upgradeOperatorToCurrent(String opNamespace, String domainNamespace, String domainUid) {
+  public static void upgradeOperatorToCurrent(String opNamespace) {
     String latestOperatorImageName = getOperatorImageName();
     HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
@@ -113,8 +115,6 @@ public class UpgradeUtils {
           checkCrdVersion(),
           logger,
           "the CRD version to be updated to current");
-    // check domain status conditions
-    checkDomainStatus(domainNamespace,domainUid);
   }
 
   private static Callable<Boolean> getOpContainerImageName(String namespace) {
@@ -170,18 +170,19 @@ public class UpgradeUtils {
    * Install a released WebLogic Kubernates Operator Version.
    */
   public static void cleanUpCRD() {
-    boolean doesCrdExist = doesCrdExist();
-
-    if (doesCrdExist) {
-      Command
-              .withParams(new CommandParams()
-                      .command(KUBERNETES_CLI + " patch crd/domains.weblogic.oracle"
-                              + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
-              .execute();
-      Command
-              .withParams(new CommandParams()
-                      .command(KUBERNETES_CLI + " delete crd domains.weblogic.oracle --ignore-not-found"))
-              .execute();
+    String[] crds = {"domains.weblogic.oracle", "clusters.weblogic.oracle"};
+    for (String crd : crds) {
+      if (doesCrdExist(crd)) {
+        Command
+            .withParams(new CommandParams()
+                .command(KUBERNETES_CLI + " patch crd/" + crd
+                    + " -p '{\"metadata\":{\"finalizers\":[]}}' --type=merge"))
+            .execute();
+        Command
+            .withParams(new CommandParams()
+                .command(KUBERNETES_CLI + " delete crd " + crd + " --ignore-not-found"))
+            .execute();
+      }
     }
   }
 }
