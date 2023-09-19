@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.UpgradeUtils.checkDomainStatus;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.cleanUpCRD;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.installOldOperator;
 import static oracle.weblogic.kubernetes.utils.UpgradeUtils.upgradeOperatorToCurrent;
@@ -208,7 +209,8 @@ class ItOperatorUpgradeWithIstio {
     istioIngressPort = 
        createIstioService(domainUid,clusterName,adminServerPodName,domainNamespace);
     checkIstioService(istioIngressPort,domainNamespace);
-    upgradeOperatorToCurrent(opNamespace,domainNamespace,domainUid);
+    upgradeOperatorToCurrent(opNamespace);
+    checkDomainStatus(domainNamespace,domainUid);
     verifyPodsNotRolled(domainNamespace, pods);
     // Re check the istio Service After Upgrade
     checkIstioService(istioIngressPort,domainNamespace);
