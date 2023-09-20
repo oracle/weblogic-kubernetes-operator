@@ -161,7 +161,7 @@ TKG support and limitations:
   * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.
 
-Tanzu Kubernetes Grid Integrated Edition (TKGI) 1.16 (with vSphere CSI 2.7) support includes:
+Tanzu Kubernetes Grid Integrated Edition (TKGI) 1.16 with vSphere (7.0.3) CSI 2.7 support includes:
 * Both domain home source types (Model in Image and Domain on PV); use vSAN for PV.
 * Kubernetes 1.25.10
 * Ubuntu
