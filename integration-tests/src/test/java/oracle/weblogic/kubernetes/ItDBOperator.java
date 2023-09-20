@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -502,7 +503,9 @@ class ItDBOperator {
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
-    if (!SKIP_CLEANUP) {
+    if (!SKIP_CLEANUP) {      
+      TestActions.shutdownDomain(fmwDomainUid, fmwDomainNamespace);
+      TestActions.shutdownDomain(wlsDomainUid, wlsDomainNamespace);
       deleteOracleDB(dbNamespace, dbName);
       uninstallDBOperator(dbNamespace);
     }
