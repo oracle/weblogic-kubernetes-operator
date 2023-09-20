@@ -47,6 +47,7 @@ descriptions, see [Pricing and licensing](#pricing-and-licensing).
 - The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites;
 see [Operator prerequisites]({{< relref "/introduction/prerequisites/introduction.md" >}}).
 
+
 ### Important notes about specific environments
 
 Here are some important considerations for specific environments:
@@ -71,16 +72,15 @@ Container Services for use with Kubernetes* on Oracle Cloud Infrastructure Compu
 any other Oracle Cloud Infrastructure "Authorized Cloud Environments"
 as described in the [Overview](#overview).
 
-Operator v3.4.4 and v4.0.0 are certified for use on OKE with Kubernetes 1.24.1.
+WebLogic Kubernetes Operator is certified for use on OKE with Kubernetes 1.25.0+, 1.26.2+, and 1.27.2+.
 
 #### Oracle Cloud Native Environment
 
 [Oracle Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
-WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment:
-- Operator v2.6.0 is certified for use on Oracle Cloud Native Environment 1.1 and v3.2.5 is certified for use on Oracle Cloud Native Environment 1.3.
-- Operator v3.2.5 provides certified support of Oracle Cloud Native Environment 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
-- Operator v3.4.4 and v4.0.0 are certified for use on Oracle Cloud Native Environment 1.5 with Kubernetes 1.24.5.
+WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Cloud Native Environment (OCNE):
+* OCNE 1.7 with Kubernetes 1.26.6+
+* OCNE 1.6 with Kubernetes 1.25.11+
 
 #### Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)
 
@@ -103,7 +103,7 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
-Operator v3.4.4 and v4.0.0 are certified for use on PCA X9 with Kubernetes 1.24.5 and Istio 1.14.
+WebLogic Kubernetes Operator is certified for use on PCA X9 with Kubernetes 1.24.5+ and Istio 1.14.
 
 #### Microsoft Azure
 
@@ -120,7 +120,7 @@ referenced in the [Overview](#overview)). In this environment, it is the custome
 
 AKS support and limitations:
 
-* Operator v3.4.4 is certified for use on AKS with Kubernetes 1.24.3+.
+* WebLogic Kubernetes Operator is certified for use on AKS with Kubernetes 1.25.0+, 1.26.2+.
 * All three [domain home source types]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) are supported (Domain in Image, Model in Image, and Domain on PV).
    * **NOTE**: The Domain in Image [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}) is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
 * For Domain on PV, we support Azure Files volumes accessed through
@@ -155,10 +155,16 @@ The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported 
 
 TKG support and limitations:
 
-* Both Domain in Image and Model in Image domain home source types are supported. Domain on PV is not supported.
+* WebLogic Kubernetes Operator is certified for use on TKG with Kubernetes 1.24.0+, 1.25.0+, 1.26.0+.
+* The Model in Image domain home source type is supported; Domain on PV is not supported.
 * VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.
   * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.
+
+Tanzu Kubernetes Grid Integrated Edition (TKGI) 1.16 (with vSphere CSI 2.7) support includes:
+* Both domain home source types (Model in Image and Domain on PV); use vSAN for PV.
+* Kubernetes 1.25.10
+* Ubuntu
 
 See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes-service/_index.md">}}).
 
@@ -166,18 +172,9 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 OpenShift can be a cloud platform or can be deployed on premises.
 
-- Operator v3.4.6 is certified for use on:
-  - OpenShift Container Platform 4.9.50 with Kubernetes 1.22, RedHat OpenShift Mesh 2.3, and Istio 1.14.
-  - OpenShift Container Platform 4.10.20 with Kubernetes 1.23, RedHat OpenShift Mesh 2.2.1, and Istio 1.14.
-  - OpenShift Container Platform 4.11.6 with Kubernetes 1.24, RedHat OpenShift Mesh 2.2.3, and Istio 1.12.9.
-
-- Operator v4.0.4 is certified for use on:
-  - OpenShift Container Platform 4.11.30 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3, and Istio 1.14.3.
-  - OpenShift Container Platform 4.12.2 with Kubernetes 1.25, RedHat OpenShift Mesh 2.3, and Istio 1.14.3.
-
 - Operator v4.0.5 is certified for use on:
-  - OpenShift Container Platform 4.11.30 with Kubernetes 1.24, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
-  - OpenShift Container Platform 4.12.2 with Kubernetes 1.25, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
+  - OpenShift Container Platform 4.11.30 with Kubernetes 1.24+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
+  - OpenShift Container Platform 4.12.2 with Kubernetes 1.25+, RedHat OpenShift Mesh 2.3.2, and Istio 1.14.5.
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
@@ -323,5 +320,5 @@ See [Ensure you are using recently patched images]({{< relref "/base-images/ocr-
 
 #### Additional references
 
-- [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
+- For the most up-to-date and comprehensive support information, see [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
 - [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
