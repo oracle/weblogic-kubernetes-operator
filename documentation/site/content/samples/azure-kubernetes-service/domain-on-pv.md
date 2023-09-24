@@ -158,7 +158,11 @@ Set an environment variable for use in a later script.
 export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 ```
 
+Connect the Azure Container Registry to your existing AKS cluster.
 
+```shell
+az aks update --name ${AKS_CLUSTER_NAME} --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr ${AKS_CLUSTER_NAME}
+```
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
 
