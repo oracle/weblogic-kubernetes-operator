@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
@@ -37,6 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.buildAndDeployC
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyAdminServerAccess;
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -53,8 +55,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify a single operator manages multiple WebLogic domains with a single Traefik fronted loadbalancer")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItLBTwoDomainsTraefik {
 
   private static final int numberOfDomains = 2;
@@ -74,6 +76,8 @@ class ItLBTwoDomainsTraefik {
   private static final int MANAGED_SERVER_PORT = 7100;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String clusterName = "cluster-1";
+
+  private static String ingressIP = null;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -122,6 +126,10 @@ class ItLBTwoDomainsTraefik {
 
     // install Traefik ingress controller for all test cases using Traefik
     installTraefikIngressController();
+
+    String ingressServiceName = traefikHelmParams.getReleaseName();
+    ingressIP = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : K8S_NODEPORT_HOST;
   }
 
   /**
@@ -134,7 +142,7 @@ class ItLBTwoDomainsTraefik {
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyAdminServerAccess(false, getTraefikLbNodePort(false), true,
-          domainUid + "." + domainNamespace + "." + "admin-server" + ".test", "");
+          domainUid + "." + domainNamespace + "." + "admin-server" + ".test", "", ingressIP);
     }
   }
 
@@ -151,7 +159,7 @@ class ItLBTwoDomainsTraefik {
     logger.info("Verifying Traefik host routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + domainNamespace + ".cluster-1.test",
-          "http", getTraefikLbNodePort(false), replicaCount, true, "");
+          "http", getTraefikLbNodePort(false), replicaCount, true, "", ingressIP);
     }
   }
 
@@ -166,7 +174,7 @@ class ItLBTwoDomainsTraefik {
     logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + domainNamespace + ".cluster-1.test",
-          "https", getTraefikLbNodePort(true), replicaCount, true, "");
+          "https", getTraefikLbNodePort(true), replicaCount, true, "", ingressIP);
     }
   }
 
@@ -179,7 +187,7 @@ class ItLBTwoDomainsTraefik {
     logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
-          replicaCount, false, "/" + domainUid.substring(12).replace("-", ""));
+          replicaCount, false, "/" + domainUid.substring(12).replace("-", ""), ingressIP);
     }
   }
 
@@ -258,5 +266,4 @@ class ItLBTwoDomainsTraefik {
             getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), isHttps ? "websecure" : "web"),
         "Getting web node port for Traefik loadbalancer failed");
   }
-
 }

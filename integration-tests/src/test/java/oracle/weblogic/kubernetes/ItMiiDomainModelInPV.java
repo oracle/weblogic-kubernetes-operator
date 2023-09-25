@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +32,8 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
+import oracle.weblogic.kubernetes.utils.ExecCommand;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_N
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -96,9 +100,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
 @Tag("olcne")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
+@Tag("oke-gate")
 public class ItMiiDomainModelInPV {
 
   private static String domainNamespace = null;
@@ -313,33 +317,64 @@ public class ItMiiDomainModelInPV {
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
       String user, String password) {
 
-    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    logger.info("admin svc host = {0}", adminSvcExtHost);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-
-    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     logger.info("Checking the health of servers in cluster");
-    String url = "http://" + hostAndPort
-        + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
     testUntil(
         () -> {
-          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-          assertEquals(200, response.statusCode(), "Status code not equals to 200");
-          boolean health = true;
-          for (String managedServer : managedServerNames) {
-            health = health && response.body().contains(managedServer + ":HEALTH_OK");
-            if (health) {
-              logger.info(managedServer + " is healthy");
-            } else {
-              logger.info(managedServer + " health is not OK or server not found");
+          if (OKE_CLUSTER) {
+            // In internal OKE env, verifyMemberHealth in admin server pod
+            int adminPort = 7001;
+            final String command = KUBERNETES_CLI + " exec -n "
+                + domainNamespace + "  " + adminServerPodName + " -- curl http://"
+                + adminServerPodName + ":"
+                + adminPort + "/clusterview/ClusterViewServlet"
+                + "\"?user=" + user
+                + "&password=" + password + "\"";
+
+            ExecResult result = null;
+            try {
+              result = ExecCommand.exec(command, true);
+            } catch (IOException | InterruptedException ex) {
+              logger.severe(ex.getMessage());
             }
+            String response = result.stdout().trim();
+            logger.info(response);
+            boolean health = true;
+            for (String managedServer : managedServerNames) {
+              health = health && response.contains(managedServer + ":HEALTH_OK");
+              if (health) {
+                logger.info(managedServer + " is healthy");
+              } else {
+                logger.info(managedServer + " health is not OK or server not found");
+              }
+            }
+            return health;
+          } else {
+            // In non-internal OKE env, verifyMemberHealth using adminSvcExtHost by sending HTTP request from local VM
+            adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+            logger.info("admin svc host = {0}", adminSvcExtHost);
+
+            logger.info("Getting node port for default channel");
+            int serviceNodePort = assertDoesNotThrow(()
+                -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+                    "Getting admin server node port failed");
+            String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+
+            String url = "http://" + hostAndPort
+                + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
+            HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
+            assertEquals(200, response.statusCode(), "Status code not equals to 200");
+            boolean health = true;
+            for (String managedServer : managedServerNames) {
+              health = health && response.body().contains(managedServer + ":HEALTH_OK");
+              if (health) {
+                logger.info(managedServer + " is healthy");
+              } else {
+                logger.info(managedServer + " health is not OK or server not found");
+              }
+            }
+            return health;
           }
-          return health;
         },
         logger,
         "Verifying the health of all cluster members");

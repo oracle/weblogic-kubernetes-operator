@@ -83,6 +83,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
@@ -600,7 +601,8 @@ public class CommonLBTestUtils {
    * @param domainNamespace domain namespace
    * @param domainUids uid of the domains
    */
-  public static void buildAndDeployClusterviewApp(String domainNamespace, List<String> domainUids) {
+  public static void buildAndDeployClusterviewApp(String domainNamespace,
+                                                  List<String> domainUids) {
     // build the clusterview application
     getLogger().info("Building clusterview application");
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -623,9 +625,13 @@ public class CommonLBTestUtils {
     }
   }
 
-  private static boolean deployApplication(String namespace, String domainUid, String adminServerPodName,
-                                        Path clusterViewAppPath) {
+  private static boolean deployApplication(String namespace,
+                                           String domainUid,
+                                           String adminServerPodName,
+                                           Path clusterViewAppPath,
+                                           String... clusterName) {
     getLogger().info("Getting node port for admin server default channel");
+
     int serviceNodePort = assertDoesNotThrow(() ->
             getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
@@ -633,13 +639,27 @@ public class CommonLBTestUtils {
     getLogger().info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         clusterViewAppPath, domainUid, namespace);
     String targets = "{ identity: [ clusters, 'cluster-1' ] }";
-    ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(serviceNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        targets, clusterViewAppPath, null, domainUid + "clusterview");
-    assertNotNull(result, "Application deployment failed");
-    getLogger().info("Application deployment returned {0}", result.toString());
-    return result.stdout().equals("202");
+    if (OKE_CLUSTER_PRIVATEIP) {
+      // In internal OKE env, deploy App using WLST
+      assertDoesNotThrow(() -> deployUsingWlst(adminServerPodName,
+          String.valueOf(7001),
+          ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT,
+          "cluster-1",
+          clusterViewAppPath,
+          namespace),"Deploying the application");
+      return true;
+    } else {
+      // In non-internal OKE env, deploy App using WebLogic restful management services
+      ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+          String.valueOf(serviceNodePort),
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+          targets, clusterViewAppPath, null, domainUid + "clusterview");
+      assertNotNull(result, "Application deployment failed");
+      getLogger().info("Application deployment returned {0}", result.toString());
+      return result.stdout().equals("202");
+    }
+
   }
 
   /**
@@ -697,26 +717,30 @@ public class CommonLBTestUtils {
    * @param pathString path string in path routing
    */
   public static void checkIngressReady(boolean isHostRouting, String ingressHost, boolean isTLS,
-                                        int httpNodeport, int httpsNodeport, String pathString) {
+                                        int httpNodeport, int httpsNodeport, String pathString,
+                                       String... ingressExtIP) {
+    String hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : K8S_NODEPORT_HOST + ":" + httpsNodeport;
+    getLogger().info("hostAndPort to check ingress ready is: {0}", hostAndPort);
+
     // check the ingress is ready to route the app to the server pod
     if (httpNodeport != 0 && httpsNodeport != 0) {
       String curlCmd;
       if (isHostRouting) {
         if (isTLS) {
           curlCmd = "curl -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-              + "' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+              + "' https://" + hostAndPort
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
           curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-              + "' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+              + "' http://" + hostAndPort
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         }
       } else {
         if (isTLS) {
-          curlCmd = "curl -k --silent --show-error --noproxy '*' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+          curlCmd = "curl -k --silent --show-error --noproxy '*' https://" + hostAndPort
               + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
-          curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+          curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
               + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         }
       }
@@ -742,7 +766,9 @@ public class CommonLBTestUtils {
                                           int lbPort,
                                           int replicaCount,
                                           boolean hostRouting,
-                                          String locationString) {
+                                          String locationString,
+                                          String... args) {
+    String host = (args.length == 0) ? K8S_NODEPORT_HOST : args[0];
     verifyClusterLoadbalancing(domainUid,
         ingressHostName,
         protocol,
@@ -750,7 +776,7 @@ public class CommonLBTestUtils {
         replicaCount,
         hostRouting,
         locationString,
-        K8S_NODEPORT_HOST);
+        host);
   }
 
   /**
@@ -777,17 +803,23 @@ public class CommonLBTestUtils {
     getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
     if (hostRouting) {
-      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
-              + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
-              + "\"?user=" + ADMIN_USERNAME_DEFAULT
-              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-          ingressHostName, protocol, host, lbPort);
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl --show-error -ks --noproxy '*' "
+          + "-H 'host: %s' %s://%s/clusterview/ClusterViewServlet"
+          + "\"?user=" + ADMIN_USERNAME_DEFAULT
+          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host)
+        : String.format("curl --show-error -ks --noproxy '*' "
+          + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
+          + "\"?user=" + ADMIN_USERNAME_DEFAULT
+          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host, lbPort);
     } else {
-      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
-              + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
-              + "\"?user=" + ADMIN_USERNAME_DEFAULT
-              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-          protocol, host, lbPort);
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl --show-error -ks --noproxy '*' "
+          + "%s://%s" + locationString + "/clusterview/ClusterViewServlet"
+          + "\"?user=" + ADMIN_USERNAME_DEFAULT
+          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", protocol, host)
+        : String.format("curl --show-error -ks --noproxy '*' "
+          + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
+          + "\"?user=" + ADMIN_USERNAME_DEFAULT
+          + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", protocol, host, lbPort);
     }
 
     List<String> managedServers = new ArrayList<>();
@@ -827,21 +859,23 @@ public class CommonLBTestUtils {
    * @param isHostRouting whether it is host routing
    * @param ingressHostName ingress host name
    * @param pathLocation path location in the console url
+   * @param host external IP address on OKE or k8s node IP address on non-OKE env
    */
   public static void verifyAdminServerAccess(boolean isTLS,
                                              int lbNodePort,
                                              boolean isHostRouting,
                                              String ingressHostName,
-                                             String pathLocation) {
+                                             String pathLocation,
+                                             String... host) {
     StringBuffer consoleUrl = new StringBuffer();
+    String hostAndPort = OKE_CLUSTER_PRIVATEIP ? host[0] : host[0] + ":" + lbNodePort;
+
     if (isTLS) {
       consoleUrl.append("https://");
     } else {
       consoleUrl.append("http://");
     }
-    consoleUrl.append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(lbNodePort);
+    consoleUrl.append(hostAndPort);
     if (!isHostRouting) {
       consoleUrl.append(pathLocation);
     }
