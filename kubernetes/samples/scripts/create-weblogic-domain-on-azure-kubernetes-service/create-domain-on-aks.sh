@@ -678,10 +678,6 @@ export PASSWORD=$(az acr credential show -n $acr_account_name --resource-group $
 
 sudo docker login $LOGIN_SERVER -u $USER_NAME -p $PASSWORD
 
-# make public access
-echo make acr public access
-az acr update --name $acr_account_name --resource-group $azureResourceGroupName --anonymous-pull-enabled
-
 ## need az acr login in order to push
 az acr login --name $acr_account_name
 
@@ -737,6 +733,10 @@ fi
 
 ## Push image
 docker push ${acr_account_name}.azurecr.io/wdt-domain-image:WLS-v1
+
+# allow aks to access acr
+echo allow aks to access acr
+az aks update --name $aksClusterName --resource-group $azureResourceGroupName --attach-acr $acr_account_name
 
 ## build image success
 echo "build image end----------"

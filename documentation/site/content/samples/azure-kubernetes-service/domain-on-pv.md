@@ -84,6 +84,8 @@ export AKS_PERS_LOCATION=eastus
 export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
 export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
 export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
+export ACR_ACCOUNT_NAME="${NAME_PREFIX}acr${TIMESTAMP}"
+
 ```
 
 #### Clone WKO repository
@@ -100,6 +102,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 ```shell
 $ cd $BASE_DIR/weblogic-kubernetes-operator
+$ az extension add --name resource-graph
 $ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 ```
 
@@ -117,7 +120,7 @@ Your AKS cluster must be connected to a container registry so it can pull and in
 Create the Azure Container Registry in your existing resource group.
 
 ```shell
-az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name ${AKS_CLUSTER_NAME} --sku Basic --admin-enabled
+az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name ${ACR_ACCOUNT_NAME} --sku Basic --admin-enabled
 ```
 
 Successful output will be a JSON object that includes the property.
@@ -130,15 +133,15 @@ Obtain the credentials to the Azure Container Registry and perform the `docker l
 
 ```shell
 export LOGIN_SERVER=$(az acr show \
-    --name ${AKS_CLUSTER_NAME} \
+    --name ${ACR_ACCOUNT_NAME} \
     --query 'loginServer' \
     --output tsv)
 export USER_NAME=$(az acr credential show \
-    --name ${AKS_CLUSTER_NAME} \
+    --name ${ACR_ACCOUNT_NAME} \
     --query 'username' \
     --output tsv)
 export PASSWORD=$(az acr credential show \
-    --name ${AKS_CLUSTER_NAME} \
+    --name ${ACR_ACCOUNT_NAME} \
     --query 'passwords[0].value' \
     --output tsv)
 
@@ -161,7 +164,7 @@ export Domain_Creation_Image_tag=${LOGIN_SERVER}/wdt-domain-image:WLS-v1
 Connect the Azure Container Registry to your existing AKS cluster.
 
 ```shell
-az aks update --name ${AKS_CLUSTER_NAME} --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr ${AKS_CLUSTER_NAME}
+az aks update --name ${AKS_CLUSTER_NAME} --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr ${ACR_ACCOUNT_NAME}
 ```
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
@@ -269,7 +272,7 @@ Now, you deploy a `sample-domain1` domain resource and an associated `sample-dom
     ```shell
     cd $BASE_DIR/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service  
 
-    ./create-domain-on-aks-generate-yaml.sh
+    bash create-domain-on-aks-generate-yaml.sh
     ```
 
 After running above commands, you will get three files: `domain-resource.yaml`, `admin-lb.yaml`, `cluster-lb.yaml`.
@@ -404,7 +407,7 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 First, package the application with the following command:
 
 ```bash
-cd integration-tests/src/test/resources/bash-scripts
+cd $BASE_DIR/weblogic-kubernetes-operator/integration-tests/src/test/resources/bash-scripts
 bash build-war-app.sh -s ../apps/testwebapp/ -d /tmp/testwebapp
 ```
 
