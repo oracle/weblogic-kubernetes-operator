@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -26,14 +27,19 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.configIstioModelInImageDomain;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -41,6 +47,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getOrigModelFile;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
@@ -54,9 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test WLS Session Migration via istio enabled using Istio gateway")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("olcne")
+@Tag("oke-gate")
 class ItIstioGatewaySessionMigration {
 
   private static String opNamespace = null;
@@ -82,6 +89,9 @@ class ItIstioGatewaySessionMigration {
   private static int replicaCount = 2;
   private static int istioIngressPort = 0;
   private static String testWebAppWarLoc = null;
+
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private static LoggingFacade logger = null;
 
@@ -168,10 +178,18 @@ class ItIstioGatewaySessionMigration {
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
     String serverName = managedServerPrefix + "1";
 
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String istioIngressIP = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : K8S_NODEPORT_HOST;
+
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
-    Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace,
-        adminServerPodName, serverName, K8S_NODEPORT_HOST, istioIngressPort, webServiceSetUrl, " -c ");
+    // the NodePort services created by the operator are not usable, because they would expose ports
+    // on the worker node’s private IP addresses only, which are not reachable from outside the cluster
+    Map<String, String> httpDataInfo = OKE_CLUSTER ? getServerAndSessionInfoAndVerify(domainNamespace,
+            adminServerPodName, serverName, istioIngressIP, 0, webServiceSetUrl, " -c ")
+        : getServerAndSessionInfoAndVerify(domainNamespace,
+            adminServerPodName, serverName, istioIngressIP, istioIngressPort, webServiceSetUrl, " -c ");
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
     String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
@@ -186,8 +204,10 @@ class ItIstioGatewaySessionMigration {
 
     // send a HTTP request to get server and session info after shutting down the primary server
     serverName = domainUid + "-" + origSecondaryServerName;
-    httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace,
-        adminServerPodName, serverName, K8S_NODEPORT_HOST, istioIngressPort, webServiceGetUrl, " -b ");
+    httpDataInfo = OKE_CLUSTER ? getServerAndSessionInfoAndVerify(domainNamespace,
+            adminServerPodName, serverName, istioIngressIP, 0, webServiceGetUrl, " -b ")
+        : getServerAndSessionInfoAndVerify(domainNamespace,
+            adminServerPodName, serverName, istioIngressIP, istioIngressPort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
@@ -254,10 +274,15 @@ class ItIstioGatewaySessionMigration {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+            : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
@@ -266,17 +291,51 @@ class ItIstioGatewaySessionMigration {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
 
-    Path archivePath = Paths.get(testWebAppWarLoc);
     ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
+    Path archivePath = Paths.get(testWebAppWarLoc);
+    // Use WebLogic restful management services to deploy Web App
+    if (OKE_CLUSTER) {
+      // In internal OKE env, deploy App in domain pods using WLST
+      String destLocation = "/u01/testwebapp.war";
+
+      // Copy App archive to admin pod
+      assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+          adminServerPodName, "",
+          archivePath,
+          Paths.get(destLocation)));
+
+      // chown of App archive in admin pod
+      V1Pod adminPod = assertDoesNotThrow(() -> getPod(domainNamespace, null, adminServerPodName));
+      execInPod(adminPod, null, true, "chown 1000:root  " + destLocation);
+
+      for (int i = 1; i <= replicaCount; i++) {
+        // Copy App archive to managed server pod
+        String managedServerPodName = managedServerPrefix + i;
+        assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+            managedServerPodName, "",
+            archivePath,
+            Paths.get(destLocation)));
+
+        // chown of App archive in managed server pod
+        V1Pod msPod = assertDoesNotThrow(() -> getPod(domainNamespace, null, managedServerPodName));
+        execInPod(msPod, null, true, "chown 1000:root  " + destLocation);
+      }
+
+      String target = "{identity: [clusters,'" + clusterName + "']}";
+      result = deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        target, Paths.get(destLocation), domainNamespace + ".org", "testwebapp");
+      assertNotNull(result, "Application deployment failed");
+    } else {
+      result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+      assertNotNull(result, "Application deployment failed");
+      logger.info("Application deployment returned {0}", result.toString());
+      assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+    }
 
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
 
     return istioIngressPort;

@@ -3,10 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +22,6 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.ActionConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -45,7 +40,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
-import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -54,7 +48,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
@@ -64,6 +57,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createTraefikIngressRoutingRules;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -190,7 +184,8 @@ class ItStickySession {
     final String channelName = "web";
 
     // create Traefik ingress resource
-    createTraefikIngressRoutingRules();
+    final String ingressResourceFileName = "traefik/traefik-ingress-rules-stickysession.yaml";
+    createTraefikIngressRoutingRules(domainNamespace, traefikNamespace, ingressResourceFileName, domainUid);
 
     String hostName = new StringBuffer()
         .append(domainUid)
@@ -516,48 +511,6 @@ class ItStickySession {
     }
 
     return httpAttribute;
-  }
-
-  private boolean createTraefikIngressRoutingRules() {
-    logger.info("Creating ingress resource");
-
-    // prepare Traefik ingress resource file
-    final String ingressResourceFileName = "traefik/traefik-ingress-rules-stickysession.yaml";
-    Path srcFile =
-        Paths.get(ActionConstants.RESOURCE_DIR, ingressResourceFileName);
-    Path dstFile =
-        Paths.get(TestConstants.RESULTS_ROOT, ingressResourceFileName);
-    assertDoesNotThrow(() -> {
-      Files.deleteIfExists(dstFile);
-      Files.createDirectories(dstFile.getParent());
-      Files.write(dstFile, Files.readString(srcFile).replaceAll("@NS@", domainNamespace)
-          .replaceAll("@domain1uid@", domainUid)
-          .getBytes(StandardCharsets.UTF_8));
-    });
-
-    // create Traefik ingress resource
-    String createIngressCmd = KUBERNETES_CLI + " create -f " + dstFile;
-    logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
-    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
-        String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));
-    assertEquals(0, result.exitValue(),
-        String.format("Failed to create Traefik ingress routing rules. Error is %s ", result.stderr()));
-
-    // get Traefik ingress service name
-    String  getServiceName = KUBERNETES_CLI + " get services -n " + traefikNamespace + " -o name";
-    logger.info("Command to get Traefik ingress service name " + getServiceName);
-    result = assertDoesNotThrow(() -> ExecCommand.exec(getServiceName, true),
-        String.format("Failed to get Traefik ingress service name %s", getServiceName));
-    assertEquals(0, result.exitValue(),
-        String.format("Failed to Traefik ingress service name . Error is %s ", result.stderr()));
-    String traefikServiceName = result.stdout().trim().split("/")[1];
-
-    // check that Traefik service exists in the Traefik namespace
-    logger.info("Checking that Traefik service {0} exists in namespace {1}",
-        traefikServiceName, traefikNamespace);
-    checkServiceExists(traefikServiceName, traefikNamespace);
-
-    return true;
   }
 
   private int getIngressServiceNodePort(String nameSpace, String ingressServiceName, String channelName) {

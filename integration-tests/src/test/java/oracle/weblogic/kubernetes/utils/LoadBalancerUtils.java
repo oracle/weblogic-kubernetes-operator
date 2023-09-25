@@ -3,6 +3,10 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,11 +33,13 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_REPO_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.actions.TestActions.installNginx;
@@ -54,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -511,6 +518,63 @@ public class LoadBalancerUtils {
   }
 
   /**
+   * Create an ingress Resource.
+   *
+   * @param domainNamespace namespace of the domain
+   * @param traefikNamespace namespace in which the ingress will be created
+   * @param ingressResourceFileName ingress resource file path and name
+   * @param domainUids uids of the domains
+   */
+  public static boolean createTraefikIngressRoutingRules(String domainNamespace,
+                                                         String traefikNamespace,
+                                                         String ingressResourceFileName,
+                                                         String... domainUids) {
+    LoggingFacade logger = getLogger();
+    logger.info("Creating Traefik ingress resource");
+
+    // prepare Traefik ingress resource file
+    Path srcFile = Paths.get(RESOURCE_DIR, ingressResourceFileName);
+    Path dstFile = Paths.get(RESULTS_ROOT, ingressResourceFileName);
+
+    assertDoesNotThrow(() -> {
+      Files.deleteIfExists(dstFile);
+      Files.createDirectories(dstFile.getParent());
+      String contentOfFile = Files.readString(srcFile);
+      for (int i = 1; i <= domainUids.length; i++) {
+        Files.write(dstFile, contentOfFile
+            .replaceAll("@NS@", domainNamespace)
+            .replaceAll("@domain" + i + "uid@", domainUids[i - 1])
+            .getBytes(StandardCharsets.UTF_8));
+        contentOfFile = Files.readString(dstFile);
+      }
+    });
+
+    // create Traefik ingress resource
+    String createIngressCmd = KUBERNETES_CLI + " create -f " + dstFile;
+    logger.info("Command to create Traefik ingress routing rules " + createIngressCmd);
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(createIngressCmd, true),
+        String.format("Failed to create Traefik ingress routing rules %s", createIngressCmd));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to create Traefik ingress routing rules. Error is %s ", result.stderr()));
+
+    // get Traefik ingress service name
+    String  getServiceName = KUBERNETES_CLI + " get services -n " + traefikNamespace + " -o name";
+    logger.info("Command to get Traefik ingress service name " + getServiceName);
+    result = assertDoesNotThrow(() -> ExecCommand.exec(getServiceName, true),
+        String.format("Failed to get Traefik ingress service name %s", getServiceName));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to Traefik ingress service name . Error is %s ", result.stderr()));
+    String traefikServiceName = result.stdout().trim().split("/")[1];
+
+    // check that Traefik service exists in the Traefik namespace
+    logger.info("Checking that Traefik service {0} exists in namespace {1}",
+        traefikServiceName, traefikNamespace);
+    checkServiceExists(traefikServiceName, traefikNamespace);
+
+    return true;
+  }
+
+  /**
    * Checks that ExternalIP LB is created in OKE.
    *
    * @param lbrelname - LB release name
@@ -520,6 +584,7 @@ public class LoadBalancerUtils {
   public static String getLbExternalIp(String lbrelname, String lbns) throws Exception {
     int i = 0;
     LoggingFacade logger = getLogger();
+
     String cmdip = KUBERNETES_CLI + " get svc --namespace " + lbns
           + " -o jsonpath='{.items[?(@.metadata.name == \"" + lbrelname + "\")]"
           + ".status.loadBalancer.ingress[0].ip}'";
@@ -534,7 +599,8 @@ public class LoadBalancerUtils {
       return null;
     }
 
-    logger.info(" LB_PUBLIC_IP is " + result.stdout().trim());
+    logger.info("LB_PUBLIC_IP is " + result.stdout().trim());
+
     return result.stdout().trim();
   }
 }
