@@ -26,6 +26,10 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$(cd "$(dirname "${script}")" && pwd)"
 
+#Kubernetes command line interface.
+#Default is 'kubectl' if KUBERNETES_CLI env variable is not set.
+kubernetesCli=${KUBERNETES_CLI:-kubectl}
+
 if [ -z "${azureResourceUID}" ]; then
   azureResourceUID=$(date +%s)
 fi
@@ -109,10 +113,10 @@ envValidate() {
   fi
 
   # Check if kubectl is installed
-  if command -v kubectl &> /dev/null; then
-      print_blue "kubectl is installed."
+  if command -v ${kubernetesCli} &> /dev/null; then
+      print_blue "${kubernetesCli} is installed."
   else
-      print_red "[ERROR]kubectl is not installed. Please install kubectl."
+      print_red "[ERROR]${kubernetesCli} is not installed. Please install ${kubernetesCli}."
       exit 1
   fi
 
@@ -389,7 +393,7 @@ createWebLogicDomain() {
 
   # Enable the operator to monitor the namespace
   echo "Enable the operator to monitor the namespace"
-  ${KUBERNETES_CLI:-kubectl} label namespace default weblogic-operator=enabled
+  ${kubernetesCli} label namespace default weblogic-operator=enabled
 
   # Create WebLogic Server Domain
   echo Creating WebLogic Server domain ${domainUID}
@@ -409,12 +413,12 @@ createWebLogicDomain() {
 
   # Mount the file share as a volume
   echo "Mounting file share as a volume..."
-  ${KUBERNETES_CLI:-kubectl} apply -f ./azure-csi-nfs.yaml
-  ${KUBERNETES_CLI:-kubectl} apply -f ./pvc.yaml
+  ${kubernetesCli} apply -f ./azure-csi-nfs.yaml
+  ${kubernetesCli} apply -f ./pvc.yaml
 
-  ${KUBERNETES_CLI:-kubectl} apply -f domain-resource.yaml
-  ${KUBERNETES_CLI:-kubectl} apply -f admin-lb.yaml
-  ${KUBERNETES_CLI:-kubectl} apply -f cluster-lb.yaml
+  ${kubernetesCli} apply -f domain-resource.yaml
+  ${kubernetesCli} apply -f admin-lb.yaml
+  ${kubernetesCli} apply -f cluster-lb.yaml
 
 }
 
@@ -757,8 +761,8 @@ echo "Waiting for $interval seconds..."
 sleep $interval
 
 while [ $waiting_time -lt $max_wait_time ]; do
-    status=$(kubectl get pod/${domainUID}-admin-server -o=jsonpath='{.status.phase}')
-    ready=$(kubectl get pod/${domainUID}-admin-server -o=jsonpath='{.ready.phase}')
+    status=$(${kubernetesCli} get pod/${domainUID}-admin-server -o=jsonpath='{.status.phase}')
+    ready=$(${kubernetesCli} get pod/${domainUID}-admin-server -o=jsonpath='{.ready.phase}')
     if [ "$status" == "Running" ]; then
         if [ "$ready" == "1/1" ]; then
           echo "${domainUID}-admin-server is running. Exiting..."
@@ -794,15 +798,15 @@ printSummary() {
   echo ""
   echo "Domain ${domainName} was created and was started by the WebLogic Kubernetes Operator"
   echo ""
-  echo "Connect your ${KUBERNETES_CLI:-kubectl} to this cluster with this command:"
+  echo "Connect your ${kubernetesCli} to this cluster with this command:"
   echo "  az aks get-credentials --resource-group ${azureResourceGroupName} --name ${aksClusterName}"
   echo ""
 
-  adminLbIP=$(${KUBERNETES_CLI:-kubectl} get svc ${domainUID}-admin-server-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  adminLbIP=$(${kubernetesCli} get svc ${domainUID}-admin-server-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo "Administration console access is available at http://${adminLbIP}:7001/console"
   
   echo ""
-  clusterLbIP=$(${KUBERNETES_CLI:-kubectl} get svc ${domainUID}-cluster-1-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  clusterLbIP=$(${kubernetesCli} get svc ${domainUID}-cluster-1-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
   echo "Cluster external ip is ${clusterLbIP}, you can access http://${clusterLbIP}:8001/myapp_war/index.jsp"
   
   echo "Completed"

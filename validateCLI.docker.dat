@@ -28,6 +28,11 @@ dockerconfigjson
 /docker-images/
 docker-container\|ockerContainer\|DockerCluster
 contains."BEGIN DOCKERFILE".
+dockerEmail
+docker-email
+dockerPassword
+docker-password
+weblogicDockerImage
 --docker-email
 --docker-password
 --docker-server
