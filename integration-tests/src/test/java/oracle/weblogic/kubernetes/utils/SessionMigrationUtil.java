@@ -193,6 +193,9 @@ public class SessionMigrationUtil {
     final String httpHeaderFile = "/u01/domains/header";
     LoggingFacade logger = getLogger();
 
+    // In OKE_CLUSTER env, the test uses LBer ext IP addr only.
+    String hostAndPort = (port == 0) ? hostName : hostName + ":" + port;
+
     // --connect-timeout - Maximum time in seconds that you allow curl's connection to take
     // --max-time - Maximum time in seconds that you allow the whole operation to take
     int waittime = 10;
@@ -200,9 +203,7 @@ public class SessionMigrationUtil {
         .append("curl --silent --show-error")
         .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
         .append(" http://")
-        .append(hostName)
-        .append(":")
-        .append(port)
+        .append(hostAndPort)
         .append("/")
         .append(curlUrlPath)
         .append(headerOption)
