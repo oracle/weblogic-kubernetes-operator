@@ -1,3 +1,4 @@
+
 #### Create the AKS cluster
 
 This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, then follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
@@ -5,16 +6,7 @@ This sample requires that you disable the AKS addon `http_application_routing` b
 Run the following commands to create the AKS cluster instance.
 
 ```shell
-# Change these parameters as needed for your own environment
-# Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
-$ export NAME_PREFIX=wls
-# Used to generate resource names.
-$ export TIMESTAMP=`date +%s`
-$ export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
-$ export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
-$ export AKS_PERS_LOCATION=eastus
 
-$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
 $ az aks create \
    --resource-group $AKS_PERS_RESOURCE_GROUP \
    --name $AKS_CLUSTER_NAME \
