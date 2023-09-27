@@ -22,9 +22,9 @@ update to the documentation, follow this process:
     ```
 
 3. Make your documentation updates by editing the source files in
-`documentation/<release-version>/content`, for example `documentation/4.0/content`.
+`documentation/site/content`.
 {{% notice note %}}
-Make sure you check in the changes from the `documentation/<release-version>/content` area _only_;
+Make sure you check in the changes from the `documentation/site/content` area _only_;
 do not build the site and check in the static files.
 {{% /notice %}}
 
@@ -32,9 +32,11 @@ do not build the site and check in the static files.
 these commands. The site will be available on the URL shown here:
 
     ```shell
-    $ cd documentation/<release-version>
+    $ cd documentation/site
     $ hugo server -b http://localhost:1313/weblogic-kubernetes-operator
     ```
+    
+   You can also run the `runlocal.sh` script in that directory to start the Hugo server locally.
 
 5. When you are ready to submit your changes, push your branch to `origin`
 and submit a pull request. Remember to follow the guidelines in the
