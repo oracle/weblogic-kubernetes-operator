@@ -12,20 +12,20 @@
     <title>Model in Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1695871222" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1695871222" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1695929502" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1695929502" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1695871222"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1695929502"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1695871222"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1695871222"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1695929502"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1695929502"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1695871222"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1695929502"></script>
 
     
   </div>
@@ -3890,16 +3890,7 @@ in <em>Securing a Production Environment for Oracle WebLogic Server</em>.</li>
 <h4 id="create-the-aks-cluster">Create the AKS cluster</h4>
 <p>This sample requires that you disable the AKS addon <code>http_application_routing</code> by default.  If you want to enable  <code>http_application_routing</code>, then follow <a href="https://docs.microsoft.com/azure/aks/http-application-routing">HTTP application routing</a>.</p>
 <p>Run the following commands to create the AKS cluster instance.</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span><span style="color:#75715e"># Change these parameters as needed for your own environment</span>
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters</span>
-</span></span><span style="display:flex;"><span>$ export NAME_PREFIX<span style="color:#f92672">=</span>wls
-</span></span><span style="display:flex;"><span><span style="color:#75715e"># Used to generate resource names.</span>
-</span></span><span style="display:flex;"><span>$ export TIMESTAMP<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>date +%s<span style="color:#e6db74">`</span>
-</span></span><span style="display:flex;"><span>$ export AKS_CLUSTER_NAME<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">aks</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>$ export AKS_PERS_RESOURCE_GROUP<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;</span><span style="color:#e6db74">${</span>NAME_PREFIX<span style="color:#e6db74">}</span><span style="color:#e6db74">resourcegroup</span><span style="color:#e6db74">${</span>TIMESTAMP<span style="color:#e6db74">}</span><span style="color:#e6db74">&#34;</span>
-</span></span><span style="display:flex;"><span>$ export AKS_PERS_LOCATION<span style="color:#f92672">=</span>eastus
-</span></span><span style="display:flex;"><span>
-</span></span><span style="display:flex;"><span>$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>
 </span></span><span style="display:flex;"><span>$ az aks create <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --resource-group $AKS_PERS_RESOURCE_GROUP <span style="color:#ae81ff">\
 </span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>   --name $AKS_CLUSTER_NAME <span style="color:#ae81ff">\
@@ -4585,7 +4576,6 @@ Found 0 local data sources:
 <p>Run the following commands to clean up resources.</p>
 
 <div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>$ az group delete --yes --no-wait --name $AKS_PERS_RESOURCE_GROUP
-</span></span><span style="display:flex;"><span>$ az group delete --yes --no-wait --name <span style="color:#e6db74">&#34;MC_</span>$AKS_PERS_RESOURCE_GROUP<span style="color:#e6db74">&#34;</span>_<span style="color:#e6db74">&#34;</span>$AKS_CLUSTER_NAME<span style="color:#e6db74">&#34;</span>_<span style="color:#e6db74">&#34;</span>$AKS_PERS_LOCATION<span style="color:#e6db74">&#34;</span>
 </span></span></code></pre></div>
 
 <h4 id="troubleshooting">Troubleshooting</h4>
@@ -7124,19 +7114,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1695871222"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1695929502"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1695871222"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1695871222"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1695929502"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1695929502"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1695871222"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1695929502"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

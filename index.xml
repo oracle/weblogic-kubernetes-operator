@@ -6,7 +6,7 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 26 Apr 2023 16:45:16 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 14 Sep 2023 18:22:31 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Overview</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/overview/</link>
@@ -199,6 +199,16 @@ $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-o
     </item>
     
     <item>
+      <title>Domain home on a PV</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</link>
+      <pubDate>Thu, 14 Sep 2023 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the domain on PV approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+Contents Prerequisites Prepare Parameters Clone WKO repository Create Resource Group Create an AKS cluster Create and Configure Storage Create an Azure Storage account and NFS share Create SC and PVC Install WebLogic Kubernetes Operator Create WebLogic domain Create secrets Create WebLogic Domain Create LoadBalancer Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
       <title>Usage</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/usage/</link>
       <pubDate>Wed, 26 Apr 2023 16:45:16 -0500</pubDate>
@@ -217,16 +227,6 @@ Contents WebLogic Kubernetes Operator Configuration WebLogic base image Domain c
       <description>Introduction A single operator instance is capable of managing multiple domains in multiple namespaces, depending on how it is configured. A Kubernetes cluster can host multiple operators, but no more than one per namespace.
 Before installing an operator, ensure that each of these prerequisite requirements is met:
 Check environment Set up the operator Helm chart access Inspect the operator Helm chart Prepare an operator namespace and service account Prepare operator image Locating an operator image Default operator image Pulling operator image Customizing operator image name, pull secret, and private registry Determine the platform setting Choose a security strategy Any namespace with cluster role binding enabled Any namespace with cluster role binding disabled Local namespace only with cluster role binding disabled Choose a domain namespace selection strategy Choose a Helm release name Be aware of advanced operator configuration options Special use cases: How to download the Helm chart if Internet access is not available How to manually install the Domain resource custom resource definition (CRD) Check environment Review the Operator prerequisites to ensure that your Kubernetes cluster supports the operator.</description>
-    </item>
-    
-    <item>
-      <title>Domain home on a PV</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</link>
-      <pubDate>Sun, 12 Jul 2020 18:22:31 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
-      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
-Contents Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create WebLogic domain Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     
     <item>
@@ -1003,7 +1003,7 @@ The general design goal of the operator installation is to automatically provide
       <description>This documentation is produced using Hugo. To make an update to the documentation, follow this process:
 If you have not already done so, clone the repository.
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator Create a new branch.
-$ git checkout -b your-branch Make your documentation updates by editing the source files in documentation/&amp;lt;release-version&amp;gt;/content, for example documentation/4.0/content. Make sure you check in the changes from the documentation/&amp;lt;release-version&amp;gt;/content area only; do not build the site and check in the static files.</description>
+$ git checkout -b your-branch Make your documentation updates by editing the source files in documentation/site/content. Make sure you check in the changes from the documentation/site/content area only; do not build the site and check in the static files.</description>
     </item>
     
     <item>
