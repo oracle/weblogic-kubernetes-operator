@@ -972,6 +972,7 @@ public class DomainUtils {
    * @param clusterName cluster name
    * @param pvName PV name
    * @param pvcName PVC name
+   * @param repoSecretName name of the secret for pulling the WebLogic image
    * @param domainInHomePrefix domain in home prefix
    * @param replicaCount repica count of the clsuter
    * @param t3ChannelPort t3 chanel
@@ -984,11 +985,18 @@ public class DomainUtils {
                                                   String clusterName,
                                                   String pvName,
                                                   String pvcName,
+                                                  String[] repoSecretName,
                                                   String domainInHomePrefix,
                                                   int replicaCount,
                                                   int t3ChannelPort,
                                                   Configuration configuration) {
 
+    // create secrets
+    List<V1LocalObjectReference> secrets = new ArrayList<>();
+    for (String secret : repoSecretName) {
+      secrets.add(new V1LocalObjectReference().name(secret));
+    }
+    
     // create a domain custom resource configuration object
     DomainResource domain = new DomainResource()
         .apiVersion(DOMAIN_API_VERSION)
@@ -1002,9 +1010,6 @@ public class DomainUtils {
             .domainHomeSourceType("PersistentVolume")
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy(IMAGE_PULL_POLICY)
-            .imagePullSecrets(Collections.singletonList(
-                new V1LocalObjectReference()
-                    .name(BASE_IMAGES_REPO_SECRET_NAME)))
             .webLogicCredentialsSecret(new V1LocalObjectReference()
                 .name(adminSecretName))
             .includeServerOutInPodLog(true)
@@ -1037,6 +1042,7 @@ public class DomainUtils {
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
             .configuration(configuration));
+    domain.spec().setImagePullSecrets(secrets);
 
     // create cluster resource for the domain
     String clusterResName  = domainUid + "-" + clusterName;

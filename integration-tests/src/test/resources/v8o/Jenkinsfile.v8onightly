@@ -143,6 +143,14 @@ pipeline {
                description: 'Kubernetes version. Supported values depend on the Kind version. Kind 0.18.0: 1.26, 1.26.3, 1.25, 1.25.8, 1.24, 1.24.12, 1.23, 1.23.17, 1.22, 1.22.17, 1.21, and 1.21.14. Kind 0.17.0: 1.25, 1.25.3, 1.24, 1.24.7, 1.23, 1.23.13, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.16.0: 1.25, 1.25.2, 1.24, 1.24.6, 1.23, 1.23.12, 1.22, 1.22.15, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.15.0: 1.25, 1.25.0, 1.24, 1.24.4, 1.23, 1.23.10, 1.22, 1.22.13, 1.21, 1.21.14, 1.20, and 1.20.15. Kind 0.13.0 and 0.14.0: 1.24, 1.24.0, 1.23, 1.23.6, 1.22, 1.22.9, 1.21, 1.21.12, 1.20, 1.20.15, Kind 0.12.0: 1.23, 1.23.4, 1.22, 1.22.7, 1.21, 1.21.10, 1.20, 1.20.15. Kind 0.11.1: 1.23, 1.23.3, 1.22, 1.22.5, 1.21, 1.21.1, 1.20, 1.20.7, 1.19, 1.19.11.',
                choices: [
                     // The first item in the list is the default value...
+                    '1.26.3',
+                    '1.26',
+                    '1.25.8',
+                    '1.25',
+                    '1.25.3',
+                    '1.25.2',
+                    '1.25.0',
+                    '1.24',
                     '1.24.12',
                     '1.24.7',
                     '1.24.6',
@@ -293,14 +301,6 @@ pipeline {
                     }
                 }
 
-                stage('Build WebLogic Kubernetes Operator') {
-                    steps {
-                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
-                            sh "mvn -DtrimStackTrace=false clean install"
-                        }
-                    }
-                }
-
                 stage('Make Workspace bin directory') {
                     steps {
                         sh "mkdir -m777 -p ${WORKSPACE}/bin"
@@ -435,25 +435,28 @@ EOF
 
                             export KUBECONFIG=${kubeconfig_file}
                             kubectl cluster-info --context "kind-${kind_name}"
-                            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
-                            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
-                            kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
+                            kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.11/config/manifests/metallb-native.yaml
+                            echo "Waiting for metallb pods to be ready before applying IPAddressPool and L2Advertisement"
+                            kubectl wait deploy --timeout=10m --for=condition=Available -l app=metallb -n metallb-system
                             SUBNET=$(docker inspect kind | jq '.[0].IPAM.Config[0].Subnet' -r | sed 's|/.*||g')
                             address_range="${SUBNET%.*}.230-${SUBNET%.*}.250"
 
                             kubectl apply -f - <<-EOF
-apiVersion: v1
-kind: ConfigMap
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
 metadata:
+  name: first-pool
   namespace: metallb-system
-  name: config
-data:
-  config: |
-    address-pools:
-    - name: my-ip-space
-      protocol: layer2
-      addresses:
-      - $address_range
+spec:
+  addresses:
+  - $address_range
+EOF
+                             kubectl apply -f - <<EOF
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2advt
+  namespace: metallb-system
 EOF
 
 

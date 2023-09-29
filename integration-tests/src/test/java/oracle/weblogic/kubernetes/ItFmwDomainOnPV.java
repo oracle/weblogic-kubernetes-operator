@@ -38,6 +38,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
@@ -238,6 +239,7 @@ class ItFmwDomainOnPV {
           clusterName,
           pvName,
           pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
           DOMAINHOMEPREFIX,
           replicaCount,
           t3ChannelPort,
@@ -368,6 +370,7 @@ class ItFmwDomainOnPV {
           clusterName,
           pvName,
           pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
           DOMAINHOMEPREFIX,
           replicaCount,
           t3ChannelPort,
@@ -477,6 +480,7 @@ class ItFmwDomainOnPV {
           clusterName,
           pvName,
           pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
           DOMAINHOMEPREFIX,
           replicaCount,
           t3ChannelPort,
@@ -618,6 +622,7 @@ class ItFmwDomainOnPV {
           clusterName,
           pvName,
           pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
           DOMAINHOMEPREFIX,
           replicaCount,
           t3ChannelPort,
@@ -743,6 +748,7 @@ class ItFmwDomainOnPV {
           clusterName,
           pvName,
           pvcName,
+          new String[]{BASE_IMAGES_REPO_SECRET_NAME},
           DOMAINHOMEPREFIX,
           replicaCount,
           t3ChannelPort,

@@ -17,14 +17,14 @@ public class PersistentVolume {
    */
   @SuppressWarnings("common-java:DuplicatedBlocks")
   @ApiModelProperty("The PersistentVolume metadata. Must include the `name` field. Required.")
-  private V1ObjectMeta metadata;
+  public V1ObjectMeta metadata;
 
   /**
    * PersistentVolumeSpec is a description of a persistent volume.
    */
   @ApiModelProperty("The specification of a persistent volume for `Domain on PV` domain. Required."
       + " This section provides a subset of fields in standard Kubernetes PersistentVolume specifications.")
-  private PersistentVolumeSpec spec;
+  public PersistentVolumeSpec spec;
 
   public V1ObjectMeta getMetadata() {
     return metadata;
