@@ -659,10 +659,17 @@
         </profile>
 
         <profile>
-            <id>olcne</id>
+            <id>olcne-srg</id>
             <properties>
                 <skipITs>false</skipITs>
-                <groups>olcne</groups>
+                <groups>olcne-srg</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>olcne-mrg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>olcne-mrg</groups>
             </properties>
         </profile>
         <profile>

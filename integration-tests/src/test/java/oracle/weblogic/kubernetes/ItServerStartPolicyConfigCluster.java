@@ -59,7 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-gate")

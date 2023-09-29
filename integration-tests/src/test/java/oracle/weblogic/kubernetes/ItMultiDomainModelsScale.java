@@ -106,7 +106,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag("kind-sequential")
 @Tag("oke-sequential")
 @IntegrationTest
-@Tag("olcne")
 class ItMultiDomainModelsScale {
 
   // domain constants

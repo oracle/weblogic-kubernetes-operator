@@ -73,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("olcne")
 class ItIstioManagedCoherence {
 
   // constants for Coherence

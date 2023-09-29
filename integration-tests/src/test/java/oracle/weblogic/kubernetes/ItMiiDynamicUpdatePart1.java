@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
 @Tag("oke-gate")
+@Tag("olcne-srg")
 class ItMiiDynamicUpdatePart1 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();

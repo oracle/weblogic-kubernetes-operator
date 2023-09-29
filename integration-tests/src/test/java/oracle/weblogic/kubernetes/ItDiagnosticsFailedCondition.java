@@ -105,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the domain status failed conditions for domain lifecycle")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-gate")
@@ -542,8 +542,6 @@ class ItDiagnosticsFailedCondition {
                           .channelName("default")
                           .nodePort(getNextFreePort())))));
       setPodAntiAffinity(domain);
-
-
 
       ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domainNamespace, replicaCount);
       logger.info("Creating cluster {0} in namespace {1}", clusterResName, domainNamespace);

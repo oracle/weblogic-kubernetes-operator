@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("oke-gate")
 class ItMiiCustomSslStore {
 

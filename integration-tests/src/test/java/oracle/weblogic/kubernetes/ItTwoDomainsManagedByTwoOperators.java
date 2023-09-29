@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("oke-gate")
 class ItTwoDomainsManagedByTwoOperators {

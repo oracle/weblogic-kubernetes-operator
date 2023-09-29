@@ -96,7 +96,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @Tag("oke-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
-@Tag("olcne")
+@Tag("olcne-mrg")
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;

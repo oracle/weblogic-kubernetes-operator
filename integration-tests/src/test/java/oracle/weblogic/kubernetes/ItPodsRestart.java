@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("okd-wls-srg")
 @Tag("oke-gate")
