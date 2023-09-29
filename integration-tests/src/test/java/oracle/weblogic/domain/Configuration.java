@@ -14,39 +14,39 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Configuration {
 
   @ApiModelProperty("Model in image model files and properties.")
-  private Model model;
+  public Model model;
 
   @ApiModelProperty("Configuration for OPSS security.")
-  private Opss opss;
+  public Opss opss;
 
   @ApiModelProperty("Istio service mesh integration")
-  private Istio istio;
+  public Istio istio;
 
   @ApiModelProperty(
       "A list of names of the secrets for WebLogic configuration overrides or model.")
-  private List<String> secrets;
+  public List<String> secrets;
 
   @ApiModelProperty(
       "The name of the config map for WebLogic configuration overrides.")
-  private String overridesConfigMap;
+  public String overridesConfigMap;
 
   @ApiModelProperty(
       "The introspector job timeout value in seconds. If this field is specified"
           + " it overrides the Operator's config map data.introspectorJobActiveDeadlineSeconds value.")
-  private Long introspectorJobActiveDeadlineSeconds;
+  public Long introspectorJobActiveDeadlineSeconds;
 
   @ApiModelProperty(
       "Determines how updated configuration overrides are distributed to already running WebLogic servers "
       + "following introspection when the domainHomeSourceType is PersistentVolume or Image.  Configuration overrides "
       + "are generated during introspection from secrets, the overrideConfigMap field, and WebLogic domain topology. "
       + "Legal values are Dynamic (the default) and OnRestart. See also introspectVersion.")
-  private String overrideDistributionStrategy;
+  public String overrideDistributionStrategy;
 
   @ApiModelProperty("Use online update.")
-  private Boolean useOnlineUpdate = false;
+  public Boolean useOnlineUpdate = false;
 
   @ApiModelProperty("Rollback the changes if the update require domain restart.")
-  private Boolean rollBackIfRestartRequired = false;
+  public Boolean rollBackIfRestartRequired = false;
 
   @ApiModelProperty("Configuration to initialize a WebLogic Domain on persistent volume (`Domain on PV`) and initialize"
       + " related resources such as a persistent volume and a persistent volume claim. If specified, the operator will"
@@ -55,7 +55,7 @@ public class Configuration {
       + " For more information, see"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/ and"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization ")
-  private InitializeDomainOnPV initializeDomainOnPV;
+  public InitializeDomainOnPV initializeDomainOnPV;
 
   public Configuration model(Model model) {
     this.model = model;

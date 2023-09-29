@@ -18,7 +18,7 @@ public class InitializeDomainOnPV {
       + " perform this one-time create operation only if the persistent volume does not already exist. The operator"
       + " will not recreate or update the PersistentVolume when it exists. More info:"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pv")
-  PersistentVolume persistentVolume;
+  public PersistentVolume persistentVolume;
 
   @ApiModelProperty("An optional field that describes the configuration for creating a PersistentVolumeClaim for"
       + " `Domain on PV`. PersistentVolumeClaim is a user's request for and claim to a persistent volume. The operator"
@@ -27,30 +27,30 @@ public class InitializeDomainOnPV {
       + " If specified, the name must match one of the volumes under `serverPod.volumes` and"
       + " the domain home must reside in the mount path of the volume using this claim. More info:"
       + " https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv-initialization#pvc")
-  PersistentVolumeClaim persistentVolumeClaim;
+  public PersistentVolumeClaim persistentVolumeClaim;
 
   @ApiModelProperty("Describes the configuration for creating an initial WebLogic Domain in persistent volume"
       + " (`Domain in PV`). The operator will not recreate or update the domain if it already exists. Required.")
   @SerializedName("domain")
-  DomainOnPV domain;
+  public DomainOnPV domain;
 
   /** Whether to wait for PVC to be bound before proceeding to create the domain. Default is true. */
   @ApiModelProperty("Specifies whether the operator will wait for the PersistentVolumeClaim to be bound before"
       + " proceeding with the domain creation. Defaults to true.")
-  Boolean waitForPvcToBind;
+  public Boolean waitForPvcToBind;
 
   /** Whether to run the domain initialization init container in the introspector job as root. Default is false. */
   @ApiModelProperty("Specifies whether the operator will run the domain initialization init container in the "
       + "introspector job as root. This may be needed in some environments to create the domain home directory on PV."
       + " Defaults to false.")
-  Boolean runDomainInitContainerAsRoot;
+  public Boolean runDomainInitContainerAsRoot;
 
   /** Whether to set the default 'fsGroup' in pod security context. Default is true. */
   @ApiModelProperty("Specifies whether the operator will set the default 'fsGroup' in the introspector job pod"
       + " security context. This is needed to create the domain home directory on PV in some environments."
       + " If the 'fsGroup' is specified as part of 'spec.introspector.serverPod.podSecurityContext', then the operator"
       + " will use that 'fsGroup' instead of the default 'fsGroup'. Defaults to true.")
-  Boolean setDefaultSecurityContextFsGroup;
+  public Boolean setDefaultSecurityContextFsGroup;
 
   public PersistentVolume getPersistentVolume() {
     return persistentVolume;

@@ -15,11 +15,11 @@ public class DomainOnPV {
 
   @ApiModelProperty("Specifies if the operator should create only the domain or the domain with RCU"
       + " (for JRF-based domains). Legal values: Domain, DomainAndRCU. Defaults to Domain.")
-  private CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
+  public CreateIfNotExists createIfNotExists = CreateIfNotExists.DOMAIN;
 
   @ApiModelProperty("WebLogic Deploy Tooling domain type. Legal values: WLS, JRF. Defaults to JRF.")
   @SerializedName("domainType")
-  private DomainOnPVType domainType = DomainOnPVType.JRF;
+  public DomainOnPVType domainType = DomainOnPVType.JRF;
 
   /**
    * The domain images.
@@ -30,13 +30,13 @@ public class DomainOnPV {
       + " These files will be used to create the domain during introspection. This feature"
       + " internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share"
       + " the files from the additional images ")
-  private List<DomainCreationImage> domainCreationImages;
+  public List<DomainCreationImage> domainCreationImages;
 
   @ApiModelProperty("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
-  private String domainCreationConfigMap;
+  public String domainCreationConfigMap;
 
   @ApiModelProperty("Settings for OPSS security.")
-  private Opss opss;
+  public Opss opss;
 
   public CreateIfNotExists getCreateIfNotExists() {
     return createIfNotExists;
