@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Miscellaneous use cases for WKO retry improvements")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("olcne")
+@Tag("olcne-mrg")
 class ItRetryImprovementMisc {
 
   private static String domainNamespace = null;

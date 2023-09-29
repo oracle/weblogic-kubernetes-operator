@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("oke-gate")
 class ItMiiCreateAuxImageWithImageTool {
 

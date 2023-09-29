@@ -80,7 +80,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify that WKO Retry Improvements handles Severe Failures as designed.")
 @IntegrationTest
-@Tag("olcne")
 @Tag("kind-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")

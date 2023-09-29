@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Verify dataHome override with different dataHome setting in the domain spec")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("oke-gate")
 class ItDataHomeOverride {
 
@@ -109,7 +109,7 @@ class ItDataHomeOverride {
     // create mii domain and override data home
     createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
         adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName),
-        true, DATA_HOME_OVERRIDE);
+        true, DATA_HOME_OVERRIDE, true);
 
     // check in admin server pod, there is no data file for JMS server created
     String dataFileToCheck = DATA_HOME_OVERRIDE + "/" + domainUid + "/FILESTORE-0000000.DAT";
@@ -157,8 +157,8 @@ class ItDataHomeOverride {
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     // create mii domain and don't override data home
-    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
-        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName), false, null);
+    createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage, adminServerPodName,
+        managedServerPrefix, replicaCount, Arrays.asList(clusterName), false, null, true);
 
     // check in admin server pod, there is no data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
@@ -206,7 +206,7 @@ class ItDataHomeOverride {
     String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
     // create mii domain and set datahome to empty string
     createMiiDomainAndVerify(miiDomainNamespace, domainUid, miiImage,
-        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName), true, "");
+        adminServerPodName, managedServerPrefix, replicaCount, Arrays.asList(clusterName), true, "", true);
 
     // check in admin server pod, there is no data file for JMS server created in /u01/oracle/customFileStore
     String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";

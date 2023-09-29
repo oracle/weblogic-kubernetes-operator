@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Test introspector will fail with error msg if the consensus leasing is configured in the cluster")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("oke-gate")
 class ItConsensusLeasingValidation {
 

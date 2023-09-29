@@ -93,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Test to verify the validating webhook for domain or cluster resource replicas count
 @DisplayName("Test to verify the validating webhook for domain or cluster resource replicas count")
 @IntegrationTest
-@Tag("olcne")
+@Tag("olcne-mrg")
 @Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")

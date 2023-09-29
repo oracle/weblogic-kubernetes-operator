@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("oke-parallel")
 @Tag("kind-parallel")
-@Tag("olcne")
+@Tag("olcne-mrg")
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;

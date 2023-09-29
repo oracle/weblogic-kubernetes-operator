@@ -109,7 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-mrg")
 @IntegrationTest
 @DisabledOnSlimImage
-@Tag("olcne")
+@Tag("olcne-mrg")
 class ItExternalLbTunneling {
 
   private static String opNamespace = null;
