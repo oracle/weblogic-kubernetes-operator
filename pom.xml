@@ -680,7 +680,7 @@
     <client-java-version>18.0.1</client-java-version>
     <kotlin-stdlib-version>1.9.10</kotlin-stdlib-version>
     <okhttp-version>4.11.0</okhttp-version>
-    <okio-version>3.5.0</okio-version>
+    <okio-version>3.6.0</okio-version>
     <bc-jdk18on-version>1.76</bc-jdk18on-version>
     <junit.jupiter.version>5.10.0</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
