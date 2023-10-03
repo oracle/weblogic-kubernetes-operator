@@ -286,7 +286,7 @@ public class Domain {
 
     // create a RESTful management services command that connects to admin server using given credentials to get
     // information about a managed server
-    String managedServer1 = (args.length == 0) ? "managed-server1" : "managed-server1-c1";
+    String managedServer1 = (args.length == 0) ? "managed-server1" : "c1-managed-server1";
     StringBuffer cmdString = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + podName)
         .append(" -- /bin/bash -c \"")
         .append("curl -k --user ")

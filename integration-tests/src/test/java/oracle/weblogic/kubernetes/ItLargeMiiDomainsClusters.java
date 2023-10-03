@@ -5,70 +5,110 @@ package oracle.weblogic.kubernetes;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
-import oracle.weblogic.domain.Model;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
+import static java.lang.System.currentTimeMillis;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_PREFIX;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PREFIX_LENGTH;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.LARGE_DOMAIN_TESTING_PROPS_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
+import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorWebhookIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.createPushAuxiliaryImageWithDomainConfig;
+import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourceAndAddReferenceToDomain;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getKindRepoImageForSpec;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNonEmptySystemProperty;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretsForImageRepos;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -78,7 +118,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Create given number of domains, clusters and servers.
- * Use properties file at resources/domain/largedomaintesting.props
+ * Use properties file provided by system property largedomainpropsfile or
+ * default to resources/domain/largedomaintesting.props
  * to configure number of domains, clusters, servers and resource requests
  * for server pod and operator.
  * If testing for large domain(s), make sure the kubernetes cluster has
@@ -86,7 +127,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * To run the test: mvn -Dit.test=ItLargeMiiDomainsClusters
  * -pl integration-tests -P integration-tests verify 2>&1  | tee test.out
  */
-@DisplayName("Test to create large number of domains, clusters and servers.")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@DisplayName("Test to create large domain(s) and rolling the domain.")
 @IntegrationTest
 class ItLargeMiiDomainsClusters {
   private static String opNamespace = null;
@@ -94,13 +136,18 @@ class ItLargeMiiDomainsClusters {
   private static final String baseDomainUid = "domain";
   private static final String baseClusterName = "cluster-";
   private static String adminServerPrefix = "-" + ADMIN_SERVER_NAME_BASE;
+  private static final String adminServerName = "admin-server";
   private static int numOfDomains;
   private static int numOfClusters;
   private static int numOfServersToStart;
   private static int maxServersInCluster;
+  private static int maxClusterUnavailable;
+  private static String baseImageName;
   private static String adminSecretName = "weblogic-credentials";
   private static String encryptionSecretName = "encryptionsecret";
   private static Properties largeDomainProps = new Properties();
+  private static final String miiAuxiliaryImageTag = "image" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImageTag;
 
   private static LoggingFacade logger = null;
 
@@ -128,6 +175,8 @@ class ItLargeMiiDomainsClusters {
     numOfServersToStart = Integer.valueOf(largeDomainProps.getProperty("NUMBER_OF_SERVERSTOSTART",
         largeDomainProps.getProperty("MAXIMUM_SERVERS_IN_CLUSTER", "2")));
     maxServersInCluster = Integer.valueOf(largeDomainProps.getProperty("MAXIMUM_SERVERS_IN_CLUSTER", "2"));
+    maxClusterUnavailable = Integer.valueOf(largeDomainProps.getProperty("MAX_CLUSTER_UNAVAILABLE", "1"));
+    baseImageName = BASE_IMAGES_PREFIX + largeDomainProps.getProperty("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME_DEFAULT);
 
     logger.info("Assign unique namespaces for Domains");
     domainNamespaces = namespaces.subList(1, numOfDomains + 1);
@@ -147,6 +196,7 @@ class ItLargeMiiDomainsClusters {
    * Create given number of domains with clusters and access the console.
    */
   @Test
+  @Order(1)
   @DisplayName("Create n number of domains/clusters")
   void testCreateNDomainsNClusters() {
     logger.info("Creating {0} domains with {1} clusters in each domain",
@@ -162,22 +212,50 @@ class ItLargeMiiDomainsClusters {
       }
 
       // create config map with model for all clusters
-      createClusterModelConfigMap(domainUid, configMapName, domainNamespaces.get(i));
+      createClusterModelConfigMap(
+          domainUid, configMapName, domainNamespaces.get(i), maxServersInCluster);
 
       // create secrets
       createSecrets(domainNamespaces.get(i));
 
-      // create cluster resources and domain resource
-      DomainResource domain = createDomainResource(domainUid, domainNamespaces.get(i),
-          MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-          adminSecretName, new String[]{TEST_IMAGES_REPO_SECRET_NAME},
-          encryptionSecretName, numOfServersToStart, clusterNameList);
+      // build app
+      assertTrue(buildAppArchive(defaultAppParams()
+              .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+              .appName(MII_BASIC_APP_NAME)),
+          String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+
+      // image with model files for domain config, app and wdt install files
+      List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+      List<String> modelList = new ArrayList<>();
+      modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+      createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImageTag, archiveList, modelList);
+
+      final String auxiliaryImagePath = "/auxiliary";
+
+      // create domain custom resource using auxiliary images
+      logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+          domainUid, miiAuxiliaryImage);
+      String weblogicImageToUseInSpec = getKindRepoImageForSpec(KIND_REPO, baseImageName,
+          largeDomainProps.containsKey("BASE_IMAGE_TAG") ? (String)largeDomainProps.get("BASE_IMAGE_TAG") :
+          WEBLOGIC_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
+      logger.info("weblogicImageToUseInSpec " + weblogicImageToUseInSpec);
+      DomainResource domain = createDomainResourceWithAuxiliaryImage(domainUid, domainNamespaces.get(i),
+          weblogicImageToUseInSpec, adminSecretName, createSecretsForImageRepos(domainNamespaces.get(i)),
+          encryptionSecretName, auxiliaryImagePath,
+          miiAuxiliaryImage);
 
       // set config map
-      domain.getSpec().configuration(new Configuration()
-          .model(new Model()
-              .configMap(configMapName)
-              .runtimeEncryptionSecret(encryptionSecretName)));
+      domain.getSpec().getConfiguration().getModel().configMap(configMapName);
+      domain.getSpec().getConfiguration().getModel().runtimeEncryptionSecret(encryptionSecretName);
+
+      for (int j = 1; j <= numOfClusters; j++) {
+        String clusterName = baseClusterName + j;
+        domain = createClusterResourceAndAddReferenceToDomain(
+            domainUid + "-" + clusterName, clusterName, domainNamespaces.get(i),
+            domain, numOfServersToStart);
+
+      }
 
       // set resource request and limit
       Map<String, Quantity> resourceRequest = new HashMap<>();
@@ -203,6 +281,7 @@ class ItLargeMiiDomainsClusters {
       domain.getSpec().getServerPod().resources(new V1ResourceRequirements()
           .requests(resourceRequest)
           .limits(resourceLimit));
+      domain.getSpec().maxClusterUnavailable(maxClusterUnavailable);
 
       logger.info("Creating Domain Resource {0} in namespace {1} using image {2}",
           domainUid, domainNamespaces.get(i),
@@ -213,7 +292,7 @@ class ItLargeMiiDomainsClusters {
       // check admin server pod is ready
       logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
           adminServerPodName, domainNamespaces.get(i));
-      checkPodReady(adminServerPodName, domainUid, domainNamespaces.get(i));
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespaces.get(i));
 
       // check managed server pods are ready in all clusters in the domain
       for (int j = 1; j <= numOfClusters; j++) {
@@ -222,7 +301,7 @@ class ItLargeMiiDomainsClusters {
         for (int k = 1; k <= numOfServersToStart; k++) {
           logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
               managedServerPrefix + k, domainNamespaces.get(i));
-          checkPodReady(managedServerPrefix + k, domainUid, domainNamespaces.get(i));
+          checkPodReadyAndServiceExists(domainUid + "-" + managedServerPrefix + k, domainUid, domainNamespaces.get(i));
         }
       }
 
@@ -234,6 +313,7 @@ class ItLargeMiiDomainsClusters {
       logger.info("Found the default service nodePort {0}", nodePort);
       String hostAndPort = getHostAndPort(null, nodePort);
 
+      // make sure K8S_NODEPORT_HOST is exported to make the below call work
       if (!WEBLOGIC_SLIM) {
         // String curlCmd = "curl -s --show-error --noproxy '*' "
         String curlCmd = "curl -s --show-error "
@@ -246,8 +326,170 @@ class ItLargeMiiDomainsClusters {
     }
   }
 
+  /**
+   * Patch the domain with the different base image name.
+   * Verify all the pods are restarted and back to ready state.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Test to update Base Weblogic Image Name")
+  void testBaseImageMinorUpdateRollingRestart() {
+    String domainUid1 = baseDomainUid + "1";
+    // get the original domain resource before update
+    DomainResource domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespaces.get(0)),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            baseDomainUid + "1", domainNamespaces.get(0)));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    Map<String, OffsetDateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    for (int j = 1; j <= numOfClusters; j++) {
+      String managedServerPrefix = "c" + j + "-managed-server";
+      // get the map with server pods and their original creation timestamps
+      podsWithTimeStamps.putAll(getPodsWithTimeStamps(domainNamespaces.get(0),
+          adminServerPrefix, managedServerPrefix, numOfServersToStart));
+    }
+
+    //print out the original image name
+    String imageName = domain1.getSpec().getImage();
+    logger.info("Currently the image name used for the domain is: {0}", imageName);
+
+    //change image name to imageUpdate
+    String imageUpdate = getKindRepoImageForSpec(KIND_REPO, baseImageName,
+        largeDomainProps.containsKey("UPGRADE_IMAGE_TAG") ? (String)largeDomainProps.get("UPGRADE_IMAGE_TAG") :
+            WEBLOGIC_IMAGE_TAG, BASE_IMAGES_REPO_PREFIX_LENGTH);
+
+    StringBuffer patchStr;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/image\",")
+        .append("\"value\": \"")
+        .append(imageUpdate)
+        .append("\"}]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    assertTrue(patchDomainResource(domainUid1, domainNamespaces.get(0), patchStr),
+        "patchDomainCustomResource(imageUpdate) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid1, domainNamespaces.get(0)),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid1, domainNamespaces.get(0)));
+    assertNotNull(domain1, "Got null domain resource after patching");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
+
+    //print out image name in the new patched domain
+    logger.info("In the new patched domain image name is: {0}", domain1.getSpec().getImage());
+    long timeBeforeRollingRestart = currentTimeMillis();
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid1, domainNamespaces.get(0));
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps,
+            maxClusterUnavailable, domainNamespaces.get(0)),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid1, domainNamespaces.get(0)));
+    logger.info("Time took for rolling restart of domain {0}",
+        (currentTimeMillis() - timeBeforeRollingRestart) / 1000 + " seconds");
+    String adminServerPodName = domainUid1 + adminServerPrefix;
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid1, domainNamespaces.get(0));
+
+  }
+
+  /**
+   * Test server pods are rolling restarted and updated when domain is patched
+   * with new restartVersion when non dynamic changes are made.
+   * Modify the dynamic cluster max size by patching the domain CRD.
+   * Update domainRestartVersion to trigger a rolling restart of server pods.
+   * Make sure the domain is rolled successfully by checking the events.
+   * Make sure the cluster can be scaled beyond the initial maximum size.
+   * Keep NUMBER_OF_SERVERSTOSTART less than MAXIMUM_SERVERS_IN_CLUSTER in the
+   * properties for this test to test cluster scaling before and after changing the
+   * max cluster size. Increase MAX_CLUSTER_UNAVAILABLE for large domains to reduce
+   * domain restart/roll time.
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Test modification to Dynamic cluster size parameters")
+  void testNonDynamicUpdateRollingRestart() {
+    String domainUid1 = baseDomainUid + "1";
+    String clusterName = domainUid1 + "-" + "cluster-1";
+    String managedServerPrefix = "c1-managed-server";
+    int newMaxServersInCluster = maxServersInCluster + 5;
+
+    // Scale the cluster to max size
+    logger.info("[Before Patching] updating the replica count to {0}",
+        maxServersInCluster);
+    boolean p1Success = scaleCluster(clusterName,
+        domainNamespaces.get(0), maxServersInCluster);
+    assertTrue(p1Success,
+        String.format("replica patching to %s failed for domain %s in namespace %s",
+            maxServersInCluster, domainUid1, domainNamespaces.get(0)));
+
+
+    // check newly added managed server pods are ready
+    for (int k = numOfServersToStart; k <= maxServersInCluster; k++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + k, domainNamespaces.get(0));
+      checkPodReadyAndServiceExists(domainUid1 + "-"
+          + managedServerPrefix + k, domainUid1, domainNamespaces.get(0));
+    }
+
+    long timeBeforeRollingRestart = currentTimeMillis();
+    OffsetDateTime timestamp = now();
+    // create config map with model for dynamic cluster size
+    String configMapName = "dynamic-cluster-size-cm";
+    createClusterModelConfigMap(
+        domainUid1, configMapName, domainNamespaces.get(0),
+        newMaxServersInCluster);
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid1, domainNamespaces.get(0),
+                patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid1, domainNamespaces.get(0));
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
+
+
+    // verify the rolling started and completed events on domain
+    // checking every pod has rolled is time consuming on large domain,
+    // hence checking events
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid1, domainNamespaces.get(0));
+    verifyDomainRollAndPodCycleEvents(timestamp,
+        domainNamespaces.get(0), opNamespace, domainUid1);
+    logger.info("Time took for rolling restart of domain {0}",
+        (currentTimeMillis() - timeBeforeRollingRestart) / 1000
+            + " seconds");
+
+    // Scale the cluster to new max size
+    logger.info("[After Patching] updating the replica count to {0}",
+        newMaxServersInCluster);
+    p1Success = scaleCluster(clusterName,
+        domainNamespaces.get(0), newMaxServersInCluster);
+    assertTrue(p1Success,
+        String.format("replica patching to %s failed for domain %s in namespace %s",
+            newMaxServersInCluster, domainUid1, domainNamespaces.get(0)));
+
+    // check newly added managed server pods are ready
+    for (int k = maxServersInCluster; k <= newMaxServersInCluster; k++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + k, domainNamespaces.get(0));
+      checkPodReadyAndServiceExists(domainUid1 + "-" + managedServerPrefix + k, domainUid1,
+          domainNamespaces.get(0));
+    }
+  }
+
   private static void createClusterModelConfigMap(
-      String domainid, String cfgMapName, String domainNamespace) {
+      String domainid, String cfgMapName, String domainNamespace, int maxClusterSize) {
     String yamlString = "topology:\n"
         + "  Cluster:\n";
     String clusterYamlString = "";
@@ -258,8 +500,8 @@ class ItLargeMiiDomainsClusters {
           + "       DynamicServers: \n"
           + "         ServerTemplate: 'cluster-" + i + "-template' \n"
           + "         ServerNamePrefix: 'c" + i + "-managed-server' \n"
-          + "         DynamicClusterSize: " + maxServersInCluster + " \n"
-          + "         MaxDynamicClusterSize: " + maxServersInCluster + " \n"
+          + "         DynamicClusterSize: " + maxClusterSize + " \n"
+          + "         MaxDynamicClusterSize: " + maxClusterSize + " \n"
           + "         CalculatedListenPorts: false \n";
       serverTemplateYamlString = serverTemplateYamlString
           + "    'cluster-" + i + "-template':\n"
@@ -272,11 +514,11 @@ class ItLargeMiiDomainsClusters {
     logger.info("Yamlstring " + yamlString);
     Map<String, String> labels = new HashMap<>();
     labels.put("weblogic.domainUid", domainid);
-    Map<String, String> data = new HashMap<>();
-    data.put("model.cluster.yaml", yamlString);
+    Map<String, String> modelData = new HashMap<>();
+    modelData.put("model.cluster.yaml", yamlString);
 
     V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
+        .data(modelData)
         .metadata(new V1ObjectMeta()
             .labels(labels)
             .name(cfgMapName)
@@ -485,7 +727,37 @@ class ItLargeMiiDomainsClusters {
   }
 
   private static void loadLargeDomainProps() throws IOException {
-    largeDomainProps.load(new FileInputStream(RESOURCE_DIR
-        + "/domain/" + LARGE_DOMAIN_TESTING_PROPS_FILE));
+    String largeDomainPropsFile = getNonEmptySystemProperty("largedomainpropsfile",
+        RESOURCE_DIR + "/domain/" + LARGE_DOMAIN_TESTING_PROPS_FILE);
+    largeDomainProps.load(new FileInputStream(largeDomainPropsFile));
   }
+
+  private void verifyDomainRollAndPodCycleEvents(OffsetDateTime timestamp, String domainNamespace,
+                                                 String opNamespace, String domainUid) {
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    // verify that Rolling condition is removed
+    testUntil(
+        () -> verifyDomainStatusConditionTypeDoesNotExist(
+            domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_ROLLING_TYPE),
+        logger,
+        "Verifying domain {0} in namespace {1} no longer has a Rolling status condition",
+        domainUid,
+        domainNamespace);
+  }
+
+  private static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
+    ConditionFactory withLongRetryPolicy = createRetryPolicy(2, 10, 60 * 60);
+    testUntil(withLongRetryPolicy,
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
+  }
+
 }
