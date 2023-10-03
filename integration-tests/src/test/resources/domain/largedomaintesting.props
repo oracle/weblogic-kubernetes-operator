@@ -7,6 +7,8 @@ NUMBER_OF_CLUSTERS=2
 NUMBER_OF_SERVERSTOSTART=2
 #Max number of servers in each cluster
 MAXIMUM_SERVERS_IN_CLUSTER=10
+#The maximum number of cluster members that can be temporarily unavailable. THis is for rolling.
+MAX_CLUSTER_UNAVAILABLE=1
 #cpu requests at server pod
 SERVER_POD_CPU_REQUEST=250m
 #memory requests at server pod
@@ -24,4 +26,7 @@ OPERATOR_CPU_LIMIT=2
 #operaotr memory limit
 OPERATOR_MEM_LIMIT=2Gi
 #operator jvm options to get JFR dump, JFR file will be inside operator pod, dump is taken every 900secs, change duration for shorter intervals
-OPERATOR_JVM_OPTIONS=-XshowSettings:vm -XX:MaxRAMPercentage=70 -XX:StartFlightRecording=delay=5s,disk=false,dumponexit=true,duration=900s,filename=/tmp/operator_rec.jfr
+#OPERATOR_JVM_OPTIONS=-XshowSettings:vm -XX:MaxRAMPercentage=70 -XX:StartFlightRecording=delay=5s,disk=false,dumponexit=true,duration=900s,filename=/tmp/operator_rec.jfr
+#BASE_IMAGE_NAME=test-images/fmw-infrastructure
+#BASE_IMAGE_TAG=12.2.1.4-ol8
+#UPGRADE_IMAGE_TAG=12.2.1.4-jdk8-ol8-cpu
