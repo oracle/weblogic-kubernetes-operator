@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.NO_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPDEMO;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
@@ -59,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getActualLocationIfNeeded;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -66,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.createZipFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
@@ -93,10 +96,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("Test to validate on-prem to k8s use case")
 @Tag("kind-parallel")
-@Tag("oke-parallel")
 @Tag("toolkits-srg")
 @Tag("okd-wls-mrg")
 @Tag("olcne-mrg")
+@Tag("oke-gate")
 @IntegrationTest
 class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
@@ -331,7 +334,9 @@ class ItLiftAndShiftFromOnPremDomain {
       hostName = createRouteForOKD(clusterService, domainNamespace);
     }
 
-    String hostAndPort = getHostAndPort(hostName, traefikNodePort);
+    final String ingressServiceName = traefikHelmParams.getReleaseName();
+    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, traefikNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String curlString = String.format("curl -v --show-error --noproxy '*' "
@@ -389,6 +394,11 @@ class ItLiftAndShiftFromOnPremDomain {
     }
     if (NO_PROXY != null) {
       container.addEnvItem(new V1EnvVar().name("no_proxy").value(NO_PROXY));
+    }
+
+    // create secret for internal OKE cluster
+    if (OKE_CLUSTER) {
+      createBaseRepoSecret(namespace);
     }
 
     return setupWebLogicPod(namespace, container);
