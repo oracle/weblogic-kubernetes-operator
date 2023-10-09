@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_F
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -58,6 +61,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.imageTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesDomainExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.AuxiliaryImageUtils.checkWDTVersion;
@@ -74,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResouceByPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyConfiguredSystemResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -157,6 +162,9 @@ class ItMiiAuxiliaryImage {
   private static final String miiAuxiliaryImage16Tag = "image16" + MII_BASIC_IMAGE_TAG;
   private static final String miiAuxiliaryImage16 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage16Tag;
 
+  private static final String miiAuxiliaryImage17Tag = "image17" + MII_BASIC_IMAGE_TAG;
+  private static final String miiAuxiliaryImage17 = MII_AUXILIARY_IMAGE_NAME + ":" + miiAuxiliaryImage17Tag;
+
   private static final String errorPathAuxiliaryImage1Tag = "errorimage1" + MII_BASIC_IMAGE_TAG;
   private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + errorPathAuxiliaryImage1Tag;
   private static final String errorPathAuxiliaryImage2Tag = "errorimage2" + MII_BASIC_IMAGE_TAG;
@@ -174,6 +182,7 @@ class ItMiiAuxiliaryImage {
   private static String encryptionSecretName = "encryptionsecret";
   private static String opNamespace = null;
   private static String operatorPodName = null;
+  private static String oldMiiAuxImageNameInDomain1 = miiAuxiliaryImage1;
 
   /**
    * Install Operator. Create a domain using multiple auxiliary images.
@@ -357,10 +366,11 @@ class ItMiiAuxiliaryImage {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodNameDomain1,
         managedServerPrefixDomain1, replicaCount);
 
-    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1,
+    patchDomainWithAuxiliaryImageAndVerify(oldMiiAuxImageNameInDomain1,
         miiAuxiliaryImage3,
         domainUid1, domainNamespace, replicaCount);
-
+    // set the old image name for other tests which patch the domain
+    oldMiiAuxImageNameInDomain1 =  miiAuxiliaryImage3;
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid1, domainNamespace);
@@ -1356,6 +1366,59 @@ class ItMiiAuxiliaryImage {
   }
 
   /**
+   * Update the existing application to a new version.
+   * Create a new auxiliary image with the new application and model files for the
+   * domain. Patch the domain by replacing the existing auxiliary image with the
+   * new auxiliary image. Verify the domain is rolled and the new version of the
+   * application is accessible.
+   *
+   */
+  @Test
+  @DisplayName("Update the sample-app application to version 2")
+  void testUpdateApplicationUsingAI() {
+
+    // check the sample app is accessible from managed servers
+    checkApplicationIsAccessible(replicaCount, MII_APP_RESPONSE_V1);
+
+    // application in the new image contains what is in the original application directory sample-app,
+    // plus the replacements or/and additions in the second application directory sample-app-2.
+    final String appDir1 = "sample-app";
+    final String appDir2 = "sample-app-2";
+    List<String> appDirList = Arrays.asList(appDir1, appDir2);
+
+    logger.info("Build an application archive using what is in {0}", appDirList);
+    assertTrue(
+        buildAppArchive(
+            defaultAppParams()
+                .srcDirList(appDirList)),
+        String.format("Failed to create application archive for %s",
+            MII_BASIC_APP_NAME));
+
+    logger.info("Build the archive list that contains {0}",
+        String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+    List<String> archiveList =
+        Collections.singletonList(
+            String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+    modelList.add(MODEL_DIR + "/model.jms2.yaml");
+    logger.info("Create auxiliary image with model files and app");
+    createPushAuxiliaryImageWithDomainConfig(MII_AUXILIARY_IMAGE_NAME, miiAuxiliaryImage17Tag, archiveList, modelList);
+
+    // patch domain resource with new image by replacing old image
+    // and verify rolling restart occurred
+    patchDomainWithAuxiliaryImageAndVerify(oldMiiAuxImageNameInDomain1,
+        miiAuxiliaryImage17,
+        domainUid1, domainNamespace, replicaCount);
+    // set the old image name for other tests which patch the domain
+    oldMiiAuxImageNameInDomain1 = miiAuxiliaryImage17;
+    // check updated sample app is accessible from managed servers
+    checkApplicationIsAccessible(replicaCount, MII_APP_RESPONSE_V2);
+  }
+
+  /**
    * Cleanup images.
    */
   public void tearDownAll() {
@@ -1488,5 +1551,20 @@ class ItMiiAuxiliaryImage {
             adminServerPodName, managedServerPrefix, replicaCount);
 
     deleteDomainResource(domainNamespace, domainUid);
+  }
+
+  private void checkApplicationIsAccessible(
+      int replicaCount, String expectedResponse) {
+    for (int i = 1; i <= replicaCount; i++) {
+      int index = i;
+      testUntil(withStandardRetryPolicy,
+          () -> appAccessibleInPod(domainNamespace, managedServerPrefixDomain1 + index, "8001",
+              "sample-war/index.jsp", expectedResponse + index),
+          logger,
+          "application {0} is running on pod {1} in namespace {2}",
+          "sample-war",
+          managedServerPrefixDomain1 + index,
+          domainNamespace);
+    }
   }
 }
