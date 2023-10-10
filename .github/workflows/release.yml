@@ -25,8 +25,8 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
-          java-version: 17
+          distribution: 'oracle'
+          java-version: 21
 
       - name: Cache Maven packages
         uses: actions/cache@v3
