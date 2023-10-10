@@ -300,7 +300,13 @@ pipeline {
                         }
                     }
                 }
-
+                stage('Build WebLogic Kubernetes Operator') {
+                    steps {
+                        withMaven(globalMavenSettingsConfig: 'wkt-maven-settings-xml', publisherStrategy: 'EXPLICIT') {
+                            sh "mvn -DtrimStackTrace=false -Dskip.unit.tests=true clean install"
+                        }
+                    }
+                }
                 stage('Make Workspace bin directory') {
                     steps {
                         sh "mkdir -m777 -p ${WORKSPACE}/bin"

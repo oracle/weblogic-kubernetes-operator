@@ -18,10 +18,8 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Utility class for session migration tests.
@@ -94,7 +92,7 @@ public class SessionMigrationUtil {
 
     // send a HTTP request to set http session state(count number) and save HTTP session cookie info
     // or get http session state(count number usind saved HTTP session cookie info
-    logger.info("Process HTTP request with web service URL {0} in the pod {1} ", webServiceUrl, serverName);
+    logger.info("Process HTTP request with web service URL {0}", webServiceUrl);
     Map<String, String> httpAttrInfo =
         processHttpRequest(domainNamespace, adminServerPodName, hostName, port, webServiceUrl, headerOption);
 
@@ -113,7 +111,7 @@ public class SessionMigrationUtil {
     );
 
     // map to save server and session info
-    Map<String, String> httpDataInfo = new HashMap<String, String>();
+    Map<String, String> httpDataInfo = new HashMap<>();
     httpDataInfo.put(primaryServerAttr, primaryServerName);
     httpDataInfo.put(secondaryServerAttr, secondaryServerName);
     httpDataInfo.put(sessionCreateTimeAttr, sessionCreateTime);
@@ -138,47 +136,54 @@ public class SessionMigrationUtil {
 
     // check if primary server is ready
     testUntil(withStandardRetryPolicy,
-        () -> checkPrimaryServerReady(domainNamespace, adminServerPodName, curlCmd),
+        () -> checkSessionReplicatorServerReady(domainNamespace, adminServerPodName, "primary", curlCmd),
         logger, "check if primary server is ready in namespace {0}", domainNamespace);
 
+    logger.info("Sending request from inside admin server pod to cluster : {0}", curlCmd);
     // set HTTP request and get HTTP response
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(domainNamespace, adminServerPodName,
-        null, true, "/bin/sh", "-c", curlCmd));
-    if (execResult.exitValue() == 0 && execResult.stderr() != null && execResult.stderr().isEmpty()) {
-      logger.info("\n HTTP response is \n " + execResult.stdout());
-      assertAll("Check that primary server name is not null or empty",
-          () -> assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null"),
-          () -> assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty")
-      );
-
-      for (String httpAttrKey : httpAttrArray) {
-        String httpAttrValue = getHttpResponseAttribute(execResult.stdout(), httpAttrKey);
-        httpAttrInfo.put(httpAttrKey, httpAttrValue);
+    testUntil(withStandardRetryPolicy, () -> {
+      ExecResult execResult = execCommand(domainNamespace, adminServerPodName, 
+          "weblogic-server", true, "/bin/sh", "-c", curlCmd);
+      if (execResult.exitValue() == 0 && execResult.stderr() != null) {
+        logger.info("\n HTTP response is \n" + execResult.stdout());
+        if (execResult.stdout() == null || execResult.stdout().isEmpty()) {
+          logger.info("Null or empty output");
+          return false;
+        }
+        for (String httpAttrKey : httpAttrArray) {
+          String httpAttrValue = getHttpResponseAttribute(execResult.stdout(), httpAttrKey);
+          httpAttrInfo.put(httpAttrKey, httpAttrValue);
+        }
+        return true;
+      } else {
+        logger.info("Didn't get correct exit code or there is an error");
+        logger.info("Exit code \n" + execResult.exitValue());
+        logger.info("Stdout \n" + execResult.stdout());
+        logger.info("Stderr \n" + execResult.stderr());
+        return false;
       }
-    } else {
-      fail("Failed to process HTTP request " + execResult.stderr());
-    }
-
+    }, logger, "curl command to return exit code 0, no error, and cookie output");
     return httpAttrInfo;
   }
 
-  private static boolean checkPrimaryServerReady(String domainNamespace,
+  private static boolean checkSessionReplicatorServerReady(String domainNamespace,
                                                  String adminServerPodName,
+                                                 String replicator,
                                                  String curlCmd) {
     boolean primaryServerReady = false;
     LoggingFacade logger = getLogger();
 
+    logger.info("Sending request from inside admin server pod to cluster : {0}", curlCmd);
     // set HTTP request and get HTTP response
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(domainNamespace, adminServerPodName,
-        null, true, "/bin/sh", "-c", curlCmd));
+        "weblogic-server", true, "/bin/sh", "-c", curlCmd));
 
     if (execResult.exitValue() == 0 && execResult.stdout() != null && !execResult.stdout().isEmpty()) {
-      String primaryServerName = getHttpResponseAttribute(execResult.stdout(), "primary");
+      String primaryServerName = getHttpResponseAttribute(execResult.stdout(), replicator);
 
       if (primaryServerName != null && !primaryServerName.isEmpty()) {
-        logger.info("\n Primary server is ready: \n " + execResult.stdout());
+        logger.info("\n {0} server is ready: \n {1}", replicator, execResult.stdout());
         primaryServerReady = true;
       }
     }
@@ -190,7 +195,7 @@ public class SessionMigrationUtil {
                                          String headerOption,
                                          String hostName,
                                          int port) {
-    final String httpHeaderFile = "/u01/domains/header";
+    final String httpHeaderFile = "/tmp/header";
     LoggingFacade logger = getLogger();
 
     // In OKE_CLUSTER env, the test uses LBer ext IP addr only.
@@ -200,7 +205,8 @@ public class SessionMigrationUtil {
     // --max-time - Maximum time in seconds that you allow the whole operation to take
     int waittime = 10;
     String curlCommand =  new StringBuilder()
-        .append("curl --silent --show-error")
+        .append("curl --show-error ")
+        .append(" --noproxy '*'")
         .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
         .append(" http://")
         .append(hostAndPort)
