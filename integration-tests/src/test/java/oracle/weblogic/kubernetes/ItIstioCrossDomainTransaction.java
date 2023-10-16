@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -42,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -58,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
@@ -80,11 +83,10 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItIstioCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
@@ -115,6 +117,9 @@ class ItIstioCrossDomainTransaction {
   static String dbUrl;
   static int dbNodePort;
   static int istioIngressPort;
+
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   /**
    * Install Operator.
@@ -164,6 +169,7 @@ class ItIstioCrossDomainTransaction {
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
     buildApplicationsAndDomains();
@@ -356,10 +362,15 @@ class ItIstioCrossDomainTransaction {
     istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
@@ -367,9 +378,7 @@ class ItIstioCrossDomainTransaction {
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-
   }
-
 
   /*
    * Test verifies a cross-domain transaction in a istio enabled environment.
@@ -390,18 +399,26 @@ class ItIstioCrossDomainTransaction {
   @Test
   @DisplayName("Check cross domain transaction with istio works")
   void testIstioCrossDomainTransaction() {
+    // In internal OKE env, use Istio EXTERNAL-IP;
+    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String istioIngressIP = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : K8S_NODEPORT_HOST;
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "-H 'host:domain1-" + domain1Namespace + ".org' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
-        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
-        domain2ManagedServerPrefix, domain2Namespace);
+    String curlRequest = OKE_CLUSTER ? String.format("curl -v --show-error --noproxy '*' "
+          + "-H 'host:domain1-" + domain1Namespace + ".org' "
+          + "http://%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
+              istioIngressIP, domain1AdminServerPodName, domain1Namespace,
+              domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
+              domain2ManagedServerPrefix, domain2Namespace)
+          : String.format("curl -v --show-error --noproxy '*' "
+              + "-H 'host:domain1-" + domain1Namespace + ".org' "
+              + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
+                  istioIngressIP, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
+                  domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
+                  domain2ManagedServerPrefix, domain2Namespace);
 
-    ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
-    result = assertDoesNotThrow(
-        () -> exec(curlRequest, true));
+    ExecResult result = assertDoesNotThrow(() -> exec(curlRequest, true));
     logger.info("curl result {0}", result.exitValue());
     assertTrue((result.exitValue() == 0), "curl command failed");
     if (result.exitValue() == 0) {
@@ -409,7 +426,6 @@ class ItIstioCrossDomainTransaction {
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
     }
-
   }
 
   /*
@@ -426,17 +442,16 @@ class ItIstioCrossDomainTransaction {
    */
   @Test
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
+  @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   void testIstioCrossDomainTransactionWithFailInjection() {
-
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "-H 'host:domain1-" + domain1Namespace + ".org' "
-            + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST, istioIngressPort, domain1Namespace, domain2Namespace);
+        + "-H 'host:domain1-" + domain1Namespace + ".org' "
+        + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
+            K8S_NODEPORT_HOST, istioIngressPort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
-    result = assertDoesNotThrow(
-        () -> exec(curlRequest, true));
+    result = assertDoesNotThrow(() -> exec(curlRequest, true));
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
@@ -464,26 +479,36 @@ class ItIstioCrossDomainTransaction {
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
   void testIstioCrossDomainTranscatedMDB() {
-    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,istioIngressPort,
-                 "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
-                "mdbtopic","cluster-1",
-                 ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
-             "MDB application can not be activated on domain1/cluster");
+    // In internal OKE env, use Istio EXTERNAL-IP;
+    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
+    assertTrue(checkAppIsActive(hostAndPort, "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
+        "mdbtopic","cluster-1", ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
+            "MDB application can not be activated on domain1/cluster");
 
     logger.info("MDB application is activated on domain1/cluster");
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+    String curlRequest = OKE_CLUSTER
+        ? String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
+            + "\"http://%s/jmsservlet/jmstest?"
+            + "url=t3://domain2-cluster-cluster-1.%s:8001&"
+            + "cf=jms.ClusterConnectionFactory&"
+            + "action=send&"
+            + "dest=jms/testCdtUniformTopic\"", hostAndPort, domain2Namespace)
+        : String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
-            + "dest=jms/testCdtUniformTopic\"",
-        K8S_NODEPORT_HOST, istioIngressPort, domain2Namespace);
+            + "dest=jms/testCdtUniformTopic\"", K8S_NODEPORT_HOST, istioIngressPort, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
-    result = assertDoesNotThrow(
-        () -> exec(curlRequest, true));
+    result = assertDoesNotThrow(() -> exec(curlRequest, true));
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
@@ -491,30 +516,39 @@ class ItIstioCrossDomainTransaction {
           "Can not send message to remote Distributed Topic");
     }
 
-    assertTrue(checkLocalQueue(),
-         "Expected number of message not found in Accounting Queue");
+    assertTrue(checkLocalQueue(), "Expected number of message not found in Accounting Queue");
   }
 
   private boolean checkLocalQueue() {
-    String curlString = String.format("curl -v --show-error --noproxy '*' "
+    // In internal OKE env, use Istio EXTERNAL-IP;
+    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
+    String curlString = OKE_CLUSTER
+        ? String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
+            + "\"http://%s/jmsservlet/jmstest?"
+            + "url=t3://localhost:7001&"
+            + "action=receive&dest=jms.testAccountingQueue\"", hostAndPort)
+        : String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
-            + "action=receive&dest=jms.testAccountingQueue\"",
-        K8S_NODEPORT_HOST, istioIngressPort);
+            + "action=receive&dest=jms.testAccountingQueue\"", K8S_NODEPORT_HOST, istioIngressPort);
 
     logger.info("curl command {0}", curlString);
-    testUntil(
-        assertDoesNotThrow(
-            () -> () -> exec(curlString, true).stdout().contains("Messages are distributed")),
-        logger,
-        "local queue to be updated");
+    testUntil(assertDoesNotThrow(
+        () -> () -> exec(curlString, true).stdout().contains("Messages are distributed")),
+        logger, "local queue to be updated");
     return true;
   }
 
-
-  private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
-                            String domainImage) {
+  private static void createDomain(String domainUid,
+                                   String domainNamespace,
+                                   String adminSecretName,
+                                   String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
