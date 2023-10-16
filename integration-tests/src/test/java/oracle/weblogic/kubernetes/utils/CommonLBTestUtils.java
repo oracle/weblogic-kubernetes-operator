@@ -636,13 +636,6 @@ public class CommonLBTestUtils {
                                            String... clusterName) {
     getLogger().info("Getting node port for admin server default channel");
 
-    int serviceNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server node port failed");
-    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
-    getLogger().info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
-        clusterViewAppPath, domainUid, namespace);
-    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     if (OKE_CLUSTER_PRIVATEIP) {
       // In internal OKE env, deploy App using WLST
       assertDoesNotThrow(() -> deployUsingWlst(adminServerPodName,
@@ -654,6 +647,14 @@ public class CommonLBTestUtils {
           namespace),"Deploying the application");
       return true;
     } else {
+      int serviceNodePort = assertDoesNotThrow(() ->
+          getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
+              "Getting admin server node port failed");
+      assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+      getLogger().info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
+          clusterViewAppPath, domainUid, namespace);
+      String targets = "{ identity: [ clusters, 'cluster-1' ] }";
+
       // In non-internal OKE env, deploy App using WebLogic restful management services
       ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
           String.valueOf(serviceNodePort),
@@ -663,7 +664,6 @@ public class CommonLBTestUtils {
       getLogger().info("Application deployment returned {0}", result.toString());
       return result.stdout().equals("202");
     }
-
   }
 
   /**

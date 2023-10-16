@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
@@ -45,11 +46,14 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
@@ -66,11 +70,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItIstioDomainInImage {
 
   private static String opNamespace = null;
@@ -80,6 +83,9 @@ class ItIstioDomainInImage {
   private final String adminServerName = "admin-server"; // do not modify
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private static String testWebAppWarLoc = null;
+
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private static LoggingFacade logger = null;
 
@@ -102,7 +108,6 @@ class ItIstioDomainInImage {
     domainNamespace = namespaces.get(1);
 
     // Label the domain/operator namespace with istio-injection=enabled
-
     Map<String, String> labelMap = new HashMap<>();
     labelMap.put("istio-injection", "enabled");
 
@@ -114,7 +119,6 @@ class ItIstioDomainInImage {
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
-
   }
 
   /**
@@ -197,35 +201,34 @@ class ItIstioDomainInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    // In internal OKE env, use Istio EXTERNAL-IP;
+    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
       // Forward the non-ssl port 7001
-      String forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 7001);
+      String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7001);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded local port is {0}", forwardPort);
       consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
       logger.info("WebLogic console is accessible thru non-ssl port forwarding");
       // Forward the ssl port 7002
-      forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 7002);
+      forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
       assertNotNull(forwardPort, "(ssl) port-forward fails to assign local port");
       logger.info("Forwarded local port is {0}", forwardPort);
       consoleUrl = "https://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
-      checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
       logger.info("WebLogic console is accessible thru ssl port forwarding");
 
@@ -235,23 +238,35 @@ class ItIstioDomainInImage {
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
-    ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        clusterName, archivePath, domainNamespace + ".org", "testwebapp");
+    String target = "{identity: [clusters,'" + clusterName + "']}";
+    ExecResult result = OKE_CLUSTER
+        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            target, archivePath, domainNamespace + ".org", "testwebapp")
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            clusterName, archivePath, domainNamespace + ".org", "testwebapp");
+
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+    logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
-    logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application");
+    if (OKE_CLUSTER) {
+      testUntil(isAppInServerPodReady(domainNamespace,
+          managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
+          logger, "Check Deployed App {0} in server {1}",
+          archivePath,
+          target);
+    } else {
+      String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
+      logger.info("Application Access URL {0}", url);
+      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
+      assertTrue(checkApp, "Failed to access WebLogic application");
+    }
+    logger.info("Application /testwebapp/index.jsp is accessble to {0}", domainUid);
 
     // Verify that Security Warning Tool does not detect any security warning
     // messages on console.
-
     istioIngressPort = getIstioHttpIngressPort();
 
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
@@ -259,11 +274,10 @@ class ItIstioDomainInImage {
       String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + " --url http://" + hostAndPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
-      result = null;
       logger.info("curl command {0}", curlCmd2);
       result = assertDoesNotThrow(
         () -> exec(curlCmd2, true));
@@ -285,8 +299,6 @@ class ItIstioDomainInImage {
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount) {
-
-
     // In case of istio "default" channel can not be exposed through nodeport.
     // No AdminService on domain resource.
     DomainResource domain = new DomainResource()
