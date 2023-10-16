@@ -3,7 +3,8 @@
 //
 
 CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=olcne-srg
-                   H 8 * * * % MAVEN_PROFILE_NAME=olcne-mrg'''
+                   H 5 * * * % MAVEN_PROFILE_NAME=olcne-mrg
+                   H 14 * * * % MAVEN_PROFILE_NAME=olcne-sequential'''
 
 pipeline {
     agent { label 'large' }
@@ -13,7 +14,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-ocne-main-nightly-new' ?
+        parameterizedCron(env.JOB_NAME == 'wko-ocne-main-nightly' ?
         CRON_SETTINGS : '')
     }
 
@@ -34,7 +35,8 @@ pipeline {
         oci_profile = 'DEFAULT'
         jenkins_user = sh(returnStdout: true, script: "id -nu").trim()
         jenkins_home_directory = sh(returnStdout: true, script: "getent passwd ${jenkins_user} | cut -d: -f6").trim()
-        
+        OCI_CLI_CONFIG_FILE = "${jenkins_home_directory}/.oci/config"
+
         oci_config_file_creds = 'wkt-oci-config-file'
         oci_signing_key_creds = 'wkt-oci-signing-key'
 
@@ -53,15 +55,15 @@ pipeline {
         result_root = "${outdir}/wl_k8s_test_results"
         pv_root_parent = "${outdir}/k8s-pvroot"
         pv_root = "${pv_root_parent}/newpvroot"
+        pv_root_for_sampletest = "/shared"
 
         start_time = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
         wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 
-        CLUSTER_NAME = "${env.JOB_NAME == 'wko-ocne-main-nightly-new' ? 'mycluster1' : 'mycluster1'}"
+        CLUSTER_NAME = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'mycluster1' : 'mycluster1'}"
         kubeconfig_file = "${WORKSPACE}/ocne_kubeconfig1"
-        //MAVEN_PROFILE_NAME = "${env.JOB_NAME == 'wko-ocne-main-nightly-new' ? 'olcne-srg' : 'olcne-mrg'}"
-        availability_domain = "${env.JOB_NAME == 'wko-ocne-main-nightly-new' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
-        PARALLEL_RUN = "${env.JOB_NAME == 'wko-ocne-main-nightly-new' ? true : false}"
+        availability_domain = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? 'mFEn:PHX-AD-1' : 'mFEn:PHX-AD-1'}"
+        PARALLEL_RUN = "${env.JOB_NAME == 'wko-ocne-main-nightly' ? true : false}"
     }
 
     parameters {
@@ -76,6 +78,7 @@ pipeline {
                 choices: [
                         'olcne-srg',
                         'olcne-mrg',
+                        'olcne-sequential',
                         'integration-tests'
                 ]
         )
@@ -254,6 +257,21 @@ pipeline {
                     }
                 }
 
+                stage('Setup OCI config file  ') {
+
+                    steps {
+                        withCredentials([file(credentialsId: "${oci_config_file_creds}", variable: 'OCI_CONFIG_FILE'),
+                                                        file(credentialsId: "${oci_signing_key_creds}", variable: 'OCI_SIGNING_KEY')]) {
+                                           sh "mkdir -p ${jenkins_home_directory}/.oci"
+                                           sh "sed -e \"s:__jenkins_home__:${jenkins_home_directory}:g\" \"\$OCI_CONFIG_FILE\" > ${jenkins_home_directory}/.oci/config"
+                                           sh "cp \"\$OCI_SIGNING_KEY\" ${jenkins_home_directory}/.oci/oci-signing-key.pem"
+                                       }
+                        sh '''
+                            cat ${jenkins_home_directory}/.oci/config
+                        '''
+                    }
+                }
+
                 stage('Build WebLogic Kubernetes Operator') {
 
                     steps {
@@ -265,12 +283,21 @@ pipeline {
 
                 stage('Preparing Integration Test Environment') {
                     steps {
-                        sh 'mkdir -m777 -p ${result_root}'
-                        echo "Results will be in ${result_root}"
-                        sh 'mkdir -m777 -p ${pv_root_parent}'
-                        sh 'sudo mount 100.105.4.71:/fs-ocne-test ${pv_root_parent}'
-                        sh 'mkdir -m777 -p ${pv_root}'
-                        echo "Persistent volume files, if any, will be in ${pv_root}"
+                        sh '''
+
+                            mt_privateip_id=`oci fs mount-target list --compartment-id=${compartment_id} --display-name="mt-ocne-test" --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
+                            mt_private_ip=`oci network private-ip get --private-ip-id "${mt_privateip_id}" | jq -r '.data | ."ip-address"'`
+
+                            mkdir -m777 -p ${result_root}
+                            echo "Results will be in ${result_root}"
+                            mkdir -m777 -p ${pv_root_parent}
+                            sudo mount ${mt_private_ip}:/fs-ocne-test ${pv_root_parent}
+                            mkdir -m777 -p ${pv_root}
+                            echo "Persistent volume files, if any, will be in ${pv_root}"
+                            echo "Create pv root for sample test in ${pv_root_for_sampletest}"
+                            sudo mkdir -m777 -p ${pv_root_for_sampletest}
+                            sudo mount ${mt_private_ip}:/fs-ocne-test ${pv_root_for_sampletest}
+                        '''
                     }
                 }
 
@@ -279,6 +306,10 @@ pipeline {
 
                         sh '''
                         #################
+
+                        k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=ocne-new2 |jq -r '.data[]."id"'`
+                        k8s_master_instance_private_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_master_instance_id} |jq -r '.data[]."private-ip"'`
+
                         echo "Generating kubeconfig file"
 
 cat > $kubeconfig_file <<EOF
@@ -287,7 +318,7 @@ apiVersion: v1
 clusters:
 - cluster:
     certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMvakNDQWVhZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJek1Ea3lNekF5TXpZeU1Gb1hEVE16TURreU1EQXlNell5TUZvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBT2NzCkxucXZreE56Y1ZIS292SW5mMXQ0OHJ1d3BQU215ZjE5NHMvdDB4OGllMnRhT25uRmNNUjhrT0E3eU5jL3h3eGEKQTl2RUNmL2xrOXZzVUNTSFZoa1pjYnpPU1JCUWRZampPSmFZNHZDd0RqVU5xc0lPeVhGU1EyWUROMFRwUUFJQwppMGZ6dmRqYytkREFkKzN6RmQvV2JBRzc0Z0JlZU0zZGxyenMvcGorZ2g3dzdMdlZ0Mjhra1hOTUUxNEFrTHV5Ck9SQXI1aHpVZ0txQ2dSSjIyTkxwc2xvSHpXL2w1WGVIa0F4OGU1YlZPbkREYmFidXFQZXNBVlIwYVdLb3BmWjUKTFFFUnU4WXhVcUREYXBsTVY5UTZCOXV2bDV0VEdzTmRjRXRqLzZWSnBEZ3RZTFJwc3FrdXZ1TDFEQVJubnNnagp1VGhRaDNGTTFkK3ZWK1FBYjE4Q0F3RUFBYU5aTUZjd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZKYm1QWmFRYWFDdVBUSUdGa1lUbDdxeXJTdE1NQlVHQTFVZEVRUU8KTUF5Q0NtdDFZbVZ5Ym1WMFpYTXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBSUlmVmpzcHBCTCtrU2p4V2ZSNgpqbng2T1BkSElkY29PZ29SbllUc3E4cDlYK3JhMkRBaGdXMXhrbTJUcnBmai9VRzBiWEoyZHBuTFF4eU5YT05WCmN3SnA2SkxlODZ0T0k0UGRXKy9lTFZFdzRMWGRubHlLOGxGSzFLK1UzbUpPaGp6MDlvR0xhbEFJUndhSEY5UmkKRlltWXFFZUQ0OVJkUHljQXAyTFl0S1RUNitlRWV0U3o2eEo3VVp6OXo1ZU52dHB6L2dVWkQwZjhRbWduWm1EcwpKVk56Q2pJc2JsOXkxZFVaZGtITzIvaDU3d0tsdEF0TXlYN25ibDNoUG1OSmppR1AxcHBZeWNkMXRqK3JlV2MwCkVWQXVEazNxZlR6MjJBeno2TjVTYkRsRitXNGh0dEJRN2lPV21BUVRkVlRDWDJhTVZsT2dDUm10dU5ydTFiZ2MKTWpVPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
-    server: https://100.105.4.76:6443
+    server: https://${k8s_master_instance_private_ip}:6443
   name: kubernetes
 contexts:
 - context:
@@ -343,14 +374,16 @@ EOF
                                 fi
 
                                 export PATH=${runtime_path}
-                                export OCI_CLI_CONFIG_FILE=${jenkins_home_directory}/.oci/config
                                 export OCI_CLI_PROFILE=${oci_profile}
                                 compartment_ocid=${compartment_id}
                                 mkdir -m777 -p "${WORKSPACE}/.mvn"
                                 touch ${WORKSPACE}/.mvn/maven.config
                                 export KUBECONFIG=${kubeconfig_file}
 
-                                clusterIP='100.105.4.76'
+                                k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=ocne-new2 |jq -r '.data[]."id"'`
+                                k8s_master_instance_private_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_master_instance_id} |jq -r '.data[]."private-ip"'`
+
+                                clusterIP=${k8s_master_instance_private_ip}
                                 export NO_PROXY=$NO_PROXY,${clusterIP}
                                 echo "NO_PROXY:" $NO_PROXY
 
@@ -359,13 +392,12 @@ EOF
                                 if [ -n "${IT_TEST}" ]; then
                                     echo "-Dit.test=\"${IT_TEST}\"" >> ${WORKSPACE}/.mvn/maven.config
                                 fi
-                                if [ "${MAVEN_PROFILE_NAME}" == "olcne-srg" ]; then
+                                if [ "${MAVEN_PROFILE_NAME}" == "olcne-sequential" ]; then
                                     PARALLEL_RUN='false'
                                 fi
-                                if [ "${MAVEN_PROFILE_NAME}" == "olcne-mrg" ]; then
-                                    PARALLEL_RUN='true'
-                                fi
+
                                 echo "MAVEN_PROFILE_NAME:" $MAVEN_PROFILE_NAME
+                                echo "PARALLEL_RUN:" $PARALLEL_RUN
                                 echo "-Dwko.it.wle.download.url=\"${wle_download_url}\""                                     >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.result.root=\"${result_root}\""                                               >> ${WORKSPACE}/.mvn/maven.config
                                 echo "-Dwko.it.pv.root=\"${pv_root}\""                                                       >> ${WORKSPACE}/.mvn/maven.config
@@ -402,13 +434,17 @@ EOF
                                 usernamePassword(credentialsId: "${ocir_creds}", usernameVariable: 'OCIR_USER', passwordVariable: 'OCIR_PASS')
                             ]) {
                                 sh '''
+
+                                    k8s_master_instance_id=`oci compute instance list --compartment-id=${compartment_id} --display-name=ocne-new2 |jq -r '.data[]."id"'`
+                                    k8s_master_instance_private_ip=`oci compute instance list-vnics --compartment-id=${compartment_id} --instance-id=${k8s_master_instance_id} |jq -r '.data[]."private-ip"'`
+
                                     export HTTPS_PROXY='http://www-proxy-hqdc.us.oracle.com:80'
                                     export https_proxy='http://www-proxy-hqdc.us.oracle.com:80'
                                     export HTTP_PROXY='http://www-proxy-hqdc.us.oracle.com:80'
                                     export http_proxy='http://www-proxy-hqdc.us.oracle.com:80'
-                                    #100.105.4.76 is the ip address of kubernetes master node
-                                    export NO_PROXY='localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,100.105.4.76'
-                                    export no_proxy='localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,100.105.4.76'
+
+                                    export NO_PROXY="localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,${k8s_master_instance_private_ip}"
+                                    export no_proxy="localhost,127.0.0.1,.us.oracle.com,.oraclecorp.com,/var/run/docker.sock,${k8s_master_instance_private_ip}"
                                     export PATH=${runtime_path}
                                     export OKE_CLUSTER="false"
                                     export OCNE="true"
@@ -438,7 +474,6 @@ EOF
                             sh '''
                                 export PATH="${WORKSPACE}/bin:${PATH}"
                                 export KUBECONFIG=${kubeconfig_file}
-                                export OCI_CLI_CONFIG_FILE=${WORKSPACE}/oci/config
                                 export OCI_CLI_PROFILE=${oci_profile}
                                 mkdir -m777 -p ${result_root}/kubelogs
                                 mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
@@ -465,6 +500,9 @@ EOF
                         rm -rf ${WORKSPACE}/.mvn
                         sudo rm -rf ${pv_root}
                         sudo umount ${pv_root_parent}
+                        sudo rm -rf ${pv_root_for_sampletest}/domains
+                        sudo rm -rf ${pv_root_for_sampletest}/logs
+                        sudo umount ${pv_root_for_sampletest}
                         kubectl delete pod $(kubectl get pod |grep recycler-for|awk '{print $1}') || true
                     '''
                 }

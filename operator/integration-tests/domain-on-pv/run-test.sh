@@ -24,6 +24,7 @@ trace "Running end to end DPV sample test."
 echo "Is OKD set? $OKD"
 echo "Is OKE_CLUSTER set? $OKE_CLUSTER"
 echo "Is KIND_CLUSTER set? $KIND_CLUSTER"
+echo "Is OCNE set? $OCNE"
 
 DRY_RUN=false
 DO_CLEANUP=false
@@ -239,6 +240,7 @@ doCommand -c cp -r \$DPVSAMPLEDIR/../ingresses/* \$WORKDIR/ingresses
 doCommand -c export OKD=$OKD
 doCommand -c export OKE_CLUSTER=$OKE_CLUSTER
 doCommand -c export KIND_CLUSTER=$KIND_CLUSTER
+doCommand -c export OCNE=$OCNE
 
 #
 # Build pre-req (operator)
@@ -249,6 +251,9 @@ if [ "$DO_OPER" = "true" ]; then
   doCommand  "\$TESTDIR/build-operator.sh"
   if [ "$KIND_CLUSTER" = "true" ]; then
       doCommand -c "kind load docker-image ${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}:${OPER_IMAGE_TAG:-test} --name kind"
+  fi
+  if [ "$OCNE" = "true" ]; then
+        doCommand -c "${WLSIMG_BUILDER:-docker} push ${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}:${OPER_IMAGE_TAG:-test}"
   fi
 fi
 

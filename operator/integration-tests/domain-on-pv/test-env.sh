@@ -24,8 +24,8 @@ export WORKDIR=${WORKDIR:-/tmp/$USER/domain-on-pv-sample-work-dir}
 # export OPER_NAME=
 # export OPER_NAMESPACE=
 # export OPER_SA=
-# export OPER_IMAGE_NAME=
-# export OPER_IMAGE_TAG=
+export OPER_IMAGE_NAME=${OPER_IMAGE_NAME:-weblogic-kubernetes-operator}
+export OPER_IMAGE_TAG=${OPER_IMAGE_TAG:-test}
 
 # ::: DB Settings (needed if WDT_DOMAIN_TYPE is JRF)
 export DB_NAMESPACE=${DB_NAMESPACE:-default}
@@ -58,6 +58,7 @@ export POD_WAIT_TIMEOUT_SECS=${POD_WAIT_TIMEOUT_SECS:-1000}
 export OKD=${OKD:-false}
 export OKE_CLUSTER=${OKE_CLUSTER:-false}
 export KIND_CLUSTER=${KIND_CLUSTER:-false}
+export OCNE=${OCNE:-false}
 
 # default Kubernetes CLI
 export KUBERNETES_CLI=${KUBERNETES_CLI:-kubectl}
