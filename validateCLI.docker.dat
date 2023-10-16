@@ -49,4 +49,4 @@ wlsDockerContainer
 wls-docker-container-imag
 dii-docker-container
 DockerCluster
-TRAEFIK_IMAGE_REGISTRY:-docker.io
+:-docker.io

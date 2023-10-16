@@ -62,6 +62,8 @@ import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -730,6 +732,9 @@ class ItIntrospectVersion {
 
     String kindWlsImage = KIND_REPO + WEBLOGIC_IMAGE_NAME_DEFAULT;
     String testWlsImage = DOMAIN_IMAGES_PREFIX + WEBLOGIC_IMAGE_NAME_DEFAULT;
+    if (OCNE) {
+      testWlsImage = TEST_IMAGES_PREFIX + "weblogic";
+    }
     //change image name to imageUpdate
     String imageTag = CommonTestUtils.getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null 
@@ -1035,7 +1040,6 @@ class ItIntrospectVersion {
 
     logger.info("Creating cluster resource {0} in namespace {1}",clusterResName, introDomainNamespace);
     createClusterAndVerify(cluster);    
-
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");

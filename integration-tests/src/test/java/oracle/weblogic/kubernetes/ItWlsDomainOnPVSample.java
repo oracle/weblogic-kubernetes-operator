@@ -28,11 +28,14 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.BUSYBOX_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.IMAGE_NAME_OPERATOR;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_INGRESS_IMAGE_REGISTRY;
@@ -63,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 @Tag("kind-sequential")
+@Tag("olcne-sequential")
 @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
 class ItWlsDomainOnPVSample {
 
@@ -121,6 +125,12 @@ class ItWlsDomainOnPVSample {
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
     envMap.put("KIND_CLUSTER", "" + KIND_CLUSTER);
+    envMap.put("OCNE", "" + OCNE);
+
+    if (OCNE) {
+      envMap.put("OPER_IMAGE_NAME", TEST_IMAGES_PREFIX + IMAGE_NAME_OPERATOR);
+      envMap.put("DOMAIN_CREATION_IMAGE_NAME", TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME);
+    }
 
     // kind cluster uses openjdk which is not supported by image tool
     if (WIT_JAVA_HOME != null) {
@@ -180,9 +190,14 @@ class ItWlsDomainOnPVSample {
     execTestScriptAndAssertSuccess("-initial-image", "Failed to run -initial-image");
 
     // load the image to kind if using kind cluster
+    String imageCreated;
     if (KIND_REPO != null) {
-      String imageCreated = DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_WLS_TAG;
+      imageCreated = DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_WLS_TAG;
       logger.info("loading image {0} to kind", imageCreated);
+      imagePush(imageCreated);
+    } else if (OCNE) {
+      imageCreated = TEST_IMAGES_PREFIX + DOMAIN_CREATION_IMAGE_NAME + ":" + DOMAIN_CREATION_IMAGE_WLS_TAG;
+      logger.info("pushing image {0} to repo", imageCreated);
       imagePush(imageCreated);
     }
   }
@@ -250,8 +265,9 @@ class ItWlsDomainOnPVSample {
     // uninstall traefik
     if (traefikNamespace != null) {
       logger.info("Uninstall Traefik");
+      String command = "helm uninstall " + envMap.get("TRAEFIK_NAME") + " -n " + traefikNamespace;
       Command.withParams(new CommandParams()
-          .command("helm uninstall traefik-operator -n " + traefikNamespace)
+          .command(command)
           .redirect(true)).execute();
     }
 
