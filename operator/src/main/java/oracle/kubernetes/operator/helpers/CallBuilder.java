@@ -87,6 +87,8 @@ public class CallBuilder {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
+
   private String container;
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
@@ -1172,6 +1174,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -1395,6 +1398,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -1630,6 +1634,7 @@ public class CallBuilder {
             PROPAGATION_POLICY,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             deleteOptions,
             callback);
@@ -1663,6 +1668,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -1784,6 +1790,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -1903,6 +1910,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -2054,6 +2062,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -2170,6 +2179,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -2223,6 +2233,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);
@@ -2314,6 +2325,7 @@ public class CallBuilder {
             limit,
             RESOURCE_VERSION,
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             timeoutSeconds,
             WATCH,
             callback);

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 46a8c5e6d5829a506548c4378e6ae8775a30b8b4e1ac1596d060d2031bdf20e8
+    weblogic.sha256: 3f448f45f16a5a9d73cb996989decc774b1f2a224824fba74c684929156afe30
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -77,6 +77,15 @@ spec:
                     description: Memory and CPU minimum requirements and limits for
                       the Monitoring exporter sidecar. See `kubectl explain pods.spec.containers.resources`.
                     properties:
+                      claims:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                        type: array
                       requests:
                         additionalProperties:
                           type: string
@@ -370,6 +379,15 @@ spec:
                     description: Memory and CPU minimum requirements and limits for
                       the fluentd container. See `kubectl explain pods.spec.containers.resources`.
                     properties:
+                      claims:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                        type: array
                       requests:
                         additionalProperties:
                           type: string
@@ -1059,6 +1077,8 @@ spec:
                                               type: string
                                             name:
                                               type: string
+                                            namespace:
+                                              type: string
                                           required:
                                           - kind
                                           - name
@@ -1067,6 +1087,15 @@ spec:
                                         resources:
                                           type: object
                                           properties:
+                                            claims:
+                                              type: array
+                                              items:
+                                                type: object
+                                                properties:
+                                                  name:
+                                                    type: string
+                                                required:
+                                                - name
                                             requests:
                                               additionalProperties:
                                                 type: string
@@ -1632,6 +1661,15 @@ spec:
                         description: Memory and CPU minimum requirements and limits
                           for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
                         properties:
+                          claims:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              required:
+                              - name
+                            type: array
                           requests:
                             additionalProperties:
                               type: string
@@ -1816,6 +1854,15 @@ spec:
                             resources:
                               type: object
                               properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
                                 requests:
                                   additionalProperties:
                                     type: string
@@ -2209,6 +2256,18 @@ spec:
                                         - value
                                   required:
                                   - port
+                            resizePolicy:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  resourceName:
+                                    type: string
+                                  restartPolicy:
+                                    type: string
+                                required:
+                                - resourceName
+                                - restartPolicy
                             stdinOnce:
                               type: boolean
                             envFrom:
@@ -2333,6 +2392,15 @@ spec:
                             resources:
                               type: object
                               properties:
+                                claims:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name:
+                                        type: string
+                                    required:
+                                    - name
                                 requests:
                                   additionalProperties:
                                     type: string
@@ -2726,6 +2794,18 @@ spec:
                                         - value
                                   required:
                                   - port
+                            resizePolicy:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  resourceName:
+                                    type: string
+                                  restartPolicy:
+                                    type: string
+                                required:
+                                - resourceName
+                                - restartPolicy
                             stdinOnce:
                               type: boolean
                             envFrom:
@@ -3252,6 +3332,15 @@ spec:
                         description: Memory and CPU minimum requirements and limits
                           for the Introspector Job Pod. See `kubectl explain pods.spec.containers.resources`.
                         properties:
+                          claims:
+                            items:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                              required:
+                              - name
+                            type: array
                           requests:
                             additionalProperties:
                               type: string
@@ -3901,6 +3990,8 @@ spec:
                                           type: string
                                         name:
                                           type: string
+                                        namespace:
+                                          type: string
                                       required:
                                       - kind
                                       - name
@@ -3909,6 +4000,15 @@ spec:
                                     resources:
                                       type: object
                                       properties:
+                                        claims:
+                                          type: array
+                                          items:
+                                            type: object
+                                            properties:
+                                              name:
+                                                type: string
+                                            required:
+                                            - name
                                         requests:
                                           additionalProperties:
                                             type: string
@@ -4474,6 +4574,15 @@ spec:
                     description: Memory and CPU minimum requirements and limits for
                       the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
                     properties:
+                      claims:
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                          required:
+                          - name
+                        type: array
                       requests:
                         additionalProperties:
                           type: string
@@ -4657,6 +4766,15 @@ spec:
                         resources:
                           type: object
                           properties:
+                            claims:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                required:
+                                - name
                             requests:
                               additionalProperties:
                                 type: string
@@ -5050,6 +5168,18 @@ spec:
                                     - value
                               required:
                               - port
+                        resizePolicy:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              resourceName:
+                                type: string
+                              restartPolicy:
+                                type: string
+                            required:
+                            - resourceName
+                            - restartPolicy
                         stdinOnce:
                           type: boolean
                         envFrom:
@@ -5174,6 +5304,15 @@ spec:
                         resources:
                           type: object
                           properties:
+                            claims:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                required:
+                                - name
                             requests:
                               additionalProperties:
                                 type: string
@@ -5567,6 +5706,18 @@ spec:
                                     - value
                               required:
                               - port
+                        resizePolicy:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              resourceName:
+                                type: string
+                              restartPolicy:
+                                type: string
+                            required:
+                            - resourceName
+                            - restartPolicy
                         stdinOnce:
                           type: boolean
                         envFrom:
@@ -6499,6 +6650,8 @@ spec:
                                                 type: string
                                               name:
                                                 type: string
+                                              namespace:
+                                                type: string
                                             required:
                                             - kind
                                             - name
@@ -6507,6 +6660,15 @@ spec:
                                           resources:
                                             type: object
                                             properties:
+                                              claims:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    name:
+                                                      type: string
+                                                  required:
+                                                  - name
                                               requests:
                                                 additionalProperties:
                                                   type: string
@@ -7073,6 +7235,15 @@ spec:
                             pods.spec.containers.resources`.
                           type: object
                           properties:
+                            claims:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  name:
+                                    type: string
+                                required:
+                                - name
                             requests:
                               additionalProperties:
                                 type: string
@@ -7257,6 +7428,15 @@ spec:
                               resources:
                                 type: object
                                 properties:
+                                  claims:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                      required:
+                                      - name
                                   requests:
                                     additionalProperties:
                                       type: string
@@ -7650,6 +7830,18 @@ spec:
                                           - value
                                     required:
                                     - port
+                              resizePolicy:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    resourceName:
+                                      type: string
+                                    restartPolicy:
+                                      type: string
+                                  required:
+                                  - resourceName
+                                  - restartPolicy
                               stdinOnce:
                                 type: boolean
                               envFrom:
@@ -7774,6 +7966,15 @@ spec:
                               resources:
                                 type: object
                                 properties:
+                                  claims:
+                                    type: array
+                                    items:
+                                      type: object
+                                      properties:
+                                        name:
+                                          type: string
+                                      required:
+                                      - name
                                   requests:
                                     additionalProperties:
                                       type: string
@@ -8167,6 +8368,18 @@ spec:
                                           - value
                                     required:
                                     - port
+                              resizePolicy:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    resourceName:
+                                      type: string
+                                    restartPolicy:
+                                      type: string
+                                  required:
+                                  - resourceName
+                                  - restartPolicy
                               stdinOnce:
                                 type: boolean
                               envFrom:

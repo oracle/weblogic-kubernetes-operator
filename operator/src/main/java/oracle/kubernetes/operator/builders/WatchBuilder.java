@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -36,6 +36,7 @@ public class WatchBuilder {
   private static final Boolean ALLOW_BOOKMARKS = true;
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
 
   private final CallParamsImpl callParams = new CallParamsImpl();
 
@@ -229,6 +230,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -266,6 +268,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -298,6 +301,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -330,6 +334,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -362,6 +367,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -454,6 +460,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -480,6 +487,7 @@ public class WatchBuilder {
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
                 RESOURCE_VERSION_MATCH_UNSET,
+                SEND_INITIAL_EVENTS_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
