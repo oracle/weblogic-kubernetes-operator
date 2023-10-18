@@ -116,6 +116,7 @@ public class Kubernetes {
   private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
   private static final String RESOURCE_VERSION = "";
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
   private static final String CLUSTER_GROUP = "weblogic.oracle";
@@ -411,6 +412,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -794,6 +796,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call.
           null, // shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           null, // Timeout for the list/watch call.
           Boolean.FALSE // Watch for changes to the described resources.
       );
@@ -825,6 +828,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call.
           null, // shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           null, // Timeout for the list/watch call.
           Boolean.FALSE // Watch for changes to the described resources.
       );
@@ -1075,6 +1079,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1107,6 +1112,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1135,6 +1141,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1221,6 +1228,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -1255,6 +1263,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -2061,6 +2070,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -2375,6 +2385,7 @@ public class Kubernetes {
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -2769,6 +2780,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -2850,6 +2862,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -3006,6 +3019,7 @@ public class Kubernetes {
           PRETTY, // String | If true, then the output is pretty printed.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -3035,6 +3049,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -3094,6 +3109,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -3124,6 +3140,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -3180,6 +3197,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -3237,6 +3255,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -3310,6 +3329,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          SEND_INITIAL_EVENTS_UNSET, // Boolean | if to send initial events
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
       );

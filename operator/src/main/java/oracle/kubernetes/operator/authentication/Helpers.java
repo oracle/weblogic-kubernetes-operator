@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -27,6 +27,7 @@ public class Helpers {
   private final CoreV1Api coreApi;
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private static final Boolean SEND_INITIAL_EVENTS_UNSET = null;
 
   /**
    * Construct helpers.
@@ -112,6 +113,7 @@ public class Helpers {
             "false", // pretty
             "", // resourceVersion
             RESOURCE_VERSION_MATCH_UNSET,
+            SEND_INITIAL_EVENTS_UNSET,
             0, // timeout (seconds)
             Boolean.FALSE // watch indicator
         );
