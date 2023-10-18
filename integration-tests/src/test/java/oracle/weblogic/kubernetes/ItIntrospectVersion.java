@@ -11,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,9 +32,12 @@ import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.ClusterResource;
 import oracle.weblogic.domain.ClusterStatus;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -57,13 +61,17 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_PREFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_ROLLING_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.IMAGE_PULL_POLICY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCNE;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_PREFIX;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -92,6 +100,7 @@ import static oracle.weblogic.kubernetes.utils.ClusterUtils.createClusterResourc
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getUniqueName;
@@ -99,10 +108,15 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.imageRepoLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -148,6 +162,10 @@ class ItIntrospectVersion {
 
   private static String opNamespace = null;
   private static String introDomainNamespace = null;
+  private static String miiDomainNamespace = null;
+  private static final String BADMII_IMAGE = "bad-modelfile-mii-image";
+  private static String badMiiImage;
+  private static final String BADMII_MODEL_FILE = "mii-bad-model-file.yaml";
 
   private static final String domainUid = "myintrodomain";
   private static final String cluster1Name = "mycluster";
@@ -195,7 +213,7 @@ class ItIntrospectVersion {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -203,9 +221,21 @@ class ItIntrospectVersion {
     logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     introDomainNamespace = namespaces.get(1);
+    logger.info("Assign a unique namespace for mii Introspect Version WebLogic domain");
+    assertNotNull(namespaces.get(2), "Namespace is null");
+    miiDomainNamespace = namespaces.get(2);
+    
+    // create image with model files
+    logger.info("Create image with model file and verify");
+    String destBadMiiYamlFile =
+        generateNewModelFileWithUpdatedDomainUid(domainUid, "ItIntrospectVersion", BADMII_MODEL_FILE);    
+    final List<String> modelList = Collections.singletonList(destBadMiiYamlFile);    
+    badMiiImage = createMiiImageAndVerify(BADMII_IMAGE, modelList, null);   
+    // repo login and push image to registry if necessary
+    imageRepoLoginAndPushImageToRegistry(badMiiImage);    
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, introDomainNamespace);
+    installAndVerifyOperator(opNamespace, introDomainNamespace, miiDomainNamespace);
 
     // build the clusterview application
     Path targetDir = Paths.get(WORK_DIR,
@@ -994,6 +1024,92 @@ class ItIntrospectVersion {
     verifyPodsNotRolled(introDomainNamespace, pods);
   }
 
+  /**
+   * Test domain status condition with a bad model file.
+   * Verify the following conditions are generated in an order after an introspector failure.
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
+   * Verify the introspector reruns to make it right when model file is fixed.
+   */
+  @Test
+  @DisplayName("Test domain status condition with bad model file")
+  void testIntrospectorMakeright() {
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createTestRepoSecret(miiDomainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        miiDomainNamespace,
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        miiDomainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create WDT config map without any files
+    createConfigMapAndVerify("empty-cm", domainUid, miiDomainNamespace, Collections.emptyList());
+
+    // create the domain object
+    DomainResource domain = createDomainResourceWithConfigMap(domainUid, "cluster-1",
+        miiDomainNamespace,
+        adminSecretName,
+        TEST_IMAGES_REPO_SECRET_NAME,
+        encryptionSecretName,
+        2,
+        badMiiImage,
+        "empty-cm",
+        180L,
+        "mymii-cluster-resource");
+
+    logger.info("Creating a domain resource with bad model file image");
+    createDomainAndVerify(domain, miiDomainNamespace);
+    //check the desired completed, available and failed statuses
+    // verify the condition type Failed exists
+    checkDomainStatusConditionTypeExists(domainUid, miiDomainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    // verify the condition Failed type has expected status
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, miiDomainNamespace,
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+    StringBuffer patchStr = new StringBuffer("[{");
+
+    //fix the domain failure by patching the domain resource with good image
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/image\",")
+        .append("\"value\": \"")
+        .append(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+        .append("\"}]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    assertTrue(patchDomainResource(domainUid, miiDomainNamespace, patchStr),
+        "patchDomainCustomResource(imageUpdate) failed");
+
+    final String adminServerPodName = domainUid + "-admin-server";
+    final String managedServerPrefix = domainUid + "-managed-server";
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, miiDomainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, miiDomainNamespace);
+    // check managed server pods are ready
+    for (int i = 1; i <= 2; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, miiDomainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, miiDomainNamespace);
+    }
+  }
+  
   private static void createDomain() {    
     String uniquePath = "/shared/" + introDomainNamespace + "/domains";
 
@@ -1352,4 +1468,67 @@ class ItIntrospectVersion {
 
     return execResult.toString();
   }
+  
+  // Create a domain resource with a custom ConfigMap
+  private DomainResource createDomainResourceWithConfigMap(String domainUid, String wlClusterName,
+                                                           String domNamespace, String adminSecretName,
+                                                           String repoSecretName, String encryptionSecretName,
+                                                           int replicaCount, String miiImage, String configmapName,
+                                                           Long introspectorDeadline, String clusterResName) {
+
+    Map<String, String> keyValueMap = new HashMap<>();
+    keyValueMap.put("testkey", "testvalue");
+
+    // create the domain CR
+    DomainResource domain = new DomainResource()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .imagePullPolicy(IMAGE_PULL_POLICY)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1LocalObjectReference()
+                .name(adminSecretName))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IfNeeded")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverService(new ServerService()
+                    .annotations(keyValueMap)
+                    .labels(keyValueMap))
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
+    setPodAntiAffinity(domain);
+
+
+    ClusterResource cluster = createClusterResource(clusterResName, wlClusterName, domNamespace, replicaCount);
+    logger.info("Creating cluster resource {0} in namespace {1}", clusterResName, domNamespace);
+
+    createClusterAndVerify(cluster);
+    // set cluster references
+    domain.getSpec().withCluster(new V1LocalObjectReference().name(clusterResName));
+    
+    return domain;
+  }
+  
 }
