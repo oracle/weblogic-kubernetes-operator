@@ -67,7 +67,7 @@ print_red() {
 
 steps=0
 total_steps=11
-print_step {
+print_step() {
     ((steps++))
     print_blue "Progress $steps/$total_steps.......... $1"
 }
