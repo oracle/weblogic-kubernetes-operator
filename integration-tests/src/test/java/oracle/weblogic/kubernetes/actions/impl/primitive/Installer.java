@@ -197,11 +197,23 @@ public class Installer {
   }
 
   private boolean unzip(String downloadDir) {
-    String command = String.format(
-        "unzip -o -d %s %s/%s", 
-        WORK_DIR,
-        downloadDir,
-        getInstallerFileName(params.type()));
+
+    String command = null;
+    if (params.type().equalsIgnoreCase("REMOTECONSOLE")) {
+      command = String.format(
+          "unzip -q %s/%s \"backend/*\" -d %s",
+          downloadDir,
+          getInstallerFileName(params.type()),
+          WORK_DIR);
+    } else {
+      command = String.format(
+          "unzip -o -d %s %s/%s",
+          WORK_DIR,
+          downloadDir,
+          getInstallerFileName(params.type()));
+    }
+
+    getLogger().info("The unzip command is: {0} for: {1} ", command, params.type());
 
     return Command.withParams(
         defaultCommandParams()  

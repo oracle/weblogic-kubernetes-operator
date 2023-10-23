@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
@@ -2034,6 +2033,8 @@ public class CommonTestUtils {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
       actualLocation = location + "/download/" + getInstallerFileName(type);
+    } else if (!needToGetActualLocation(location, type) && type.equalsIgnoreCase(REMOTECONSOLE)) {
+      actualLocation = location + getInstallerFileName(type);
     }
     getLogger().info("The actual download location for {0} is {1}", type, actualLocation);
     return actualLocation;
@@ -2049,8 +2050,6 @@ public class CommonTestUtils {
         return WIT_DOWNLOAD_URL_DEFAULT.equals(location);
       case WLE:
         return WLE_DOWNLOAD_URL_DEFAULT.equals(location);
-      case REMOTECONSOLE:
-        return REMOTECONSOLE_DOWNLOAD_URL_DEFAULT.equals(location);
       default:
         return false;
     }
