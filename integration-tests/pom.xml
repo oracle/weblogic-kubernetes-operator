@@ -58,6 +58,7 @@
         <wko.it.oraclelinux.test.version>${env.ORACLELINUX_TEST_VERSION}</wko.it.oraclelinux.test.version>
         <wko.it.wdt.download.url>${wdt.download.url}</wko.it.wdt.download.url>
         <wko.it.wit.download.url>${wit.download.url}</wko.it.wit.download.url>
+        <wko.it.remoteconsole.version>${remoteconsole.version}</wko.it.remoteconsole.version>
         <wko.it.remoteconsole.download.url>${remoteconsole.download.url}</wko.it.remoteconsole.download.url>
         <wko.it.wle.version>${env.WLE_VERSION}</wko.it.wle.version>
         <wko.it.wle.download.url>${wle.download.url}</wko.it.wle.download.url>
@@ -255,6 +256,7 @@
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>
                                 <wko.it.wit.download.url>${wko.it.wit.download.url}</wko.it.wit.download.url>
+                                <wko.it.remoteconsole.version>${wko.it.remoteconsole.version}</wko.it.remoteconsole.version>
                                 <wko.it.remoteconsole.download.url>${wko.it.remoteconsole.download.url}</wko.it.remoteconsole.download.url>
                                 <wko.it.wle.version>${wko.it.wle.version}</wko.it.wle.version>
                                 <wko.it.wle.download.url>${wko.it.wle.download.url}</wko.it.wle.download.url>

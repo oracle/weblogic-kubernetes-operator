@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1IngressBackend;
 import io.kubernetes.client.openapi.models.V1IngressRule;
 import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
 import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.DisabledOnSlimImage;
@@ -43,8 +44,11 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_CLEANUP;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.installWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
@@ -61,8 +65,6 @@ import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRout
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
-import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -119,6 +121,10 @@ class ItRemoteConsole {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    logger.info("REMOTECONSOLE_DOWNLOAD_URL [{0}]", REMOTECONSOLE_DOWNLOAD_URL);
+    logger.info("REMOTECONSOLE_FILE [{0}]", REMOTECONSOLE_FILE);
+    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+        "Remote Console installation failed");
     logger.info("Assign a unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
@@ -386,5 +392,38 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10),
         "Calling web app failed");
   }
+
+  /**
+   * Install WebLogic Remote Console.
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName the name of the admin server pod
+   *
+   * @return true if WebLogic Remote Console is successfully installed, false otherwise.
+   */
+  public static boolean installAndVerifyWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
+
+    assertThat(installWlsRemoteConsole(domainNamespace, adminServerPodName))
+        .as("WebLogic Remote Console installation succeeds")
+        .withFailMessage("WebLogic Remote Console installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Shutdown WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully shutdown, false otherwise.
+   */
+  public static boolean shutdownWlsRemoteConsole() {
+
+    assertThat(TestActions.shutdownWlsRemoteConsole())
+        .as("WebLogic Remote Console shutdown succeeds")
+        .withFailMessage("WebLogic Remote Console shutdown failed")
+        .isTrue();
+
+    return true;
+  }
+
 
 }
