@@ -2053,7 +2053,6 @@ def isSecureModeEnabledForDomain(domain):
   else:
     secureModeEnabled = domain.isProductionModeEnabled() and not LegalHelper.versionEarlierThan(domain.getDomainVersion(), "14.1.2.0")
 
-
   return secureModeEnabled
 
 def isAdministrationPortEnabledForDomain(domain):

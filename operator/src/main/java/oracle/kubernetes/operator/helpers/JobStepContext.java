@@ -59,9 +59,11 @@ import oracle.kubernetes.weblogic.domain.model.DomainCreationImage;
 import oracle.kubernetes.weblogic.domain.model.DomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_TARGET_PATH;
@@ -72,10 +74,12 @@ import static oracle.kubernetes.common.CommonConstants.WLS_SHARED;
 import static oracle.kubernetes.common.utils.CommonUtils.MAX_ALLOWED_VOLUME_NAME_LENGTH;
 import static oracle.kubernetes.common.utils.CommonUtils.VOLUME_NAME_SUFFIX;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.AffinityHelper.getDefaultAntiAffinity;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainCreationImage.DOMAIN_CREATION_IMAGE_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_RUNNING_SERVERS_STATES;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -917,7 +921,26 @@ public class JobStepContext extends BasePodStepContext {
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     Optional.ofNullable(getDomainCreationImages()).ifPresent(dcrImages -> addAuxImagePathEnv(dcrImages, vars,
         DOMAIN_CREATION_IMAGE_MOUNT_PATH));
+
+    if (isDomainSourceFromModel()) {
+      StringBuilder runningServer = new StringBuilder();
+      Optional.ofNullable(this.info.getDomain())
+              .map(DomainResource::getStatus)
+              .map(DomainStatus::getServers)
+              .ifPresent(servers -> servers.forEach(item -> addServerStateIfNotShutDown(runningServer, item)));
+
+      if (runningServer.length() > 0) {
+        addEnvVar(vars, MII_RUNNING_SERVERS_STATES, runningServer.toString());
+      }
+    }
+
     return vars;
+  }
+
+  private void addServerStateIfNotShutDown(StringBuilder runningServer, ServerStatus item) {
+    if (!item.getState().equals(SHUTDOWN_STATE)) {
+      runningServer.append(item.getServerName() + "=" + item.getState() + " ");
+    }
   }
 
   private void addAuxImagePathEnv(List<? extends DeploymentImage> auxiliaryImages, List<V1EnvVar> vars) {

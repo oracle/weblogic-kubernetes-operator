@@ -133,7 +133,9 @@ public class IntrospectorJobEnvVars {
 
   /** Has InitializedDomainOnPV in configuration spec. */
   public static final String INIT_DOMAIN_ON_PV = "INIT_DOMAIN_ON_PV";
-  
+
+  public static final String MII_RUNNING_SERVERS_STATES = "MII_RUNNING_SERVERS_STATES";
+
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
    * the introspection job.
@@ -151,5 +153,5 @@ public class IntrospectorJobEnvVars {
       MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, MII_WDT_CONNECT_TIMEOUT, MII_WDT_ACTIVATE_TIMEOUT, MII_WDT_DEPLOY_TIMEOUT,
       MII_WDT_REDEPLOY_TIMEOUT, MII_WDT_UNDEPLOY_TIMEOUT, MII_WDT_START_APPLICATION_TIMEOUT,
         MII_WDT_STOP_APPLICATION_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT, INIT_DOMAIN_ON_PV,
-          ADMIN_CHANNEL_PORT_FORWARDING_ENABLED);
+          ADMIN_CHANNEL_PORT_FORWARDING_ENABLED, MII_RUNNING_SERVERS_STATES);
 }
