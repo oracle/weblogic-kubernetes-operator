@@ -15,7 +15,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](https://o
  - [Create Resource Group](#create-resource-group)
  - [Create an AKS cluster](#create-the-aks-cluster)
  - [Create and Configure Storage](#create-storage)
-   - [Create an Azure Storage account and NFS share](##create-an-azure-storage-account-and-nfs-share)
+   - [Create an Azure Storage account and NFS share](#create-an-azure-storage-account-and-nfs-share)
    - [Create SC and PVC](#create-sc-and-pvc)
  - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator-into-the-aks-cluster)
  - [Create WebLogic domain](#create-weblogic-domain)
