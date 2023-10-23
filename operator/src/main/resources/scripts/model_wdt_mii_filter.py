@@ -47,7 +47,7 @@
 import inspect
 import os
 import sys, traceback
-
+import time
 from java.lang import System
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
@@ -209,6 +209,7 @@ def filter_model(model):
         if 'ServerTemplate' in topology:
           customizeServerTemplates(model)
 
+        upgradeServerIfNeeded(model)
   except:
       exc_type, exc_obj, exc_tb = sys.exc_info()
       ee_string = traceback.format_exception(exc_type, exc_obj, exc_tb)
@@ -388,6 +389,43 @@ def customizeCoherenceMemberConfig(server, listen_address):
   cmc = server['CoherenceMemberConfig']
   cmc['UnicastListenAddress'] = listen_address
 
+def upgradeServerIfNeeded(model):
+  # The marker file is created earlier when the introspector checking if
+  # the secure mode is enabled in the config.xml.  This will compare with the incoming model
+  # if secure mode is not set (or set to secure in option),  then inject the secure mode
+  # to false.  This is done to maintain compatibility from 12.2.1* to 14.1.2 and the file
+  # is only created when the deploy version is newer than or equals to 14.1.2
+
+  if os.path.exists('/tmp/mii_domain_upgrade.txt'):
+    fh = open('/tmp/mii_domain_upgrade.txt', 'r')
+    result = fh.read()
+    fh.close()
+    found = False
+    if result == 'False':
+        # check if model has anything set
+        if 'topology' in model:
+            topology = model['topology']
+
+            if 'SecurityConfiguration' in topology:
+                if 'SecureMode' in topology['SecurityConfiguration']:
+                   if 'SecureModeEnabled' in topology['SecurityConfiguration']['SecureMode']:
+                        found = True
+
+            if not found:
+                # if domainInfo already set to secure or in dev mode then do not set it.
+                if 'ServerStartMode' in model['domainInfo']:
+                    mode = model['domainInfo']['ServerStartMode']
+                    if mode == 'secure' or mode == 'dev':
+                        return
+                # if the model disabled `ProductionModeEnabled`  specifically now, do nothing
+                if 'ProductionModeEnabled' in topology and topology['ProductionModeEnabled'] == False:
+                  return
+
+                if not 'SecurityConfiguration' in topology:
+                    topology['SecurityConfiguration'] = {}
+                if not 'SecureMode' in topology['SecurityConfiguration']:
+                    topology['SecurityConfiguration']['SecureMode'] = {}
+                topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] = False
 
 def getAdministrationPort(server, topology):
   port = 0

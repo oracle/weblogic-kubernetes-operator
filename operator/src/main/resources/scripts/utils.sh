@@ -453,6 +453,14 @@ versionCmp()
   echo "0"
 }
 
+# versionGT
+#   return success if WL v1 > v2
+versionGT()
+{
+  [ `versionCmp "$1" "$2"` -gt 0 ] && return 0
+  return 1
+}
+
 # versionGE
 #   return success if WL v1 >= v2
 versionGE()

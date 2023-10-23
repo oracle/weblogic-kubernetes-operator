@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainValidationTestBase;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Opss;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.hamcrest.Matcher;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -123,6 +124,7 @@ import static oracle.kubernetes.operator.tuning.TuningParameters.INTROSPECTOR_JO
 import static oracle.kubernetes.operator.tuning.TuningParameters.KUBERNETES_PLATFORM_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.SERVER_POD;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_RUNNING_SERVERS_STATES;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -381,6 +383,59 @@ class JobHelperTest extends DomainValidationTestBase {
                 envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
                 envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
           ))));
+  }
+
+  @Test
+  void whenMIIDomainIsRunning_introspectorPodHasEnvSet() {
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+
+    final DomainStatus status = new DomainStatus();
+    ServerStatus adminServerStatus = new ServerStatus();
+    adminServerStatus.setServerName("admin-server");
+    adminServerStatus.setState("RUNNING");
+    ServerStatus managedServerStatus = new ServerStatus();
+    managedServerStatus.setServerName("managed-server1");
+    managedServerStatus.setState("SHUTDOWN");
+    status.addServer(adminServerStatus);
+    status.addServer(managedServerStatus);
+    domainPresenceInfo.getDomain().setStatus(status);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            anyOf(List.of(
+                    hasEnvVar(MII_RUNNING_SERVERS_STATES)
+            )));
+  }
+
+
+  @Test
+  void whenMIIDomainIsShutdown_introspectorPodHasEnvSet() {
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.FROM_MODEL);
+
+    final DomainStatus status = new DomainStatus();
+    ServerStatus adminServerStatus = new ServerStatus();
+    adminServerStatus.setServerName("admin-server");
+    adminServerStatus.setState("SHUTDOWN");
+    ServerStatus managedServerStatus = new ServerStatus();
+    managedServerStatus.setServerName("managed-server1");
+    managedServerStatus.setState("SHUTDOWN");
+    status.addServer(adminServerStatus);
+    status.addServer(managedServerStatus);
+    domainPresenceInfo.getDomain().setStatus(status);
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+            getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(anyOf(List.of(
+                    hasEnvVar(MII_RUNNING_SERVERS_STATES)
+            ))));
   }
 
   private V1JobSpec createJobSpec() {
