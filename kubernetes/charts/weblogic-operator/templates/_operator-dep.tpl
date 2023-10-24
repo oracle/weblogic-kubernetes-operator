@@ -285,6 +285,10 @@ spec:
           affinity:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- with .tolerations }}
+          tolerations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           containers:
           - name: "weblogic-operator-webhook"
             image: {{ .image | quote }}
