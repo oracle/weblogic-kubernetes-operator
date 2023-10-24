@@ -39,6 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag("kind-parallel")
 @Tag("olcne-mrg")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItConsensusLeasingValidation {
 
   private static String opNamespace = null;

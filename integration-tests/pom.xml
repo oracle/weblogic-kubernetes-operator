@@ -48,6 +48,7 @@
         <wko.it.grafana.chart.version>${env.GRAFANA_CHART_VERSION}</wko.it.grafana.chart.version>
         <wko.it.istio.version>${env.ISTIO_VERSION}</wko.it.istio.version>
         <wko.it.oke.cluster>${env.OKE_CLUSTER}</wko.it.oke.cluster>
+        <wko.it.arm.cluster>${env.ARM}</wko.it.arm.cluster>
         <wko.it.oke.cluster.privateip>${env.OKE_CLUSTER_PRIVATEIP}</wko.it.oke.cluster.privateip>
         <wko.it.nfs.server>${env.NFS_SERVER}</wko.it.nfs.server>
         <wko.it.node.ip>${env.NODE_IP}</wko.it.node.ip>
@@ -75,6 +76,7 @@
         <wko.it.opdemo>${env.opdemo}</wko.it.opdemo>
         <wko.it.image.name.operator>${env.IMAGE_NAME_OPERATOR}</wko.it.image.name.operator>
         <wko.it.image.tag.operator>${env.IMAGE_TAG_OPERATOR}</wko.it.image.tag.operator>
+        <wko.it.release.image.name.operator>${env.RELEASE_IMAGE_OPERATOR}</wko.it.release.image.name.operator>
         <wko.it.crio.pipeline.image>${env.DOCKER_IMAGE}</wko.it.crio.pipeline.image>
         <includes-failsafe>**/It*</includes-failsafe>
     </properties>
@@ -251,6 +253,7 @@
                                 <wko.it.nfs.server>${wko.it.nfs.server}</wko.it.nfs.server>
                                 <wko.it.fss.dir>${wko.it.fss.dir}</wko.it.fss.dir>
                                 <wko.it.okd.cluster>${wko.it.okd.cluster}</wko.it.okd.cluster>
+                                <wko.it.arm.cluster>${wko.it.arm.cluster}</wko.it.arm.cluster>
                                 <wko.it.ocne.cluster>${wko.it.ocne.cluster}</wko.it.ocne.cluster>
                                 <wko.it.oracle.db.operator.release>${wko.it.oracle.db.operator.release}</wko.it.oracle.db.operator.release>
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
@@ -271,6 +274,7 @@
                                 <wko.it.k8s.nodeport.host1>${wko.it.k8s.nodeport.host1}</wko.it.k8s.nodeport.host1>
                                 <wko.it.k8s.nodeport.host2>${wko.it.k8s.nodeport.host2}</wko.it.k8s.nodeport.host2>
                                 <wko.it.opdemo>${wko.it.opdemo}</wko.it.opdemo>
+                                <wko.it.release.image.name.operator>${wko.it.release.image.name.operator}</wko.it.release.image.name.operator>
                                 <wko.it.image.name.operator>${wko.it.image.name.operator}</wko.it.image.name.operator>
                                 <wko.it.image.tag.operator>${wko.it.image.tag.operator}</wko.it.image.tag.operator>
                                 <wko.it.base.images.tenancy>${wko.it.base.images.tenancy}</wko.it.base.images.tenancy>
@@ -461,6 +465,13 @@
             <properties>
                 <skipITs>false</skipITs>
                 <groups>oke-gate</groups>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-arm</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>oke-arm</groups>
             </properties>
         </profile>
 

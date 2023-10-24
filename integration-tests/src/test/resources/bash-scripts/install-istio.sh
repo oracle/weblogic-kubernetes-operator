@@ -23,6 +23,8 @@ install_istio() {
 
 version=$1
 workdir=$2
+wko_tenancy=$3
+arch=$4
 
 istiodir=${workdir}/istio-${version}
 echo "Installing Istio version [${version}] in location [${istiodir}]"
@@ -32,7 +34,9 @@ ${KUBERNETES_CLI} delete namespace istio-system --ignore-not-found
 ${KUBERNETES_CLI} create namespace istio-system
 
 ( cd $workdir;
-  curl -Lo "istio.tar.gz" "https://objectstorage.us-phoenix-1.oraclecloud.com/n/weblogick8s/b/wko-system-test-files/o/istio%2Fistio-${version}-linux-amd64.tar.gz";
+  oci os object get --namespace=${wko_tenancy} --bucket-name=wko-system-test-files \
+                                --name=istio/istio-${version}-${arch}.tar.gz --file=istio.tar.gz \
+                                --auth=instance_principal
   tar zxf istio.tar.gz
 )
 
@@ -52,6 +56,8 @@ ${KUBERNETES_CLI} create namespace istio-system
 # MAIN
 version=${1:-1.13.2}
 workdir=${2:-`pwd`}
+wko_tenancy=${3:-devweblogic}
+arch=${4:-linux-amd64}
 
 if [ ! -d ${workdir} ]; then 
   mkdir -p $workdir
@@ -62,7 +68,7 @@ if [ -d ${istiodir} ]; then
    echo "Istio version [${version}] alreday installed at [${istiodir}]"
    exit 0 
 else 
-   install_istio ${version} ${workdir}
+   install_istio ${version} ${workdir} ${wko_tenancy} ${arch}
    # Additional check for Istio Service. 
    # Make sure a not-null Service Port returned.
    HTTP2_PORT=$(${KUBERNETES_CLI} -n istio-system get service istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')

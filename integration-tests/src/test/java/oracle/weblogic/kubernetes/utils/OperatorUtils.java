@@ -8,23 +8,31 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
+import static oracle.weblogic.kubernetes.TestConstants.KUBERNETES_CLI;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
@@ -441,6 +449,9 @@ public class OperatorUtils {
     logger.info("Created service account: {0}", opServiceAccount);
 
     operatorImage = getOperatorImageName();
+    if (ARM) {
+      operatorImage = OPERATOR_RELEASE_IMAGE;
+    }
 
     assertFalse(operatorImage.isEmpty(), "operator image name can not be empty");
     logger.info("operator image name {0}", operatorImage);
@@ -744,7 +755,25 @@ public class OperatorUtils {
             OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("Operator release {0} status is deployed in namespace {1}",
         OPERATOR_RELEASE_NAME, opNamespace);
-
+    String labelSelector = String.format("weblogic.operatorName in (%s)", opNamespace);
+    assertDoesNotThrow(() -> {
+      V1Pod pod = getPod(opNamespace, labelSelector, "weblogic-operator-");
+      logger.info(getPodLog(pod.getMetadata().getName(), opNamespace));
+    });
+    String cmdToExecute = String.format(
+        KUBERNETES_CLI
+            + " describe pods " + "  -n " + opNamespace);
+    Command
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute();
+    cmdToExecute = String.format(
+        KUBERNETES_CLI
+            + " get events  " +   "  -n " + opNamespace);
+    Command
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute();
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
     CommonTestUtils.withStandardRetryPolicy

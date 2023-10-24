@@ -38,8 +38,8 @@ setupTerraform() {
     else
        echo "Unsupported OS"
     fi
-    curl -O https://releases.hashicorp.com/terraform/1.2.0/terraform_1.2.0_${os_type}_amd64.zip
-    unzip terraform_1.2.0_${os_type}_amd64.zip
+    curl -O https://releases.hashicorp.com/terraform/1.2.0/terraform_1.2.0_${os_type}_${platform}64.zip
+    unzip terraform_1.2.0_${os_type}_${platform}64.zip
     chmod +x ${terraformDir}/terraform
     export PATH=${terraformDir}:${PATH}
 }
@@ -120,6 +120,7 @@ checkClusterRunning () {
 #MAIN
 propsFile=${1:-$PWD/oci.props}
 terraformVarDir=${2:-$PWD}
+platform=${3:-amd}
 
 #grep props's values from oci.props file
 

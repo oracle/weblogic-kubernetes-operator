@@ -70,6 +70,7 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
@@ -327,6 +328,9 @@ public class DbUtils {
     logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
         dbPodName, dbNamespace);
     String msg = "The database is ready for use";
+    if (ARM) {
+      msg = "DATABASE IS READY TO USE!";
+    }
     checkDbReady(msg, dbPodName, dbNamespace);
 
     dbMap.put(dbNamespace, dbPodName);

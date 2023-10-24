@@ -78,6 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("toolkits-srg")
 @Tag("okd-wls-srg")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItMultiDomainModels {
 
   // domain constants

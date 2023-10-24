@@ -58,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-gate")
+@Tag("oke-arm")
 @Tag("olcne-mrg")
 class ItIstioProductionSecureMode {
 

@@ -39,6 +39,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_USERNAME;
@@ -169,7 +170,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
-        assertTrue(Operator.buildImage(operatorImage), "image build failed for Operator");
+        if (!ARM) {
+          assertTrue(Operator.buildImage(operatorImage), "image build failed for Operator");
+        }
 
         // login to BASE_IMAGES_REPO 
         logger.info(WLSIMG_BUILDER + " login to BASE_IMAGES_REPO {0}", BASE_IMAGES_REPO);
@@ -257,7 +260,9 @@ public class InitializationTasks implements BeforeAllCallback, ExtensionContext.
         if (!DOMAIN_IMAGES_REPO.isEmpty()) {
 
           List<String> images = new ArrayList<>();
-          images.add(operatorImage);
+          if (!ARM) {
+            images.add(operatorImage);
+          }
           // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
           if (!SKIP_BUILD_IMAGES_IF_EXISTS) {
             images.add(miiBasicImage);

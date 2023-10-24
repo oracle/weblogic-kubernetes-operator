@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -76,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okd-wls-srg")
 @Tag("olcne-mrg")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItMiiCreateAuxImageWithImageTool {
 
   private static String opNamespace = null;
@@ -210,6 +212,7 @@ class ItMiiCreateAuxImageWithImageTool {
   @Test
   @DisplayName("Test to create domain using auxiliary image with customized options")
   @Tag("gate")
+  @DisabledIfEnvironmentVariable(named = "ARM", matches = "true")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
     final String auxiliaryImagePath2 = "/auxiliary2";
