@@ -27,4 +27,16 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson-databind@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-35116</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This CVE does not apply because this CVE refers to an unrelated project.
+        ]]></notes>
+        <vulnerabilityName>CVE-2022-4244</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        This CVE does not apply because this CVE refers to an unrelated project.
+        ]]></notes>
+        <vulnerabilityName>CVE-2022-4245</vulnerabilityName>
+    </suppress>
 </suppressions>
