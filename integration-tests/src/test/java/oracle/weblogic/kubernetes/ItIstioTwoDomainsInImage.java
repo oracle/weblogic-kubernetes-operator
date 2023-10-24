@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -31,6 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
@@ -43,9 +44,13 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createTestWebAppWarFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getServiceExtIPAddrtOke;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isAppInServerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createBaseRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createTestRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
@@ -62,8 +67,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create two WebLogic domains in domainhome-in-image model with istio configuration")
 @IntegrationTest
-@Tag("oke-parallel")
 @Tag("kind-parallel")
+@Tag("oke-gate")
 class ItIstioTwoDomainsInImage {
 
   private static String opNamespace = null;
@@ -77,6 +82,9 @@ class ItIstioTwoDomainsInImage {
   private final String adminServerPodName2 = domainUid2 + "-" + adminServerName;
 
   private static String testWebAppWarLoc = null;
+
+  private static final String istioNamespace = "istio-system";
+  private static final String istioIngressServiceName = "istio-ingressgateway";
 
   private static Map<String, Object> secretNameMap;
   private static LoggingFacade logger = null;
@@ -263,12 +271,16 @@ class ItIstioTwoDomainsInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
+        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
       logger.info("WebLogic console on domain1 is accessible");
     } else {
@@ -276,44 +288,79 @@ class ItIstioTwoDomainsInImage {
     }
 
     Path archivePath = Paths.get(testWebAppWarLoc);
-    ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
+    String resourcePath = "/testwebapp/index.jsp";
+    String target = "{identity: [clusters,'" + clusterName + "']}";
+
+    // create secret for internal OKE cluster
+    createBaseRepoSecret(domainNamespace1);
+
+    ExecResult result = OKE_CLUSTER
+        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            target, archivePath, domainNamespace1 + ".org", "testwebapp")
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
+
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+    logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid1 + "-" + clusterName);
 
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
-    logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace1 + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application on domain1");
+    if (OKE_CLUSTER) {
+      testUntil(
+          isAppInServerPodReady(domainNamespace1,
+              managedServerPrefix1 + 1, 8001, resourcePath, "testwebapp"),
+          logger, "Check Deployed App {0} in server {1}",
+          archivePath,
+          target);
+    } else {
+      String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + resourcePath;
+      logger.info("Application Access URL {0}", url);
+      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace1 + ".org");
+      assertTrue(checkApp, "Failed to access WebLogic application on domain1");
+    }
+    logger.info("Application {0} is accessble to {1}", resourcePath, domainUid2);
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
       assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
       logger.info("WebLogic console on domain2 is accessible");
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
 
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
+    // In internal OKE env, deploy App in domain pods using WLST
+    createBaseRepoSecret(domainNamespace2);
+
+    result = OKE_CLUSTER
+        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            target, archivePath, domainNamespace2 + ".org", "testwebapp")
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+            clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
+
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+    logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid2 + "-" + clusterName);
 
-    logger.info("Application Access URL {0}", url);
-    checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application on domain2");
-
+    if (OKE_CLUSTER) {
+      testUntil(
+          isAppInServerPodReady(domainNamespace2,
+              managedServerPrefix2 + 1,8001, resourcePath,"testwebapp"),
+          logger, "Check Deployed App {0} in server {1}",
+          archivePath,
+          target);
+    } else {
+      String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + resourcePath;
+      logger.info("Application Access URL {0}", url);
+      boolean checkApp = checkAppUsingHostHeader(url, domainNamespace2 + ".org");
+      assertTrue(checkApp, "Failed to access WebLogic application on domain2");
+    }
+    logger.info("Application {0} is accessble to {1}", resourcePath, domainUid2);
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
@@ -357,5 +404,4 @@ class ItIstioTwoDomainsInImage {
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
-
 }
