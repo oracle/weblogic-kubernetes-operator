@@ -67,7 +67,7 @@ print_red() {
 
 steps=0
 total_steps=11
-print_step {
+print_step() {
     ((steps++))
     print_blue "Progress $steps/$total_steps.......... $1"
 }
@@ -762,7 +762,7 @@ sleep $interval
 
 while [ $waiting_time -lt $max_wait_time ]; do
     status=$(${kubernetesCli} get pod/${domainUID}-admin-server -o=jsonpath='{.status.phase}')
-    ready=$(${kubernetesCli} get pod/${domainUID}-admin-server -o=jsonpath='{.ready.phase}')
+    ready=$(${kubernetesCli} get pod/${domainUID}-admin-server --no-headers | awk '{print $2}')
     if [ "$status" == "Running" ]; then
         if [ "$ready" == "1/1" ]; then
           echo "${domainUID}-admin-server is running. Exiting..."
