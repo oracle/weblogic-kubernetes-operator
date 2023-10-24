@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_NODE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.WLSIMG_BUILDER;
@@ -27,7 +28,7 @@ public class Image {
    * @return true if successful
    */
   public static boolean login(String registryName, String username, String password) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " login %s -u %s -p \"%s\"",
+    String cmdToExecute = String.format(WLSIMG_BUILDER + " login %s -u %s -p '%s'",
         registryName, username, password);
     return Command
         .withParams(new CommandParams()
@@ -110,11 +111,37 @@ public class Image {
    * @return true if delete image is successful
    */
   public static boolean createImage(String imageBuildDir, String image, String extraArgs) {
-    String cmdToExecute = String.format(WLSIMG_BUILDER + " build %s -t %s  %s", imageBuildDir, image, extraArgs);
-    return Command
-        .withParams(new CommandParams()
-            .command(cmdToExecute))
-        .execute();
+    if (ARM) {
+      String cmdToExecute = String.format(
+          WLSIMG_BUILDER
+              + " buildx create --use --name buildx_instance");
+      Command
+          .withParams(new CommandParams()
+              .command(cmdToExecute))
+          .execute();
+      cmdToExecute = String.format(
+          WLSIMG_BUILDER
+              + " buildx build --pull  --platform linux/amd64,linux/arm64 %s -t %s  %s",
+          imageBuildDir, image, extraArgs);
+      boolean result = Command
+          .withParams(new CommandParams()
+              .command(cmdToExecute))
+          .execute();
+      cmdToExecute = String.format(
+          WLSIMG_BUILDER
+              + " buildx build --load  %s -t %s  %s ",
+          imageBuildDir, image, extraArgs);
+      Command
+          .withParams(new CommandParams()
+              .command(cmdToExecute))
+          .execute();
+      return result;
+    } else {
+      String cmdToExecute = String.format(WLSIMG_BUILDER + " build %s -t %s  %s", imageBuildDir, image, extraArgs);
+      return Command.withParams(new CommandParams()
+              .command(cmdToExecute))
+          .execute();
+    }
   }
 
   /**

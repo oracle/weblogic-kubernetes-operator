@@ -112,6 +112,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("olcne-srg")
 @Tag("kind-parallel")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItTwoDomainsManagedByTwoOperators {
 
   private static final int numberOfDomains = 2;

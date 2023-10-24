@@ -29,6 +29,9 @@ public interface TestConstants {
   public static final String K8S_NODEPORT_HOST1 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host1");
   public static final String K8S_NODEPORT_HOST2 = getNonEmptySystemProperty("wko.it.k8s.nodeport.host2");
   public static final String OPDEMO = getNonEmptySystemProperty("wko.it.opdemo");
+  //ARM constants
+  public static final boolean ARM =
+      Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.arm.cluster", "false"));
 
   // domain constants
   public static final String DOMAIN_VERSION =
@@ -52,6 +55,9 @@ public interface TestConstants {
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =
       "../kubernetes/charts/weblogic-operator";
+  public static final String OPERATOR_RELEASE_IMAGE =
+      getNonEmptySystemProperty("wko.it.release.image.name.operator",
+          "ghcr.io/oracle/weblogic-kubernetes-operator:4.1.2");
   public static final String IMAGE_NAME_OPERATOR =
       getNonEmptySystemProperty("wko.it.image.name.operator", "oracle/weblogic-kubernetes-operator");
   public static final String OPERATOR_SERVICE_NAME = "internal-weblogic-operator-svc";
@@ -191,8 +197,8 @@ public interface TestConstants {
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "4.0.17";
-  public static final String NGINX_INGRESS_IMAGE_DIGEST = 
-      "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";  
+  public static final String NGINX_INGRESS_IMAGE_DIGEST =
+      "sha256:314435f9465a7b2973e3aa4f2edad7465cc7bcdc8304be5d146d70e4da136e51";
   public static final String TEST_NGINX_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/ingress-nginx/controller";
   public static final String NGINX_INGRESS_IMAGE_TAG = "v1.2.0";
 
@@ -201,15 +207,16 @@ public interface TestConstants {
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_CHART_NAME = "traefik";
-  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/traefik-ingress/traefik";
+  public static final String TRAEFIK_INGRESS_IMAGE_NAME = TEST_IMAGES_TENANCY + "/test-images/traefik";
   public static final String TRAEFIK_INGRESS_IMAGE_REGISTRY = TEST_IMAGES_REPO;
 
-  public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.9.6";
+  public static final String TRAEFIK_INGRESS_IMAGE_TAG = "v2.10.5";
 
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
-  public static final String ELASTICSEARCH_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/elasticsearch";
-  public static final String ELK_STACK_VERSION = "7.8.1";
+  public static final String ELASTICSEARCH_IMAGE_NAME = ARM ? TEST_IMAGES_PREFIX + "test-images/elasticsearch"
+      : TEST_IMAGES_PREFIX + "test-images/docker/elasticsearch";
+  public static final String ELK_STACK_VERSION = ARM ? "8.10.3-arm64" : "7.8.1";
   public static final String FLUENTD_IMAGE_VERSION =
       getNonEmptySystemProperty("wko.it.fluentd.image.version", "v1.14.5");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
@@ -225,12 +232,14 @@ public interface TestConstants {
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
-  public static final String KIBANA_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/kibana";
+  public static final String KIBANA_IMAGE_NAME = ARM ? TEST_IMAGES_PREFIX + "test-images/kibana"
+      : TEST_IMAGES_PREFIX + "test-images/docker/kibana";
   public static final String KIBANA_IMAGE = KIBANA_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String KIBANA_TYPE = "NodePort";
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
-  public static final String LOGSTASH_IMAGE_NAME = TEST_IMAGES_PREFIX + "test-images/docker/logstash";
+  public static final String LOGSTASH_IMAGE_NAME = ARM ? TEST_IMAGES_PREFIX + "test-images/logstash" :
+      TEST_IMAGES_PREFIX + "test-images/docker/logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_IMAGE_NAME + ":" + ELK_STACK_VERSION;
   public static final String FLUENTD_IMAGE = TEST_IMAGES_PREFIX
             + "test-images/docker/fluentd-kubernetes-daemonset:"
@@ -243,8 +252,9 @@ public interface TestConstants {
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_PREFIX + "mii-ai-image";
   public static final boolean SKIP_BUILD_IMAGES_IF_EXISTS =
       Boolean.parseBoolean(getNonEmptySystemProperty("wko.it.skip.build.images.if.exists", "false"));
+
   public static final String BUSYBOX_IMAGE = TEST_IMAGES_PREFIX + "test-images/docker/busybox";
-  public static final String BUSYBOX_TAG = "1.34.1";
+  public static final String BUSYBOX_TAG = "1.36";
 
   // Skip the mii/wdt basic image build locally if needed
   public static final String MII_BASIC_IMAGE_TAG = SKIP_BUILD_IMAGES_IF_EXISTS ? "local" : getDateAndTimeStamp();

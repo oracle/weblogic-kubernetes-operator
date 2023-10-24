@@ -74,6 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @Tag("kind-parallel")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItIstioDomainInImage {
 
   private static String opNamespace = null;

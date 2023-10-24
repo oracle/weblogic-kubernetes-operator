@@ -27,6 +27,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
 
+import static oracle.weblogic.kubernetes.TestConstants.ARM;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_INTERVAL_SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.FAILURE_RETRY_LIMIT_MINUTES;
@@ -40,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CONFIG_MAP_REL
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_TENANCY;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -94,9 +96,13 @@ public class IstioUtils {
       assertDoesNotThrow(() -> replaceStringInFile(installScript, "gcr.io", "phx.ocir.io/devweblogic"),
           String.format("Failed to replace string in File %s", installScript));
     }
+    String arch = "linux-amd64";
+    if (ARM) {
+      arch = "linux-arm64";
+    }
 
     String command =
-        String.format("%s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT);
+        String.format("%s %s %s %s %s", installScript, ISTIO_VERSION, RESULTS_ROOT, TEST_IMAGES_TENANCY, arch);
     logger.info("Istio installation command {0}", command);
     assertTrue(() -> Command.withParams(
         defaultCommandParams()

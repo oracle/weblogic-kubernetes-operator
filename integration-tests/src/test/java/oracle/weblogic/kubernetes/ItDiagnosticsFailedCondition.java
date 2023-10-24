@@ -40,6 +40,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToRepo;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -109,6 +110,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
@@ -709,6 +711,7 @@ class ItDiagnosticsFailedCondition {
    * type: Available, status: false
    * type: Completed, status: false
    */
+  @DisabledIfEnvironmentVariable(named = "ARM", matches = "true")
   @Test
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {

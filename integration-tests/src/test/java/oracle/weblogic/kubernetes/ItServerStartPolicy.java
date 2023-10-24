@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
 @Tag("oke-gate")
+@Tag("oke-arm")
 class ItServerStartPolicy {
 
   private static String domainNamespace = null;
