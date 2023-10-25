@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 prop() {
@@ -76,7 +76,7 @@ createRoleBindings () {
 
 checkClusterRunning () {
 
-    echo "Confirm we have ${KUBERNETES_CLI:-kubectl} working..."
+    echo "Confirm access to cluster..."
     myline=`${KUBERNETES_CLI:-kubectl} get nodes | awk '{print $2}'| tail -n+2`
     status="NotReady"
     max=50
@@ -101,9 +101,9 @@ checkClusterRunning () {
 
     NODES=`${KUBERNETES_CLI:-kubectl} get nodes -o wide | grep "${privateIP}" | wc -l`
     if [ "$NODES" == "1" ]; then
-      echo '- looks good'
+      echo '- able to access cluster'
     else
-      echo '- could not talk to cluster, aborting'
+      echo '- could not access cluster, aborting'
       cd ${terraformVarDir}
       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
       exit 1
@@ -159,4 +159,4 @@ createCluster
 #check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 checkClusterRunning
-echo "$okeclustername is up and running"
+echo "$okeclustername cluster is up and running"
