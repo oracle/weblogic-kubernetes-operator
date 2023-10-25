@@ -2,7 +2,7 @@
 title: "OCR images"
 date: 2019-02-23T16:45:55-05:00
 weight: 1
-description: "Obtain and inspect images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR)."
+description: "Obtain and inspect base images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR)."
 ---
 
 
