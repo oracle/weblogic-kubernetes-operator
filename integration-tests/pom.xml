@@ -59,6 +59,7 @@
         <wko.it.remoteconsole.download.url>${remoteconsole.download.url}</wko.it.remoteconsole.download.url>
         <wko.it.wle.version>${env.WLE_VERSION}</wko.it.wle.version>
         <wko.it.wle.download.url>${wle.download.url}</wko.it.wle.download.url>
+        <wko.it.remoteconsole.version>${remoteconsole.version}</wko.it.remoteconsole.version>
         <wko.it.wle.file.name>${env.WLE_FILE_NAME}</wko.it.wle.file.name>
         <wko.it.snake.version>${snake.version}</wko.it.snake.version>
         <wko.it.snake.download.url>${snake.download.url}</wko.it.snake.download.url>
@@ -252,6 +253,7 @@
                                 <wko.it.oraclelinux.test.version>${wko.it.oraclelinux.test.version}</wko.it.oraclelinux.test.version>
                                 <wko.it.wdt.download.url>${wko.it.wdt.download.url}</wko.it.wdt.download.url>
                                 <wko.it.wit.download.url>${wko.it.wit.download.url}</wko.it.wit.download.url>
+                                <wko.it.remoteconsole.version>${wko.it.remoteconsole.version}</wko.it.remoteconsole.version>
                                 <wko.it.remoteconsole.download.url>${wko.it.remoteconsole.download.url}</wko.it.remoteconsole.download.url>
                                 <wko.it.wle.version>${wko.it.wle.version}</wko.it.wle.version>
                                 <wko.it.wle.download.url>${wko.it.wle.download.url}</wko.it.wle.download.url>

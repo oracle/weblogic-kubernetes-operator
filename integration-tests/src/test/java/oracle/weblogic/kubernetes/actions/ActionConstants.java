@@ -65,15 +65,17 @@ public interface ActionConstants {
   public static final String SNAKE = "SNAKE";
 
   public static final String REMOTECONSOLE = "REMOTECONSOLE";
+  public static final String REMOTECONSOLE_VERSION =
+      getNonEmptySystemProperty("wko.it.remoteconsole.version", "2.4.7");
   //remoteconsole jar file after unzipping
-  public static final String REMOTECONSOLE_FILE = WORK_DIR + "/console/console.jar";
+  public static final String REMOTECONSOLE_FILE = WORK_DIR + "/backend/console.jar";
   public static final String REMOTECONSOLE_DOWNLOAD_URL_DEFAULT =
-      "https://github.com/oracle/weblogic-remote-console/releases/latest";
+      "https://github.com/oracle/weblogic-remote-console/releases/download/v"
+           + REMOTECONSOLE_VERSION + "/";
   public static final String REMOTECONSOLE_DOWNLOAD_URL
       =  getNonEmptySystemProperty("wko.it.remoteconsole.download.url", REMOTECONSOLE_DOWNLOAD_URL_DEFAULT);
-  public static final String REMOTECONSOLE_VERSION =
-      getNonEmptySystemProperty("remoteconsole.version", "1.1.0");
-  public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
+  public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT =
+        "WebLogic-Remote-Console-" + REMOTECONSOLE_VERSION + "-linux.zip";
   public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 
   public static final String WLE_VERSION = getNonEmptySystemProperty("wko.it.wle.version", "latest");
