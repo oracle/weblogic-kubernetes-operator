@@ -189,6 +189,10 @@ pipeline {
                description: 'URL to download WIT.',
                defaultValue: 'https://github.com/oracle/weblogic-image-tool/releases/latest'
         )
+        string(name: 'REMOTECONSOLE_VERSION',
+               description: 'RemoteConsole version.',
+               defaultValue: '2.4.7'
+        )
         string(name: 'TEST_IMAGES_REPO',
                description: '',
                defaultValue: "${env.WKT_OCIR_HOST}"
@@ -527,6 +531,7 @@ EOF
                             echo "-Dwko.it.prometheus.chart.version=\"${PROMETHEUS_CHART_VERSION}\""                     >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.grafana.chart.version=\"${GRAFANA_CHART_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
                             echo "-Dwko.it.collect.logs.on.success=\"${COLLECT_LOGS_ON_SUCCESS}\""                       >> ${WORKSPACE}/.mvn/maven.config
+                            echo "-Dwko.it.remoteconsole.version=\"${REMOTECONSOLE_VERSION}\""                           >> ${WORKSPACE}/.mvn/maven.config
 
                             echo "${WORKSPACE}/.mvn/maven.config contents:"
                             cat "${WORKSPACE}/.mvn/maven.config"

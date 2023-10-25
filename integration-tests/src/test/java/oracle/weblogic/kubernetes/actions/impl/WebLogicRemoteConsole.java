@@ -3,8 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.nio.file.Paths;
-
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -15,7 +13,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaul
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -71,21 +68,13 @@ public class WebLogicRemoteConsole {
   private static boolean runRemoteconsole(String domainNamespace, String adminServerPodName) {
 
     String jarLocation = REMOTECONSOLE_FILE;
-
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-             adminServerPodName, "weblogic-server",
-             "/u01/oracle/wlserver/server/lib/DemoTrust.jks",
-             Paths.get(WORK_DIR, "DemoTrust.jks")));
     StringBuffer javaCmd = new StringBuffer("java");
-    javaCmd.append(" -Dconsole.disableHostnameVerification=true");
-    javaCmd.append(" -Djavax.net.ssl.trustStore=" + "\"" + WORK_DIR + "/DemoTrust.jks" + "\"");
-    javaCmd.append(" -Djavax.net.ssl.trustStoreType=\"JKS\"");
     javaCmd.append(" -jar ");
     javaCmd.append(jarLocation);
     javaCmd.append(" > ");
-    javaCmd.append(WORK_DIR + "/console");
+    javaCmd.append(WORK_DIR + "/backend");
     javaCmd.append("/remoteconsole.out 2>&1 ");
-    javaCmd.append(WORK_DIR + "/console");
+    javaCmd.append(WORK_DIR + "/backend");
     javaCmd.append(" &");
     logger.info("java command to start remote console {0}", javaCmd.toString());
 
@@ -94,6 +83,7 @@ public class WebLogicRemoteConsole {
     logger.info("java returned EXIT value {0}", result.exitValue());
 
     return ((result.exitValue() == 0) && accessRemoteconsole());
+
 
   }
 
