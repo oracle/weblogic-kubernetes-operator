@@ -9832,7 +9832,7 @@ spec:
                 properties:
                   image:
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.3
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.1.8
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -10086,7 +10086,7 @@ spec:
                   pod  will have the fluentd sidecar or not, as appropriate
                 properties:
                   image:
-                    description: The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.14.5-debian-elasticsearch7-1.1
+                    description: The Fluentd container image name. Defaults to fluent/fluentd-kubernetes-daemonset:v1.16.1-debian-elasticsearch7-1.2
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the Fluentd sidecar container
