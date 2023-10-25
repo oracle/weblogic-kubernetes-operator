@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
 
@@ -136,9 +136,40 @@ resource "oci_core_security_list" "oke-worker-security-list" {
     stateless   = true
   }
   egress_security_rules {
-    destination = "${var.vcn_cidr_prefix}.12.0/24"
-    protocol    = "all"
+    protocol    = "6" // tcp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
     stateless   = true
+
+    tcp_options {
+      source_port_range {
+        min = 2048
+        max = 2050
+      }
+    }
+  }
+  egress_security_rules {
+    protocol    = "6" // tcp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless   = true
+
+    tcp_options {
+      source_port_range {
+        min = 111
+        max = 111
+      }
+    }
+  }
+  egress_security_rules {
+    protocol    = "17" // udp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless   = true
+
+    udp_options {
+      source_port_range {
+        min = 111
+        max = 111
+      }
+    }
   }
 
   ingress_security_rules {
@@ -153,11 +184,6 @@ resource "oci_core_security_list" "oke-worker-security-list" {
     stateless = true
     protocol  = "all"
     source    = "${var.vcn_cidr_prefix}.11.0/24"
-  }
-  ingress_security_rules {
-    stateless = true
-    protocol  = "all"
-    source    = "${var.vcn_cidr_prefix}.12.0/24"
   }
   ingress_security_rules {
     # ICMP 
@@ -199,6 +225,54 @@ resource "oci_core_security_list" "oke-worker-security-list" {
     tcp_options {
       min = 30000
       max = 32767
+    }
+  }
+  ingress_security_rules {
+    protocol  = "6" // tcp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
+
+    tcp_options {
+      source_port_range {
+        min = 2048
+        max = 2050
+      }
+    }
+  }
+  ingress_security_rules {
+    protocol  = "6" // tcp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
+
+    tcp_options {
+      source_port_range {
+        min = 111
+        max = 111
+      }
+    }
+  }
+  ingress_security_rules {
+    protocol  = "17" // udp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
+
+    udp_options {
+      source_port_range {
+        min = 111
+        max = 111
+      }
+    }
+  }
+  ingress_security_rules {
+    protocol  = "17" // udp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
+
+    udp_options {
+      source_port_range {
+        min = 2048
+        max = 2048
+      }
     }
   }
   ingress_security_rules {
