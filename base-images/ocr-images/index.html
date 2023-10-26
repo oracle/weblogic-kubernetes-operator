@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.108.0">
-    <meta name="description" content="Obtain and inspect images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR).">
+    <meta name="description" content="Obtain and inspect base images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR).">
 
 
     <link rel="icon" href="https://oracle.github.io/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,20 +12,20 @@
     <title>OCR images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1698290413" rel="stylesheet">
-    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1698290413" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/nucleus.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hybrid.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/featherlight.min.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/auto-complete.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/theme.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/tabs.css?1698351666" rel="stylesheet">
+    <link href="https://oracle.github.io/weblogic-kubernetes-operator/css/hugo-theme.css?1698351666" rel="stylesheet">
     
     
 
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1698290413"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1698351666"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1698290413"></script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1698290413"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/lunr.min.js?1698351666"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/auto-complete.js?1698351666"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1698290413"></script>
+<script type="text/javascript" src="https://oracle.github.io/weblogic-kubernetes-operator/js/search.js?1698351666"></script>
 
     
   </div>
@@ -3770,6 +3770,7 @@
     <li><a href="#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a></li>
     <li><a href="#inspect-images">Inspect images</a></li>
     <li><a href="#ensure-you-are-using-recently-patched-images">Ensure you are using recently patched images</a></li>
+    <li><a href="#use-or-create-weblogic-images-depending-on-the-domain-home-source-type">Use or create WebLogic images depending on the domain home source type</a></li>
   </ul>
 </nav>
     </div>
@@ -3809,6 +3810,7 @@
     <li><a href="#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a></li>
     <li><a href="#inspect-images">Inspect images</a></li>
     <li><a href="#ensure-you-are-using-recently-patched-images">Ensure you are using recently patched images</a></li>
+    <li><a href="#use-or-create-weblogic-images-depending-on-the-domain-home-source-type">Use or create WebLogic images depending on the domain home source type</a></li>
   </ul>
 </nav></div>
 <h3 id="overview">Overview</h3>
@@ -4130,6 +4132,38 @@ of <code>Always</code> when a pod starts.</li>
 see <a href="#understand-oracle-container-registry-images">Understand Oracle Container Registry images</a>.</p>
 <p>To determine the patches and versions of software within a particular image, see <a href="#inspect-images">Inspect images</a>.</p>
 <p>For information about licensed access to WebLogic patches and CPU images, see <a href="https://oracle.github.io/weblogic-kubernetes-operator/introduction/platforms/environments/">Supported environments</a>.</p>
+<h3 id="use-or-create-weblogic-images-depending-on-the-domain-home-source-type">Use or create WebLogic images depending on the domain home source type</h3>
+<p>For information relevant to your chosen <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/choosing-a-model/">domain home source type</a>, refer to the following documentation:</p>
+<ul>
+<li>
+<p>Model in Image domains that use <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>:</p>
+<ul>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#understand-oracle-container-registry-images">Understand Oracle Container Registry images</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a></li>
+</ul>
+</li>
+<li>
+<p>Model in Image domains that <em>do not</em> use auxiliary images:
+<strong>NOTE</strong>: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image <em>with</em> Auxiliary images. See <a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/auxiliary-images/">Auxiliary images</a>.</p>
+</li>
+<li>
+<p>Domain in Image domains: <strong>NOTE</strong>: The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.</p>
+<ul>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/#create-a-custom-image-with-your-domain-inside-the-image">Create a custom image with your domain inside the image</a></li>
+</ul>
+</li>
+<li>
+<p>Domain on Persistent Volume (PV) domains:</p>
+<ul>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#understand-oracle-container-registry-images">Understand Oracle Container Registry images</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/#obtain-images-from-the-oracle-container-registry">Obtain images from the Oracle Container Registry</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/base-images/custom-images/#create-a-custom-image-with-patches-applied">Create a custom image with patches applied</a></li>
+<li><a href="https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/domain-creation-images/">Domain creation images</a></li>
+</ul>
+</li>
+</ul>
 
 
 <footer class="footline">
@@ -6652,19 +6686,19 @@ see <a href="#understand-oracle-container-registry-images">Understand Oracle Con
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1698290413"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/clipboard.min.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/jquery.sticky.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/featherlight.min.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/highlight.pack.js?1698351666"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1698290413"></script>
-    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1698290413"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/learn.js?1698351666"></script>
+    <script src="https://oracle.github.io/weblogic-kubernetes-operator/js/hugo-learn.js?1698351666"></script>
     
         
-            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1698290413"></script>
+            <script src="https://oracle.github.io/weblogic-kubernetes-operator/mermaid/mermaid.js?1698351666"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

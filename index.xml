@@ -151,7 +151,7 @@ Contents Introduction Starting and stopping servers serverStartPolicy rules Avai
       <pubDate>Sat, 23 Feb 2019 16:45:55 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/base-images/ocr-images/</guid>
-      <description>Contents Overview Understand Oracle Container Registry images Compare General Availability to Critical Patch Updates images WebLogic distribution installer type Compare &amp;ldquo;dated&amp;rdquo; and &amp;ldquo;undated&amp;rdquo; images Example OCR image names Obtain images from the Oracle Container Registry Inspect images Ensure you are using recently patched images Overview A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes. Oracle recommends obtaining these WebLogic images from the Oracle Container Registry (OCR) or creating custom images using the WebLogic Image Tool.</description>
+      <description>Contents Overview Understand Oracle Container Registry images Compare General Availability to Critical Patch Updates images WebLogic distribution installer type Compare &amp;ldquo;dated&amp;rdquo; and &amp;ldquo;undated&amp;rdquo; images Example OCR image names Obtain images from the Oracle Container Registry Inspect images Ensure you are using recently patched images Use or create WebLogic images depending on the domain home source type Overview A container image with WebLogic Server or Fusion Middleware Infrastructure is required to run WebLogic domains in Kubernetes.</description>
     </item>
     
     <item>
