@@ -2,7 +2,7 @@
 title: "Create custom images"
 date: 2019-02-23T16:45:55-05:00
 weight: 2
-description: "Create custom WebLogic images using the WebLogic Image Tool (WIT)."
+description: "Create custom WebLogic images using the WebLogic Image Tool (WIT) with specified patches and/or JDK version."
 ---
 
 {{< table_of_contents >}}

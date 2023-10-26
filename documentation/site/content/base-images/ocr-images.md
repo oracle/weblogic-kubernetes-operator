@@ -2,7 +2,7 @@
 title: "OCR images"
 date: 2019-02-23T16:45:55-05:00
 weight: 1
-description: "Obtain and inspect images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR)."
+description: "Obtain and inspect base images for WebLogic Server or Fusion Middleware Infrastructure deployments from the Oracle Container Registry (OCR)."
 ---
 
 
@@ -280,3 +280,25 @@ Please review the following guidance to ensure that you are using recently patch
   To determine the patches and versions of software within a particular image, see [Inspect images](#inspect-images).
 
   For information about licensed access to WebLogic patches and CPU images, see [Supported environments]({{< relref "/introduction/platforms/environments.md" >}}).
+
+### Use or create WebLogic images depending on the domain home source type
+
+For information relevant to your chosen [domain home source type]({{< relref "/managing-domains/choosing-a-model/_index.md" >}}), refer to the following documentation:
+
+* Model in Image domains that use [auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}):
+  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
+  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
+  * [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}})
+
+* Model in Image domains that _do not_ use auxiliary images:
+**NOTE**: Model in Image without auxiliary images (the WDT model and installation files are included in the same image with the WebLogic Server installation) is deprecated in WebLogic Kubernetes Operator version 4.0.7. Oracle recommends that you use Model in Image _with_ Auxiliary images. See [Auxiliary images]({{< relref "/managing-domains/model-in-image/auxiliary-images.md" >}}).
+
+* Domain in Image domains: **NOTE**: The Domain in Image domain home source type is deprecated in WebLogic Kubernetes Operator version 4.0. Oracle recommends that you choose either Domain on PV or Model in Image, depending on your needs.
+  * [Create a custom image with your domain inside the image]({{< relref "/base-images/custom-images#create-a-custom-image-with-your-domain-inside-the-image" >}})
+
+* Domain on Persistent Volume (PV) domains:
+  * [Understand Oracle Container Registry images]({{< relref "/base-images/ocr-images#understand-oracle-container-registry-images" >}})
+  * [Obtain images from the Oracle Container Registry]({{< relref "/base-images/ocr-images#obtain-images-from-the-oracle-container-registry" >}})
+  * [Create a custom image with patches applied]({{< relref "/base-images/custom-images#create-a-custom-image-with-patches-applied" >}})
+  * [Domain creation images]({{< relref "/managing-domains/domain-on-pv/domain-creation-images.md" >}})

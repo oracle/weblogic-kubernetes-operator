@@ -2,7 +2,7 @@
 title: "Patch running domains"
 date: 2019-02-23T16:45:55-05:00
 weight: 3
-description: "Dynamically update WebLogic images in a running domain."
+description: "Dynamically update or upgrade WebLogic images in a running domain."
 ---
 
 ### Apply patched images to a running domain
