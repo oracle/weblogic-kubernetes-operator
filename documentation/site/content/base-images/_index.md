@@ -8,5 +8,3 @@ description: "Obtain, create, and dynamically patch images for WebLogic Server o
 The following sections guide you through obtaining, creating, and dynamically updating WebLogic images.
 
 {{% children style="h4" description="true" %}}
-
-#### [Use or create WebLogic images depending on domain home source type]({{< relref "/managing-domains/choosing-a-model#use-or-create-weblogic-images-depending-on-domain-home-source-type" >}})
