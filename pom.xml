@@ -643,7 +643,7 @@
     <java.version.range>21</java.version.range>
     <maven.version.range>[3.8.1,)</maven.version.range>
     <maven-enforcer-plugin-version>3.4.1</maven-enforcer-plugin-version>
-    <maven-clean-plugin-version>3.3.1</maven-clean-plugin-version>
+    <maven-clean-plugin-version>3.3.2</maven-clean-plugin-version>
     <maven-compiler-plugin-version>3.11.0</maven-compiler-plugin-version>
     <maven-deploy-plugin-version>3.1.1</maven-deploy-plugin-version>
     <maven-install-plugin-version>3.1.1</maven-install-plugin-version>
