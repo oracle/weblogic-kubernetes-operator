@@ -624,11 +624,11 @@
     <maven-jar-plugin-version>3.3.0</maven-jar-plugin-version>
     <maven-resources-plugin-version>3.3.1</maven-resources-plugin-version>
     <maven-site-plugin-version>3.12.1</maven-site-plugin-version>
-    <maven-surefire-plugin-version>3.1.2</maven-surefire-plugin-version>
-    <maven-checkstyle-plugin-version>3.3.0</maven-checkstyle-plugin-version>
+    <maven-surefire-plugin-version>3.2.1</maven-surefire-plugin-version>
+    <maven-checkstyle-plugin-version>3.3.1</maven-checkstyle-plugin-version>
     <maven-release-plugin-version>3.0.1</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.6.0</maven-javadoc-plugin-version>
-    <maven-failsafe-plugin-version>3.1.2</maven-failsafe-plugin-version>
+    <maven-failsafe-plugin-version>3.2.1</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.6.0</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.7.3.6</spotbugs-maven-plugin-version>
@@ -667,7 +667,7 @@
     <jackson-version>2.15.3</jackson-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <jackson-databind-version>2.15.3</jackson-databind-version>
-    <dependency-check-version>8.4.0</dependency-check-version>
+    <dependency-check-version>8.4.2</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
