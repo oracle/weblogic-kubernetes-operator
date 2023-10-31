@@ -354,6 +354,7 @@ EOF
                     }
                     steps {
                          script {
+                             currentBuild.description = "${GIT_BRANCH} ${MAVEN_PROFILE_NAME}"
                              def res = 0
                              res = sh(script: '''
                                      if [ -z "${IT_TEST}" ] && [ "${MAVEN_PROFILE_NAME}" = "integration-tests" ]; then
