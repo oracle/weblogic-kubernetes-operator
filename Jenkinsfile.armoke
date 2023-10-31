@@ -117,7 +117,7 @@ pipeline {
         )
         string(name: 'BRANCH',
                        description: '',
-                       defaultValue: "arm"
+                       defaultValue: "main"
         )
         choice(name: 'BASE_IMAGES_REPO',
                choices: ["${env.WKT_OCIR_HOST}", 'container-registry.oracle.com'],
