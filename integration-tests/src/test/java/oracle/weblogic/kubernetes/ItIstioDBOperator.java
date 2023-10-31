@@ -125,7 +125,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
     + "database created using Oracle Database Operator")
 @IntegrationTest
 @Tag("oke-sequential")
-@Tag("kind-parallel")
+@Tag("kind-sequential")
 class ItIstioDBOperator {
 
   private static String dbNamespace = null;
