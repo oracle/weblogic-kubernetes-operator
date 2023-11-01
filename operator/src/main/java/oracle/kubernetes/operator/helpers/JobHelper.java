@@ -505,7 +505,7 @@ public class JobHelper {
       }
 
       private String getContainerName() {
-        return getDomain().getDomainUid() + "-introspector";
+        return getJobName();
       }
 
       private String getInitContainerName(V1Pod jobPod) {
