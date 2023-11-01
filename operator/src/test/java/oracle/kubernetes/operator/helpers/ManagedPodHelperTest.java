@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Disabled;
@@ -1293,6 +1294,15 @@ class ManagedPodHelperTest extends PodHelperTestBase {
                both(hasJavaOption("-DWLS_PORT=8001")).and(hasJavaOption("-DWLS_SECURE=true")));
   }
 
+  @Test
+  void whenDomainSetShutdownSkippingCoherenceEndangeredStateHasEnvSet() {
+    Shutdown shutdown = new Shutdown();
+    shutdown.skipWaitingCohEndangeredState(true);
+    getConfigurator().withServerPodShutdownSpec(shutdown);
+    assertThat(
+            getCreatedPodSpecContainer().getEnv(),
+            allOf(hasEnvVar("SHUTDOWN_SKIP_WAIT_COH_ENDANGERED_STATE", "true")));
+  }
 
   @Override
   void setServerPort(int port) {
