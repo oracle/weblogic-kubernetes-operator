@@ -32,6 +32,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.InitializeDomainOnPV;
 import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 /**
  * Configures a domain, adding settings independently of the version of the domain representation.
@@ -423,6 +424,8 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withFluentdConfiguration(boolean watchIntrospectorLog,
                                                               String credentialName, String fluentdConfig,
                                                               List<String> args, List<String> command);
+
+  public abstract DomainConfigurator withServerPodShutdownSpec(Shutdown shutdown);
 
   /**
    * Adds a default server configuration to the domain, if not already present.

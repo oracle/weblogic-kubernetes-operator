@@ -17,6 +17,7 @@ public class Shutdown {
   public static final Long DEFAULT_TIMEOUT = 30L;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
   public static final Boolean DEFAULT_WAIT_FOR_ALL_SESSIONS = Boolean.FALSE;
+  public static final Boolean DEFAULT_SKIP_WAIT_COH_ENDANGERED_STATE = Boolean.FALSE;
 
   @Description(
       "Specifies how the operator will shut down server instances."
@@ -44,6 +45,14 @@ public class Shutdown {
   @Default(boolDefault = false)
   private Boolean waitForAllSessions;
 
+  @Description(
+          "For graceful shutdown only, set to true to skip waiting for Coherence Cache Cluster service MBean HAStatus"
+                  + " in safe state before shutdown. By default, the operator will wait until it is"
+                  + " safe to shutdown the Coherence Cache Cluster."
+                  + " Defaults to false.")
+  @Default(boolDefault = false)
+  private Boolean skipWaitingCohEndangeredState;
+
   void copyValues(Shutdown fromShutdown) {
     if (shutdownType == null) {
       shutdownType(fromShutdown.shutdownType);
@@ -57,6 +66,10 @@ public class Shutdown {
 
     if (waitForAllSessions == null) {
       waitForAllSessions(fromShutdown.waitForAllSessions);
+    }
+
+    if (skipWaitingCohEndangeredState == null) {
+      skipWaitingCohEndangeredState(fromShutdown.skipWaitingCohEndangeredState);
     }
   }
 
@@ -96,6 +109,16 @@ public class Shutdown {
     return this;
   }
 
+  public Boolean getSkipWaitingCohEndangeredState() {
+    return Optional.ofNullable(skipWaitingCohEndangeredState)
+            .orElse(DEFAULT_SKIP_WAIT_COH_ENDANGERED_STATE);
+  }
+
+  public Shutdown skipWaitingCohEndangeredState(Boolean skipWaitingCohEndangeredState) {
+    this.skipWaitingCohEndangeredState = skipWaitingCohEndangeredState;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -103,6 +126,7 @@ public class Shutdown {
         .append("timeoutSeconds", timeoutSeconds)
         .append("ignoreSessions", ignoreSessions)
         .append("waitForAllSessions", waitForAllSessions)
+        .append("skipWaitingCohEndangeredState", skipWaitingCohEndangeredState)
         .toString();
   }
 
@@ -123,6 +147,7 @@ public class Shutdown {
         .append(timeoutSeconds, that.timeoutSeconds)
         .append(ignoreSessions, that.ignoreSessions)
         .append(waitForAllSessions, that.waitForAllSessions)
+        .append(skipWaitingCohEndangeredState, that.skipWaitingCohEndangeredState)
         .isEquals();
   }
 
@@ -133,6 +158,7 @@ public class Shutdown {
         .append(timeoutSeconds)
         .append(ignoreSessions)
         .append(waitForAllSessions)
+        .append(skipWaitingCohEndangeredState)
         .toHashCode();
   }
 }

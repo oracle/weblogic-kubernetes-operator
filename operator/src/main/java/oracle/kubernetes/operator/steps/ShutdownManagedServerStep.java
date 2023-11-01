@@ -221,7 +221,16 @@ public class ShutdownManagedServerStep extends Step {
     private Integer getWlsServerPort() {
       Integer listenPort = Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getListenPort)
           .orElse(null);
-
+      Integer adminPort = Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getAdminPort)
+              .orElse(null);
+      Integer sslListenPort = Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getSslListenPort)
+              .orElse(null);
+      if (adminPort != null) {
+        return adminPort;
+      }
+      if (sslListenPort != null) {
+        return sslListenPort;
+      }
       if (listenPort == null) {
         // This can only happen if the running server pod does not exist in the WLS Domain.
         // This is a rare case where the server was deleted from the WLS Domain config.

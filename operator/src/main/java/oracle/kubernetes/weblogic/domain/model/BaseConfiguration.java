@@ -274,6 +274,12 @@ public abstract class BaseConfiguration {
     serverPod.addLimitRequirement(resource, quantity);
   }
 
+  void setShutdown(Shutdown shutdown) {
+    serverPod.setShutdown(shutdown.getShutdownType(),
+            shutdown.getTimeoutSeconds(), shutdown.getIgnoreSessions(), shutdown.getWaitForAllSessions(),
+            shutdown.getSkipWaitingCohEndangeredState());
+  }
+
   V1PodSecurityContext getPodSecurityContext() {
     return Optional.ofNullable(serverPod.getPodSecurityContext()).orElse(getDefaultPodSecurityContext());
   }
