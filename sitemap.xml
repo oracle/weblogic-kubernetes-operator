@@ -290,6 +290,9 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/summary/</loc>
     <lastmod>2019-02-22T15:44:42-05:00</lastmod>
   </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/major-weblogic-version-upgrade/</loc>
+    <lastmod>2023-10-05T16:43:45-05:00</lastmod>
+  </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/domain-on-pv/</loc>
     <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url><url>
@@ -428,6 +431,9 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-operators/common-mistakes/</loc>
     <lastmod>2019-02-23T17:08:43-05:00</lastmod>
   </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/deprecated-functionality/</loc>
+    <lastmod>2019-02-23T08:14:59-05:00</lastmod>
+  </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/aks/</loc>
     <lastmod>2021-10-27T15:27:38-05:00</lastmod>
   </url><url>
@@ -461,8 +467,11 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/runtime-updates/</loc>
     <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/managing-domains/model-in-image/move-to-pv/</loc>
+    <lastmod>2020-03-11T16:45:16-05:00</lastmod>
+  </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/</loc>
-    <lastmod>2023-09-14T18:22:31-05:00</lastmod>
+    <lastmod>2023-10-05T16:43:45-05:00</lastmod>
     <priority>0</priority>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/categories/</loc>
