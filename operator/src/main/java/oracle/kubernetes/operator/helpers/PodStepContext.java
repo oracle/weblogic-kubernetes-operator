@@ -613,6 +613,11 @@ public abstract class PodStepContext extends BasePodStepContext {
       addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS",
               String.valueOf(shutdown.getWaitForAllSessions()));
     }
+    if (!shutdown.getSkipWaitingCohEndangeredState()
+            .equals(Shutdown.DEFAULT_SKIP_WAIT_COH_ENDANGERED_STATE)) {
+      addDefaultEnvVarIfMissing(env, "SHUTDOWN_SKIP_WAIT_COH_ENDANGERED_STATE",
+              String.valueOf(shutdown.getSkipWaitingCohEndangeredState()));
+    }
   }
 
   private Shutdown getShutdownSpec() {
