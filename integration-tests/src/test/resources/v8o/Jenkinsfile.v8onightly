@@ -76,7 +76,7 @@ pipeline {
 
     tools {
         maven 'maven-3.8.7'
-        jdk 'jdk17'
+        jdk 'jdk21'
     }
 
     environment {
@@ -544,14 +544,14 @@ EOF
                            elapsed_time=0
                            while [ $done -ne 0 ] && [ $elapsed_time -lt $VZ_INSTALL_TIMEOUT ]                           
                            do
-                             install_status=$(kubectl wait --timeout=30m --for=condition=InstallComplete verrazzano/admin)
+                             install_status=$(kubectl wait --timeout=3m --for=condition=InstallComplete verrazzano/admin 2>&1 || true)
                              echo $install_status
                              if echo "$install_status" | grep -q 'condition met'; then
                                echo "verrazzano installation complete"
                                echo "It took $elapsed_time minutes to complete verrazzano installation"
                                done=0
                              else
-                               elapsed_time=$((elapsed_time + 30))
+                               elapsed_time=$((elapsed_time + 3))
                                echo "verrazzano installtion is not complete"
                              fi
                              kubectl get all -A
