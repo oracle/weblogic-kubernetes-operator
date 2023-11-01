@@ -115,6 +115,7 @@ The specification of the operation of the WebLogic cluster. Required.
 | --- | --- | --- |
 | `ignoreSessions` | Boolean | For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Defaults to false. |
 | `shutdownType` | string | Specifies how the operator will shut down server instances. Legal values are `Graceful` and `Forced`. Defaults to `Graceful`. |
+| `skipWaitingCohEndangeredState` | Boolean | For graceful shutdown only, set to true to skip waiting for Coherence Cache Cluster service MBean HAStatus in safe state before shutdown. By default, the operator will wait until it is safe to shutdown the Coherence Cache Cluster. Defaults to false. |
 | `timeoutSeconds` | integer | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds. |
 | `waitForAllSessions` | Boolean | For graceful shutdown only, set to true to wait for all HTTP sessions during in-flight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false. |
 

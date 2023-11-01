@@ -106,7 +106,9 @@ def checkCoherenceClusterExist(configData):
 def waitUntilCoherenceSafe():
   print ('Shutdown: getting all service Coherence MBeans')
   query='Coherence:type=PartitionAssignment,service=*,*'
-
+  if 'SHUTDOWN_SKIP_WAIT_COH_ENDANGERED_STATE' in os.environ and \
+          os.environ['SHUTDOWN_SKIP_WAIT_COH_ENDANGERED_STATE'] == 'true':
+      return
   # By default, Coherence will use a single WebLogic Runtime MBean server to managed
   # its MBeans.  That server will correspond to the current Coherence senior member,
   # which means that the Coherence MBeans will migrate to the oldest cluster member
@@ -169,6 +171,10 @@ def waitUntilServiceSafeToShutdown(objectName):
       if status != "ENDANGERED":
         break
 
+      safe_status_ha = _checkCacheSafeStatusHA(objectName)
+      if safe_status_ha:
+        break
+
       # Coherence caches are ENDANGERED meaning that we may lose data
       print ('Shutdown: Waiting until it is safe to shutdown Coherence server ...')
       systime.sleep(5)
@@ -179,6 +185,57 @@ def waitUntilServiceSafeToShutdown(objectName):
       dumpStack()
       systime.sleep(10)
       pass
+
+# Checking the Cache is safe to shutdown.  The logic is incorporated from Coherence Operator
+#    OperatorRestServer.areCacheServicesHA.
+
+def _checkCacheSafeStatusHA(objectName):
+  try:
+    fields = ["StorageEnabled", "StorageEnabledCount", "BackupCount", "PartitionsAll",
+        "OwnedPartitionsPrimary", "StatusHA", "OutgoingTransferCount", "PartitionsEndangered", "PartitionsVulnerable" ]
+
+    if objectName.getKeyProperty('service') == 'PartitionedCache':
+      partitioned_cache_query = "Coherence:name=PartitionedCache,type=Service,*"
+      partitioned_cache_mbeans = mbs.queryMBeans(ObjectName(partitioned_cache_query), None)
+      for item in partitioned_cache_mbeans:
+        fields_dict = {}
+        attrs = mbs.getAttributes(item.getObjectName(), fields)
+        for attr in attrs:
+          fields_dict.update({ attr.getName(): attr.getValue()})
+
+        storage_enabled = fields_dict['StorageEnabled']
+        storage_enabled_count = fields_dict['StorageEnabledCount']
+        backup_count = fields_dict['BackupCount']
+        status_ha = fields_dict['StatusHA']
+        outgoing_transfer_count = fields_dict['OutgoingTransferCount']
+        partitions_endangered = fields_dict['PartitionsEndangered']
+        partitions_vulnerable = fields_dict['PartitionsVulnerable']
+        partitions_all = fields_dict['PartitionsAll']
+        owned_partitions_primary = fields_dict['OwnedPartitionsPrimary']
+
+        if storage_enabled:
+          if storage_enabled_count > 1 and backup_count > 0 and "ENDANGERED" == status_ha:
+            print("StatusHA check failed. Service %s has HA status of %s" % (objectName, status_ha))
+            return False
+
+          if outgoing_transfer_count > 0:
+            print("StatusHA check failed. Service %s distribution in progress" % (objectName))
+            return False
+
+          persistent_query = "Coherence:service=PartitionedCache,type=Persistence,*"
+          persistent_mbeans = mbs.queryMBeans(ObjectName(persistent_query), None)
+          if persistent_mbeans.size() == 1:
+            idle = mbs.getAttribute(persistent_mbeans[0].getObjectName(), 'Idle')
+            if not idle:
+              print("StatusHA check failed. Service %s persistence is not idle" % (objectName))
+              return False
+
+  except:
+    print("Error _checkCacheSafeStatusHA function:")
+    dumpStack()
+
+  return True
+
 
 
 #----------------------------------
