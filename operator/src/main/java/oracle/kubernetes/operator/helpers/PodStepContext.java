@@ -90,6 +90,7 @@ import static oracle.kubernetes.common.CommonConstants.COMPATIBILITY_MODE;
 import static oracle.kubernetes.common.helpers.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_EVICTED;
 import static oracle.kubernetes.common.logging.MessageKeys.CYCLING_POD_SPEC_CHANGED;
+import static oracle.kubernetes.common.utils.CommonUtils.stream;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
@@ -1253,8 +1254,8 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     private void restoreMetricsExporterSidecarPortTcpMetrics(V1Pod recipe, V1Pod currentPod) {
       V1PodSpec podSpec = recipe.getSpec();
-      podSpec.getContainers().stream().filter(c -> "monitoring-exporter".equals(c.getName()))
-          .findFirst().flatMap(c -> c.getPorts().stream().filter(p -> "metrics".equals(p.getName()))
+      stream(podSpec.getContainers()).filter(c -> "monitoring-exporter".equals(c.getName()))
+          .findFirst().flatMap(c -> stream(c.getPorts()).filter(p -> "metrics".equals(p.getName()))
               .findFirst()).ifPresent(p -> p.setName("tcp-metrics"));
     }
 
