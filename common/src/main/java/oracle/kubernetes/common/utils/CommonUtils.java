@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.utils;
@@ -6,7 +6,9 @@ package oracle.kubernetes.common.utils;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import oracle.kubernetes.common.CommonConstants;
 
@@ -19,6 +21,16 @@ public class CommonUtils {
 
   private CommonUtils() {
     //not called
+  }
+
+  /**
+   * Stream a collection with protection for null collections.
+   * @param <T> Type
+   * @param collection Collection
+   * @return Stream
+   */
+  public static <T> Stream<T> stream(Collection<T> collection) {
+    return Optional.ofNullable(collection).stream().flatMap(Collection::stream);
   }
 
   /**
