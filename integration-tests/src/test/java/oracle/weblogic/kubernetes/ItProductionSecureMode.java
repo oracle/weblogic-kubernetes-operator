@@ -26,6 +26,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.TEST_IMAGES_REPO_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -58,6 +60,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.exeAppInServerPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
@@ -97,9 +100,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 @Tag("olcne-mrg")
-@Tag("oke-parallel")
 @Tag("kind-parallel")
 @Tag("okd-wls-mrg")
+@Tag("oke-gate")
 class ItProductionSecureMode {
 
   private static String opNamespace = null;
@@ -247,23 +250,27 @@ class ItProductionSecureMode {
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, defaultAdminPort);
     logger.info("The hostAndPort is {0}", hostAndPort);
 
-
+    String resourcePath = "/console/login/LoginForm.jsp";
     if (!WEBLOGIC_SLIM) {
-      String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + hostAndPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} "
-          + " -o /dev/null";
-      logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      if (OKE_CLUSTER) {
+        ExecResult result = exeAppInServerPod(domainNamespace, adminServerPodName,7002, resourcePath);
+        logger.info("result in OKE_CLUSTER is {0}", result.toString());
+        assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+      } else {
+        String curlCmd = "curl -sk --show-error --noproxy '*' "
+            + " https://" + hostAndPort
+            + "/console/login/LoginForm.jsp --write-out %{http_code} "
+            + " -o /dev/null";
+        logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
+        assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      }
       logger.info("WebLogic console is accessible thru default-admin service");
 
       String localhost = "localhost";
-      String forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 9002);
+      String forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 9002);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded admin-port is {0}", forwardPort);
-      curlCmd = "curl -sk --show-error --noproxy '*' "
+      String curlCmd = "curl -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} "
           + " -o /dev/null";
@@ -273,9 +280,7 @@ class ItProductionSecureMode {
 
       // When port-forwarding is happening on admin-port, port-forwarding will
       // not work for SSL port i.e. 7002
-      forwardPort =
-           startPortForwardProcess(localhost, domainNamespace,
-           domainUid, 7002);
+      forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded ssl port is {0}", forwardPort);
       curlCmd = "curl -sk --show-error --noproxy '*' "
@@ -291,9 +296,9 @@ class ItProductionSecureMode {
     }
 
     int nodePort = getServiceNodePort(
-           domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertEquals(-1, nodePort,
-          "Default external service node port service must not be available");
+        "Default external service node port service must not be available");
     logger.info("Default service nodePort is not available as expected");
   }
 
@@ -333,23 +338,30 @@ class ItProductionSecureMode {
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    testUntil(
-        () -> checkWeblogicMBean(
-            adminSvcSslPortExtHost,
-            domainNamespace,
-            adminServerPodName,
-            "/management/weblogic/latest/domainRuntime/serverRuntimes/"
-                + MANAGED_SERVER_NAME_BASE + "1"
-                + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
-                + "/workManagerRuntimes/newWM",
-            "200", true, "default-admin"),
-        logger,
-        "work manager configuration to be updated.");
+    String resourcePath = "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+        + MANAGED_SERVER_NAME_BASE + "1"
+        + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
+        + "/workManagerRuntimes/newWM";
+    if (OKE_CLUSTER) {
+      ExecResult result = exeAppInServerPod(domainNamespace, managedServerPrefix + "1",9002, resourcePath);
+      logger.info("result in OKE_CLUSTER is {0}", result.toString());
+      assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
+    } else {
+      testUntil(
+          () -> checkWeblogicMBean(
+              adminSvcSslPortExtHost,
+              domainNamespace,
+              adminServerPodName,
+              "/management/weblogic/latest/domainRuntime/serverRuntimes/"
+                  + MANAGED_SERVER_NAME_BASE + "1"
+                  + "/applicationRuntimes/" + MII_BASIC_APP_DEPLOYMENT_NAME
+                  + "/workManagerRuntimes/newWM",
+              "200", true, "default-admin"),
+              logger, "work manager configuration to be updated.");
+    }
 
     logger.info("Found new work manager configuration");
-
     verifyPodsNotRolled(domainNamespace, pods);
-
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
