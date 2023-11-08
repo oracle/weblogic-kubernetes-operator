@@ -61,7 +61,7 @@ The following table lists the configurable parameters of this chart and their de
 
 | Parameter | Description | Default |
 | --- | --- | --- |
-| `type` | Type of ingress controller. Legal values are `TRAEFIK`, `VOYAGER`, or `NGINX`. | `TRAEFIK` |
+| `type` | Type of ingress controller. Legal values are `TRAEFIK` or `NGINX`. | `TRAEFIK` |
 | `wlsDomain.domainUID` | DomainUID of the WLS domain. | `domain1` |
 | `wlsDomain.clusterName` | Cluster name in the WLS domain. | `cluster-1` |
 | `wlsDomain.managedServerPort` | Port number of the managed servers in the WLS domain cluster. | `8001` |
