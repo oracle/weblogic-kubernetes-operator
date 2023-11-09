@@ -13,7 +13,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -27,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 public class AppBuilder {
-  private static final String ARCHIVE_SRC_DIR = ARCHIVE_DIR + "/wlsdeploy/applications";
   
   private AppParams params;
 
@@ -67,17 +65,18 @@ public class AppBuilder {
    * @return true if the command succeeds 
    */
   public boolean build() {
+    String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
     // prepare the archive directory and copy over the app src
     try {
-      cleanupDirectory(ARCHIVE_SRC_DIR);
-      checkDirectory(ARCHIVE_SRC_DIR);
+      cleanupDirectory(archiveSrcDir);
+      checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
         copyFolder(
             APP_DIR + "/" + item, 
-            ARCHIVE_SRC_DIR);
+            archiveSrcDir);
       }
     } catch (IOException ioe) {    
-      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }
 
@@ -88,11 +87,11 @@ public class AppBuilder {
 
     // build the app archive
     String jarPath = String.format("%s.ear", params.appName());
-    boolean jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+    boolean jarBuilt = buildJarArchive(jarPath, archiveSrcDir);
     
     // build a zip file that can be passed to WIT
-    String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
-    boolean zipBuilt = buildZipArchive(zipPath, ARCHIVE_DIR);
+    String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
+    boolean zipBuilt = buildZipArchive(zipPath, params.appArchiveDir());
 
     return jarBuilt && zipBuilt;
   }
@@ -103,14 +102,15 @@ public class AppBuilder {
    */
   public boolean buildCoherence() {
     // prepare the archive directory and copy over the app src
+    String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
     try {
-      cleanupDirectory(ARCHIVE_SRC_DIR);
-      checkDirectory(ARCHIVE_SRC_DIR);
+      cleanupDirectory(archiveSrcDir);
+      checkDirectory(archiveSrcDir);
       for (String item : params.srcDirList()) {
-        copyFolder(APP_DIR + "/" + item, ARCHIVE_SRC_DIR);
+        copyFolder(APP_DIR + "/" + item, archiveSrcDir);
       }
     } catch (IOException ioe) {
-      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }
 
@@ -123,18 +123,18 @@ public class AppBuilder {
     boolean jarBuilt = false;
     if (params.appName().contains("coherence-proxy")) {
       String jarPath = String.format("%s.gar", params.appName());
-      jarBuilt = buildJarArchive(jarPath, ARCHIVE_SRC_DIR);
+      jarBuilt = buildJarArchive(jarPath, archiveSrcDir);
     } else if (params.appName().contains("CoherenceApp")) {
       String [] appTypes = {"ear", "gar"};
       try {
         for (String appType : appTypes) {
           String appSrcDir = String.format("%s/%s/u01/application/builddir/%s.%s",
               WORK_DIR, params.appName(), params.appName(), appType);
-          String archiveSrcDir = String.format("%s/%s.%s", ARCHIVE_SRC_DIR, params.appName(), appType);
+          String appArchiveSrcDir = String.format("%s/%s.%s", archiveSrcDir, params.appName(), appType);
           assertTrue(FileUtils.doesFileExist(appSrcDir), "File " + appSrcDir + " doesn't exist");
-          assertTrue(FileUtils.doesDirExist(ARCHIVE_SRC_DIR), "Dir " + ARCHIVE_SRC_DIR + " doesn't exist");
+          assertTrue(FileUtils.doesDirExist(archiveSrcDir), "Dir " + archiveSrcDir + " doesn't exist");
 
-          FileUtils.copy(Paths.get(appSrcDir), Paths.get(archiveSrcDir));
+          FileUtils.copy(Paths.get(appSrcDir), Paths.get(appArchiveSrcDir));
         }
         jarBuilt = true;
       } catch (IOException ex) {
@@ -145,8 +145,8 @@ public class AppBuilder {
     }
 
     // build a zip file that can be passed to WIT
-    String zipPath = String.format("%s/%s.zip", ARCHIVE_DIR, params.appName());
-    boolean zipBuilt = buildCoherenceZipArchive(zipPath, ARCHIVE_DIR);
+    String zipPath = String.format("%s/%s.zip", params.appArchiveDir(), params.appName());
+    boolean zipBuilt = buildCoherenceZipArchive(zipPath, params.appArchiveDir());
 
     return jarBuilt && zipBuilt;
   }
@@ -222,7 +222,7 @@ public class AppBuilder {
     if (params.appName().contains("CoherenceApp")) {
       cmd = String.format(
         "cd %s ; zip -r %s.zip wlsdeploy/applications ",
-        ARCHIVE_DIR,
+        params.appArchiveDir(),
         params.appName()
       );
     }
@@ -244,26 +244,27 @@ public class AppBuilder {
     List<String> srcFiles  = params.srcDirList();
     String srcFile = srcFiles.get(0);
     String appName = srcFile.substring(srcFile.lastIndexOf("/") + 1, srcFile.lastIndexOf("."));
+    String archiveSrcDir = params.appArchiveDir() + "/wlsdeploy/applications";
+
     try {
-      String appDir = ARCHIVE_DIR + "/wlsdeploy/applications";
-      cleanupDirectory(appDir);
-      checkDirectory(appDir);
+      cleanupDirectory(archiveSrcDir);
+      checkDirectory(archiveSrcDir);
       for (String appSrcFile : srcFiles) {
         if (appSrcFile.length() > 0) {
-          getLogger().info("copy {0} to {1} ", appSrcFile, appDir);
+          getLogger().info("copy {0} to {1} ", appSrcFile, archiveSrcDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
-          Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
+          Files.copy(Paths.get(appSrcFile), Paths.get(archiveSrcDir + "/" + fileName),
                   StandardCopyOption.REPLACE_EXISTING);
         }
       }
     } catch (IOException ioe) {
-      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + archiveSrcDir + " ready", ioe);
       return false;
     }
 
     String cmd = String.format(
             "cd %s ; zip -r %s.zip wlsdeploy/applications ",
-            ARCHIVE_DIR,
+            params.appArchiveDir(),
             appName
     );
 
