@@ -5,6 +5,8 @@ package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.List;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+
 /**
  * Contains the parameters for creating an application archive.
  */
@@ -22,7 +24,10 @@ public class AppParams {
   
   // Whether the output of the command is redirected to system out
   private boolean redirect = true;
-  
+
+  // The directory for the app archive
+  private String appArchiveDir = ARCHIVE_DIR;
+
   public AppParams defaults() {
     return this;
   }
@@ -34,6 +39,15 @@ public class AppParams {
 
   public List<String> srcDirList() {
     return srcDirList;
+  }
+
+  public AppParams appArchiveDir(String appArchiveDir) {
+    this.appArchiveDir = appArchiveDir;
+    return this;
+  }
+
+  public String appArchiveDir() {
+    return appArchiveDir;
   }
 
   public AppParams appName(String appName) {
