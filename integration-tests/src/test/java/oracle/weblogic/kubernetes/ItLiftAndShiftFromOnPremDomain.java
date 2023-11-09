@@ -334,9 +334,14 @@ class ItLiftAndShiftFromOnPremDomain {
       hostName = createRouteForOKD(clusterService, domainNamespace);
     }
 
-    final String ingressServiceName = traefikHelmParams.getReleaseName();
-    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, traefikNodePort);
+    String hostAndPort = null;
+    if (!OKD) {
+      final String ingressServiceName = traefikHelmParams.getReleaseName();
+      hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, traefikNodePort);
+    } else {
+      hostAndPort = getHostAndPort(hostName, traefikNodePort);
+    }
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String curlString = String.format("curl -v --show-error --noproxy '*' "

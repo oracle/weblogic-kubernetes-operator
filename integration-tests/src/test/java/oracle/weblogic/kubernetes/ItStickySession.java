@@ -457,12 +457,18 @@ class ItStickySession {
 
     if (clusterAddress.length == 0) {
       //use a LBer ingress controller to build the curl command to run on local
-      final String ingressServiceName = traefikHelmParams.getReleaseName();
+      String hostAndPort = null;
       final String httpHeaderFile = LOGS_DIR + "/headers";
       logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
-      String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, servicePort);
+      if (!OKD) {
+        final String ingressServiceName = traefikHelmParams.getReleaseName();
+        hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+            ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) : getHostAndPort(hostName, servicePort);
+      } else {
+        hostAndPort = getHostAndPort(hostName, servicePort);
+      }
+
 
       curlCmd.append(" --noproxy '*' -H 'host: ")
           .append(hostName)

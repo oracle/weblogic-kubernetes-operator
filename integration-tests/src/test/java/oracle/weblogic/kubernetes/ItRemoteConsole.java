@@ -221,10 +221,15 @@ class ItRemoteConsole {
     int sslPort = getServicePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
     setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
-    String ingressServiceName = traefikHelmParams.getReleaseName();
-    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
-            : getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    String hostAndPort = null;
+    if (!OKD) {
+      String ingressServiceName = traefikHelmParams.getReleaseName();
+      hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+          : getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    } else {
+      hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    }
 
     logger.info("The hostAndPort is {0}", hostAndPort);
 
