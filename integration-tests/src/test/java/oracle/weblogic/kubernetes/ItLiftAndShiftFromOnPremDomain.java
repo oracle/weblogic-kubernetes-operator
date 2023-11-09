@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -193,9 +194,11 @@ class ItLiftAndShiftFromOnPremDomain {
     List<String> appDirList = Collections.singletonList("onprem-app");
 
     logger.info("Build the application archive using what is in {0}", appDirList);
+    AppParams appParams = defaultAppParams()
+        .appArchiveDir(ARCHIVE_DIR + this.getClass().getSimpleName());
     assertTrue(
         buildAppArchive(
-            defaultAppParams()
+            appParams
                 .srcDirList(appDirList)
                 .appName("opdemo")),
         String.format("Failed to create application archive for %s",
@@ -203,7 +206,8 @@ class ItLiftAndShiftFromOnPremDomain {
 
     //copy file from stage dir to where the config files are
     try {
-      copy(Paths.get(ARCHIVE_DIR, "/wlsdeploy/applications/opdemo.ear"), Paths.get(DOMAIN_TEMP_DIR, "/opdemo.ear"));
+      copy(Paths.get(appParams.appArchiveDir(), "/wlsdeploy/applications/opdemo.ear"),
+          Paths.get(DOMAIN_TEMP_DIR, "/opdemo.ear"));
     } catch (IOException ioex) {
       logger.info("Copy of the application to the domain directory failed");
     }

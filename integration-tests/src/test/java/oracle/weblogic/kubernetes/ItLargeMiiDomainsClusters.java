@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -219,13 +220,16 @@ class ItLargeMiiDomainsClusters {
       createSecrets(domainNamespaces.get(i));
 
       // build app
-      assertTrue(buildAppArchive(defaultAppParams()
+      AppParams appParams = defaultAppParams()
+          .appArchiveDir(ARCHIVE_DIR + this.getClass().getSimpleName());
+      assertTrue(buildAppArchive(appParams
               .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
               .appName(MII_BASIC_APP_NAME)),
           String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
       // image with model files for domain config, app and wdt install files
-      List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+      List<String> archiveList
+          = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
       List<String> modelList = new ArrayList<>();
       modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);

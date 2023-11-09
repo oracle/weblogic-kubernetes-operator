@@ -21,6 +21,7 @@ import oracle.weblogic.domain.DomainResource;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -348,7 +349,9 @@ class ItMultiDomainModelsUpgradeAndScale {
     appSrcDirList.add(WLDF_OPENSESSION_APP);
 
     for (String appName : appSrcDirList) {
-      assertTrue(buildAppArchive(defaultAppParams()
+      AppParams appParams = defaultAppParams()
+          .appArchiveDir(ARCHIVE_DIR + ItMultiDomainModelsUpgradeAndScale.class.getSimpleName());
+      assertTrue(buildAppArchive(appParams
           .srcDirList(Collections.singletonList(appName))
           .appName(appName)),
           String.format("Failed to create app archive for %s", appName));
@@ -361,7 +364,7 @@ class ItMultiDomainModelsUpgradeAndScale {
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
       //deploy application
-      Path archivePath = get(ARCHIVE_DIR, "wlsdeploy", "applications", appName + ".ear");
+      Path archivePath = get(appParams.appArchiveDir(), "wlsdeploy", "applications", appName + ".ear");
       logger.info("Deploying webapp {0} to domain {1}", archivePath, domainUid);
       deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
           ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, clusterName + "," + ADMIN_SERVER_NAME_BASE, archivePath,

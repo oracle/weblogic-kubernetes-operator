@@ -17,6 +17,7 @@ import java.util.Map;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -184,6 +185,8 @@ class ItMiiAuxiliaryImage {
   private static String opNamespace = null;
   private static String operatorPodName = null;
   private static String oldMiiAuxImageNameInDomain1 = miiAuxiliaryImage1;
+  private static AppParams appParams = defaultAppParams()
+      .appArchiveDir(ARCHIVE_DIR + ItMiiAuxiliaryImage.class.getSimpleName());
 
   /**
    * Install Operator. Create a domain using multiple auxiliary images.
@@ -238,13 +241,13 @@ class ItMiiAuxiliaryImage {
     createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
         "weblogicenc", "weblogicenc");
     // build app
-    assertTrue(buildAppArchive(defaultAppParams()
+    assertTrue(buildAppArchive(appParams
             .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
             .appName(MII_BASIC_APP_NAME)),
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
 
     // image1 with model files for domain config, ds, app and wdt install files
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -334,7 +337,7 @@ class ItMiiAuxiliaryImage {
         "/multi-model-one-ds.20.yaml").toString(), "ORCLCDB",
         "dbsvc"), "Can't replace datasource url in the model file");
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -540,7 +543,7 @@ class ItMiiAuxiliaryImage {
 
     // creating image with no WDT install files
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -597,7 +600,7 @@ class ItMiiAuxiliaryImage {
     //createAuxiliaryImageWithDomainConfig(miiAuxiliaryImage6, auxiliaryImagePathCustom);
 
     // admin/managed server name here should match with model yaml
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -733,7 +736,7 @@ class ItMiiAuxiliaryImage {
     String domainUid = "testdomain8";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     WitParams witParams =
             new WitParams()
@@ -785,7 +788,7 @@ class ItMiiAuxiliaryImage {
     String domainUid = "testdomain9";
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     WitParams witParams =
         new WitParams()
@@ -967,7 +970,7 @@ class ItMiiAuxiliaryImage {
     }
     OffsetDateTime timestamp = now();
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -1039,7 +1042,7 @@ class ItMiiAuxiliaryImage {
     final String auxiliaryImagePath = "/auxiliary";
     OffsetDateTime timestamp = now();
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
@@ -1110,7 +1113,7 @@ class ItMiiAuxiliaryImage {
 
     OffsetDateTime timestamp = now();
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -1197,7 +1200,7 @@ class ItMiiAuxiliaryImage {
     createSecretWithUsernamePassword(encryptionSecretName, wdtDomainNamespace,
         "weblogicenc", "weblogicenc");
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
@@ -1389,17 +1392,14 @@ class ItMiiAuxiliaryImage {
 
     logger.info("Build an application archive using what is in {0}", appDirList);
     assertTrue(
-        buildAppArchive(
-            defaultAppParams()
-                .srcDirList(appDirList)),
-        String.format("Failed to create application archive for %s",
-            MII_BASIC_APP_NAME));
+        buildAppArchive(appParams.srcDirList(appDirList)),
+        String.format("Failed to create application archive for %s", MII_BASIC_APP_NAME));
 
     logger.info("Build the archive list that contains {0}",
-        String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+        String.format("%s/%s.zip", appParams.appArchiveDir(), MII_BASIC_APP_NAME));
     List<String> archiveList =
         Collections.singletonList(
-            String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+            String.format("%s/%s.zip", appParams.appArchiveDir(), MII_BASIC_APP_NAME));
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -1517,7 +1517,7 @@ class ItMiiAuxiliaryImage {
                                                                                                String domainUid,
                                                                                                String imageTag) {
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);

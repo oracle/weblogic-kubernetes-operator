@@ -14,6 +14,7 @@ import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -88,6 +89,8 @@ class ItAuxV8DomainImplicitUpgrade {
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private boolean foundCompatiblityContainer = false;
   private String domainUid = "implicit-upg";
+  private static AppParams appParams = defaultAppParams()
+      .appArchiveDir(ARCHIVE_DIR + ItAuxV8DomainImplicitUpgrade.class.getSimpleName());
 
   /**
    * Install Operator.
@@ -128,7 +131,7 @@ class ItAuxV8DomainImplicitUpgrade {
         ENCRYPION_USERNAME_DEFAULT, ENCRYPION_PASSWORD_DEFAULT);
 
     // build app
-    assertTrue(buildAppArchive(defaultAppParams()
+    assertTrue(buildAppArchive(appParams
             .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
             .appName(MII_BASIC_APP_NAME)),
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
@@ -167,7 +170,7 @@ class ItAuxV8DomainImplicitUpgrade {
     String modelOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  modelOnlyImageTag;
     String wdtOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  wdtOnlyImageTag;
     String configOnlyImage = MII_AUXILIARY_IMAGE_NAME + ":" +  configOnlyImageTag;
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
 
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
@@ -510,7 +513,7 @@ class ItAuxV8DomainImplicitUpgrade {
       deleteDomainResource(domainNamespace, domainUid);
     }
 
-    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+    List<String> archiveList = Collections.singletonList(appParams.appArchiveDir() + "/" + MII_BASIC_APP_NAME + ".zip");
     List<String> modelList = new ArrayList<>();
     modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     modelList.add(MODEL_DIR + "/model.jms2.yaml");
