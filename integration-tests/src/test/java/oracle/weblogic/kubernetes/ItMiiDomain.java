@@ -28,6 +28,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -148,6 +149,7 @@ class ItMiiDomain {
   private static volatile boolean mainThreadDone = false;
   private static String miiDomainNegativeNamespace = null;
   private String encryptionSecretName = "encryptionsecret";
+  private AppParams appParams = defaultAppParams().appArchiveDir(ARCHIVE_DIR + this.getClass().getSimpleName());
 
   /**
    * Install Operator.
@@ -713,18 +715,16 @@ class ItMiiDomain {
         Collections.singletonList(String.format("%s/%s", MODEL_DIR, MII_BASIC_WDT_MODEL_FILE));
 
     logger.info("Build an application archive using what is in {0}", appDirList);
+
     assertTrue(
-        buildAppArchive(
-            defaultAppParams()
-                .srcDirList(appDirList)),
-        String.format("Failed to create application archive for %s",
-            MII_BASIC_APP_NAME));
+        buildAppArchive(appParams.srcDirList(appDirList)),
+        String.format("Failed to create application archive for %s", MII_BASIC_APP_NAME));
 
     logger.info("Build the archive list that contains {0}",
-        String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+        String.format("%s/%s.zip", appParams.appArchiveDir(), MII_BASIC_APP_NAME));
     List<String> archiveList =
         Collections.singletonList(
-            String.format("%s/%s.zip", ARCHIVE_DIR, MII_BASIC_APP_NAME));
+            String.format("%s/%s.zip", appParams.appArchiveDir(), MII_BASIC_APP_NAME));
 
     return createImageAndVerify(
       imageName,
@@ -748,7 +748,7 @@ class ItMiiDomain {
     logger.info("Build the first application archive using what is in {0}", appDirList1);
     assertTrue(
         buildAppArchive(
-            defaultAppParams()
+            appParams
                 .srcDirList(appDirList1)
                 .appName(appName1)),
         String.format("Failed to create application archive for %s",
@@ -757,18 +757,18 @@ class ItMiiDomain {
     logger.info("Build the second application archive usingt what is in {0}", appDirList2);
     assertTrue(
         buildAppArchive(
-            defaultAppParams()
+            appParams
                 .srcDirList(appDirList2)
                 .appName(appName2)),
         String.format("Failed to create application archive for %s",
             appName2));
 
     logger.info("Build the archive list with two zip files: {0} and {1}",
-        String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
-        String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
+        String.format("%s/%s.zip", appParams.appArchiveDir(), appName1),
+        String.format("%s/%s.zip", appParams.appArchiveDir(), appName2));
     List<String> archiveList = Arrays.asList(
-        String.format("%s/%s.zip", ARCHIVE_DIR, appName1),
-        String.format("%s/%s.zip", ARCHIVE_DIR, appName2));
+        String.format("%s/%s.zip", appParams.appArchiveDir(), appName1),
+        String.format("%s/%s.zip", appParams.appArchiveDir(), appName2));
 
     return createImageAndVerify(
       imageName,

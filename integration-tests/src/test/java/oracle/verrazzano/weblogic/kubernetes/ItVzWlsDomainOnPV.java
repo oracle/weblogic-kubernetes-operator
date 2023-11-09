@@ -38,6 +38,7 @@ import oracle.weblogic.domain.DomainCreationImage;
 import oracle.weblogic.domain.DomainOnPV;
 import oracle.weblogic.domain.DomainOnPVType;
 import oracle.weblogic.domain.DomainResource;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -307,12 +308,13 @@ class ItVzWlsDomainOnPV {
     // create image with model and wdt installation files
     // build an application archive using what is in resources/apps/APP_NAME
     logger.info("Build an application archive using resources/apps/{0}", appName);
-    assertTrue(buildAppArchive(defaultAppParams()
+    AppParams appParams = defaultAppParams().appArchiveDir(ARCHIVE_DIR + this.getClass().getSimpleName());
+    assertTrue(buildAppArchive(appParams
         .srcDirList(Collections.singletonList(appName))),
         String.format("Failed to create app archive for %s", appName));
 
     // build the archive list
-    String zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+    String zipFile = String.format("%s/%s.zip", appParams.appArchiveDir(), appName);
     final List<String> archiveList = Collections.singletonList(zipFile);   
     WitParams witParams
         = new WitParams()
