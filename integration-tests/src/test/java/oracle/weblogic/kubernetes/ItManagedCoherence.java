@@ -318,13 +318,18 @@ class ItManagedCoherence {
 
   private boolean coherenceCacheTest(String hostName, int ingressServiceNodePort) {
     logger.info("Starting to test the cache");
-    // get ingress service Name and Nodeport
-    String ingressServiceName = traefikHelmParams.getReleaseName();
-    String traefikNamespace = traefikHelmParams.getNamespace();
 
-    String hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
-        ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
-            : getHostAndPort(hostName, ingressServiceNodePort);;
+    String hostAndPort = null;
+    if (!OKD) {
+      // get ingress service Name and Nodeport
+      String ingressServiceName = traefikHelmParams.getReleaseName();
+      String traefikNamespace = traefikHelmParams.getNamespace();
+      hostAndPort = getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace) != null
+          ? getServiceExtIPAddrtOke(ingressServiceName, traefikNamespace)
+          : getHostAndPort(hostName, ingressServiceNodePort);
+    } else {
+      hostAndPort = getHostAndPort(hostName, ingressServiceNodePort);
+    }
     logger.info("hostAndPort is: {0} ", hostAndPort);
 
     // add the data to cache
