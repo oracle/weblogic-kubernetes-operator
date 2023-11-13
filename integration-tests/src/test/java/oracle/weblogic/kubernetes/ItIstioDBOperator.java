@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -331,7 +331,11 @@ class ItIstioDBOperator {
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, fmwDomainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
@@ -353,10 +357,14 @@ class ItIstioDBOperator {
     }
 
     if (isWebLogicPsuPatchApplied()) {
-      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + fmwDomainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + " --url http://" + host + ":" + istioIngressPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
@@ -389,7 +397,11 @@ class ItIstioDBOperator {
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
 
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
     hostHeader = fmwDomainNamespace + ".org";
     boolean checkApp = checkAppUsingHostHeader(url, hostHeader);
@@ -622,7 +634,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("status=$(curl --user "
+    StringBuffer curlString = new StringBuffer("status=$(curl -g --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
@@ -651,7 +663,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("status=$(curl --user "
+    StringBuffer curlString = new StringBuffer("status=$(curl -g --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " "
         + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
@@ -682,7 +694,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
-    StringBuffer curlString = new StringBuffer("curl --user "
+    StringBuffer curlString = new StringBuffer("curl -g --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " -H 'host: " + hostHeader + " ' ");
     curlString.append("\"http://" + hostAndPort)

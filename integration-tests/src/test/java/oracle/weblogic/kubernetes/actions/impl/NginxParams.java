@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,7 +31,10 @@ public class NginxParams {
   private static final String NGINX_IMAGE = "controller.image.image";
   private static final String NGINX_IMAGE_TAG = "controller.image.tag";
   private static final String NGINX_IMAGE_DIGEST = "controller.image.digest";
-  private static final String IMAGE_PULL_SECRET = "imagePullSecrets[0].name";  
+  private static final String IMAGE_PULL_SECRET = "imagePullSecrets[0].name";
+  private static final String IP_FAMILY_POLICY = "controller.service.ipFamilyPolicy";
+  private static final String IP_FAMILIES = "controller.service.ipFamilies";
+  
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
@@ -43,6 +47,8 @@ public class NginxParams {
   private String nginxImageTag = NGINX_INGRESS_IMAGE_TAG;
   private String nginxImageDigest = NGINX_INGRESS_IMAGE_DIGEST;
   private String imageRepoSecret;
+  private List<String> ipFamilies;
+  private String ipFamilyPolicy = "SingleStack";
 
   public NginxParams() {
     ingressClassName = UniqueName.uniqueName("nginx-");
@@ -94,7 +100,17 @@ public class NginxParams {
   public NginxParams imageRepoSecret(String imageRepoSecret) {
     this.imageRepoSecret = imageRepoSecret;
     return this;
-  }  
+  }
+  
+  public NginxParams ipFamilies(List<String> ipFamilies) {
+    this.ipFamilies = ipFamilies;
+    return this;
+  }
+  
+  public NginxParams ipFamilyPolicy(String ipFamilyPolicy) {
+    this.ipFamilyPolicy = ipFamilyPolicy;
+    return this;
+  }   
 
   public NginxParams helmParams(HelmParams helmParams) {
     this.helmParams = helmParams;
@@ -121,12 +137,12 @@ public class NginxParams {
     values.put(NGINX_IMAGE_REGISTRY, imageRegistry);
     values.put(NGINX_IMAGE, nginxImage);
     values.put(NGINX_IMAGE_TAG, nginxImageTag);
-    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);
-    
+    values.put(NGINX_IMAGE_DIGEST, nginxImageDigest);    
     if (imageRepoSecret != null) {
       values.put(IMAGE_PULL_SECRET, imageRepoSecret);
     }
-    
+    values.put(IP_FAMILY_POLICY, ipFamilyPolicy);
+    values.put(IP_FAMILIES, ipFamilies);
     values.values().removeIf(Objects::isNull);
     return values;
   }

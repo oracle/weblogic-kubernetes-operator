@@ -232,7 +232,7 @@ class ItLogHomeFlatStructure {
     for (String pod : podNames) {
       String curlCmd = "for i in {1..100}; "
           + "do "
-          + "curl -v http://" + pod + ":8001/sample-war/index.jsp;"
+          + "curl -g -v http://" + pod + ":8001/sample-war/index.jsp;"
           + "done";
       testUntil(
           () -> {

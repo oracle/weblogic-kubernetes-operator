@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.applications.clusterview;
@@ -278,9 +278,11 @@ public class ClusterViewServlet extends HttpServlet {
     ServerLifeCycleRuntimeMBean[] serverLifeCycleRuntimes = domainRuntime.getServerLifeCycleRuntimes();
     for (ServerLifeCycleRuntimeMBean serverLifeCycleRuntime : serverLifeCycleRuntimes) {
       //check state and get the url only if its running, also make sure the url is not null
-      if (null != serverLifeCycleRuntime.getIPv4URL("t3") && serverLifeCycleRuntime.getState().equals("RUNNING")) {
-        serverUrls.add(serverLifeCycleRuntime.getIPv4URL("t3"));
-        System.out.println("getIPv4URL(t3):" + serverLifeCycleRuntime.getIPv4URL("t3"));
+      String t3Url =
+          host.contains(":") ? serverLifeCycleRuntime.getIPv6URL("t3") : serverLifeCycleRuntime.getIPv4URL("t3");
+      if (t3Url != null && serverLifeCycleRuntime.getState().equals("RUNNING")) {
+        serverUrls.add(t3Url);
+        System.out.println("getIPv[4|6]URL(t3):" + t3Url);
       }
     }
 

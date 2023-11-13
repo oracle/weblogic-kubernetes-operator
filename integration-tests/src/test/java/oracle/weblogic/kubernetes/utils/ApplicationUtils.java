@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -45,7 +45,7 @@ public class ApplicationUtils {
     } else {
       headerString = new StringBuffer("");
     }
-    curlString.append(" -sk --noproxy '*' ")
+    curlString.append(" -g -sk --noproxy '*' ")
         .append(" --silent --show-error ")
         .append(headerString.toString())
         .append(url)
@@ -146,7 +146,7 @@ public class ApplicationUtils {
   ) {
 
     LoggingFacade logger = getLogger();
-    String curlString = String.format("curl -v --show-error --noproxy '*' "
+    String curlString = String.format("curl -g -v --show-error --noproxy '*' "
         + "--user " + username + ":" + password + " " + headers
         + " -H X-Requested-By:MyClient -H Accept:application/json "
         + "-H Content-Type:application/json "
@@ -433,6 +433,9 @@ public class ApplicationUtils {
       // curl: (60) SSL certificate problem: Invalid certificate chain
       // and explicitly allows curl to perform “insecure” SSL connections and transfers
       httpKey = " --insecure https://";
+    }
+    if (hostName.contains(":")) {
+      hostName = "[" + hostName + "]";
     }
     String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
 

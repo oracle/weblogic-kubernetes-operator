@@ -371,7 +371,11 @@ class ItIstioCrossDomainTransaction {
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
@@ -445,7 +449,7 @@ class ItIstioCrossDomainTransaction {
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
   @DisabledIfEnvironmentVariable(named = "OKE_CLUSTER", matches = "true")
   void testIstioCrossDomainTransactionWithFailInjection() {
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+    String curlRequest = String.format("curl -g -v --show-error --noproxy '*' "
         + "-H 'host:domain1-" + domain1Namespace + ".org' "
         + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
             K8S_NODEPORT_HOST, istioIngressPort, domain1Namespace, domain2Namespace);
@@ -491,21 +495,27 @@ class ItIstioCrossDomainTransaction {
             "MDB application can not be activated on domain1/cluster");
 
     logger.info("MDB application is activated on domain1/cluster");
+
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
     String curlRequest = OKE_CLUSTER
-        ? String.format("curl -v --show-error --noproxy '*' "
+        ? String.format("curl -g -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
             + "dest=jms/testCdtUniformTopic\"", hostAndPort, domain2Namespace)
-        : String.format("curl -v --show-error --noproxy '*' "
+        : String.format("curl -g -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
-            + "dest=jms/testCdtUniformTopic\"", K8S_NODEPORT_HOST, istioIngressPort, domain2Namespace);
+            + "dest=jms/testCdtUniformTopic\"",
+        host, istioIngressPort, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
@@ -521,23 +531,27 @@ class ItIstioCrossDomainTransaction {
   }
 
   private boolean checkLocalQueue() {
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
     // In internal OKE env, use Istio EXTERNAL-IP;
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        : host + ":" + istioIngressPort;
 
     String curlString = OKE_CLUSTER
-        ? String.format("curl -v --show-error --noproxy '*' "
+        ? String.format("curl -g -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
             + "action=receive&dest=jms.testAccountingQueue\"", hostAndPort)
-        : String.format("curl -v --show-error --noproxy '*' "
+        : String.format("curl -g -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
-            + "action=receive&dest=jms.testAccountingQueue\"", K8S_NODEPORT_HOST, istioIngressPort);
+            + "action=receive&dest=jms.testAccountingQueue\"", host, istioIngressPort);
 
     logger.info("curl command {0}", curlString);
     testUntil(assertDoesNotThrow(

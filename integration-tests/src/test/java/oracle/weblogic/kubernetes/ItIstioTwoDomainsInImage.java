@@ -270,16 +270,21 @@ class ItIstioTwoDomainsInImage {
 
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
-
+    
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        : host + ":" + istioIngressPort;
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
+
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
       boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
       logger.info("WebLogic console on domain1 is accessible");
@@ -295,9 +300,9 @@ class ItIstioTwoDomainsInImage {
     createBaseRepoSecret(domainNamespace1);
 
     ExecResult result = OKE_CLUSTER
-        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        ? deployUsingRest(host, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace1 + ".org", "testwebapp")
-        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
 
@@ -314,18 +319,19 @@ class ItIstioTwoDomainsInImage {
           archivePath,
           target);
     } else {
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + resourcePath;
+      String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
       logger.info("Application Access URL {0}", url);
       boolean checkApp = checkAppUsingHostHeader(url, domainNamespace1 + ".org");
       assertTrue(checkApp, "Failed to access WebLogic application on domain1");
     }
-    logger.info("Application {0} is accessble to {1}", resourcePath, domainUid2);
+    logger.info("Application {0} is accessble to {1}", resourcePath, domainUid1);
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole
+          = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
       assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
       logger.info("WebLogic console on domain2 is accessible");
     } else {
@@ -338,7 +344,7 @@ class ItIstioTwoDomainsInImage {
     result = OKE_CLUSTER
         ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace2 + ".org", "testwebapp")
-        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
 
@@ -350,7 +356,7 @@ class ItIstioTwoDomainsInImage {
     if (OKE_CLUSTER) {
       testUntil(
           isAppInServerPodReady(domainNamespace2,
-              managedServerPrefix2 + 1,8001, resourcePath,"testwebapp"),
+              managedServerPrefix2 + 1, 8001, resourcePath, "testwebapp"),
           logger, "Check Deployed App {0} in server {1}",
           archivePath,
           target);

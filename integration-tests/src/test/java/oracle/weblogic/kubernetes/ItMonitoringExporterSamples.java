@@ -369,7 +369,11 @@ class ItMonitoringExporterSamples {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
-      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      hostPortPrometheus = host + ":" + nodeportPrometheus;
       if (OKD) {
         hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
             + "-service", monitoringNS) + ":" + nodeportPrometheus;
@@ -392,7 +396,11 @@ class ItMonitoringExporterSamples {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }

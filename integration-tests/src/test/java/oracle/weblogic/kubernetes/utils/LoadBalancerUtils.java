@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,6 +172,11 @@ public class LoadBalancerUtils {
       nginxParams
           .nodePortsHttp(nodeportshttp)
           .nodePortsHttps(nodeportshttps);
+    }
+    if (K8S_NODEPORT_HOST.contains(":")) {
+      nginxParams.ipFamilies(Arrays.asList("IPv6"));
+    } else {
+      nginxParams.ipFamilies(Arrays.asList("IPv4"));
     }
 
     // install NGINX
@@ -409,8 +415,12 @@ public class LoadBalancerUtils {
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+        String host = K8S_NODEPORT_HOST;
+        if (host.contains(":")) {
+          host = "[" + host + "]";
+        }
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + host + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
@@ -468,8 +478,12 @@ public class LoadBalancerUtils {
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+        String host = K8S_NODEPORT_HOST;
+        if (host.contains(":")) {
+          host = "[" + host + "]";
+        }
+        String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+            + "' http://" + host + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);

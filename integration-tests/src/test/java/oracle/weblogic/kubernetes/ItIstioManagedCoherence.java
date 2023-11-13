@@ -214,7 +214,12 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
+
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -262,7 +267,12 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
+
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -366,7 +376,12 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
+
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -492,6 +507,12 @@ class ItIstioManagedCoherence {
   }
 
   private boolean coherenceCacheTest(int ingressServiceNodePort) {
+
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = host + ":" + ingressServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     // add the data to cache
@@ -530,7 +551,7 @@ class ItIstioManagedCoherence {
                                     String secondName,
                                     String hostAndPort) {
     logger.info("Add initial data to cache");
-    StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
+    StringBuffer curlCmd = new StringBuffer("curl -g --silent --show-error --noproxy '*' ");
     curlCmd
         .append("-d 'action=add&first=")
         .append(firstName)
@@ -554,7 +575,7 @@ class ItIstioManagedCoherence {
   private ExecResult getCacheSize(String hostAndPort) {
     logger.info("Get the number of records in cache");
 
-    StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
+    StringBuffer curlCmd = new StringBuffer("curl -g --silent --show-error --noproxy '*' ");
     curlCmd
         .append("-d 'action=size' ")
         .append(" http://")
@@ -576,7 +597,7 @@ class ItIstioManagedCoherence {
   private ExecResult getCacheContents(String hostAndPort) {
     logger.info("Get the records from cache");
 
-    StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
+    StringBuffer curlCmd = new StringBuffer("curl -g --silent --show-error --noproxy '*' ");
     curlCmd
         .append("-d 'action=get' ")
         .append(" http://")
@@ -598,7 +619,7 @@ class ItIstioManagedCoherence {
   private ExecResult clearCache(String hostAndPort) {
     logger.info("Clean the cache");
 
-    StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
+    StringBuffer curlCmd = new StringBuffer("curl -g --silent --show-error --noproxy '*' ");
     curlCmd
         .append("-d 'action=clear' ")
         .append(" http://")

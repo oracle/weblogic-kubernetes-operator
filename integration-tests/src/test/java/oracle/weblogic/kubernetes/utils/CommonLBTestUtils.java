@@ -432,12 +432,16 @@ public class CommonLBTestUtils {
       throws IOException {
     if (WEBLOGIC_SLIM) {
       getLogger().info("Check REST Console for WebLogic slim image");
-      StringBuffer curlCmd = new StringBuffer("status=$(curl --user ");
+      StringBuffer curlCmd = new StringBuffer("status=$(curl -g --user ");
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
       curlCmd.append(ADMIN_USERNAME_DEFAULT)
           .append(":")
           .append(ADMIN_PASSWORD_DEFAULT)
           .append(" http://")
-          .append(K8S_NODEPORT_HOST)
+          .append(host)
           .append(":")
           .append(nodePort)
           .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
@@ -455,10 +459,14 @@ public class CommonLBTestUtils {
       }
     } else {
       // generic/dev Image
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
       getLogger().info("Check administration Console for generic/dev image");
       String consoleUrl = new StringBuffer()
           .append("http://")
-          .append(K8S_NODEPORT_HOST)
+          .append(host)
           .append(":")
           .append(nodePort)
           .append("/console/login/LoginForm.jsp").toString();
@@ -506,7 +514,7 @@ public class CommonLBTestUtils {
       StringBuffer curlCmd = new StringBuffer(KUBERNETES_CLI + " exec -n "
           + namespace + " " + adminServerPodName)
           .append(" -- /bin/bash -c \"")
-          .append("curl --user ")
+          .append("curl -g --user ")
           .append(userName)
           .append(":")
           .append(password)
@@ -723,11 +731,15 @@ public class CommonLBTestUtils {
   public static void checkIngressReady(boolean isHostRouting, String ingressHost, boolean isTLS,
                                         int httpNodeport, int httpsNodeport, String pathString,
                                        String... ingressExtIP) {
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
     String hostAndPort;
     if (isTLS) {
-      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : K8S_NODEPORT_HOST + ":" + httpsNodeport;
+      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : host + ":" + httpsNodeport;
     } else {
-      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : K8S_NODEPORT_HOST + ":" + httpNodeport;
+      hostAndPort = ingressExtIP.length != 0 ? ingressExtIP[0] : host + ":" + httpNodeport;
     }
     getLogger().info("hostAndPort to check ingress ready is: {0}", hostAndPort);
 
@@ -736,20 +748,20 @@ public class CommonLBTestUtils {
       String curlCmd;
       if (isHostRouting) {
         if (isTLS) {
-          curlCmd = "curl -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+          curlCmd = "curl -g -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
               + "' https://" + hostAndPort
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
-          curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+          curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: " + ingressHost
               + "' http://" + hostAndPort
               + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         }
       } else {
         if (isTLS) {
-          curlCmd = "curl -k --silent --show-error --noproxy '*' https://" + hostAndPort
+          curlCmd = "curl -g -k --silent --show-error --noproxy '*' https://" + hostAndPort
               + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         } else {
-          curlCmd = "curl --silent --show-error --noproxy '*' http://" + hostAndPort
+          curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
               + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
         }
       }
@@ -777,7 +789,11 @@ public class CommonLBTestUtils {
                                           boolean hostRouting,
                                           String locationString,
                                           String... args) {
-    String host = (args.length == 0) ? K8S_NODEPORT_HOST : args[0];
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostName = (args.length == 0) ? host : args[0];
     verifyClusterLoadbalancing(domainUid,
         ingressHostName,
         protocol,
@@ -785,7 +801,7 @@ public class CommonLBTestUtils {
         replicaCount,
         hostRouting,
         locationString,
-        host);
+        hostName);
   }
 
   /**
@@ -812,7 +828,7 @@ public class CommonLBTestUtils {
     getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
     if (hostRouting) {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl --show-error -ks --noproxy '*' "
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
           + "-H 'host: %s' %s://%s/clusterview/ClusterViewServlet"
           + "\"?user=" + ADMIN_USERNAME_DEFAULT
           + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host)
@@ -821,7 +837,7 @@ public class CommonLBTestUtils {
           + "\"?user=" + ADMIN_USERNAME_DEFAULT
           + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", ingressHostName, protocol, host, lbPort);
     } else {
-      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl --show-error -ks --noproxy '*' "
+      curlRequest = OKE_CLUSTER_PRIVATEIP ? String.format("curl -g --show-error -ks --noproxy '*' "
           + "%s://%s" + locationString + "/clusterview/ClusterViewServlet"
           + "\"?user=" + ADMIN_USERNAME_DEFAULT
           + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", protocol, host)
@@ -868,20 +884,24 @@ public class CommonLBTestUtils {
    * @param isHostRouting whether it is host routing
    * @param ingressHostName ingress host name
    * @param pathLocation path location in the console url
-   * @param host external IP address on OKE or k8s node IP address on non-OKE env
+   * @param hostName external IP address on OKE or k8s node IP address on non-OKE env
    */
   public static void verifyAdminServerAccess(boolean isTLS,
                                              int lbNodePort,
                                              boolean isHostRouting,
                                              String ingressHostName,
                                              String pathLocation,
-                                             String... host) {
+                                             String... hostName) {
     StringBuffer consoleUrl = new StringBuffer();
     String hostAndPort;
-    if (host != null && host.length > 0) {
-      hostAndPort = OKE_CLUSTER_PRIVATEIP ? host[0] : host[0] + ":" + lbNodePort;
+    if (hostName != null && hostName.length > 0) {
+      hostAndPort = OKE_CLUSTER_PRIVATEIP ? hostName[0] : hostName[0] + ":" + lbNodePort;
     } else {
-      hostAndPort = K8S_NODEPORT_HOST + ":" + lbNodePort;
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      hostAndPort = host + ":" + lbNodePort;
     }
 
     if (isTLS) {
@@ -897,14 +917,14 @@ public class CommonLBTestUtils {
     consoleUrl.append("/console/login/LoginForm.jsp");
     String curlCmd;
     if (isHostRouting) {
-      curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'host: %s' %s",
+      curlCmd = String.format("curl -g -ks --show-error --noproxy '*' -H 'host: %s' %s",
           ingressHostName, consoleUrl.toString());
     } else {
       if (isTLS) {
-        curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
+        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
             + "-H 'WL-Proxy-SSL: false' %s", consoleUrl.toString());
       } else {
-        curlCmd = String.format("curl -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+        curlCmd = String.format("curl -g -ks --show-error --noproxy '*' %s", consoleUrl.toString());
       }
     }
 

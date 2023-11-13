@@ -651,10 +651,14 @@ public class CommonTestUtils {
                                                    String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + nodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    StringBuffer curlString = new StringBuffer("status=$(curl -g --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
@@ -692,7 +696,7 @@ public class CommonTestUtils {
 
     StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n " + namespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl -k --user ")
+        .append("curl -g -k --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" " + protocol + "://")
         .append(adminServerPodName + ":" + port)
@@ -734,7 +738,7 @@ public class CommonTestUtils {
         .append("/")
         .append(resourcesName)
         .append("/")
-        .append(" --silent --show-error ")
+        .append(" -g --silent --show-error ")
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
@@ -766,10 +770,14 @@ public class CommonTestUtils {
                                        String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + nodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    StringBuffer curlString = new StringBuffer("curl --user ");
+    StringBuffer curlString = new StringBuffer("curl -g --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
@@ -799,7 +807,7 @@ public class CommonTestUtils {
     StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + namespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl --user ")
+        .append("curl -g --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + adminServerPodName + ":" + adminListenPort)
         .append("/management/weblogic/latest/domainConfig")
@@ -826,10 +834,14 @@ public class CommonTestUtils {
                                                         String expectedValue) {
     final LoggingFacade logger = getLogger();
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + nodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    StringBuffer curlString = new StringBuffer("curl --user ");
+    StringBuffer curlString = new StringBuffer("curl -g --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig/");
@@ -856,7 +868,7 @@ public class CommonTestUtils {
     StringBuffer curlString = new StringBuffer(KUBERNETES_CLI + " exec -n "
         + namespace + " " + adminServerPodName)
         .append(" -- /bin/bash -c \"")
-        .append("curl --user ")
+        .append("curl -g --user ")
         .append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + adminServerPodName + ":" + adminListenPort)
         .append("/management/weblogic/latest/domainRuntime")
@@ -1244,7 +1256,11 @@ public class CommonTestUtils {
    */
   public static String getHostAndPort(String hostName, int servicePort) {
     LoggingFacade logger = getLogger();
-    String hostAndPort = ((OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort);
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = ((OKD) ? hostName : host + ":" + servicePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
     return hostAndPort;
   }
@@ -1487,9 +1503,12 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
 
     String hostAndPort = (hosts.length == 0) ? K8S_NODEPORT_HOST + ":" + istioIngressPort : hosts[0];
-
     // verify WebLogic console is accessible before port forwarding using ingress port
-    String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
 
     boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console");
