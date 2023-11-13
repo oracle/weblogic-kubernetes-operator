@@ -1259,8 +1259,8 @@ public class CommonMiiTestUtils {
             fail("Change permissions on PV hostpath job failed");
           }
         }
+        assertDoesNotThrow(() -> deleteJob(jobName, namespace));
       }
-      assertDoesNotThrow(() -> deleteJob(jobName, namespace));
     }
   }
 

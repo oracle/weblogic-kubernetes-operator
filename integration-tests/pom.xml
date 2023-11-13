@@ -444,6 +444,13 @@
                 <groups>oke-sequential</groups>
             </properties>
         </profile>
+        <profile>
+            <id>oke-gate</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <groups>oke-gate</groups>
+            </properties>
+        </profile>
 
         <profile>
             <id>oke-parallel</id>
