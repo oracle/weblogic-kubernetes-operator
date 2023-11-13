@@ -16,4 +16,3 @@ The samples are located in following folders:
 
 * [Traefik](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/traefik/README.md)
 * [NGINX](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/nginx/README.md)
-* [Ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/ingress-per-domain/README.md)

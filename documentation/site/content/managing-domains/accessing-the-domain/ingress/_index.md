@@ -54,9 +54,9 @@ additional pods become ready, or pods enter a non-ready state.
     Ingress resources contain routing rules to one or more backends. An ingress controller is responsible to apply the rules to the underlying load balancer.
     There are two approaches to create the Ingress resource:
 
-      * Use the Helm chart [ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/{{< latestMinorVersion >}}/kubernetes/samples/charts/ingress-per-domain).  
+      * Use the Helm chart.  
 
-        Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations.
+        Each ingress provider supports a number of annotations in Ingress resources. The Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations.
 
       * Create the Ingress resource manually from a YAML file.
 
