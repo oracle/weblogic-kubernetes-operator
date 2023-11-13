@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("Test to create a WLS domain in persistent volume with new simplified feature")
 @IntegrationTest
 @Tag("kind-parallel")
-@Tag("oke-gate")
+@Tag("oke-sequential")
 class ItWlsDomainOnPV {
 
   private static String domainNamespace = null;

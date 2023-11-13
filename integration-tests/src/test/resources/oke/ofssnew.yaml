@@ -1,0 +1,11 @@
+# Copyright (c) 2023, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: oci-fss
+provisioner: fss.csi.oraclecloud.com
+parameters:
+  # Insert mount target from the FSS here
+  availabilityDomain: %AVAILABILITY_DOMAIN%
+  mountTargetOcid: %MOUNT_TARGET_ID%
