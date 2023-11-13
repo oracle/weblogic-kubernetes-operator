@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -548,13 +548,17 @@ class ItMultiDomainModelsScale {
     if (OKD) {
       String routeHost = getRouteHost(domainNamespace, domainUid + "-cluster-" + clusterName);
       logger.info("routeHost = {0}", routeHost);
-      return String.format("curl -v --show-error --noproxy '*' http://%s/%s/index.jsp",
+      return String.format("curl -g -v --show-error --noproxy '*' http://%s/%s/index.jsp",
           routeHost, appContextRoot);
 
     } else {
-      return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      return String.format("curl -g -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
           domainUid + "." + domainNamespace + "." + clusterName + ".test",
-          K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+          host, nodeportshttp, appContextRoot);
     }
   }
 
@@ -780,9 +784,13 @@ class ItMultiDomainModelsScale {
     if (!OKD) {
       assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
-      String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: "
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String curlCmd = "curl -g --silent --show-error --noproxy '*' -H 'host: "
           + domainUid + "." + domainNamespace + ".adminserver.test"
-          + "' http://" + K8S_NODEPORT_HOST + ":" + nodeportshttp
+          + "' http://" + host + ":" + nodeportshttp
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
 
       logger.info("Executing curl command {0}", curlCmd);

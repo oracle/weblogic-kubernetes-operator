@@ -1043,7 +1043,7 @@ public class CommonMiiTestUtils {
       String port = "7001";
 
       curlString = String.format(
-          KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -k %s://"
+          KUBERNETES_CLI + " exec -n " + domainNamespace + "  " + adminServerPodName + " -- curl -g -k %s://"
               + ADMIN_USERNAME_DEFAULT
               + ":"
               + ADMIN_PASSWORD_DEFAULT
@@ -1053,10 +1053,14 @@ public class CommonMiiTestUtils {
       int adminServiceNodePort
           = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-      String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
       logger.info("hostAndPort = {0} ", hostAndPort);
       curlString = String.format(
-          "curl --user "
+          "curl -g --user "
               + ADMIN_USERNAME_DEFAULT
               + ":"
               + ADMIN_PASSWORD_DEFAULT
@@ -1162,17 +1166,21 @@ public class CommonMiiTestUtils {
 
     StringBuffer curlString;
     if (isSecureMode) {
-      curlString = new StringBuffer("status=$(curl -k --user weblogic:welcome1 https://");
+      curlString = new StringBuffer("status=$(curl -g -k --user weblogic:welcome1 https://");
     } else {
-      curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 http://");
+      curlString = new StringBuffer("status=$(curl -g --user weblogic:welcome1 http://");
     }
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String hostAndPort = (OKD) ? adminSvcExtHost : host + ":" + adminServiceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     curlString.append(hostAndPort)
         .append(resourcePath)
-        .append(" --silent --show-error ")
+        .append(" -g --silent --show-error ")
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
@@ -1211,7 +1219,7 @@ public class CommonMiiTestUtils {
             + ":"
             + ADMIN_PASSWORD_DEFAULT
             + "@" + adminServerPodName + ":%s/%s", protocol, port, resourcePath);
-    curlString = curlString + " --silent --show-error -o /dev/null -w %{http_code}";
+    curlString = curlString + " -g --silent --show-error -o /dev/null -w %{http_code}";
     logger.info("checkSystemResource: curl command {0}", curlString);
     return Command
         .withParams(new CommandParams()

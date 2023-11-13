@@ -324,12 +324,17 @@ class ItIstioDomainInPV  {
     // In internal OKE env, use Istio EXTERNAL-IP;
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = hostName.equals(K8S_NODEPORT_HOST) ? K8S_NODEPORT_HOST + ":" + istioIngressPort : hostName;
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+    if (!WEBLOGIC_SLIM) {      
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole =
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
@@ -347,10 +352,10 @@ class ItIstioDomainInPV  {
 
     ExecResult result = null;
     if (isWebLogicPsuPatchApplied()) {
-      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+      String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + " --url http://" + host + ":" + istioIngressPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
@@ -376,7 +381,9 @@ class ItIstioDomainInPV  {
       String managedServerPrefix = domainUid + "-managed-";
       String target = "{identity: [clusters,'" + clusterName + "']}";
 
-      result = deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+      String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
+      logger.info("Application Access URL {0}", url);
+      result = deployUsingRest(host, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
           target, archivePath, domainNamespace + ".org", "testwebapp");
       assertNotNull(result, "Application deployment failed");
       logger.info("Application deployment returned {0}", result.toString());
@@ -384,13 +391,13 @@ class ItIstioDomainInPV  {
       logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
       testUntil(isAppInServerPodReady(domainNamespace,
-          managedServerPrefix + 1,8001, "/testwebapp/index.jsp","testwebapp"),
+          managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
           logger, "Check Deployed App {0} in server {1}",
           archivePath,
           target);
     } else {
       for (int i = 1; i <= 10; i++) {
-        result = deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
+        result = deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace + ".org", "testwebapp");
         assertNotNull(result, "Application deployment failed");
@@ -402,7 +409,7 @@ class ItIstioDomainInPV  {
       assertEquals("202", result.stdout(), "Application deployment failed with wrong HTTP code");
       logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
-      String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+      String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
       logger.info("Application Access URL {0}", url);
       boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
       assertTrue(checkApp, "Failed to access WebLogic application");

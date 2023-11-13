@@ -1262,7 +1262,7 @@ class ItUsabilityOperatorHelmChart {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuilder checkCluster = new StringBuilder("status=$(curl --user ")
+    StringBuilder checkCluster = new StringBuilder("status=$(curl -g --user ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)

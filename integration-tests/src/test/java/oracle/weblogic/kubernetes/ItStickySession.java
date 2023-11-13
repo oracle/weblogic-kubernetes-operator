@@ -452,7 +452,7 @@ class ItStickySession {
                                          String headerOption,
                                          String... clusterAddress) {
 
-    StringBuffer curlCmd = new StringBuffer("curl --show-error");
+    StringBuffer curlCmd = new StringBuffer("curl -g --show-error");
     logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
     if (clusterAddress.length == 0) {

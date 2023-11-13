@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -183,7 +183,7 @@ public class SecretUtils {
     StringBuffer command = new StringBuffer()
         .append(GEN_EXTERNAL_REST_IDENTITY_FILE);
     if (K8S_NODEPORT_HOST != null && !K8S_NODEPORT_HOST.equals("<none>")) {
-      if (Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
+      if (K8S_NODEPORT_HOST.contains(":") || Character.isDigit(K8S_NODEPORT_HOST.charAt(0))) {
         command.append(" -a \"IP:");
       } else {
         command.append(" -a \"DNS:");

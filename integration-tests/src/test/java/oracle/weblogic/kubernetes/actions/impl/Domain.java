@@ -420,7 +420,7 @@ public class Domain {
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
-        .append("curl --noproxy '*' -v -k ")
+        .append("curl -g --noproxy '*' -v -k ")
         .append("-H \"Authorization:Bearer ")
         .append(decodedToken)
         .append("\" ")
@@ -499,7 +499,7 @@ public class Domain {
 
     // build the curl command to scale the cluster
     String command = new StringBuffer()
-        .append("curl --noproxy '*' -v -k ")
+        .append("curl -g --noproxy '*' -v -k ")
         .append("-H \"Authorization:Bearer ")
         .append(decodedToken)
         .append("\" ")

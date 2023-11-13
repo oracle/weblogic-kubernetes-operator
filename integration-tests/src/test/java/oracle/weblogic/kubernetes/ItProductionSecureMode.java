@@ -257,7 +257,7 @@ class ItProductionSecureMode {
         logger.info("result in OKE_CLUSTER is {0}", result.toString());
         assertEquals(0, result.exitValue(), "Failed to access WebLogic console");
       } else {
-        String curlCmd = "curl -sk --show-error --noproxy '*' "
+        String curlCmd = "curl -g -sk --show-error --noproxy '*' "
             + " https://" + hostAndPort
             + "/console/login/LoginForm.jsp --write-out %{http_code} "
             + " -o /dev/null";
@@ -283,7 +283,7 @@ class ItProductionSecureMode {
       forwardPort = startPortForwardProcess(localhost, domainNamespace, domainUid, 7002);
       assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded ssl port is {0}", forwardPort);
-      curlCmd = "curl -sk --show-error --noproxy '*' "
+      curlCmd = "curl -g -sk --show-error --noproxy '*' "
           + " https://" + localhost + ":" + forwardPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} "
           + " -o /dev/null";

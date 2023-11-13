@@ -260,7 +260,7 @@ public class ClusterUtils {
 
     // build the curl command to scale the cluster
     StringBuffer command = new StringBuffer()
-        .append("curl --noproxy '*' -v -k ");
+        .append("curl -g --noproxy '*' -v -k ");
     if (hasAuthHeader) {
       command.append("-H \"Authorization:Bearer ")
           .append(decodedToken)

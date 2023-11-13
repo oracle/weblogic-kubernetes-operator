@@ -205,7 +205,11 @@ class ItMonitoringExporterWebApp {
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
 
-    exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    exporterUrl = String.format("http://%s:%s/wls-exporter/", host, nodeportshttp);
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
@@ -416,7 +420,11 @@ class ItMonitoringExporterWebApp {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
-      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      hostPortPrometheus = host + ":" + nodeportPrometheus;
       if (OKD) {
         hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
                 + "-service", monitoringNS) + ":" + nodeportPrometheus;
@@ -439,7 +447,11 @@ class ItMonitoringExporterWebApp {
               grafanaHelmValuesFileDir,
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String hostPortGrafana = host + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }

@@ -284,7 +284,7 @@ class ItMiiDomain {
     logger.info("Found the administration service nodePort {0}", sslNodePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     if (!WEBLOGIC_SLIM) {
-      String curlCmd = "curl -sk --show-error --noproxy '*' "
+      String curlCmd = "curl --globoff -sk --show-error --noproxy '*' "
           + " https://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
@@ -302,7 +302,7 @@ class ItMiiDomain {
     hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     if (!WEBLOGIC_SLIM) {
-      String curlCmd2 = "curl -s --show-error --noproxy '*' "
+      String curlCmd2 = "curl -g -s --show-error --noproxy '*' "
           + " http://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default nodeport curl command {0}", curlCmd2);

@@ -319,7 +319,11 @@ class ItT3Channel {
         "Getting admin server node port failed");
 
     logger.info("Checking the health of servers in cluster");
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String url = "http://" + host + ":" + serviceNodePort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
     testUntil(

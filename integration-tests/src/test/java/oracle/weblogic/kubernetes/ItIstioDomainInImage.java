@@ -211,8 +211,13 @@ class ItIstioDomainInImage {
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      String host = K8S_NODEPORT_HOST;
+      if (host.contains(":")) {
+        host = "[" + host + "]";
+      }
+      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole =
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
@@ -252,6 +257,12 @@ class ItIstioDomainInImage {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
     logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      host = "[" + host + "]";
+    }
+    String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    
     if (OKE_CLUSTER) {
       testUntil(isAppInServerPodReady(domainNamespace,
           managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
@@ -259,7 +270,6 @@ class ItIstioDomainInImage {
           archivePath,
           target);
     } else {
-      String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
       logger.info("Application Access URL {0}", url);
       boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
       assertTrue(checkApp, "Failed to access WebLogic application");
@@ -272,10 +282,10 @@ class ItIstioDomainInImage {
 
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
     if (isWebLogicPsuPatchApplied()) {
-      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+      String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + hostAndPort
+          + " --url http://" + host + ":" + istioIngressPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 

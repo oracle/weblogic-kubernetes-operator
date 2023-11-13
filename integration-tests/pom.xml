@@ -589,7 +589,69 @@
                 </includes-failsafe>
             </properties>
         </profile>
-
+        <profile>
+          <id>ipv6</id>
+          <properties>
+            <skipITs>false</skipITs>
+            <includes-failsafe>
+              **/ItCoherenceTests,
+              **/ItConfigDistributionStrategy,
+              **/ItConsensusLeasingValidation,
+              **/ItDataHomeOverride,
+              **/ItDiagnosticsCompleteAvailableCondition,
+              **/ItElasticLoggingFluentd,
+              **/ItElasticLoggingSample,
+              **/ItEvictedPodsCycling,
+              **/ItExternalNodePortService,
+              **/ItHorizontalPodAutoscaler,
+              **/ItHorizontalPodAutoscalerCustomMetrics,
+              **/ItInitContainers,
+              **/ItIntrospectVersion,
+              **/ItIstioCoherenceTests,
+              **/ItIstioDomainInImage,
+              **/ItIstioManagedCoherence,
+              **/ItIstioMiiDomain,
+              **/ItIstioMonitoringExporter,
+              **/ItIstioProductionSecureMode,
+              **/ItIstioSessionMigration,
+              **/ItKubernetesDomainEvents,
+              **/ItKubernetesNameSpaceWatchingEvents,
+              **/ItLBTwoDomainsNginx,
+              **/ItLBTwoDomainsTraefik,
+              **/ItLivenessProbeCustomization,
+              **/ItManageNameSpace,
+              **/ItManagedCoherence,
+              **/ItMaxConcurOptions,
+              **/ItMiiAuxiliaryImage,
+              **/ItMiiClusterResource,
+              **/ItMiiCreateAuxImageWithImageTool,
+              **/ItMiiCustomSslStore,
+              **/ItMiiDomain,
+              **/ItMiiDomainModelInPV,
+              **/ItMiiDynamicUpdatePart1,
+              **/ItMiiDynamicUpdatePart2,
+              **/ItMiiDynamicUpdatePart3,
+              **/ItMiiMultiModel,
+              **/ItMiiUpdateDomainConfig,
+              **/ItMonitoringExporterSideCar,
+              **/ItOperatorRestart,
+              **/ItPodTemplates,
+              **/ItPodsRestart,
+              **/ItPodsShutdownOption,
+              **/ItProductionSecureMode,
+              **/ItRecoveryDomainInPV,
+              **/ItRemoteConsole,
+              **/ItRetryImprovementMisc,
+              **/ItRetryImprovements,
+              **/ItServerStartPolicy,
+              **/ItServerStartPolicyConfigCluster,
+              **/ItServerStartPolicyDynamicCluster,
+              **/ItSystemResOverrides,
+              **/ItTwoDomainsManagedByTwoOperators,
+              **/ItWlsDomainOnPV
+            </includes-failsafe>
+          </properties>
+        </profile>
         <profile>
             <id>wko-okd-fmw-cert</id>
             <properties>
@@ -605,7 +667,6 @@
                 </includes-failsafe>
             </properties>
         </profile>
-
         <profile>
             <id>wko-okd-wls-cert</id>
             <properties>

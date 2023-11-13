@@ -270,7 +270,7 @@ class ItMiiUpdateDomainConfig {
         OKE_CLUSTER ? adminServerPodName + ":7001" : getHostAndPort(adminSvcExtHost, adminServiceNodePort);
 
     String curlString = new StringBuffer()
-          .append("curl --user ")
+          .append("curl -g --user ")
           .append(ADMIN_USERNAME_DEFAULT)
           .append(":")
           .append(ADMIN_PASSWORD_DEFAULT)
@@ -1004,8 +1004,7 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort =
         OKE_CLUSTER ? adminServerPodName + ":7001" : getHostAndPort(adminSvcExtHost, adminServiceNodePort);
-
-    StringBuffer checkClusterBaseCmd = new StringBuffer("curl --user ")
+    StringBuffer checkClusterBaseCmd = new StringBuffer("curl -g --user ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(":")
         .append(ADMIN_PASSWORD_DEFAULT)
@@ -1067,7 +1066,7 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
     ExecResult result = null;
-    curlString = new StringBuffer("curl --user ")
+    curlString = new StringBuffer("curl -g --user ")
          .append(ADMIN_USERNAME_DEFAULT)
          .append(":")
          .append(ADMIN_PASSWORD_DEFAULT)

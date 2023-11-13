@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -384,7 +384,7 @@ class ItCrossDomainTransaction {
   @DisplayName("Check cross domain transaction works")
   void testCrossDomainTransaction() {
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+    String curlRequest = String.format("curl -g -v --show-error --noproxy '*' "
             + "http://%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
         hostAndPort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
@@ -418,7 +418,7 @@ class ItCrossDomainTransaction {
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   void testCrossDomainTransactionWithFailInjection() {
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+    String curlRequest = String.format("curl -g -v --show-error --noproxy '*' "
             + "http://%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
         hostAndPort, domain1Namespace, domain2Namespace);
 
@@ -462,7 +462,7 @@ class ItCrossDomainTransaction {
 
     logger.info("MDB application is activated on domain1/cluster");
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+    String curlRequest = String.format("curl -g -v --show-error --noproxy '*' "
             + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
@@ -486,7 +486,7 @@ class ItCrossDomainTransaction {
   }
 
   private boolean checkLocalQueue() {
-    String curlString = String.format("curl -v --show-error --noproxy '*' "
+    String curlString = String.format("curl -g -v --show-error --noproxy '*' "
             + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
             + "action=receive&dest=jms.testAccountingQueue\"",

@@ -62,7 +62,8 @@ def kind_k8s_map = [
 def _kind_image = null
 CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel
                    H 2 * * * % MAVEN_PROFILE_NAME=kind-sequential
-                   H 3 * * * % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.12;KIND_VERSION=0.18.0'''
+                   H 3 * * * % MAVEN_PROFILE_NAME=kind-upgrade;KUBE_VERSION=1.24.12;KIND_VERSION=0.18.0
+		   H 4 * * * % MAVEN_PROFILE_NAME=ipv6;IP_FAMILY=ipv6'''
 
 
 pipeline {
@@ -108,6 +109,14 @@ pipeline {
                description: 'The branch to run the tests on',
                defaultValue: 'main'
         )
+	choice(name: 'IP_FAMILY',
+               description: 'Ip Family.',
+               choices: [
+                   'ipv4',
+                   'ipv6',
+                   'dual'
+               ]
+        )
         choice(name: 'MAVEN_PROFILE_NAME',
                 description: 'Profile to use in mvn command to run the tests.  Possible values are kind-parallel (the default), kind-sequential, kind-upgrade,toolkits-srg, wls-srg and integration-tests. Refer to weblogic-kubernetes-operator/integration-tests/pom.xml on the branch.',
                 choices: [
@@ -116,7 +125,8 @@ pipeline {
                         'kind-upgrade',
                         'integration-tests',
                         'toolkits-srg',
-                        'wls-srg'
+                        'wls-srg',
+			'ipv6'
                 ]
         )
         string(name: 'IT_TEST',
@@ -434,7 +444,7 @@ pipeline {
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
-  podSubnet: 192.168.0.0/16
+  ipFamily: ${IP_FAMILY}
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${registry_port}"]
@@ -525,7 +535,11 @@ EOF
                                 export KUBECONFIG=${kubeconfig_file}
                                 mkdir -m777 -p "${WORKSPACE}/.mvn"
                                 touch ${WORKSPACE}/.mvn/maven.config
-                                K8S_NODEPORT_HOST=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+				address_stack=$(kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}')
+				addresses=($address_stack)
+				echo address_stack
+				echo "IPV4 address ${addresses[0]}"
+				K8S_NODEPORT_HOST=${addresses[0]}
                                 if [ "${MAVEN_PROFILE_NAME}" == "kind-sequential" ]; then
                                     PARALLEL_RUN='false'
                                 fi
