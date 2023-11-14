@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.actions.impl.AppParams;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Image;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -327,6 +328,14 @@ public class ImageUtils {
     }
     final String image = imageName + ":" + imageTag;
 
+    // Generates a "unique" name by choosing a random name from
+    // 26^4 possible combinations.
+    Random random = new Random(System.currentTimeMillis());
+    char[] cacheSfx = new char[4];
+    for (int i = 0; i < cacheSfx.length; i++) {
+      cacheSfx[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+
     List<String> archiveList = new ArrayList<>();
     if (appSrcDirList != null && appSrcDirList.size() != 0 && appSrcDirList.get(0) != null) {
       List<String> archiveAppsList = new ArrayList<>();
@@ -345,9 +354,10 @@ public class ImageUtils {
         }
       }
 
+      AppParams appParams = defaultAppParams().appArchiveDir(ARCHIVE_DIR + cacheSfx);
+
       if (archiveAppsList.size() != 0 && archiveAppsList.get(0) != null) {
-        assertTrue(archiveApp(defaultAppParams()
-            .srcDirList(archiveAppsList)));
+        assertTrue(archiveApp(appParams.srcDirList(archiveAppsList)));
         String appPath = archiveAppsList.get(0);
 
         //archive provided ear or war file
@@ -355,9 +365,8 @@ public class ImageUtils {
             appPath.lastIndexOf("."));
 
         // build the archive list
-        String zipAppFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+        String zipAppFile = String.format("%s/%s.zip", appParams.appArchiveDir(), appName);
         archiveList.add(zipAppFile);
-
       }
 
       if (buildAppDirList.size() != 0 && buildAppDirList.get(0) != null) {
@@ -365,29 +374,28 @@ public class ImageUtils {
         String zipFile = "";
         if (oneArchiveContainsMultiApps) {
           for (String buildAppDirs : buildAppDirList) {
-            assertTrue(buildAppArchive(defaultAppParams()
+            assertTrue(buildAppArchive(appParams
                     .srcDirList(Collections.singletonList(buildAppDirs))
                     .appName(buildAppDirs)),
                 String.format("Failed to create app archive for %s", buildAppDirs));
-            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirs);
+            zipFile = String.format("%s/%s.zip", appParams.appArchiveDir(), buildAppDirs);
             // build the archive list
             archiveList.add(zipFile);
           }
         } else if (buildCoherence) {
           // build the Coherence GAR file
-          assertTrue(buildCoherenceArchive(defaultAppParams()
-                  .srcDirList(buildAppDirList)),
+          assertTrue(buildCoherenceArchive(appParams.srcDirList(buildAppDirList)),
               String.format("Failed to create app archive for %s", buildAppDirList.get(0)));
-          zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, buildAppDirList.get(0));
+          zipFile = String.format("%s/%s.zip", appParams.appArchiveDir(), buildAppDirList.get(0));
           // build the archive list
           archiveList.add(zipFile);
         } else {
           for (String appName : buildAppDirList) {
-            assertTrue(buildAppArchive(defaultAppParams()
+            assertTrue(buildAppArchive(appParams
                     .srcDirList(Collections.singletonList(appName))
                     .appName(appName)),
                 String.format("Failed to create app archive for %s", appName));
-            zipFile = String.format("%s/%s.zip", ARCHIVE_DIR, appName);
+            zipFile = String.format("%s/%s.zip", appParams.appArchiveDir(), appName);
             // build the archive list
             archiveList.add(zipFile);
           }
@@ -396,14 +404,6 @@ public class ImageUtils {
     }
 
     // Set additional environment variables for WIT
-
-    // Generates a "unique" name by choosing a random name from
-    // 26^4 possible combinations.
-    Random random = new Random(System.currentTimeMillis());
-    char[] cacheSfx = new char[4];
-    for (int i = 0; i < cacheSfx.length; i++) {
-      cacheSfx[i] = (char) (random.nextInt(25) + (int) 'a');
-    }
     String cacheDir = WIT_BUILD_DIR + "/cache-" + new String(cacheSfx);
     logger.info("WLSIMG_CACHEDIR is set to {0}", cacheDir);
     logger.info("WLSIMG_BLDDIR is set to {0}", WIT_BUILD_DIR);
