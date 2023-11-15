@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Obsoleteable;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import org.apache.commons.lang3.ObjectUtils;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
@@ -21,7 +22,7 @@ public enum DomainConditionType implements Obsoleteable {
     @Override
     int compare(DomainCondition thisCondition, DomainCondition thatCondition) {
       if (compareUsingSeverities(thisCondition, thatCondition)) {
-        return thisCondition.getSeverity().compareTo(thatCondition.getSeverity());
+        return ObjectUtils.compare(thisCondition.getSeverity(), thatCondition.getSeverity());
       } else {
         return super.compare(thisCondition, thatCondition);
       }
