@@ -631,7 +631,7 @@
     <maven-failsafe-plugin-version>3.2.2</maven-failsafe-plugin-version>
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.1.0</exec-maven-plugin-version>
-    <spotbugs-maven-plugin-version>4.7.3.6</spotbugs-maven-plugin-version>
+    <spotbugs-maven-plugin-version>4.8.1.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.8.0</spotbugs-version>
     <checkstyle-version>10.12.4</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
