@@ -191,6 +191,9 @@ parametersValidate() {
 initialize() {
 
   print_step "initializing"
+
+  az provider register -n Microsoft.ContainerRegistry
+
   source ./create-domain-on-aks-inputs.sh
   source ~/.bashrc
   
@@ -218,7 +221,7 @@ initialize() {
   echo "azureResourceGroupName=${azureResourceGroupName}"
   echo "image_build_base_dir=${image_build_base_dir}"
   echo "acr_account_name=${acr_account_name}"
-  
+
   
 }
 
@@ -818,11 +821,11 @@ cd ${scriptDir}
 # Do these steps to create Azure resources and a WebLogic Server domain.
 #
 
-# Setup the environment for running this script and perform initial validation checks
-initialize
-
 # Validate the host environment meets the prerequisites.
 envValidate
+
+# Setup the environment for running this script and perform initial validation checks
+initialize
 
 # Validate the parameters
 parametersValidate "$@"
