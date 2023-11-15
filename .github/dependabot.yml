@@ -15,11 +15,6 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "maven"
-    target-branch: release/4.0
-    directory: "/"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "maven"
     target-branch: release/3.4
     directory: "/"
     schedule:
