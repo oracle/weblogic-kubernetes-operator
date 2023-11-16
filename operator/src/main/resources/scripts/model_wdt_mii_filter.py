@@ -49,6 +49,7 @@ import os
 import sys, traceback
 
 from java.lang import System
+from java.lang import Boolean
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
@@ -406,7 +407,8 @@ def isAdministrationPortEnabledForServer(server, model):
     administrationPortEnabled = server['AdministrationPortEnabled']
   else:
     administrationPortEnabled = isAdministrationPortEnabledForDomain(model)
-  return administrationPortEnabled
+
+  return Boolean.valueOf(administrationPortEnabled)
 
 
 def isAdministrationPortEnabledForDomain(model):
@@ -418,7 +420,9 @@ def isAdministrationPortEnabledForDomain(model):
     # AdministrationPortEnabled is not explicitly set so going with the default
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
     administrationPortEnabled = isSecureModeEnabledForDomain(model)
-  return administrationPortEnabled
+
+  return Boolean.valueOf(administrationPortEnabled)
+
 
 
 # Derive the default value for SecureMode of a domain
@@ -438,7 +442,8 @@ def isSecureModeEnabledForDomain(model):
     if 'ProductionModeEnabled' in topology:
       is_production_mode_enabled = topology['ProductionModeEnabled']
     secureModeEnabled = is_production_mode_enabled and not env.wlsVersionEarlierThan("14.1.2.0")
-  return secureModeEnabled
+
+  return Boolean.valueOf(secureModeEnabled)
 
 
 def getSSLOrNone(server):
