@@ -45,7 +45,6 @@ import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 
 /** An abstract base main class for the operator and the webhook. */
@@ -60,7 +59,7 @@ public abstract class BaseMain {
   static final Container container = new Container();
   static final ThreadFactory threadFactory = new WrappedThreadFactory();
   static ScheduledExecutorService wrappedExecutorService =
-      Engine.wrappedExecutorService("operator", container);  // non-final to allow change in unit tests
+      Engine.wrappedExecutorService(container);  // non-final to allow change in unit tests
   static final AtomicReference<OffsetDateTime> lastFullRecheck =
       new AtomicReference<>(SystemClock.now());
   static final Semaphore shutdownSignal = new Semaphore(0);
@@ -276,7 +275,7 @@ public abstract class BaseMain {
   }
 
   private static class WrappedThreadFactory implements ThreadFactory {
-    private final ThreadFactory delegate = ThreadFactorySingleton.getInstance();
+    private final ThreadFactory delegate = Thread.ofVirtual().factory();
 
     @Override
     public Thread newThread(@Nonnull Runnable r) {

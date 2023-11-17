@@ -619,7 +619,7 @@ class DomainPresenceTest extends ThreadFactoryTestBase {
     @NotNull
     private Map<String, FiberGate> createMakeRightFiberGateMap() {
       Map<String, FiberGate> map = new ConcurrentHashMap<>();
-      map.put(NS, new TestFiberGate(new Engine("Test")));
+      map.put(NS, new TestFiberGate(new Engine()));
       return map;
     }
 

@@ -4,11 +4,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -116,22 +113,9 @@ public class ClientPool extends Pool<ApiClient> {
         }
 
         if (threadFactory != null) {
-          ExecutorService exec =
-              new ThreadPoolExecutor(
-                  0,
-                  Integer.MAX_VALUE,
-                  60,
-                  TimeUnit.SECONDS,
-                  new SynchronousQueue<>(),
-                  threadFactory) {
-                @Override
-                public void execute(Runnable command) {
-                  super.execute(wrapRunnable(command));
-                }
-              };
           OkHttpClient httpClient =
               client.getHttpClient().newBuilder().addInterceptor(new HeaderModifierInterceptor())
-                  .dispatcher(new Dispatcher(exec)).build();
+                  .dispatcher(new Dispatcher(Executors.newThreadPerTaskExecutor(threadFactory))).build();
           client.setHttpClient(httpClient);
         }
 
