@@ -101,6 +101,6 @@ ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} get configmap ${DOMAIN_UID}-weblogic-do
 ${KUBERNETES_CLI} cp encrypted_model.json ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 ${KUBERNETES_CLI} cp decrypt_model.sh ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
 ${KUBERNETES_CLI} cp model-encryption-util.py ${DOMAIN_NAMESPACE}/decryptmodel:/tmp
-${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && if [ '{' == $(head -c 1 /tmp/decrypted_model.json) ] ; then   cat /tmp/decrypted_model.json; else  base64 -d /tmp/decrypted_model.json | gunzip ; fi"
+${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} exec decryptmodel -- bash -c "/tmp/decrypt_model.sh decrypt /tmp/encrypted_model.json ${PASSWORD} /tmp/decrypted_model.json && if [ '{' == '$(head -c 1 /tmp/decrypted_model.json)' ] ; then   cat /tmp/decrypted_model.json; else  base64 -d /tmp/decrypted_model.json | gunzip ; fi"
 ${KUBERNETES_CLI} -n ${DOMAIN_NAMESPACE} delete -f decrypt_model.yaml
 
