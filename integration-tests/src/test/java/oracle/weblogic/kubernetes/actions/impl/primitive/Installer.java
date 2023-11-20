@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -34,8 +34,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
  */
 
 public class Installer {
-  private static final String TMP_FILE_NAME = "temp-download-file.out";
-
 
   private InstallParams params;
   
@@ -189,7 +187,8 @@ public class Installer {
     }
     if (params.unzip()) {
       // only unzip WIT once
-      if (!(doesFileExist(IMAGE_TOOL)) || !(doesFileExist(REMOTECONSOLE_FILE))) {
+      if ((params.type().equalsIgnoreCase(WIT) && !(doesFileExist(IMAGE_TOOL)))
+          || (params.type().equalsIgnoreCase(REMOTECONSOLE) && !(doesFileExist(REMOTECONSOLE_FILE)))) {
         unzipSucceeded = unzip(downloadDir);
       }
     }
