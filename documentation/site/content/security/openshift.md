@@ -24,6 +24,10 @@ it to managing domain resources in its local namespace only
 and they may need to manually install the Domain Custom Resource (CRD)
 (see [Prepare for installation]({{< relref "/managing-operators/preparation#how-to-manually-install-the-domain-resource-custom-resource-definition-crd" >}})).
 
+{{% notice note %}}
+WebLogic Kubernetes Operator expects to connect to the auto-created services for each domain it manages. Any networking configuration in place must allow that connection because without it, the operator cannot accurately report the status of the domain. For more information, see  [MOS 2988024.1](https://support.oracle.com/rs?type=doc&id=2988024.1).
+{{% /notice %}}
+
 #### With WIT, set the `target` parameter to `OpenShift`
 
 When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
@@ -73,7 +77,6 @@ group, and that the group read, write and execute permissions are set (enabled):
 * For the operator, `/operator` and `/logs`.
 * For WebLogic Server and Fusion Middleware Infrastructure images, `/u01` (or the ultimate parent directory of your
   Oracle Home and domain if you put them in different locations).
-
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
