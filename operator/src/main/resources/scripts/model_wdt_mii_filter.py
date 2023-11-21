@@ -446,7 +446,10 @@ def isAdministrationPortEnabledForServer(server, model):
   else:
     administrationPortEnabled = isAdministrationPortEnabledForDomain(model)
 
-  return Boolean.valueOf(administrationPortEnabled)
+  if isinstance(administrationPortEnabled, str):
+    return Boolean.valueOf(administrationPortEnabled)
+  else:
+    return administrationPortEnabled
 
 
 def isAdministrationPortEnabledForDomain(model):
@@ -459,7 +462,10 @@ def isAdministrationPortEnabledForDomain(model):
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
     administrationPortEnabled = isSecureModeEnabledForDomain(model)
 
-  return Boolean.valueOf(administrationPortEnabled)
+  if isinstance(administrationPortEnabled, str):
+    return Boolean.valueOf(administrationPortEnabled)
+  else:
+    return administrationPortEnabled
 
 
 
@@ -481,7 +487,10 @@ def isSecureModeEnabledForDomain(model):
       is_production_mode_enabled = topology['ProductionModeEnabled']
     secureModeEnabled = is_production_mode_enabled and not env.wlsVersionEarlierThan("14.1.2.0")
 
-  return Boolean.valueOf(secureModeEnabled)
+  if isinstance(secureModeEnabled, str):
+    return Boolean.valueOf(secureModeEnabled)
+  else:
+    return secureModeEnabled
 
 
 def getSSLOrNone(server):
