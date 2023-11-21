@@ -724,7 +724,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected void getAuxiliaryImageInitContainers(List<AuxiliaryImage> auxiliaryImageList,
                                                  List<V1Container> initContainers) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(cl -> IntStream.range(0, cl.size()).forEach(idx ->
-            initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
+            initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx,
+                    getDomain().isInitializeDomainOnPV()))));
   }
 
   // ---------------------- model methods ------------------------------
