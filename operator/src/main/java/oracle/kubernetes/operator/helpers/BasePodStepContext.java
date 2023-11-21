@@ -150,18 +150,26 @@ public abstract class BasePodStepContext extends StepContextBase {
         .name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
   }
 
-  protected V1Container createInitContainerForAuxiliaryImage(DeploymentImage auxiliaryImage, int index) {
-    return new V1Container().name(getName(index))
+  protected V1Container createInitContainerForAuxiliaryImage(DeploymentImage auxiliaryImage, int index,
+                                                             boolean isInitializeDomainOnPV) {
+    V1Container container = new V1Container().name(getName(index))
         .image(auxiliaryImage.getImage())
             .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
             .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(auxiliaryImage, getName(index)))
             .resources(createResources())
-            .securityContext(PodSecurityHelper.getDefaultContainerSecurityContext())
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                             .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
+
+    if (isInitializeDomainOnPV) {
+      container.securityContext(PodSecurityHelper.getDefaultContainerSecurityContext());
+    } else {
+      container.securityContext(getInitContainerSecurityContext());
+    }
+
+    return container;
   }
 
   abstract V1SecurityContext getInitContainerSecurityContext();

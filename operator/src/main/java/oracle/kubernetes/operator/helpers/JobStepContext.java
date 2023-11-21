@@ -463,7 +463,8 @@ public class JobStepContext extends BasePodStepContext {
 
   private void addInitContainers(List<V1Container> initContainers, List<? extends DeploymentImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-        initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+        initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx,
+                isInitializeDomainOnPV())));
   }
 
   private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {
