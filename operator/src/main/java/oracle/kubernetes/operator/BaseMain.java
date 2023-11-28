@@ -303,8 +303,8 @@ public abstract class BaseMain {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      if (throwable instanceof UnrecoverableCallException) {
-        ((UnrecoverableCallException) throwable).log();
+      if (throwable instanceof UnrecoverableCallException uce) {
+        uce.log();
       } else {
         LOGGER.severe(MessageKeys.EXCEPTION, throwable);
       }

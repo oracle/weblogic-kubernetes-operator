@@ -1,10 +1,11 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
@@ -240,13 +241,13 @@ public class InitializeWebhookIdentityStep extends Step {
   protected static V1Secret createModel(V1Secret secret, WebhookIdentity webhookIdentity) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
-      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
+      data.put(WEBHOOK_KEY, webhookIdentity.webhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.webhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put(WEBHOOK_KEY, webhookIdentity.getWebhookKey().getBytes());
-      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.getWebhookCert());
+      data.put(WEBHOOK_KEY, webhookIdentity.webhookKey().getBytes());
+      data.put(WEBHOOK_CERTIFICATE, webhookIdentity.webhookCert());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }
@@ -258,26 +259,13 @@ public class InitializeWebhookIdentityStep extends Step {
             .labels(labels);
   }
 
-  static final class WebhookIdentity {
-
-    private final String webhookKey;
-    private final byte[] webhookCert;
-
-    public WebhookIdentity(String webhookKey, byte[] webhookCert) {
-      this.webhookKey = webhookKey;
-      this.webhookCert = webhookCert;
-    }
-
-    public String getWebhookKey() {
-      return webhookKey;
-    }
-
-    public byte[] getWebhookCert() {
-      return webhookCert;
-    }
+  record WebhookIdentity(String webhookKey, byte[] webhookCert) {
   }
 
   public static class IdentityInitializationException extends Exception {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
     public IdentityInitializationException(Exception e) {
       super(e);
     }

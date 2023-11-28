@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
@@ -113,9 +112,9 @@ class DomainResourcesValidation {
   private void executeMakeRightForClusterEvents(DomainProcessor dp) {
     List<String> clusterNamesFromList =
         getActiveClusterResources().stream().map(ClusterResource::getMetadata).map(V1ObjectMeta::getName)
-        .collect(Collectors.toList());
+        .toList();
     getClusterPresenceInfoMap().values().stream()
-        .filter(cpi -> !clusterNamesFromList.contains(cpi.getResourceName())).collect(Collectors.toList())
+        .filter(cpi -> !clusterNamesFromList.contains(cpi.getResourceName())).toList()
         .forEach(info -> updateCluster(dp, info.getCluster(), CLUSTER_DELETED));
     getActiveClusterResources().forEach(cluster -> updateCluster(dp, cluster, getEventItem(cluster)));
   }
@@ -127,7 +126,7 @@ class DomainResourcesValidation {
 
   private void adjustClusterResources(ClusterList clusters, DomainPresenceInfo info) {
     List<ClusterResource> resources = clusters.getItems().stream()
-        .filter(c -> isForDomain(c, info)).collect(Collectors.toList());
+        .filter(c -> isForDomain(c, info)).toList();
     info.adjustClusterResources(resources);
   }
 
@@ -140,7 +139,7 @@ class DomainResourcesValidation {
   }
 
   private void removeDeletedPodsFromDPI(DomainPresenceInfo dpi) {
-    dpi.getServerNames().stream().filter(s -> !dpi.getServerNamesFromPodList().contains(s)).collect(Collectors.toList())
+    dpi.getServerNames().stream().filter(s -> !dpi.getServerNamesFromPodList().contains(s)).toList()
         .forEach(name -> dpi.deleteServerPodFromEvent(name, null));
   }
 
@@ -209,18 +208,18 @@ class DomainResourcesValidation {
   }
 
   private void addDomainList(DomainList list) {
-    getDomainPresenceInfoMap().values().forEach(dpi -> updateDeletedDomainsinDPI(list));
+    getDomainPresenceInfoMap().values().forEach(dpi -> updateDeletedDomainsInDPI(list));
     list.getItems().forEach(this::addDomain);
   }
 
-  private void updateDeletedDomainsinDPI(DomainList list) {
+  private void updateDeletedDomainsInDPI(DomainList list) {
     Collection<String> domainNamesFromList = list.getItems().stream()
-        .map(DomainResource::getDomainUid).collect(Collectors.toList());
+        .map(DomainResource::getDomainUid).toList();
 
     getDomainPresenceInfoMap().values().stream()
         .filter(dpi -> !domainNamesFromList.contains(dpi.getDomainUid()))
         .filter(dpi -> isNotBeingProcessed(dpi.getNamespace(), dpi.getDomainUid()))
-        .collect(Collectors.toList())
+        .toList()
         .forEach(i -> i.setDomain(null));
   }
 
@@ -290,7 +289,7 @@ class DomainResourcesValidation {
     MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
     if (eventItem != null) {
       makeRight.withEventData(new EventData(eventItem)).interrupt().execute();
-    } else if (!info.hasRetriableFailure()) {
+    } else if (!info.hasRetryableFailure()) {
       makeRight.execute();
     }
   }

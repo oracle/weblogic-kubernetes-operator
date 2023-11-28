@@ -49,7 +49,7 @@ public class DomainValidationTestBase extends DomainTestUtils {
           .add(getPlaceholder(name, type, namespace));
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void defineResource(KubernetesObject resource) {
       ((List) Optional.ofNullable(getResourceList(resource.getClass())).orElse(new ArrayList<>())).add(resource);
     }

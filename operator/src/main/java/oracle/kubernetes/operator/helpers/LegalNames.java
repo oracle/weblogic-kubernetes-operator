@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -40,7 +40,7 @@ public class LegalNames {
       "GenerateName",       // V1ObjectMetaData
       "MetricName",         // V2beta1PodsMetricSource, etc
       "Name",
-      "NodeName",           // V1PodSpec, etc
+      "NodeName",           // V1PodSpec, etc.
       // "NominatedNodeName",  // V1PodStatus - excluded since it is not used within V1PodSpec
       "PersistentVolumeName",// V1VolumeAttachmentSource, etc
       "PriorityClassName",  // V1PodSpec
@@ -149,7 +149,7 @@ public class LegalNames {
   }
 
   private static boolean hasValidLength(String value) {
-    return value.length() > 0 && value.length() <= LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
+    return !value.isEmpty() && value.length() <= LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
   }
 
   private static boolean followsPattern(String value) {
@@ -178,11 +178,9 @@ public class LegalNames {
 
     Collection<String> fields = new ArrayList<>();
 
-    if (configuredValue != null) {
-      StringTokenizer st = new StringTokenizer(configuredValue, ",");
-      while (st.hasMoreTokens()) {
-        fields.add(st.nextToken().trim());
-      }
+    StringTokenizer st = new StringTokenizer(configuredValue, ",");
+    while (st.hasMoreTokens()) {
+      fields.add(st.nextToken().trim());
     }
     String[] fieldsArray = new String[fields.size()];
     return fields.toArray(fieldsArray);

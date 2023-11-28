@@ -1,11 +1,13 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
@@ -101,7 +103,7 @@ public class JsonSchemaMojo extends AbstractMojo {
         main.defineSchemaUrlAndContents(
             externalSchema.getUrl(), externalSchema.getCacheUrl(baseDir));
       }
-    } catch (IOException e) {
+    } catch (IOException | URISyntaxException e) {
       throw new MojoExecutionException("Unable to define external schema: ", e);
     }
   }
@@ -146,6 +148,9 @@ public class JsonSchemaMojo extends AbstractMojo {
   }
 
   private static class UncheckedMalformedUrlException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
     UncheckedMalformedUrlException(Throwable cause) {
       super(cause);
     }

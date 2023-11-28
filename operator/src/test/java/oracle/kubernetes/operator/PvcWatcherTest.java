@@ -39,7 +39,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class PvcWatcherTest {
 
   private final V1PersistentVolumeClaim cachedPvc = createPvc();
-  private OffsetDateTime clock = SystemClock.now();
+  private final OffsetDateTime clock = SystemClock.now();
   private static final String LATEST_IMAGE = "image:latest";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();

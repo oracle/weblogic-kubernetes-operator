@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -100,7 +99,7 @@ public class JobStepContext extends BasePodStepContext {
   private static final String SECRET_TYPE = "st";
   // domainTopology is null if this is 1st time we're running job for this domain
   private final WlsDomainConfig domainTopology;
-  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
+  private static final CommonUtils.CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
   private V1Job jobModel;
   private Step conflictStep;
 
@@ -158,21 +157,21 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   protected V1ResourceRequirements getResources() {
-    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getResources())
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(EffectiveIntrospectorJobPodSpec::getResources)
         .orElse(getAdminServerResources());
   }
 
   private V1ResourceRequirements getAdminServerResources() {
-    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getResources()).orElse(null);
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getResources).orElse(null);
   }
 
   protected List<V1EnvFromSource> getEnvFrom() {
-    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(is -> is.getEnvFrom())
+    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(EffectiveIntrospectorJobPodSpec::getEnvFrom)
         .orElse(getAdminServerEnvFrom());
   }
 
   private List<V1EnvFromSource> getAdminServerEnvFrom() {
-    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvFrom()).orElse(null);
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getEnvFrom).orElse(null);
   }
 
   protected List<V1EnvVar> getServerPodEnvironmentVariables() {
@@ -188,7 +187,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private List<V1EnvVar> getAdminServerEnvVariables() {
-    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(as -> as.getEnvironmentVariables())
+    return Optional.ofNullable(getDomain().getAdminServerSpec()).map(EffectiveServerSpec::getEnvironmentVariables)
         .orElse(new ArrayList<>());
   }
 
@@ -445,12 +444,11 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
-    V1ObjectMeta metadata = new V1ObjectMeta()
+    return new V1ObjectMeta()
           .name(getJobName())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .putLabelsItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putLabelsItem(LabelConstants.JOBNAME_LABEL, createJobName(getDomainUid()));
-    return metadata;
   }
 
   protected void addInitContainers(V1PodSpec podSpec) {
@@ -461,7 +459,7 @@ public class JobStepContext extends BasePodStepContext {
     initContainers.addAll(getAdditionalInitContainers().stream()
             .filter(container -> isAllowedInIntrospector(container.getName()))
             .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
-            .collect(Collectors.toList()));
+            .toList());
     podSpec.initContainers(initContainers);
   }
 
@@ -472,7 +470,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private Optional<InitializeDomainOnPV> getInitializeDomainOnPV() {
-    return Optional.ofNullable(getDomain().getSpec())
+    return Optional.of(getDomain().getSpec())
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getInitializeDomainOnPV);
   }
@@ -511,7 +509,7 @@ public class JobStepContext extends BasePodStepContext {
   @NotNull
   private Boolean isInitDomainOnPVRunAsRoot() {
     return Optional.ofNullable(getDomain().getInitializeDomainOnPV())
-        .map(p -> p.getRunDomainInitContainerAsRoot()).orElse(false);
+        .map(InitializeDomainOnPV::getRunDomainInitContainerAsRoot).orElse(false);
   }
 
   private V1SecurityContext creatSecurityContextFromPodSecurityContext(
@@ -526,11 +524,11 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private String getDomainHomeOnPVHomeOwnership() {
-    Long uid = Optional.ofNullable(getDomain().getAdminServerSpec())
+    long uid = Optional.ofNullable(getDomain().getAdminServerSpec())
                     .map(EffectiveServerSpec::getPodSecurityContext)
                             .map(V1PodSecurityContext::getRunAsUser)
                                     .orElse(-1L);
-    Long gid = Optional.ofNullable(getDomain().getAdminServerSpec())
+    long gid = Optional.ofNullable(getDomain().getAdminServerSpec())
             .map(EffectiveServerSpec::getPodSecurityContext)
             .map(V1PodSecurityContext::getRunAsGroup)
             .orElse(-1L);
@@ -592,7 +590,7 @@ public class JobStepContext extends BasePodStepContext {
 
     if (isInitializeDomainOnPV()) {
       V1PodSecurityContext podSecurityContext = getPodSecurityContext();
-      if (getDomain().getInitializeDomainOnPV().getSetDefaultSecurityContextFsGroup()) {
+      if (Boolean.TRUE.equals(getDomain().getInitializeDomainOnPV().getSetDefaultSecurityContextFsGroup())) {
         if (podSecurityContext.getFsGroup() == null && podSecurityContext.getRunAsGroup() != null) {
           podSpec.securityContext(podSecurityContext.fsGroup(podSecurityContext.getRunAsGroup()));
         } else if (podSecurityContext.getFsGroup() == null) {
@@ -616,7 +614,8 @@ public class JobStepContext extends BasePodStepContext {
 
   @Override
   V1PodSecurityContext getPodSecurityContext() {
-    return Optional.ofNullable(getDomain().getIntrospectorSpec()).map(s -> s.getPodSecurityContext())
+    return Optional.ofNullable(getDomain().getIntrospectorSpec())
+        .map(EffectiveIntrospectorJobPodSpec::getPodSecurityContext)
         .orElse(getDomain().getAdminServerSpec().getPodSecurityContext());
   }
 
@@ -674,7 +673,7 @@ public class JobStepContext extends BasePodStepContext {
       container.addVolumeMountsItem(additionalVolumeMount);
     }
 
-    if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
+    if (getConfigOverrides() != null && !getConfigOverrides().isEmpty()) {
       container.addVolumeMountsItem(
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
@@ -849,7 +848,7 @@ public class JobStepContext extends BasePodStepContext {
   }
 
   private String getIntrospectVersionLabel() {
-    return Optional.ofNullable(getDomain().getIntrospectVersion()).orElse(null);
+    return getDomain().getIntrospectVersion();
   }
 
   @Override
@@ -930,7 +929,7 @@ public class JobStepContext extends BasePodStepContext {
               .map(DomainStatus::getServers)
               .ifPresent(servers -> servers.forEach(item -> addServerStateIfNotShutDown(runningServer, item)));
 
-      if (runningServer.length() > 0) {
+      if (!runningServer.isEmpty()) {
         addEnvVar(vars, MII_RUNNING_SERVERS_STATES, runningServer.toString());
       }
     }
@@ -940,7 +939,7 @@ public class JobStepContext extends BasePodStepContext {
 
   private void addServerStateIfNotShutDown(StringBuilder runningServer, ServerStatus item) {
     if (!item.getState().equals(SHUTDOWN_STATE)) {
-      runningServer.append(item.getServerName() + "=" + item.getState() + " ");
+      runningServer.append(item.getServerName()).append("=").append(item.getState()).append(" ");
     }
   }
 

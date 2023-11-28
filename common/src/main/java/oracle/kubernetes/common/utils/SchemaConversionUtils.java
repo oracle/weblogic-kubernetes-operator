@@ -116,14 +116,7 @@ public class SchemaConversionUtils {
     List<Map<String, Object>> listClusters();
   }
 
-  public static class Resources {
-    public final Map<String, Object> domain;
-    public final List<Map<String, Object>> clusters;
-
-    public Resources(Map<String, Object> domain, List<Map<String, Object>> clusters) {
-      this.domain = domain;
-      this.clusters = clusters;
-    }
+  public record Resources(Map<String, Object> domain, List<Map<String, Object>> clusters) {
   }
 
   /**
@@ -164,7 +157,7 @@ public class SchemaConversionUtils {
       }
 
       restore(PRESERVED_V8, domain);
-      restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxilaryImages);
+      restore(PRESERVED_AUX, domain, this::validateRestoreLegacyAuxiliaryImages);
       removeAddedAdminChannelPortForwardingEnabled(domain);
     } else {
       restore(PRESERVED_V9, domain);
@@ -513,13 +506,7 @@ public class SchemaConversionUtils {
   }
 
   private Map<String, String> select(Map<String, String> apiVersion9, Map<String, String> apiVersion8) {
-    switch (targetAPIVersion) {
-      case API_VERSION_V8:
-        return apiVersion8;
-      case API_VERSION_V9:
-      default:
-        return apiVersion9;
-    }
+    return targetAPIVersion.equals(API_VERSION_V8) ? apiVersion8 : apiVersion9;
   }
 
   private static final Map<String, String> serverStartPolicyMap = Map.of(
@@ -578,7 +565,7 @@ public class SchemaConversionUtils {
   }
 
   @SuppressWarnings("unchecked")
-  private boolean validateRestoreLegacyAuxilaryImages(Map<String, Object> domain,
+  private boolean validateRestoreLegacyAuxiliaryImages(Map<String, Object> domain,
                                                       Map<String, Object> scope, Map<String, Object> value) {
     List<Object> auxiliaryImages = (List<Object>) value.get(AUXILIARY_IMAGES);
     if (auxiliaryImages != null) {
@@ -638,10 +625,10 @@ public class SchemaConversionUtils {
   private String getAuxiliaryImagePaths(List<Object> auxiliaryImages,
                                  List<Object> auxiliaryImageVolumes) {
     return Optional.ofNullable(auxiliaryImages).map(
-          aiList -> createauxiliaryImagePathsEnv(aiList, auxiliaryImageVolumes)).orElse(null);
+          aiList -> createAuxiliaryImagePathsEnv(aiList, auxiliaryImageVolumes)).orElse(null);
   }
 
-  private String createauxiliaryImagePathsEnv(List<Object> auxiliaryImages, List<Object> auxiliaryImageVolumes) {
+  private String createAuxiliaryImagePathsEnv(List<Object> auxiliaryImages, List<Object> auxiliaryImageVolumes) {
     StringJoiner auxiliaryImagePaths = new StringJoiner(",","","");
     auxiliaryImages.forEach(auxiliaryImage -> auxiliaryImagePaths.add(
           getMountPath((Map<String,Object>)auxiliaryImage, auxiliaryImageVolumes)));
@@ -815,7 +802,7 @@ public class SchemaConversionUtils {
             return false;
           }
           return true;
-        }).collect(Collectors.toList());
+        }).toList();
         if (filteredConditions.isEmpty()) {
           status.remove(CONDITIONS);
         } else {

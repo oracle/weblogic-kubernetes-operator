@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -14,7 +14,7 @@ public interface ComponentEx extends Component {
    * <p>This method works as a kind of directory service for SPIs, allowing various components to
    * define private contract and talk to each other. However unlike {@link
    * Component#getSpi(java.lang.Class)}, this method can support cases where there is an ordered
-   * collection (defined by {@link Iterable} of implementations. The SPI contract should define
+   * collection (defined by {@link Iterable} of implementations). The SPI contract should define
    * whether lookups are for the first appropriate implementation or whether all returned
    * implementations should be used.
    *

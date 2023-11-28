@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,2642 +6,2677 @@ package oracle.kubernetes.operator.helpers;
 /**
  * To present pods from rolling when a customer upgrades the operator, we must test against the YAML that would
  * be generated in old operator versions for the settings in the PodHelper test.
- *
  * The settings here are taken from 3.0.0 and 3.1.0.
  */
 class ReferenceObjects {
   static final String MANAGED_PLAINPORT_POD_3_0 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '8001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: '6e1c6a716a9e0078a56c2df86ffe1cd2f0f9bdbe271f169dc1d548d026aa52b7'\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ess_server1\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-ess-server1\n"
-        + "  namespace: namespace\n"
-        + "  ownerReferences:\n"
-        + "  - apiVersion: weblogic.oracle/v9\n"
-        + "    kind: Domain\n"
-        + "    controller: true\n"
-        + "    name: domain1\n"
-        + "    uid: '12345'\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ess_server1\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-ess-server1\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    - name: LOCAL_ADMIN_PORT\n"
-        + "      value: '8001'\n"
-        + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-        + "      value: t3\n"
-        + "    - name: SHUTDOWN_TYPE\n"
-        + "      value: Graceful\n"
-        + "    - name: SHUTDOWN_TIMEOUT\n"
-        + "      value: '30'\n"
-        + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-        + "      value: 'false'\n"
-        + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-        + "      value: 'true'\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 8001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 8001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  terminationGracePeriodSeconds: 40\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '8001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: '6e1c6a716a9e0078a56c2df86ffe1cd2f0f9bdbe271f169dc1d548d026aa52b7'
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+            ownerReferences:
+            - apiVersion: weblogic.oracle/v9
+              kind: Domain
+              controller: true
+              name: domain1
+              uid: '12345'
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '8001'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String MANAGED_PLAINPORT_POD_3_1 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '8001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: 6e1c6a716a9e0078a56c2df86ffe1cd2f0f9bdbe271f169dc1d548d026aa52b7\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ess_server1\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-ess-server1\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ess_server1\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-ess-server1\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 8001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 8001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '8001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 6e1c6a716a9e0078a56c2df86ffe1cd2f0f9bdbe271f169dc1d548d026aa52b7
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String ADMIN_PLAINPORT_POD_3_0 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: 'fc735cf7c34bc1492a237149c4e27c9bb27575de463dbc55e953588862098df4'\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ADMIN_SERVER\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-admin-server\n"
-        + "  namespace: namespace\n"
-        + "  ownerReferences:\n"
-        + "  - apiVersion: weblogic.oracle/v9\n"
-        + "    kind: Domain\n"
-        + "    controller: true\n"
-        + "    name: domain1\n"
-        + "    uid: '12345'\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    - name: LOCAL_ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-        + "      value: t3\n"
-        + "    - name: SHUTDOWN_TYPE\n"
-        + "      value: Graceful\n"
-        + "    - name: SHUTDOWN_TIMEOUT\n"
-        + "      value: '30'\n"
-        + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-        + "      value: 'false'\n"
-        + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-        + "      value: 'true'\n"
-        + "    - name: INTERNAL_OPERATOR_CERT\n"
-        + "      value: encoded-cert-data\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 7001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  hostname: uid1-admin-server\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  terminationGracePeriodSeconds: 40\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 'fc735cf7c34bc1492a237149c4e27c9bb27575de463dbc55e953588862098df4'
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+            ownerReferences:
+            - apiVersion: weblogic.oracle/v9
+              kind: Domain
+              controller: true
+              name: domain1
+              uid: '12345'
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '7001'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              - name: INTERNAL_OPERATOR_CERT
+                value: encoded-cert-data
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
 
   static final String ADMIN_PLAINPORT_POD_3_1
-        = "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: fc735cf7c34bc1492a237149c4e27c9bb27575de463dbc55e953588862098df4\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ADMIN_SERVER\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-admin-server\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 7001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  hostname: uid1-admin-server\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+        = """
+      metadata:
+        annotations:
+          prometheus.io/path: /wls-exporter/metrics
+          prometheus.io/port: '7001'
+          prometheus.io/scrape: 'true'
+          weblogic.sha256: fc735cf7c34bc1492a237149c4e27c9bb27575de463dbc55e953588862098df4
+        labels:
+          weblogic.domainName: domain1
+          weblogic.serverName: ADMIN_SERVER
+          weblogic.domainRestartVersion: null
+          weblogic.domainUID: uid1
+          weblogic.createdByOperator: 'true'
+          weblogic.clusterRestartVersion: null
+          weblogic.serverRestartVersion: null
+        name: uid1-admin-server
+        namespace: namespace
+      spec:
+        containers:
+        - command:
+          - /weblogic-operator/scripts/startServer.sh
+          env:
+          - name: DOMAIN_NAME
+            value: domain1
+          - name: DOMAIN_HOME
+            value: /u01/oracle/user_projects/domains
+          - name: ADMIN_NAME
+            value: ADMIN_SERVER
+          - name: ADMIN_PORT
+            value: '7001'
+          - name: SERVER_NAME
+            value: ADMIN_SERVER
+          - name: DOMAIN_UID
+            value: uid1
+          - name: NODEMGR_HOME
+            value: /u01/nodemanager
+          - name: LOG_HOME
+          - name: SERVER_OUT_IN_POD_LOG
+            value: 'true'
+          - name: SERVICE_NAME
+            value: uid1-admin-server
+          - name: AS_SERVICE_NAME
+            value: uid1-admin-server
+          - name: USER_MEM_ARGS
+            value: -Djava.security.egd=file:/dev/./urandom
+          - name: ADMIN_USERNAME
+          - name: ADMIN_PASSWORD
+          image: image:latest
+          imagePullPolicy: Always
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /weblogic-operator/scripts/stopServer.sh
+          livenessProbe:
+            exec:
+              command:
+              - /weblogic-operator/scripts/livenessProbe.sh
+            failureThreshold: 1
+            initialDelaySeconds: 4
+            periodSeconds: 6
+            timeoutSeconds: 5
+          name: weblogic-server
+          ports:
+          - containerPort: 7001
+            name: default
+            protocol: TCP
+          readinessProbe:
+            failureThreshold: 1
+            httpGet:
+              path: /weblogic/ready
+              port: 7001
+            initialDelaySeconds: 1
+            periodSeconds: 3
+            timeoutSeconds: 2
+          resources:
+            limits: {}
+            requests: {}
+          securityContext: {}
+          volumeMounts:
+          - mountPath: /weblogic-operator/scripts
+            name: weblogic-scripts-cm-volume
+            readOnly: true
+          - mountPath: /weblogic-operator/debug
+            name: weblogic-domain-debug-cm-volume
+            readOnly: true
+          - mountPath: /weblogic-operator/introspector
+            name: weblogic-domain-introspect-cm-volume
+        hostname: uid1-admin-server
+        imagePullSecrets: []
+        initContainers: []
+        nodeSelector: {}
+        securityContext: {}
+        volumes:
+        - configMap:
+            defaultMode: 365
+            name: weblogic-scripts-cm
+          name: weblogic-scripts-cm-volume
+        - configMap:
+            defaultMode: 365
+            name: uid1-weblogic-domain-debug-cm
+            optional: true
+          name: weblogic-domain-debug-cm-volume
+        - configMap:
+            defaultMode: 365
+            name: uid1-weblogic-domain-introspect-cm
+          name: weblogic-domain-introspect-cm-volume
+      """;
 
   static final String MANAGED_SSLPORT_POD_3_0 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '8001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: '368b26eaf1645f966d4c350906b59a0afcc0fbdf9ed30779b71a6d044eb480dd'\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ess_server1\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-ess-server1\n"
-        + "  namespace: namespace\n"
-        + "  ownerReferences:\n"
-        + "  - apiVersion: weblogic.oracle/v9\n"
-        + "    kind: Domain\n"
-        + "    controller: true\n"
-        + "    name: domain1\n"
-        + "    uid: '12345'\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: ADMIN_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ess_server1\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-ess-server1\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    - name: LOCAL_ADMIN_PORT\n"
-        + "      value: '7002'\n"
-        + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-        + "      value: t3s\n"
-        + "    - name: SHUTDOWN_TYPE\n"
-        + "      value: Graceful\n"
-        + "    - name: SHUTDOWN_TIMEOUT\n"
-        + "      value: '30'\n"
-        + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-        + "      value: 'false'\n"
-        + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-        + "      value: 'true'\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 8001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    - containerPort: 7002\n"
-        + "      name: default-secure\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7002\n"
-        + "        scheme: HTTPS\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  terminationGracePeriodSeconds: 40\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '8001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: '368b26eaf1645f966d4c350906b59a0afcc0fbdf9ed30779b71a6d044eb480dd'
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+            ownerReferences:
+            - apiVersion: weblogic.oracle/v9
+              kind: Domain
+              controller: true
+              name: domain1
+              uid: '12345'
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: ADMIN_PORT_SECURE
+                value: 'true'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '7002'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3s
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              - containerPort: 7002
+                name: default-secure
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7002
+                  scheme: HTTPS
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
   
   static final String MANAGED_SSLPORT_POD_3_1 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7002'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: 368b26eaf1645f966d4c350906b59a0afcc0fbdf9ed30779b71a6d044eb480dd\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ess_server1\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-ess-server1\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: ADMIN_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ess_server1\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-ess-server1\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 8001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    - containerPort: 7002\n"
-        + "      name: default-secure\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7002\n"
-        + "        scheme: HTTPS\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7002'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 368b26eaf1645f966d4c350906b59a0afcc0fbdf9ed30779b71a6d044eb480dd
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: ADMIN_PORT_SECURE
+                value: 'true'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              - containerPort: 7002
+                name: default-secure
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7002
+                  scheme: HTTPS
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String ADMIN_SSLPORT_POD_3_0 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7002'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: '25dad014916d4e459419f1a38c67f3f3e44d4f2256f0e9edeb89a6c86ca22428'\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ADMIN_SERVER\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-admin-server\n"
-        + "  namespace: namespace\n"
-        + "  ownerReferences:\n"
-        + "  - apiVersion: weblogic.oracle/v9\n"
-        + "    kind: Domain\n"
-        + "    controller: true\n"
-        + "    name: domain1\n"
-        + "    uid: '12345'\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7002'\n"
-        + "    - name: ADMIN_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: ADMIN_SERVER_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    - name: LOCAL_ADMIN_PORT\n"
-        + "      value: '7002'\n"
-        + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-        + "      value: t3s\n"
-        + "    - name: SHUTDOWN_TYPE\n"
-        + "      value: Graceful\n"
-        + "    - name: SHUTDOWN_TIMEOUT\n"
-        + "      value: '30'\n"
-        + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-        + "      value: 'false'\n"
-        + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-        + "      value: 'true'\n"
-        + "    - name: INTERNAL_OPERATOR_CERT\n"
-        + "      value: encoded-cert-data\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 7001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    - containerPort: 7002\n"
-        + "      name: default-secure\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7002\n"
-        + "        scheme: HTTPS\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  hostname: uid1-admin-server\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  terminationGracePeriodSeconds: 40\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7002'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: '25dad014916d4e459419f1a38c67f3f3e44d4f2256f0e9edeb89a6c86ca22428'
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+            ownerReferences:
+            - apiVersion: weblogic.oracle/v9
+              kind: Domain
+              controller: true
+              name: domain1
+              uid: '12345'
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7002'
+              - name: ADMIN_PORT_SECURE
+                value: 'true'
+              - name: ADMIN_SERVER_PORT_SECURE
+                value: 'true'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '7002'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3s
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              - name: INTERNAL_OPERATOR_CERT
+                value: encoded-cert-data
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              - containerPort: 7002
+                name: default-secure
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7002
+                  scheme: HTTPS
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String ADMIN_SSLPORT_POD_3_1 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7002'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: 854c2ce0b646268a7e72f601f625a8466f45d71f7f635a65ad3740ecb9bdf39a\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ADMIN_SERVER\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-admin-server\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7002'\n"
-        + "    - name: ADMIN_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: ADMIN_SERVER_PORT_SECURE\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 7001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    - containerPort: 7002\n"
-        + "      name: default-secure\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7002\n"
-        + "        scheme: HTTPS\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  hostname: uid1-admin-server\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7002'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 854c2ce0b646268a7e72f601f625a8466f45d71f7f635a65ad3740ecb9bdf39a
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7002'
+              - name: ADMIN_PORT_SECURE
+                value: 'true'
+              - name: ADMIN_SERVER_PORT_SECURE
+                value: 'true'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              - containerPort: 7002
+                name: default-secure
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7002
+                  scheme: HTTPS
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String MANAGED_MII_POD_3_1 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '8001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: bdebf4e8152fea393e06f037bbb4ed243a938f2f9e1aeeffe20768724a0b32cc\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ess_server1\n"
-        + "    weblogic.modelInImageModelSecretsHash: md5.originalSecret.md5\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.modelInImageDomainZipHash: md5.originalSecret.md5\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-ess-server1\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ess_server1\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-ess-server1\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 8001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 8001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '8001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: bdebf4e8152fea393e06f037bbb4ed243a938f2f9e1aeeffe20768724a0b32cc
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.modelInImageModelSecretsHash: md5.originalSecret.md5
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.modelInImageDomainZipHash: md5.originalSecret.md5
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume""";
 
   static final String ADMIN_MII_POD_3_1 =
-        "metadata:\n"
-        + "  annotations:\n"
-        + "    prometheus.io/path: /wls-exporter/metrics\n"
-        + "    prometheus.io/port: '7001'\n"
-        + "    prometheus.io/scrape: 'true'\n"
-        + "    weblogic.sha256: 98ac04bc5ddbc792ee37912ea5efe8097016ed10ce93b13f8e57013547429e6c\n"
-        + "  labels:\n"
-        + "    weblogic.domainName: domain1\n"
-        + "    weblogic.serverName: ADMIN_SERVER\n"
-        + "    weblogic.modelInImageModelSecretsHash: md5.originalSecret.md5\n"
-        + "    weblogic.domainRestartVersion: null\n"
-        + "    weblogic.domainUID: uid1\n"
-        + "    weblogic.createdByOperator: 'true'\n"
-        + "    weblogic.modelInImageDomainZipHash: md5.originalSecret.md5\n"
-        + "    weblogic.clusterRestartVersion: null\n"
-        + "    weblogic.serverRestartVersion: null\n"
-        + "  name: uid1-admin-server\n"
-        + "  namespace: namespace\n"
-        + "spec:\n"
-        + "  containers:\n"
-        + "  - command:\n"
-        + "    - /weblogic-operator/scripts/startServer.sh\n"
-        + "    env:\n"
-        + "    - name: DOMAIN_NAME\n"
-        + "      value: domain1\n"
-        + "    - name: DOMAIN_HOME\n"
-        + "      value: /u01/oracle/user_projects/domains\n"
-        + "    - name: ADMIN_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: ADMIN_PORT\n"
-        + "      value: '7001'\n"
-        + "    - name: SERVER_NAME\n"
-        + "      value: ADMIN_SERVER\n"
-        + "    - name: DOMAIN_UID\n"
-        + "      value: uid1\n"
-        + "    - name: NODEMGR_HOME\n"
-        + "      value: /u01/nodemanager\n"
-        + "    - name: LOG_HOME\n"
-        + "    - name: SERVER_OUT_IN_POD_LOG\n"
-        + "      value: 'true'\n"
-        + "    - name: SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: AS_SERVICE_NAME\n"
-        + "      value: uid1-admin-server\n"
-        + "    - name: USER_MEM_ARGS\n"
-        + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-        + "    - name: ADMIN_USERNAME\n"
-        + "    - name: ADMIN_PASSWORD\n"
-        + "    image: image:latest\n"
-        + "    imagePullPolicy: Always\n"
-        + "    lifecycle:\n"
-        + "      preStop:\n"
-        + "        exec:\n"
-        + "          command:\n"
-        + "          - /weblogic-operator/scripts/stopServer.sh\n"
-        + "    livenessProbe:\n"
-        + "      exec:\n"
-        + "        command:\n"
-        + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-        + "      failureThreshold: 1\n"
-        + "      initialDelaySeconds: 4\n"
-        + "      periodSeconds: 6\n"
-        + "      timeoutSeconds: 5\n"
-        + "    name: weblogic-server\n"
-        + "    ports:\n"
-        + "    - containerPort: 7001\n"
-        + "      name: default\n"
-        + "      protocol: TCP\n"
-        + "    readinessProbe:\n"
-        + "      failureThreshold: 1\n"
-        + "      httpGet:\n"
-        + "        path: /weblogic/ready\n"
-        + "        port: 7001\n"
-        + "      initialDelaySeconds: 1\n"
-        + "      periodSeconds: 3\n"
-        + "      timeoutSeconds: 2\n"
-        + "    resources:\n"
-        + "      limits: {}\n"
-        + "      requests: {}\n"
-        + "    securityContext: {}\n"
-        + "    volumeMounts:\n"
-        + "    - mountPath: /weblogic-operator/scripts\n"
-        + "      name: weblogic-scripts-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/debug\n"
-        + "      name: weblogic-domain-debug-cm-volume\n"
-        + "      readOnly: true\n"
-        + "    - mountPath: /weblogic-operator/introspector\n"
-        + "      name: weblogic-domain-introspect-cm-volume\n"
-        + "  hostname: uid1-admin-server\n"
-        + "  imagePullSecrets: []\n"
-        + "  initContainers: []\n"
-        + "  nodeSelector: {}\n"
-        + "  securityContext: {}\n"
-        + "  volumes:\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: weblogic-scripts-cm\n"
-        + "    name: weblogic-scripts-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-debug-cm\n"
-        + "      optional: true\n"
-        + "    name: weblogic-domain-debug-cm-volume\n"
-        + "  - configMap:\n"
-        + "      defaultMode: 365\n"
-        + "      name: uid1-weblogic-domain-introspect-cm\n"
-        + "    name: weblogic-domain-introspect-cm-volume";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 98ac04bc5ddbc792ee37912ea5efe8097016ed10ce93b13f8e57013547429e6c
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.modelInImageModelSecretsHash: md5.originalSecret.md5
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.modelInImageDomainZipHash: md5.originalSecret.md5
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume""";
 
   static final String ADMIN_MII_AUX_IMAGE_POD_3_3 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ADMIN_SERVER\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.3.8\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-admin-server\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 7001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 7001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "  hostname: uid1-admin-server\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: aux-image-volume-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.3.8
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: aux-image-volume-auxiliaryimagevolume1
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: aux-image-volume-auxiliaryimagevolume1
+          """;
 
   static final String MANAGED_MII_AUX_IMAGE_POD_3_3 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ess_server1\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.3.8\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-ess-server1\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ess_server1\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-ess-server1\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 8001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: aux-image-volume-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.3.8
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: aux-image-volume-auxiliaryimagevolume1
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: aux-image-volume-auxiliaryimagevolume1
+          """;
 
   static final String ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ADMIN_SERVER\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.4.0\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-admin-server\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: WDT_INSTALL_HOME\n"
-          + "      value: /auxiliary/weblogic-deploy\n"
-          + "    - name: WDT_MODEL_HOME\n"
-          + "      value: /auxiliary/models\n"
-          + "    - name: AUXILIARY_IMAGE_PATHS\n"
-          + "      value: /auxiliary\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 7001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 7001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "  hostname: uid1-admin-server\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: compat-operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: compat-operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: compat-ai-vol-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.4.0
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: WDT_INSTALL_HOME
+                value: /auxiliary/weblogic-deploy
+              - name: WDT_MODEL_HOME
+                value: /auxiliary/models
+              - name: AUXILIARY_IMAGE_PATHS
+                value: /auxiliary
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: compat-ai-vol-auxiliaryimagevolume1
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: compat-operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: compat-operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: compat-ai-vol-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: compat-ai-vol-auxiliaryimagevolume1
+          """;
 
   static final String MANAGED_MII_CONVERTED_AUX_IMAGE_POD_3_4 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ess_server1\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.4.0\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-ess-server1\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ess_server1\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-ess-server1\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: WDT_INSTALL_HOME\n"
-          + "      value: /auxiliary/weblogic-deploy\n"
-          + "    - name: WDT_MODEL_HOME\n"
-          + "      value: /auxiliary/models\n"
-          + "    - name: AUXILIARY_IMAGE_PATHS\n"
-          + "      value: /auxiliary\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 8001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: compat-operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: compat-operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: compat-ai-vol-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.4.0
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: WDT_INSTALL_HOME
+                value: /auxiliary/weblogic-deploy
+              - name: WDT_MODEL_HOME
+                value: /auxiliary/models
+              - name: AUXILIARY_IMAGE_PATHS
+                value: /auxiliary
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: compat-ai-vol-auxiliaryimagevolume1
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: compat-operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: compat-operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: compat-ai-vol-auxiliaryimagevolume1
+          """;
 
   static final String ADMIN_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /metrics\n"
-          + "    prometheus.io/port: '8080'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: fc8e3c36de352b0419844b393fd42bf01f32c67932a635cdedce230122d44d0a\n"
-          + "  labels:\n"
-          + "    weblogic.operatorVersion: 3.4.0\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ADMIN_SERVER\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-admin-server\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - args:\n"
-          + "     - proxy\n"
-          + "     - sidecar\n"
-          + "    name: istio-proxy\n"
-          + "    env:\n"
-          + "    - name: ISTIO_KUBE_APP_PROBERS\n"
-          + "      value: '{\"/app-health/weblogic-server/readyz\":{\"httpGet\":{\"path\":\"/weblogic/ready\",\"port\""
-          + ":8888,\"scheme\":\"HTTP\"},\"timeoutSeconds\":2, \"failureThreshold\":1, \"initialDelaySeconds\":1,"
-          + " \"periodSeconds\":3}}'\n"
-          + "  - env:\n"
-          + "    - name: JAVA_OPTS\n"
-          + "      value: -DDOMAIN=uid1 -DWLS_PORT=7001\n"
-          + "    image: monexp:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    name: monitoring-exporter\n"
-          + "    ports:\n"
-          + "    - containerPort: 8080\n"
-          + "      name: tcp-metrics\n"
-          + "      protocol: TCP\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    - name: LOCAL_ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-          + "      value: t3\n"
-          + "    - name: SHUTDOWN_TYPE\n"
-          + "      value: Graceful\n"
-          + "    - name: SHUTDOWN_TIMEOUT\n"
-          + "      value: '30'\n"
-          + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-          + "      value: 'false'\n"
-          + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-          + "      value: 'true'\n"
-          + "    - name: DOMAIN_SOURCE_TYPE\n"
-          + "      value: Image\n"
-          + "    - name: INTERNAL_OPERATOR_CERT\n"
-          + "      value: encoded-cert-data\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 31400\n"
-          + "      name: tcp-t3channel\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-ldap\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-default\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: http-default\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-snmp\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-iiop\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8888\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests: {}\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "  hostname: uid1-admin-server\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers: []\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  terminationGracePeriodSeconds: 40\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /metrics
+              prometheus.io/port: '8080'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: fc8e3c36de352b0419844b393fd42bf01f32c67932a635cdedce230122d44d0a
+            labels:
+              weblogic.operatorVersion: 3.4.0
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - args:
+               - proxy
+               - sidecar
+              name: istio-proxy
+              env:
+              - name: ISTIO_KUBE_APP_PROBERS
+                value: '{"/app-health/weblogic-server/readyz":{"httpGet":{"path":"/weblogic/ready","port":8888,"scheme":
+                  "HTTP"},"timeoutSeconds":2, "failureThreshold":1, "initialDelaySeconds":1, "periodSeconds":3}}'
+            - env:
+              - name: JAVA_OPTS
+                value: -DDOMAIN=uid1 -DWLS_PORT=7001
+              image: monexp:latest
+              imagePullPolicy: Always
+              name: monitoring-exporter
+              ports:
+              - containerPort: 8080
+                name: tcp-metrics
+                protocol: TCP
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '7001'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              - name: DOMAIN_SOURCE_TYPE
+                value: Image
+              - name: INTERNAL_OPERATOR_CERT
+                value: encoded-cert-data
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 31400
+                name: tcp-t3channel
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-ldap
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-default
+                protocol: TCP
+              - containerPort: 7001
+                name: http-default
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-snmp
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-iiop
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8888
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String MANAGED_ISTIO_MONITORING_EXPORTER_TCP_PROTOCOL =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /metrics\n"
-          + "    prometheus.io/port: '8080'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: d3423494f6f84b64cb7a677c6c1825fcc8b6ae37722a73f74d99c5da6b936c16\n"
-          + "  labels:\n"
-          + "    weblogic.operatorVersion: 3.4.0\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ess_server1\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-ess-server1\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - args:\n"
-          + "     - proxy\n"
-          + "     - sidecar\n"
-          + "    name: istio-proxy\n"
-          + "    env:\n"
-          + "    - name: ISTIO_KUBE_APP_PROBERS\n"
-          + "      value: '{\"/app-health/weblogic-server/readyz\":{\"httpGet\":{\"path\":\"/weblogic/ready\",\"port\""
-          + ":8888,\"scheme\":\"HTTP\"},\"timeoutSeconds\":2, \"failureThreshold\":1, \"initialDelaySeconds\":1,"
-          + " \"periodSeconds\":3}}'\n"
-          + "  - env:\n"
-          + "    - name: JAVA_OPTS\n"
-          + "      value: -DDOMAIN=uid1 -DWLS_PORT=8001\n"
-          + "    image: monexp:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    name: monitoring-exporter\n"
-          + "    ports:\n"
-          + "    - containerPort: 8080\n"
-          + "      name: tcp-metrics\n"
-          + "      protocol: TCP\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ess_server1\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-ess-server1\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    - name: LOCAL_ADMIN_PORT\n"
-          + "      value: '8001'\n"
-          + "    - name: LOCAL_ADMIN_PROTOCOL\n"
-          + "      value: t3\n"
-          + "    - name: SHUTDOWN_TYPE\n"
-          + "      value: Graceful\n"
-          + "    - name: SHUTDOWN_TIMEOUT\n"
-          + "      value: '30'\n"
-          + "    - name: SHUTDOWN_IGNORE_SESSIONS\n"
-          + "      value: 'false'\n"
-          + "    - name: DYNAMIC_CONFIG_OVERRIDE\n"
-          + "      value: 'true'\n"
-          + "    - name: DOMAIN_SOURCE_TYPE\n"
-          + "      value: Image\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 31400\n"
-          + "      name: tcp-t3channel\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-ldap\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7102\n"
-          + "      name: tls-ldaps\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-default\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7102\n"
-          + "      name: tls-default\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: http-default\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7102\n"
-          + "      name: https-secure\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-snmp\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7001\n"
-          + "      name: tcp-iiop\n"
-          + "      protocol: TCP\n"
-          + "    - containerPort: 7102\n"
-          + "      name: tls-iiops\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8888\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests: {}\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers: []\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  terminationGracePeriodSeconds: 40\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /metrics
+              prometheus.io/port: '8080'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: d3423494f6f84b64cb7a677c6c1825fcc8b6ae37722a73f74d99c5da6b936c16
+            labels:
+              weblogic.operatorVersion: 3.4.0
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - args:
+               - proxy
+               - sidecar
+              name: istio-proxy
+              env:
+              - name: ISTIO_KUBE_APP_PROBERS
+                value: '{"/app-health/weblogic-server/readyz":{"httpGet":{"path":"/weblogic/ready","port":8888,"scheme":
+                  "HTTP"},"timeoutSeconds":2, "failureThreshold":1, "initialDelaySeconds":1, "periodSeconds":3}}'
+            - env:
+              - name: JAVA_OPTS
+                value: -DDOMAIN=uid1 -DWLS_PORT=8001
+              image: monexp:latest
+              imagePullPolicy: Always
+              name: monitoring-exporter
+              ports:
+              - containerPort: 8080
+                name: tcp-metrics
+                protocol: TCP
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              - name: LOCAL_ADMIN_PORT
+                value: '8001'
+              - name: LOCAL_ADMIN_PROTOCOL
+                value: t3
+              - name: SHUTDOWN_TYPE
+                value: Graceful
+              - name: SHUTDOWN_TIMEOUT
+                value: '30'
+              - name: SHUTDOWN_IGNORE_SESSIONS
+                value: 'false'
+              - name: DYNAMIC_CONFIG_OVERRIDE
+                value: 'true'
+              - name: DOMAIN_SOURCE_TYPE
+                value: Image
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 31400
+                name: tcp-t3channel
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-ldap
+                protocol: TCP
+              - containerPort: 7102
+                name: tls-ldaps
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-default
+                protocol: TCP
+              - containerPort: 7102
+                name: tls-default
+                protocol: TCP
+              - containerPort: 7001
+                name: http-default
+                protocol: TCP
+              - containerPort: 7102
+                name: https-secure
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-snmp
+                protocol: TCP
+              - containerPort: 7001
+                name: tcp-iiop
+                protocol: TCP
+              - containerPort: 7102
+                name: tls-iiops
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8888
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests: {}
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+            imagePullSecrets: []
+            initContainers: []
+            nodeSelector: {}
+            securityContext: {}
+            terminationGracePeriodSeconds: 40
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+          """;
 
   static final String ADMIN_MII_CONVERTED_AUX_IMAGE_POD_3_4_1 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ADMIN_SERVER\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.4.1\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-admin-server\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: WDT_INSTALL_HOME\n"
-          + "      value: /auxiliary/weblogic-deploy\n"
-          + "    - name: WDT_MODEL_HOME\n"
-          + "      value: /auxiliary/models\n"
-          + "    - name: AUXILIARY_IMAGE_PATHS\n"
-          + "      value: /auxiliary\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 7001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 7001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "  hostname: uid1-admin-server\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: compat-operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: compat-operator-aux-container1\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: compat-ai-vol-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 6bc3726c327773e20be8856c0555d8b25d37fbb82846e7b96060c5b639b7cce2
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.4.1
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: WDT_INSTALL_HOME
+                value: /auxiliary/weblogic-deploy
+              - name: WDT_MODEL_HOME
+                value: /auxiliary/models
+              - name: AUXILIARY_IMAGE_PATHS
+                value: /auxiliary
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: compat-ai-vol-auxiliaryimagevolume1
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: compat-operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: compat-operator-aux-container1
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: compat-ai-vol-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: compat-ai-vol-auxiliaryimagevolume1
+          """;
 
   static final String MANAGED_MII_CONVERTED_AUX_IMAGE_POD_3_4_1 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ess_server1\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 3.4.1\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-ess-server1\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ess_server1\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-ess-server1\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: WDT_INSTALL_HOME\n"
-          + "      value: /auxiliary/weblogic-deploy\n"
-          + "    - name: WDT_MODEL_HOME\n"
-          + "      value: /auxiliary/models\n"
-          + "    - name: AUXILIARY_IMAGE_PATHS\n"
-          + "      value: /auxiliary\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 8001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: compat-ai-vol-auxiliaryimagevolume1\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: compat-operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: compat-operator-aux-container1\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: compat-ai-vol-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: e10514d80b1ebb8bf7f49b3cad19a249601ee32d2fc7e95686e6dfb7755b5682
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 3.4.1
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: WDT_INSTALL_HOME
+                value: /auxiliary/weblogic-deploy
+              - name: WDT_MODEL_HOME
+                value: /auxiliary/models
+              - name: AUXILIARY_IMAGE_PATHS
+                value: /auxiliary
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: compat-ai-vol-auxiliaryimagevolume1
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: compat-operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: compat-operator-aux-container1
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: compat-ai-vol-auxiliaryimagevolume1
+          """;
 
   static final String ADMIN_MII_AUX_IMAGE_POD_4_0 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: f8ce3566270c93f214545fd8398012c8ce7e48c9e591e3c502f71b3f83259407\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ADMIN_SERVER\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 4.0\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-admin-server\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 7001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 7001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "  hostname: uid1-admin-server\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: aux-image-volume-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: f8ce3566270c93f214545fd8398012c8ce7e48c9e591e3c502f71b3f83259407
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ADMIN_SERVER
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 4.0
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-admin-server
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ADMIN_SERVER
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-admin-server
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 7001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 7001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: aux-image-volume-auxiliaryimagevolume1
+            hostname: uid1-admin-server
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: aux-image-volume-auxiliaryimagevolume1
+          """;
 
   static final String MANAGED_MII_AUX_IMAGE_POD_4_0 =
-      "metadata:\n"
-          + "  annotations:\n"
-          + "    prometheus.io/path: /wls-exporter/metrics\n"
-          + "    prometheus.io/port: '7001'\n"
-          + "    prometheus.io/scrape: 'true'\n"
-          + "    weblogic.sha256: 82ec0ede6f40b4cd03d5cc40c593f8552677a89b73e602df33afe967b378881a\n"
-          + "  labels:\n"
-          + "    weblogic.domainName: domain1\n"
-          + "    weblogic.serverName: ess_server1\n"
-          + "    weblogic.domainRestartVersion: null\n"
-          + "    weblogic.domainUID: uid1\n"
-          + "    weblogic.createdByOperator: 'true'\n"
-          + "    weblogic.operatorVersion: 4.0\n"
-          + "    weblogic.clusterRestartVersion: null\n"
-          + "    weblogic.serverRestartVersion: null\n"
-          + "  name: uid1-ess-server1\n"
-          + "  namespace: namespace\n"
-          + "spec:\n"
-          + "  containers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/startServer.sh\n"
-          + "    env:\n"
-          + "    - name: DOMAIN_NAME\n"
-          + "      value: domain1\n"
-          + "    - name: DOMAIN_HOME\n"
-          + "      value: /u01/oracle/user_projects/domains\n"
-          + "    - name: ADMIN_NAME\n"
-          + "      value: ADMIN_SERVER\n"
-          + "    - name: ADMIN_PORT\n"
-          + "      value: '7001'\n"
-          + "    - name: SERVER_NAME\n"
-          + "      value: ess_server1\n"
-          + "    - name: DOMAIN_UID\n"
-          + "      value: uid1\n"
-          + "    - name: NODEMGR_HOME\n"
-          + "      value: /u01/nodemanager\n"
-          + "    - name: LOG_HOME\n"
-          + "    - name: SERVER_OUT_IN_POD_LOG\n"
-          + "      value: 'true'\n"
-          + "    - name: SERVICE_NAME\n"
-          + "      value: uid1-ess-server1\n"
-          + "    - name: AS_SERVICE_NAME\n"
-          + "      value: uid1-admin-server\n"
-          + "    - name: USER_MEM_ARGS\n"
-          + "      value: -Djava.security.egd=file:/dev/./urandom\n"
-          + "    - name: ADMIN_USERNAME\n"
-          + "    - name: ADMIN_PASSWORD\n"
-          + "    image: image:latest\n"
-          + "    imagePullPolicy: Always\n"
-          + "    lifecycle:\n"
-          + "      preStop:\n"
-          + "        exec:\n"
-          + "          command:\n"
-          + "          - /weblogic-operator/scripts/stopServer.sh\n"
-          + "    livenessProbe:\n"
-          + "      exec:\n"
-          + "        command:\n"
-          + "        - /weblogic-operator/scripts/livenessProbe.sh\n"
-          + "      failureThreshold: 1\n"
-          + "      initialDelaySeconds: 4\n"
-          + "      periodSeconds: 6\n"
-          + "      timeoutSeconds: 5\n"
-          + "    name: weblogic-server\n"
-          + "    ports:\n"
-          + "    - containerPort: 8001\n"
-          + "      name: default\n"
-          + "      protocol: TCP\n"
-          + "    readinessProbe:\n"
-          + "      failureThreshold: 1\n"
-          + "      httpGet:\n"
-          + "        path: /weblogic/ready\n"
-          + "        port: 8001\n"
-          + "      initialDelaySeconds: 1\n"
-          + "      periodSeconds: 3\n"
-          + "      timeoutSeconds: 2\n"
-          + "    resources:\n"
-          + "      limits: {}\n"
-          + "      requests:\n"
-          + "        memory: 768Mi\n"
-          + "        cpu: 250m\n"
-          + "    securityContext: {}\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/debug\n"
-          + "      name: weblogic-domain-debug-cm-volume\n"
-          + "      readOnly: true\n"
-          + "    - mountPath: /weblogic-operator/introspector\n"
-          + "      name: weblogic-domain-introspect-cm-volume\n"
-          + "    - mountPath: /auxiliary\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "  imagePullSecrets: []\n"
-          + "  initContainers:\n"
-          + "  - command:\n"
-          + "    - /weblogic-operator/scripts/auxImage.sh\n"
-          + "    env:\n"
-          + "    - name: AUXILIARY_IMAGE_PATH\n"
-          + "      value: /auxiliary\n"
-          + "    - name: AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "      value: /tmpAuxiliaryImage\n"
-          + "    - name: AUXILIARY_IMAGE_COMMAND\n"
-          + "      value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_IMAGE\n"
-          + "      value: model-in-image:WLS-AI-v1\n"
-          + "    - name: AUXILIARY_IMAGE_CONTAINER_NAME\n"
-          + "      value: operator-aux-container1\n"
-          + "    image: model-in-image:WLS-AI-v1\n"
-          + "    imagePullPolicy: IfNotPresent\n"
-          + "    name: operator-aux-container1\n"
-          + "    volumeMounts:\n"
-          + "    - mountPath: /tmpAuxiliaryImage\n"
-          + "      name: aux-image-volume-auxiliaryimagevolume1\n"
-          + "    - mountPath: /weblogic-operator/scripts\n"
-          + "      name: weblogic-scripts-cm-volume\n"
-          + "  nodeSelector: {}\n"
-          + "  securityContext: {}\n"
-          + "  volumes:\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: weblogic-scripts-cm\n"
-          + "    name: weblogic-scripts-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-debug-cm\n"
-          + "      optional: true\n"
-          + "    name: weblogic-domain-debug-cm-volume\n"
-          + "  - configMap:\n"
-          + "      defaultMode: 365\n"
-          + "      name: uid1-weblogic-domain-introspect-cm\n"
-          + "    name: weblogic-domain-introspect-cm-volume\n"
-          + "  - emptyDir: {}\n"
-          + "    name: aux-image-volume-auxiliaryimagevolume1\n";
+      """
+          metadata:
+            annotations:
+              prometheus.io/path: /wls-exporter/metrics
+              prometheus.io/port: '7001'
+              prometheus.io/scrape: 'true'
+              weblogic.sha256: 82ec0ede6f40b4cd03d5cc40c593f8552677a89b73e602df33afe967b378881a
+            labels:
+              weblogic.domainName: domain1
+              weblogic.serverName: ess_server1
+              weblogic.domainRestartVersion: null
+              weblogic.domainUID: uid1
+              weblogic.createdByOperator: 'true'
+              weblogic.operatorVersion: 4.0
+              weblogic.clusterRestartVersion: null
+              weblogic.serverRestartVersion: null
+            name: uid1-ess-server1
+            namespace: namespace
+          spec:
+            containers:
+            - command:
+              - /weblogic-operator/scripts/startServer.sh
+              env:
+              - name: DOMAIN_NAME
+                value: domain1
+              - name: DOMAIN_HOME
+                value: /u01/oracle/user_projects/domains
+              - name: ADMIN_NAME
+                value: ADMIN_SERVER
+              - name: ADMIN_PORT
+                value: '7001'
+              - name: SERVER_NAME
+                value: ess_server1
+              - name: DOMAIN_UID
+                value: uid1
+              - name: NODEMGR_HOME
+                value: /u01/nodemanager
+              - name: LOG_HOME
+              - name: SERVER_OUT_IN_POD_LOG
+                value: 'true'
+              - name: SERVICE_NAME
+                value: uid1-ess-server1
+              - name: AS_SERVICE_NAME
+                value: uid1-admin-server
+              - name: USER_MEM_ARGS
+                value: -Djava.security.egd=file:/dev/./urandom
+              - name: ADMIN_USERNAME
+              - name: ADMIN_PASSWORD
+              image: image:latest
+              imagePullPolicy: Always
+              lifecycle:
+                preStop:
+                  exec:
+                    command:
+                    - /weblogic-operator/scripts/stopServer.sh
+              livenessProbe:
+                exec:
+                  command:
+                  - /weblogic-operator/scripts/livenessProbe.sh
+                failureThreshold: 1
+                initialDelaySeconds: 4
+                periodSeconds: 6
+                timeoutSeconds: 5
+              name: weblogic-server
+              ports:
+              - containerPort: 8001
+                name: default
+                protocol: TCP
+              readinessProbe:
+                failureThreshold: 1
+                httpGet:
+                  path: /weblogic/ready
+                  port: 8001
+                initialDelaySeconds: 1
+                periodSeconds: 3
+                timeoutSeconds: 2
+              resources:
+                limits: {}
+                requests:
+                  memory: 768Mi
+                  cpu: 250m
+              securityContext: {}
+              volumeMounts:
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/debug
+                name: weblogic-domain-debug-cm-volume
+                readOnly: true
+              - mountPath: /weblogic-operator/introspector
+                name: weblogic-domain-introspect-cm-volume
+              - mountPath: /auxiliary
+                name: aux-image-volume-auxiliaryimagevolume1
+            imagePullSecrets: []
+            initContainers:
+            - command:
+              - /weblogic-operator/scripts/auxImage.sh
+              env:
+              - name: AUXILIARY_IMAGE_PATH
+                value: /auxiliary
+              - name: AUXILIARY_IMAGE_TARGET_PATH
+                value: /tmpAuxiliaryImage
+              - name: AUXILIARY_IMAGE_COMMAND
+                value: cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH
+              - name: AUXILIARY_IMAGE_CONTAINER_IMAGE
+                value: model-in-image:WLS-AI-v1
+              - name: AUXILIARY_IMAGE_CONTAINER_NAME
+                value: operator-aux-container1
+              image: model-in-image:WLS-AI-v1
+              imagePullPolicy: IfNotPresent
+              name: operator-aux-container1
+              volumeMounts:
+              - mountPath: /tmpAuxiliaryImage
+                name: aux-image-volume-auxiliaryimagevolume1
+              - mountPath: /weblogic-operator/scripts
+                name: weblogic-scripts-cm-volume
+            nodeSelector: {}
+            securityContext: {}
+            volumes:
+            - configMap:
+                defaultMode: 365
+                name: weblogic-scripts-cm
+              name: weblogic-scripts-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-debug-cm
+                optional: true
+              name: weblogic-domain-debug-cm-volume
+            - configMap:
+                defaultMode: 365
+                name: uid1-weblogic-domain-introspect-cm
+              name: weblogic-domain-introspect-cm-volume
+            - emptyDir: {}
+              name: aux-image-volume-auxiliaryimagevolume1
+          """;
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -449,10 +448,6 @@ public class ServiceHelper {
       addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), nap.getListenPort());
     }
 
-    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, Integer port) {
-      addServicePortIfNeeded(ports, portName, null, port);
-    }
-
     abstract void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port);
 
     protected void addServicePortIfNeeded(List<V1ServicePort> ports, V1ServicePort port) {
@@ -601,7 +596,7 @@ public class ServiceHelper {
                       public Step createSuccessStep(V1ServiceList result, Step next) {
                         Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
                                   .filter(ServiceHelper::isNodePortType)
-                                  .collect(Collectors.toList())).orElse(new ArrayList<>());
+                                  .toList()).orElse(new ArrayList<>());
                         return new DeleteServiceListStep(c, createReplacementService(next));
                       }
                     });
@@ -633,10 +628,9 @@ public class ServiceHelper {
         if (other == this) {
           return true;
         }
-        if (!(other instanceof ConflictStep)) {
+        if (!(other instanceof ConflictStep rhs)) {
           return false;
         }
-        ConflictStep rhs = ((ConflictStep) other);
         return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
       }
 

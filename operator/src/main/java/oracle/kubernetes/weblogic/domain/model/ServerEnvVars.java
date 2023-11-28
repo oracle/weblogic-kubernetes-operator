@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -65,7 +65,7 @@ public class ServerEnvVars {
   /** 'true' or 'false' to indicate whether the server output should be included in the pod log. */
   public static final String SERVER_OUT_IN_POD_LOG = "SERVER_OUT_IN_POD_LOG";
 
-  /** 'true' or 'false' to indicate whether the server HTTP access log should be include in the
+  /** 'true' or 'false' to indicate whether the server HTTP access log should be included in the
    *  directory specified by LOG_HOME. */
   public static final String ACCESS_LOG_IN_LOG_HOME = "ACCESS_LOG_IN_LOG_HOME";
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -180,7 +180,7 @@ class ResourceVersionTest {
             "foo10",
             "v12alpha1");
     List<ResourceVersion> rvs =
-        values.stream().map(ResourceVersion::new).sorted().collect(Collectors.toList());
+        values.stream().map(ResourceVersion::new).sorted().toList();
 
     List<String> actual = rvs.stream().map(ResourceVersion::toString).collect(Collectors.toList());
 

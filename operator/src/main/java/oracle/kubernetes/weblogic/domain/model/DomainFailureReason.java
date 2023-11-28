@@ -178,7 +178,7 @@ public enum DomainFailureReason {
 
   /**
    * Return a String which is used as parameter for the event suggestion message.
-   * @param info DomainPresenceInfo may be use by overriding classes to obtain the message
+   * @param info DomainPresenceInfo may be used by overriding classes to obtain the message
    *             parameter String from
    */
   public String getEventSuggestionParam(DomainPresenceInfo info) {

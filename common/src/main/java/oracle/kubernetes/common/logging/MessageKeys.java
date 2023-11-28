@@ -14,13 +14,10 @@ public class MessageKeys {
   public static final String ENABLED_FEATURES = "WLSKO-0003";
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
-  public static final String NO_FORMATTING = "WLSKO-0007";
   public static final String CREATING_CRD = "WLSKO-0012";
   public static final String SECRET_NOT_FOUND = "WLSKO-0018";
   public static final String RETRIEVING_SECRET = "WLSKO-0019";
   public static final String SECRET_DATA_NOT_FOUND = "WLSKO-0020";
-  public static final String WLS_CONFIGURATION_READ = "WLSKO-0021";
-  public static final String JSON_PARSING_FAILED = "WLSKO-0026";
   public static final String NO_WLS_SERVER_IN_CLUSTER = "WLSKO-0028";
   public static final String VERIFY_ACCESS_START = "WLSKO-0029";
   public static final String VERIFY_ACCESS_DENIED = "WLSKO-0030";
@@ -89,7 +86,6 @@ public class MessageKeys {
   public static final String ADMIN_POD_PATCHED = "WLSKO-0120";
   public static final String MANAGED_POD_PATCHED = "WLSKO-0121";
   public static final String POD_DELETED = "WLSKO-0122";
-  public static final String TUNING_PARAMETERS = "WLSKO-0126";
   public static final String WLS_HEALTH_READ_FAILED = "WLSKO-0127";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
   public static final String SCRIPT_LOADED = "WLSKO-0134";
@@ -101,7 +97,6 @@ public class MessageKeys {
   public static final String CANNOT_PARSE_TOPOLOGY = "WLSKO-0141";
   public static final String CANNOT_PARSE_INTROSPECTOR_RESULT = "WLSKO-0142";
   public static final String CANNOT_PARSE_INTROSPECTOR_FILE = "WLSKO-0143";
-  public static final String CANNOT_START_DOMAIN_AFTER_MAX_RETRIES = "WLSKO-0144";
   public static final String CYCLING_POD = "WLSKO-0145";
   public static final String REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT = "WLSKO-0146";
   public static final String POD_DUMP = "WLSKO-0148";

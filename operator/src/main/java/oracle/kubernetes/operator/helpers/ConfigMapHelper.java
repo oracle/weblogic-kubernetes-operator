@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.google.gson.Gson;
@@ -604,7 +603,7 @@ public class ConfigMapHelper {
       public NextAction apply(Packet packet) {
         Collection<StepAndPacket> startDetails = splitter.split(data).stream()
               .map(c -> c.createStepAndPacket(packet))
-              .collect(Collectors.toList());
+              .toList();
         packet.put(NUM_CONFIG_MAPS, Integer.toString(startDetails.size()));
         return doForkJoin(getNext(), packet, startDetails);
       }
@@ -786,7 +785,7 @@ public class ConfigMapHelper {
       return list.getItems().stream()
             .map(this::getName)
             .filter(this::isIntrospectorOrFluentdConfigMapName)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private boolean isIntrospectorOrFluentdConfigMapName(String name) {

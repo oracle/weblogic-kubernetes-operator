@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -74,11 +74,10 @@ public class NetworkAccessPoint {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof NetworkAccessPoint)) {
+    if (!(other instanceof NetworkAccessPoint rhs)) {
       return false;
     }
 
-    NetworkAccessPoint rhs = ((NetworkAccessPoint) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(name, rhs.name)

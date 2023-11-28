@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -269,7 +269,7 @@ class OperatorEventProcessingTest {
   }
 
   @Test
-  void afterAddStopManaingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
+  void afterAddStopManagingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);

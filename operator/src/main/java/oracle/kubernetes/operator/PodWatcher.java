@@ -130,8 +130,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     V1Pod pod = item.object;
     switch (item.type) {
-      case "ADDED":
-      case "MODIFIED":
+      case "ADDED", "MODIFIED":
         copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
@@ -388,7 +387,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return new WaitForServerShutdownStep(next, serverName, domain);
   }
 
-  private class WaitForServerShutdownStep extends WaitForReadyStep<DomainResource> {
+  private static class WaitForServerShutdownStep extends WaitForReadyStep<DomainResource> {
     private final String serverName;
 
     WaitForServerShutdownStep(Step next, String serverName, DomainResource domain) {
@@ -424,6 +423,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected ResponseStep resumeIfReady(WaitForReadyStep.Callback callback) {
       return new WaitForServerShutdownResponseStep(callback, serverName);
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.mojo.shunit2;
@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -104,7 +103,7 @@ public class ShUnit2Mojo extends AbstractMojo {
     }
     
     environmentVariables = getEnvironmentVariables();
-    testSuites = Arrays.stream(getScriptPaths()).map(this::createTestSuite).collect(Collectors.toList());
+    testSuites = Arrays.stream(getScriptPaths()).map(this::createTestSuite).toList();
 
     testSuites.forEach(TestSuite::run);
     if ((totalNumFailures() + totalNumErrors()) != 0) {

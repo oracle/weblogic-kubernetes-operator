@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest.backend;
@@ -63,11 +63,11 @@ public class VersionUtils {
   }
 
   /**
-   * Get whether or not a version is the latest version of the WebLogic operator REST api.
+   * Get whether a version is the latest version of the WebLogic operator REST api.
    *
    * @param version - the version's name (can be aliased). The caller is responsible for calling
    *     isVersion first and should not call this method if the version does
-   * @return whether or not this is the latest version of the WebLogic operator REST api.
+   * @return whether this is the latest version of the WebLogic operator REST api.
    */
   public static boolean isLatest(String version) {
     return getLatest().equals(getVersion(version));

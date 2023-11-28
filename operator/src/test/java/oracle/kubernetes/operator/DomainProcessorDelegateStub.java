@@ -149,7 +149,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
   }
 
-  private class PassThroughWithServerShutdownAwaiterStepFactory extends PassthroughPodAwaiterStepFactory {
+  private static class PassThroughWithServerShutdownAwaiterStepFactory extends PassthroughPodAwaiterStepFactory {
     @Override
     public Step waitForServerShutdown(String serverName, DomainResource domain, Step next) {
       if (Optional.ofNullable(PodHelper.getServerState(domain, serverName))

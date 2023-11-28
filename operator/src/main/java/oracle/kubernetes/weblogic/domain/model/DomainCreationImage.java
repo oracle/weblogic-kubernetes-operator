@@ -114,11 +114,10 @@ public class DomainCreationImage implements DeploymentImage {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof DomainCreationImage)) {
+    if (!(other instanceof DomainCreationImage rhs)) {
       return false;
     }
 
-    DomainCreationImage rhs = ((DomainCreationImage) other);
     EqualsBuilder builder =
             new EqualsBuilder()
                     .append(image, rhs.image)

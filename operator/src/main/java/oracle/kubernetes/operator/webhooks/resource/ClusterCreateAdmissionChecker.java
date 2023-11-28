@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -16,7 +16,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
  * ClusterCreateAdmissionChecker provides the validation functionality for the validating webhook. It takes a
  * proposed new cluster resource and returns a result to indicate if the proposed resource is allowed, and if not,
  * what the problem is.
- *
  * Currently, it always accepts a new cluster resource.
  * </p>
  */

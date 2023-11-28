@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -14,7 +14,7 @@ public interface LoggingFilter {
    *
    * @param loggingFilter LoggingFilter that decides whether the log message should be logged, can
    *     be null
-   * @param msg The log message to be loggd
+   * @param msg The log message to be logged
    * @return the canLog() return value from the provided loggingFilter, message, and parameters, or
    *     true if loggingFilter is null
    */
@@ -26,7 +26,7 @@ public interface LoggingFilter {
    * Checks if the message should be logged.
    *
    * @param msg the message to be logged
-   * @return true, if can log
+   * @return true, if the can log
    */
   boolean canLog(String msg);
 }

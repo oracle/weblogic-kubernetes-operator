@@ -1,9 +1,10 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -76,6 +77,9 @@ public class MonitoringExporterConfiguration {
 
   // A query which defines a set of values and sub-queries to select metrics to export.
   static class ExporterQuery extends HashMap<String,ExporterQuery> {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
     @Description("A filter for subtypes. "
                + "If specified, only those objects whose type attribute matches will be collected.")
     private String type;
@@ -243,7 +247,8 @@ public class MonitoringExporterConfiguration {
   @Override
   public boolean equals(Object o) {
     return (this == o)
-          || ((o instanceof MonitoringExporterConfiguration) && equals((MonitoringExporterConfiguration) o));
+        || ((o instanceof MonitoringExporterConfiguration monitoringExporterConfiguration)
+        && equals(monitoringExporterConfiguration));
   }
 
   private boolean equals(MonitoringExporterConfiguration that) {

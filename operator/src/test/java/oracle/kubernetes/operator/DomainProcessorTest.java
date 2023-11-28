@@ -6,7 +6,6 @@ package oracle.kubernetes.operator;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -394,7 +393,7 @@ class DomainProcessorTest {
 
   @SuppressWarnings("ConstantConditions")
   private OffsetDateTime laterThan(DomainResource newDomain) {
-    return newDomain.getMetadata().getCreationTimestamp().plus(1, ChronoUnit.SECONDS);
+    return newDomain.getMetadata().getCreationTimestamp().plusSeconds(1);
   }
 
   @Test
@@ -426,7 +425,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainSpecNotChangedWithRetriableFailureButNotRetrying_dontContinueProcessing() {
+  void whenDomainSpecNotChangedWithRetryableFailureButNotRetrying_dontContinueProcessing() {
     originalInfo.setPopulated(true);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
@@ -437,7 +436,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainSpecChangedWithRetriableFailureButNotRetrying_continueProcessing() {
+  void whenDomainSpecChangedWithRetryableFailureButNotRetrying_continueProcessing() {
     originalInfo.setPopulated(true);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
@@ -448,7 +447,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainWithRetriableFailureButForDeletion_continueProcessing() {
+  void whenDomainWithRetryableFailureButForDeletion_continueProcessing() {
     originalInfo.setPopulated(true);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
@@ -459,7 +458,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainWithNonRetriableFailureButForDeletion_continueProcessing() {
+  void whenDomainWithNonRetryableFailureButForDeletion_continueProcessing() {
     originalInfo.setPopulated(true);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(ABORTED));
@@ -470,7 +469,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenDomainWithRetriableFailureAndRetryOnFailure_continueProcess() {
+  void whenDomainWithRetryableFailureAndRetryOnFailure_continueProcess() {
     originalInfo.setPopulated(false);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getStatus().addCondition(new DomainCondition(FAILED).withReason(DOMAIN_INVALID));
@@ -2427,38 +2426,40 @@ class DomainProcessorTest {
         + ">>> EOF\n"
         + DOMAIN_INTROSPECTION_COMPLETE;
 
-    String topologyxml = "domainValid: true\n"
-            + "domain:\n"
-            + "  name: \"base_domain\"\n"
-            + "  adminServerName: \"admin-server\"\n"
-            + "  configuredClusters:\n"
-            + "  - name: \"cluster-1\"\n"
-            + "    servers:\n"
-            + "      - name: \"managed-server1\"\n"
-            + "        listenPort: 7003\n"
-            + "        listenAddress: \"domain1-managed-server1\"\n"
-            + "        adminPort: 7099\n"
-            + "        sslListenPort: 7104\n"
-            + "      - name: \"managed-server2\"\n"
-            + "        listenPort: 7003\n"
-            + "        listenAddress: \"domain1-managed-server2\"\n"
-            + "        adminPort: 7099\n"
-            + "        sslListenPort: 7104\n"
-            + "  servers:\n"
-            + "    - name: \"admin-server\"\n"
-            + "      listenPort: 7001\n"
-            + "      listenAddress: \"domain1-admin-server\"\n"
-            + "      adminPort: 7099\n"
-            + "    - name: \"server1\"\n"
-            + "      listenPort: 9003\n"
-            + "      adminPort: 7099\n"
-            + "      listenAddress: \"domain1-server1\"\n"
-            + "      sslListenPort: 8003\n"
-            + "    - name: \"server2\"\n"
-            + "      listenPort: 9004\n"
-            + "      listenAddress: \"domain1-server2\"\n"
-            + "      adminPort: 7099\n"
-            + "      sslListenPort: 8004\n";
+    String topologyxml = """
+        domainValid: true
+        domain:
+          name: "base_domain"
+          adminServerName: "admin-server"
+          configuredClusters:
+          - name: "cluster-1"
+            servers:
+              - name: "managed-server1"
+                listenPort: 7003
+                listenAddress: "domain1-managed-server1"
+                adminPort: 7099
+                sslListenPort: 7104
+              - name: "managed-server2"
+                listenPort: 7003
+                listenAddress: "domain1-managed-server2"
+                adminPort: 7099
+                sslListenPort: 7104
+          servers:
+            - name: "admin-server"
+              listenPort: 7001
+              listenAddress: "domain1-admin-server"
+              adminPort: 7099
+            - name: "server1"
+              listenPort: 9003
+              adminPort: 7099
+              listenAddress: "domain1-server1"
+              sslListenPort: 8003
+            - name: "server2"
+              listenPort: 9004
+              listenAddress: "domain1-server2"
+              adminPort: 7099
+              sslListenPort: 8004
+        """;
 
     //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo, "cluster-1").withReplicas(2);
@@ -2523,33 +2524,35 @@ class DomainProcessorTest {
         + ">>> EOF\n"
         + DOMAIN_INTROSPECTION_COMPLETE;
 
-    String topologyxml = "domainValid: true\n"
-        + "domain:\n"
-        + "  name: \"base_domain\"\n"
-        + "  adminServerName: \"admin-server\"\n"
-        + "  configuredClusters:\n"
-        + "  - name: \"cluster-1\"\n"
-        + "    servers:\n"
-        + "      - name: \"managed-server1\"\n"
-        + "        listenPort: 7003\n"
-        + "        listenAddress: \"domain1-managed-server1\"\n"
-        + "        sslListenPort: 7104\n"
-        + "      - name: \"managed-server2\"\n"
-        + "        listenPort: 7003\n"
-        + "        listenAddress: \"domain1-managed-server2\"\n"
-        + "        sslListenPort: 7104\n"
-        + "  servers:\n"
-        + "    - name: \"admin-server\"\n"
-        + "      listenPort: 7001\n"
-        + "      listenAddress: \"domain1-admin-server\"\n"
-        + "    - name: \"server1\"\n"
-        + "      listenPort: 9003\n"
-        + "      listenAddress: \"domain1-server1\"\n"
-        + "      sslListenPort: 8003\n"
-        + "    - name: \"server2\"\n"
-        + "      listenPort: 9004\n"
-        + "      listenAddress: \"domain1-server2\"\n"
-        + "      sslListenPort: 8004\n";
+    String topologyxml = """
+        domainValid: true
+        domain:
+          name: "base_domain"
+          adminServerName: "admin-server"
+          configuredClusters:
+          - name: "cluster-1"
+            servers:
+              - name: "managed-server1"
+                listenPort: 7003
+                listenAddress: "domain1-managed-server1"
+                sslListenPort: 7104
+              - name: "managed-server2"
+                listenPort: 7003
+                listenAddress: "domain1-managed-server2"
+                sslListenPort: 7104
+          servers:
+            - name: "admin-server"
+              listenPort: 7001
+              listenAddress: "domain1-admin-server"
+            - name: "server1"
+              listenPort: 9003
+              listenAddress: "domain1-server1"
+              sslListenPort: 8003
+            - name: "server2"
+              listenPort: 9004
+              listenAddress: "domain1-server2"
+              sslListenPort: 8004
+        """;
 
     //establishPreviousIntrospection(null);
     domainConfigurator.configureCluster(newInfo,"cluster-1").withReplicas(2);
@@ -2822,7 +2825,7 @@ class DomainProcessorTest {
     consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
     processor.registerDomainPresenceInfo(originalInfo);
     domain.getSpec().withWebLogicCredentialsSecret(null);
-    int time = 0;
+    long time = 0;
 
     for (int numRetries = 0; numRetries < 5; numRetries++) {
       processor.createMakeRightOperation(originalInfo).withExplicitRecheck().execute();

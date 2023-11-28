@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.introspection;
@@ -138,7 +138,7 @@ class IntrospectionLoggingTest {
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
     return Optional.ofNullable(events)
-        .filter(list -> list.size() != 0)
+        .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
         .map(CoreV1Event::getMessage)
         .orElse("Event not found");

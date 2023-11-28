@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -155,11 +155,10 @@ public class Istio {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof Istio)) {
+    if (!(other instanceof Istio rhs)) {
       return false;
     }
 
-    Istio rhs = ((Istio) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)

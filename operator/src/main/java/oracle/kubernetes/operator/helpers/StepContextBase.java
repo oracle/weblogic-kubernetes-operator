@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -37,9 +37,9 @@ public abstract class StepContextBase implements StepContextConstants {
       return obj;
     } else if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
-    } else if (obj instanceof List) {
+    } else if (obj instanceof List<?> list) {
       List<Object> result = new ArrayList<>();
-      for (Object o : (List) obj) {
+      for (Object o : list) {
         result.add(doDeepSubstitution(substitutionVariables, o));
       }
       return (T) result;
@@ -60,13 +60,13 @@ public abstract class StepContextBase implements StepContextConstants {
 
           List<Pair<Method, Method>> typeBeans = typeBeans(cls);
           for (Pair<Method, Method> item : typeBeans) {
-            item.getRight()
+            item.right()
                 .invoke(
                     subObj,
                     doDeepSubstitution(
                         substitutionVariables,
-                        item.getLeft().invoke(obj),
-                        isDns1123Required(item.getLeft())));
+                        item.left().invoke(obj),
+                        isDns1123Required(item.left())));
           }
           return subObj;
         } catch (NoSuchMethodException
@@ -82,7 +82,7 @@ public abstract class StepContextBase implements StepContextConstants {
 
   private boolean isDns1123Required(Method method) {
     // value requires to be in DNS1123 if the value is for a name, which is assumed to be
-    // name for a kubernetes object
+    // a name for a kubernetes object
     return LegalNames.isDns1123Required(method.getName().substring(3));
   }
 

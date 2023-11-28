@@ -184,7 +184,7 @@ public class DomainNamespaces {
   }
 
   /**
-   * Returns a set up steps to update the specified namespace.
+   * Returns a set-up steps to update the specified namespace.
    * This will include adding any existing domains, pod, services,
    * and will also start watchers for the namespace if they aren't already running.
    * @param ns the name of the namespace

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -30,8 +30,7 @@ public class ServerDownIteratorStep extends Step {
 
   ServerDownIteratorStep(List<ServerShutdownInfo> serverShutdownInfos, Step next) {
     super(next);
-    Collections.reverse(serverShutdownInfos);
-    this.serverShutdownInfos = serverShutdownInfos;
+    this.serverShutdownInfos = serverShutdownInfos.reversed();
   }
 
   List<String> getServersToStop() {
@@ -122,7 +121,7 @@ public class ServerDownIteratorStep extends Step {
 
     @Nonnull
     private List<StepAndPacket> createShutdownWaiters() {
-      return serverShutdownInfos.stream().map(this::createServerDownWaiter).collect(Collectors.toList());
+      return serverShutdownInfos.stream().map(this::createServerDownWaiter).toList();
     }
 
     @Nonnull

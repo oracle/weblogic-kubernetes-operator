@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,7 +8,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.DomainFailureMessages;
@@ -26,6 +25,7 @@ import oracle.kubernetes.weblogic.domain.model.ClusterResource;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
+import org.apache.commons.collections4.ListUtils;
 
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH;
 import static oracle.kubernetes.common.logging.MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH;
@@ -267,9 +267,7 @@ public class WlsConfigValidator {
   }
 
   private List<Integer> getDefinedPorts(WlsServerConfig serverConfig) {
-    final List<Integer> result = getStandardPorts(serverConfig);
-    result.addAll(getNapPorts(serverConfig));
-    return result;
+    return ListUtils.union(getStandardPorts(serverConfig), getNapPorts(serverConfig));
   }
 
   private List<Integer> getStandardPorts(WlsServerConfig serverConfig) {
@@ -277,14 +275,14 @@ public class WlsConfigValidator {
   }
 
   private List<Integer> getNonNullPorts(Integer... definedPorts) {
-    return Arrays.stream(definedPorts).filter(Objects::nonNull).collect(Collectors.toList());
+    return Arrays.stream(definedPorts).filter(Objects::nonNull).toList();
   }
 
   private List<Integer> getNapPorts(WlsServerConfig serverConfig) {
     return Optional.ofNullable(serverConfig.getNetworkAccessPoints()).orElse(List.of()).stream()
           .map(NetworkAccessPoint::getListenPort)
           .filter(Objects::nonNull)
-          .collect(Collectors.toList());
+          .toList();
   }
 
   List<String> getReplicaTooHighFailures() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest.model;
@@ -31,6 +31,7 @@ public class LinkModel extends BaseModel {
    * @param title -the link's title.
    * @param href - the link's hypertext reference.
    */
+  @SuppressWarnings("this-escape")
   public LinkModel(String rel, String title, String href) {
     setRel(rel);
     setTitle(title);

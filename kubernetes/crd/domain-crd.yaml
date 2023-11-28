@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: d33dc80911f1901a703fe95438c2e4fc39271775bfecddd35893f8422d97caa3
+    weblogic.sha256: 01a3cdba6b993d2091f4c55f47ffb2a35debc51ee59d1de05ccd3735881d64f8
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -222,10 +222,11 @@ spec:
                                   means that this volume does not belong to any StorageClass.
                                 type: string
                               nfs:
-                                description: |-
-                                  nfs represents an NFS mount on the host. Provisioned by an admin. More info:
-                                  https://kubernetes.io/docs/concepts/storage/volumes#nfs
-                                  Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do not support ownership management or SELinux relabeling.
+                                description: 'nfs represents an NFS mount on the host.
+                                  Provisioned by an admin. More info: https://kubernetes.io/docs/concepts/storage/volumes#nfs.
+                                  Represents an NFS mount that lasts the lifetime
+                                  of a pod. NFS volumes do not support ownership management
+                                  or SELinux relabeling.'
                                 properties:
                                   path:
                                     type: string
@@ -245,13 +246,18 @@ spec:
                                   (default for dynamically provisioned PersistentVolumes),
                                   and Recycle (deprecated). Recycle must be supported
                                   by the volume plugin underlying this PersistentVolume.
-                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  '
+                                  More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming'
                                 type: string
                               hostPath:
-                                description: |-
-                                  HostPath represents a directory on the host. Provisioned by a developer or tester. This is useful for single-node development and testing only! On-host storage is not supported in any way and WILL NOT WORK in a multi-node cluster. More info:
-                                   https://kubernetes.io/docs/concepts/storage/volumes#hostpath
-                                  Represents a host path mapped into a pod. Host path volumes do not support ownership management or SELinux relabeling.
+                                description: 'HostPath represents a directory on the
+                                  host. Provisioned by a developer or tester. This
+                                  is useful for single-node development and testing
+                                  only! On-host storage is not supported in any way
+                                  and WILL NOT WORK in a multi-node cluster. More
+                                  info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath.
+                                  Represents a host path mapped into a pod. Host path
+                                  volumes do not support ownership management or SELinux
+                                  relabeling.'
                                 properties:
                                   path:
                                     type: string

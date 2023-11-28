@@ -53,8 +53,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
- * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
- * test setup simulates a kubernetes call, which then blocks. Each test verifies the behavior as a result of a
+ * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The
+ * pre-test setup simulates a kubernetes call, which then blocks. Each test verifies the behavior as a result of a
  * different response.
  */
 class AsyncRequestStepTest {
@@ -244,7 +244,7 @@ class AsyncRequestStepTest {
   private void sendMultipleFailedCallbackWithSetTime(int statusCode, int maxRetries) {
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       sendFailedCallback(statusCode);
-      testSupport.setTime(10 + retryCount * 10, TimeUnit.SECONDS);
+      testSupport.setTime(10 + ((long) retryCount * 10), TimeUnit.SECONDS);
     }
   }
 

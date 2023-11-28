@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -40,10 +40,9 @@ public class ErrorFilter implements ContainerResponseFilter {
     if (entity == null) {
       // don't wrap null entities
       LOGGER.finer("null entity");
-    } else if (entity instanceof String) {
+    } else if (entity instanceof String detail) {
       // Wrap the error in an 'Error' object that converts the error to a
       // json object matching the Oracle REST style guide:
-      String detail = (String) entity;
       LOGGER.finer("String entity=" + detail);
       ErrorModel error = new ErrorModel(status, detail);
       res.setEntity(error, res.getEntityAnnotations(), MediaType.APPLICATION_JSON_TYPE);

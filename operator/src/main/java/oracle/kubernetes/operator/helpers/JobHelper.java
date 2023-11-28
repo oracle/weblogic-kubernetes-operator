@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,7 +53,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainResource;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Server;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.common.logging.MessageKeys.DOMAIN_INTROSPECTION_INCOMPLETE;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_FLUENTD_CONTAINER_TERMINATED;
 import static oracle.kubernetes.common.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
@@ -132,12 +130,7 @@ public class JobHelper {
     return new StartupComputation(info).isCreatingAServer();
   }
 
-  private static class StartupComputation {
-    private final DomainPresenceInfo info;
-
-    private StartupComputation(DomainPresenceInfo info) {
-      this.info = info;
-    }
+  private record StartupComputation(DomainPresenceInfo info) {
 
     private boolean isCreatingAServer() {
       return domainShouldStart() || willStartACluster() || willStartAServer();
@@ -162,7 +155,7 @@ public class JobHelper {
     // Returns true if the specified cluster is configured to start.
     private boolean shouldStart(ClusterSpec clusterSpec) {
       return (shouldStart(clusterSpec.getServerStartPolicy()))
-              && info.getReplicaCount(clusterSpec.getClusterName()) > 0;
+          && info.getReplicaCount(clusterSpec.getClusterName()) > 0;
     }
 
     // Returns true if the specified server start policy will allow starting a server.
@@ -186,7 +179,6 @@ public class JobHelper {
 
   /**
    * Returns the first step in the introspection process.
-   *
    * Uses the following packet values:
    *  ProcessingConstants.DOMAIN_TOPOLOGY - the domain topology
    *  ProcessingConstants.DOMAIN_RESTART_VERSION - the restart version from the domain
@@ -254,8 +246,10 @@ public class JobHelper {
 
       @Nonnull
       private String jobDescription(@Nonnull V1Job job) {
-        return "found introspection job " + job.getMetadata().getName()
-                         + ", started at " + job.getMetadata().getCreationTimestamp();
+        return "found introspection job "
+            + Optional.ofNullable(job.getMetadata()).map(V1ObjectMeta::getName).orElse(null)
+            + ", started at "
+            + Optional.ofNullable(job.getMetadata()).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
       }
 
       private boolean isInProgressJobOutdated(V1Job job) {
@@ -290,7 +284,7 @@ public class JobHelper {
       }
 
       List<String> getSortedAuxiliaryImagesFromJob(V1Job job) {
-        return getAuxiliaryImagesFromJob(job).sorted().collect(Collectors.toList());
+        return getAuxiliaryImagesFromJob(job).sorted().toList();
       }
 
       Stream<String> getAuxiliaryImagesFromJob(V1Job job) {
@@ -322,7 +316,7 @@ public class JobHelper {
       }
 
       List<String> getSortedJobModelPodSpecAuxiliaryImages() {
-        return getJobModelPodSpecAuxiliaryImages().sorted().collect(Collectors.toList());
+        return getJobModelPodSpecAuxiliaryImages().sorted().toList();
       }
 
       Stream<String> getJobModelPodSpecAuxiliaryImages() {
@@ -496,12 +490,11 @@ public class JobHelper {
       }
 
       private V1ContainerStatus getJobPodContainerStatus(V1Pod jobPod) {
-        return Optional.ofNullable(getContainerStatuses(jobPod))
-            .map(cs -> cs.stream().findFirst().orElse(null)).orElse(null);
+        return Optional.ofNullable(getContainerStatuses(jobPod)).flatMap(cs -> cs.stream().findFirst()).orElse(null);
       }
 
       private List<V1ContainerStatus> getContainerStatuses(V1Pod jobPod) {
-        return Optional.ofNullable(jobPod.getStatus()).map(s -> s.getContainerStatuses()).orElse(null);
+        return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(null);
       }
 
       private String getContainerName() {
@@ -510,18 +503,18 @@ public class JobHelper {
 
       private String getInitContainerName(V1Pod jobPod) {
         return Optional.ofNullable(getInitContainerStatuses(jobPod))
-            .map(is -> is.stream().filter(cs -> hasError(cs)).findFirst().map(c  -> c.getName())
+            .map(is -> is.stream().filter(this::hasError).findFirst().map(V1ContainerStatus::getName)
                 .orElse(getContainerName()))
             .orElse(getContainerName());
       }
 
       private boolean hasError(V1ContainerStatus cs) {
-        return Optional.ofNullable(cs.getState()).map(s -> s.getTerminated())
-            .map(t -> t.getReason()).map(r -> r.equals("Error")).orElse(false);
+        return Optional.ofNullable(cs.getState()).map(V1ContainerState::getTerminated)
+            .map(V1ContainerStateTerminated::getReason).map(r -> r.equals("Error")).orElse(false);
       }
 
       private List<V1ContainerStatus> getInitContainerStatuses(V1Pod jobPod) {
-        return Optional.ofNullable(jobPod.getStatus()).map(s -> s.getInitContainerStatuses()).orElse(null);
+        return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
       }
 
       private Step readDomainIntrospectorPodLog(String jobPodName, String containerName, Step next) {
@@ -620,7 +613,7 @@ public class JobHelper {
       // Returns true if the job is left over from an earlier make-right, and we may now delete it.
       private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
         final int retryInterval = TuningParameters.getInstance().getDomainPresenceRecheckIntervalSeconds();
-        return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
+        return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plusSeconds(retryInterval));
       }
 
 
@@ -641,15 +634,16 @@ public class JobHelper {
           if (line.startsWith("@[")) {
             logToOperator();
             logMessage = new StringBuilder(INTROSPECTOR_LOG_PREFIX).append(line.trim());
-          } else if (logMessage.length() > 0) {
+          } else if (!logMessage.isEmpty()) {
             logMessage.append(System.lineSeparator()).append(line.trim());
           }
         }
         logToOperator();
       }
 
+      @SuppressWarnings("fallthrough")
       private void logToOperator() {
-        if (logMessage.length() == 0) {
+        if (logMessage.isEmpty()) {
           return;
         }
 
@@ -733,7 +727,7 @@ public class JobHelper {
         }
       }
 
-      private class FluentdContainer {
+      private static class FluentdContainer {
         private final V1Pod jobPod;
         private final V1ContainerStatus matchingStatus;
 
@@ -765,16 +759,19 @@ public class JobHelper {
 
         private Object[] getParameters() {
           return new Object[] {
-              jobPod.getMetadata().getName(),
-              jobPod.getMetadata().getNamespace(),
-              matchingStatus.getState().getTerminated().getExitCode(),
-              matchingStatus.getState().getTerminated().getReason(),
-              matchingStatus.getState().getTerminated().getMessage()
+              Optional.ofNullable(jobPod.getMetadata()).map(V1ObjectMeta::getName).orElse(null),
+              Optional.ofNullable(jobPod.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null),
+              Optional.ofNullable(matchingStatus.getState()).map(V1ContainerState::getTerminated)
+                  .map(V1ContainerStateTerminated::getExitCode).orElse(null),
+              Optional.ofNullable(matchingStatus.getState()).map(V1ContainerState::getTerminated)
+                  .map(V1ContainerStateTerminated::getReason).orElse(null),
+              Optional.ofNullable(matchingStatus.getState()).map(V1ContainerState::getTerminated)
+                  .map(V1ContainerStateTerminated::getMessage).orElse(null)
           };
         }
       }
 
-      class JobPodContainer {
+      static class JobPodContainer {
         private final V1Pod jobPod;
         private final String jobName;
 

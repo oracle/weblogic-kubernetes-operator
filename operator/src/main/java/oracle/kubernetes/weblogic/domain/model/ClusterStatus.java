@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -239,10 +239,9 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     if (other == this) {
       return true;
     }
-    if (!(other instanceof ClusterStatus)) {
+    if (!(other instanceof ClusterStatus rhs)) {
       return false;
     }
-    ClusterStatus rhs = ((ClusterStatus) other);
     return new EqualsBuilder()
         .append(clusterName, rhs.clusterName)
         .append(replicas, rhs.replicas)

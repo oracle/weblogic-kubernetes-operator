@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -421,10 +421,7 @@ class CommonLoggingFacadeTest {
 
     public boolean isLoggable(Level level) {
       int levelValue = this.level.intValue();
-      if (level.intValue() < levelValue || levelValue == Level.OFF.intValue()) {
-        return false;
-      }
-      return true;
+      return level.intValue() >= levelValue && levelValue != Level.OFF.intValue();
     }
 
     @Override

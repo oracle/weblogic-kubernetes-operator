@@ -142,8 +142,8 @@ public abstract class ResponseStep<T> extends Step {
       // the next window of data.
       return resetRetryStrategyAndReinvokeRequest(packet);
     }
-    if (callResponse.getResult() instanceof KubernetesListObject) {
-      return doNext(next, packet).withDebugComment((KubernetesListObject)callResponse.getResult(), this::toComment);
+    if (callResponse.getResult() instanceof KubernetesListObject kubernetesListObject) {
+      return doNext(next, packet).withDebugComment(kubernetesListObject, this::toComment);
     } else {
       return doNext(next, packet);
     }

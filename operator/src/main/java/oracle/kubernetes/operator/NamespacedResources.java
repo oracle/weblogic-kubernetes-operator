@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,7 +9,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
@@ -202,7 +201,7 @@ class NamespacedResources {
 
   private <L extends KubernetesListObject>
         Optional<List<Consumer<L>>> getListProcessing(Function<Processors, Consumer<L>> method) {
-    return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).collect(Collectors.toList()));
+    return nullIfEmpty(processors.stream().map(method).filter(Objects::nonNull).toList());
   }
 
   private <T> Optional<List<T>> nullIfEmpty(@Nonnull List<T> list) {
@@ -218,7 +217,7 @@ class NamespacedResources {
     }
   }
 
-  class PauseWatchersStep<T> extends Step {
+  static class PauseWatchersStep<T> extends Step {
     private final Watcher<T> watcher;
 
     PauseWatchersStep(Watcher<T> watcher) {

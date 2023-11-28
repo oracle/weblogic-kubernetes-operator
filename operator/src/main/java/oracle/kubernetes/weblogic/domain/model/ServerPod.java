@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 
@@ -348,13 +347,13 @@ class ServerPod extends KubernetesResource {
     if (from.getAdd() != null) {
       Stream<String> stream = (to.getAdd() != null)
           ? Stream.concat(to.getAdd().stream(), from.getAdd().stream()) : from.getAdd().stream();
-      to.setAdd(stream.distinct().collect(Collectors.toList()));
+      to.setAdd(stream.distinct().toList());
     }
 
     if (from.getDrop() != null) {
       Stream<String> stream = (to.getDrop() != null)
           ? Stream.concat(to.getDrop().stream(), from.getDrop().stream()) : from.getDrop().stream();
-      to.setDrop(stream.distinct().collect(Collectors.toList()));
+      to.setDrop(stream.distinct().toList());
     }
   }
 

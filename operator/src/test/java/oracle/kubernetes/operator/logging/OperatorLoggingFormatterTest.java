@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -97,6 +97,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenNotInFiber_retrieveDomainUidFromThread() throws JsonProcessingException {
     try (ThreadLoggingContext stack = setThreadContext().domainUid("test-uid")) {
       assertThat(getFormattedMessage().get("domainUID"), equalTo("test-uid"));
@@ -112,6 +113,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveDomainUidFromLoggingContext() {
     testSupport.addLoggingContext(new LoggingContext().domainUid("test-lc-uid1"));
     try (ThreadLoggingContext stack = setThreadContext().namespace("test-lc-tl-uid")) {
@@ -120,6 +122,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveDomainUidFromThread() {
     try (ThreadLoggingContext stack = setThreadContext().domainUid("test-lc-tl-uid1")) {
       assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-tl-uid1"));
@@ -127,6 +130,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenThreadLocalDefinedAndPacketNoDomainPresenceAndLoggingContextNoDUid_retrieveDomainUidFromThread() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-namespace"));
     try (ThreadLoggingContext stack = setThreadContext().domainUid("test-lc-tl-uid1")) {
@@ -162,6 +166,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveNamespaceFromLoggingContext() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns1"));
     try (ThreadLoggingContext stack = setThreadContext().namespace("test-lc-tl-ns")) {
@@ -170,6 +175,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveNamespaceFromThread() {
     try (ThreadLoggingContext stack = setThreadContext().namespace("test-lc-tl-ns1")) {
       assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-tl-ns1"));
@@ -177,6 +183,7 @@ class OperatorLoggingFormatterTest {
   }
 
   @Test
+  @SuppressWarnings("try")
   void whenNotInFiber_retrieveNamespaceFromThread() throws JsonProcessingException {
     try (ThreadLoggingContext stack = setThreadContext().namespace("test-lc-tl-ns1")) {
       assertThat(getFormattedMessage().get("namespace"), equalTo("test-lc-tl-ns1"));

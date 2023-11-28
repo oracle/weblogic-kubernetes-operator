@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -96,10 +96,6 @@ public class CallTestSupport {
     return cannedResponse;
   }
 
-  private boolean isUnused(CannedResponse cannedResponse) {
-    return !cannedResponse.optional && !cannedResponses.get(cannedResponse);
-  }
-
   CannedResponse getMatchingResponse(
       RequestParams requestParams, String fieldSelector, String labelSelector) {
     AdditionalParams params = new AdditionalParams(fieldSelector, labelSelector);
@@ -128,7 +124,7 @@ public class CallTestSupport {
     private static final String BODY = "body";
     private static final String LABEL_SELECTOR = "labelSelector";
     private static final String FIELD_SELECTOR = "fieldSelector";
-    private static final String MISFORMED_RESPONSE =
+    private static final String MALFORMED_RESPONSE =
         "%s not defined with returning(), computingResult() or failingWithStatus()";
     private static final BodyMatcher WILD_CARD = actualBody -> true;
     private final String methodName;
@@ -210,7 +206,7 @@ public class CallTestSupport {
 
     void validate() {
       if (status == 0 && result == null && function == null) {
-        throw new IllegalStateException(String.format(MISFORMED_RESPONSE, this));
+        throw new IllegalStateException(String.format(MALFORMED_RESPONSE, this));
       }
     }
   }
@@ -239,7 +235,7 @@ public class CallTestSupport {
     }
 
     private boolean isEmpty(String value) {
-      return value.trim().length() == 0;
+      return value.trim().isEmpty();
     }
 
     public String toString() {

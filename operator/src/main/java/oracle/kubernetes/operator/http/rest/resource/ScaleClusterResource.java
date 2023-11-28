@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest.resource;
@@ -30,7 +30,7 @@ public class ScaleClusterResource extends BaseResource {
   }
 
   /**
-   * Scale this WebLogic cluster up or down. This method configures the specified numer of managed
+   * Scale this WebLogic cluster up or down. This method configures the specified number of managed
    * servers at both the Kubernetes and WebLogic levels, then returns. It does not wait for the new
    * managed servers to start or removed managed servers to stop.
    *

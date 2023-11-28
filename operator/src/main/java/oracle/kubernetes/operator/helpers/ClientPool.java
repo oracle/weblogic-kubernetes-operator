@@ -92,17 +92,6 @@ public class ClientPool extends Pool<ApiClient> {
   private static class DefaultClientFactory implements ClientFactory {
     private final AtomicBoolean first = new AtomicBoolean(true);
 
-    private static Runnable wrapRunnable(Runnable r) {
-      return () -> {
-        try {
-          r.run();
-        } catch (Throwable t) {
-          // These will almost always be spurious exceptions
-          LOGGER.finer(MessageKeys.EXCEPTION, t);
-        }
-      };
-    }
-
     @Override
     public ApiClient get() {
       ApiClient client;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -12,7 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 
 import jakarta.json.Json;
@@ -321,7 +320,7 @@ class ObjectPatch<T> {
       P[] oldItems = getListField(oldItem);
       P[] newItems = getListField(newItem);
       List<Disposition> disposition
-            = Arrays.stream(oldItems).map(c -> getDisposition(c, newItems)).collect(Collectors.toList());
+            = Arrays.stream(oldItems).map(c -> getDisposition(c, newItems)).toList();
 
       for (int i = 0; i < oldItems.length; i++) {
         if (disposition.get(i).type == DispositionType.UPDATE) {
@@ -347,7 +346,7 @@ class ObjectPatch<T> {
       }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private P[] getListField(T item) {
       return (P[]) getter.apply(item).toArray(new PatchableComponent[0]);
     }

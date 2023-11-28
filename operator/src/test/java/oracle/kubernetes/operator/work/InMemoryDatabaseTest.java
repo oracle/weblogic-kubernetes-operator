@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -36,9 +36,7 @@ class InMemoryDatabaseTest {
   @Test
   void whenItemAbsent_readThrowsException() {
     Map<String, String> keys = keys().name(NAME1).namespace(NS1).map();
-    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.read(keys);
-    });
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> database.read(keys));
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
@@ -48,9 +46,7 @@ class InMemoryDatabaseTest {
 
     V1Ingress item = new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1));
     Map<String, String> keys = keys().namespace(NS1).map();
-    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.create(item, keys);
-    });
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> database.create(item, keys));
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_CONFLICT));
   }
 
@@ -72,9 +68,8 @@ class InMemoryDatabaseTest {
   void whenItemAbsent_replaceThrowsException() {
     V1Ingress item = new V1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1));
     Map<String, String> keys = keys().namespace(NS1).map();
-    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.replace(item, keys);
-    });
+    InMemoryDatabaseException thrown
+        = assertThrows(InMemoryDatabaseException.class, () -> database.replace(item, keys));
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 
@@ -104,9 +99,7 @@ class InMemoryDatabaseTest {
   @Test
   void whenItemToDeletedAbsent_throwException() {
     Map<String, String> keys = keys().name(NAME1).namespace(NS1).map();
-    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> {
-      database.delete(keys);
-    });
+    InMemoryDatabaseException thrown = assertThrows(InMemoryDatabaseException.class, () -> database.delete(keys));
     assertThat(thrown.getCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
 

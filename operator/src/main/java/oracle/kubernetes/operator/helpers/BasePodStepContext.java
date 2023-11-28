@@ -36,6 +36,7 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.processing.EffectiveServerSpec;
 import oracle.kubernetes.operator.tuning.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.DeploymentImage;
+import org.apache.commons.collections4.MapUtils;
 
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.common.AuxiliaryImageConstants.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
@@ -204,12 +205,12 @@ public abstract class BasePodStepContext extends StepContextBase {
   protected V1ResourceRequirements createResources() {
     V1ResourceRequirements resources = getResources();
     V1ResourceRequirements resourceRequirements = null;
-    if (!resources.getLimits().isEmpty()) {
+    if (!MapUtils.isEmpty(resources.getLimits())) {
       resourceRequirements = new V1ResourceRequirements()
           .limits(resources.getLimits());
     }
 
-    if (!resources.getRequests().isEmpty()) {
+    if (!MapUtils.isEmpty(resources.getRequests())) {
       resourceRequirements = resourceRequirements == null
           ? new V1ResourceRequirements().requests(resources.getRequests())
           : resourceRequirements.requests(resources.getRequests());
@@ -345,13 +346,13 @@ public abstract class BasePodStepContext extends StepContextBase {
     }
   }
 
-  // Hide the admin account's user name and password.
+  // Hide the admin account's username and password.
   // Note: need to use null v.s. "" since if you upload a "" to kubectl then download it,
   // it comes back as a null and V1EnvVar.equals returns false even though it's supposed to
   // be the same value.
   // Regardless, the pod ends up with an empty string as the value (v.s. thinking that
   // the environment variable hasn't been set), so it honors the value (instead of using
-  // the default, e.g. 'weblogic' for the user name).
+  // the default, e.g. 'weblogic' for the username).
   protected void hideAdminUserCredentials(List<V1EnvVar> vars) {
     addEnvVar(vars, "ADMIN_USERNAME", null);
     addEnvVar(vars, "ADMIN_PASSWORD", null);
@@ -376,7 +377,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     return vars;
   }
 
-  protected Optional<V1Container> getContainer(V1Pod v1Pod) {
+  protected Optional<V1Container> getContainer(@Nonnull V1Pod v1Pod) {
     return getContainer(v1Pod.getSpec());
   }
 
