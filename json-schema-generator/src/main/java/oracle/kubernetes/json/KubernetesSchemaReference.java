@@ -1,9 +1,11 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 public class KubernetesSchemaReference {
@@ -22,8 +24,8 @@ public class KubernetesSchemaReference {
     return new KubernetesSchemaReference(version);
   }
 
-  URL getKubernetesSchemaUrl() throws MalformedURLException {
-    return new URL(getUrlString());
+  URL getKubernetesSchemaUrl() throws MalformedURLException, URISyntaxException {
+    return new URI(getUrlString()).toURL();
   }
 
   private String getUrlString() {

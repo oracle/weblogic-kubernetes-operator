@@ -208,7 +208,7 @@ public class RestBackendImpl implements RestBackend {
     verifyDomain(domainUid);
     authorize(domainUid, Operation.UPDATE);
 
-    switch (Optional.ofNullable(params.getAction()).orElse(DomainActionType.UNKNOWN)) {
+    switch (Optional.ofNullable(params.action()).orElse(DomainActionType.UNKNOWN)) {
       case INTROSPECT:
         introspect(domainUid);
         break;
@@ -341,7 +341,7 @@ public class RestBackendImpl implements RestBackend {
   private List<String> getReferencedClusterResourceNames(DomainResource domain) {
     return domain.getSpec().getClusters().stream()
         .map(V1LocalObjectReference::getName)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private void createClusterIfNecessary(DomainResource domain, String cluster, int managedServerCount) {

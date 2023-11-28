@@ -82,7 +82,7 @@ import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.OPERATOR_WEBHOOK_COMPONENT;
-import static oracle.kubernetes.operator.EventConstants.PERSISTENT_VOUME_CLAIM_BOUND_EVENT;
+import static oracle.kubernetes.operator.EventConstants.PERSISTENT_VOLUME_CLAIM_BOUND_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBHOOK_STARTUP_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
@@ -854,7 +854,7 @@ public class EventHelper {
     PERSISTENT_VOLUME_CLAIM_BOUND {
       @Override
       public String getReason() {
-        return PERSISTENT_VOUME_CLAIM_BOUND_EVENT;
+        return PERSISTENT_VOLUME_CLAIM_BOUND_EVENT;
       }
 
       @Override

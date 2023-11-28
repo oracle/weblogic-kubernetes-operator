@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -45,7 +45,7 @@ public interface CallParams {
    * resource. Defaults to changes from the beginning of history. On a list call: when specified,
    * requests values at least as recent as the specified value. Defaults to returning the result
    * from remote storage based on quorum-read flag; - if it&#39;s 0, then we simply return what we
-   * currently have in cache, no guarantee; - if set to non zero, then the result is at least as
+   * currently have in cache, no guarantee; - if set to non-zero, then the result is at least as
    * fresh as given version.
    *
    * @return the current setting. Defaults to null.

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -159,7 +159,7 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return the server template associated with this dynamic servers configuration.
+   * Return the server template associated with this dynamic server's configuration.
    *
    * @return The server template associated with this dynamic servers configuration
    */
@@ -247,11 +247,10 @@ public class WlsDynamicServersConfig {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof WlsDynamicServersConfig)) {
+    if (!(other instanceof WlsDynamicServersConfig rhs)) {
       return false;
     }
 
-    WlsDynamicServersConfig rhs = ((WlsDynamicServersConfig) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(name, rhs.name)

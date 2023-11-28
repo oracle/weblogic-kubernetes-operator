@@ -1,10 +1,11 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serial;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -144,6 +145,9 @@ public class DomainUpgrader {
   }
 
   static class DomainUpgraderException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
 
     public DomainUpgraderException(String message) {
       super(message);

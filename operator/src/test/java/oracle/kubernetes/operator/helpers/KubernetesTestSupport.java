@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.io.Serial;
 import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -721,6 +722,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   static class HttpErrorException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
     private final ApiException apiException;
 
     HttpErrorException(ApiException apiException) {
@@ -1112,7 +1116,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       onDeleteActions.forEach(a -> a.accept(gracePeriodSeconds));
     }
 
-    class FieldMatcher {
+    static class FieldMatcher {
       private String path;
       private String op;
       private String value;
@@ -1459,6 +1463,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
   }
 
   static class NotFoundException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
     public NotFoundException(String resourceType, String name, String namespace) {
       super(String.format("No %s named %s found in namespace %s", resourceType, name, namespace));
     }

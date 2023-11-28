@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -14,7 +14,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -50,7 +49,7 @@ public class DomainStatus {
 
   @Description("Current service state of the domain.")
   @Valid
-  private List<DomainCondition> conditions = new ArrayList<>();
+  private final List<DomainCondition> conditions = new ArrayList<>();
 
   @Description(
       "A human readable message indicating details about why the domain is in this condition.")
@@ -88,7 +87,7 @@ public class DomainStatus {
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
   // sorted list of ServerStatus
-  private final List<ServerStatus> servers;
+  private final List<ServerStatus> servers = new ArrayList<>();
 
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
@@ -116,7 +115,6 @@ public class DomainStatus {
   private Integer replicas;
 
   public DomainStatus() {
-    servers = new ArrayList<>();
   }
 
   /**
@@ -128,9 +126,9 @@ public class DomainStatus {
     message = that.message;
     reason = that.reason;
     observedGeneration = that.observedGeneration;
-    conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
-    servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
-    clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
+    conditions.addAll(that.conditions.stream().map(DomainCondition::new).toList());
+    servers.addAll(that.servers.stream().map(ServerStatus::new).toList());
+    clusters.addAll(that.clusters.stream().map(ClusterStatus::new).toList());
     startTime = that.startTime;
     initialFailureTime = that.initialFailureTime;
     lastFailureTime = that.lastFailureTime;
@@ -171,10 +169,7 @@ public class DomainStatus {
       return this;
     }
 
-    conditions = conditions.stream()
-          .filter(c -> !c.getType().isObsolete())
-          .filter(c -> c.isCompatibleWith(newCondition))
-          .collect(Collectors.toList());
+    conditions.removeIf(c -> c.getType().isObsolete() || !c.isCompatibleWith(newCondition));
 
     conditions.add(newCondition);
     Collections.sort(conditions);
@@ -277,7 +272,7 @@ public class DomainStatus {
   }
 
   private List<DomainCondition> getConditionsMatching(Predicate<DomainCondition> predicate) {
-    return conditions.stream().filter(predicate).collect(Collectors.toList());
+    return conditions.stream().filter(predicate).toList();
   }
 
   /**
@@ -308,7 +303,7 @@ public class DomainStatus {
   }
 
   /**
-   * A human readable message indicating details about why the domain is in this condition.
+   * A human-readable message indicating details about why the domain is in this condition.
    *
    * @return message
    */
@@ -317,7 +312,7 @@ public class DomainStatus {
   }
 
   /**
-   * A human readable message indicating details about why the domain is in this condition.
+   * A human-readable message indicating details about why the domain is in this condition.
    *
    * @param message message
    */
@@ -326,7 +321,7 @@ public class DomainStatus {
   }
 
   /**
-   * A human readable message indicating details about why the domain is in this condition.
+   * A human-readable message indicating details about why the domain is in this condition.
    *
    * @param message message
    * @return this
@@ -462,7 +457,7 @@ public class DomainStatus {
             .map(ServerStatus::new)
             .map(this::adjust)
             .sorted(Comparator.naturalOrder())
-            .collect(Collectors.toList());
+            .toList();
 
       this.servers.clear();
       this.servers.addAll(newServers);
@@ -673,10 +668,9 @@ public class DomainStatus {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof DomainStatus)) {
+    if (!(other instanceof DomainStatus rhs)) {
       return false;
     }
-    DomainStatus rhs = ((DomainStatus) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(observedGeneration, rhs.observedGeneration)

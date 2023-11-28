@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -22,7 +22,7 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
     // if the initial character token is "v", then the value "alpha" or "beta"
     // may follow the numeric token followed by another token of digits.  Anything
     // else is illegal
-    if (value == null || value.length() < 1 || !Character.isAlphabetic(value.charAt(0))) {
+    if (value == null || value.isEmpty() || !Character.isAlphabetic(value.charAt(0))) {
       throw new IllegalArgumentException();
     }
 
@@ -134,7 +134,7 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
         if (o.isAlpha()) {
           return 1;
         }
-      } else /* if (isAlpha()) */ {
+      } else {
         if (!o.isAlpha()) {
           return -1;
         }

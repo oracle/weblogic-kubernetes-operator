@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -62,7 +62,7 @@ public abstract class BaseDebugLoggingFilter {
             // value to something like "*****" so that the log would at least show what
             // types of Authorization headers are in the request.  But then we'd need to
             // worry about malformed Authorization headers.
-            // For now, keep it simple and set the each value to "*****".
+            // For now, keep it simple and set all values to "*****".
             "*****"
         );
         // replace the original atz header values with ones that hide the credentials

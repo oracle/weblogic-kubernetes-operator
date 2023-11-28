@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -27,6 +28,7 @@ import oracle.kubernetes.operator.webhooks.WebhookRestServer;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.PartialObjectMetadata;
 
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_CERT;
 import static oracle.kubernetes.common.CommonConstants.SECRETS_WEBHOOK_KEY;
@@ -175,8 +177,8 @@ public class WebhookMain extends BaseMain {
   }
 
   private String getCrdResourceVersion(String crdName) throws ApiException {
-    return Optional.ofNullable(new CallBuilder().readCRDMetadata(crdName))
-        .map(pom -> pom.getMetadata()).map(m -> m.getResourceVersion()).orElse(null);
+    return Optional.of(new CallBuilder().readCRDMetadata(crdName))
+        .map(PartialObjectMetadata::getMetadata).map(V1ObjectMeta::getResourceVersion).orElse(null);
   }
 
   private Step createFullCRDRecheckSteps() {
@@ -257,12 +259,6 @@ public class WebhookMain extends BaseMain {
             .namespace(getWebhookNamespace())), packet);
       }
       return doNext(getNext(), packet);
-    }
-  }
-
-  public static class DeploymentException extends Exception {
-    public DeploymentException(Exception e) {
-      super(e);
     }
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -62,6 +62,7 @@ class OperatorRestTest extends RestTestBase {
     return restBackend;
   }
 
+  @SuppressWarnings("rawtypes")
   Map getJsonResponse(String href) {
     return new Gson().fromJson(createRequest(href).get(String.class), Map.class);
   }
@@ -88,6 +89,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void operatorEndPoint_returnsVersion() {
     Map result = getJsonResponse(OPERATOR_HREF);
 
@@ -98,6 +100,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void v1EndPoint_returnsVersionAndLinks() {
     Map result = getJsonResponse(V1_HREF);
 
@@ -109,6 +112,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void latestVersionEndPoint_returnsVersionAndLinks() {
     Map result = getJsonResponse(LATEST_HREF);
 
@@ -124,6 +128,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void swaggerEndPoint_returnsSwaggerFile() {
     Map result = getJsonResponse(SWAGGER_HREF);
 
@@ -133,6 +138,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void domainsEndPoint_returnsListOfDomainsAndLinks() {
     defineDomains("uid1", "uid2");
 
@@ -150,6 +156,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void existingDomainEndPoint_returnsDomainsUidAndClusterLink() {
     defineDomains("uid1", "uid2");
 
@@ -172,6 +179,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void clustersEndPoint_returnsListOfClustersAndLinks() {
     defineClusters("uid1", "cluster1", "cluster2");
 
@@ -194,6 +202,7 @@ class OperatorRestTest extends RestTestBase {
   }
 
   @Test
+  @SuppressWarnings("rawtypes")
   void existingClusterEndPoint_returnsClusterNameAndScalingLink() {
     defineClusters("uid1", "cluster1", "cluster2");
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.common.logging;
@@ -22,6 +22,7 @@ public abstract class BaseLoggingFacade {
    * Construct logging facade.
    * @param logger logger
    */
+  @SuppressWarnings("this-escape")
   protected BaseLoggingFacade(Logger logger) {
     this.logger = logger;
 
@@ -245,7 +246,7 @@ public abstract class BaseLoggingFacade {
   /**
    * Sets the level at which the underlying Logger operates. This should not be called in the
    * general case; levels should be set via OOB configuration (a configuration file exposed by the
-   * logging implementation, management API, etc).
+   * logging implementation, management API, etc.).
    *
    * @param newLevel Level to set
    */
@@ -401,7 +402,7 @@ public abstract class BaseLoggingFacade {
    * Logs a message at the requested level. Normally, one of the level-specific methods should be
    * used instead.
    *
-   * @param level Level at which log log the message
+   * @param level Level at which to log the message
    * @param msg the message to log
    */
   public void log(Level level, String msg) {
@@ -416,7 +417,7 @@ public abstract class BaseLoggingFacade {
    * param or an Object array, and is backward-compatible with them. Calling the per-Level methods
    * is preferred, but this is present for completeness.
    *
-   * @param level Level at which log log the message
+   * @param level Level at which to log the message
    * @param msg the message to log
    * @param params varargs list of objects to include in the log message
    * @see Logger#log(java.util.logging.Level, String, Object[])
@@ -432,7 +433,7 @@ public abstract class BaseLoggingFacade {
    * Logs a message which accompanies a Throwable. Calling equivalent per-Level method is preferred,
    * but this is present for completeness.
    *
-   * @param level Level at which log log the message
+   * @param level Level at which to log the message
    * @param msg the message to log
    * @param thrown an Exception to include in the logged message
    */

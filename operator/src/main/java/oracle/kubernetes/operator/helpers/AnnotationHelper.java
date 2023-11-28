@@ -1,16 +1,14 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.util.Yaml;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -22,9 +20,6 @@ public class AnnotationHelper {
   }
 
   static final String SHA256_ANNOTATION = "weblogic.sha256";
-  private static final boolean DEBUG = false;
-  private static final String HASHED_STRING = "hashedString";
-
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<Object, String> hashFunction = o -> DigestUtils.sha256Hex(Yaml.dump(o));
 
@@ -43,27 +38,12 @@ public class AnnotationHelper {
     meta.putAnnotationsItem("prometheus.io/scrape", "true");
   }
 
-  static V1Pod withSha256Hash(V1Pod pod) {
-    return DEBUG ? addHashAndDebug(pod) : addHash(pod);
-  }
-
   public static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject) {
     return withSha256Hash(kubernetesObject, kubernetesObject);
   }
 
   static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject, Object objectToHash) {
     return addHash(kubernetesObject, objectToHash);
-  }
-
-  private static V1Pod addHashAndDebug(V1Pod pod) {
-    String dump = Yaml.dump(pod);
-    addHash(pod);
-    Objects.requireNonNull(pod.getMetadata()).putAnnotationsItem(HASHED_STRING, dump);
-    return pod;
-  }
-
-  private static <K extends KubernetesObject> K addHash(K kubernetesObject) {
-    return addHash(kubernetesObject, kubernetesObject);
   }
 
   private static <K extends KubernetesObject> K addHash(K kubernetesObject, Object objectToHash) {
@@ -79,20 +59,12 @@ public class AnnotationHelper {
     return getAnnotation(kubernetesObject.getMetadata(), AnnotationHelper::getSha256Annotation);
   }
 
-  static String getDebugString(V1Pod pod) {
-    return getAnnotation(pod.getMetadata(), AnnotationHelper::getDebugHashAnnotation);
-  }
-
   private static String getAnnotation(
       V1ObjectMeta metadata, Function<Map<String, String>, String> annotationGetter) {
     return Optional.ofNullable(metadata)
         .map(V1ObjectMeta::getAnnotations)
         .map(annotationGetter)
         .orElse("");
-  }
-
-  private static String getDebugHashAnnotation(Map<String, String> annotations) {
-    return annotations.get(HASHED_STRING);
   }
 
   private static String getSha256Annotation(Map<String, String> annotations) {

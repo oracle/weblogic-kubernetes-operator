@@ -1,10 +1,11 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Map;
 
@@ -18,7 +19,7 @@ public interface Main {
    * @param kubernetesVersion the desired version
    * @throws IOException on IO exception
    */
-  void setKubernetesVersion(String kubernetesVersion) throws IOException;
+  void setKubernetesVersion(String kubernetesVersion) throws IOException, URISyntaxException;
 
   /**
    * Defines an external schema URL to be used for object definitions.

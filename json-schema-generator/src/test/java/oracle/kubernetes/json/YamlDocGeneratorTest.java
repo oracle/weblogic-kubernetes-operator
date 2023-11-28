@@ -1,10 +1,11 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -215,7 +216,7 @@ class YamlDocGeneratorTest {
   }
 
   @Test
-  void whenExternalSchemaSpecified_returnFileName() throws IOException {
+  void whenExternalSchemaSpecified_returnFileName() throws IOException, URISyntaxException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -228,7 +229,7 @@ class YamlDocGeneratorTest {
   }
 
   @Test
-  void whenExternalSchemaSpecified_generateWithReferencedSections() throws IOException {
+  void whenExternalSchemaSpecified_generateWithReferencedSections() throws IOException, URISyntaxException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -249,7 +250,7 @@ class YamlDocGeneratorTest {
   }
 
   @Test
-  void whenExternalSchemaSpecified_generateMarkdownForIt() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForIt() throws IOException, URISyntaxException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -273,7 +274,7 @@ class YamlDocGeneratorTest {
   }
 
   @Test
-  void whenExternalSchemaSpecified_generateMarkdownForItsLinks() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForItsLinks() throws IOException, URISyntaxException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -286,7 +287,7 @@ class YamlDocGeneratorTest {
   }
 
   @Test
-  void whenExternalSchemaSpecified_generateMarkdownForItsDependencies() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForItsDependencies() throws IOException, URISyntaxException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 

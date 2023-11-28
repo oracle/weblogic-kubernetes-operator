@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -147,10 +147,9 @@ public class ClusterCondition implements Comparable<ClusterCondition>, Patchable
     if (other == this) {
       return true;
     }
-    if (!(other instanceof ClusterCondition)) {
+    if (!(other instanceof ClusterCondition rhs)) {
       return false;
     }
-    ClusterCondition rhs = ((ClusterCondition) other);
     return new EqualsBuilder()
         .append(message, rhs.message)
         .append(type, rhs.type)

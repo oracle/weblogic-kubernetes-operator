@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.resource;
@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -130,12 +129,12 @@ public class ConversionWebhookResource extends BaseResource {
                 .map(m -> (String) m.get("namespace")).orElse("default");
             return be.listClusters(namespace);
           }))
-          .collect(Collectors.toList());
+          .toList();
 
     List<Object> convertedDomains = new ArrayList<>();
     for (SchemaConversionUtils.Resources cr : convertedResources) {
-      convertedDomains.add(cr.domain);
-      cr.clusters.forEach(be::createOrReplaceCluster);
+      convertedDomains.add(cr.domain());
+      cr.clusters().forEach(be::createOrReplaceCluster);
     }
 
     return new ConversionResponse()

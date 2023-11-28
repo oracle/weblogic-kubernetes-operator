@@ -45,7 +45,7 @@ public interface MakeRightDomainOperation extends MakeRightOperation<DomainPrese
   MakeRightDomainOperation interrupt();
 
   /**
-   * Modifies the factory to indicate that this is a retry operation on a retriable failure.
+   * Modifies the factory to indicate that this is a retry operation on a retryable failure.
    +
    + @return the updated factory
    */

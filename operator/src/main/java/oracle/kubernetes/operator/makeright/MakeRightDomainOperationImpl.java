@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -480,7 +479,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
 
         private void processList(V1PodList list) {
           info.addServerNamesFromPodList(list.getItems().stream()
-              .map(PodHelper::getPodServerName).collect(Collectors.toList()));
+              .map(PodHelper::getPodServerName).toList());
           list.getItems().forEach(this::addPod);
         }
 
@@ -510,7 +509,7 @@ public class MakeRightDomainOperationImpl extends MakeRightOperationImpl<DomainP
         @Override
         public void completeProcessing(Packet packet) {
           info.getServerNames().stream().filter(
-              s -> !info.getServerNamesFromPodList().contains(s)).collect(Collectors.toList())
+              s -> !info.getServerNamesFromPodList().contains(s)).toList()
               .forEach(name -> info.deleteServerPodFromEvent(name, null));
           info.clearServerPodNamesFromList();
         }

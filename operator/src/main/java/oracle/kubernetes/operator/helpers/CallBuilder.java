@@ -543,11 +543,13 @@ public class CallBuilder {
           new WeblogicApi(client)
               .createNamespacedCluster(
                   requestParams.namespace, (ClusterResource) requestParams.body);
+  @SuppressWarnings("unchecked")
   private final SynchronousCallFactory<Object> createClusterCallUntyped =
       (client, requestParams) ->
           new WeblogicApi(client)
               .createNamespacedCluster(
                   requestParams.namespace, (Map<String, Object>) requestParams.body);
+  @SuppressWarnings("unchecked")
   private final SynchronousCallFactory<Object> replaceClusterCallUntyped =
       (client, requestParams) ->
           new WeblogicApi(client)

@@ -1,9 +1,10 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -79,7 +80,8 @@ public class AuthorizationProxy {
       return Boolean.FALSE;
     }
     V1SubjectAccessReviewStatus subjectAccessReviewStatus = subjectAccessReview.getStatus();
-    Boolean result = subjectAccessReviewStatus.getAllowed();
+    Boolean result = Optional.ofNullable(subjectAccessReviewStatus)
+        .map(V1SubjectAccessReviewStatus::getAllowed).orElse(false);
     LOGGER.exiting(result);
     return result;
   }

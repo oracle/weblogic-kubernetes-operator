@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks;
@@ -126,7 +126,7 @@ public class WebhookRestServer extends BaseRestServer {
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
-        // if we didn't get a chance to start all of the ports because an exception
+        // if we didn't get a chance to start all the ports because an exception
         // was thrown, then stop the ones we did manage to start
         stop();
       }

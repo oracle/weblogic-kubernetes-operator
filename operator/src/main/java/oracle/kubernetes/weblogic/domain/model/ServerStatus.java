@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -326,10 +326,9 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
     if (other == this) {
       return true;
     }
-    if (!(other instanceof ServerStatus)) {
+    if (!(other instanceof ServerStatus rhs)) {
       return false;
     }
-    ServerStatus rhs = ((ServerStatus) other);
     return new EqualsBuilder()
         .append(nodeName, rhs.nodeName)
         .append(serverName, rhs.serverName)

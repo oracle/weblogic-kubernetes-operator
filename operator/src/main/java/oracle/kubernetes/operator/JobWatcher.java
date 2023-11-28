@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.Serial;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
@@ -208,12 +209,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     LOGGER.fine("JobWatcher.receivedResponse response item: " + item);
     switch (item.type) {
-      case "ADDED":
-      case "MODIFIED":
+      case "ADDED", "MODIFIED":
         dispatchCallback(getJobName(item), item.object);
         break;
-      case "DELETED":
-      case "ERROR":
+      case "DELETED", "ERROR":
       default:
     }
 
@@ -303,7 +302,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
               .listPodAsync(namespace, new TerminationStateResponseStep(jobName, next));
     }
 
-    private class TerminationStateResponseStep extends ResponseStep<V1PodList> {
+    private static class TerminationStateResponseStep extends ResponseStep<V1PodList> {
       private final String jobName;
 
       TerminationStateResponseStep(String jobName, Step next) {
@@ -343,15 +342,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         return getName(pod).startsWith(jobName);
       }
 
-      private class IntrospectorTerminationState {
-
-        private final String jobName;
-        private final Packet packet;
-
-        IntrospectorTerminationState(String jobName, Packet packet) {
-          this.jobName = jobName;
-          this.packet = packet;
-        }
+      private record IntrospectorTerminationState(String jobName, Packet packet) {
 
         private void remove(Packet packet) {
           packet.remove(JOB_POD_INTROSPECT_CONTAINER_TERMINATED);
@@ -429,7 +420,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   public static class DeadlineExceededException extends Exception implements IntrospectionJobHolder {
-    final V1Job job;
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
+    final transient V1Job job;
 
     public DeadlineExceededException(V1Job job) {
       super();

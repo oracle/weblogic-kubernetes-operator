@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -71,7 +71,7 @@ public class AuthenticationFilter extends BaseDebugLoggingFilter implements Cont
     String atz = req.getHeaderString(HttpHeaders.AUTHORIZATION);
     if (atz != null && atz.startsWith(ACCESS_TOKEN_PREFIX)) {
       String t = atz.substring(ACCESS_TOKEN_PREFIX.length());
-      if (t.length() > 0) {
+      if (!t.isEmpty()) {
         LOGGER.exiting();
         return t;
       }

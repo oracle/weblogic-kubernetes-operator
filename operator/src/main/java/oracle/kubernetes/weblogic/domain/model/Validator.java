@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -73,7 +72,7 @@ public abstract class Validator {
       failures.add(DomainValidationMessages.badVolumeMountPath(mount));
     }
 
-    mounts.stream().forEach(m -> checkOverlappingMountPaths(spec, mount, m));
+    mounts.forEach(m -> checkOverlappingMountPaths(spec, mount, m));
   }
 
   private void checkOverlappingMountPaths(DomainSpec spec, V1VolumeMount mount1, V1VolumeMount mount2) {
@@ -97,7 +96,7 @@ public abstract class Validator {
   private List<String> getTokensWithCollection(String str) {
     return Collections.list(new StringTokenizer(str, "/")).stream()
         .map(String.class::cast)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   boolean skipValidation(String mountPath, Set<String> envNames) {
@@ -183,7 +182,7 @@ public abstract class Validator {
           .stream()
           .map(V1EnvVar::getName)
           .filter(isReserved)
-          .collect(Collectors.toList());
+          .toList();
 
       if (!reservedNames.isEmpty()) {
         failures.add(DomainValidationMessages.reservedVariableNames(prefix, reservedNames));

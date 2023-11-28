@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.common.utils;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ class SchemaConversionUtilsTest {
   private final ConversionAdapter converterv8 = new ConversionAdapter(API_VERSION_V8);
   private Map<String, Object> v8Domain;
 
-  private static CommonUtils.CheckedFunction<String, String> getMD5Hash = SchemaConversionUtilsTest::getMD5Hash;
+  private static final CommonUtils.CheckedFunction<String, String> getMD5Hash = SchemaConversionUtilsTest::getMD5Hash;
 
   private static String getMD5Hash(String s) throws NoSuchAlgorithmException {
     throw new NoSuchAlgorithmException();
@@ -65,11 +64,11 @@ class SchemaConversionUtilsTest {
   }
 
   @SuppressWarnings("unchecked")
-  private static Map<String, Object> readAsYaml(String fileName) throws IOException {
+  private static Map<String, Object> readAsYaml(String fileName) {
     return (Map<String, Object>) getYamlDocuments(fileName).iterator().next();
   }
 
-  private static Iterable<Object> getYamlDocuments(String fileName) throws IOException {
+  private static Iterable<Object> getYamlDocuments(String fileName) {
     InputStream yamlStream = inputStreamFromClasspath(fileName);
     return new Yaml().loadAll(yamlStream);
   }
@@ -100,8 +99,8 @@ class SchemaConversionUtilsTest {
     void convert(Map<String, Object> yaml, List<Map<String, Object>> clusters) {
       assertDoesNotThrow(() -> {
         SchemaConversionUtils.Resources convertedResources = utils.convertDomainSchema(yaml, toLookup(clusters));
-        convertedDomain = convertedResources.domain;
-        generatedClusters = convertedResources.clusters;
+        convertedDomain = convertedResources.domain();
+        generatedClusters = convertedResources.clusters();
       });
     }
 
@@ -135,7 +134,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV8DomainUpgradeWithLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
+  void testV8DomainUpgradeWithLegacyAuxImagesToV9DomainWithInitContainers() {
     Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
     final Object expectedDomain = yamlDocuments.next();
     List<Object> clusters = new ArrayList<>();
@@ -149,7 +148,7 @@ class SchemaConversionUtilsTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void testV9DomainDowngrade() throws IOException {
+  void testV9DomainDowngrade() {
     Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
     final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
     List<Map<String, Object>> clusters = new ArrayList<>();
@@ -166,7 +165,7 @@ class SchemaConversionUtilsTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() throws IOException {
+  void testV8DomainUpgradeWithServerScopedLegacyAuxImagesToV9DomainWithInitContainers() {
     Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_SERVER_SCOPED_AUX_IMAGE_YAML).iterator();
     final Map<String, Object> expectedDomain = (Map<String, Object>) yamlDocuments.next();
     List<Map<String, Object>> clusters = new ArrayList<>();
@@ -251,7 +250,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainFailedConditionReason_restored() throws IOException {
+  void testV9DomainFailedConditionReason_restored() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "metadata.annotations")
         .put("weblogic.v8.failed.reason", "Danger");
@@ -265,7 +264,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainAvailableConditionReason_restored() throws IOException {
+  void testV9DomainAvailableConditionReason_restored() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "metadata.annotations")
         .put("weblogic.v8.available.reason", "ServersReady");
@@ -279,7 +278,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainRollingCondition_preservedAndRestored() throws IOException {
+  void testV9DomainRollingCondition_preservedAndRestored() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     addStatusCondition(v9Domain, "Rolling", "True", null, "Rolling cluster-2");
 
@@ -502,7 +501,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainWithLogHomeLayoutFlat_dropIt() throws IOException {
+  void testV9DomainWithLogHomeLayoutFlat_dropIt() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "spec")
         .put("logHomeLayout", "Flat");
@@ -513,7 +512,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainWithLogHomeLayoutByServers_preserveIt() throws IOException {
+  void testV9DomainWithLogHomeLayoutByServers_preserveIt() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "spec")
         .put("logHomeLayout", "ByServers");
@@ -526,7 +525,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainWithNoLogHomeLayout_preserveItAsByServers() throws IOException {
+  void testV9DomainWithNoLogHomeLayout_preserveItAsByServers() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "spec")
         .remove("logHomeLayout");
@@ -565,7 +564,7 @@ class SchemaConversionUtilsTest {
 
   @Test
   @SuppressWarnings("unchecked")
-  void testV9DomainFields_restored() throws IOException {
+  void testV9DomainFields_restored() {
     Iterator<Object> yamlDocuments = getYamlDocuments(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML).iterator();
     final Map<String, Object> domain = (Map<String, Object>) yamlDocuments.next();
     List<Map<String, Object>> clusters = new ArrayList<>();
@@ -585,7 +584,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainCompletedIsFalse_toProgressing() throws IOException {
+  void testV9DomainCompletedIsFalse_toProgressing() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     addStatusCondition(v9Domain, "Completed", "False", "Something", "Hello");
     converterv8.convert(v9Domain);
@@ -600,7 +599,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainCompletedIsTrue_removeIt() throws IOException {
+  void testV9DomainCompletedIsTrue_removeIt() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     addStatusCondition(v9Domain, "Completed", "True", "Something", "Hello");
     converterv8.convert(v9Domain);
@@ -610,7 +609,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void whenV9DomainHasServerStatusStateGoal_renameToDesiredState() throws IOException {
+  void whenV9DomainHasServerStatusStateGoal_renameToDesiredState() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
 
     addV9ServerStatus(v9Domain, "ms1", "RUNNING", "UNKNOWN");
@@ -653,7 +652,7 @@ class SchemaConversionUtilsTest {
   }
 
   @Test
-  void testV9DomainIstio_restored() throws IOException {
+  void testV9DomainIstio_restored() {
     Map<String, Object> v9Domain = readAsYaml(DOMAIN_V9_CONVERTED_LEGACY_AUX_IMAGE_YAML);
     getMapAtPath(v9Domain, "metadata.annotations")
         .put("weblogic.v8.preserved",
@@ -680,6 +679,7 @@ class SchemaConversionUtilsTest {
 
   @Test
   void testV8DomainWithLongAuxiliaryImageVolumeName_convertedVolumeNameIsTruncated() throws NoSuchAlgorithmException {
+    @SuppressWarnings("unchecked")
     Map<String, Object> auxImageVolume = ((Map<String, Object>)
         ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
     auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");
@@ -689,7 +689,7 @@ class SchemaConversionUtilsTest {
 
     assertThat(converter.getDomain(), hasJsonPath("$.spec.serverPod.volumes[0].name",
         equalTo(CommonUtils.getLegalVolumeName(CommonUtils.toDns1123LegalName(CommonConstants.COMPATIBILITY_MODE
-            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + (String)auxImageVolume.get("name"))))));
+            + AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + auxImageVolume.get("name"))))));
   }
 
   @Test
@@ -697,6 +697,7 @@ class SchemaConversionUtilsTest {
       throws NoSuchFieldException {
     mementos.add(StaticStubSupport.install(CommonUtils.class, "getMD5Hash", getMD5Hash));
 
+    @SuppressWarnings("unchecked")
     Map<String, Object> auxImageVolume = ((Map<String, Object>)
         ((List<Object>) getDomainSpec(v8Domain).get("auxiliaryImageVolumes")).get(0));
     auxImageVolume.put("name", "test-domain-aux-image-volume-test-domain-aux-image-volume");

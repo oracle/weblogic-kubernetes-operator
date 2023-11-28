@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -288,13 +288,12 @@ class ServerDownIteratorStepTest {
   }
 
   private ServerDownIteratorStepTest forServers(String... servers) {
-    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(this::createShutdownInfo).collect(Collectors.toList()));
+    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(this::createShutdownInfo).toList());
     return this;
   }
 
   private ServerDownIteratorStepTest forClusteredServers(String clusterName, String... servers) {
-    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(s -> createShutdownInfo(clusterName, s))
-            .collect(Collectors.toList()));
+    this.serverShutdownInfos.addAll(Arrays.stream(servers).map(s -> createShutdownInfo(clusterName, s)).toList());
     return this;
   }
 

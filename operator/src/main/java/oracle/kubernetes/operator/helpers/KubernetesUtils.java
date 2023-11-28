@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -17,23 +17,11 @@ import oracle.kubernetes.operator.LabelConstants;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
-import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 public class KubernetesUtils {
 
   private KubernetesUtils() {
     // no-op
-  }
-
-  /**
-   * Returns true if the two maps of values match. A null map is considered to match an empty map.
-   *
-   * @param first  the first map to compare
-   * @param second the second map to compare
-   * @return true if the maps match.
-   */
-  static <K, V> boolean mapEquals(Map<K, V> first, Map<K, V> second) {
-    return Objects.equals(first, second) || (isNullOrEmpty(first) && isNullOrEmpty(second));
   }
 
   /**
@@ -108,8 +96,8 @@ public class KubernetesUtils {
    * @return the metadata, if found; otherwise a newly created one.
    */
   static V1ObjectMeta getResourceMetadata(Object resource) {
-    if (resource instanceof KubernetesObject) {
-      return ((KubernetesObject) resource).getMetadata();
+    if (resource instanceof KubernetesObject kubernetesObject) {
+      return kubernetesObject.getMetadata();
     } else {
       return new V1ObjectMeta();
     }

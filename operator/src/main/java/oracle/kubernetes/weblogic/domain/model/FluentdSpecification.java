@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -175,7 +175,7 @@ public class FluentdSpecification {
   @Override
   public boolean equals(Object o) {
     return (this == o)
-          || ((o instanceof FluentdSpecification) && equals((FluentdSpecification) o));
+          || ((o instanceof FluentdSpecification fluentdSpecification) && equals(fluentdSpecification));
   }
 
   private boolean equals(FluentdSpecification that) {

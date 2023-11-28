@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -154,7 +154,7 @@ public final class NextAction implements BreadCrumbFactory {
     SUSPEND,
     THROW;
     Kind getPreviousKind(BreadCrumb previous) {
-      return (previous instanceof NextActionBreadCrumb) ? ((NextActionBreadCrumb) previous).na.kind : null;
+      return (previous instanceof NextActionBreadCrumb nextActionBreadCrumb) ? nextActionBreadCrumb.na.kind : null;
     }
   }
 

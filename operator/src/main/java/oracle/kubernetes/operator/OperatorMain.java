@@ -101,7 +101,7 @@ public class OperatorMain extends BaseMain {
 
     private final DomainProcessor domainProcessor;
     private final DomainNamespaces domainNamespaces;
-    private final AtomicReference<V1CustomResourceDefinition> crdRefernce;
+    private final AtomicReference<V1CustomResourceDefinition> crdReference;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       super(buildProps, scheduledExecutorService);
@@ -112,7 +112,7 @@ public class OperatorMain extends BaseMain {
 
       PodHelper.setProductVersion(productVersion.toString());
 
-      crdRefernce = new AtomicReference<>();
+      crdReference = new AtomicReference<>();
     }
 
 
@@ -178,7 +178,7 @@ public class OperatorMain extends BaseMain {
 
     @Override
     public AtomicReference<V1CustomResourceDefinition> getCrdReference() {
-      return crdRefernce;
+      return crdReference;
     }
   }
 
@@ -375,7 +375,8 @@ public class OperatorMain extends BaseMain {
   }
 
   // If CRD read succeeds, wait until the CRD has webhook.
-  // Otherwise if CRD read fails due to permissions error, list the domains to indirectly check if the CRD is installed.
+  // Otherwise, if CRD read fails due to permissions error,
+  // list the domains to indirectly check if the CRD is installed.
   ResponseStep<V1CustomResourceDefinition> createReadResponseStep(Step next) {
     return new ReadResponseStep(next);
   }
@@ -485,8 +486,7 @@ public class OperatorMain extends BaseMain {
 
         break;
 
-      case "MODIFIED":
-      case "ERROR":
+      case "MODIFIED", "ERROR":
       default:
     }
   }

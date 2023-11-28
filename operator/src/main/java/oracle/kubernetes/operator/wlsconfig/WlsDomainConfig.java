@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
@@ -59,6 +58,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
    * @param wlsServerTemplates A Map containing server templates configured in this WLS domain
    */
+  @SuppressWarnings("this-escape")
   public WlsDomainConfig(
       String name,
       String adminServerName,
@@ -162,10 +162,11 @@ public class WlsDomainConfig implements WlsDomain {
    * @return A List of WlsServerConfig for each server statically configured the WLS domain
    */
   public List<WlsServerConfig> getAllServers() {
-    return Stream.concat(
+    List<WlsServerConfig> allServers = new ArrayList<>();
+    Stream.concat(
           servers.stream(),
-          configuredClusters.stream().flatMap(c -> c.getServerConfigs().stream()))
-      .collect(Collectors.toList());
+          configuredClusters.stream().flatMap(c -> c.getServerConfigs().stream())).forEach(allServers::add);
+    return allServers;
   }
 
   public List<WlsServerConfig> getServerTemplates() {
@@ -326,7 +327,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   private List<Map<String, Object>> createClustersList() {
-    return configuredClusters.stream().map(this::createTopology).collect(Collectors.toList());
+    return configuredClusters.stream().map(this::createTopology).toList();
   }
 
   private Map<String, Object> createTopology(WlsClusterConfig cluster) {
@@ -345,7 +346,7 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   private List<Map<String, Object>> createServersList(List<WlsServerConfig> servers) {
-    return servers.stream().map(this::createTopology).collect(Collectors.toList());
+    return servers.stream().map(this::createTopology).toList();
   }
 
   @Override
@@ -376,11 +377,10 @@ public class WlsDomainConfig implements WlsDomain {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof WlsDomainConfig)) {
+    if (!(other instanceof WlsDomainConfig rhs)) {
       return false;
     }
 
-    WlsDomainConfig rhs = ((WlsDomainConfig) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(name, rhs.name)

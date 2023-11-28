@@ -1333,7 +1333,7 @@ class CallBuilderTest {
 
   @Test
   @ResourceLock(value = "server")
-  void replaceValodatingWebhookConfiguration_returnsUpdatedResource() throws InterruptedException {
+  void replaceValidatingWebhookConfiguration_returnsUpdatedResource() throws InterruptedException {
     V1ValidatingWebhookConfiguration validatingWebhookConfig
         = new V1ValidatingWebhookConfiguration()
         .metadata(createNameOnlyMetadata(TEST_VALIDATING_WEBHOOK_NAME))
@@ -1474,7 +1474,7 @@ class CallBuilderTest {
     return new V1ObjectMeta().name(name);
   }
 
-  /** defines a get request for an list of items. */
+  /** defines a get request for a list of items. */
   private JsonServlet defineHttpGetResponse(String resourceName, Object response) {
     JsonGetServlet servlet = new JsonGetServlet(response);
     defineResource(resourceName, servlet);
@@ -1649,14 +1649,14 @@ class CallBuilderTest {
       Map<String, String[]> parameters = new HashMap<>();
       for (String s : query.split("&")) {
         Pair<String, String> p = splitQueryParameter(s);
-        if (!parameters.containsKey(p.getLeft())) {
-          parameters.put(p.getLeft(), new String[] { p.getRight() });
+        if (!parameters.containsKey(p.left())) {
+          parameters.put(p.left(), new String[] { p.right() });
         } else {
-          String[] current = parameters.get(p.getLeft());
+          String[] current = parameters.get(p.left());
           String[] updated = new String[current.length + 1];
           System.arraycopy(current, 0, updated, 0, current.length);
-          updated[current.length] = p.getRight();
-          parameters.put(p.getLeft(), updated);
+          updated[current.length] = p.right();
+          parameters.put(p.left(), updated);
         }
       }
       return parameters;

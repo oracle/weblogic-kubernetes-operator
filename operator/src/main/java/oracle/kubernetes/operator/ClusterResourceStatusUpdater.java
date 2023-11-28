@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.common.logging.MessageKeys;
@@ -88,7 +87,7 @@ public class ClusterResourceStatusUpdater {
       List<StepAndPacket> result = clusterResources.stream()
           .filter(res -> createContext(packet, res).isClusterResourceStatusChanged())
           .map(res -> new StepAndPacket(createContext(packet, res).createReplaceClusterResourceStatusStep(), packet))
-          .collect(Collectors.toList());
+          .toList();
       return result.isEmpty() ? null : new RunInParallelStep(result);
     }
 
@@ -243,14 +242,14 @@ public class ClusterResourceStatusUpdater {
       return conditions.stream().filter(cc -> "False".equals(cc.getStatus()))
            .map(this::toFalseClusterResourceEvent)
            .filter(Objects::nonNull)
-           .collect(Collectors.toList());
+           .toList();
     }
 
     private List<EventData> getClusterStatusConditionTrueEvents(List<ClusterCondition> conditions) {
       return conditions.stream().filter(cc -> "True".equals(cc.getStatus()))
           .map(this::toTrueClusterResourceEvent)
           .filter(Objects::nonNull)
-          .collect(Collectors.toList());
+          .toList();
     }
 
     private EventData toTrueClusterResourceEvent(ClusterCondition condition) {

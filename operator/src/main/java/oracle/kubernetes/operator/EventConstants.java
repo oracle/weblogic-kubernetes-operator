@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -27,7 +27,7 @@ public interface EventConstants {
   String DOMAIN_UNAVAILABLE_EVENT = "Unavailable";
   String DOMAIN_INCOMPLETE_EVENT = "Incomplete";
   String DOMAIN_FAILURE_RESOLVED_EVENT = "FailureResolved";
-  String PERSISTENT_VOUME_CLAIM_BOUND_EVENT = "PersistentVolumeClaimBound";
+  String PERSISTENT_VOLUME_CLAIM_BOUND_EVENT = "PersistentVolumeClaimBound";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";

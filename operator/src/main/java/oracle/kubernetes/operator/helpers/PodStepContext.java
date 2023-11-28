@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -351,7 +350,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       String portNamePrefix = getPortNamePrefix(name);
       // Find ports with the name having the same first 12 characters
       List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
-              portNamePrefix.equals(getPortNamePrefix(port.getName()))).collect(Collectors.toList());
+              portNamePrefix.equals(getPortNamePrefix(port.getName()))).toList();
       int index = containerPortsWithSamePrefix.size() + 1;
       String indexStr = String.valueOf(index);
       // zero fill to the left for single digit index (e.g. 01)
@@ -717,7 +716,7 @@ public abstract class PodStepContext extends BasePodStepContext {
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
             .map(c -> c.env(createEnv(c)).envFrom(c.getEnvFrom()).resources(createResources()))
-        .collect(Collectors.toList()));
+        .toList());
     return initContainers;
   }
 
@@ -1024,10 +1023,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (other == this) {
         return true;
       }
-      if (!(other instanceof ConflictStep)) {
+      if (!(other instanceof ConflictStep rhs)) {
         return false;
       }
-      ConflictStep rhs = ((ConflictStep) other);
       return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
     }
 
@@ -1345,9 +1343,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     private void restoreFluentdVolume(V1Pod recipe, V1Pod currentPod) {
       Optional.ofNullable(recipe.getSpec().getVolumes())
           .ifPresent(volumes -> volumes.stream().filter(volume -> FLUENTD_CONFIGMAP_VOLUME.equals(volume.getName()))
-              .forEach(volume -> {
-                Optional.ofNullable(volume.getConfigMap()).ifPresent(cms -> cms.setName(OLD_FLUENTD_CONFIGMAP_NAME));
-              }));
+              .forEach(volume ->
+                  Optional.ofNullable(volume.getConfigMap())
+                      .ifPresent(cms -> cms.setName(OLD_FLUENTD_CONFIGMAP_NAME))));
     }
 
     private void restoreSecurityContext(V1Pod recipe, V1Pod currentPod) {

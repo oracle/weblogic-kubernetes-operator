@@ -1,9 +1,10 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +43,10 @@ class MessageIntegrityTest {
   }
 
   static class DuplicateFindingProperties extends Properties {
-    private final List<Object> duplicateProperties = new ArrayList<>();
+    @Serial
+    private static final long serialVersionUID  = 1L;
+
+    private final transient List<Object> duplicateProperties = new ArrayList<>();
 
     @Override
     public synchronized Object put(Object key, Object value) {

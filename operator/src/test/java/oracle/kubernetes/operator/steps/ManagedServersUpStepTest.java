@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -670,7 +669,7 @@ class ManagedServersUpStepTest {
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
     ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, info);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
-    info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
+    info.getServerPods().map(PodHelper::getPodServerName)
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
     serversUpStepFactory.shutdownInfos.addAll(ssi);
     return factory.createServerStep(info, config, serversUpStepFactory, nextStep);

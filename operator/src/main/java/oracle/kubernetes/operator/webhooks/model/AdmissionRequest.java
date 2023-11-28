@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.webhooks.model;
@@ -150,7 +150,7 @@ public class AdmissionRequest {
   }
 
   public Object getProposedResource() {
-    return getRequestKind().readObject(this);
+    return getRequestKind().readProposedObject(this);
   }
 
   @Override
@@ -171,16 +171,12 @@ public class AdmissionRequest {
    * @return enum element.
    */
   public RequestKind getRequestKind() {
-    switch (getKind().get("kind")) {
-      case DOMAIN:
-        return RequestKind.DOMAIN;
-      case CLUSTER:
-        return RequestKind.CLUSTER;
-      case SCALE:
-        return RequestKind.SCALE;
-      default:
-        return RequestKind.NOT_SUPPORTED;
-    }
+    return switch (getKind().get("kind")) {
+      case DOMAIN -> RequestKind.DOMAIN;
+      case CLUSTER -> RequestKind.CLUSTER;
+      case SCALE -> RequestKind.SCALE;
+      default -> RequestKind.NOT_SUPPORTED;
+    };
   }
 
   public enum RequestKind {
@@ -191,7 +187,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public Object readObject(AdmissionRequest request) {
+      public Object readProposedObject(AdmissionRequest request) {
         return readDomain(writeMap(request.getObject()));
       }
 
@@ -211,7 +207,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public Object readObject(AdmissionRequest request) {
+      public Object readProposedObject(AdmissionRequest request) {
         return readCluster(writeMap(request.getObject()));
       }
 
@@ -231,7 +227,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public Object readObject(AdmissionRequest request) {
+      public Object readProposedObject(AdmissionRequest request) {
         return readScale(writeMap(request.getObject()));
       }
 
@@ -266,7 +262,7 @@ public class AdmissionRequest {
       }
 
       @Override
-      public Object readObject(AdmissionRequest request) {
+      public Object readProposedObject(AdmissionRequest request) {
         throw new AssertionError(NOT_SUPPORTED_MSG);
       }
 
@@ -282,7 +278,7 @@ public class AdmissionRequest {
 
     public abstract Object readOldObject(AdmissionRequest request);
 
-    public abstract Object readObject(AdmissionRequest request);
+    public abstract Object readProposedObject(AdmissionRequest request);
 
     public abstract AdmissionChecker getAdmissionChecker(AdmissionRequest request) throws ApiException;
 

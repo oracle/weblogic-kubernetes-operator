@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -111,6 +111,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
    * @param labelSelector Label selector
    * @param resourceVersion Resource version
    */
+  @SuppressWarnings("this-escape")
   public AsyncRequestStep(
           ResponseStep<T> next,
           RequestParams requestParams,
@@ -176,7 +177,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       this.packet = packet;
       retryStrategy = Optional.ofNullable(retry)
             .orElse(new DefaultRetryStrategy(maxRetryCount, AsyncRequestStep.this, AsyncRequestStep.this));
-      this.cont = Optional.ofNullable(cont).orElse(null);
+      this.cont = cont;
       client = helper.take();
     }
 
@@ -252,8 +253,10 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       return didResume.compareAndSet(false, true);
     }
 
+    @SuppressWarnings("try")
+
     private void logTimeout() {
-      // called from a code path where we don't have the necessary information for logging context
+      // called from a code path where we don't have the necessary information for logging context,
       // so we need to use the thread context to pass in the logging context
       try (ThreadLoggingContext ignored =
                setThreadContext()
@@ -272,8 +275,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       }
     }
 
+    @SuppressWarnings("try")
     private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      // called from a code path where we don't have the necessary information for logging context
+      // called from a code path where we don't have the necessary information for logging context,
       // so we need to use the thread context to pass in the logging context
       try (ThreadLoggingContext ignored =
                setThreadContext()
@@ -289,8 +293,9 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       }
     }
 
+    @SuppressWarnings("try")
     private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
-      // called from a code path where we don't have the necessary information for logging context
+      // called from a code path where we don't have the necessary information for logging context,
       // so we need to use the thread context to pass in the logging context
       try (ThreadLoggingContext ignored =
                setThreadContext()

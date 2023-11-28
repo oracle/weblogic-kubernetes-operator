@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -124,7 +124,7 @@ public class OperatorUtils {
     StringBuilder word = new StringBuilder();
     char lastCh = 0;
     for (char ch : orig.toCharArray()) {
-      if (word.length() != 0
+      if (!word.isEmpty()
           && Character.isDigit(ch) ^ Character.isDigit(lastCh)) {
         ret.append(getSortingWord(word.toString()));
         word = new StringBuilder();
@@ -137,7 +137,7 @@ public class OperatorUtils {
   }
 
   private static String getSortingWord(String word) {
-    if (word.length() == 0) {
+    if (word.isEmpty()) {
       return word;
     }
     if (Character.isDigit(word.charAt(0))) {

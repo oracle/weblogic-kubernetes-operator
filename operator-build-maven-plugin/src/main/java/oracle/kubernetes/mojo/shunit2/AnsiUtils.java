@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.mojo.shunit2;
@@ -11,6 +11,10 @@ import java.util.regex.Pattern;
  * Utilities related to ANSI-formatting of strings sent to a terminal.
  */
 class AnsiUtils {
+
+  private AnsiUtils() {
+    // no-op
+  }
 
   private static final Pattern ANSI_ESCAPE_CHARS = Pattern.compile("(\\x9B|\\x1B\\[)[0-?]*[ -\\/]*[@-~]");
 
@@ -48,17 +52,17 @@ class AnsiUtils {
     }
   }
 
-  static enum Format {
+  enum Format {
     BOLD(1), RED_FG(31), BLUE_FG(34), GREEN_FG(32);
 
-    private final String format;
+    private final String fmt;
 
     Format(int format) {
-      this.format = Integer.toString(format);
+      this.fmt = Integer.toString(format);
     }
 
     public String getFormat() {
-      return format;
+      return fmt;
     }
   }
 }

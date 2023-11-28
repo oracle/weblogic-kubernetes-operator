@@ -16,7 +16,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import oracle.kubernetes.common.logging.MessageKeys;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -32,20 +31,17 @@ import static oracle.kubernetes.common.logging.MessageKeys.DUMP_BREADCRUMBS;
  * threads. This is made possible by utilizing a {@link Fiber} &mdash; a user-level thread that gets
  * created for each processing flow. A fiber remembers where in the pipeline the processing is at
  * and other additional information specific to the execution of a particular flow.
- *
  * <h2>Suspend/Resume</h2>
  *
  * <p>Fiber can be {@link NextAction#suspend(Step,Consumer) suspended} by a {@link Step}. When a fiber is
  * suspended, it will be kept on the side until it is {@link #resume(Packet) resumed}. This allows
  * threads to go execute other runnable fibers, allowing efficient utilization of smaller number of
  * threads.
- *
  * <h2>Context ClassLoader</h2>
  *
  * <p>Just like thread, a fiber has a context class loader (CCL.) A fiber's CCL becomes the thread's
  * CCL when it's executing the fiber. The original CCL of the thread will be restored when the
  * thread leaves the fiber execution.
- *
  * <h2>Debugging Aid</h2>
  *
  * <p>Setting the {@link #LOGGER} for FINE would give you basic start/stop/resume/suspend level
@@ -205,12 +201,12 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   }
 
   private String getStatus() {
-    switch (status.get()) {
-      case NOT_COMPLETE: return "NOT_COMPLETE";
-      case DONE: return "DONE";
-      case CANCELLED: return "CANCELLED";
-      default: return "UNKNOWN: " + status.get();
-    }
+    return switch (status.get()) {
+      case NOT_COMPLETE -> "NOT_COMPLETE";
+      case DONE -> "DONE";
+      case CANCELLED -> "CANCELLED";
+      default -> "UNKNOWN: " + status.get();
+    };
   }
 
   /**
@@ -421,11 +417,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         // catching this exception indicates onExitRunnable in suspend() threw.
         // we must still avoid double unlock
         Throwable t = o.target;
-        if (t instanceof Error) {
-          throw (Error) t;
+        if (t instanceof Error error) {
+          throw error;
         }
-        if (t instanceof RuntimeException) {
-          throw (RuntimeException) t;
+        if (t instanceof RuntimeException re) {
+          throw re;
         }
         throw new RuntimeException(t);
       } finally {
@@ -645,7 +641,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
   }
 
   public List<BreadCrumb> getBreadCrumbs() {
-    return breadCrumbs.stream().map(BreadCrumbFactory::createBreadCrumb).collect(Collectors.toList());
+    return breadCrumbs.stream().map(BreadCrumbFactory::createBreadCrumb).toList();
   }
 
   public String getBreadCrumbString() {
@@ -743,12 +739,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     }
   }
 
-  private static class ChildFiberBreadCrumb implements BreadCrumb {
-    private final Fiber child;
-
-    ChildFiberBreadCrumb(Fiber child) {
-      this.child = child;
-    }
+  private record ChildFiberBreadCrumb(Fiber child) implements BreadCrumb {
 
     @Override
     public void writeTo(StringBuilder sb, BreadCrumb previous, PacketDumper dumper) {

@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.io.StringReader;
 import java.io.Writer;
 import java.net.URI;
@@ -18,7 +19,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import com.google.gson.Gson;
@@ -135,8 +136,10 @@ public class CrdHelper {
   static void writeAsYaml(URI outputFileName, Object model) {
     try (Writer writer = Files.newBufferedWriter(PathSupport.getPath(outputFileName))) {
       writer.write(
-            "# Copyright (c) 2020, 2023, Oracle and/or its affiliates.\n"
-                  + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+              """
+              # Copyright (c) 2020, 2023, Oracle and/or its affiliates.
+              # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+              """);
       writer.write("\n");
       dumpYaml(writer, model);
     } catch (IOException io) {
@@ -368,13 +371,14 @@ public class CrdHelper {
     }
 
     List<V1CustomResourceDefinitionVersion> getCrdVersions() {
-      List<V1CustomResourceDefinitionVersion> versions = getExistingVersions();
-      versions.add(0, createNewVersion());
-      return versions;
+      List<V1CustomResourceDefinitionVersion> list = new ArrayList<>();
+      list.add(createNewVersion());
+      getExistingVersions().forEach(list::add);
+      return list;
     }
 
     @Nonnull
-    private List<V1CustomResourceDefinitionVersion> getExistingVersions() {
+    private Stream<V1CustomResourceDefinitionVersion> getExistingVersions() {
       final Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       return schemas.entrySet().stream()
           .sorted(Map.Entry.comparingByKey())
@@ -384,8 +388,7 @@ public class CrdHelper {
               .schema(getValidationFromCrdSchemaFile(entry.getValue()))
               .subresources(createSubresources())
               .served(true)
-              .storage(false))
-          .collect(Collectors.toList());
+              .storage(false));
     }
 
     private String getVersionFromCrdSchemaFileName(String name) {
@@ -816,6 +819,8 @@ public class CrdHelper {
   }
 
   static class CrdCreationException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID  = 1L;
 
     public CrdCreationException(String message, Exception e) {
       super(message, e);

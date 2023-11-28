@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 
 /**
  * ExceptionMapper converts non-WebApplicationExceptions into internal server errors and logs
- * warnings for them. It debug logs WebApplicationExceptions then lets them flow through unchanged.
+ * warnings for them. It debugs logs WebApplicationExceptions then lets them flow through unchanged.
  */
 @Provider
 public class ExceptionMapper implements jakarta.ws.rs.ext.ExceptionMapper<Exception> {
@@ -36,8 +36,8 @@ public class ExceptionMapper implements jakarta.ws.rs.ext.ExceptionMapper<Except
     // So, see if there's a nested WebApplicationException, and if so,
     // return its response.
     for (Throwable t = e; r == null && t != null; t = t.getCause()) {
-      if (t instanceof WebApplicationException) {
-        r = ((WebApplicationException) t).getResponse();
+      if (t instanceof WebApplicationException webApplicationException) {
+        r = webApplicationException.getResponse();
       }
     }
     if (r == null) {

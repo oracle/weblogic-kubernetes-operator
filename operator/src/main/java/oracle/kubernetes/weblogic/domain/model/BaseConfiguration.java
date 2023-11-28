@@ -53,7 +53,7 @@ public abstract class BaseConfiguration {
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
-   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * String, and it can be defined on domain, cluster or server to restart the different pods. After
    * the value is added, the corresponding pods will be terminated and created again. If customer
    * modifies the value again after the pods were recreated, then the pods will again be terminated
    * and recreated.
@@ -131,7 +131,7 @@ public abstract class BaseConfiguration {
    * Tells the operator whether the customer wants the server to be running. For non-clustered
    * servers - the operator will start it if the policy isn't Never. For clustered servers - the
    * operator will start it if the policy is Always or the policy is IfNeeded and the server needs
-   * to be started to get to the cluster's replica count..
+   * to be started to get to the cluster's replica count...
    *
    * @since 2.0
    * @param serverStartPolicy start policy

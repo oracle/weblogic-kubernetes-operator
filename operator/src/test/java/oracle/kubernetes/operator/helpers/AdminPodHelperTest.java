@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -714,7 +714,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainHasLegcayAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+  void whenDomainHasLegacyAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
     Map<String, Object> auxiliaryImageVolume = createAuxiliaryImageVolume(TEST_VOLUME_NAME,
             DEFAULT_LEGACY_AUXILIARY_IMAGE_MOUNT_PATH);
     Map<String, Object> auxiliaryImage =

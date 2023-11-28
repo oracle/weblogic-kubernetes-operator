@@ -74,11 +74,10 @@ public class Opss {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof Opss)) {
+    if (!(other instanceof Opss rhs)) {
       return false;
     }
 
-    Opss rhs = ((Opss) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(walletFileSecret, rhs.walletFileSecret)

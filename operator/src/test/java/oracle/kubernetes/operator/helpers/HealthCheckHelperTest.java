@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -227,7 +227,7 @@ class HealthCheckHelperTest {
     private String getFullResource(String resourceString) {
       String resource = getResource(resourceString);
       String subresource = getSubresource(resourceString);
-      return subresource.length() == 0 ? resource : resource + "/" + subresource;
+      return subresource.isEmpty() ? resource : resource + "/" + subresource;
     }
 
     private List<String> toVerbs(List<Operation> operations) {

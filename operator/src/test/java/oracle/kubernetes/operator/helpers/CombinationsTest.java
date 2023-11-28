@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 class CombinationsTest {
 
   @Test
+  @SuppressWarnings("unchecked")
   void whenSourceListHasOneElement_collectionIsListOfSame() {
     List<String> source = List.of("one");
 
@@ -23,6 +24,7 @@ class CombinationsTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void whenSourceListHasTwoElement_collectionContainsCombinations() {
     String first = "one";
     String second = "two";
@@ -33,6 +35,7 @@ class CombinationsTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void whenSourceListHasThreeElement_collectionContainsCombinations() {
     String first = "one";
     String second = "two";

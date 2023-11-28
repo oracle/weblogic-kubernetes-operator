@@ -83,6 +83,7 @@ public class ClusterResource implements KubernetesObject {
   private ClusterStatus status;
 
   public ClusterResource() {
+    // no-op
   }
 
   /**

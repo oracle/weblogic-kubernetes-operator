@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -7,8 +7,8 @@ import java.util.Properties;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 class MacroSubstitutorTest {
 
@@ -23,60 +23,41 @@ class MacroSubstitutorTest {
     final MacroSubstitutor macroSubstitutor =
         new MacroSubstitutor(ID, server, cluster, domain, machine);
 
-    assertEquals(
-        "empty input string should return an empty string",
-        "",
-        macroSubstitutor.substituteMacro(""));
+    assertEquals("", macroSubstitutor.substituteMacro(""), "empty input string should return an empty string");
 
-    assertNull("null input string should return null", macroSubstitutor.substituteMacro(null));
+    assertNull(macroSubstitutor.substituteMacro(null), "null input string should return null");
 
-    assertEquals(
-        "string without macro should remains unchanged",
-        "abcdefg 1",
-        macroSubstitutor.substituteMacro("abcdefg 1"));
+    assertEquals("abcdefg 1",
+        macroSubstitutor.substituteMacro("abcdefg 1"), "string without macro should remains unchanged");
 
-    assertEquals(
-        "string with ${id} macro",
-        "myserver-" + ID,
-        macroSubstitutor.substituteMacro("myserver-${id}"));
+    assertEquals("myserver-" + ID,
+        macroSubstitutor.substituteMacro("myserver-${id}"), "string with ${id} macro");
 
-    assertEquals(
-        "string with ${serverName} macro",
-        "test-" + server,
-        macroSubstitutor.substituteMacro("test-${serverName}"));
+    assertEquals("test-" + server,
+        macroSubstitutor.substituteMacro("test-${serverName}"), "string with ${serverName} macro");
 
-    assertEquals(
-        "string with ${clusterName} macro",
-        "test-" + cluster,
-        macroSubstitutor.substituteMacro("test-${clusterName}"));
+    assertEquals("test-" + cluster,
+        macroSubstitutor.substituteMacro("test-${clusterName}"), "string with ${clusterName} macro");
 
-    assertEquals(
-        "string with ${domainName} macro",
-        "test-" + domain,
-        macroSubstitutor.substituteMacro("test-${domainName}"));
+    assertEquals("test-" + domain,
+        macroSubstitutor.substituteMacro("test-${domainName}"), "string with ${domainName} macro");
 
-    assertEquals(
-        "string with only macro", server, macroSubstitutor.substituteMacro("${serverName}"));
+    assertEquals(server, macroSubstitutor.substituteMacro("${serverName}"), "string with only macro");
 
-    assertEquals(
-        "string with multiple macros",
-        server + "-" + domain + "-" + cluster + "-" + ID,
-        macroSubstitutor.substituteMacro("${serverName}-${domainName}-${clusterName}-${id}"));
+    assertEquals(server + "-" + domain + "-" + cluster + "-" + ID,
+        macroSubstitutor.substituteMacro("${serverName}-${domainName}-${clusterName}-${id}"),
+        "string with multiple macros");
 
     System.setProperty("oracle.macrosubstitutortest", "myEnv Value");
-    assertEquals(
-        "string with system property macro",
-        "myEnv Value",
-        macroSubstitutor.substituteMacro("${oracle.macrosubstitutortest}"));
+    assertEquals("myEnv Value",
+        macroSubstitutor.substituteMacro("${oracle.macrosubstitutortest}"), "string with system property macro");
 
     Properties systemProperties = System.getProperties();
     systemProperties.remove("oracle.macrosubstitutortest");
-    assertEquals(
-        "string with system property macro but system property not set",
-        "test--1",
-        macroSubstitutor.substituteMacro("test-${oracle.macrosubstitutortest}-1"));
+    assertEquals("test--1",
+        macroSubstitutor.substituteMacro("test-${oracle.macrosubstitutortest}-1"),
+        "string with system property macro but system property not set");
 
-    assertEquals(
-        "string without complete macro", "test${", macroSubstitutor.substituteMacro("test${"));
+    assertEquals("test${", macroSubstitutor.substituteMacro("test${"), "string without complete macro");
   }
 }

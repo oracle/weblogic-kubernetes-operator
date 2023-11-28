@@ -1,11 +1,10 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +16,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.ABORTED;
 import static oracle.kubernetes.weblogic.domain.model.DomainFailureReason.DOMAIN_INVALID;
@@ -98,7 +96,7 @@ class DomainResourceRetryTest extends DomainTestBase {
     addFailureCondition(SERVER_POD);
 
     assertThat(domain.getNextRetryTime(),
-               equalTo(lastFailureTime.plus(domain.getFailureRetryIntervalSeconds(), SECONDS)));
+               equalTo(lastFailureTime.plusSeconds(domain.getFailureRetryIntervalSeconds())));
   }
 
   @Test
@@ -129,6 +127,6 @@ class DomainResourceRetryTest extends DomainTestBase {
 
     String retryMessage = domain.createRetryMessage(domain.getStatus(), secondLaterCondition);
     assertThat(retryMessage,
-        containsString(initialFailureTime.plus(RETRY_LIMIT_MINUTES, ChronoUnit.MINUTES).toString()));
+        containsString(initialFailureTime.plusMinutes(RETRY_LIMIT_MINUTES).toString()));
   }
 }

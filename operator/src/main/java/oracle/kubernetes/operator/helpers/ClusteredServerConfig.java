@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -36,10 +36,9 @@ public class ClusteredServerConfig extends ServerConfig {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof ClusteredServerConfig)) {
+    if (!(other instanceof ClusteredServerConfig rhs)) {
       return false;
     }
-    ClusteredServerConfig rhs = ((ClusteredServerConfig) other);
     return new EqualsBuilder()
         .appendSuper(super.equals(other))
         .append(clusterName, rhs.clusterName)

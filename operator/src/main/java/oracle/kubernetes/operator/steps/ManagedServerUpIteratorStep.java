@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -77,7 +77,7 @@ public class ManagedServerUpIteratorStep extends Step {
     Collection<StepAndPacket> startDetails =
         startupInfos.stream()
             .filter(ssi -> !isServerInCluster(ssi))
-            .map(ssi -> createManagedServerUpDetails(packet, ssi)).collect(Collectors.toList());
+            .map(ssi -> createManagedServerUpDetails(packet, ssi)).toList();
 
     Collection<StepAndPacket> work = new ArrayList<>();
     if (!startDetails.isEmpty()) {
@@ -96,7 +96,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
     Collection<StepAndPacket> startupWaiters =
             startupInfos.stream()
-                    .map(ssi -> createManagedServerUpWaiters(packet, ssi)).collect(Collectors.toList());
+                    .map(ssi -> createManagedServerUpWaiters(packet, ssi)).toList();
     work.addAll(startupWaiters);
 
     if (!work.isEmpty()) {
@@ -120,7 +120,7 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   private List<String> getServerNames(Collection<ServerStartupInfo> startupInfos) {
-    return startupInfos.stream().map(ServerStartupInfo::getName).collect(Collectors.toList());
+    return startupInfos.stream().map(ServerStartupInfo::getName).toList();
   }
 
   private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
@@ -177,7 +177,7 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     void add(StepAndPacket serverToStart) {
-      startDetailsQueue.add(new StepAndPacket(serverToStart.step, serverToStart.packet));
+      startDetailsQueue.add(new StepAndPacket(serverToStart.step(), serverToStart.packet()));
     }
 
     @Override

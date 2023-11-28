@@ -53,7 +53,7 @@ abstract class WaitForReadyStep<T> extends Step {
   /**
    * Creates a step which will only proceed once the specified resource is ready.
    * @param resource the resource to watch
-   * @param next the step to run once it the resource is ready
+   * @param next the step to run once the resource is ready
    */
   WaitForReadyStep(T resource, Step next) {
     this(null, resource, next);
