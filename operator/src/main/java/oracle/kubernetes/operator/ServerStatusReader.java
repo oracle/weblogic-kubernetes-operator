@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiClient;
@@ -95,7 +94,7 @@ public class ServerStatusReader {
       Collection<StepAndPacket> startDetails =
           info.getServerPods()
               .map(pod -> createStatusReaderStep(packet, pod))
-              .collect(Collectors.toList());
+              .toList();
 
       if (startDetails.isEmpty()) {
         return doNext(packet);
@@ -135,6 +134,7 @@ public class ServerStatusReader {
     }
 
     @Override
+    @SuppressWarnings("try")
     public NextAction apply(Packet packet) {
       @SuppressWarnings("unchecked")
       final ConcurrentMap<String, String> serverStateMap =
@@ -144,7 +144,7 @@ public class ServerStatusReader {
       final int eventualLongDelay = TuningParameters.getInstance().getEventualLongDelay();
       final DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       final LastKnownStatus lastKnownStatus = info.getLastKnownServerStatus(serverName);
-      final V1Pod currentPod = Optional.ofNullable(info.getServerPod(serverName)).orElse(null);
+      final V1Pod currentPod = info.getServerPod(serverName);
 
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
@@ -226,7 +226,7 @@ public class ServerStatusReader {
     }
 
     private String getNamespace(@Nonnull V1Pod pod) {
-      return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+      return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
     }
 
     public String getDomainUid(V1Pod pod) {

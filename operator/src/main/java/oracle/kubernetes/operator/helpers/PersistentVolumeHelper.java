@@ -32,7 +32,7 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 
 /**
- * Operations for dealing with perisstent volumes.
+ * Operations for dealing with persistent volumes.
  */
 public class PersistentVolumeHelper {
 

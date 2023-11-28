@@ -14,7 +14,7 @@ import oracle.kubernetes.common.CommonConstants;
 
 public class CommonUtils {
 
-  private static CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
+  private static final CheckedFunction<String, String> getMD5Hash = CommonUtils::getMD5Hash;
 
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
   public static final String VOLUME_NAME_SUFFIX = "-volume";
@@ -78,7 +78,7 @@ public class CommonUtils {
    * Gets the MD5 hash of a string.
    *
    * @param data input string
-   * @return MD5 hash value of the data, null in case of an exception.
+   * @return MD5 hash value of the data
    */
   public static String getMD5Hash(String data) throws NoSuchAlgorithmException {
     return bytesToHex(MessageDigest.getInstance("MD5").digest(data.getBytes(StandardCharsets.UTF_8)));

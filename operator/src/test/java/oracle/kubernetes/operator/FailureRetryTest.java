@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -84,7 +83,7 @@ class FailureRetryTest {
 
     testSupport.defineResources(domain);
     testStartTime = SystemClock.now();
-    cachedDomain.getMetadata().setCreationTimestamp(testStartTime.minus(1, ChronoUnit.SECONDS));
+    cachedDomain.getMetadata().setCreationTimestamp(testStartTime.minusSeconds(1));
     domainProcessor.registerDomainPresenceInfo(new DomainPresenceInfo(cachedDomain));
     stepFactory.setSteps(domainInvalidStep);
 
@@ -109,7 +108,7 @@ class FailureRetryTest {
   void whenNotYetNextRetryTime_dontExecuteRetry() {
     domainProcessor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
-    final OffsetDateTime nextRetryTime = domain.getNextRetryTime().minus(2, ChronoUnit.SECONDS);
+    final OffsetDateTime nextRetryTime = domain.getNextRetryTime().minusSeconds(2);
     setCurrentTime(nextRetryTime);
 
     assertThat(domainInvalidStep.numTimesRun, equalTo(1));
@@ -259,7 +258,7 @@ class FailureRetryTest {
     return new V1Job()
         .metadata(new V1ObjectMeta().name("introspection"))
         .spec(new V1JobSpec().activeDeadlineSeconds(deadlineSeconds))
-        .status(new V1JobStatus().startTime(SystemClock.now().minus(jobRunningTime, ChronoUnit.SECONDS)));
+        .status(new V1JobStatus().startTime(SystemClock.now().minusSeconds(jobRunningTime)));
   }
 
   static class AddDomainInvalidStep extends Step {

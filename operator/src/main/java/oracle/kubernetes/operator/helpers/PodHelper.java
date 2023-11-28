@@ -280,7 +280,7 @@ public class PodHelper {
   }
 
   /**
-   * Chcek if the pod status shows that the pod is evicted.
+   * Check if the pod status shows that the pod is evicted.
    * @param status Pod status to be checked
    * @return True if the pod status shows that the pod is evicted, false otherwise
    */
@@ -807,11 +807,11 @@ public class PodHelper {
           .map(LastKnownStatus::getStatus).orElse(getServerState(info.getDomain(), serverName));
     }
 
-    // We add a 10 second fudge factor here to account for the fact that WLST takes
+    // We add a 10-second fudge factor here to account for the fact that WLST takes
     // ~6 seconds to start, so along with any other delay in connecting and issuing
     // the shutdown, the actual server instance has the full configured timeout to
     // gracefully shutdown before the container is destroyed by this timeout.
-    // We will remove this fudge factor when the operator connects via REST to shutdown
+    // We will remove this fudge factor when the operator connects via REST to shut down
     // the server instance.
     private long getConfiguredGracePeriodSeconds(EffectiveServerSpec effectiveServerSpec) {
       return effectiveServerSpec.getShutdown().getTimeoutSeconds() + DEFAULT_ADDITIONAL_DELETE_TIME;
@@ -846,12 +846,7 @@ public class PodHelper {
   }
 
   /* Retry strategy for delete pod which will not perform any retries */
-  private static final class DeletePodRetryStrategy implements RetryStrategy {
-    private final Step retryStep;
-
-    DeletePodRetryStrategy(Step retryStep) {
-      this.retryStep = retryStep;
-    }
+  private record DeletePodRetryStrategy(Step retryStep) implements RetryStrategy {
 
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {

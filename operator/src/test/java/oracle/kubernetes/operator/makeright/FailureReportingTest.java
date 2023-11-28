@@ -1,10 +1,9 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.makeright;
 
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -252,7 +251,7 @@ class FailureReportingTest {
 
     executeMakeRight();
 
-    if (testCase.isRetriable()) {
+    if (testCase.isRetryable()) {
       assertThat(domain.getStatus().getMessage(), containsString(createRetryMessageAugmentation(makeRightTime)));
     } else {
       assertThat(domain.getStatus().getMessage().toLowerCase(), not(containsString("will retry")));
@@ -263,7 +262,7 @@ class FailureReportingTest {
     return LOGGER.formatMessage(MAKE_RIGHT_WILL_RETRY, "",
         domain.getNextRetryTime(),
         domain.getFailureRetryIntervalSeconds(),
-        makeRightTime.plus(domain.getFailureRetryLimitMinutes(), ChronoUnit.MINUTES));
+        makeRightTime.plusMinutes(domain.getFailureRetryLimitMinutes()));
   }
 
   @ParameterizedTest
@@ -276,7 +275,7 @@ class FailureReportingTest {
     assertThat(testSupport, hasEvent("Failed").withMessageContaining(testCase.getExpectedMessage()));
   }
 
-  // todo what about the retry message for two retriable failures, after the first is fixed, and the second remains?
+  // todo what about the retry message for two retryable failures, after the first is fixed, and the second remains?
 
   enum TestCase {
     DOMAIN_VALIDATION_FAILURE {
@@ -346,7 +345,7 @@ class FailureReportingTest {
       }
 
       @Override
-      boolean isRetriable() {
+      boolean isRetryable() {
         return false;
       }
     },
@@ -395,7 +394,7 @@ class FailureReportingTest {
       }
 
       @Override
-      boolean isRetriable() {
+      boolean isRetryable() {
         return false;
       }
     };
@@ -409,7 +408,7 @@ class FailureReportingTest {
     @Nonnull
     abstract String getExpectedMessage();
 
-    boolean isRetriable() {
+    boolean isRetryable() {
       return true;
     }
   }

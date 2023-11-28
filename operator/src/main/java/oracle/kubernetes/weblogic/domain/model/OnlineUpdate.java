@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -16,8 +16,8 @@ public class OnlineUpdate {
   @Default(boolDefault = false)
   private Boolean enabled = false;
 
-  @Description(""
-       + "Controls behavior when non-dynamic WebLogic configuration changes are detected"
+  @Description(
+       "Controls behavior when non-dynamic WebLogic configuration changes are detected"
        + " during an online update."
        + " Non-dynamic changes are changes that require a domain restart to take effect."
        + " Valid values are 'CommitUpdateOnly' and 'CommitUpdateAndRoll'. Defaults to `CommitUpdateOnly`."

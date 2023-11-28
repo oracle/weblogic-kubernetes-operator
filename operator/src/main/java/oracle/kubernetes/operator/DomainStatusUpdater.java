@@ -565,7 +565,7 @@ public class DomainStatusUpdater {
 
     @Nonnull
     private Long getDomainGeneration(@Nonnull DomainResource domain) {
-      return Optional.ofNullable(domain.getMetadata()).map(V1ObjectMeta::getGeneration).orElse(0L);
+      return Optional.of(domain.getMetadata()).map(V1ObjectMeta::getGeneration).orElse(0L);
     }
 
     @Nonnull
@@ -725,7 +725,7 @@ public class DomainStatusUpdater {
         return conditions.getNewConditions().stream()
             .map(this::toEvent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
       }
 
       private EventData toEvent(DomainCondition newCondition) {
@@ -736,7 +736,7 @@ public class DomainStatusUpdater {
         return conditions.getRemovedConditions().stream()
             .map(this::toRemovedEvent)
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
       }
 
       private EventData toRemovedEvent(DomainCondition removedCondition) {
@@ -810,7 +810,7 @@ public class DomainStatusUpdater {
               .stream()
               .filter(c -> "True".equals(c.getStatus()))
               .filter(c -> oldStatus == null || oldStatus.lacksConditionWith(matchFor(c)))
-              .collect(Collectors.toList());
+              .toList();
         }
 
         List<DomainCondition> getRemovedConditions() {
@@ -819,7 +819,7 @@ public class DomainStatusUpdater {
               .stream()
               .filter(c -> "True".equals(c.getStatus()))
               .filter(c -> status == null || status.lacksConditionWith(matchFor(c)))
-              .collect(Collectors.toList());
+              .toList();
         }
 
         private boolean failureReasonMatch(DomainCondition c1, DomainCondition c2) {
@@ -866,7 +866,7 @@ public class DomainStatusUpdater {
         }
 
         private List<String> getNonStartedServersWithState() {
-          return serverState.keySet().stream().filter(this::isNonStartedServer).collect(Collectors.toList());
+          return serverState.keySet().stream().filter(this::isNonStartedServer).toList();
         }
 
         private boolean isNonStartedServer(String serverName) {
@@ -879,7 +879,7 @@ public class DomainStatusUpdater {
 
         private @Nonnull List<String> getNonClusteredServers() {
           return expectedRunningServers.stream().filter(
-              StatusUpdateContext.this::isNonClusteredServer).collect(Collectors.toList());
+              StatusUpdateContext.this::isNonClusteredServer).toList();
         }
 
         private boolean allIntendedServersReady() {
@@ -916,7 +916,7 @@ public class DomainStatusUpdater {
 
         @Nonnull
         private List<String> createUnavailableClustersMessage(List<ClusterCheck> unavailableClusters) {
-          return unavailableClusters.stream().map(ClusterCheck::createNotReadyMessage).collect(Collectors.toList());
+          return unavailableClusters.stream().map(ClusterCheck::createNotReadyMessage).toList();
         }
 
         private DomainCondition createNotAvailableCondition(String message) {
@@ -924,11 +924,11 @@ public class DomainStatusUpdater {
         }
 
         private List<String> getUnreadyNonClusteredServers() {
-          return getNonClusteredServers().stream().filter(this::isServerNotReady).collect(Collectors.toList());
+          return getNonClusteredServers().stream().filter(this::isServerNotReady).toList();
         }
 
         private List<ClusterCheck> getUnavailableClusters() {
-          return Arrays.stream(clusterChecks).filter(this::isUnavailable).collect(Collectors.toList());
+          return Arrays.stream(clusterChecks).filter(this::isUnavailable).toList();
         }
 
         private boolean isServerNotReady(@Nonnull String serverName) {
@@ -1005,7 +1005,7 @@ public class DomainStatusUpdater {
               .filter(s -> clusterName.equals(s.getClusterName()))
               .map(ServerStatus::getServerName)
               .filter(expectedRunningServers::contains)
-              .collect(Collectors.toList());
+              .toList();
         }
 
         private List<String> getNonStartedClusteredServers(DomainStatus domainStatus, String clusterName) {
@@ -1013,7 +1013,7 @@ public class DomainStatusUpdater {
               .filter(s -> clusterName.equals(s.getClusterName()))
               .map(ServerStatus::getServerName)
               .filter(name -> !expectedRunningServers.contains(name))
-              .collect(Collectors.toList());
+              .toList();
         }
 
         boolean isAvailable() {
@@ -1150,8 +1150,8 @@ public class DomainStatusUpdater {
         }
 
         private boolean isReadyCondition(Object condition) {
-          return (condition instanceof V1PodCondition)
-              && "Ready".equals(((V1PodCondition)condition).getType());
+          return (condition instanceof V1PodCondition podCondition)
+              && "Ready".equals(podCondition.getType());
         }
 
         private boolean isPhaseRunning(V1PodStatus status) {
@@ -1468,10 +1468,10 @@ public class DomainStatusUpdater {
     public void setStatusDetails(DomainStatus status) {
       status.setServers(domainConfig.getAllServers().stream()
           .map(this::createServerStatus)
-          .collect(Collectors.toList()));
+          .toList());
       status.setClusters(domainConfig.getConfiguredClusters().stream()
           .map(this::createClusterStatus)
-          .collect(Collectors.toList()));
+          .toList());
     }
 
     class ServerStatusFactory {

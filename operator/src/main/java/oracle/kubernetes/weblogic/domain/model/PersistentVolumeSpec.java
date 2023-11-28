@@ -19,29 +19,29 @@ public class PersistentVolumeSpec {
       + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#capacity")
   private Map<String, Quantity> capacity;
 
-  @Description("HostPath represents a directory on the host. Provisioned by a developer or tester."
-      + " This is useful for single-node development and testing only! On-host storage is not supported in any way"
-      + " and WILL NOT WORK in a multi-node cluster. More info:\n"
-      + " https://kubernetes.io/docs/concepts/storage/volumes#hostpath\n"
-      + "Represents a host path mapped into a pod. Host path volumes do not support ownership management"
-      + " or SELinux relabeling.")
+  @Description("HostPath represents a directory on the host. Provisioned by a developer or tester. "
+      + "This is useful for single-node development and testing only! On-host storage is not supported in any way "
+      + "and WILL NOT WORK in a multi-node cluster. More info: "
+      + "https://kubernetes.io/docs/concepts/storage/volumes#hostpath. "
+      + "Represents a host path mapped into a pod. Host path volumes do not support ownership management "
+      + "or SELinux relabeling.")
   private V1HostPathVolumeSource hostPath;
 
-  @Description("nfs represents an NFS mount on the host. Provisioned by an admin. More info:\n"
-      + "https://kubernetes.io/docs/concepts/storage/volumes#nfs\n"
-      + "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do"
-      + " not support ownership management or SELinux relabeling.")
+  @Description("nfs represents an NFS mount on the host. Provisioned by an admin. More info: "
+      + "https://kubernetes.io/docs/concepts/storage/volumes#nfs. "
+      + "Represents an NFS mount that lasts the lifetime of a pod. NFS volumes do "
+      + "not support ownership management or SELinux relabeling.")
   private V1NFSVolumeSource nfs;
 
-  @Description("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from"
-      + " its claim. Valid options are Retain (default for manually created PersistentVolumes),"
-      + " Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated)."
-      + " Recycle must be supported by the volume plugin underlying this PersistentVolume."
-      + " More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming  ")
+  @Description("PersistentVolumeReclaimPolicy defines what happens to a persistent volume when released from "
+      + "its claim. Valid options are Retain (default for manually created PersistentVolumes), "
+      + "Delete (default for dynamically provisioned PersistentVolumes), and Recycle (deprecated). "
+      + "Recycle must be supported by the volume plugin underlying this PersistentVolume. "
+      + "More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming")
   private String persistentVolumeReclaimPolicy;
 
-  @Description("StorageClassName is the name of StorageClass to which this persistent volume belongs."
-      + " Empty value means that this volume does not belong to any StorageClass.")
+  @Description("StorageClassName is the name of StorageClass to which this persistent volume belongs. "
+      + "Empty value means that this volume does not belong to any StorageClass.")
   private String storageClassName;
 
   public Map<String, Quantity> getCapacity() {

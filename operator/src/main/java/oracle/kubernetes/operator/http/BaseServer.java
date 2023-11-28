@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -44,7 +44,7 @@ public abstract class BaseServer {
   }; // ONLY support TLSv1.2 (by default, we would get TLSv1 and TLSv1.1 too)
 
   private static byte[] readFromDataOrFile(String data, String file) throws IOException {
-    if (data != null && data.length() > 0) {
+    if (data != null && !data.isEmpty()) {
       return Base64.decodeBase64(data);
     }
     return Files.readAllBytes(new File(file).toPath());
@@ -174,7 +174,7 @@ public abstract class BaseServer {
 
   protected boolean isPemConfigured(String data, String path) {
     boolean result = false;
-    if (data != null && data.length() > 0) {
+    if (data != null && !data.isEmpty()) {
       result = true;
     } else if (path != null) {
       File f = new File(path);

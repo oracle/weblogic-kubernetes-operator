@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +14,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -147,7 +145,7 @@ abstract class HttpRequestProcessing {
     }
 
     private void updateExpirationTime() {
-      expirationTime = SystemClock.now().plus(50, ChronoUnit.MINUTES);
+      expirationTime = SystemClock.now().plusMinutes(50);
     }
 
     void addCookies(List<String> setCookieHeaders) {
@@ -160,7 +158,7 @@ abstract class HttpRequestProcessing {
 
     List<String> getCookieHeaders() {
       updateExpirationTime();
-      return cookies.entrySet().stream().map(e -> e.getKey() + '=' + e.getValue()).collect(Collectors.toList());
+      return cookies.entrySet().stream().map(e -> e.getKey() + '=' + e.getValue()).toList();
     }
 
     private void clearIfExpired() {

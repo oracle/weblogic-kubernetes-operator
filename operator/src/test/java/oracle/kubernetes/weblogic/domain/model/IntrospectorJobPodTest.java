@@ -3,12 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
-
 class IntrospectorJobPodTest extends BaseIntrospectorJobPodConfigurationTestBase {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final Introspector introspector1;
   private final Introspector introspector2;

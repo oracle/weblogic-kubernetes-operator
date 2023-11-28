@@ -43,11 +43,11 @@ public abstract class ResourcePresenceInfo implements PacketComponent {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("ResourcePresenceInfo{");
-    sb.append(", namespace=").append(namespace);
-    sb.append(", resourceName=").append(getResourceName());
-    sb.append("}");
-
-    return sb.toString();
+    return "ResourcePresenceInfo{"
+        + ", namespace="
+        + namespace
+        + ", resourceName="
+        + getResourceName()
+        + "}";
   }
 }

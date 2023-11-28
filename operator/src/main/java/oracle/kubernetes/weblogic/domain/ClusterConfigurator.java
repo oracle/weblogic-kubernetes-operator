@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -104,7 +104,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
-   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * String, and it can be defined on domain, cluster or server to restart the different pods. After
    * the value is added, the corresponding pods will be terminated and created again. If customer
    * modifies the value again after the pods were recreated, then the pods will again be terminated
    * and recreated.

@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -440,7 +439,7 @@ public class TuningParameters {
       return Arrays.stream(list.split(","))
           .filter(this::isEnabledFeatureName)
           .map(this::getFeatureName)
-          .collect(Collectors.toList());
+          .toList();
     }
 
     private boolean isEnabledFeatureName(String v) {

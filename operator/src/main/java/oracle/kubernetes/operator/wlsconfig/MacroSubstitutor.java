@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -109,20 +109,15 @@ public class MacroSubstitutor {
     if (macro == null || macro.isEmpty()) {
       return "";
     }
-    switch (macro) {
-      case "domainName":
-        return domainName;
-      case "serverName":
-        return serverName;
-      case "clusterName":
-        return clusterName;
-      case "machineName":
-        return machineName;
-      case "id":
-        return "" + id;
-      default:
+    return switch (macro) {
+      case "domainName" -> domainName;
+      case "serverName" -> serverName;
+      case "clusterName" -> clusterName;
+      case "machineName" -> machineName;
+      case "id" -> "" + id;
+      default ->
         // Look for macro in ConfigurationProperty or as system property
-        return System.getProperty(macro);
-    }
+        System.getProperty(macro);
+    };
   }
 }

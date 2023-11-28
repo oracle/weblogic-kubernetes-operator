@@ -103,7 +103,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track changes to WebLogic domains in one namespaces.
+   * Creates a web hook object to track changes to WebLogic domains in one namespace.
    *
    * @param namespace the namespace in which to track domains
    * @return the active web hook
@@ -207,12 +207,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListNamespacedServiceCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListNamespacedServiceCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListNamespacedServiceCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -240,17 +235,12 @@ public class WatchBuilder {
     }
   }
 
-  // Specify an infinite timeout to ensure the client doesn't timeout before call or watch.
+  // Specify an infinite timeout to ensure the client doesn't time out before call or watch.
   private static void configureClient(ApiClient client) {
     client.setHttpClient(client.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build());
   }
 
-  private static class ListPodCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListPodCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListPodCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -278,12 +268,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListJobCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListJobCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListJobCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -311,12 +296,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListEventCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListEventCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListEventCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -344,12 +324,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListPodDisruptionBudgetCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListPodDisruptionBudgetCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListPodDisruptionBudgetCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -377,12 +352,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListClustersCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListClustersCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListClustersCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -407,12 +377,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListDomainsCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListDomainsCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListDomainsCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {
@@ -437,12 +402,7 @@ public class WatchBuilder {
     }
   }
 
-  private static class ListNamespacedConfigMapCall implements BiFunction<ApiClient, CallParams, Call> {
-    private final String namespace;
-
-    ListNamespacedConfigMapCall(String namespace) {
-      this.namespace = namespace;
-    }
+  private record ListNamespacedConfigMapCall(String namespace) implements BiFunction<ApiClient, CallParams, Call> {
 
     @Override
     public Call apply(ApiClient client, CallParams callParams) {

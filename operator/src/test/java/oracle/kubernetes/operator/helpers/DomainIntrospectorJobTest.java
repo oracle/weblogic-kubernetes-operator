@@ -975,7 +975,7 @@ class DomainIntrospectorJobTest extends DomainTestUtils {
 
   private V1PodStatus createJobPodStatus() {
     return new V1PodStatus().containerStatuses(
-        Arrays.asList(new V1ContainerStatus().name(UID + "-introspector").ready(true).started(true)));
+        Collections.singletonList(new V1ContainerStatus().name(UID + "-introspector").ready(true).started(true)));
   }
 
   private void ignoreJobCreatedAndDeletedLogs() {

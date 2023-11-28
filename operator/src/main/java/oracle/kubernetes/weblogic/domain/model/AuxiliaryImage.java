@@ -116,11 +116,10 @@ public class AuxiliaryImage implements DeploymentImage {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof AuxiliaryImage)) {
+    if (!(other instanceof AuxiliaryImage rhs)) {
       return false;
     }
 
-    AuxiliaryImage rhs = ((AuxiliaryImage) other);
     EqualsBuilder builder =
             new EqualsBuilder()
                     .append(image, rhs.image)

@@ -157,7 +157,7 @@ class JobHelperTest extends DomainValidationTestBase {
         = "very-long-resource-name-very-long-resource-name-abcdefghijklmnopqrstuvwxyz";
 
   /**
-   * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
+   * OEVN is the name of an env var that contains a comma-separated list of operator supplied env var names.
    * It's used by the Model in Image introspector job to detect env var differences from the last
    * time the job ran.
    */
@@ -1543,7 +1543,7 @@ class JobHelperTest extends DomainValidationTestBase {
                 "echo managed server && sleep 120"))
         .configureIntrospector()
         .withRequestRequirement("cpu", "512m")
-        .withLimitRequirement("memory", "1Gi");    ;
+        .withLimitRequirement("memory", "1Gi");
 
     V1JobSpec jobSpec = createJobSpec();
 

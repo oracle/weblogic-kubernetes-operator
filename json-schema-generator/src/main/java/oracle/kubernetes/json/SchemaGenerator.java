@@ -12,6 +12,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public class SchemaGenerator {
    * @param version a Kubernetes version string, such as "1.9.0"
    * @throws IOException if no schema for that version is cached.
    */
-  public void useKubernetesVersion(String version) throws IOException {
+  public void useKubernetesVersion(String version) throws IOException, URISyntaxException {
     KubernetesSchemaReference reference = KubernetesSchemaReference.create(version);
     URL cacheUrl = reference.getKubernetesSchemaCacheUrl();
     if (cacheUrl == null) {

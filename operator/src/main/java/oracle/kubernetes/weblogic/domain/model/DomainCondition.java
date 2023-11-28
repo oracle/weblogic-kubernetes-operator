@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -265,10 +265,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     if (other == this) {
       return true;
     }
-    if (!(other instanceof DomainCondition)) {
+    if (!(other instanceof DomainCondition rhs)) {
       return false;
     }
-    DomainCondition rhs = ((DomainCondition) other);
     return new EqualsBuilder()
         .append(reason, rhs.reason)
         .append(message, rhs.message)

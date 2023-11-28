@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -22,120 +22,130 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DomainTopologyTest {
 
   private static final String DOMAIN_TOPOLOGY =
-            "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    servers:\n"
-          + "      - name: \"managed-server1\"\n"
-          + "        listenPort: 7003\n"
-          + "        listenAddress: \"domain1-managed-server1\"\n"
-          + "        sslListenPort: 7103\n"
-          + "        machineName: \"machine-managed-server1\"\n"
-          + "      - name: \"managed-server2\"\n"
-          + "        listenPort: 7004\n"
-          + "        listenAddress: \"domain1-managed-server2\"\n"
-          + "        sslListenPort: 7104\n"
-          + "        networkAccessPoints:\n"
-          + "          - name: \"nap2\"\n"
-          + "            protocol: \"t3\"\n"
-          + "            listenPort: 7105\n"
-          + "            publicPort: 7105\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n"
-          + "      adminPort: 7099\n"
-          + "    - name: \"server1\"\n"
-          + "      listenPort: 9003\n"
-          + "      listenAddress: \"domain1-managed-server1\"\n"
-          + "      sslListenPort: 8003\n"
-          + "      machineName: \"machine-managed-server1\"\n"
-          + "    - name: \"server2\"\n"
-          + "      listenPort: 9004\n"
-          + "      listenAddress: \"domain1-managed-server2\"\n"
-          + "      sslListenPort: 8004\n"
-          + "      networkAccessPoints:\n"
-          + "        - name: \"nap2\"\n"
-          + "          protocol: \"t3\"\n"
-          + "          listenPort: 8005\n"
-          + "          publicPort: 8005\n";
+      """
+          domainValid: true
+          domain:
+            name: "base_domain"
+            adminServerName: "admin-server"
+            configuredClusters:
+            - name: "cluster-1"
+              servers:
+                - name: "managed-server1"
+                  listenPort: 7003
+                  listenAddress: "domain1-managed-server1"
+                  sslListenPort: 7103
+                  machineName: "machine-managed-server1"
+                - name: "managed-server2"
+                  listenPort: 7004
+                  listenAddress: "domain1-managed-server2"
+                  sslListenPort: 7104
+                  networkAccessPoints:
+                    - name: "nap2"
+                      protocol: "t3"
+                      listenPort: 7105
+                      publicPort: 7105
+            servers:
+              - name: "admin-server"
+                listenPort: 7001
+                listenAddress: "domain1-admin-server"
+                adminPort: 7099
+              - name: "server1"
+                listenPort: 9003
+                listenAddress: "domain1-managed-server1"
+                sslListenPort: 8003
+                machineName: "machine-managed-server1"
+              - name: "server2"
+                listenPort: 9004
+                listenAddress: "domain1-managed-server2"
+                sslListenPort: 8004
+                networkAccessPoints:
+                  - name: "nap2"
+                    protocol: "t3"
+                    listenPort: 8005
+                    publicPort: 8005
+          """;
   private static final String DYNAMIC_SERVER_TOPOLOGY =
-            "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    dynamicServersConfig:\n"
-          + "        name: \"cluster-1\"\n"
-          + "        serverTemplateName: \"cluster-1-template\"\n"
-          + "        calculatedListenPorts: false\n"
-          + "        serverNamePrefix: \"managed-server\"\n"
-          + "        dynamicClusterSize: 4\n"
-          + "        maxDynamicClusterSize: 8\n"
-          + "        minDynamicClusterSize: 2\n"
-          + "  serverTemplates:\n"
-          + "    - name: \"cluster-1-template\"\n"
-          + "      listenPort: 8001\n"
-          + "      clusterName: \"cluster-1\"\n"
-          + "      listenAddress: \"domain1-managed-server${id}\"\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n";
+      """
+          domainValid: true
+          domain:
+            name: "base_domain"
+            adminServerName: "admin-server"
+            configuredClusters:
+            - name: "cluster-1"
+              dynamicServersConfig:
+                  name: "cluster-1"
+                  serverTemplateName: "cluster-1-template"
+                  calculatedListenPorts: false
+                  serverNamePrefix: "managed-server"
+                  dynamicClusterSize: 4
+                  maxDynamicClusterSize: 8
+                  minDynamicClusterSize: 2
+            serverTemplates:
+              - name: "cluster-1-template"
+                listenPort: 8001
+                clusterName: "cluster-1"
+                listenAddress: "domain1-managed-server${id}"
+            servers:
+              - name: "admin-server"
+                listenPort: 7001
+                listenAddress: "domain1-admin-server"
+          """;
   private static final String MIXED_CLUSTER_TOPOLOGY =
-            "domainValid: true\n"
-          + "domain:\n"
-          + "  name: \"base_domain\"\n"
-          + "  adminServerName: \"admin-server\"\n"
-          + "  configuredClusters:\n"
-          + "  - name: \"cluster-1\"\n"
-          + "    dynamicServersConfig:\n"
-          + "        name: \"cluster-1\"\n"
-          + "        serverTemplateName: \"cluster-1-template\"\n"
-          + "        calculatedListenPorts: false\n"
-          + "        serverNamePrefix: \"managed-server\"\n"
-          + "        dynamicClusterSize: 3\n"
-          + "        maxDynamicClusterSize: 8\n"
-          + "    servers:\n"
-          + "      - name: \"ms1\"\n"
-          + "        listenPort: 7003\n"
-          + "        listenAddress: \"domain1-managed-server1\"\n"
-          + "        sslListenPort: 7103\n"
-          + "        machineName: \"machine-managed-server1\"\n"
-          + "      - name: \"ms2\"\n"
-          + "        listenPort: 7004\n"
-          + "        listenAddress: \"domain1-managed-server2\"\n"
-          + "        sslListenPort: 7104\n"
-          + "        networkAccessPoints:\n"
-          + "          - name: \"nap2\"\n"
-          + "            protocol: \"t3\"\n"
-          + "            listenPort: 7105\n"
-          + "            publicPort: 7105\n"
-          + "  serverTemplates:\n"
-          + "    - name: \"cluster-1-template\"\n"
-          + "      listenPort: 8001\n"
-          + "      clusterName: \"cluster-1\"\n"
-          + "      listenAddress: \"domain1-managed-server${id}\"\n"
-          + "      sslListenPort: 7204\n"
-          + "      networkAccessPoints:\n"
-          + "        - name: \"nap3\"\n"
-          + "          protocol: \"t3\"\n"
-          + "          listenPort: 7205\n"
-          + "          publicPort: 7205\n"
-          + "  servers:\n"
-          + "    - name: \"admin-server\"\n"
-          + "      listenPort: 7001\n"
-          + "      listenAddress: \"domain1-admin-server\"\n";
+      """
+          domainValid: true
+          domain:
+            name: "base_domain"
+            adminServerName: "admin-server"
+            configuredClusters:
+            - name: "cluster-1"
+              dynamicServersConfig:
+                  name: "cluster-1"
+                  serverTemplateName: "cluster-1-template"
+                  calculatedListenPorts: false
+                  serverNamePrefix: "managed-server"
+                  dynamicClusterSize: 3
+                  maxDynamicClusterSize: 8
+              servers:
+                - name: "ms1"
+                  listenPort: 7003
+                  listenAddress: "domain1-managed-server1"
+                  sslListenPort: 7103
+                  machineName: "machine-managed-server1"
+                - name: "ms2"
+                  listenPort: 7004
+                  listenAddress: "domain1-managed-server2"
+                  sslListenPort: 7104
+                  networkAccessPoints:
+                    - name: "nap2"
+                      protocol: "t3"
+                      listenPort: 7105
+                      publicPort: 7105
+            serverTemplates:
+              - name: "cluster-1-template"
+                listenPort: 8001
+                clusterName: "cluster-1"
+                listenAddress: "domain1-managed-server${id}"
+                sslListenPort: 7204
+                networkAccessPoints:
+                  - name: "nap3"
+                    protocol: "t3"
+                    listenPort: 7205
+                    publicPort: 7205
+            servers:
+              - name: "admin-server"
+                listenPort: 7001
+                listenAddress: "domain1-admin-server"
+          """;
   private static final String INVALID_TOPOLOGY =
-            "domainValid: false\n"
-          + "validationErrors:\n"
-          + "  - \"The dynamic cluster \\\"mycluster\\\"'s dynamic servers use calculated listen ports.\"";
+      """
+          domainValid: false
+          validationErrors:
+            - "The dynamic cluster \\"mycluster\\"'s dynamic servers use calculated listen ports.\"""";
   private static final String DOMAIN_INVALID_NO_ERRORS =
-      "domainValid: false\n" + "validationErrors:\n";
+      """
+          domainValid: false
+          validationErrors:
+          """;
 
   @Test
   void parseDomainTopologyYaml() {

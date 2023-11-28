@@ -1,10 +1,11 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json.mojo;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -187,7 +188,7 @@ class JsonSchemaMojoTest extends MojoTestBase {
     executeMojo();
 
     assertThat(
-        main.getCacheFor(new URL("http://schema.json")),
+        main.getCacheFor(new URI("http://schema.json").toURL()),
         equalTo(toModuleUrl("src/cache/schema.json")));
   }
 
@@ -225,7 +226,8 @@ class JsonSchemaMojoTest extends MojoTestBase {
   void useSpecifiedClasspath() throws Exception {
     String[] classpathElements = new String[] {"a", "b", "c"};
     setMojoParameter("compileClasspathElements", Arrays.asList(classpathElements));
-    URL[] classPathUrls = new URL[] {new URL("file:abc"), new URL("file:bcd"), new URL("file:cde")};
+    URL[] classPathUrls
+        = new URL[] {new URI("file:abc").toURL(), new URI("file:bcd").toURL(), new URI("file:cde").toURL()};
     for (int i = 0; i < classpathElements.length; i++) {
       fileSystem.defineUrl(new File(classpathElements[i]), classPathUrls[i]);
     }

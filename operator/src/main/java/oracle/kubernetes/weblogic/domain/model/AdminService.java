@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -128,10 +128,9 @@ public class AdminService implements ServiceConfigurator {
     if (o == null) {
       return false;
     }
-    if (!(o instanceof AdminService)) {
+    if (!(o instanceof AdminService as)) {
       return false;
     }
-    AdminService as = (AdminService) o;
     return new EqualsBuilder()
         .append(DomainResource.sortList(channels), DomainResource.sortList(as.channels))
         .append(labels, as.labels)

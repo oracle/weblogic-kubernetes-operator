@@ -42,7 +42,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
 
   @Override
   public String format(LogRecord logRecord) {
-    String sourceClassName = "";
+    String sourceClassName;
     String sourceMethodName = "";
     if (logRecord.getSourceClassName() != null) {
       sourceClassName = logRecord.getSourceClassName();
@@ -71,7 +71,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     long rawTime = logRecord.getMillis();
     final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(logRecord.getInstant(),
             ZoneId.systemDefault()));
-    long thread = Thread.currentThread().getId();
+    long thread = Thread.currentThread().threadId();
     T fiberObject = getCurrentFiberIfSet();
 
     map.put(TIMESTAMP, dateString);
@@ -90,7 +90,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
     map.put(RESPONSE_CODE, code);
     map.put(RESPONSE_HEADERS, headers);
     map.put(RESPONSE_BODY, body.replace("\n", "\\\n"));
-    String json = "";
+    String json;
     try {
       ObjectMapper mapper = new ObjectMapper();
       json = mapper.writeValueAsString(map);
@@ -123,7 +123,7 @@ public abstract class BaseLoggingFormatter<T> extends Formatter {
   protected abstract void processThrowable(LogRecord logRecord, ThrowableProcessing throwableProcessing);
 
   protected class ThrowableProcessing {
-    private LogRecord logRecord;
+    private final LogRecord logRecord;
     private String code;
     private Map<String, List<String>> headers;
     private String body;

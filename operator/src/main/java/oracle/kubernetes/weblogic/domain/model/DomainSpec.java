@@ -94,7 +94,7 @@ public class DomainSpec extends BaseConfiguration {
   private ServerStartPolicy serverStartPolicy;
 
   /**
-   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    */
   @Description(
@@ -623,7 +623,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
+   * Reference to secret containing WebLogic startup credentials username and password. Secret must
    * contain keys names 'username' and 'password'. Required.
    *
    * @param webLogicCredentialsSecret WebLogic startup credentials secret
@@ -1150,11 +1150,10 @@ public class DomainSpec extends BaseConfiguration {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof DomainSpec)) {
+    if (!(other instanceof DomainSpec rhs)) {
       return false;
     }
 
-    DomainSpec rhs = ((DomainSpec) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .appendSuper(super.equals(other))

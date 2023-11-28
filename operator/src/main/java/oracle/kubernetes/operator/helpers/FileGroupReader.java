@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,10 +10,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,9 +29,6 @@ public class FileGroupReader {
 
   private final String pathToGroup;
 
-  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // keep non-final for unit test
-  private static Function<URI, Path> uriToPath = Paths::get;
-  
   /**
    * Creates a reader for a specific file location.
    *
@@ -75,6 +70,7 @@ public class FileGroupReader {
    *
    * @return a map of file paths to string contents.
    */
+  @SuppressWarnings("try")
   Map<String, String> loadFilesFromClasspath() {
     synchronized (FileGroupReader.class) {
       try {

@@ -6,6 +6,7 @@ package oracle.kubernetes.json.mojo;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class MainImpl implements Main {
   }
 
   @Override
-  public void setKubernetesVersion(String kubernetesVersion) throws IOException {
+  public void setKubernetesVersion(String kubernetesVersion) throws IOException, URISyntaxException {
     this.kubernetesVersion = kubernetesVersion;
     generator.useKubernetesVersion(kubernetesVersion);
   }

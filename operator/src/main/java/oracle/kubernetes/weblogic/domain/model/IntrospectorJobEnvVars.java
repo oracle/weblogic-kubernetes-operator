@@ -26,7 +26,7 @@ public class IntrospectorJobEnvVars {
   public static final String INTROSPECT_HOME = "INTROSPECT_HOME";
 
   /**
-   * The credentials used by the introspection job - weblogic credenitals.
+   * The credentials used by the introspection job - weblogic credentials.
    */
   public static final String CREDENTIALS_SECRET_NAME = "CREDENTIALS_SECRET_NAME";
 

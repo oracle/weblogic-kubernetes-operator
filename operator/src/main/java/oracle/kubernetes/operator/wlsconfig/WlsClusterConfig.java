@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -228,11 +228,10 @@ public class WlsClusterConfig {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof WlsClusterConfig)) {
+    if (!(other instanceof WlsClusterConfig rhs)) {
       return false;
     }
 
-    WlsClusterConfig rhs = ((WlsClusterConfig) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(name, rhs.name)

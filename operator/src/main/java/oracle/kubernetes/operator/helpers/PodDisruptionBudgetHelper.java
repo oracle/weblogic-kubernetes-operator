@@ -175,11 +175,9 @@ public class PodDisruptionBudgetHelper {
         if (other == this) {
           return true;
         }
-        if (!(other instanceof PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep)) {
+        if (!(other instanceof ConflictStep rhs)) {
           return false;
         }
-        PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep rhs =
-                ((PodDisruptionBudgetHelper.PodDisruptionBudgetContext.ConflictStep) other);
         return new EqualsBuilder().append(conflictStep, rhs.getConflictStep()).isEquals();
       }
 

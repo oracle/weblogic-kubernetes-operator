@@ -58,8 +58,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DomainV2Test extends DomainTestBase {
 
@@ -485,7 +485,7 @@ class DomainV2Test extends DomainTestBase {
     configureDomainWithResourceRequirements(domain);
     V1ResourceRequirements ms1ResourceReq = info.getServer(SERVER1, CLUSTER_NAME).getResources();
 
-    // Since SERVER1 is specified in domain and it overrides only memory requirement of 512Mi
+    // Since SERVER1 is specified in domain, and it overrides only memory requirement of 512Mi
     // Only the following assertion should be different from the cluster defined values
     assertThat(ms1ResourceReq.getLimits(), hasResourceQuantity("memory", "512Mi"));
 

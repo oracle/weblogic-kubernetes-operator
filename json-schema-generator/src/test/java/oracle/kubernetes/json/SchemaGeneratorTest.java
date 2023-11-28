@@ -5,6 +5,8 @@ package oracle.kubernetes.json;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -95,7 +97,7 @@ class SchemaGeneratorTest {
 
   @BeforeEach
   public void setUp() throws Exception {
-    schemaUrl = new URL(K8S_SCHEMA_URL);
+    schemaUrl = new URI(K8S_SCHEMA_URL).toURL();
     cacheUrl = getClass().getResource(K8S_CACHE_FILE);
   }
 
@@ -448,7 +450,7 @@ class SchemaGeneratorTest {
   }
 
   @Test
-  void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException {
+  void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException, URISyntaxException {
     generator.useKubernetesVersion("1.9.0");
     Object schema = generator.generate(ExternalReferenceObject.class);
 

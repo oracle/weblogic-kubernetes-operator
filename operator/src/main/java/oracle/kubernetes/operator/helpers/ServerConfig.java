@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -55,10 +55,9 @@ public class ServerConfig {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof ServerConfig)) {
+    if (!(other instanceof ServerConfig rhs)) {
       return false;
     }
-    ServerConfig rhs = ((ServerConfig) other);
     return new EqualsBuilder()
         .append(serverName, rhs.serverName)
         .append(image, rhs.image)

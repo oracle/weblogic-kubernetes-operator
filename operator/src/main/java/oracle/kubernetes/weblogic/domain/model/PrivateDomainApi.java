@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -68,7 +68,7 @@ public interface PrivateDomainApi {
   int getMaxConcurrentStartup(ClusterSpec clusterSpec);
 
   /**
-   * Get the maximum number of servers to shutdown concurrently.
+   * Get the maximum number of servers to shut down concurrently.
    * @param clusterSpec the spec of the cluster; may be null or empty if no applicable cluster.
    */
   int getMaxConcurrentShutdown(ClusterSpec clusterSpec);

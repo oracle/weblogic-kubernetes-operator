@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -52,7 +51,7 @@ public class ManagedServersUpStep extends Step {
   }
 
   public static Collection<String> getRunningServers(DomainPresenceInfo info) {
-    return info.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList());
+    return info.getServerPods().map(PodHelper::getPodServerName).toList();
   }
 
   private static Step scaleDownIfNecessary(
@@ -100,7 +99,7 @@ public class ManagedServersUpStep extends Step {
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).collect(Collectors.toList());
+            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).toList();
   }
 
   private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {

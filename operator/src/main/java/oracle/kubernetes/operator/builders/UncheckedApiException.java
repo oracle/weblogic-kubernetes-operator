@@ -1,7 +1,9 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
+
+import java.io.Serial;
 
 import io.kubernetes.client.openapi.ApiException;
 
@@ -10,8 +12,10 @@ import io.kubernetes.client.openapi.ApiException;
  * is thrown by a function object and the underlying ApiException is then rethrown by the caller of
  * the function object.
  */
-@SuppressWarnings("serial")
 class UncheckedApiException extends RuntimeException {
+  @Serial
+  private static final long serialVersionUID  = 1L;
+
   UncheckedApiException(ApiException e) {
     super(e);
   }

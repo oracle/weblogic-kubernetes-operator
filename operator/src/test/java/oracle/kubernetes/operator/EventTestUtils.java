@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -157,7 +157,7 @@ public class EventTestUtils {
    * @param count count to match
    * @return true if there is a matching event
    */
-  public static Object containsOneEventWithCount(List<CoreV1Event> events, String reason, int count) {
+  public static boolean containsOneEventWithCount(List<CoreV1Event> events, String reason, int count) {
     List<CoreV1Event> eventsMatchReason = getEventsWithReason(events, reason);
     return eventsMatchReason.size() == 1 && eventsMatchReason.stream().anyMatch(e -> countMatches(e, count));
   }
@@ -185,7 +185,7 @@ public class EventTestUtils {
   public static String getExpectedEventMessage(KubernetesTestSupport testSupport, EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(testSupport), event.getReason());
     return Optional.ofNullable(events)
-        .filter(list -> list.size() != 0)
+        .filter(list -> !list.isEmpty())
         .map(n -> n.get(0))
         .map(CoreV1Event::getMessage)
         .orElse("Event not found");
@@ -196,7 +196,7 @@ public class EventTestUtils {
   }
 
   public static boolean containsEvent(List<CoreV1Event> events, String reason) {
-    return getEventsWithReason(events, reason).size() != 0;
+    return !getEventsWithReason(events, reason).isEmpty();
   }
 
   private static boolean reasonMatches(CoreV1Event event, String eventReason) {
@@ -287,7 +287,7 @@ public class EventTestUtils {
   }
 
   public static CoreV1Event getEventWithReason(List<CoreV1Event> events, String reason) {
-    return getEventsWithReason(events, reason).size() > 0 ? getEventsWithReason(events, reason).get(0) : null;
+    return !getEventsWithReason(events, reason).isEmpty() ? getEventsWithReason(events, reason).get(0) : null;
   }
 
   public static int getNumberOfEvents(List<CoreV1Event> events, String reason) {

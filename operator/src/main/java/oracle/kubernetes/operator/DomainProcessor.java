@@ -111,7 +111,7 @@ public interface DomainProcessor {
   /**
    * Get the map of domain presence infos for a given namespace.
    *
-   * @param namespace the nnamespace
+   * @param namespace the namespace
    * @return Map of cached domain presence infos.
    */
   default Map<String,DomainPresenceInfo> getDomainPresenceInfoMapForNS(String namespace) {

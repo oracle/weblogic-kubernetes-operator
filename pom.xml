@@ -419,6 +419,11 @@
         <version>${client-java-version}</version>
       </dependency>
       <dependency>
+        <groupId>com.google.code.findbugs</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${findbugs-version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-stdlib</artifactId>
         <version>${kotlin-stdlib-version}</version>
@@ -688,6 +693,7 @@
     <commons.io.version>2.15.0</commons.io.version>
     <awaitility-version>4.2.0</awaitility-version>
     <client-java-version>19.0.0</client-java-version>
+    <findbugs-version>3.0.1</findbugs-version>
     <kotlin-stdlib-version>1.9.21</kotlin-stdlib-version>
     <okhttp-version>4.12.0</okhttp-version>
     <okio-version>3.6.0</okio-version>

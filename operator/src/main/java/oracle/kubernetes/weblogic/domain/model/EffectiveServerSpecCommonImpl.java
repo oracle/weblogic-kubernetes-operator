@@ -125,14 +125,11 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
 
   @Override
   public boolean shouldStart(int currentReplicas) {
-    switch (getEffectiveServerStartPolicy()) {
-      case ALWAYS:
-        return true;
-      case IF_NEEDED:
-        return clusterLimit == null || currentReplicas < clusterLimit;
-      default:
-        return false;
-    }
+    return switch (getEffectiveServerStartPolicy()) {
+      case ALWAYS -> true;
+      case IF_NEEDED -> clusterLimit == null || currentReplicas < clusterLimit;
+      default -> false;
+    };
   }
 
   @Override
@@ -288,11 +285,9 @@ public abstract class EffectiveServerSpecCommonImpl extends EffectiveServerSpecB
       return true;
     }
 
-    if (!(o instanceof EffectiveServerSpecCommonImpl)) {
+    if (!(o instanceof EffectiveServerSpecCommonImpl that)) {
       return false;
     }
-
-    EffectiveServerSpecCommonImpl that = (EffectiveServerSpecCommonImpl) o;
 
     return new EqualsBuilder()
         .appendSuper(super.equals(o))

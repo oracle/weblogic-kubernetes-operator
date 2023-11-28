@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http.rest;
@@ -47,7 +47,7 @@ public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
       }
       String reqHeaders = getLoggableHeaders(req);
       // Always debug log the request even though the response logger logs it too
-      // in case the method hangs and we never get a response.
+      // in case the method hangs, and we never get a response.
       LOGGER.fine("uri=" + req.getUriInfo().getRequestUri().toString());
       LOGGER.fine("method=" + req.getMethod());
       LOGGER.fine("start=" + formatTime(start));
@@ -63,7 +63,7 @@ public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
 
   private Object getRequestEntity(ContainerRequestContext req) throws Exception {
     // TBD - is it ever safe to debug log the request body since
-    // it might contain cleartext passwords and we can't tell at this level?
+    // it might contain cleartext passwords, and we can't tell at this level?
     String entityAsString = readEntityAsString(req);
     return formatEntity(req.getMediaType(), entityAsString);
   }

@@ -637,7 +637,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     try {
       if (webLogicCredentialsSecretLastSet == null
           || webLogicCredentialsSecretLastSet.isAfter(
-              SystemClock.now().minusSeconds(getWeblogicCredentialsSecretRereadIntervalSeconds()))) {
+              SystemClock.now().minusSeconds(getWebLogicCredentialsSecretRereadIntervalSeconds()))) {
         return webLogicCredentialsSecret;
       }
     } finally {
@@ -649,7 +649,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return null;
   }
 
-  private int getWeblogicCredentialsSecretRereadIntervalSeconds() {
+  private int getWebLogicCredentialsSecretRereadIntervalSeconds() {
     return TuningParameters.getInstance().getCredentialsSecretRereadIntervalSeconds();
   }
 
@@ -771,7 +771,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return servers.entrySet().stream()
           .filter(e -> hasMatchingServer(e, criteria))
           .map(Map.Entry::getKey)
-          .collect(Collectors.toList());
+          .toList();
   }
 
   private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Predicate<V1Pod> criteria) {
@@ -933,7 +933,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
 
   public List<ClusterResource> getReferencedClusters() {
     return Optional.ofNullable(getDomain().getSpec().getClusters()).orElse(Collections.emptyList())
-        .stream().map(this::findCluster).filter(Objects::nonNull).collect(Collectors.toList());
+        .stream().map(this::findCluster).filter(Objects::nonNull).toList();
   }
 
   private ClusterResource findCluster(V1LocalObjectReference reference) {
@@ -1080,8 +1080,8 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     return clusters.values();
   }
 
-  public boolean hasRetriableFailure() {
-    return Optional.ofNullable(getDomain()).map(DomainResource::hasRetriableFailure).orElse(false);
+  public boolean hasRetryableFailure() {
+    return Optional.ofNullable(getDomain()).map(DomainResource::hasRetryableFailure).orElse(false);
   }
 
   /** Details about a specific managed server. */
@@ -1204,7 +1204,7 @@ public class DomainPresenceInfo extends ResourcePresenceInfo {
     /**
      * Create server shutdown info.
      *
-     * @param serverName the name of the server to shutdown
+     * @param serverName the name of the server to shut down
      * @param clusterName the name of the cluster
      */
     public ServerShutdownInfo(String serverName, String clusterName) {

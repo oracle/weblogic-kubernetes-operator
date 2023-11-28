@@ -34,7 +34,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold);
 
   /**
-   * Add a node label to the Servers's node selector.
+   * Add a node label to the Servers' node selector.
    *
    * @param labelKey the pod label key
    * @param labelValue the pod label value
@@ -104,7 +104,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   /**
    * Tells the operator whether the customer wants to restart the server pods. The value can be any
-   * String and it can be defined on domain, cluster or server to restart the different pods. After
+   * String, and it can be defined on domain, cluster or server to restart the different pods. After
    * the value is added, the corresponding pods will be terminated and created again. If customer
    * modifies the value again after the pods were recreated, then the pods will again be terminated
    * and recreated.
