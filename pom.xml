@@ -632,7 +632,7 @@
     <maven-dependency-plugin-version>3.6.1</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.1.1</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.8.1.0</spotbugs-maven-plugin-version>
-    <spotbugs-version>4.8.1</spotbugs-version>
+    <spotbugs-version>4.8.2</spotbugs-version>
     <checkstyle-version>10.12.5</checkstyle-version>
     <directory-maven-version>1.0</directory-maven-version>
     <maven-jxr-plugin-version>3.3.1</maven-jxr-plugin-version>
