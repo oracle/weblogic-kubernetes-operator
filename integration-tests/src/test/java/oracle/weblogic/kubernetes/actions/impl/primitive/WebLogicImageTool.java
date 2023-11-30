@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -22,6 +22,8 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultC
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWdtParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWitParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.installWdtParams;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 
@@ -96,34 +98,44 @@ public class WebLogicImageTool {
   public String inspectImage(String imageName, String imageTag) {
     String output = null;
     // download WIT if it is not in the expected location
-    if (!downloadWit()) {
-      return output;
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> downloadWit(),
+        getLogger(),
+        "downloading WIT succeeds");
 
     // download WDT if it is not in the expected location
-    if (!downloadWdt()) {
-      return output;
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> downloadWdt(),
+        getLogger(),
+        "downloading WDT succeeds");
 
     // delete the old cache entry for the WDT installer
-    if (!deleteEntry()) {
-      return output;
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> deleteEntry(),
+        getLogger(),
+        "deleting cache entry for WDT installer succeeds");
 
     // add the WDT installer that we just downloaded into WIT cache entry
-    if (!addInstaller()) {
-      return output;
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> addInstaller(),
+        getLogger(),
+        "adding WDT installer to the cache succeeds");
+
     ExecResult result = Command.withParams(
             defaultCommandParams()
                     .command(buildInspectWitCommand(imageName,
                             imageTag))
                     .redirect(params.redirect()))
             .executeAndReturnResult();
-    // check exitValue to determine if the command execution has failed.
 
+    // check exitValue to determine if the command execution has failed.
     if (result.exitValue() != 0) {
       getLogger().severe("The command execution failed because it returned non-zero exit value: {0}.", result);
+      output = result.stderr();
     } else {
       getLogger().info("The command execution succeeded with result: {0}.", result);
       output = result.stdout();
@@ -339,35 +351,41 @@ public class WebLogicImageTool {
    */
   public ExecResult createAuxImageAndReturnResult() {
     // download WIT if it is not in the expected location
-    if (!downloadWit()) {
-      return new ExecResult(1, "failed to download WIT", "failed to download WIT");
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> downloadWit(),
+        getLogger(),
+        "downloading WIT succeeds");
 
     // download WDT if it is not in the expected location
     if (params.wdtVersion() != null && !Objects.equals(params.wdtVersion(), "NONE")) {
-      if (!downloadWdt(params.wdtVersion())) {
-        return new ExecResult(1, "failed to download WDT with version " + params.wdtVersion(),
-            "failed to download WDT with version " + params.wdtVersion());
-
-      }
+      testUntil(
+          withStandardRetryPolicy,
+          () -> downloadWdt(params.wdtVersion()),
+          getLogger(),
+          "downloading WDT with version {0} succeeds",
+          params.wdtVersion());
     } else {
-      if (!downloadWdt()) {
-        return new ExecResult(1, "failed to download latest WDT",
-            "failed to download latest WDT");
-      }
+      testUntil(
+          withStandardRetryPolicy,
+          () -> downloadWdt(),
+          getLogger(),
+          "downloading latest WDT succeeds");
     }
 
     // delete the old cache entry for the WDT installer
-    if (!deleteEntry()) {
-      return new ExecResult(1, "failed to delete cache entry for the WDT installer",
-          "failed to delete cache entry for the WDT installer");
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> deleteEntry(),
+        getLogger(),
+        "deleting cache entry for WDT installer succeeds");
 
     // add the WDT installer that we just downloaded into WIT cache entry
-    if (!addInstaller()) {
-      return new ExecResult(1, "failed to add WDT installer to the cache",
-          "failed to add WDT installer to the cache");
-    }
+    testUntil(
+        withStandardRetryPolicy,
+        () -> addInstaller(),
+        getLogger(),
+        "adding WDT installer to the cache succeeds");
 
     return Command.withParams(
             defaultCommandParams()
