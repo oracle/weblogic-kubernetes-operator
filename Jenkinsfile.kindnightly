@@ -61,7 +61,7 @@ def kind_k8s_map = [
     ]
 ]
 def _kind_image = null
-CRON_SETTINGS = '''H 1 * * * % MAVEN_PROFILE_NAME=kind-parallel'''
+CRON_SETTINGS = '''H 11 * * 6 % MAVEN_PROFILE_NAME=kind-parallel'''
 
 
 pipeline {
@@ -71,7 +71,7 @@ pipeline {
     }
     triggers {
         // timer trigger for "nightly build"
-        parameterizedCron(env.JOB_NAME == 'wko-kind-release34-nightly' ?
+        parameterizedCron(env.JOB_NAME == 'wko-kind-release34-weekly' ?
         CRON_SETTINGS : '')
     }
 
