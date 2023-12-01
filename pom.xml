@@ -667,7 +667,7 @@
     <jackson-version>2.16.0</jackson-version>
     <snakeyaml-version>1.33</snakeyaml-version>
     <jackson-databind-version>2.16.0</jackson-databind-version>
-    <dependency-check-version>9.0.1</dependency-check-version>
+    <dependency-check-version>9.0.2</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
