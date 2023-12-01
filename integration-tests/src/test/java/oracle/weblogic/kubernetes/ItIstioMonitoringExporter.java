@@ -18,7 +18,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -63,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
-@Tag("kind-parallel")
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;
