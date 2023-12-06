@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2023, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -20,25 +20,25 @@ public class Model {
   @ApiModelProperty(
       value = "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
       allowableValues = "WLS, RestrictedJRF, JRF")
-  private String domainType;
+  public String domainType;
 
   @ApiModelProperty("WDT config map name.")
-  private String configMap;
+  public String configMap;
 
   @ApiModelProperty("Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no "
           + "`spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise.")
-  private String modelHome;
+  public String modelHome;
 
   @ApiModelProperty("Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if "
           + "no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise.")
-  private String wdtInstallHome;
+  public String wdtInstallHome;
 
   @ApiModelProperty("Online update option for Model In Image dynamic update.")
-  private OnlineUpdate onlineUpdate;
+  public OnlineUpdate onlineUpdate;
 
   @ApiModelProperty(
       "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
-  private String runtimeEncryptionSecret;
+  public String runtimeEncryptionSecret;
 
   /**
    * The auxiliary images.
@@ -49,23 +49,23 @@ public class Model {
           + "modifications to the pod's base image `domain.spec.image`. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
-  private List<AuxiliaryImage> auxiliaryImages;
+  public List<AuxiliaryImage> auxiliaryImages;
 
   @ApiModelProperty("The auxiliary image volume mount path. This is an advanced setting that rarely needs to be "
           + "configured. Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the "
           + "WebLogic-Server container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start "
           + "with the new mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to "
           + "the new default locations.")
-  private String auxiliaryImageVolumeMountPath;
+  public String auxiliaryImageVolumeMountPath;
 
   @ApiModelProperty("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely "
           + "needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's "
           + "file system for the life of the pod.")
-  private String auxiliaryImageVolumeMedium;
+  public String auxiliaryImageVolumeMedium;
 
   @ApiModelProperty("The emptyDir volume size limit. This is an advanced setting that rarely needs to be configured. "
           + "Defaults to unset.")
-  private String auxiliaryImageVolumeSizeLimit;
+  public String auxiliaryImageVolumeSizeLimit;
 
   public Model domainType(String domainType) {
     this.domainType = domainType;
