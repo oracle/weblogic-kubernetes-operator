@@ -254,10 +254,15 @@ class ItIstioMiiDomain {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      // use IPV6
+      host = "[" + host + "]";
+    }
+
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
     logger.info("hostAndPort is {0}", hostAndPort);
 
     // We can not verify Rest Management console thru Adminstration NodePort
@@ -273,14 +278,10 @@ class ItIstioMiiDomain {
     }
 
     if (isWebLogicPsuPatchApplied()) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
       String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + host + ":" + istioIngressPort
+          + " --url http://" + hostAndPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 
@@ -320,11 +321,6 @@ class ItIstioMiiDomain {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
     logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
     if (OKE_CLUSTER) {
       testUntil(isAppInServerPodReady(domainNamespace,
           managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
@@ -358,12 +354,11 @@ class ItIstioMiiDomain {
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-
-    String wmRuntimeUrl  = "http://" + host + ":"
-           + istioIngressPort + "/management/weblogic/latest/domainRuntime"
-           + "/serverRuntimes/managed-server1/applicationRuntimes"
-           + "/testwebapp/workManagerRuntimes/newWM/"
-           + "maxThreadsConstraintRuntime ";
+    String resourcePath = "/management/weblogic/latest/domainRuntime"
+        + "/serverRuntimes/managed-server1/applicationRuntimes"
+        + "/testwebapp/workManagerRuntimes/newWM/"
+        + "maxThreadsConstraintRuntime ";
+    String wmRuntimeUrl  = "http://" + hostAndPort + resourcePath;
 
     boolean checkWm = checkAppUsingHostHeader(wmRuntimeUrl, domainNamespace + ".org");
     assertTrue(checkWm, "Failed to access WorkManagerRuntime");

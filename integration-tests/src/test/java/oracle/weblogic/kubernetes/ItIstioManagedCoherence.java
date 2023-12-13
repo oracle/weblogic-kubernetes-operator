@@ -169,10 +169,15 @@ class ItIstioManagedCoherence {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      // use IPV6
+      host = "[" + host + "]";
+    }
+
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
   }
 
   /**
@@ -214,12 +219,7 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -267,12 +267,7 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -376,12 +371,7 @@ class ItIstioManagedCoherence {
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // Make sure ready app is accessible thru Istio Ingress Port
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + host + ":" + istioIngressPort
+    String curlCmd = "curl -g --silent --show-error --noproxy '*' http://" + hostAndPort
         + "/weblogic/ready --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
@@ -507,14 +497,6 @@ class ItIstioManagedCoherence {
   }
 
   private boolean coherenceCacheTest(int ingressServiceNodePort) {
-
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String hostAndPort = host + ":" + ingressServiceNodePort;
-    logger.info("hostAndPort = {0} ", hostAndPort);
-
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};

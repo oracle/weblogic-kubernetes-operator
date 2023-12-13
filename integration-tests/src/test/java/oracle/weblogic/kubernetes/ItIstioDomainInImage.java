@@ -202,22 +202,22 @@ class ItIstioDomainInImage {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      // use IPV6
+      host = "[" + host + "]";
+    }
+
     // In internal OKE env, use Istio EXTERNAL-IP;
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String host = K8S_NODEPORT_HOST;
-      if (host.contains(":")) {
-        host = "[" + host + "]";
-      }
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
@@ -257,12 +257,6 @@ class ItIstioDomainInImage {
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
     logger.info("Application {0} deployed successfully at {1}", "testwebapp.war", domainUid + "-" + clusterName);
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
-    String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
-    
     if (OKE_CLUSTER) {
       testUntil(isAppInServerPodReady(domainNamespace,
           managedServerPrefix + 1, 8001, "/testwebapp/index.jsp", "testwebapp"),
@@ -270,6 +264,7 @@ class ItIstioDomainInImage {
           archivePath,
           target);
     } else {
+      String url = "http://" + hostAndPort + "/testwebapp/index.jsp";
       logger.info("Application Access URL {0}", url);
       boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
       assertTrue(checkApp, "Failed to access WebLogic application");
@@ -285,7 +280,7 @@ class ItIstioDomainInImage {
       String curlCmd2 = "curl -g -j -sk --show-error --noproxy '*' "
           + " -H 'Host: " + domainNamespace + ".org'"
           + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-          + " --url http://" + host + ":" + istioIngressPort
+          + " --url http://" + hostAndPort
           + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
           + "link=none";
 

@@ -1290,7 +1290,12 @@ public class CommonTestUtils {
       logger.info("External IP address of the service is {0} ", serviceExtIPAddr);
     }
 
-    return serviceExtIPAddr;
+    String serviceExtIPAddress = serviceExtIPAddr;
+    if (serviceExtIPAddr != null && serviceExtIPAddr.contains(":")) {
+      serviceExtIPAddress = "[" + serviceExtIPAddr + "]";
+    }
+
+    return serviceExtIPAddress;
   }
 
   /**
@@ -1502,18 +1507,19 @@ public class CommonTestUtils {
                                        String... hosts) {
     LoggingFacade logger = getLogger();
 
-    String hostAndPort = (hosts.length == 0) ? K8S_NODEPORT_HOST + ":" + istioIngressPort : hosts[0];
-    // verify WebLogic console is accessible before port forwarding using ingress port
     String host = K8S_NODEPORT_HOST;
     if (host.contains(":")) {
+      // use IPV6
       host = "[" + host + "]";
     }
-    String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+
+    String hostAndPort = (hosts.length == 0) ? host + ":" + istioIngressPort : hosts[0];
+    // verify WebLogic console is accessible before port forwarding using ingress port
+    String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
 
     boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console");
     logger.info("WebLogic console is accessible");
-
 
     // forwarding admin port to a local port
     String localhost = "localhost";
