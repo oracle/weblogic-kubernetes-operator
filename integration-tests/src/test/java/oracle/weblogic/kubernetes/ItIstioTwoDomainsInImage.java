@@ -273,18 +273,18 @@ class ItIstioTwoDomainsInImage {
     
     String host = K8S_NODEPORT_HOST;
     if (host.contains(":")) {
+      // use IPV6
       host = "[" + host + "]";
     }
     // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : host + ":" + istioIngressPort;
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
 
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
       boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
       logger.info("WebLogic console on domain1 is accessible");
@@ -300,9 +300,9 @@ class ItIstioTwoDomainsInImage {
     createBaseRepoSecret(domainNamespace1);
 
     ExecResult result = OKE_CLUSTER
-        ? deployUsingRest(host, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace1 + ".org", "testwebapp")
-        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
 
@@ -329,9 +329,8 @@ class ItIstioTwoDomainsInImage {
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole
-          = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
       assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
       logger.info("WebLogic console on domain2 is accessible");
     } else {
@@ -344,7 +343,7 @@ class ItIstioTwoDomainsInImage {
     result = OKE_CLUSTER
         ? deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             target, archivePath, domainNamespace2 + ".org", "testwebapp")
-        : deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
+        : deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
 

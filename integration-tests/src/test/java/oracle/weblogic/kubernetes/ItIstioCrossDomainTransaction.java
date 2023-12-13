@@ -363,19 +363,21 @@ class ItIstioCrossDomainTransaction {
     istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-    String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
-
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String host = K8S_NODEPORT_HOST;
       if (host.contains(":")) {
+        // use IPV6
         host = "[" + host + "]";
       }
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+
+      // In internal OKE env, use Istio EXTERNAL-IP; in non-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+      String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
+          ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
+
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+
       boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
@@ -484,11 +486,16 @@ class ItIstioCrossDomainTransaction {
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
   void testIstioCrossDomainTranscatedMDB() {
+    String host = K8S_NODEPORT_HOST;
+    if (host.contains(":")) {
+      // use IPV6
+      host = "[" + host + "]";
+    }
+
     // In internal OKE env, use Istio EXTERNAL-IP;
     // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
     String hostAndPort = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
-        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace)
-        : K8S_NODEPORT_HOST + ":" + istioIngressPort;
+        ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : host + ":" + istioIngressPort;
 
     assertTrue(checkAppIsActive(hostAndPort, "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
         "mdbtopic","cluster-1", ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
@@ -496,10 +503,6 @@ class ItIstioCrossDomainTransaction {
 
     logger.info("MDB application is activated on domain1/cluster");
 
-    String host = K8S_NODEPORT_HOST;
-    if (host.contains(":")) {
-      host = "[" + host + "]";
-    }
     String curlRequest = OKE_CLUSTER
         ? String.format("curl -g -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -533,6 +536,7 @@ class ItIstioCrossDomainTransaction {
   private boolean checkLocalQueue() {
     String host = K8S_NODEPORT_HOST;
     if (host.contains(":")) {
+      // use IPV6
       host = "[" + host + "]";
     }
     // In internal OKE env, use Istio EXTERNAL-IP;

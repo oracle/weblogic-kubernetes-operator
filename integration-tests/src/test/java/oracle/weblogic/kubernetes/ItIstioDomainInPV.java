@@ -179,8 +179,7 @@ class ItIstioDomainInPV  {
     final int replicaCount = 2;
     final int t3ChannelPort = getNextFreePort();
 
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST
+    // In internal OKE env, use Istio EXTERNAL-IP; in non-internal-OKE env, use K8S_NODEPORT_HOST
     String hostName = getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) != null
         ? getServiceExtIPAddrtOke(istioIngressServiceName, istioNamespace) : K8S_NODEPORT_HOST;
 
@@ -321,20 +320,21 @@ class ItIstioDomainInPV  {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio http ingress Port is {0}", istioIngressPort);
 
-    // In internal OKE env, use Istio EXTERNAL-IP;
-    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
-    String hostAndPort = hostName.equals(K8S_NODEPORT_HOST) ? K8S_NODEPORT_HOST + ":" + istioIngressPort : hostName;
     String host = K8S_NODEPORT_HOST;
     if (host.contains(":")) {
+      // use IPV6
       host = "[" + host + "]";
     }
 
+    // In internal OKE env, use Istio EXTERNAL-IP;
+    // in non-internal-OKE env, use K8S_NODEPORT_HOST + ":" + istioIngressPort
+    String hostAndPort = hostName.contains(K8S_NODEPORT_HOST) ? host + ":" + istioIngressPort  : hostName;
+
     // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
-    if (!WEBLOGIC_SLIM) {      
-      String consoleUrl = "http://" + host + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole =
-          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+    if (!WEBLOGIC_SLIM) {
+      String consoleUrl = "http://" + hostAndPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
@@ -381,10 +381,9 @@ class ItIstioDomainInPV  {
       String managedServerPrefix = domainUid + "-managed-";
       String target = "{identity: [clusters,'" + clusterName + "']}";
 
-      String url = "http://" + host + ":" + istioIngressPort + "/testwebapp/index.jsp";
-      logger.info("Application Access URL {0}", url);
-      result = deployUsingRest(host, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+      result = deployUsingRest(hostAndPort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
           target, archivePath, domainNamespace + ".org", "testwebapp");
+
       assertNotNull(result, "Application deployment failed");
       logger.info("Application deployment returned {0}", result.toString());
       assertEquals("202", result.stdout(), "Application deployment failed with wrong HTTP code");
@@ -397,11 +396,12 @@ class ItIstioDomainInPV  {
           target);
     } else {
       for (int i = 1; i <= 10; i++) {
-        result = deployToClusterUsingRest(host, String.valueOf(istioIngressPort),
+        result = deployToClusterUsingRest(K8S_NODEPORT_HOST, String.valueOf(istioIngressPort),
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
             clusterName, archivePath, domainNamespace + ".org", "testwebapp");
         assertNotNull(result, "Application deployment failed");
         logger.info("(Loop:{0}) Application deployment returned {1}", i, result.toString());
+
         if (result.stdout().equals("202")) {
           break;
         }
