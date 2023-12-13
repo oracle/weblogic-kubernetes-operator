@@ -39,7 +39,7 @@ See the [operator prerequisites]({{< relref "/introduction/prerequisites/introdu
 
 #### Recent changes and known issues
 
-See the Release Notes for recent changes to the operator and known issues.
+See the [Release Notes](https://github.com/oracle/weblogic-kubernetes-operator/releases) for recent changes to the operator and [Known Limitations]({{< relref "/known-limitations/_index.md" >}}) for the current set of known issues.
 
 #### Operator earlier versions
 
