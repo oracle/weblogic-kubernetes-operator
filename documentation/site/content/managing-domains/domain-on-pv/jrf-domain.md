@@ -59,7 +59,7 @@ and, if you use the original models to create the domain again, then you will lo
 After the domain is created, the operator will automatically export the OPSS wallet and
 store it in an introspector ConfigMap; the name of the ConfigMap follows the pattern `<domain uid>-weblogic-domain-introspect-cm`
 with the key `ewallet.p12`.  Export this file and put it in a safe place. The operator provides a
-[OPSS wallet utility](https://orahub.oci.oraclecorp.com/weblogic-cloud/weblogic-kubernetes-operator/-/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh)
+[OPSS wallet utility](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/domain-lifecycle/opss-wallet.sh)
 for extracting this file and storing it in a Kubernetes `walletFileSecret`.  You should also save the wallet file in a safely backed-up location, outside of Kubernetes.
 
 For example,
